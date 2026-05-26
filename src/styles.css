@@ -1,0 +1,637 @@
+/* 深海回响 — 视觉基调
+ * 暗色主题，类似深夜的港口灯光与水下蓝绿色
+ * 字体保持系统默认，等内容稳定后再做字体定制
+ */
+
+:root {
+  --bg: #0a1018;
+  --bg-elev: #11192a;
+  --bg-elev-2: #1a2540;
+  --border: #233048;
+  --text: #d9e2ee;
+  --text-muted: #8aa0bc;
+  --text-faint: #5c728f;
+  --accent: #4ed1c1;
+  --warn: #f3a64a;
+  --danger: #ff6b6b;
+  --green: #6cd296;
+  --cyan: #4ed1c1;
+  --yellow: #f3d264;
+  --violet: #b88dff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  min-height: 100vh;
+}
+
+.app-footer {
+  position: fixed;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+/* ——— 通用按钮 ——— */
+
+.btn {
+  background: var(--bg-elev);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--bg-elev-2);
+  border-color: var(--accent);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ——— 港口 ——— */
+
+.port-header {
+  margin-bottom: 32px;
+}
+
+.port-header h1 {
+  margin: 0 0 4px;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.port-sub {
+  margin: 0;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.port-meta {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.port-npcs {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.npc-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.npc-card.disabled {
+  opacity: 0.5;
+}
+
+.npc-name {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.npc-role {
+  color: var(--text-faint);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.npc-desc {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+/* ——— 对话面板 ——— */
+
+.dialog-panel {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.dialog-text p {
+  margin: 0 0 12px;
+}
+
+.dialog-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ——— 下潜与事件 ——— */
+
+.dive {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.event {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.event-title {
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.event-body p {
+  margin: 0 0 10px;
+  line-height: 1.7;
+}
+
+.event-options {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.event-option {
+  /* 继承自 .btn */
+}
+
+.event-option.hallucination {
+  color: var(--danger);
+  font-style: italic;
+}
+
+.event-option.ascend {
+  background: var(--bg-elev-2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.event-option.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.warn {
+  color: var(--warn);
+  margin-left: 8px;
+  font-size: 12px;
+}
+
+/* —— 战斗 —— */
+
+.combat {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.combat-enemies, .combat-actions {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.combat-enemies h3, .combat-actions h3 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.enemy-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.enemy-row {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.enemy-row:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.enemy-row.selected {
+  border-color: var(--accent);
+  background: var(--bg-elev-2);
+}
+
+.enemy-row.dead {
+  opacity: 0.4;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.enemy-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.stance {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg-elev);
+  color: var(--text-faint);
+}
+
+.stance-attacking { color: var(--danger); }
+.stance-alerted { color: var(--warn); }
+.stance-fleeing { color: var(--text-faint); }
+.stance-enraged { color: var(--danger); font-weight: 600; }
+
+.enemy-hp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hp-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-elev);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.hp-fill {
+  height: 100%;
+  background: var(--danger);
+  transition: width 0.2s;
+}
+
+.hp-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  min-width: 70px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.combat-log {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.log-line {
+  padding: 2px 0;
+}
+
+.log-player { color: var(--cyan); }
+.log-enemy { color: var(--warn); }
+.log-system { color: var(--text-muted); font-style: italic; }
+
+.action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.action-name {
+  font-weight: 500;
+}
+
+.action-cost {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.action-desc {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* —— 尸体回收 —— */
+
+.corpse-tag {
+  background: var(--bg);
+  border: 1px solid #5a4970;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-family: "Courier New", monospace;
+}
+
+.corpse-name {
+  color: var(--violet);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.corpse-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.corpse-items {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.corpse-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.corpse-item:hover {
+  border-color: var(--accent);
+}
+
+.corpse-item.selected {
+  border-color: var(--accent);
+  background: var(--bg-elev-2);
+}
+
+.corpse-item-name {
+  flex: 1;
+  font-size: 14px;
+}
+
+.corpse-item-qty {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.decay-tag {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--bg-elev);
+}
+
+.decay-danger { color: var(--danger); }
+.decay-warn { color: var(--warn); }
+.decay-muted { color: var(--text-muted); }
+.decay-cyan { color: var(--cyan); }
+.decay-violet { color: var(--violet); }
+
+/* —— 葬礼 —— */
+
+.funeral h2 {
+  color: var(--violet);
+  font-family: "Courier New", monospace;
+  letter-spacing: 0.05em;
+}
+
+.funeral-prose {
+  margin: 20px 0;
+  text-align: left;
+  background: var(--bg);
+  padding: 16px 20px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.funeral-prose p {
+  margin: 0 0 8px;
+}
+
+.funeral-foot {
+  margin-top: 20px;
+  font-size: 12px;
+}
+
+.event-option.corpse {
+  border-color: #6a2a3e;
+}
+
+/* 节点选择 ——— */
+
+.node-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.node-depth {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--accent);
+  min-width: 64px;
+}
+
+.node-preview {
+  flex: 1;
+}
+
+.node-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.node-hint.dim {
+  color: var(--text-faint);
+}
+
+.dim {
+  color: var(--text-faint);
+}
+
+/* tone 切换 ——— */
+
+.event.tone-realistic {
+  border-color: var(--border);
+}
+
+.event.tone-uncanny {
+  border-color: #5a4970;
+  background: linear-gradient(180deg, var(--bg-elev), #15101e);
+}
+
+.event.tone-cosmic {
+  border-color: #6a2a3e;
+  background: linear-gradient(180deg, var(--bg-elev), #1a0e14);
+  font-family: "Courier New", monospace;
+}
+
+/* ——— Status Bar ——— */
+
+.status-bar {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.status-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 16px;
+}
+
+.stat-pill {
+  display: grid;
+  grid-template-columns: 60px 1fr 80px;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.stat-bar {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.stat-fill {
+  height: 100%;
+  transition: width 0.2s;
+}
+
+.tint-green .stat-fill { background: var(--green); }
+.tint-cyan .stat-fill { background: var(--cyan); }
+.tint-yellow .stat-fill { background: var(--yellow); }
+.tint-violet .stat-fill { background: var(--violet); }
+
+.stat-fill.invert { background: var(--warn); }
+
+.stat-value {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-warn {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.status-warn.danger {
+  color: var(--danger);
+}
+
+/* ——— 结算 / 结束 ——— */
+
+.resolution {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 32px;
+  text-align: center;
+}
+
+.resolution h2 {
+  margin: 0 0 24px;
+  font-weight: 400;
+}
+
+.resolution-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+  color: var(--text-muted);
+}
+
+.resolution-rows .cause {
+  color: var(--warn);
+  font-style: italic;
+  margin-top: 8px;
+}
+
+.resolution .btn {
+  max-width: 240px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.gameover h2 {
+  color: var(--danger);
+}

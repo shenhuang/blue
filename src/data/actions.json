@@ -1,0 +1,112 @@
+{
+  "actions": [
+    {
+      "id": "action.knife_slash",
+      "name": "潜水刀挥砍",
+      "description": "近距离一刀。中等伤害，噪声低。",
+      "costStamina": 6,
+      "costOxygenTurns": 1,
+      "requiresEquipment": "tool",
+      "targeting": "single",
+      "effect": {
+        "kind": "attack",
+        "damage": [8, 14],
+        "damageType": "physical",
+        "noise": 1
+      }
+    },
+    {
+      "id": "action.knife_stab",
+      "name": "潜水刀刺击",
+      "description": "蓄力一刀，对失能敌人附加处决伤害。",
+      "costStamina": 10,
+      "costOxygenTurns": 1,
+      "requiresEquipment": "tool",
+      "targeting": "single",
+      "effect": {
+        "kind": "attack",
+        "damage": [14, 22],
+        "damageType": "physical",
+        "noise": 1,
+        "ambushMultiplier": 1.5
+      }
+    },
+    {
+      "id": "action.fist",
+      "name": "拳脚扭打",
+      "description": "最后手段。低伤，可能被反咬。",
+      "costStamina": 12,
+      "costOxygenTurns": 2,
+      "targeting": "single",
+      "effect": {
+        "kind": "attack",
+        "damage": [3, 6],
+        "damageType": "physical",
+        "noise": 2
+      }
+    },
+    {
+      "id": "action.evade",
+      "name": "闪避",
+      "description": "下次受击减伤 50%。",
+      "costStamina": 8,
+      "costOxygenTurns": 0,
+      "targeting": "self",
+      "effect": {
+        "kind": "defend",
+        "damageReduction": 0.5,
+        "turns": 1
+      }
+    },
+    {
+      "id": "action.ambush",
+      "name": "屏息伏击",
+      "description": "压住浮力，下次攻击附加暴击。",
+      "costStamina": 0,
+      "costOxygenTurns": 3,
+      "targeting": "self",
+      "effect": {
+        "kind": "ambush",
+        "nextAttackMultiplier": 1.5
+      }
+    },
+    {
+      "id": "action.flee",
+      "name": "屏息潜逃",
+      "description": "尝试脱战。对警戒度低的敌人成功率高。",
+      "costStamina": 0,
+      "costOxygenTurns": 3,
+      "targeting": "self",
+      "effect": {
+        "kind": "flee",
+        "baseChance": 0.6,
+        "failExposure": 1
+      }
+    },
+    {
+      "id": "action.breathe",
+      "name": "调息",
+      "description": "稳住呼吸，恢复 5 理智。被打中会失效。",
+      "costStamina": 2,
+      "costOxygenTurns": 2,
+      "targeting": "self",
+      "effect": {
+        "kind": "recover",
+        "deltas": { "sanity": 5 },
+        "disruptable": true,
+        "disruptPenalty": { "sanity": -5 }
+      }
+    },
+    {
+      "id": "action.use_medkit",
+      "name": "使用急救包",
+      "description": "回 30 体力。占一次行动。",
+      "costStamina": 0,
+      "costOxygenTurns": 1,
+      "requiresItemId": "item.med_kit",
+      "consumesItem": true,
+      "targeting": "self",
+      "effect": { "kind": "use_item" }
+    }
+  ]
+}

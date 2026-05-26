@@ -1,0 +1,80 @@
+{
+  "lines": [
+    {
+      "id": "line.dockyard",
+      "name": "船坞",
+      "description": "扩展出海范围。",
+      "upgrades": [
+        {
+          "id": "upgrade.dockyard.lv1",
+          "level": 1,
+          "name": "船坞 Lv.1",
+          "cost": 10,
+          "effects": [
+            { "kind": "unlockZone", "zoneId": "zone.old_lighthouse_reef" },
+            { "kind": "extraConsumableSlot", "value": 1 }
+          ],
+          "description": "解锁新海域：旧灯塔礁。出海前可多带 1 个消耗品。"
+        }
+      ]
+    },
+    {
+      "id": "line.salvage_guild",
+      "name": "打捞行会",
+      "description": "信息、定位、保鲜。让深处的东西被找到。",
+      "upgrades": [
+        {
+          "id": "upgrade.salvage_guild.lv1",
+          "level": 1,
+          "name": "打捞行会 Lv.1",
+          "cost": 15,
+          "effects": [
+            { "kind": "preservationBonus", "value": 2 },
+            { "kind": "revealCorpseHint", "value": true }
+          ],
+          "description": "尸体物品保鲜期 +2 次出海。海图上的尸体位置带上提示。"
+        },
+        {
+          "id": "upgrade.salvage_guild.lv2",
+          "level": 2,
+          "name": "打捞行会 Lv.2",
+          "cost": 30,
+          "effects": [
+            { "kind": "preservationBonus", "value": 5 },
+            { "kind": "preDiveCorpseSelect", "value": true }
+          ],
+          "description": "保鲜期 +5。出海前可选定一具尸体作为本次目标。"
+        },
+        {
+          "id": "upgrade.salvage_guild.lv3",
+          "level": 3,
+          "name": "打捞行会 Lv.3",
+          "cost": 50,
+          "effects": [
+            { "kind": "preservationBonus", "value": 10 },
+            { "kind": "currentSweepImmune", "value": true }
+          ],
+          "description": "保鲜期 +10。海流不再随机冲走物品。"
+        }
+      ]
+    },
+    {
+      "id": "line.tankhouse",
+      "name": "气瓶库",
+      "description": "氧气方案与备用气瓶。",
+      "upgrades": [
+        {
+          "id": "upgrade.tankhouse.lv1",
+          "level": 1,
+          "name": "气瓶库 Lv.1",
+          "cost": 12,
+          "effects": [
+            { "kind": "oxygenMaxBonus", "value": 10 },
+            { "kind": "unlockShopItem", "itemId": "item.spare_tank" }
+          ],
+          "description": "氧气上限 +10 回合。解锁备用气瓶购买。"
+        }
+      ]
+    }
+  ]
+}

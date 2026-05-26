@@ -1,0 +1,32 @@
+{
+  "zones": [
+    {
+      "id": "zone.east_reef",
+      "name": "东礁",
+      "description": "公会的资格潜水海域。浅、平、平淡。",
+      "depthRange": [12, 30],
+      "layerCount": 5,
+      "nodesPerLayer": [1, 1],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["tutorial"] }
+      ],
+      "generation": "linearScripted",
+      "scriptedStartEventId": "tutorial.descent"
+    },
+    {
+      "id": "zone.old_lighthouse_reef",
+      "name": "旧灯塔礁",
+      "description": "灯塔废弃二十年。岩礁下面据说还有些船难的残骸。",
+      "depthRange": [10, 60],
+      "layerCount": 5,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["shallow", "reef"] },
+        { "minDepth": 25, "tags": ["reef", "wreck"] },
+        { "minDepth": 45, "tags": ["wreck", "cave"] }
+      ],
+      "requiresFlags": ["flag.tutorial_complete"],
+      "generation": "random"
+    }
+  ]
+}

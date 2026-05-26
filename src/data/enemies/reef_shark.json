@@ -1,0 +1,58 @@
+{
+  "enemies": [
+    {
+      "id": "enemy.reef_shark.tutorial",
+      "name": "暗礁鲨（幼体）",
+      "tier": "realistic",
+      "hp": 32,
+      "armor": 0,
+      "evasion": 2,
+      "speed": 8,
+      "threat": 6,
+      "hostility": "territorial",
+      "initialStance": "alerted",
+      "aiPattern": "aggressor",
+      "attacks": [
+        {
+          "id": "shark.bite",
+          "name": "撕咬",
+          "damageType": "physical",
+          "damage": [4, 7],
+          "description": "它冲过来，齿列在水里划出一道白线。",
+          "weight": 3
+        },
+        {
+          "id": "shark.tail_swipe",
+          "name": "尾击",
+          "damageType": "physical",
+          "damage": [2, 4],
+          "description": "它甩动身体，水流把你推开。",
+          "weight": 1
+        }
+      ],
+      "physicalDamage": [4, 7],
+      "loot": {
+        "guaranteed": [{ "itemId": "item.shark_tooth", "qty": [1, 1], "weight": 1 }],
+        "rolls": [],
+        "rollCount": 0,
+        "victoryModifier": {
+          "kill": 1.0,
+          "flee": 0.5,
+          "scare": 0.5
+        }
+      },
+      "victoryConditions": ["kill", "flee", "scare"],
+      "loreEntry": "lore.reef_shark.basic"
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.tutorial_shark",
+      "party": {
+        "members": [{ "defId": "enemy.reef_shark.tutorial" }]
+      },
+      "introText": "鲨鱼盯着你，鳃部张合。你握紧潜水刀。",
+      "victoryEventId": "tutorial.deeper"
+    }
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "items": [
+    {
+      "id": "item.dive_knife.standard",
+      "name": "潜水刀",
+      "category": "equipment",
+      "rarity": "common",
+      "description": "普通的不锈钢潜水刀，父亲留下的。刀柄上还有他的指纹。",
+      "weight": 1,
+      "sellPrice": 0,
+      "equipment": {
+        "slot": "tool",
+        "baseLevel": 1,
+        "effects": [
+          { "kind": "unlocksAction", "actionId": "action.knife_slash" },
+          { "kind": "unlocksAction", "actionId": "action.knife_stab" }
+        ]
+      }
+    },
+    {
+      "id": "item.tank.bluefin_mk1",
+      "name": "蓝鳍 Mk.I 气瓶",
+      "category": "equipment",
+      "rarity": "common",
+      "description": "标准压缩空气气瓶。够走一趟资格潜水。",
+      "weight": 4,
+      "sellPrice": 0,
+      "equipment": {
+        "slot": "tank",
+        "baseLevel": 1,
+        "effects": [{ "kind": "oxygenMaxBonus", "value": 60 }]
+      }
+    },
+    {
+      "id": "item.suit.thermal_basic",
+      "name": "普通防寒服",
+      "category": "equipment",
+      "rarity": "common",
+      "description": "厚实的橡胶潜水服，保暖一般，防御也一般。",
+      "weight": 2,
+      "sellPrice": 0,
+      "equipment": {
+        "slot": "suit",
+        "baseLevel": 1,
+        "effects": [
+          { "kind": "staminaMaxBonus", "value": 0 },
+          { "kind": "physicalArmor", "value": 2 }
+        ]
+      }
+    },
+    {
+      "id": "item.light.hand_torch",
+      "name": "手提探照灯",
+      "category": "equipment",
+      "rarity": "common",
+      "description": "黄铜外壳的老式探照灯。光柱在水里是一道实体的剑。",
+      "weight": 1,
+      "sellPrice": 0,
+      "equipment": {
+        "slot": "light",
+        "baseLevel": 1,
+        "effects": [{ "kind": "lightRadius", "value": 2 }]
+      }
+    },
+    {
+      "id": "item.marker_buoy",
+      "name": "公会浮标",
+      "category": "story",
+      "rarity": "common",
+      "description": "红白相间的圆筒，公会用来标记水下位置。需要送回 Aldo。",
+      "weight": 2,
+      "sellPrice": 0,
+      "decay": "eternal"
+    },
+    {
+      "id": "item.shark_tooth",
+      "name": "鲨鱼牙",
+      "category": "material",
+      "rarity": "common",
+      "description": "三角形的、锋利得不像话的牙。Mira 收。",
+      "weight": 0.1,
+      "sellPrice": 15,
+      "decay": "durable"
+    },
+    {
+      "id": "item.coral_shard",
+      "name": "珊瑚碎片",
+      "category": "material",
+      "rarity": "common",
+      "description": "粉橘色的小块，断口处有一种几何美。",
+      "weight": 0.1,
+      "sellPrice": 10,
+      "decay": "material"
+    },
+    {
+      "id": "item.captain_log",
+      "name": "航海日志",
+      "category": "story",
+      "rarity": "uncommon",
+      "description": "皮面封皮已经被水泡软。大部分页面糊在一起。其中一页是父亲的字。",
+      "weight": 0.5,
+      "sellPrice": 0,
+      "decay": "eternal",
+      "story": {
+        "triggersEventId": "tutorial.ending_log",
+        "unlocksLoreEntry": "lore.father_first_entry"
+      }
+    },
+    {
+      "id": "item.lobster",
+      "name": "龙虾",
+      "category": "material",
+      "rarity": "common",
+      "description": "肥美的大龙虾。Mira 喜欢这种。",
+      "weight": 0.5,
+      "sellPrice": 25,
+      "decay": "organic"
+    },
+    {
+      "id": "item.canned_food",
+      "name": "锈罐头",
+      "category": "material",
+      "rarity": "common",
+      "description": "盖子还没被锈穿。能卖给古董贩子，或者真的吃掉。",
+      "weight": 0.3,
+      "sellPrice": 8,
+      "decay": "consumable"
+    },
+    {
+      "id": "item.old_fishing_net",
+      "name": "旧渔网",
+      "category": "material",
+      "rarity": "common",
+      "description": "结实但破损。修一修能换钱。",
+      "weight": 0.6,
+      "sellPrice": 12,
+      "decay": "material"
+    },
+    {
+      "id": "item.rusty_compass",
+      "name": "锈蚀的指南针",
+      "category": "story",
+      "rarity": "uncommon",
+      "description": "指针在水里慢慢转。Aldo 见过类似的东西。",
+      "weight": 0.2,
+      "sellPrice": 0,
+      "decay": "durable"
+    },
+    {
+      "id": "item.med_kit",
+      "name": "急救包",
+      "category": "consumable",
+      "rarity": "common",
+      "description": "止血、绷带、镇痛针。能让你撑过最糟糕的一回合。",
+      "weight": 0.5,
+      "sellPrice": 0,
+      "decay": "consumable",
+      "consumable": {
+        "usableIn": ["dive", "combat"],
+        "effectOnUse": {
+          "deltas": { "stamina": 30 },
+          "text": "你撕开急救包，止血带勒紧，疼痛被推到一边。"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,234 @@
+{
+  "events": [
+    {
+      "id": "tutorial.descent",
+      "depthRange": [12, 12],
+      "zoneTags": ["tutorial"],
+      "weight": 0,
+      "oncePerSave": true,
+      "title": "下潜",
+      "body": "你顺着锚链下潜。光线还很亮，珊瑚礁在脚下伸展。\n一群小鱼从你身边绕过。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "continue",
+          "label": "继续下沉",
+          "outcome": {
+            "text": "你继续向下，水越来越冷。",
+            "triggerEventId": "tutorial.grouper"
+          }
+        },
+        {
+          "id": "linger",
+          "label": "停下来看看（氧气 -2 回合，理智 +2）",
+          "outcome": {
+            "text": "你定在水中，珊瑚的颜色比你记忆里更浓。一只小章鱼在岩缝里看你。它的眼睛比你想象的聪明。",
+            "deltas": { "sanity": 2 },
+            "oxygenTurnCost": 2,
+            "triggerEventId": "tutorial.grouper"
+          }
+        },
+        {
+          "id": "edge",
+          "label": "沿珊瑚边缘游（体力 -2，可能拾到珊瑚）",
+          "outcome": {
+            "text": "你贴着珊瑚游过，指尖碰到了什么硬硬的东西。",
+            "deltas": { "stamina": -2 },
+            "loot": [
+              { "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.6 }
+            ],
+            "triggerEventId": "tutorial.grouper"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "tutorial.grouper",
+      "depthRange": [20, 20],
+      "zoneTags": ["tutorial"],
+      "weight": 0,
+      "oncePerSave": true,
+      "title": "石斑鱼",
+      "body": "你贴着海底向北游，前方是一片倒伏的钢梁。\n一只巨型石斑鱼挡在你和沉船之间，颚部张合着。\n它有领地意识，但显然不是冲你来的。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "sneak",
+          "label": "缓慢绕开（氧气 -2）",
+          "outcome": {
+            "text": "你压低身体，让气瓶贴近沙底，慢慢移到了它的盲区。",
+            "oxygenTurnCost": 2,
+            "triggerEventId": "tutorial.wreck"
+          }
+        },
+        {
+          "id": "scare",
+          "label": "用刀柄敲击金属吓走它",
+          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "金属声在水里闷响。石斑鱼一晃，向深处去了。",
+              "triggerEventId": "tutorial.wreck"
+            },
+            "onFailure": {
+              "text": "它没被吓住，反而朝你撞了一下。你后退，肋下生疼。",
+              "deltas": { "stamina": -5 },
+              "triggerEventId": "tutorial.wreck"
+            }
+          }
+        },
+        {
+          "id": "rush",
+          "label": "直接游近（体力 -8）",
+          "outcome": {
+            "text": "你硬游过去，它向你扑了一下又躲开。气息有点乱。",
+            "deltas": { "stamina": -8 },
+            "triggerEventId": "tutorial.wreck"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "tutorial.wreck",
+      "depthRange": [25, 25],
+      "zoneTags": ["tutorial"],
+      "weight": 0,
+      "oncePerSave": true,
+      "title": "沉船",
+      "body": "沉船的影子覆盖了整个视野。\n锈蚀的桅杆斜斜地戳在淤泥里。\n你看见浮标——一个红白相间的圆筒，卡在船舱的入口。\n\n正要伸手时，一只暗礁鲨从船尾绕了出来。\n它注意到你了。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "engage",
+          "label": "进入战斗",
+          "outcome": {
+            "text": "鲨鱼盯住你，鳃部张合。你握紧潜水刀。",
+            "triggerCombatId": "combat.tutorial_shark"
+          }
+        },
+        {
+          "id": "stealth_grab",
+          "label": "屏住呼吸，慢慢取浮标（氧气 -3）",
+          "check": {
+            "stat": "oxygen",
+            "dc": 30,
+            "onSuccess": {
+              "text": "你按住浮力，缓慢得像是水的一部分。手伸进去——浮标到手。鲨鱼没有动。",
+              "oxygenTurnCost": 3,
+              "loot": [{ "itemId": "item.marker_buoy", "qty": [1, 1] }],
+              "applyFlags": ["flag.tutorial_buoy_obtained"],
+              "triggerEventId": "tutorial.deeper"
+            },
+            "onFailure": {
+              "text": "你的气泡出卖了你。它转向。",
+              "oxygenTurnCost": 1,
+              "triggerCombatId": "combat.tutorial_shark"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "tutorial.deeper",
+      "depthRange": [25, 25],
+      "zoneTags": ["tutorial"],
+      "weight": 0,
+      "oncePerSave": true,
+      "prereqFlags": ["flag.tutorial_buoy_obtained"],
+      "title": "再深一点",
+      "body": "你拿到浮标了。任务完成。\n但船舱往下还有一个更暗的入口，\n你的灯照进去，照不到底。\n\nAldo 说过别贪。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "ascend_now",
+          "label": "上浮（任务完成）",
+          "outcome": {
+            "text": "你转身。这是个不错的选择。",
+            "endDive": "forceAscend"
+          }
+        },
+        {
+          "id": "go_deeper",
+          "label": "再深一点看看（深度 +5m）",
+          "outcome": {
+            "text": "你顺着入口下沉。水温骤降。",
+            "triggerEventId": "tutorial.captain_quarters"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "tutorial.captain_quarters",
+      "depthRange": [30, 30],
+      "zoneTags": ["tutorial"],
+      "weight": 0,
+      "oncePerSave": true,
+      "title": "船长室",
+      "body": "入口里像是船长室。书桌、瓷器、一本被水浸透的航海日志。\n你伸手想拿——\n\n桌子后面似乎有个人影。\n\n但那不可能，对吧？",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "grab_log",
+          "label": "抓起日志就走（氧气 -1）",
+          "outcome": {
+            "text": "你抓起日志，转身往出口游。回头时桌子后面什么都没有。\n或者说——什么都没有了。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.captain_log", "qty": [1, 1] }],
+            "deltas": { "sanity": -3 },
+            "endDive": "forceAscend"
+          }
+        },
+        {
+          "id": "look_closer",
+          "label": "看清楚那个影子",
+          "check": {
+            "stat": "sanity",
+            "dc": 80,
+            "onSuccess": {
+              "text": "你撑住了。眨一下眼，影子不在了。书桌只是书桌。\n但有一行字在你脑子里一闪——\n\n⟪ 那不是人影。但那也不是没有什么。 ⟫",
+              "deltas": { "sanity": -5 },
+              "applyFlags": ["flag.seen_first_uncanny"],
+              "loot": [{ "itemId": "item.captain_log", "qty": [1, 1] }],
+              "endDive": "forceAscend"
+            },
+            "onFailure": {
+              "text": "你没撑住。\n你看见了——你不知道你看见了什么。等你回过神，气泡已经狂涌。",
+              "deltas": { "sanity": -15 },
+              "applyFlags": ["flag.seen_first_uncanny"],
+              "loot": [{ "itemId": "item.captain_log", "qty": [1, 1] }],
+              "endDive": "forceAscend"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "tutorial.ending_log",
+      "depthRange": [0, 0],
+      "zoneTags": ["tutorial"],
+      "weight": 0,
+      "oncePerSave": true,
+      "title": "父亲的字",
+      "body": "夜幕。你坐在父亲的书桌前。航海日志摊开。\n大部分页面都泡烂了，但有一页能看清——\n\n————————————————————————\n\n「……第七次见到它。\n它不在这里。它从来不在这里。\n但每次我下到 80 米以下，\n它都\"差一点\"就要出现。\n\n不是恐惧。是——\n我不知道怎么形容。\n像是在记起某件\n我从来没经历过的事。」\n\n————————————————————————\n\n航海日志的下一页粘连得很紧，你撕不开。\n或许下一次……拿到合适的工具？",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "close_book",
+          "label": "合上日志。",
+          "outcome": {
+            "text": "你合上日志，海的味道还在指尖。",
+            "applyFlags": ["flag.tutorial_complete"],
+            "loreEntry": "lore.father_first_entry"
+          }
+        }
+      ]
+    }
+  ]
+}

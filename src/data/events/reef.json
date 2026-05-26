@@ -1,0 +1,282 @@
+{
+  "events": [
+    {
+      "id": "reef.kelp_curtain",
+      "depthRange": [10, 25],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 10,
+      "cooldown": 3,
+      "title": "海藻帘子",
+      "body": "一片厚厚的海藻随海流缓缓摆动。\n光线穿不透，但下面似乎有动静。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "push_through",
+          "label": "推开海藻穿过去（体力 -3）",
+          "outcome": {
+            "text": "海藻黏腻地贴在面镜上。你拨开它，看见两只龙虾。它们也看见了你。",
+            "deltas": { "stamina": -3 },
+            "loot": [
+              { "itemId": "item.lobster", "qty": [1, 2], "chance": 0.7 }
+            ]
+          }
+        },
+        {
+          "id": "swim_around",
+          "label": "绕开（氧气 -2）",
+          "outcome": {
+            "text": "你绕了一大圈。安全，但更累。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.lobster_hole",
+      "depthRange": [15, 35],
+      "zoneTags": ["reef"],
+      "weight": 8,
+      "cooldown": 4,
+      "title": "礁洞",
+      "body": "礁石上一个深洞。一对触须正一伸一缩地试探着外面。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "grab",
+          "label": "伸手去抓",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你手很稳。它没来得及缩回去。",
+              "loot": [{ "itemId": "item.lobster", "qty": [1, 1] }]
+            },
+            "onFailure": {
+              "text": "它夹住你的指根。一阵剧痛，你抽回手。",
+              "deltas": { "stamina": -5 }
+            }
+          }
+        },
+        {
+          "id": "wait_with_knife",
+          "label": "握刀等它出来",
+          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "outcome": {
+            "text": "你压住浮力，让自己沉下来。两个回合后它探出来——刀落下，干净利落。",
+            "oxygenTurnCost": 2,
+            "loot": [{ "itemId": "item.lobster", "qty": [1, 2] }]
+          }
+        },
+        {
+          "id": "leave",
+          "label": "算了，走吧",
+          "outcome": {
+            "text": "你继续向前。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.current_drag",
+      "depthRange": [10, 30],
+      "zoneTags": ["reef", "wreck"],
+      "weight": 6,
+      "title": "逆流",
+      "body": "你感到水流变了方向。\n如果不抓住什么，会被往深处推。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "anchor",
+          "label": "扒住礁石（体力 -8）",
+          "outcome": {
+            "text": "你死死抓住礁石的硬枝，过了一阵，水流过去了。",
+            "deltas": { "stamina": -8 }
+          }
+        },
+        {
+          "id": "drift",
+          "label": "顺流而下（深度自然加深）",
+          "outcome": {
+            "text": "你松弛下来，让水带你走。它没把你带到太远，但你呼吸有点乱。",
+            "oxygenTurnCost": 2,
+            "deltas": { "nitrogen": 4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "wreck.fishing_boat",
+      "depthRange": [25, 45],
+      "zoneTags": ["wreck"],
+      "weight": 10,
+      "cooldown": 4,
+      "title": "渔船残骸",
+      "body": "一艘翻覆的小渔船半埋在沙里。\n船舷上还挂着没被撕烂的渔网。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "salvage_net",
+          "label": "切下渔网（潜水刀）",
+          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "outcome": {
+            "text": "刀刃进的时候，网线像是叹了口气。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.old_fishing_net", "qty": [1, 1] }]
+          }
+        },
+        {
+          "id": "enter_cabin",
+          "label": "钻进船舱看看",
+          "outcome": {
+            "text": "舱里很黑。你的灯照到一个铁皮罐——盖子还没锈穿。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.canned_food", "qty": [1, 2], "chance": 0.8 }
+            ]
+          }
+        },
+        {
+          "id": "skip",
+          "label": "不感兴趣，离开",
+          "outcome": { "text": "你绕过它，继续向前。" }
+        }
+      ]
+    },
+
+    {
+      "id": "wreck.compass",
+      "depthRange": [25, 50],
+      "zoneTags": ["wreck"],
+      "weight": 4,
+      "oncePerRun": true,
+      "title": "还在转的指南针",
+      "body": "锈成一坨的小方盒，盖子半开。\n指针指着南——不对，是西南——\n它在转。在水里，缓慢地转。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "take",
+          "label": "拿走",
+          "outcome": {
+            "text": "你把它塞进网袋。它在你腰间继续转。",
+            "loot": [{ "itemId": "item.rusty_compass", "qty": [1, 1] }],
+            "deltas": { "sanity": -3 }
+          }
+        },
+        {
+          "id": "leave",
+          "label": "不要",
+          "outcome": {
+            "text": "你看了它一会儿，转身。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "cave.narrow_passage",
+      "depthRange": [40, 55],
+      "zoneTags": ["cave"],
+      "weight": 6,
+      "title": "狭窄通道",
+      "body": "礁石间一条裂缝，刚够你侧着挤进去。\n灯光照进去，照不到底。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "squeeze",
+          "label": "侧身挤过去",
+          "check": {
+            "stat": "stamina",
+            "dc": 14,
+            "onSuccess": {
+              "text": "你蹭着石壁过去。另一边豁然开朗——是个小小的礁洞，沙里有什么在闪。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.coral_shard", "qty": [1, 2] },
+                { "itemId": "item.rusty_compass", "qty": [1, 1], "chance": 0.1 }
+              ]
+            },
+            "onFailure": {
+              "text": "你卡了一下。挣脱的时候气瓶撞到岩壁，发出一声闷响。\n你听见自己心跳。",
+              "deltas": { "stamina": -8, "sanity": -3 },
+              "oxygenTurnCost": 3
+            }
+          }
+        },
+        {
+          "id": "skip",
+          "label": "算了，太窄",
+          "outcome": { "text": "你向旁边游开。" }
+        }
+      ]
+    },
+
+    {
+      "id": "cave.air_pocket",
+      "depthRange": [30, 55],
+      "zoneTags": ["cave"],
+      "weight": 3,
+      "oncePerRun": true,
+      "title": "气穴",
+      "body": "礁顶的一道裂缝里——\n你的灯照上去，水面在晃。\n这里有个气穴。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "breathe",
+          "label": "上去呼吸（氧气 +6 回合）",
+          "outcome": {
+            "text": "你的头露出水面。空气有股陈年的金属味，但能用。\n你深深吸了几口。",
+            "deltas": { "oxygen": 6, "sanity": 4 }
+          }
+        },
+        {
+          "id": "ignore",
+          "label": "保持下潜，记住位置",
+          "outcome": {
+            "text": "你看了一眼水面，继续向下。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "cave.glowing_eyes",
+      "depthRange": [45, 60],
+      "zoneTags": ["cave"],
+      "weight": 5,
+      "sanityRange": [0, 90],
+      "title": "黑暗里的东西",
+      "body": "你的灯扫过岩石——\n有两点光在岩石深处一闪。\n你的灯关了又开。它们没了。\n然后又出现。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "approach",
+          "label": "靠近看清楚",
+          "check": {
+            "stat": "sanity",
+            "dc": 60,
+            "onSuccess": {
+              "text": "是两块磷光的菌斑。岩石上的。怪是怪，但解释得通。",
+              "deltas": { "sanity": -2 }
+            },
+            "onFailure": {
+              "text": "你越靠近，它越深。等你回过神，你已经在岩缝里游了三分钟。",
+              "deltas": { "sanity": -8 },
+              "oxygenTurnCost": 3
+            }
+          }
+        },
+        {
+          "id": "retreat",
+          "label": "立刻退开",
+          "outcome": {
+            "text": "你向后游。气泡掩盖了你最后一眼瞥见的东西。",
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
+    }
+  ]
+}

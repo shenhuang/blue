@@ -1,0 +1,242 @@
+// 事件解析器：处理 Outcome、Condition、SkillCheck
+// 输入 (state, option) → 输出 (newState, narrative text[])
+
+import type {
+  GameState,
+  RunState,
+  DiveEvent,
+  EventOption,
+  Outcome,
+  Condition,
+  Stats,
+} from '@/types';
+import { addToInventory, appendLog, clampStats } from './state';
+
+// —— 数据装载 ——
+import tutorialEvents from '@/data/events/tutorial.json';
+
+const EVENT_INDEX: Map<string, DiveEvent> = new Map();
+for (const ev of tutorialEvents.events as DiveEvent[]) {
+  EVENT_INDEX.set(ev.id, ev);
+}
+
+export function getEvent(id: string): DiveEvent | undefined {
+  return EVENT_INDEX.get(id);
+}
+
+// —— Condition 解析 ——
+
+export function evalCondition(state: GameState, c: Condition): boolean {
+  const run = state.run;
+  const profile = state.profile;
+  switch (c.kind) {
+    case 'hasEquipment':
+      return run !== null && run.equipment[c.slot] !== null;
+    case 'hasItem': {
+      if (!run) return false;
+      const inv = run.inventory.find((i) => i.itemId === c.itemId);
+      return inv !== undefined && inv.qty >= (c.minQty ?? 1);
+    }
+    case 'statAtLeast':
+      return run !== null && run.stats[c.stat] >= c.value;
+    case 'statAtMost':
+      return run !== null && run.stats[c.stat] <= c.value;
+    case 'hasFlag':
+      return profile.flags.has(c.flag) || (run?.activeFlags.has(c.flag) ?? false);
+    case 'notHasFlag':
+      return (
+        !profile.flags.has(c.flag) && !(run?.activeFlags.has(c.flag) ?? false)
+      );
+    case 'depthAtLeast':
+      return run !== null && run.currentDepth >= c.value;
+    case 'all':
+      return c.of.every((sub) => evalCondition(state, sub));
+    case 'any':
+      return c.of.some((sub) => evalCondition(state, sub));
+  }
+}
+
+/** 一个选项是否对当前 state 可见 */
+export function isOptionVisible(state: GameState, opt: EventOption): boolean {
+  if (opt.hallucination) {
+    if (!state.run || state.run.stats.sanity > 50) return false;
+  }
+  if (opt.visibleIf && !evalCondition(state, opt.visibleIf)) {
+    return opt.hiddenIfFails === false; // false = 仅灰显
+  }
+  return true;
+}
+
+/** 该选项是否可点（满足 visibleIf 才可点） */
+export function isOptionEnabled(state: GameState, opt: EventOption): boolean {
+  if (opt.visibleIf && !evalCondition(state, opt.visibleIf)) return false;
+  return true;
+}
+
+// —— SkillCheck ——
+
+export function performCheck(stats: Stats, stat: keyof Stats, dc: number): boolean {
+  // 概率模型：以 (stat - dc) 为差值映射到 [-30, +30] 的成功率窗口
+  // diff = 0 时 50%；每 1 点 ±1.5%；clamp 到 [5%, 95%]
+  const val = stats[stat];
+  const diff = val - dc;
+  const successRate = Math.max(0.05, Math.min(0.95, 0.5 + diff * 0.015));
+  return Math.random() < successRate;
+}
+
+// —— Outcome 应用 ——
+
+export interface OutcomeResult {
+  state: GameState;
+  narrative: string[];
+  /** 引擎后续应进行的 phase 转换提示 */
+  next:
+    | { kind: 'continueEvent'; eventId: string }
+    | { kind: 'startCombat'; combatId: string }
+    | { kind: 'forceAscend' }
+    | { kind: 'death' }
+    | { kind: 'remainOnEvent' };
+}
+
+export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult {
+  let s = state;
+  const narrative: string[] = [];
+
+  if (outcome.text) narrative.push(outcome.text);
+
+  // ---- 数值变更 ----
+  if (s.run) {
+    let stats = { ...s.run.stats };
+    if (outcome.deltas) {
+      for (const [stat, delta] of Object.entries(outcome.deltas) as [
+        keyof Stats,
+        number,
+      ][]) {
+        stats[stat] = stats[stat] + delta;
+      }
+    }
+    // 额外氧气消耗（按"标准回合数"）
+    if (outcome.oxygenTurnCost) {
+      stats.oxygen -= outcome.oxygenTurnCost;
+    }
+    stats = clampStats(stats, {
+      stamina: s.run.staminaMax,
+      oxygen: s.run.oxygenMax,
+    });
+    s = { ...s, run: { ...s.run, stats } };
+  }
+
+  // ---- 战利品 ----
+  if (outcome.loot && s.run) {
+    let inv = s.run.inventory;
+    for (const roll of outcome.loot) {
+      const chance = roll.chance ?? 1;
+      if (Math.random() <= chance) {
+        const min = roll.qty[0];
+        const max = roll.qty[1];
+        const qty = min + Math.floor(Math.random() * (max - min + 1));
+        if (qty > 0) {
+          inv = addToInventory(inv, roll.itemId, qty);
+        }
+      }
+    }
+    s = { ...s, run: { ...s.run, inventory: inv } };
+  }
+
+  // ---- Flags ----
+  if (outcome.applyFlags && s.run) {
+    const flags = new Set(s.run.activeFlags);
+    for (const f of outcome.applyFlags) flags.add(f);
+    s = { ...s, run: { ...s.run, activeFlags: flags } };
+  }
+  if (outcome.removeFlags && s.run) {
+    const flags = new Set(s.run.activeFlags);
+    for (const f of outcome.removeFlags) flags.delete(f);
+    s = { ...s, run: { ...s.run, activeFlags: flags } };
+  }
+
+  // ---- 金币 ----
+  if (outcome.goldDelta && s.run) {
+    s = {
+      ...s,
+      run: { ...s.run, gold: s.run.gold + outcome.goldDelta },
+    };
+  }
+
+  // ---- Lore ----
+  if (outcome.loreEntry) {
+    const entries = new Set(s.profile.loreEntries);
+    entries.add(outcome.loreEntry);
+    s = { ...s, profile: { ...s.profile, loreEntries: entries } };
+  }
+
+  // ---- 叙事日志 ----
+  if (outcome.text) {
+    s = appendLog(s, { tone: 'realistic', text: outcome.text });
+  }
+
+  // ---- 后续 phase 决定 ----
+  if (outcome.endDive === 'death') {
+    return { state: s, narrative, next: { kind: 'death' } };
+  }
+  if (outcome.endDive === 'forceAscend') {
+    return { state: s, narrative, next: { kind: 'forceAscend' } };
+  }
+  if (outcome.triggerCombatId) {
+    return {
+      state: s,
+      narrative,
+      next: { kind: 'startCombat', combatId: outcome.triggerCombatId },
+    };
+  }
+  if (outcome.triggerEventId) {
+    return {
+      state: s,
+      narrative,
+      next: { kind: 'continueEvent', eventId: outcome.triggerEventId },
+    };
+  }
+  return { state: s, narrative, next: { kind: 'remainOnEvent' } };
+}
+
+/** 选项 → Outcome（处理 check 分支） */
+export function resolveOption(state: GameState, opt: EventOption): OutcomeResult {
+  if (opt.check && state.run) {
+    const succeeded = performCheck(state.run.stats, opt.check.stat, opt.check.dc);
+    const outcome = succeeded ? opt.check.onSuccess : opt.check.onFailure;
+    const result = applyOutcome(state, outcome);
+    return {
+      ...result,
+      narrative: [
+        `检定 [${opt.check.stat} vs ${opt.check.dc}] ${succeeded ? '成功' : '失败'}`,
+        ...result.narrative,
+      ],
+    };
+  }
+  if (opt.outcome) {
+    return applyOutcome(state, opt.outcome);
+  }
+  return { state, narrative: ['（这个选项暂时没接好。）'], next: { kind: 'remainOnEvent' } };
+}
+
+/** 将一个 RunState 推进 N 个标准回合的氧气/氮气消耗（不处理事件内额外消耗） */
+export function tickTurns(run: RunState, turns: number): RunState {
+  if (turns <= 0) return run;
+  const depth = run.currentDepth;
+  const depthFactor = 1 + depth / 50;
+  const oxygenDrain = turns * 1 * depthFactor;
+  const nitrogenGain = turns * (depth / 30);
+
+  const stats: Stats = {
+    ...run.stats,
+    oxygen: Math.max(0, run.stats.oxygen - oxygenDrain),
+    nitrogen: Math.min(100, run.stats.nitrogen + nitrogenGain),
+  };
+  // 简单的深度→理智衰减
+  if (depth >= 30) {
+    const decayPerTurn = depth < 60 ? 0.2 : depth < 100 ? 0.5 : 1.0;
+    stats.sanity = Math.max(0, stats.sanity - decayPerTurn * turns);
+  }
+
+  return { ...run, stats, turn: run.turn + turns };
+}

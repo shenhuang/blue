@@ -1,0 +1,89 @@
+{
+  "npcs": [
+    {
+      "id": "npc.aldo",
+      "name": "Aldo",
+      "role": "mentor",
+      "shortDescription": "守灯人。脸上有大片伤疤，左手少了两根手指。再不下水。",
+      "dialogRoot": {
+        "id": "aldo.root",
+        "text": "黎明前的鸢尾湾。雾还没散。Aldo 坐在长椅上，看着海。他没回头。\n\n「准备好了？」",
+        "choices": [
+          {
+            "id": "ready",
+            "label": "准备好了。",
+            "next": "aldo.briefing"
+          },
+          {
+            "id": "not_yet",
+            "label": "还差一点。",
+            "next": "aldo.look_around"
+          }
+        ]
+      }
+    }
+  ],
+  "dialogs": {
+    "aldo.briefing": {
+      "id": "aldo.briefing",
+      "text": "「让我看看你的装备。」\n\nAldo 接过去，挨个检查。\n\n「你父亲的装备，我帮你保养了这么多年。今天你去东礁那个老沉船把这个浮标取回来。算是你的初次潜水，简单。」\n\n他停顿了一下。\n\n「记住：氧气是时间，氮气是债。慢慢上来，别贪。」\n\n「四样东西你要盯紧——体力，氧气，理智，氮气。前两样你能直接看到。第三样你自己感觉。第四样会找你算账。」",
+      "choices": [
+        {
+          "id": "depart_east",
+          "label": "出海到东礁（初次潜水）。",
+          "next": "end",
+          "visibleIf": { "kind": "notHasFlag", "flag": "flag.tutorial_complete" },
+          "effects": [
+            { "kind": "setFlag", "flag": "flag.tutorial_briefed" },
+            { "kind": "startDive", "zoneId": "zone.east_reef" }
+          ]
+        },
+        {
+          "id": "depart_lighthouse",
+          "label": "出海到旧灯塔礁。",
+          "next": "end",
+          "visibleIf": { "kind": "hasFlag", "flag": "flag.tutorial_complete" },
+          "effects": [
+            { "kind": "startDive", "zoneId": "zone.old_lighthouse_reef" }
+          ]
+        },
+        {
+          "id": "depart_east_revisit",
+          "label": "再去东礁走一趟。",
+          "next": "end",
+          "visibleIf": { "kind": "hasFlag", "flag": "flag.tutorial_complete" },
+          "effects": [
+            { "kind": "startDive", "zoneId": "zone.east_reef" }
+          ]
+        },
+        {
+          "id": "ask_father",
+          "label": "你认识我父亲？",
+          "next": "aldo.about_father"
+        }
+      ]
+    },
+    "aldo.about_father": {
+      "id": "aldo.about_father",
+      "text": "Aldo 沉默了很久。\n\n「他是上一代最后一个还敢去深处的人。」\n\n他没说更多。",
+      "choices": [
+        {
+          "id": "back",
+          "label": "（沉默地点头）",
+          "next": "aldo.briefing"
+        }
+      ]
+    },
+    "aldo.look_around": {
+      "id": "aldo.look_around",
+      "text": "「随你。但太阳一出，潮位就涨。」\n\n你在港口走了一圈。气瓶师 Otto 在仓库门口给一只气瓶上压力，没抬头。打捞商 Mira 的柜台还没开。海鸥在桅杆上叫。\n\n回到长椅时，Aldo 还在那个位置。",
+      "choices": [
+        {
+          "id": "now_ready",
+          "label": "现在准备好了。",
+          "next": "aldo.briefing"
+        }
+      ]
+    }
+  }
+}
