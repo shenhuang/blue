@@ -12,6 +12,7 @@ import type {
   Visibility,
 } from '@/types';
 import { addToInventory, appendLog, clampStats } from './state';
+import { restoreLighthouse } from './lighthouses';
 
 // —— 数据装载 ——
 // 单一事件库是 zones.ts::EVENT_DB（含全部 zone 的事件）。getEvent 直接委托给它，
@@ -191,6 +192,13 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
     const entries = new Set(s.profile.loreEntries);
     entries.add(outcome.loreEntry);
     s = { ...s, profile: { ...s.profile, loreEntries: entries } };
+  }
+
+  // ---- 修复废弃灯塔（Phase C）----
+  // 与 loreEntry 同属"少数能从下潜里持久写 profile 的 outcome"：restoreLighthouse 权威校验账单
+  // （按 profile 银行材料＋金币），成功则 push 新灯塔到 profile.lighthouses，否则只叙事不改档。
+  if (outcome.restoreRuinId) {
+    s = restoreLighthouse(s, outcome.restoreRuinId);
   }
 
   // ---- 叙事日志 ----

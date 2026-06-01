@@ -7,12 +7,14 @@
 //
 // 跑法： npx tsx scripts/playthrough-chart.ts
 
-import { createInitialGameState, createNewRun } from '../src/engine/state';
+import { createInitialGameState, createNewRun, HOME_LIGHTHOUSE_ID } from '../src/engine/state';
 import {
   generateChart,
   poiLockReason,
   isPoiVisible,
+  isPoiLit,
   isPoiDepartable,
+  effectiveDistance,
   describePoi,
 } from '../src/engine/chart';
 import { generateDiveMap } from '../src/engine/mapgen';
@@ -53,6 +55,18 @@ function profileWith(
   };
 }
 
+/** 在家灯塔建上「船坞」设施（Phase C：dockyard 迁灯塔后旧灯塔礁的抵达门）。 */
+function withHomeDockyard(profile: PlayerProfile): PlayerProfile {
+  return {
+    ...profile,
+    lighthouses: profile.lighthouses.map((l) =>
+      l.id === HOME_LIGHTHOUSE_ID
+        ? { ...l, builtUpgrades: new Set([...l.builtUpgrades, 'lighthouse.dockyard.lv1']) }
+        : l,
+    ),
+  };
+}
+
 // ============================================
 // 1. 发现门控
 // ============================================
@@ -69,24 +83,69 @@ for (const z of ['zone.east_reef', 'zone.blue_caves', 'zone.wreck_graveyard', 'z
 L(`  教学后 anchor：${c1.pois.filter((p) => p.persistent).map((p) => p.name).join(' / ')} ✓`);
 
 // ============================================
-// 2. 抵达门控（requiresUpgrade）
+// 2. 抵达门控（家灯塔船坞 requiresLighthouseUpgrade）
 // ============================================
-L('\n========== 2. 抵达门控（requiresUpgrade） ==========');
+L('\n========== 2. 抵达门控（家灯塔船坞） ==========');
 const lh1 = c1.pois.find((p) => p.zoneId === 'zone.old_lighthouse_reef' && p.persistent)!;
-assert(isPoiVisible(postNoUp, lh1), '旧灯塔礁 anchor 教学后应可见');
-assert(poiLockReason(postNoUp, lh1) !== null, '无 dockyard.lv1 时旧灯塔礁应被锁');
-assert(!isPoiDepartable(postNoUp, lh1), '无 dockyard.lv1 时旧灯塔礁不可出海');
+assert(isPoiVisible(postNoUp, lh1), '旧灯塔礁 anchor 教学后应可见（home 点亮）');
+assert(poiLockReason(postNoUp, lh1) !== null, '无家灯塔船坞时旧灯塔礁应被锁');
+assert(!isPoiDepartable(postNoUp, lh1), '无船坞时旧灯塔礁不可出海');
 L(`  旧灯塔礁：可见但锁（${poiLockReason(postNoUp, lh1)}）✓`);
 
 const bc = c1.pois.find((p) => p.zoneId === 'zone.blue_caves' && p.persistent)!;
 assert(isPoiDepartable(postNoUp, bc), '蓝洞群无升级门，应可出海');
 L('  蓝洞群：无升级门，可出海 ✓');
 
-const postUp = profileWith(['flag.tutorial_complete'], ['upgrade.dockyard.lv1']);
+const postUp = withHomeDockyard(profileWith(['flag.tutorial_complete']));
 const c2 = generateChart({ profile: postUp, rng: lcg(1) });
 const lh2 = c2.pois.find((p) => p.zoneId === 'zone.old_lighthouse_reef' && p.persistent)!;
-assert(poiLockReason(postUp, lh2) === null, '买了 dockyard.lv1 后旧灯塔礁应可出海');
-L('  买船坞 Lv.1 后旧灯塔礁：解锁 ✓');
+assert(poiLockReason(postUp, lh2) === null, '建了家灯塔船坞后旧灯塔礁应可出海');
+L('  建家灯塔船坞后旧灯塔礁：解锁 ✓');
+
+// ============================================
+// 2b. 灯塔 reveal（点亮）+ reach（最近灯塔算距离）
+// ============================================
+L('\n========== 2b. 灯塔 reveal + reach ==========');
+// (a) 无灯塔 → 没有任何点被点亮 → 海图空（reveal 门）
+const noLh: PlayerProfile = { ...profileWith(['flag.tutorial_complete']), lighthouses: [] };
+assert(generateChart({ profile: noLh }).pois.length === 0, '无灯塔时海图应为空（reveal 门）');
+L('  无灯塔 → 海图全灭 ✓');
+
+// (b) home 点亮近端、不点亮远端（北缘 ≈0.80）
+const homeOnly = profileWith(['flag.tutorial_complete']);
+const nearPoi: ChartPoi = { id: 't.near', zoneId: 'zone.wreck_graveyard', name: '', blurb: '', distance: 1, mapX: 0.72, mapY: 0.55, persistent: false };
+const farPoi: ChartPoi = { id: 't.far', zoneId: 'zone.wreck_graveyard', name: '', blurb: '', distance: 2, mapX: 0.85, mapY: 0.64, persistent: false };
+assert(isPoiLit(homeOnly, nearPoi), 'home 应点亮近端 (0.72,0.55)');
+assert(!isPoiLit(homeOnly, farPoi), 'home 不应点亮远端 (0.85,0.64)，留给前哨');
+L('  home 点亮近端 / 远端要前哨 ✓');
+
+// (c) 修复前哨灯塔后：远端被点亮 + reach 变近
+const withOutpost: PlayerProfile = {
+  ...homeOnly,
+  lighthouses: [
+    ...homeOnly.lighthouses,
+    { id: 'lighthouse.outpost_north', name: '北缘前哨灯塔', mapX: 0.8, mapY: 0.6, level: 1, builtUpgrades: new Set() },
+  ],
+};
+assert(isPoiLit(withOutpost, farPoi), '建前哨灯塔后远端应被点亮');
+const reachHome = effectiveDistance(homeOnly, farPoi);
+const reachOutpost = effectiveDistance(withOutpost, farPoi);
+assert(reachOutpost < reachHome, `前哨更近：reach 应下降 ${reachHome}→${reachOutpost}`);
+L(`  前哨点亮远端 + reach ${reachHome}→${reachOutpost} ✓`);
+
+// (d) 4 个锚点从 home 算的 reach 与写死 distance 一致（不破手感）
+const anchorReach: [string, number, number, number][] = [
+  ['zone.east_reef', 0.18, 0.5, 0],
+  ['zone.blue_caves', 0.46, 0.3, 1],
+  ['zone.old_lighthouse_reef', 0.44, 0.72, 1],
+  ['zone.wreck_graveyard', 0.72, 0.55, 2],
+];
+for (const [zone, x, y, want] of anchorReach) {
+  const p: ChartPoi = { id: 'a', zoneId: zone, name: '', blurb: '', distance: want, mapX: x, mapY: y, persistent: true };
+  const got = effectiveDistance(homeOnly, p);
+  assert(got === want, `${zone} 从 home 的 reach 应=${want}（手感不破），实际 ${got}`);
+}
+L('  4 锚点 home reach = 写死 distance（0/1/1/2，手感不破）✓');
 
 // ============================================
 // 3. roaming 刷新（runsCompleted 种子）

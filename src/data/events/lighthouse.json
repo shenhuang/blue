@@ -1,0 +1,28 @@
+{
+  "_doc": "灯塔相关下潜事件（基建地图 Phase C 修复循环）。lighthouse.ruin_* = 废弃灯塔点：repair 选项的 outcome 带 restoreRuinId，applyOutcome 权威校验账单（profile 银行材料＋金币）后 push 新灯塔到 profile.lighthouses（reveal 它周围、reach 从它更近）。修复成功置 flag.lighthouse_restored.<ruinId> → forbiddenFlags 把本事件门控掉不再重复。挂 [wreck] tag（沉船墓园 + 旧灯塔礁深层都能遇到沉没的塔），depth 28-50m，oncePerRun。账单详情见 data/lighthouse_upgrades.json::ruins。",
+  "events": [
+    {
+      "id": "lighthouse.ruin_north",
+      "depthRange": [28, 50],
+      "zoneTags": ["wreck"],
+      "weight": 2,
+      "oncePerRun": true,
+      "forbiddenFlags": ["flag.lighthouse_restored.ruin.north_beacon"],
+      "title": "黑着的灯塔",
+      "body": "一座灯塔从淤泥里斜插出来，灯室的玻璃碎了大半，里头黑着。海水从破口涌进涌出，像它还在喘气。\n结构还立得住——清理、配料、重燃，它能重新照亮这一带的水面，往后从这儿出海也近得多。\n要的料不轻：黄铜配件×4、蟹甲×2、章鱼角喙×1，外加 80 金。这些得从你岸上的家底里出。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "restore",
+          "label": "重燃这座灯（黄铜配件×4·蟹甲×2·章鱼角喙×1 ＋ 80 金）",
+          "outcome": { "restoreRuinId": "ruin.north_beacon" }
+        },
+        {
+          "id": "leave",
+          "label": "记下方位，先走",
+          "outcome": { "text": "你把它的方位刻在随身石板的边角。也许下次带够料再来。" }
+        }
+      ]
+    }
+  ]
+}

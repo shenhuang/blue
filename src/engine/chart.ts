@@ -8,7 +8,22 @@
 import type { ChartPoi, PoiModifier, PlayerProfile, SeaChart } from '@/types';
 import chartData from '@/data/chart_pois.json';
 import { getUpgradeDef } from './upgrades';
+import {
+  distanceBetween,
+  nearestLighthouse,
+  revealRadius,
+  getLighthouseBonuses,
+  getHomeLighthouse,
+  getLighthouseUpgradeDef,
+} from './lighthouses';
 import { makeLcg } from './rng';
+
+/**
+ * 归一化海图距离 → "distance 档"的换算系数（reach，SPEC §4/§9 tunable）。
+ * 选 0.3 使现有 4 个锚点从 home 算出的档位与写死值一致（0/1/1/2，不破手感）；
+ * roaming 点按几何略有出入（本就是"潮位常变"的机会点）。
+ */
+export const REACH_NORM_PER_TIER = 0.3;
 
 /** roaming 模板（数据形状：无运行时 id / persistent，generateChart 补齐） */
 interface RoamingTemplate {
@@ -22,6 +37,7 @@ interface RoamingTemplate {
   weight?: number;
   requiresFlags?: string[];
   requiresUpgrade?: string;
+  requiresLighthouseUpgrade?: string;
   modifier?: PoiModifier;
 }
 
@@ -41,21 +57,61 @@ function flagsSatisfied(profile: PlayerProfile, requiresFlags?: string[]): boole
   return requiresFlags.every((f) => profile.flags.has(f));
 }
 
-/** POI 是否对玩家"可见"（requiresFlags 已满足 = 已发现） */
+/**
+ * 给定坐标是否被某座已拥有灯塔点亮（落在其 revealRadius 内）。
+ * 无坐标 → 默认点亮（不因缺坐标而隐藏，向后兼容）。
+ */
+function isLit(profile: PlayerProfile, mapX?: number, mapY?: number): boolean {
+  if (mapX === undefined || mapY === undefined) return true;
+  for (const lh of profile.lighthouses) {
+    if (distanceBetween(lh.mapX, lh.mapY, mapX, mapY) <= revealRadius(lh)) return true;
+  }
+  return false;
+}
+
+/** POI 是否被灯塔点亮（reveal，基建地图 Phase C）。 */
+export function isPoiLit(profile: PlayerProfile, poi: ChartPoi): boolean {
+  return isLit(profile, poi.mapX, poi.mapY);
+}
+
+/**
+ * POI 是否对玩家"可见"。两道门：
+ *   ① requiresFlags 已满足（发现）；② 落在某座已拥有灯塔的点亮半径内（reveal）。
+ * home 灯塔默认点亮现有 4 个锚点 + 近端机会点；远端机会点要修复前哨灯塔才点亮。
+ */
 export function isPoiVisible(profile: PlayerProfile, poi: ChartPoi): boolean {
-  return flagsSatisfied(profile, poi.requiresFlags);
+  return flagsSatisfied(profile, poi.requiresFlags) && isPoiLit(profile, poi);
 }
 
 /**
  * POI 不能出海的原因（已假定 visible）。可出海返回 null。
- * 目前唯一的能力门是 requiresUpgrade。
+ * 能力门两类：requiresUpgrade（全局随身升级）+ requiresLighthouseUpgrade（家灯塔设施，如船坞）。
  */
 export function poiLockReason(profile: PlayerProfile, poi: ChartPoi): string | null {
   if (poi.requiresUpgrade && !profile.unlockedUpgrades.has(poi.requiresUpgrade)) {
     const def = getUpgradeDef(poi.requiresUpgrade);
     return `需要「${def?.name ?? poi.requiresUpgrade}」`;
   }
+  if (poi.requiresLighthouseUpgrade) {
+    const home = getHomeLighthouse(profile);
+    if (!home || !home.builtUpgrades.has(poi.requiresLighthouseUpgrade)) {
+      const def = getLighthouseUpgradeDef(poi.requiresLighthouseUpgrade);
+      return `需要「${def?.name ?? poi.requiresLighthouseUpgrade}」`;
+    }
+  }
   return null;
+}
+
+/**
+ * 一次下潜的"距离档"——按**最近的已拥有灯塔**到该 POI 的归一化距离换算（reach，SPEC §3.4/§4）。
+ * 再减最近灯塔的 reachReduction，clamp ≥ 0。无坐标 / 无灯塔 → 退回写死的 poi.distance（fallback）。
+ */
+export function effectiveDistance(profile: PlayerProfile, poi: ChartPoi): number {
+  if (poi.mapX === undefined || poi.mapY === undefined) return poi.distance;
+  const near = nearestLighthouse(profile, poi.mapX, poi.mapY);
+  if (!near) return poi.distance;
+  const tier = Math.round(near.distance / REACH_NORM_PER_TIER);
+  return Math.max(0, tier - getLighthouseBonuses(near.lighthouse).reachReduction);
 }
 
 /** 是否可从该 POI 出海（可见且无能力门拦截） */
@@ -108,9 +164,10 @@ export function generateChart(opts: {
     if (isPoiVisible(profile, a)) pois.push(a);
   }
 
-  // roaming：从"已发现"的模板里加权不放回抽 ROAMING_COUNT 个
-  const visibleTemplates = FILE.roamingTemplates.filter((t) =>
-    flagsSatisfied(profile, t.requiresFlags),
+  // roaming：从"已发现 + 已点亮"的模板里加权不放回抽 ROAMING_COUNT 个
+  // （远端机会点不在 home 半径内 → 修复前哨灯塔点亮后才会进池）
+  const visibleTemplates = FILE.roamingTemplates.filter(
+    (t) => flagsSatisfied(profile, t.requiresFlags) && isLit(profile, t.mapX, t.mapY),
   );
   const picked = pickWithoutReplacement(visibleTemplates, ROAMING_COUNT, rng);
   picked.forEach((t, i) => {
@@ -125,6 +182,7 @@ export function generateChart(opts: {
       modifier: t.modifier,
       persistent: false,
       requiresUpgrade: t.requiresUpgrade,
+      requiresLighthouseUpgrade: t.requiresLighthouseUpgrade,
       requiresFlags: t.requiresFlags,
     });
   });
@@ -155,7 +213,8 @@ export function describeModifier(mod?: PoiModifier): string[] {
 
 /** CLI / 日志用的一行描述 */
 export function describePoi(profile: PlayerProfile, poi: ChartPoi): string {
-  const dist = poi.distance > 0 ? ` 距离${poi.distance}` : '';
+  const d = effectiveDistance(profile, poi);
+  const dist = d > 0 ? ` 距离${d}` : '';
   const mods = describeModifier(poi.modifier);
   const modStr = mods.length > 0 ? ` [${mods.join('/')}]` : '';
   const lock = poiLockReason(profile, poi);

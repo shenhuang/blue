@@ -283,11 +283,12 @@ L(`  回港后 coral 备货 = ${coralStockAfterReturn}（应补满到 ${coralMax
 assert(coralStockAfterReturn === coralMax, '回港应把 shopStock 补满');
 
 L('\n========== 金币买不了升级（材料是硬门控） ==========');
-// 满金 + 无材料 → canPurchase(dockyard.lv1) 落 notEnoughMaterials，不是 ok / notEnoughGold
+// 满金 + 无材料 → canPurchase(tankhouse.lv1) 落 notEnoughMaterials，不是 ok / notEnoughGold
+// （dockyard 已迁灯塔设施，用仍为全局的气瓶库验证"金币买不了升级"）
 state = createInitialGameState();
 state = { ...state, profile: { ...state.profile, bankedGold: 100000, inventory: [] } };
-const upAvail = canPurchase(state.profile, 'upgrade.dockyard.lv1');
-L(`  满金空仓 canPurchase(dockyard.lv1) = ${JSON.stringify(upAvail)}`);
+const upAvail = canPurchase(state.profile, 'upgrade.tankhouse.lv1');
+L(`  满金空仓 canPurchase(tankhouse.lv1) = ${JSON.stringify(upAvail)}`);
 assert(!upAvail.ok && upAvail.reason === 'notEnoughMaterials', '只有金币买不了升级（应 notEnoughMaterials）');
 
 console.log(log.join('\n'));

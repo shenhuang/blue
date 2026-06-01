@@ -16,6 +16,7 @@ import { EventView } from '../src/ui/EventView';
 import { FuneralView } from '../src/ui/CorpseView';
 import { UpgradePanel } from '../src/ui/UpgradePanel';
 import { MiraShopView } from '../src/ui/MiraShopView';
+import { LighthouseBuildPanel } from '../src/ui/LighthouseBuildPanel';
 import type { GameState, InventoryItem, NodeChoice } from '../src/types';
 
 const log: string[] = [];
@@ -42,6 +43,21 @@ function stateWith(flags: string[], upgrades: string[], runsCompleted = 0): Game
   };
 }
 
+/** 在家灯塔建上「船坞」设施（Phase C：dockyard 迁灯塔后旧灯塔礁的抵达门）。 */
+function withHomeDockyard(s: GameState): GameState {
+  return {
+    ...s,
+    profile: {
+      ...s.profile,
+      lighthouses: s.profile.lighthouses.map((l) =>
+        l.id === 'lighthouse.home'
+          ? { ...l, builtUpgrades: new Set([...l.builtUpgrades, 'lighthouse.dockyard.lv1']) }
+          : l,
+      ),
+    },
+  };
+}
+
 // ============================================
 // A. SeaChartView · 教学后无升级 → 灯塔礁锁、蓝洞/沉船可出海
 // ============================================
@@ -57,14 +73,14 @@ assert(htmlA.includes('出海'), 'A: 蓝洞/沉船应有可点的出海按钮');
 L('  渲染成功，灯塔礁锁定 + 蓝洞/沉船可出海 ✓');
 
 // ============================================
-// B. SeaChartView · 教学后 + dockyard.lv1 → 灯塔礁解锁（无锁定串）
+// B. SeaChartView · 教学后 + 家灯塔船坞 → 灯塔礁解锁（无锁定串）
 // ============================================
-L('\n========== B. 教学后 · 有船坞 Lv.1 ==========');
-const B = stateWith(['flag.tutorial_complete'], ['upgrade.dockyard.lv1']);
+L('\n========== B. 教学后 · 有家灯塔船坞 ==========');
+const B = withHomeDockyard(stateWith(['flag.tutorial_complete'], []));
 const htmlB = renderToStaticMarkup(<SeaChartView state={B} onStateChange={noop} />);
 assert(htmlB.includes('旧灯塔礁'), 'B: 应含旧灯塔礁 POI');
-// dockyard.lv1 是 chart_pois 里唯一的能力门 → 拥有后全图不应再有锁定原因串
-assert(!htmlB.includes('需要「船坞 Lv.1」'), 'B: 买了船坞后不应再出现锁定原因');
+// 船坞（lighthouse.dockyard.lv1）是旧灯塔礁的抵达门 → 建成后不应再有锁定原因串
+assert(!htmlB.includes('需要「船坞 Lv.1」'), 'B: 建了家灯塔船坞后不应再出现锁定原因');
 L('  渲染成功，灯塔礁解锁、无残留锁定串 ✓');
 
 // ============================================
@@ -233,11 +249,12 @@ function upgradeState(inv: InventoryItem[], gold: number): GameState {
   const base = createInitialGameState();
   return { ...base, profile: { ...base.profile, inventory: inv, bankedGold: gold } };
 }
+// 用仍为全局的打捞行会 lv1（coral×5, brass×3 ＋ 30 金）做账单三态（dockyard 已迁灯塔设施）
 // J1. 材料 + 金币都够 → 出现"修缮"按钮 + 账单列出材料名与金币
-const J1 = upgradeState([{ itemId: 'item.coral_shard', qty: 6 }, { itemId: 'item.old_fishing_net', qty: 3 }], 50);
+const J1 = upgradeState([{ itemId: 'item.coral_shard', qty: 5 }, { itemId: 'item.brass_fitting', qty: 3 }], 50);
 const htmlJ1 = renderToStaticMarkup(<UpgradePanel state={J1} onStateChange={noop} onClose={noop} />);
-assert(htmlJ1.includes('珊瑚碎片×6'), 'J1: 账单应列出材料名×需求量');
-assert(htmlJ1.includes('＋ 20 金'), 'J1: 账单应列出金币价（dockyard.lv1 = 20 金）');
+assert(htmlJ1.includes('珊瑚碎片×5'), 'J1: 账单应列出材料名×需求量');
+assert(htmlJ1.includes('＋ 30 金'), 'J1: 账单应列出金币价（salvage_guild.lv1 = 30 金）');
 assert(htmlJ1.includes('upgrade-buy">修缮'), 'J1: 账单满足应出现可点（非 disabled）"修缮"按钮（面板渲染全部升级线，其它行显示不足是正常的）');
 // J2. 空仓 + 满金 → "材料不足" + 缺口"（有 0）"
 const J2 = upgradeState([], 9999);
@@ -245,9 +262,9 @@ const htmlJ2 = renderToStaticMarkup(<UpgradePanel state={J2} onStateChange={noop
 assert(htmlJ2.includes('材料不足'), 'J2: 无材料应显示"材料不足"');
 assert(htmlJ2.includes('（有 0）'), 'J2: 缺口应高亮显示已有数');
 // J3. 材料够、金币不够 → "金币不足（还差 N）"
-const J3 = upgradeState([{ itemId: 'item.coral_shard', qty: 6 }, { itemId: 'item.old_fishing_net', qty: 3 }], 5);
+const J3 = upgradeState([{ itemId: 'item.coral_shard', qty: 5 }, { itemId: 'item.brass_fitting', qty: 3 }], 5);
 const htmlJ3 = renderToStaticMarkup(<UpgradePanel state={J3} onStateChange={noop} onClose={noop} />);
-assert(htmlJ3.includes('金币不足（还差 15）'), 'J3: 材料够金币差应显示差额 15');
+assert(htmlJ3.includes('金币不足（还差 25）'), 'J3: 材料够金币差应显示差额 25（salvage lv1 = 30 金 − 5）');
 L('  可买/材料不足/金币不足 三态 + 账单缺口高亮 ✓');
 
 // ============================================
@@ -275,6 +292,35 @@ const K3 = shopState([], 1000, { 'item.coral_shard': 0 });
 const htmlK3 = renderToStaticMarkup(<MiraShopView state={K3} onStateChange={noop} />);
 assert(htmlK3.includes('售罄'), 'K3: 备货 0 时应显示"售罄"');
 L('  回购区列 T1/T2(不含 T3/T4) + 买/钱不够/售罄 三态 ✓');
+
+// ============================================
+// L. SeaChartView · 渲染灯塔节点 + 点亮范围 + 建造入口
+// ============================================
+L('\n========== L. SeaChartView 灯塔节点 + 点亮范围 ==========');
+const htmlL = renderToStaticMarkup(
+  <SeaChartView state={stateWith(['flag.tutorial_complete'], [])} onStateChange={noop} />,
+);
+assert(htmlL.includes('chart-lighthouse'), 'L: 应渲染灯塔节点');
+assert(htmlL.includes('灯塔：旧灯塔'), 'L: 灯塔节点 aria-label 应含家灯塔名');
+assert(htmlL.includes('chart-light-radius'), 'L: 应渲染点亮范围圈');
+assert(htmlL.includes('灯塔设施'), 'L: 应有"灯塔设施"建造入口');
+L('  灯塔节点 + 点亮范围 + 建造入口 ✓');
+
+// ============================================
+// M. LighthouseBuildPanel · 家灯塔船坞/信标轨 + 可建造
+// ============================================
+L('\n========== M. LighthouseBuildPanel 建造面板 ==========');
+// 家灯塔有船坞账单材料（coral×6, net×3）+ 金 → 船坞可建
+const M1 = upgradeState([{ itemId: 'item.coral_shard', qty: 6 }, { itemId: 'item.old_fishing_net', qty: 3 }], 50);
+const htmlM1 = renderToStaticMarkup(
+  <LighthouseBuildPanel state={M1} onStateChange={noop} onClose={noop} />,
+);
+assert(htmlM1.includes('灯塔设施'), 'M: 应渲染灯塔设施标题');
+assert(htmlM1.includes('旧灯塔'), 'M: 应列出家灯塔');
+assert(htmlM1.includes('船坞'), 'M: home 应显示船坞轨（homeOnly）');
+assert(htmlM1.includes('信标光源'), 'M: 应显示信标轨');
+assert(htmlM1.includes('upgrade-buy">建造'), 'M: 材料金币够 → 船坞应有可点"建造"按钮');
+L('  家灯塔船坞/信标轨渲染 + 可建造 ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 海图 UI 冒烟测试通过');

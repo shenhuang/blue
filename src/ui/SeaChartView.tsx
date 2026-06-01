@@ -7,9 +7,11 @@ import { useMemo, useState, useEffect } from 'react';
 import type { GameState, ChartPoi } from '@/types';
 import { generateChart, poiLockReason, isPoiDepartable, describeModifier } from '@/engine/chart';
 import { startDiveFromPoi } from '@/engine/dive';
+import { revealRadius } from '@/engine/lighthouses';
 import { getZone } from '@/engine/zones';
 import { getUpgradeBonuses } from '@/engine/upgrades';
 import { listRecoverableCorpses } from '@/engine/death';
+import { LighthouseBuildPanel } from './LighthouseBuildPanel';
 
 interface Props {
   state: GameState;
@@ -48,6 +50,18 @@ export function SeaChartView({ state, onStateChange }: Props) {
   const [target, setTarget] = useState<string>('');
   useEffect(() => setTarget(''), [selected?.id]);
 
+  // 灯塔设施建造面板（灯塔在海图上可见，建造也在海图上）
+  const [showBuild, setShowBuild] = useState(false);
+  if (showBuild) {
+    return (
+      <LighthouseBuildPanel
+        state={state}
+        onStateChange={onStateChange}
+        onClose={() => setShowBuild(false)}
+      />
+    );
+  }
+
   function handleDepart(poi: ChartPoi, targetCorpseId?: string) {
     if (poiLockReason(state.profile, poi)) return;
     onStateChange(startDiveFromPoi(state, poi, { targetCorpseId }));
@@ -79,6 +93,33 @@ export function SeaChartView({ state, onStateChange }: Props) {
             <span className="chart-axis" style={{ left: '20%' }}>近岸</span>
             <span className="chart-axis" style={{ left: '50%' }}>中段</span>
             <span className="chart-axis" style={{ left: '80%' }}>远海</span>
+
+            {/* 灯塔节点 + 点亮范围（reveal）。半径用海图归一化坐标，渲染在 POI 之下。 */}
+            {state.profile.lighthouses.map((lh) => {
+              const r = revealRadius(lh);
+              return (
+                <div key={`lh-${lh.id}`}>
+                  <span
+                    className="chart-light-radius"
+                    aria-hidden="true"
+                    style={{
+                      left: `${lh.mapX * 100}%`,
+                      top: `${lh.mapY * 100}%`,
+                      width: `${r * 2 * 100}%`,
+                      height: `${r * 2 * 100}%`,
+                    }}
+                  />
+                  <span
+                    className="chart-lighthouse"
+                    aria-label={`灯塔：${lh.name}`}
+                    style={{ left: `${lh.mapX * 100}%`, top: `${lh.mapY * 100}%` }}
+                  >
+                    <span className="chart-light-dot" />
+                    <span className="chart-light-name">{lh.name}</span>
+                  </span>
+                </div>
+              );
+            })}
 
             {chart.pois.map((poi) => {
               const { x, y } = poiPos(poi);
@@ -127,9 +168,14 @@ export function SeaChartView({ state, onStateChange }: Props) {
         </div>
       )}
 
-      <button className="btn" onClick={handleLeave}>
-        卷起海图（回港口）
-      </button>
+      <div className="chart-actions">
+        <button className="btn" onClick={() => setShowBuild(true)}>
+          灯塔设施
+        </button>
+        <button className="btn" onClick={handleLeave}>
+          卷起海图（回港口）
+        </button>
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import tutorialEvents from '@/data/events/tutorial.json';
 import reefEvents from '@/data/events/reef.json';
 import blueCavesEvents from '@/data/events/blue_caves.json';
 import wreckGraveyardEvents from '@/data/events/wreck_graveyard.json';
+import lighthouseEvents from '@/data/events/lighthouse.json';
 import zonesData from '@/data/zones.json';
 
 export const ZONES: Map<string, ZoneDef> = new Map();
@@ -18,6 +19,7 @@ for (const e of (tutorialEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (reefEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (blueCavesEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (wreckGraveyardEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
+for (const e of (lighthouseEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 
 export function getZone(id: string): ZoneDef | undefined {
   return ZONES.get(id);

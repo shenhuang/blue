@@ -2,7 +2,7 @@
 
 > 状态：**设计已锁**。2026-06-01 与作者敲定五项决策后落稿，供实装与后续 session 接手。
 > 基线 commit：`ff2cc77`（MVP 之后全部工作）。
-> **实装进度**：✅ **Phase A（材料经济）+ Phase B（灯塔数据模型）已实装（2026-06-01）**——见 §8 + STATUS quirk #50/#51。Phase C（海图集成 + 修复循环）/ D 未开工。
+> **实装进度**：✅ **Phase A（材料经济）+ Phase B（灯塔数据模型）+ Phase C（海图集成 + 修复循环）已实装（2026-06-01）**——见 §8 + STATUS quirk #50/#51/#52。**revamp 三支柱（材料 / 灯塔 / 海图）至此闭环。** Phase D（invasion/defense）未开工。
 > 设计原则同项目要求：可扩展、可维护，每阶段都能独立过回归。
 
 ---
@@ -119,7 +119,7 @@ interface Lighthouse {
 ### 3.3 升级轨：全局装备 vs 每灯塔
 - **潜水装备（随身）= 全局**：tank / suit / light / tool（氧、容量等）仍走现有 `profile.unlockedUpgrades` + `getUpgradeBonuses`。即 `tankhouse` 这类留全局。
 - **灯塔设施 = 每灯塔**：点亮半径、（后续）服务、（更后）防御，写在该灯塔的 `builtUpgrades`。新增 `engine/lighthouses.ts` 管这套（`canBuildAt(lh, upgradeId)` / `buildAtLighthouse` / `getLighthouseBonuses(lh)`），与全局 upgrades.ts 平行、互不污染。
-- `dockyard` / `salvage_guild` 归属待定：建议 `dockyard`（解锁海域/槽位）迁成 home 灯塔的灯塔升级；`salvage_guild`（保鲜/尸体）仍全局（它是随身能力）。**【tunable】**
+- `dockyard` / `salvage_guild` 归属：✅ **Phase C 已定（作者拍板「迁」）**——`dockyard` 迁成 home 灯塔的「船坞」设施（`lighthouse.dockyard.lv1`，homeOnly 轨；其 `extraConsumableSlot` 经 `getRunBonuses` 桥回随身加成；旧灯塔礁等远海 POI 改用 `requiresLighthouseUpgrade` 门控）；`salvage_guild`（保鲜/尸体）仍全局（随身能力）。预发布无存档包袱，但仍补了 SAVE_VERSION 3→4 迁移（已购 dockyard 搬进 home.builtUpgrades）。
 
 ### 3.4 v1 灯塔效果："点亮周围海域" = 揭示 + 拉近
 - **揭示（reveal）**：POI 只有落在某座**已拥有灯塔**的点亮半径内才可见/可出海；半径随灯塔 `level` 扩大。home 灯塔默认点亮现有 4 个近岸 POI，所以**当前行为不变**。
@@ -191,7 +191,7 @@ interface Lighthouse {
 
 - ✅ **Phase A — 材料经济**（**已实装 2026-06-01**）：cost 模型 `UpgradeCost{ materials: MaterialCost[]; gold }`、items `tier 1–4`、canPurchase/purchaseUpgrade 双资源（材料缺口 + 金币）、删 buildingPoints（types/engine/UI/脚本全删）、SAVE_VERSION→2（v1→v2 删点数）、UpgradePanel 账单缺口高亮、**Mira 回购(T1/T2 买价=卖价×2)+`shopStock`(T1=8/T2=4) 限量出售侧 + 回港补满**、改 `playthrough-upgrades.ts`/`-economy.ts`/`-save.ts` + `smoke-chart-ui.tsx` J/K。**自洽可发**（灯塔还没来，升级照常买，只是改用材料+金币）。落地细节 + 易踩坑见 STATUS quirk #50。
 - ✅ **Phase B — 灯塔数据模型**（**已实装 2026-06-01**）：`Lighthouse` 类型（`types/lighthouse.ts`）、`profile.lighthouses`、home 灯塔种入（`createHomeLighthouse`）+ 迁移补全（SAVE_VERSION 2→3 `case 2`）、`engine/lighthouses.ts`（每灯塔升级轨 canBuildAt/buildAtLighthouse + getLighthouseBonuses + nearestLighthouse 距离工具，与全局 upgrades.ts 平行）+ `data/lighthouse_upgrades.json`（信标占位轨）。**灯塔 inert**（没接 chart/dive/UI，reveal/reach 留 Phase C）；`dockyard` 暂仍全局（归属决策留 Phase C）。回归：`playthrough-lighthouse.ts` + `-save` v2→v3。落地细节见 STATUS quirk #51。
-- **Phase C — 海图集成 + 修复循环**：chart.ts reveal + nearest-lighthouse distance、`lighthouse_ruin` 下潜点/事件 + 修复账单、SeaChartView 渲染灯塔、新 `scenarios/lighthouse/` + 脚本、`playthrough-chart.ts`/`smoke-chart-ui.tsx` 更新。
+- ✅ **Phase C — 海图集成 + 修复循环**（**已实装 2026-06-01**）：`chart.ts` reveal（POI 落在某座已拥有灯塔的点亮半径内才可见；home L1 半径 `BASE_LIGHT_RADIUS=0.72` 覆盖现有 4 锚点 + 近端 roaming，两个远端 roaming 留给前哨）+ `effectiveDistance`（reach：按最近灯塔的归一化距离换算，`REACH_NORM_PER_TIER=0.3` 使 4 锚点从 home 算的档位＝写死值 0/1/1/2，不破手感；减最近灯塔 reachReduction）；`lighthouse_ruin` 下潜事件（`data/events/lighthouse.json`，repair 选项 outcome 带 `restoreRuinId` → `applyOutcome` 调 `restoreLighthouse` 权威校验 profile 银行账单 → push 新灯塔 + 置 `flag.lighthouse_restored.<id>` 门控掉事件）；`data/lighthouse_upgrades.json` 加 `ruins[]` + `lhtrack.dockyard`（homeOnly）；SeaChartView 渲染灯塔节点 + 点亮范围圈 + `LighthouseBuildPanel`（海图上建设施）；dockyard 迁灯塔（§3.3）；新 `scenarios/lighthouse/` + `playthrough-lighthouse-scenarios.ts`，更新 `playthrough-chart`/`-lighthouse`/`-upgrades`/`-economy`/`-save`/`smoke-chart-ui`/`verify-tutorial`。落地细节见 STATUS quirk #52。
 - **Phase D（未来，仅占位）**：invasion/defense——本次只确保 §3.1/§4 的 `integrity`/`threat`/`lighthouse_event` 字段预留，不写逻辑。
 
 ---
@@ -220,3 +220,5 @@ interface Lighthouse {
 5. **建设值**：整体移除。
 6. **材料经济**（2026-06-01 续敲）：所有材料可卖（收入源）；T1/T2 可回购（买价>卖价），T3/T4 只卖不买；金币另可买 T1/T2 材料 + 消耗品；店铺出售侧限量（每回港补满）；秘密商人（卖稀材 / 以物易物）留作未来；不引入 stockpile，材料即普通 inventory 物品。
 7. **升级双资源**（2026-06-01 续敲）：每个升级 / 灯塔账单 = 材料 **＋ 金币**；金币必要但不能替代材料（高阶仍强制下深，缺钱卖富余材料换、不死锁），给金币一个核心去处。
+8. **reveal 路线**（2026-06-01 Phase C，作者拍板）：**uniform radius**——home L1 半径（`BASE_LIGHT_RADIUS=0.72`）覆盖现有 4 锚点 + 近端 roaming，两个远端 roaming（蓝洞暗河口 / 塌口北缘 ≈0.79/0.80）落在半径外、由修复前哨灯塔点亮（让修复循环立刻有意义）。非"祖父化豁免"路线。
+9. **dockyard 迁灯塔**（2026-06-01 Phase C，作者拍板）：dockyard 迁成 home 灯塔「船坞」设施（见 §3.3）。理由：dockyard 本职"解锁更远海域"正是灯塔 reveal/reach 的活，归并到灯塔体系更统一。预发布无存档包袱，仍做了 SAVE_VERSION 3→4 干净迁移。

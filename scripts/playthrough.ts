@@ -1,7 +1,7 @@
 // 真·端到端 playthrough 测试 —— 用项目自身的引擎模块
 // 跑法： npx tsx scripts/playthrough.ts
 
-import { createInitialGameState, createNewRun, mergeIntoInventory } from '../src/engine/state';
+import { createInitialGameState, createNewRun, mergeIntoInventory, HOME_LIGHTHOUSE_ID } from '../src/engine/state';
 import {
   getDialogNode,
   getNpc,
@@ -20,7 +20,7 @@ import {
 } from '../src/engine/dive';
 import { generateChart, poiLockReason } from '../src/engine/chart';
 import { planAscent, executeAscent } from '../src/engine/ascent';
-import { purchaseUpgrade } from '../src/engine/upgrades';
+import { buildAtLighthouse } from '../src/engine/lighthouses';
 import { eventDoneFlag, pickReturnTrigger } from '../src/engine/portEvents';
 import { handleReturnToPort } from '../src/engine/port';
 import type { GameState, DialogNode, DiveEvent } from '../src/types';
@@ -225,12 +225,14 @@ state = {
     bankedGold: Math.max(state.profile.bankedGold, 20),
   },
 };
-log.push(`\n========== 港口修缮 ==========`);
+log.push(`\n========== 港口修缮（建家灯塔船坞） ==========`);
 log.push(`修缮前: 银行 ${state.profile.bankedGold} 金 / 仓库 ${state.profile.inventory.map((i) => `${i.itemId}×${i.qty}`).join(', ')}`);
-state = purchaseUpgrade(state, 'upgrade.dockyard.lv1');
-log.push(`修缮后: 银行 ${state.profile.bankedGold} 金, unlockedUpgrades=[${[...state.profile.unlockedUpgrades].join(',')}]`);
-if (!state.profile.unlockedUpgrades.has('upgrade.dockyard.lv1')) {
-  throw new Error('船坞 Lv.1 应在购买后入账');
+// dockyard 已迁成家灯塔「船坞」设施（Phase C）：走 buildAtLighthouse 而非 purchaseUpgrade。
+state = buildAtLighthouse(state, HOME_LIGHTHOUSE_ID, 'lighthouse.dockyard.lv1');
+const homeLh = state.profile.lighthouses.find((l) => l.id === HOME_LIGHTHOUSE_ID)!;
+log.push(`修缮后: 银行 ${state.profile.bankedGold} 金, home.builtUpgrades=[${[...homeLh.builtUpgrades].join(',')}]`);
+if (!homeLh.builtUpgrades.has('lighthouse.dockyard.lv1')) {
+  throw new Error('船坞 Lv.1（家灯塔设施）应在建造后入账');
 }
 
 // ========== Run 2: 随机图旧灯塔礁 ==========

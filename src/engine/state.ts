@@ -12,7 +12,7 @@ import type {
   Lighthouse,
 } from '@/types';
 
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 4;
 
 /** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile + migrateSave 共用一个来源。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
@@ -250,6 +250,27 @@ function migrateSave(obj: unknown): GameState | null {
           prof.lighthouses = [createHomeLighthouse()];
         }
         v = 3;
+        break;
+      }
+      case 3: {
+        // 3→4（基建地图 Phase C · dockyard 迁灯塔）：把已购的全局 dockyard 搬进 home 灯塔「船坞」设施
+        // （lighthouse.dockyard.lv1）。reveal/reach 不入存档（从 lighthouses 派生），故只需迁这一项。
+        const prof = o.profile as Record<string, unknown> | undefined;
+        if (prof) {
+          const unlocked = prof.unlockedUpgrades;
+          const hadDockyard = unlocked instanceof Set && unlocked.has('upgrade.dockyard.lv1');
+          if (unlocked instanceof Set) unlocked.delete('upgrade.dockyard.lv1');
+          if (hadDockyard && Array.isArray(prof.lighthouses)) {
+            const home = (prof.lighthouses as Array<Record<string, unknown>>).find(
+              (l) => l && l.id === HOME_LIGHTHOUSE_ID,
+            );
+            if (home) {
+              if (!(home.builtUpgrades instanceof Set)) home.builtUpgrades = new Set<string>();
+              (home.builtUpgrades as Set<string>).add('lighthouse.dockyard.lv1');
+            }
+          }
+        }
+        v = 4;
         break;
       }
       default:

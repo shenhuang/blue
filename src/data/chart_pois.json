@@ -22,7 +22,7 @@
       "mapY": 0.72,
       "persistent": true,
       "requiresFlags": ["flag.tutorial_complete"],
-      "requiresUpgrade": "upgrade.dockyard.lv1"
+      "requiresLighthouseUpgrade": "lighthouse.dockyard.lv1"
     },
     {
       "id": "poi.anchor.blue_caves",
@@ -58,7 +58,7 @@
       "mapY": 0.64,
       "weight": 2,
       "requiresFlags": ["flag.tutorial_complete"],
-      "requiresUpgrade": "upgrade.dockyard.lv1",
+      "requiresLighthouseUpgrade": "lighthouse.dockyard.lv1",
       "modifier": { "depthOffset": 8, "current": "strong" }
     },
     {
@@ -71,7 +71,7 @@
       "mapY": 0.84,
       "weight": 2,
       "requiresFlags": ["flag.tutorial_complete"],
-      "requiresUpgrade": "upgrade.dockyard.lv1",
+      "requiresLighthouseUpgrade": "lighthouse.dockyard.lv1",
       "modifier": { "depthOffset": 10 }
     },
     {

@@ -58,6 +58,10 @@ const COMBAT_IDS = new Set((enemies.combatEncounters ?? []).map((c) => c.id));
 const ENEMY_IDS = new Set((enemies.enemies ?? []).map((e) => e.id));
 const ZONE_IDS = new Set(zones.map((z) => z.id));
 const UPGRADE_IDS = new Set(upgrades.lines.flatMap((l) => l.upgrades.map((u) => u.id)));
+const LIGHTHOUSE_UPGRADE_IDS = new Set(
+  (lighthouseUpgrades.tracks ?? []).flatMap((t) => (t.upgrades ?? []).map((u) => u.id)),
+);
+const RUIN_IDS = new Set((lighthouseUpgrades.ruins ?? []).map((r) => r.id));
 
 const errors = [];
 const warnings = [];
@@ -103,6 +107,8 @@ function walkOutcome(out, ctx) {
     if (!ITEM_IDS.has(l.itemId))
       errors.push(`${ctx}: loot ${l.itemId} not found`);
   }
+  if (out.restoreRuinId && !RUIN_IDS.has(out.restoreRuinId))
+    errors.push(`${ctx}: restoreRuinId ${out.restoreRuinId} not found`);
 }
 for (const ev of events) {
   for (const opt of ev.options ?? []) {
@@ -144,6 +150,17 @@ for (const line of upgrades.lines)
   for (const u of line.upgrades) checkUpgradeCost(u, `upgrade ${u.id}`);
 for (const track of lighthouseUpgrades.tracks ?? [])
   for (const u of track.upgrades ?? []) checkUpgradeCost(u, `lighthouse ${u.id}`);
+
+// —— 4c. 灯塔废弃点（修复账单 + 结果灯塔字段，基建地图 Phase C）——
+for (const ruin of lighthouseUpgrades.ruins ?? []) {
+  checkUpgradeCost(ruin, `ruin ${ruin.id}`); // ruin.cost 同 UpgradeCost 形状
+  const r = ruin.result;
+  err(
+    r && typeof r.id === 'string' && typeof r.name === 'string' &&
+      typeof r.mapX === 'number' && typeof r.mapY === 'number' && typeof r.level === 'number',
+    `ruin ${ruin.id}: result 应含 id/name/mapX/mapY/level`,
+  );
+}
 
 // —— 5. zones ——
 for (const z of zones) {
@@ -257,13 +274,14 @@ for (const p of [...anchors, ...templates]) {
   const tag = p.id ?? p.templateId;
   err(ZONE_IDS.has(p.zoneId), `海图 POI ${tag}: zoneId ${p.zoneId} 不存在`);
   if (p.requiresUpgrade) err(UPGRADE_IDS.has(p.requiresUpgrade), `海图 POI ${tag}: requiresUpgrade ${p.requiresUpgrade} 不存在`);
+  if (p.requiresLighthouseUpgrade) err(LIGHTHOUSE_UPGRADE_IDS.has(p.requiresLighthouseUpgrade), `海图 POI ${tag}: requiresLighthouseUpgrade ${p.requiresLighthouseUpgrade} 不存在`);
 }
 const lhAnchor = anchors.find((p) => p.zoneId === 'zone.old_lighthouse_reef');
 err(lhAnchor, '海图应有旧灯塔礁 anchor');
 err(lhAnchor && (lhAnchor.requiresFlags ?? []).includes('flag.tutorial_complete'),
   '旧灯塔礁 anchor 应需 flag.tutorial_complete 才出现');
-err(lhAnchor && lhAnchor.requiresUpgrade === 'upgrade.dockyard.lv1',
-  '旧灯塔礁 anchor 应由 dockyard.lv1 门控抵达能力');
+err(lhAnchor && lhAnchor.requiresLighthouseUpgrade === 'lighthouse.dockyard.lv1',
+  '旧灯塔礁 anchor 应由家灯塔船坞（lighthouse.dockyard.lv1）门控抵达能力');
 err(anchors.some((p) => p.zoneId === 'zone.blue_caves'), '海图应有蓝洞群 anchor');
 err(anchors.some((p) => p.zoneId === 'zone.wreck_graveyard'), '海图应有沉船墓园 anchor');
 log.push(`  anchors: ${anchors.length} / roamingTemplates: ${templates.length} ✓`);

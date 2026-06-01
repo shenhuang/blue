@@ -970,6 +970,79 @@ html, body, #root {
   color: var(--text-faint);
 }
 
+/* 灯塔节点 + 点亮范围（reveal）。半径用归一化坐标渲染成圆，置于 POI 之下、不拦点击。 */
+.chart-light-radius {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(214, 178, 102, 0.14) 0%,
+    rgba(214, 178, 102, 0.06) 60%,
+    rgba(214, 178, 102, 0) 100%
+  );
+  border: 1px solid rgba(214, 178, 102, 0.25);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.chart-lighthouse {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chart-light-dot {
+  width: 11px;
+  height: 11px;
+  background: var(--warn);
+  border: 2px solid #0b1116;
+  box-sizing: border-box;
+  transform: rotate(45deg);
+}
+
+.chart-light-name {
+  font-size: 0.66rem;
+  white-space: nowrap;
+  color: var(--warn);
+  background: rgba(11, 17, 22, 0.85);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.chart-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lighthouse-section {
+  margin-bottom: 14px;
+}
+
+.lighthouse-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+
+.lighthouse-section-name {
+  font-weight: 600;
+  color: var(--warn);
+}
+
+.lighthouse-section-meta {
+  font-size: 0.75rem;
+}
+
 .chart-legend {
   display: flex;
   flex-wrap: wrap;

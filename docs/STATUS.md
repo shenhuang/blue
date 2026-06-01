@@ -12,6 +12,7 @@
 > **2026-05-31 周日内容 pass（第四次 · realistic 探索密度）**：轮换离开近几 pass 的 cosmic/uncanny/敌人侧重，回到 **realistic 探索质感**，跨 reef/wreck/cave 三 zone 补 **4 个 realistic dive 事件、无新敌人**（守『敌人别太多·优先事件』）——`reef.shelf_break`（realistic·30-44m·礁壁断口·stamina vs12·coral_shard，**填 reef 26-44m realistic 缺口**：此前该段只有 barracuda 战斗触发 + lobster_hole 尾）/ `reef.urchin_barren`（realistic·16-30m·海胆滩·无 check·coral_shard+sanity-1，补 reef 浅中段 realistic 密度）/ `wreck_graveyard.galley`（realistic·20-34m·伙房·stamina vs13·canned_food/old_fishing_net 人造 loot·守 quirk #44/#47）/ `bluecaves.breakdown_pile`（realistic·16-26m·塌石堆·无 check 资源取舍·稀释 entrance_light 过曝 quirk #20）。全 realistic、全只挂单 zone tag（quirk #19）、无 lore/无 d_reveal。事件 59→63，事件 baseline 43→49（2 个 stamina-success + 4 个 no-check 路径）。详见 quirk #49。
 > **2026-06-01 基建地图 revamp · Phase A（材料经济）实装**：把"建设值（每潜按 depth/node 计分）买升级"**整体换成"材料 ＋ 金币 买升级"**。`UpgradeDef.cost: number → UpgradeCost{ materials: MaterialCost[]; gold }`（5 个升级账单见 `data/upgrades.json`）；每个 material 加 `tier 1–4`（深度分档，门控高阶升级要更深的料）；`canPurchase`/`purchaseUpgrade` 改双资源（材料缺口 + 金币）；**`buildingPoints` 整体移除**（types/engine/UI/存档迁移 v1→v2 全删，`computeRawBuildingPoints`/`computeBuildingPoints` 删除）；**Mira 加回购侧**（T1/T2 可买，买价=卖价×2，`shopStock` 限量+回港补满；T3/T4 只卖不买）。SAVE_VERSION 1→2。回归全绿（`playthrough-upgrades`/`-economy`/`-save` 改写 + `smoke-chart-ui` 加 UpgradePanel/MiraShopView 两节）。详见 quirk #50 + `docs/深海回响_基建地图_SPEC.md`（Phase A 已打勾）。提交 `4612c0c`。
 > **2026-06-01 基建地图 revamp · Phase B（灯塔数据模型）实装**：把"单一岸边港口"在**数据层**扩成**多座灯塔基地**。新 `Lighthouse` 类型（`types/lighthouse.ts`：id/name/mapX/mapY/level/`builtUpgrades:Set` + inert `integrity?`/`region?` 留 Phase D）+ `profile.lighthouses: Lighthouse[]`；现有港口重构成 **home 灯塔**（`lighthouse.home`，`createHomeLighthouse()` 单一来源，createInitialProfile 种入 + 迁移补种）；SAVE_VERSION **2→3**（`case 2` 给旧档种 home）。新 `engine/lighthouses.ts`（与全局 `upgrades.ts` 平行、互不污染）：`canBuildAt`/`buildAtLighthouse`（每灯塔升级轨，账单复用 Phase A 双资源）/`getLighthouseBonuses`（聚合 lightRadiusBonus/reachReduction）/`nearestLighthouse`（最近灯塔距离工具）+ `data/lighthouse_upgrades.json`（信标轨占位）。**灯塔此刻 inert**——reveal（点亮揭示）/ reach（最近灯塔算 distance）是 **Phase C**，本阶段没接进 chart/dive/UI，游戏行为不变。`dockyard` 仍全局（归属决策留 Phase C）。回归全绿（新 `playthrough-lighthouse.ts` + `-save` v2→v3 + verify-tutorial 加账单材料校验）。详见 quirk #51 + SPEC（Phase B 已打勾）。
+> **2026-06-01 基建地图 revamp · Phase C（海图集成 + 修复循环）实装**：把 Phase B 的 inert 灯塔接进游戏，**revamp 三支柱（材料/灯塔/海图）闭环**。① **reveal**（`chart.ts`）：POI 落在某座已拥有灯塔的点亮半径内才可见——`isPoiLit`/`revealRadius`（home L1 半径 `BASE_LIGHT_RADIUS=0.72` 覆盖现有 4 锚点 + 近端 roaming，两个远端 roaming 落半径外、留给前哨）折进 `isPoiVisible` + generateChart roaming 过滤；② **reach**（`effectiveDistance`）：出海 distance 按最近的已拥有灯塔的归一化距离换算（`REACH_NORM_PER_TIER=0.3`，使 4 锚点从 home 算的档位＝写死 0/1/1/2 不破手感）减 reachReduction，无坐标/无灯塔退回写死 distance；`dive.ts::startDiveFromPoi` 消费；③ **修复废弃灯塔**：`data/events/lighthouse.json` 的 `lighthouse.ruin_north`（repair 选项 outcome 带新字段 `restoreRuinId` → `applyOutcome` 调 `engine/lighthouses.ts::restoreLighthouse` 权威校验 profile 银行账单 → push 新灯塔 + 置 `flag.lighthouse_restored.<id>` 把事件门控掉）；`data/lighthouse_upgrades.json` 加 `ruins[]`；④ **dockyard 迁灯塔**：`dockyard` 从全局升级迁成 home 灯塔「船坞」设施（`lighthouse.dockyard.lv1`，新 `lhtrack.dockyard` homeOnly 轨），其 `extraConsumableSlot` 经新 `getRunBonuses`（全局升级 ＋ 家灯塔船坞）桥回 run 加成；旧灯塔礁等远海 POI 的抵达门从 `requiresUpgrade` 改成新 `requiresLighthouseUpgrade`（读 home.builtUpgrades）；SAVE_VERSION **3→4**（`case 3`：已购 dockyard 搬进 home.builtUpgrades）；⑤ **UI**：`SeaChartView` 渲染灯塔节点 + 点亮范围圈，新 `LighthouseBuildPanel`（海图上建设施，"灯塔设施"按钮唤出）。回归全绿（新 `playthrough-lighthouse-scenarios.ts` + `scenarios/lighthouse/` + 改 `playthrough-chart`/`-lighthouse`/`-upgrades`/`-economy`/`-save`/`smoke-chart-ui`/`verify-tutorial`）。详见 quirk #52 + SPEC（Phase C 已打勾）。
 > 给"未来的自己"和"下一个接手 session 的 Claude"看。
 
 ---
@@ -518,6 +519,14 @@ npx tsx scripts/playthrough-combat-scenarios.ts
    - **`dockyard` 归属**：SPEC §3.3 建议 dockyard→home 灯塔升级，但 Phase B **没动**（dockyard 仍全局，仍用 `hasUpgrade` 门控旧灯塔礁 POI + 进 getUpgradeBonuses；迁灯塔会牵动海图门控+加成聚合，是更大改动）。留 Phase C 评估。
    - **`lighthouse_upgrades.json` 是单文件**（非目录）→ 不触发 verify-tutorial 的目录注册守卫（quirk #39e 只扫 events/enemies/npcs 子目录）；但 verify-tutorial **§4b 新增账单材料校验**（全局 upgrades + 灯塔 upgrades 的 `cost.materials.itemId` 都必须是真 item，catch 拼错）。加新灯塔设施轨改这个 JSON 即可，引擎零改动。
 
+52. **海图集成 + 修复循环（基建地图 Phase C，2026-06-01）—— 灯塔从 inert 到"做事"，revamp 三支柱闭环**：
+   - **reveal（`chart.ts`）**：新 `isPoiLit(profile, poi)`/内部 `isLit(profile, x?, y?)`——POI 落在**任一**已拥有灯塔的 `revealRadius(lh)` 内才点亮（遍历所有灯塔，不只看最近）。`revealRadius = BASE_LIGHT_RADIUS(0.72) + (level-1)*PER_LEVEL(0.12) + lightRadiusBonus*PER_BONUS(0.12)`（常数在 `lighthouses.ts` 顶部，tunable SPEC §9）。`isPoiVisible = flagsSatisfied && isPoiLit`；generateChart 的 roaming 过滤也加 `isLit`。**home L1 半径 0.72 故意只覆盖现有 4 锚点（最远沉船墓园 ≈0.662）+ 近端 3 roaming，两个远端 roaming（蓝洞暗河口 0.791 / 塌口北缘 0.802）落半径外** → 修复前哨灯塔才点亮（决策：作者选 uniform radius、非祖父化豁免；SPEC §10.8）。**无坐标的 POI 默认点亮**（不因缺坐标隐藏）。
+   - **reach（`effectiveDistance(profile, poi)`，`chart.ts`）**：distance 档 = `round(nearestLighthouse 距离 / REACH_NORM_PER_TIER(0.3)) - reachReduction`，clamp ≥0；**无坐标 / 无灯塔退回写死 `poi.distance`（fallback）**。0.3 是**刻意校准**：使 4 锚点从 home(0.06,0.5) 算出的档位＝写死 0/1/1/2（不破手感，`playthrough-chart` §2b(d) 锁死）；roaming 按几何略偏（本就"潮位常变"）。`dive.ts::startDiveFromPoi` 用它替代写死 `poi.distance`（预耗氧 + turn）。
+   - **修复废弃灯塔**：下潜里能**持久写 profile** 的 outcome 之前只有 `loreEntry`——新增 `restoreRuinId` 同类（`applyOutcome` 在 loreEntry 之后处理）。事件 `lighthouse.ruin_north`（`data/events/lighthouse.json`，注册进 `zones.ts`）repair 选项 `outcome:{restoreRuinId}` → `restoreLighthouse(state, id)` **权威校验**（`canRestoreRuin` 按 **profile 银行**材料＋金币，**不是 run.inventory**——下潜带不进银行料、run.inventory 起步空）：成功扣 profile 料＋金 + push `ruin.result` 灯塔（builtUpgrades 空 Set）+ 置 `flag.lighthouse_restored.<ruinId>`（事件 `forbiddenFlags` 据此不再出）；不够/已修则只叙事不改档（幂等）。账单/结果灯塔在 `lighthouse_upgrades.json::ruins[]`，verify-tutorial §4c 校验 cost＋result，walkOutcome 校验 restoreRuinId 引用真 ruin。
+   - **dockyard 迁灯塔**：dockyard 从 `upgrades.json` 全局线删，迁成 `lighthouse_upgrades.json` 的 `lhtrack.dockyard`（**新 `LighthouseTrack.homeOnly:true`**——建造 UI 对前哨隐藏此轨）。它唯一真效果是 `extraConsumableSlot`（旧 `unlockZone` 是死的——`bonuses.unlockedZones` 没被任何 chart/dive 消费，只被旧测试断言，已删该断言）。**桥**：新 `LighthouseEffect.extraConsumableSlot` + `LighthouseBonuses.extraConsumableSlot`，`getRunBonuses(profile)` = 全局 `getUpgradeBonuses` ＋ **家灯塔**（仅 home）的 `extraConsumableSlot`；`dialog.ts::startDive` 和 `dive.ts::startDiveFromPoi` 两个出海口都改用它。3 个远海 POI 的抵达门从 `requiresUpgrade`（查 unlockedUpgrades）改成新 `ChartPoi.requiresLighthouseUpgrade`（`poiLockReason` 查 **home** 的 builtUpgrades）；**锁定串保持「需要「船坞 Lv.1」」**（facility name 沿用，smoke A/B 串不变）。**SAVE_VERSION 3→4**（`case 3`：已购 `upgrade.dockyard.lv1` 从 unlockedUpgrades 删 + `lighthouse.dockyard.lv1` 加进 home.builtUpgrades；没买过的档不塞）。
+   - **UI**：`SeaChartView` 在 chart-map 里渲染每座灯塔的 `.chart-lighthouse`（aria-label「灯塔：<名>」）+ `.chart-light-radius`（归一化半径圈，pointer-events:none 不挡 POI 点击、置 POI 之下）；底部「灯塔设施」按钮 toggle 新 `LighthouseBuildPanel`（镜像 UpgradePanel，用 `getLighthouseTracks`/`canBuildAt`/`buildAtLighthouse`，按 `track.homeOnly` 对非 home 隐藏船坞轨）。**半径圈 % 宽高、容器非正方时是椭圆**——v1 接受，纯视觉（tunable）。
+   - **回归**：新 `playthrough-lighthouse-scenarios.ts`（引擎直调 resolveOption 跑修复成功/失败/幂等 + reveal/reach 前后 + 存档 round-trip——**因 runEventScenario 的 inventory 落 run 不落 profile、且不暴露 final lighthouses，成功路径只能引擎直调**）+ `scenarios/lighthouse/`（leave / 身无分文 restore 两条 harness 路径）。改 `playthrough-chart`（§2 门控 + 新 §2b reveal/reach）/`-lighthouse`（新 §6 半径+船坞桥）/`-upgrades`（全局线 3→2，dockyard 全迁）/`-economy`（"金币买不了升级"改用 tankhouse）/`-save`（v3→v4 + 没买不塞）/`smoke-chart-ui`（B 用 home 船坞、J 用 salvage 账单、新 L/M）/`verify-tutorial`（requiresLighthouseUpgrade + ruin 校验）。
+
 ---
 
 ## 7. 仓库结构
@@ -534,9 +543,9 @@ Blue/
 │   ├── App.tsx, main.tsx, styles.css
 │   ├── types/    (state/events/enemies/items/npcs/dive/combat/chart/upgrades/index)
 │   ├── engine/   (state[含存档层]/events/dialog/chart/zones/mapgen/dive/ascent/combat/death/items/port/portEvents/upgrades/eventScenario/combatScenario/rng)
-│   ├── ui/       (PortView/PortEventView/SeaChartView[2D 地图]/MiraShopView/UpgradePanel/EventView/NodeSelectView/RestView/CombatView/AscentView/CorpseView/ResolutionView/StatusBar/diverName[D-reveal 渲染])
+│   ├── ui/       (PortView/PortEventView/SeaChartView[2D 地图+灯塔节点/点亮圈]/MiraShopView/UpgradePanel/LighthouseBuildPanel/EventView/NodeSelectView/RestView/CombatView/AscentView/CorpseView/ResolutionView/StatusBar/diverName[D-reveal 渲染])
 │   │   └── dev/  (EventDevPanel + CombatDevPanel + MapDevPanel + ScenarioSerializer + CombatScenarioSerializer + dev-panel.css + combat-panel.css + map-panel.css — 仅 DEV 模式加载，Shift+D / Shift+C / Shift+M 互斥切面板)
-│   └── data/     (items/actions/zones/upgrades/chart_pois + npcs/<id>.json + events/{tutorial,reef,blue_caves,wreck_graveyard}.json + enemies/{reef_shark,blind_eel,wreck_spider_crab,reef_barracuda,cave_octopus,drowned_lantern}.json)
+│   └── data/     (items/actions/zones/upgrades/lighthouse_upgrades[含 ruins]/chart_pois + npcs/<id>.json + events/{tutorial,reef,blue_caves,wreck_graveyard,lighthouse}.json + enemies/{reef_shark,blind_eel,wreck_spider_crab,reef_barracuda,cave_octopus,drowned_lantern}.json)
 ├── scripts/
 │   ├── verify-tutorial.mjs               数据图引用完整性
 │   ├── playthrough.ts                    教学+随机图+上浮
@@ -547,8 +556,10 @@ Blue/
 │   ├── playthrough-economy.ts            仓库 + Mira 变卖
 │   ├── playthrough-bluecaves.ts          蓝洞群 + canFreeAscend + 盲鳗
 │   ├── playthrough-wreckyard.ts          沉船墓园 + 蛛蟹 solo+pair + lost_diver/watch portEvent 链 + crab_chitin → Mira
-│   ├── playthrough-chart.ts              海图引擎回归：门控 / roaming 刷新 / depthOffset / distance
-│   ├── smoke-chart-ui.tsx                海图 UI 渲染冒烟：SeaChartView/PortView 服务端渲染断言（React 层）
+│   ├── playthrough-chart.ts              海图引擎回归：门控 / reveal+reach / roaming 刷新 / depthOffset / distance
+│   ├── playthrough-lighthouse.ts         灯塔引擎回归：canBuildAt/build/bonuses/nearest + revealRadius/船坞桥
+│   ├── playthrough-lighthouse-scenarios.ts  灯塔修复循环：修复账单 + reveal/reach 前后 + round-trip + scenarios/lighthouse/*.json
+│   ├── smoke-chart-ui.tsx                海图 UI 渲染冒烟：SeaChartView/PortView/LighthouseBuildPanel 服务端渲染断言（React 层）
 │   ├── playthrough-scenarios.ts          事件回归：跑 scenarios/*.json
 │   ├── playthrough-combat-scenarios.ts   战斗回归：跑 scenarios/combat/*.json
 │   ├── playthrough-mapgen-scenarios.ts   mapgen 回归：跑 scenarios/mapgen/*.json + 迷路不变量 60-seed 扫描 + 确定性
@@ -558,7 +569,8 @@ Blue/
 │   └── combat-runner.ts                  战斗回归 CLI（--list / --list-enemies / --list-actions / --show / --from / quick mode）
 ├── scenarios/                            事件回归场景库（JSON，每份一个 ScenarioInput + expect 断言）
 │   ├── combat/                           战斗回归场景库（JSON，每份一个 CombatScenarioInput + expect 断言）
-│   └── mapgen/                           mapgen 回归场景库（JSON，{ zoneId, seed, depthOffset?, expect }）
+│   ├── mapgen/                           mapgen 回归场景库（JSON，{ zoneId, seed, depthOffset?, expect }）
+│   └── lighthouse/                       灯塔修复循环场景库（JSON，lighthouse_ruin 的 leave/restore 路径）
 ├── package.json, tsconfig.json, vite.config.ts, index.html, README.md
 ```
 

@@ -6,7 +6,7 @@ import aldoData from '@/data/npcs/aldo.json';
 import miraData from '@/data/npcs/mira.json';
 import { createNewRun } from './state';
 import { startDive } from './dive';
-import { getUpgradeBonuses } from './upgrades';
+import { getRunBonuses } from './lighthouses';
 
 interface NpcFile {
   npc: NpcDef;
@@ -83,7 +83,8 @@ export function applyDialogEffects(
         }
         break;
       case 'startDive': {
-        const bonuses = getUpgradeBonuses(s.profile);
+        // 随身加成 = 全局升级 ＋ 家灯塔「船坞」设施（dockyard 迁灯塔后的桥，见 lighthouses.ts::getRunBonuses）
+        const bonuses = getRunBonuses(s.profile);
         const run = createNewRun({
           zoneId: e.zoneId,
           bonuses: {

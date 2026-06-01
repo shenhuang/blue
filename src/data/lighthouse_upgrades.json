@@ -1,6 +1,29 @@
 {
-  "_doc": "灯塔设施升级（每灯塔，建成写进 lighthouse.builtUpgrades）。账单 = 材料＋金币双资源（同全局升级，基建地图 §2.3/§3.3）。Phase B：机制 + 数据就位、类型钉死；效果（点亮半径 reveal / 出海拉近 reach）由 Phase C 的 chart.ts/dive.ts 消费 getLighthouseBonuses。数值为占位，待平衡（SPEC §9）。",
+  "_doc": "灯塔设施升级（每灯塔，建成写进 lighthouse.builtUpgrades）。账单 = 材料＋金币双资源（同全局升级，基建地图 §2.3/§3.3）。Phase C：reveal/reach 已实装（chart.ts/dive.ts 消费 getLighthouseBonuses）；dockyard 迁来（lhtrack.dockyard，homeOnly，给 extraConsumableSlot + 远海 POI 的 requiresLighthouseUpgrade 门控）；新增 ruins[]（修复废弃灯塔 → push 新灯塔）。数值为占位，待平衡（SPEC §9）。",
   "tracks": [
+    {
+      "id": "lhtrack.dockyard",
+      "name": "船坞",
+      "description": "扩建灯塔脚下的船坞——更大的船出得了更远的海，出海前也能多带一件消耗品。",
+      "homeOnly": true,
+      "upgrades": [
+        {
+          "id": "lighthouse.dockyard.lv1",
+          "level": 1,
+          "name": "船坞 Lv.1",
+          "cost": {
+            "materials": [
+              { "itemId": "item.coral_shard", "qty": 6 },
+              { "itemId": "item.old_fishing_net", "qty": 3 }
+            ],
+            "gold": 20
+          },
+          "effects": [{ "kind": "extraConsumableSlot", "value": 1 }],
+          "description": "修起灯塔脚下的船坞。出海前可多带 1 个消耗品；远海点位（旧灯塔礁等）从此出得去。",
+          "requiresLighthouseLevel": 1
+        }
+      ]
+    },
     {
       "id": "lhtrack.beacon",
       "name": "信标光源",
@@ -39,6 +62,27 @@
           "requiresLighthouseLevel": 1
         }
       ]
+    }
+  ],
+  "ruins": [
+    {
+      "id": "ruin.north_beacon",
+      "cost": {
+        "materials": [
+          { "itemId": "item.brass_fitting", "qty": 4 },
+          { "itemId": "item.crab_chitin", "qty": 2 },
+          { "itemId": "item.cave_octopus_beak", "qty": 1 }
+        ],
+        "gold": 80
+      },
+      "result": {
+        "id": "lighthouse.outpost_north",
+        "name": "北缘前哨灯塔",
+        "mapX": 0.8,
+        "mapY": 0.6,
+        "level": 1,
+        "region": "wreck_graveyard"
+      }
     }
   ]
 }

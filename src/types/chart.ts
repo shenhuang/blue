@@ -53,8 +53,13 @@ export interface ChartPoi {
   modifier?: PoiModifier;
   /** true = 持久 anchor（永远在）；false = roaming（每次回港刷新） */
   persistent: boolean;
-  /** 抵达能力门控：需要某升级（hasUpgrade）。未满足 → 海图上灰显可见但不能出海。 */
+  /** 抵达能力门控：需要某全局升级（hasUpgrade）。未满足 → 海图上灰显可见但不能出海。 */
   requiresUpgrade?: string;
+  /**
+   * 抵达能力门控（灯塔设施版，基建地图 Phase C）：需要家灯塔建成某设施（如「船坞」）。
+   * 与 requiresUpgrade 并列检查；用于 dockyard 迁灯塔后的「大船才出得了远海」门控。
+   */
+  requiresLighthouseUpgrade?: string;
   /** 发现门控：这些 flag 都满足才出现在海图上（镜像 ZoneDef.requiresFlags）。 */
   requiresFlags?: string[];
 }

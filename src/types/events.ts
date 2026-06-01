@@ -84,6 +84,12 @@ export interface Outcome {
   endDive?: 'forceAscend' | 'death';
   goldDelta?: number;
   loreEntry?: string;
+  /**
+   * 修复废弃灯塔（基建地图 Phase C）：引用一个 LighthouseRuinDef.id。
+   * applyOutcome 会权威地校验账单（按 profile 银行材料＋金币）并 push 新灯塔到 profile.lighthouses。
+   * 与 loreEntry 同属"少数能从下潜里持久写 profile 的 outcome"（其余 flag/loot/gold 都是 run 局部）。
+   */
+  restoreRuinId?: string;
 }
 
 /** 掉落表条目 */

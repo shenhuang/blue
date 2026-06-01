@@ -22,6 +22,10 @@ import {
   getBuiltLevelInTrack,
   getLighthouseTracks,
   nearestLighthouse,
+  revealRadius,
+  getRunBonuses,
+  BASE_LIGHT_RADIUS,
+  LIGHT_RADIUS_PER_BONUS,
 } from '../src/engine/lighthouses';
 import type { GameState, InventoryItem, Lighthouse } from '../src/types';
 
@@ -165,6 +169,27 @@ L(`  (0.1,0.5)→${near1!.lighthouse.id} d=${near1!.distance.toFixed(2)} / (0.65
 const empties = { ...createInitialGameState().profile, lighthouses: [] };
 assert(nearestLighthouse(empties, 0.5, 0.5) === null, '无灯塔应返回 null');
 L('  最近灯塔（多座按距离）+ 空 → null ✓');
+
+// ============================================
+// 6. revealRadius + 船坞设施桥接 extraConsumableSlot（Phase C 接入）
+// ============================================
+L('\n========== 6. revealRadius + 船坞桥接 ==========');
+// 空 home（level 1，无 beacon）→ 半径 = BASE
+const homeBare = createHomeLighthouse();
+assert(Math.abs(revealRadius(homeBare) - BASE_LIGHT_RADIUS) < 1e-9, `空 home 半径应=BASE(${BASE_LIGHT_RADIUS})`);
+// h2 建了 beacon lv1+lv2（lightRadiusBonus 2）→ 半径 = BASE + 2*PER_BONUS
+const expR = BASE_LIGHT_RADIUS + 2 * LIGHT_RADIUS_PER_BONUS;
+assert(Math.abs(revealRadius(h2) - expR) < 1e-9, `beacon lv1+lv2 → 半径应=${expR}，实际 ${revealRadius(h2)}`);
+L(`  半径：空 home ${revealRadius(homeBare)} / +beacon2 ${revealRadius(h2).toFixed(2)} ✓`);
+// 船坞设施 → getLighthouseBonuses.extraConsumableSlot 1；getRunBonuses 把它并进随身加成
+const DOCK = 'lighthouse.dockyard.lv1';
+let sDock = stateWith([{ itemId: 'item.coral_shard', qty: 6 }, { itemId: 'item.old_fishing_net', qty: 3 }], 50);
+sDock = buildAtLighthouse(sDock, HOME, DOCK);
+const homeDock = sDock.profile.lighthouses.find((l) => l.id === HOME)!;
+assert(getLighthouseBonuses(homeDock).extraConsumableSlot === 1, '船坞 → getLighthouseBonuses.extraConsumableSlot 1');
+assert(getRunBonuses(sDock.profile).extraConsumableSlot === 1, '船坞 → getRunBonuses 并回 +1 槽');
+assert(getRunBonuses(createInitialGameState().profile).extraConsumableSlot === 0, '没船坞 → 0 槽');
+L('  船坞设施 → +1 消耗品槽（getLighthouseBonuses + getRunBonuses 桥）✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 灯塔基地（Phase B 数据模型 + 引擎脚手架）回归通过');

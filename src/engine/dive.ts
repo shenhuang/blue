@@ -7,6 +7,8 @@ import { generateDiveMap, getNextChoices } from './mapgen';
 import { getZone } from './zones';
 import { appendLog, createNewRun } from './state';
 import { getUpgradeBonuses } from './upgrades';
+import { getRunBonuses } from './lighthouses';
+import { effectiveDistance } from './chart';
 import { executeDeath } from './death';
 
 /** 编译期穷尽性检查：将来新增 NodeKind 却忘了在 moveToNode 里处理时，这里会直接报类型错误。 */
@@ -89,7 +91,8 @@ export function startDiveFromPoi(
   poi: ChartPoi,
   opts?: { targetCorpseId?: string },
 ): GameState {
-  const bonuses = getUpgradeBonuses(state.profile);
+  // 随身加成 = 全局升级 ＋ 家灯塔「船坞」设施（dockyard 迁灯塔后由 getRunBonuses 并回，见 lighthouses.ts）
+  const bonuses = getRunBonuses(state.profile);
   let run = createNewRun({
     zoneId: poi.zoneId,
     bonuses: {
@@ -99,11 +102,13 @@ export function startDiveFromPoi(
     },
   });
 
-  const transitOxygen = poi.distance * 2;
+  // reach：距离按最近的已拥有灯塔算（出海预耗氧 + turn）；写死 distance 仍作 fallback（SPEC §3.4/§4）
+  const dist = effectiveDistance(state.profile, poi);
+  const transitOxygen = dist * 2;
   run = {
     ...run,
     diveModifier: poi.modifier,
-    turn: poi.distance,
+    turn: dist,
     stats: { ...run.stats, oxygen: Math.max(1, run.stats.oxygen - transitOxygen) },
   };
 
@@ -113,7 +118,7 @@ export function startDiveFromPoi(
     targetCorpseId: opts?.targetCorpseId,
   });
 
-  if (poi.distance > 0) {
+  if (dist > 0) {
     s = appendLog(s, {
       tone: 'system',
       text: `航行至「${poi.name}」。路上耗气约 ${transitOxygen} 回合。`,

@@ -13,6 +13,7 @@ import type {
   GameState,
   Lighthouse,
   LighthouseBonuses,
+  LighthouseRuinDef,
   LighthouseTrack,
   LighthouseUpgradeDef,
   LighthouseUpgradesFile,
@@ -20,14 +21,34 @@ import type {
   PlayerProfile,
 } from '@/types';
 import lighthouseData from '@/data/lighthouse_upgrades.json';
-import { appendLog, removeFromInventory } from './state';
-import { materialShortfall, describeUpgradeCost } from './upgrades';
+import { appendLog, removeFromInventory, HOME_LIGHTHOUSE_ID } from './state';
+import { materialShortfall, describeUpgradeCost, getUpgradeBonuses } from './upgrades';
 
 const file = lighthouseData as unknown as LighthouseUpgradesFile;
 const TRACKS: LighthouseTrack[] = file.tracks;
 const INDEX = new Map<string, { track: LighthouseTrack; def: LighthouseUpgradeDef }>();
 for (const track of TRACKS) {
   for (const def of track.upgrades) INDEX.set(def.id, { track, def });
+}
+
+/** 可修复的废弃灯塔（Phase C 修复循环）。 */
+const RUINS: LighthouseRuinDef[] = file.ruins ?? [];
+const RUIN_INDEX = new Map<string, LighthouseRuinDef>();
+for (const r of RUINS) RUIN_INDEX.set(r.id, r);
+
+// —— 点亮半径 / reach 换算的 tunable 常数（SPEC §3.4 / §4 / §9）——
+// 半径用海图归一化坐标（0–1）。home（level 1，无 beacon）= BASE，刚好覆盖现有 4 个锚点
+// （最远沉船墓园 ≈ 0.662）+ 近端机会点，但不覆盖两个远端 roaming（≈0.79/0.80）——
+// 那两个留给「修复前哨灯塔」点亮，使修复循环立刻有意义（决策：作者选 uniform radius）。
+export const BASE_LIGHT_RADIUS = 0.72;
+export const LIGHT_RADIUS_PER_LEVEL = 0.12;
+export const LIGHT_RADIUS_PER_BONUS = 0.12;
+
+/** 一座灯塔的点亮半径（归一化海图距离）。= base(level) + lightRadiusBonus 换算。 */
+export function revealRadius(lighthouse: Lighthouse): number {
+  const base = BASE_LIGHT_RADIUS + (lighthouse.level - 1) * LIGHT_RADIUS_PER_LEVEL;
+  const bonus = getLighthouseBonuses(lighthouse).lightRadiusBonus * LIGHT_RADIUS_PER_BONUS;
+  return base + bonus;
 }
 
 /** 全部灯塔设施升级轨（按 JSON 顺序）。 */
@@ -144,7 +165,11 @@ export function buildAtLighthouse(
 
 /** 聚合某座灯塔已建设施的派生加成（Phase C 读取消费 reveal/reach）。 */
 export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses {
-  const bonuses: LighthouseBonuses = { lightRadiusBonus: 0, reachReduction: 0 };
+  const bonuses: LighthouseBonuses = {
+    lightRadiusBonus: 0,
+    reachReduction: 0,
+    extraConsumableSlot: 0,
+  };
   for (const id of lighthouse.builtUpgrades) {
     const def = getLighthouseUpgradeDef(id);
     if (!def) continue;
@@ -156,10 +181,41 @@ export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses 
         case 'reachReduction':
           bonuses.reachReduction += e.value;
           break;
+        case 'extraConsumableSlot':
+          bonuses.extraConsumableSlot += e.value;
+          break;
       }
     }
   }
   return bonuses;
+}
+
+/** 家灯塔（守灯人 Aldo 所在的港口基地）。找不到 → undefined（理论上 createInitialProfile 总会种入）。 */
+export function getHomeLighthouse(profile: PlayerProfile): Lighthouse | undefined {
+  return profile.lighthouses.find((l) => l.id === HOME_LIGHTHOUSE_ID);
+}
+
+/** createNewRun 需要的随身加成（出海前结算）。 */
+export interface RunStartBonuses {
+  oxygenMaxBonus: number;
+  staminaMaxBonus: number;
+  extraConsumableSlot: number;
+}
+
+/**
+ * 合并"全局随身升级"+"家灯塔设施"的随身加成，供出海（startDive / startDiveFromPoi）注入 run。
+ * 唯一的桥：dockyard 迁成家灯塔「船坞」设施后，其 extraConsumableSlot 不再走 getUpgradeBonuses，
+ * 在此并回——只取**家灯塔**（你的出海基地），前哨灯塔不贡献随身槽。
+ */
+export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
+  const g = getUpgradeBonuses(profile);
+  const home = getHomeLighthouse(profile);
+  const homeSlot = home ? getLighthouseBonuses(home).extraConsumableSlot : 0;
+  return {
+    oxygenMaxBonus: g.oxygenMaxBonus,
+    staminaMaxBonus: g.staminaMaxBonus,
+    extraConsumableSlot: g.extraConsumableSlot + homeSlot,
+  };
 }
 
 /** 海图归一化坐标上的欧氏距离。 */
@@ -182,4 +238,92 @@ export function nearestLighthouse(
     if (!best || distance < best.distance) best = { lighthouse: lh, distance };
   }
   return best;
+}
+
+// ============================================================
+// 修复废弃灯塔（Phase C 修复循环）—— 把"下潜"接到"基建"
+// ============================================================
+
+export function getLighthouseRuins(): LighthouseRuinDef[] {
+  return RUINS;
+}
+
+export function getRuinDef(id: string): LighthouseRuinDef | undefined {
+  return RUIN_INDEX.get(id);
+}
+
+/** 一座废弃灯塔已被修复后写到 profile.flags 的标记，用于把 lighthouse_ruin 事件门控掉（不再重复出现）。 */
+export function ruinRestoredFlag(ruinId: string): string {
+  return `flag.lighthouse_restored.${ruinId}`;
+}
+
+/** 修复一座废弃灯塔的可行性（账单按 profile 银行材料＋金币结算；与全局升级平行）。 */
+export type RestoreAvailability =
+  | { ok: true }
+  | { ok: false; reason: 'unknown' | 'alreadyRestored' }
+  | { ok: false; reason: 'notEnoughMaterials'; shortfall: MaterialCost[] }
+  | { ok: false; reason: 'notEnoughGold'; goldShort: number };
+
+export function canRestoreRuin(profile: PlayerProfile, ruinId: string): RestoreAvailability {
+  const ruin = RUIN_INDEX.get(ruinId);
+  if (!ruin) return { ok: false, reason: 'unknown' };
+  // 已修过（目标灯塔已在档）→ 不能再修
+  if (profile.lighthouses.some((l) => l.id === ruin.result.id)) {
+    return { ok: false, reason: 'alreadyRestored' };
+  }
+  // 双资源账单：材料先于金币（同全局升级）
+  const shortfall = materialShortfall(profile, ruin.cost);
+  if (shortfall.length > 0) return { ok: false, reason: 'notEnoughMaterials', shortfall };
+  if (profile.bankedGold < ruin.cost.gold) {
+    return { ok: false, reason: 'notEnoughGold', goldShort: ruin.cost.gold - profile.bankedGold };
+  }
+  return { ok: true };
+}
+
+/**
+ * 修复一座废弃灯塔：权威校验账单（profile 银行材料＋金币）；
+ *   - 成功 → 扣料＋扣金 + push 新灯塔到 profile.lighthouses + 置 ruinRestoredFlag + 叙事。
+ *   - 不够 / 已修 → 不改 profile，仅叙事说明（applyOutcome 在下潜里调用，故只读不破 run）。
+ * 幂等：重复对同一 ruin 调用，第二次因 alreadyRestored 落 no-op。
+ */
+export function restoreLighthouse(state: GameState, ruinId: string): GameState {
+  const ruin = RUIN_INDEX.get(ruinId);
+  if (!ruin) {
+    console.warn(`Lighthouse ruin ${ruinId} not found`);
+    return state;
+  }
+  const avail = canRestoreRuin(state.profile, ruinId);
+  if (!avail.ok) {
+    const why =
+      avail.reason === 'alreadyRestored'
+        ? '这座灯塔已经在远处亮着了。'
+        : `材料或金币不够，没能重燃这座灯塔（需要：${describeUpgradeCost(ruin.cost)}）。`;
+    return appendLog(state, { tone: 'system', text: why });
+  }
+
+  // 扣材料（profile 银行）
+  let inventory = state.profile.inventory;
+  for (const m of ruin.cost.materials) {
+    inventory = removeFromInventory(inventory, m.itemId, m.qty);
+  }
+
+  const newLighthouse: Lighthouse = { ...ruin.result, builtUpgrades: new Set() };
+  const flags = new Set(state.profile.flags);
+  flags.add(ruinRestoredFlag(ruinId));
+
+  let next: GameState = {
+    ...state,
+    profile: {
+      ...state.profile,
+      inventory,
+      bankedGold: state.profile.bankedGold - ruin.cost.gold,
+      lighthouses: [...state.profile.lighthouses, newLighthouse],
+      flags,
+    },
+  };
+  next = appendLog(next, {
+    tone: 'system',
+    text: `你重燃了「${newLighthouse.name}」。它的光扫过这一带——海图上多出一片亮的水域，从这里出海也更近了。（${describeUpgradeCost(ruin.cost)}）`,
+  });
+  return next;
 }
