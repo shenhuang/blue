@@ -1,13 +1,22 @@
 // 港口修缮面板 —— 把 upgrades.json 里的升级线呈现给玩家
-// 显示每条 line 的 lv1/lv2/lv3，标注已购、可购、缺前置、不够建设值
+// 显示每条 line 的 lv1/lv2/lv3，标注已购、可购、缺前置、材料/金币不足（缺口高亮）
 
-import type { GameState, UpgradeDef, UpgradeEffect, UpgradeLine } from '@/types';
+import type {
+  GameState,
+  PlayerProfile,
+  UpgradeCost,
+  UpgradeDef,
+  UpgradeEffect,
+  UpgradeLine,
+} from '@/types';
 import {
   canPurchase,
   getUpgradeLines,
   getUnlockedLevelInLine,
   purchaseUpgrade,
 } from '@/engine/upgrades';
+import { countInInventory } from '@/engine/state';
+import { getItemDef } from '@/engine/items';
 
 interface Props {
   state: GameState;
@@ -27,7 +36,7 @@ export function UpgradePanel({ state, onStateChange, onClose }: Props) {
       <div className="upgrade-head">
         <div>
           <div className="upgrade-title">港口修缮</div>
-          <div className="upgrade-sub">建设值 {state.profile.buildingPoints}</div>
+          <div className="upgrade-sub">银行 {state.profile.bankedGold} 金币 · 用带回的材料修缮</div>
         </div>
         <button className="btn upgrade-close" onClick={onClose}>
           返回
@@ -93,15 +102,21 @@ function UpgradeRow({
   } else if (avail.ok) {
     statusEl = (
       <button className="btn upgrade-buy" onClick={() => onBuy(def.id)}>
-        修缮 · {def.cost} 建设值
+        修缮
       </button>
     );
   } else if (avail.reason === 'needsPrev') {
     statusEl = <span className="upgrade-status locked">需要前一级</span>;
-  } else if (avail.reason === 'notEnoughPoints') {
+  } else if (avail.reason === 'notEnoughMaterials') {
     statusEl = (
       <button className="btn upgrade-buy" disabled>
-        {def.cost} 建设值（不够）
+        材料不足
+      </button>
+    );
+  } else if (avail.reason === 'notEnoughGold') {
+    statusEl = (
+      <button className="btn upgrade-buy" disabled>
+        金币不足（还差 {avail.goldShort}）
       </button>
     );
   } else {
@@ -122,8 +137,37 @@ function UpgradeRow({
             </span>
           ))}
         </div>
+        {!owned && <CostLine cost={def.cost} profile={state.profile} />}
       </div>
       <div className="upgrade-row-side">{statusEl}</div>
+    </div>
+  );
+}
+
+/** 账单明细：逐条材料"名×需求量"，自有不足时高亮 + 标注已有数；金币同理。 */
+function CostLine({ cost, profile }: { cost: UpgradeCost; profile: PlayerProfile }) {
+  const goldShort = profile.bankedGold < cost.gold;
+  return (
+    <div className="upgrade-cost">
+      <span className="upgrade-cost-label">需要：</span>
+      {cost.materials.map((m) => {
+        const owned = countInInventory(profile.inventory, m.itemId);
+        const short = owned < m.qty;
+        return (
+          <span
+            key={m.itemId}
+            className={`upgrade-cost-mat ${short ? 'short' : 'ok'}`}
+          >
+            {getItemDef(m.itemId)?.name ?? m.itemId}×{m.qty}
+            {short && <span className="upgrade-cost-have">（有 {owned}）</span>}
+          </span>
+        );
+      })}
+      {cost.gold > 0 && (
+        <span className={`upgrade-cost-gold ${goldShort ? 'short' : 'ok'}`}>
+          ＋ {cost.gold} 金
+        </span>
+      )}
     </div>
   );
 }

@@ -152,7 +152,6 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
   }
 
   // 推进到结算
-  const buildingPoints = computeBuildingPoints(run);
   const lootValue = computeLootValue(run);
 
   // 这次 run 结束：海底所有死者老化一次 + 衰减
@@ -167,7 +166,6 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
     profile: {
       ...s.profile,
       deaths: agedDeaths,
-      buildingPoints: s.profile.buildingPoints + buildingPoints,
       runsCompleted: s.profile.runsCompleted + 1,
     },
     phase: {
@@ -176,7 +174,6 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
         survived: true,
         maxDepthReached: run.currentDepth, // 注意：在这里 run 还是上浮前的 depth
         eventsTriggered: new Set(run.visitedNodeIds).size,
-        buildingPointsEarned: buildingPoints,
         goldEarned: run.gold, // 上岸时实际入袋（事件给的金币）；战利品要回港找 Mira 兑
         lootValue,
         loot: run.inventory,
@@ -187,14 +184,6 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
   };
 
   return { state: s, bendsType: bends, narrative };
-}
-
-function computeBuildingPoints(run: RunState): number {
-  // 主 SPEC §7.1: 最深深度系数 + 触发事件数 × α + 完成事件链 × β
-  const depthCoef = Math.floor(run.currentDepth / 5);
-  // 去重计数（见 death.ts::computeRawBuildingPoints 的同理说明）
-  const nodeCoef = new Set(run.visitedNodeIds).size;
-  return Math.max(3, depthCoef + nodeCoef);
 }
 
 /**

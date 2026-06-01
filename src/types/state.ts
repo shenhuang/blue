@@ -20,7 +20,6 @@ export interface Stats {
 /** 玩家档案（永久数据，跨次下潜保留） */
 export interface PlayerProfile {
   name: string;
-  buildingPoints: number; // 港口建设值
   bankedGold: number; // 港口银行存款
   unlockedUpgrades: Set<string>; // upgrade.id 集合
   flags: Set<string>; // 全局 flag（剧情触发器）
@@ -32,6 +31,12 @@ export interface PlayerProfile {
    * 其它物品要么主动卖给 Mira 要么放着。dive 中的临时背包是 run.inventory，不要和这里搞混。
    */
   inventory: InventoryItem[];
+  /**
+   * Mira 店铺当前剩余备货（itemId → 剩余可买数量），仅低阶材料回购用（基建地图 SPEC §2.5）。
+   * 软性 per-run 限量：每次回港 handleReturnToPort 清空（= 视作全部补满，靠 getShopStock 的懒默认）。
+   * 可选 + 普通对象 → 旧存档缺它无妨（懒默认满货），JSON 原生 round-trip，无需额外迁移。
+   */
+  shopStock?: Record<string, number>;
 }
 
 /** 死亡记录，用于尸体回收 */
@@ -148,8 +153,7 @@ export interface RunOutcome {
   survived: boolean;
   maxDepthReached: number;
   eventsTriggered: number;
-  buildingPointsEarned: number;
-  /** 上岸时即时入袋的金币（事件给的 goldDelta + run.gold）。次要货币，建设值仍是主线。 */
+  /** 上岸时即时入袋的金币（事件给的 goldDelta + run.gold）。 */
   goldEarned: number;
   /** 战利品的"潜在变卖价值"——按 Mira 的收购价估的，需要回港找她兑现。0 = 没东西可卖。 */
   lootValue: number;

@@ -4,6 +4,7 @@
 //   3. 更高 version → null（拒绝读比代码新的存档）
 //   4. 缺 version 的旧存档 → 补齐到当前 version
 //   5. 非浏览器环境 loadGame() → null（feature-detect）
+//   6. v1 → v2 迁移（基建地图 Phase A）：旧档的 buildingPoints 被删，version 升到 2
 //
 // 跑法： npx tsx scripts/playthrough-save.ts
 
@@ -34,9 +35,10 @@ s = {
     flags: new Set(['flag.tutorial_complete', 'flag.event_done.x']),
     unlockedUpgrades: new Set(['upgrade.dockyard.lv1', 'upgrade.salvage_guild.lv2']),
     loreEntries: new Set(['lore.bluecaves.silent_chamber']),
-    buildingPoints: 42,
     bankedGold: 7,
     runsCompleted: 3,
+    inventory: [{ itemId: 'item.coral_shard', qty: 5 }],
+    shopStock: { 'item.coral_shard': 3 },
     deaths: [
       {
         id: 'death-0',
@@ -92,10 +94,14 @@ assert(
   'deaths 及其 snapshot 应保留',
 );
 assert(
-  back!.profile.buildingPoints === 42 && back!.profile.bankedGold === 7 && back!.profile.runsCompleted === 3,
+  back!.profile.bankedGold === 7 && back!.profile.runsCompleted === 3,
   'profile 数值应保留',
 );
-L('  round-trip：三个 profile Set + run.activeFlags + deaths + 数值 全部还原 ✓');
+assert(
+  back!.profile.shopStock?.['item.coral_shard'] === 3,
+  'shopStock（普通 Record）应 round-trip',
+);
+L('  round-trip：三个 profile Set + run.activeFlags + deaths + shopStock + 数值 全部还原 ✓');
 
 // 2. 损坏 JSON → null
 assert(deserializeGameState('not json{') === null, '损坏 JSON 应返回 null');
@@ -116,6 +122,25 @@ L(`  缺 version → 补齐到 v${revived!.version} ✓`);
 // 5. node 环境无 localStorage → loadGame() 返回 null（feature-detect 不崩）
 assert(loadGame() === null, '非浏览器环境 loadGame() 应返回 null');
 L('  非浏览器环境 loadGame() → null ✓');
+
+// 6. v1 → v2 迁移（基建地图 Phase A）：旧档带 buildingPoints → 迁移后删除、version 升 2
+const v1obj = JSON.parse(raw);
+v1obj.version = 1;
+v1obj.profile.buildingPoints = 42; // 模拟旧档遗留的建设值字段
+const migrated = deserializeGameState(JSON.stringify(v1obj));
+assert(migrated, 'v1 存档应能迁移（非 null）');
+assert(migrated!.version === 2, `迁移后 version 应为 2，实际 ${migrated!.version}`);
+assert(
+  !('buildingPoints' in (migrated!.profile as Record<string, unknown>)),
+  '迁移后 profile.buildingPoints 应被删除',
+);
+assert(
+  migrated!.profile.bankedGold === 7 &&
+    migrated!.profile.unlockedUpgrades instanceof Set &&
+    migrated!.profile.unlockedUpgrades.has('upgrade.dockyard.lv1'),
+  '迁移应保留其它字段（bankedGold / unlockedUpgrades Set）',
+);
+L('  v1→v2 迁移：buildingPoints 删除 / version=2 / 其它字段保留 ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 存档序列化回归通过');

@@ -193,17 +193,13 @@ export function FuneralView({
       <div className="funeral-prose">
         <p>{goldText && `身上的 ${goldText} 沉到海床。`}</p>
         <p>留在海里：{itemsText}</p>
-        <p className="dim">下一次出海，或许有人能找到他。</p>
-        <p className="dim">
-          港口建设值 +{Math.max(2, Math.floor((Math.floor(record.depthAtDeath / 5) + 1) * 0.6))}
-          ＝ 你死过的事，让活着的人变强。
-        </p>
+        <p className="dim">下一次出海，或许有人能找到他——连同他没能带回来的东西。</p>
       </div>
       <button className="btn" onClick={onReturn}>
         回到港口
       </button>
       <div className="dim funeral-foot">
-        累计 {state.profile.deaths.length} 次失踪 · 建设值 {state.profile.buildingPoints}
+        累计 {state.profile.deaths.length} 次失踪
       </div>
     </div>
   );

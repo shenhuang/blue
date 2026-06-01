@@ -19,6 +19,13 @@ export type DecayTier =
   | 'durable'    // 装备级硬物：极慢；指南针、潜水刀
   | 'eternal';   // 剧情物 / 永不消失：航海日志、家族遗物
 
+/**
+ * 材料深度分档（基建地图 SPEC §2.2）——只有 category==='material' 的物品才标。
+ * 决定升级账单的稀有度门控（高阶升级要更深的料）+ Mira 回购门控（仅 T1/T2 可买回）。
+ * T1 浅 0–25m / T2 中 25–44m / T3 深 40–55m / T4 50m+·cosmic。
+ */
+export type MaterialTier = 1 | 2 | 3 | 4;
+
 /** 物品定义 */
 export interface ItemDef {
   id: string;
@@ -34,6 +41,8 @@ export interface ItemDef {
   sellPrice?: number;
   /** 海底衰减档位（未填默认 material） */
   decay?: DecayTier;
+  /** 材料深度分档（仅 material 物品有；引擎按它做升级稀有度门控 + Mira 回购门控） */
+  tier?: MaterialTier;
 
   /** 装备物品才有 */
   equipment?: EquipmentMeta;

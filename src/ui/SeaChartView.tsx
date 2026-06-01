@@ -63,7 +63,7 @@ export function SeaChartView({ state, onStateChange }: Props) {
         <h1>海图</h1>
         <p className="port-sub">摊在长桌上的旧海图，铅笔印一层盖一层。挑一个点。</p>
         <div className="port-meta">
-          建设值 {state.profile.buildingPoints} ・ 银行 {state.profile.bankedGold} 金币
+          银行 {state.profile.bankedGold} 金币
         </div>
       </header>
 

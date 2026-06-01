@@ -3,17 +3,27 @@
 //   2. computeLootValue 用 sellPrice × Mira 收购系数估算战利品价值
 //   3. Mira 面板：listMiraSellables + sellItemToMira → bankedGold 增长
 //   4. eternal / 0 售价物品不被收购，留在仓库
+//   5. Mira 回购（基建地图 Phase A）：T1/T2 可买(买价>卖价)、T3/T4 不可买；
+//      shopStock 限量 + 回港补货；金币买不了升级
 //
 // 跑法： npx tsx scripts/playthrough-economy.ts
 
-import { createInitialGameState, createNewRun } from '../src/engine/state';
+import { createInitialGameState, createNewRun, countInInventory } from '../src/engine/state';
 import {
   handleReturnToPort,
   listMiraSellables,
   miraOfferFor,
   isSellableToMira,
   sellItemToMira,
+  buyFromMira,
+  isBuyableFromMira,
+  miraBuyPriceFor,
+  maxShopStockFor,
+  getShopStock,
+  listMiraBuyables,
+  MIRA_BUY_MARKUP,
 } from '../src/engine/port';
+import { canPurchase } from '../src/engine/upgrades';
 import { computeLootValue, executeAscent } from '../src/engine/ascent';
 import type { GameState, InventoryItem } from '../src/types';
 
@@ -196,6 +206,89 @@ L(`  outcome.lootValue = ${out.lootValue}（期望 ${expected}）`);
 assert(out.lootValue === expected, 'outcome.lootValue 不对');
 L(`  outcome.goldEarned = ${out.goldEarned}（run.gold = 0 → 应 0）`);
 assert(out.goldEarned === 0, 'goldEarned 应只反映 run.gold（事件给的），不含 lootValue');
+
+// ============================================
+// Phase 5: Mira 回购（出售侧）—— 买价>卖价 / 分档门控 / shopStock 限量 + 回港补货
+// ============================================
+L('\n========== Mira 回购：买价 > 卖价 + 分档门控 ==========');
+// 分档门控：T1/T2 可买，T3/T4 只卖不买
+const buyGate: [string, boolean][] = [
+  ['item.coral_shard', true], // T1
+  ['item.shark_tooth', true], // T1
+  ['item.brass_fitting', true], // T2
+  ['item.crab_chitin', true], // T2
+  ['item.eel_skin', false], // T3
+  ['item.cave_octopus_beak', false], // T3
+  ['item.lantern_gland', false], // T4
+  ['item.med_kit', false], // 非材料
+  ['item.captain_log', false], // 剧情物
+];
+for (const [id, expected] of buyGate) {
+  const got = isBuyableFromMira(id);
+  L(`  ${id.padEnd(24)} isBuyable=${got}（期望 ${expected}）`);
+  assert(got === expected, `${id} 回购门控不对：${got} ≠ ${expected}`);
+}
+// 买价 = 卖价 × markup，恒 > 卖价
+for (const id of ['item.coral_shard', 'item.brass_fitting', 'item.lobster']) {
+  const sell = miraOfferFor(id);
+  const buy = miraBuyPriceFor(id);
+  L(`  ${id.padEnd(24)} 卖价 ${sell} / 买价 ${buy}（×${MIRA_BUY_MARKUP}）`);
+  assert(buy === sell * MIRA_BUY_MARKUP, `${id} 买价应 = 卖价×${MIRA_BUY_MARKUP}`);
+  assert(buy > sell, `${id} 买价必须 > 卖价`);
+}
+// T3/T4 买价 = 0（不可买）
+assert(miraBuyPriceFor('item.eel_skin') === 0, 'T3 eel_skin 买价应为 0（不可买）');
+assert(miraBuyPriceFor('item.lantern_gland') === 0, 'T4 lantern_gland 买价应为 0（不可买）');
+
+L('\n========== Mira 回购：买入扣金 + 进仓库 ==========');
+state = createInitialGameState();
+state = { ...state, profile: { ...state.profile, bankedGold: 1000 } };
+const coralBuy = miraBuyPriceFor('item.coral_shard'); // 8*2 = 16
+const goldB = state.profile.bankedGold;
+state = buyFromMira(state, 'item.coral_shard', 1);
+L(`  买 1 珊瑚：银行 ${goldB} → ${state.profile.bankedGold}（应 -${coralBuy}）, 仓库 coral=${countInInventory(state.profile.inventory, 'item.coral_shard')}`);
+assert(state.profile.bankedGold === goldB - coralBuy, '买 1 珊瑚应扣对应买价');
+assert(countInInventory(state.profile.inventory, 'item.coral_shard') === 1, '买入的珊瑚应进仓库');
+// T3 不可买 → no-op
+const sBeforeT3 = state;
+state = buyFromMira(state, 'item.eel_skin', 1);
+assert(state === sBeforeT3, 'T3 eel_skin 不可买 → buyFromMira 应 no-op');
+
+L('\n========== shopStock 限量 + 回港补货 ==========');
+const coralMax = maxShopStockFor('item.coral_shard'); // 8
+L(`  coral_shard 备货上限 = ${coralMax}`);
+assert(coralMax === 8 && maxShopStockFor('item.brass_fitting') === 4, '备货上限：T1=8 / T2=4');
+// 把珊瑚买空（已买 1，再买一大笔）
+state = { ...state, profile: { ...state.profile, bankedGold: 100000 } };
+state = buyFromMira(state, 'item.coral_shard', 999);
+const coralStock = getShopStock(state.profile, 'item.coral_shard');
+L(`  狂买后 coral 剩余备货 = ${coralStock}（应 0）, 仓库 coral=${countInInventory(state.profile.inventory, 'item.coral_shard')}（应 ${coralMax}）`);
+assert(coralStock === 0, '买空后剩余备货应为 0');
+assert(countInInventory(state.profile.inventory, 'item.coral_shard') === coralMax, `总共只能买到上限 ${coralMax} 个`);
+// 售罄后再买 → no-op
+const sBeforeSoldOut = state;
+state = buyFromMira(state, 'item.coral_shard', 1);
+assert(state === sBeforeSoldOut, '售罄后再买应 no-op');
+// listMiraBuyables 反映余量
+const buyablesNow = listMiraBuyables(state.profile);
+const coralEntry = buyablesNow.find((b) => b.itemId === 'item.coral_shard')!;
+assert(coralEntry && coralEntry.stock === 0 && coralEntry.maxStock === coralMax, 'listMiraBuyables 应反映 coral 余 0/上限');
+assert(!buyablesNow.some((b) => b.itemId === 'item.eel_skin'), '回购清单不应含 T3 eel_skin');
+
+// 回港补满：构造一次 run 走 handleReturnToPort，断言 shopStock 清空（= 满货）
+state = { ...state, run: { ...createNewRun({ zoneId: 'zone.east_reef' }), inventory: [] } };
+state = handleReturnToPort(state).state;
+const coralStockAfterReturn = getShopStock(state.profile, 'item.coral_shard');
+L(`  回港后 coral 备货 = ${coralStockAfterReturn}（应补满到 ${coralMax}）`);
+assert(coralStockAfterReturn === coralMax, '回港应把 shopStock 补满');
+
+L('\n========== 金币买不了升级（材料是硬门控） ==========');
+// 满金 + 无材料 → canPurchase(dockyard.lv1) 落 notEnoughMaterials，不是 ok / notEnoughGold
+state = createInitialGameState();
+state = { ...state, profile: { ...state.profile, bankedGold: 100000, inventory: [] } };
+const upAvail = canPurchase(state.profile, 'upgrade.dockyard.lv1');
+L(`  满金空仓 canPurchase(dockyard.lv1) = ${JSON.stringify(upAvail)}`);
+assert(!upAvail.ok && upAvail.reason === 'notEnoughMaterials', '只有金币买不了升级（应 notEnoughMaterials）');
 
 console.log(log.join('\n'));
 console.log('\n✓ economy playthrough 完成');

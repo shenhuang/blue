@@ -11,12 +11,11 @@ import type {
   LogEntry,
 } from '@/types';
 
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
 
 export function createInitialProfile(): PlayerProfile {
   return {
     name: '潜水员',
-    buildingPoints: 0,
     bankedGold: 0,
     unlockedUpgrades: new Set(),
     flags: new Set(),
@@ -24,6 +23,7 @@ export function createInitialProfile(): PlayerProfile {
     deaths: [],
     runsCompleted: 0,
     inventory: [],
+    shopStock: {},
   };
 }
 
@@ -38,6 +38,11 @@ export function mergeIntoInventory(
     result = addToInventory(result, item.itemId, item.qty);
   }
   return result;
+}
+
+/** 数某个物品在 inventory 里的数量（没有则 0）；纯函数。升级账单 / Mira 回购都用它。 */
+export function countInInventory(inventory: InventoryItem[], itemId: string): number {
+  return inventory.find((i) => i.itemId === itemId)?.qty ?? 0;
 }
 
 /** 从 inventory 扣减一个物品；qty 不足时全部扣完；纯函数 */
@@ -197,7 +202,7 @@ export function serializeGameState(state: GameState): string {
 /**
  * 把存档对象迁移到当前 SAVE_VERSION。
  *  - version > 当前：存档比代码新 → 拒绝（返回 null，避免读坏）。
- *  - version < 当前：逐步迁移（目前只有 v1，无真实旧版；未来在 while 的 switch 里加 case）。
+ *  - version < 当前：在 while 的 switch 里逐步迁移（每个 case 把 v 推进一档）。
  */
 function migrateSave(obj: unknown): GameState | null {
   if (!obj || typeof obj !== 'object') return null;
@@ -205,8 +210,19 @@ function migrateSave(obj: unknown): GameState | null {
   let v = typeof o.version === 'number' ? (o.version as number) : 0;
   if (v > SAVE_VERSION) return null;
   while (v < SAVE_VERSION) {
-    // switch (v) { case 1: /* 1→2 迁移步骤 */ v = 2; break; default: v = SAVE_VERSION; }
-    v = SAVE_VERSION; // 目前没有 < 当前 的真实旧版，直接对齐
+    switch (v) {
+      case 0:
+      case 1: {
+        // 1→2（基建地图 Phase A · 材料经济）：移除建设值。旧点数直接丢弃，不折算成材料——
+        // 内容期还早、存档量极小（决策见 SPEC §6 / §10）。灯塔字段留 Phase B 再迁。
+        const prof = o.profile as Record<string, unknown> | undefined;
+        if (prof) delete prof.buildingPoints;
+        v = 2;
+        break;
+      }
+      default:
+        v = SAVE_VERSION; // 没有对应迁移步骤的旧版，直接对齐
+    }
   }
   o.version = SAVE_VERSION;
   return o as unknown as GameState;

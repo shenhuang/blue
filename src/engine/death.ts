@@ -81,8 +81,10 @@ function pickName(seed: number): string {
  * 死亡时调用。
  * 1) 把当前 run 快照成 DeathRecord 入 profile.deaths
  * 2) 把已有的 deaths.diveAge 全部 +1
- * 3) 按探索程度结算 buildingPoints
- * 4) run 置空，phase 切到 funeral
+ * 3) run 置空，phase 切到 funeral
+ *
+ * 注：元进度已从"建设值"换成"材料经济"（基建地图 SPEC Phase A）——死亡不再发放任何点数，
+ * 玩家的进度来自带回港口的材料本身。
  */
 export function executeDeath(state: GameState, cause: string): GameState {
   if (!state.run) return state;
@@ -111,16 +113,12 @@ export function executeDeath(state: GameState, cause: string): GameState {
     state.profile.unlockedUpgrades.has(SWEEP_IMMUNITY_UPGRADE),
   );
 
-  // 建设值结算（跟 ascent 同公式但乘 0.6，死亡比活着回来少一些）
-  const buildingPoints = Math.max(2, Math.floor(computeRawBuildingPoints(run) * 0.6));
-
   let s: GameState = {
     ...state,
     run: null,
     profile: {
       ...state.profile,
       deaths: [...agedDeaths, record],
-      buildingPoints: state.profile.buildingPoints + buildingPoints,
       runsCompleted: state.profile.runsCompleted + 1,
     },
     phase: { kind: 'funeral', record },
@@ -128,14 +126,6 @@ export function executeDeath(state: GameState, cause: string): GameState {
 
   s = appendLog(s, { tone: 'cosmic', text: `[${record.diverName}] 死于 ${record.depthAtDeath}m：${cause}` });
   return s;
-}
-
-function computeRawBuildingPoints(run: NonNullable<GameState['run']>): number {
-  const depthCoef = Math.floor(run.currentDepth / 5);
-  // 去重计数：迷路图里回头/绕回会重复 append 同一节点，按"到过的不同节点数"算建设值，
-  // 既不被来回踱步刷高，也与层状图（无重访）保持一致。
-  const nodeCoef = new Set(run.visitedNodeIds).size;
-  return depthCoef + nodeCoef;
 }
 
 /**

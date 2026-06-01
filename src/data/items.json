@@ -80,7 +80,8 @@
       "description": "三角形的、锋利得不像话的牙。Mira 收。",
       "weight": 0.1,
       "sellPrice": 15,
-      "decay": "durable"
+      "decay": "durable",
+      "tier": 1
     },
     {
       "id": "item.coral_shard",
@@ -90,7 +91,8 @@
       "description": "粉橘色的小块，断口处有一种几何美。",
       "weight": 0.1,
       "sellPrice": 10,
-      "decay": "material"
+      "decay": "material",
+      "tier": 1
     },
     {
       "id": "item.captain_log",
@@ -114,7 +116,8 @@
       "description": "肥美的大龙虾。Mira 喜欢这种。",
       "weight": 0.5,
       "sellPrice": 25,
-      "decay": "organic"
+      "decay": "organic",
+      "tier": 1
     },
     {
       "id": "item.canned_food",
@@ -124,7 +127,8 @@
       "description": "盖子还没被锈穿。能卖给古董贩子，或者真的吃掉。",
       "weight": 0.3,
       "sellPrice": 8,
-      "decay": "consumable"
+      "decay": "consumable",
+      "tier": 1
     },
     {
       "id": "item.old_fishing_net",
@@ -134,7 +138,8 @@
       "description": "结实但破损。修一修能换钱。",
       "weight": 0.6,
       "sellPrice": 12,
-      "decay": "material"
+      "decay": "material",
+      "tier": 1
     },
     {
       "id": "item.rusty_compass",
@@ -154,7 +159,8 @@
       "description": "湿的时候发蓝，干了变成铅灰。Mira 说有人专门收。",
       "weight": 0.4,
       "sellPrice": 22,
-      "decay": "organic"
+      "decay": "organic",
+      "tier": 3
     },
     {
       "id": "item.brass_pocket_watch",
@@ -192,7 +198,8 @@
       "description": "拳头大小的一块外壳，钙化得很厚。Mira 说几个铸器铺会专门收。",
       "weight": 0.3,
       "sellPrice": 8,
-      "decay": "durable"
+      "decay": "durable",
+      "tier": 2
     },
     {
       "id": "item.brass_fitting",
@@ -202,7 +209,8 @@
       "description": "从旧灯塔上拆下来的一块黄铜——齿轮、铰链、说不清的零件。海水只在表面蚀了层绿。Mira 说铸器铺称重收。",
       "weight": 0.4,
       "sellPrice": 14,
-      "decay": "durable"
+      "decay": "durable",
+      "tier": 2
     },
     {
       "id": "item.med_kit",
@@ -230,7 +238,8 @@
       "description": "一整副下颌，牙朝里倒钩，干了之后白得发亮。Mira 说有铺子拿它做钓具的倒刺。",
       "weight": 0.2,
       "sellPrice": 12,
-      "decay": "durable"
+      "decay": "durable",
+      "tier": 2
     },
     {
       "id": "item.cave_octopus_beak",
@@ -240,7 +249,8 @@
       "description": "从那团软东西里取出来的两片黑硬喙，像鸟嘴，又比鸟嘴沉。干了之后乌亮。Mira 说做雕件的肯收。",
       "weight": 0.1,
       "sellPrice": 13,
-      "decay": "durable"
+      "decay": "durable",
+      "tier": 3
     },
     {
       "id": "item.lantern_gland",
@@ -250,7 +260,8 @@
       "description": "从那钟形的伞里取出来的一小囊东西，装在网兜里还在发一点冷光——离了水、过了夜也不灭，也不腐。Mira 不太想碰它，但说港里有个收异物的肯出价。",
       "weight": 0.1,
       "sellPrice": 16,
-      "decay": "durable"
+      "decay": "durable",
+      "tier": 4
     }
   ]
 }

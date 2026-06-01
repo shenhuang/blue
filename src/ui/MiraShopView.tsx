@@ -5,6 +5,8 @@ import { useState } from 'react';
 import type { GameState, InventoryItem } from '@/types';
 import { getItemDef } from '@/engine/items';
 import {
+  buyFromMira,
+  listMiraBuyables,
   listMiraSellables,
   miraOfferFor,
   sellItemToMira,
@@ -57,9 +59,21 @@ export function MiraShopView({ state, onStateChange }: Props) {
     }
   }
 
+  function handleBuyOne(itemId: string) {
+    const next = buyFromMira(state, itemId, 1);
+    if (next !== state) {
+      const def = getItemDef(itemId);
+      setFlash(`买入 ${def?.name ?? itemId} ×1`);
+      onStateChange(next);
+    }
+  }
+
   function handleLeave() {
     onStateChange({ ...state, phase: { kind: 'port' } });
   }
+
+  // 回购侧：Mira 卖的低阶材料（T1/T2，带买价 + 剩余备货）
+  const buyables = listMiraBuyables(state.profile);
 
   // 不卖品（剧情物、急救包等）单列展示
   const keepers = state.profile.inventory.filter(
@@ -103,6 +117,23 @@ export function MiraShopView({ state, onStateChange }: Props) {
           </div>
         )}
         {flash && <div className="mira-flash dim">{flash}</div>}
+      </section>
+
+      <section className="mira-section">
+        <h3>她也匀给你（回购）</h3>
+        <p className="dim mira-buy-note">浅水的常见材料，她手头有些存货。深处的东西只能自己下去拿。</p>
+        <ul className="mira-items">
+          {buyables.map((b) => (
+            <MiraBuyRow
+              key={b.itemId}
+              itemId={b.itemId}
+              unitPrice={b.unitPrice}
+              stock={b.stock}
+              canAfford={state.profile.bankedGold >= b.unitPrice}
+              onBuyOne={() => handleBuyOne(b.itemId)}
+            />
+          ))}
+        </ul>
       </section>
 
       {keepers.length > 0 && (
@@ -153,6 +184,40 @@ function MiraSellRow({
             卖完（×{item.qty}）
           </button>
         )}
+      </div>
+    </li>
+  );
+}
+
+function MiraBuyRow({
+  itemId,
+  unitPrice,
+  stock,
+  canAfford,
+  onBuyOne,
+}: {
+  itemId: string;
+  unitPrice: number;
+  stock: number;
+  canAfford: boolean;
+  onBuyOne: () => void;
+}) {
+  const def = getItemDef(itemId);
+  const soldOut = stock <= 0;
+  return (
+    <li className={`mira-item ${soldOut ? 'dim' : ''}`}>
+      <div className="mira-item-info">
+        <span className="mira-item-name">{def?.name ?? itemId}</span>
+        <span className="dim">@ {unitPrice} 金 · 余 {stock}</span>
+      </div>
+      <div className="mira-item-actions">
+        <button
+          className="btn small"
+          onClick={onBuyOne}
+          disabled={soldOut || !canAfford}
+        >
+          {soldOut ? '售罄' : !canAfford ? '钱不够' : '买 1'}
+        </button>
       </div>
     </li>
   );

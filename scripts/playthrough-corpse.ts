@@ -1,6 +1,6 @@
 // 死亡-尸体闭环 playthrough：
 // 1. 强制让玩家在旧灯塔礁深处死掉（手动把氧气清零）
-// 2. 验证 executeDeath 触发：profile.deaths 长度增加、buildingPoints 增加、phase=funeral
+// 2. 验证 executeDeath 触发：profile.deaths 长度增加、runsCompleted 增加、phase=funeral
 // 3. 回港，再次出海到旧灯塔礁
 // 4. 多次生成节点图，验证有概率出现 corpse 节点
 // 5. 走到 corpse 节点，调用 recoverFromCorpse 验证物品转移到玩家背包
@@ -53,7 +53,6 @@ state = executeDeath(state, '测试用：氧气耗尽');
 
 L(`\n→ phase=${state.phase.kind}`);
 L(`profile.deaths.length=${state.profile.deaths.length}`);
-L(`profile.buildingPoints=${state.profile.buildingPoints}`);
 L(`profile.runsCompleted=${state.profile.runsCompleted}`);
 if (state.profile.deaths.length > 0) {
   const d = state.profile.deaths[0];

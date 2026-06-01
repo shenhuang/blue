@@ -52,7 +52,7 @@ export function PortView({ state, onStateChange }: Props) {
         <h1>鸢尾湾</h1>
         <p className="port-sub">黎明前的港口。雾还没散。</p>
         <div className="port-meta">
-          建设值 {state.profile.buildingPoints} ・ 银行 {state.profile.bankedGold} 金币
+          银行 {state.profile.bankedGold} 金币
           {state.profile.inventory.length > 0 && (
             <> ・ 仓库 {state.profile.inventory.length} 项</>
           )}
@@ -93,14 +93,8 @@ export function PortView({ state, onStateChange }: Props) {
           <button
             className="btn port-upgrade-btn"
             onClick={() => setUpgradesOpen(true)}
-            disabled={state.profile.buildingPoints <= 0 && state.profile.unlockedUpgrades.size === 0}
-            title={
-              state.profile.buildingPoints <= 0 && state.profile.unlockedUpgrades.size === 0
-                ? '还没攒下建设值。'
-                : ''
-            }
           >
-            修缮港口（{state.profile.buildingPoints} 建设值）
+            修缮港口（材料 ＋ 金币）
           </button>
         </div>
       ) : (

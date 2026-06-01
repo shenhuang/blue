@@ -4,14 +4,17 @@
 
 import type {
   GameState,
+  MaterialCost,
   PlayerProfile,
   UpgradeBonuses,
+  UpgradeCost,
   UpgradeDef,
   UpgradeLine,
   UpgradesFile,
 } from '@/types';
 import upgradesData from '@/data/upgrades.json';
-import { appendLog } from './state';
+import { appendLog, countInInventory, removeFromInventory } from './state';
+import { getItemDef } from './items';
 
 const file = upgradesData as unknown as UpgradesFile;
 
@@ -48,10 +51,31 @@ export function getUnlockedLevelInLine(
   return lv;
 }
 
-/** 一条升级目前是否可购买。返回 reason 解释不可购买的原因 */
+/**
+ * 一条升级目前是否可购买。返回 reason 解释不可购买的原因。
+ * 双资源账单（材料 ＋ 金币）：
+ *  - `notEnoughMaterials` 带 `shortfall`（每条 = 还差几个某材料），供 UI 显示"还差 brass_fitting ×2"。
+ *  - `notEnoughGold` 带 `goldShort`（还差多少金）。
+ * 材料先于金币检查——下深拿料是核心门控，所以"只有钱没有料"会落到 notEnoughMaterials。
+ */
 export type PurchaseAvailability =
   | { ok: true }
-  | { ok: false; reason: 'unknown' | 'alreadyOwned' | 'needsPrev' | 'notEnoughPoints' };
+  | { ok: false; reason: 'unknown' | 'alreadyOwned' | 'needsPrev' }
+  | { ok: false; reason: 'notEnoughMaterials'; shortfall: MaterialCost[] }
+  | { ok: false; reason: 'notEnoughGold'; goldShort: number };
+
+/** 算出账单里还缺哪些材料（owned < qty 的，列出缺口数）。够了返回空数组。 */
+export function materialShortfall(
+  profile: PlayerProfile,
+  cost: UpgradeCost,
+): MaterialCost[] {
+  const out: MaterialCost[] = [];
+  for (const m of cost.materials) {
+    const owned = countInInventory(profile.inventory, m.itemId);
+    if (owned < m.qty) out.push({ itemId: m.itemId, qty: m.qty - owned });
+  }
+  return out;
+}
 
 export function canPurchase(
   profile: PlayerProfile,
@@ -71,13 +95,29 @@ export function canPurchase(
     return { ok: false, reason: 'needsPrev' };
   }
 
-  if (profile.buildingPoints < def.cost) {
-    return { ok: false, reason: 'notEnoughPoints' };
+  // ① 材料（核心门控）：逐条 countInInventory >= qty
+  const shortfall = materialShortfall(profile, def.cost);
+  if (shortfall.length > 0) {
+    return { ok: false, reason: 'notEnoughMaterials', shortfall };
+  }
+
+  // ② 金币：必要但不充分——材料够了才轮到查钱
+  if (profile.bankedGold < def.cost.gold) {
+    return { ok: false, reason: 'notEnoughGold', goldShort: def.cost.gold - profile.bankedGold };
   }
   return { ok: true };
 }
 
-/** 扣除建设值 + 加入 unlockedUpgrades。不在 port phase 时也允许（脚本/测试用） */
+/** 把一份账单格式化成 "珊瑚碎片×6、旧渔网×3 ＋ 20 金"（log + UI 共用，避免两份格式漂移）。 */
+export function describeUpgradeCost(cost: UpgradeCost): string {
+  const mats = cost.materials
+    .map((m) => `${getItemDef(m.itemId)?.name ?? m.itemId}×${m.qty}`)
+    .join('、');
+  if (cost.gold <= 0) return mats || '免费';
+  return mats ? `${mats} ＋ ${cost.gold} 金` : `${cost.gold} 金`;
+}
+
+/** 扣材料 ＋ 扣金币 + 加入 unlockedUpgrades。不在 port phase 时也允许（脚本/测试用） */
 export function purchaseUpgrade(state: GameState, upgradeId: string): GameState {
   const entry = UPGRADE_INDEX.get(upgradeId);
   if (!entry) {
@@ -94,17 +134,24 @@ export function purchaseUpgrade(state: GameState, upgradeId: string): GameState 
   const unlockedUpgrades = new Set(state.profile.unlockedUpgrades);
   unlockedUpgrades.add(def.id);
 
+  // 逐条扣材料
+  let inventory = state.profile.inventory;
+  for (const m of def.cost.materials) {
+    inventory = removeFromInventory(inventory, m.itemId, m.qty);
+  }
+
   let next: GameState = {
     ...state,
     profile: {
       ...state.profile,
-      buildingPoints: state.profile.buildingPoints - def.cost,
+      inventory,
+      bankedGold: state.profile.bankedGold - def.cost.gold,
       unlockedUpgrades,
     },
   };
   next = appendLog(next, {
     tone: 'system',
-    text: `港口修缮：${def.name}（-${def.cost} 建设值）。`,
+    text: `港口修缮：${def.name}（${describeUpgradeCost(def.cost)}）。`,
   });
   return next;
 }

@@ -15,12 +15,28 @@ export type UpgradeEffect =
   | { kind: 'currentSweepImmune'; value: boolean }
   | { kind: 'unlockShopItem'; itemId: string };
 
+/** 一条升级要求的某种材料及数量（qty 量级 ∈ [1,10]） */
+export interface MaterialCost {
+  itemId: string;
+  qty: number;
+}
+
+/**
+ * 升级 / 灯塔的双资源账单（材料 ＋ 金币）。
+ * 金币必要但不充分：每条升级都有金币价，但金币不能替代材料——高阶升级仍要实打实的（深）材料，
+ * 借此把"下深拿料"门控钉死（见 基建地图 SPEC §2.3）。
+ */
+export interface UpgradeCost {
+  materials: MaterialCost[];
+  gold: number;
+}
+
 /** 一级升级 */
 export interface UpgradeDef {
   id: string;
   level: number; // 1..N，同一 line 内必须连续
   name: string;
-  cost: number; // 建设值
+  cost: UpgradeCost; // 材料 ＋ 金币（替换旧"建设值"单一数字）
   effects: UpgradeEffect[];
   description: string;
 }

@@ -275,6 +275,23 @@ html, body, #root {
   border: 1px solid var(--border);
 }
 
+/* 升级账单（材料 ＋ 金币），缺口高亮 */
+.upgrade-cost {
+  margin-top: 6px;
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: baseline;
+}
+.upgrade-cost-label { color: var(--text-faint); }
+.upgrade-cost-mat.ok,
+.upgrade-cost-gold.ok { color: var(--text-faint); }
+.upgrade-cost-mat.short,
+.upgrade-cost-gold.short { color: var(--danger); }
+.upgrade-cost-have { color: var(--danger); font-size: 11px; }
+.mira-buy-note { margin: 2px 0 8px; font-size: 12px; }
+
 .upgrade-row-side {
   display: flex;
   align-items: center;

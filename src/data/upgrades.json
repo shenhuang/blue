@@ -9,7 +9,13 @@
           "id": "upgrade.dockyard.lv1",
           "level": 1,
           "name": "船坞 Lv.1",
-          "cost": 10,
+          "cost": {
+            "materials": [
+              { "itemId": "item.coral_shard", "qty": 6 },
+              { "itemId": "item.old_fishing_net", "qty": 3 }
+            ],
+            "gold": 20
+          },
           "effects": [
             { "kind": "unlockZone", "zoneId": "zone.old_lighthouse_reef" },
             { "kind": "extraConsumableSlot", "value": 1 }
@@ -27,7 +33,13 @@
           "id": "upgrade.salvage_guild.lv1",
           "level": 1,
           "name": "打捞行会 Lv.1",
-          "cost": 15,
+          "cost": {
+            "materials": [
+              { "itemId": "item.coral_shard", "qty": 5 },
+              { "itemId": "item.brass_fitting", "qty": 3 }
+            ],
+            "gold": 30
+          },
           "effects": [
             { "kind": "preservationBonus", "value": 2 },
             { "kind": "revealCorpseHint", "value": true }
@@ -38,7 +50,14 @@
           "id": "upgrade.salvage_guild.lv2",
           "level": 2,
           "name": "打捞行会 Lv.2",
-          "cost": 30,
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 4 },
+              { "itemId": "item.crab_chitin", "qty": 3 },
+              { "itemId": "item.cave_octopus_beak", "qty": 2 }
+            ],
+            "gold": 70
+          },
           "effects": [
             { "kind": "preservationBonus", "value": 5 },
             { "kind": "preDiveCorpseSelect", "value": true }
@@ -49,7 +68,14 @@
           "id": "upgrade.salvage_guild.lv3",
           "level": 3,
           "name": "打捞行会 Lv.3",
-          "cost": 50,
+          "cost": {
+            "materials": [
+              { "itemId": "item.cave_octopus_beak", "qty": 4 },
+              { "itemId": "item.eel_skin", "qty": 3 },
+              { "itemId": "item.lantern_gland", "qty": 1 }
+            ],
+            "gold": 150
+          },
           "effects": [
             { "kind": "preservationBonus", "value": 10 },
             { "kind": "currentSweepImmune", "value": true }
@@ -67,7 +93,13 @@
           "id": "upgrade.tankhouse.lv1",
           "level": 1,
           "name": "气瓶库 Lv.1",
-          "cost": 12,
+          "cost": {
+            "materials": [
+              { "itemId": "item.shark_tooth", "qty": 4 },
+              { "itemId": "item.lobster", "qty": 4 }
+            ],
+            "gold": 25
+          },
           "effects": [
             { "kind": "oxygenMaxBonus", "value": 10 },
             { "kind": "unlockShopItem", "itemId": "item.spare_tank" }

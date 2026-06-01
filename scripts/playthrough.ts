@@ -1,7 +1,7 @@
 // 真·端到端 playthrough 测试 —— 用项目自身的引擎模块
 // 跑法： npx tsx scripts/playthrough.ts
 
-import { createInitialGameState, createNewRun } from '../src/engine/state';
+import { createInitialGameState, createNewRun, mergeIntoInventory } from '../src/engine/state';
 import {
   getDialogNode,
   getNpc,
@@ -151,7 +151,7 @@ pretty('after-ascent');
 
 if (state.phase.kind !== 'resolution') throw new Error('上浮后应 resolution，实际 ' + state.phase.kind);
 const out1 = (state.phase as any).outcome;
-log.push(`结算: 深度=${out1.maxDepthReached}m 建设值+${out1.buildingPointsEarned} 战利品=${out1.loot.length} 件`);
+log.push(`结算: 深度=${out1.maxDepthReached}m 金币+${out1.goldEarned} 战利品=${out1.loot.length} 件`);
 if (out1.loot.length > 0) {
   log.push(`战利品: ${out1.loot.map((l: any) => `${l.itemId}×${l.qty}`).join(', ')}`);
 }
@@ -212,15 +212,23 @@ if (trigger2 !== null) {
 log.push(`flag.tutorial_complete ✓ / lore.father_first_entry ✓ / 重播被防住 ✓`);
 
 // ========== 港口修缮：买下船坞 Lv.1 解锁旧灯塔礁 ==========
-// 教学关只给 3 建设值，凑不够 10。脚本里直接补到 10 以测试购买流程。
+// 船坞 Lv.1 账单 = coral_shard×6, old_fishing_net×3 ＋ 20 金（基建地图 Phase A）。
+// 教学关带不回这么多料，脚本里直接补足材料 + 金币以测试购买流程。
 state = {
   ...state,
-  profile: { ...state.profile, buildingPoints: Math.max(state.profile.buildingPoints, 10) },
+  profile: {
+    ...state.profile,
+    inventory: mergeIntoInventory(state.profile.inventory, [
+      { itemId: 'item.coral_shard', qty: 6 },
+      { itemId: 'item.old_fishing_net', qty: 3 },
+    ]),
+    bankedGold: Math.max(state.profile.bankedGold, 20),
+  },
 };
 log.push(`\n========== 港口修缮 ==========`);
-log.push(`修缮前: 建设值 ${state.profile.buildingPoints}, unlockedUpgrades=[${[...state.profile.unlockedUpgrades].join(',')}]`);
+log.push(`修缮前: 银行 ${state.profile.bankedGold} 金 / 仓库 ${state.profile.inventory.map((i) => `${i.itemId}×${i.qty}`).join(', ')}`);
 state = purchaseUpgrade(state, 'upgrade.dockyard.lv1');
-log.push(`修缮后: 建设值 ${state.profile.buildingPoints}, unlockedUpgrades=[${[...state.profile.unlockedUpgrades].join(',')}]`);
+log.push(`修缮后: 银行 ${state.profile.bankedGold} 金, unlockedUpgrades=[${[...state.profile.unlockedUpgrades].join(',')}]`);
 if (!state.profile.unlockedUpgrades.has('upgrade.dockyard.lv1')) {
   throw new Error('船坞 Lv.1 应在购买后入账');
 }
@@ -299,7 +307,7 @@ if (state.phase.kind === 'ascent') {
 
   if (state.phase.kind === 'resolution') {
     const out2 = (state.phase as any).outcome;
-    log.push(`结算: 深度=${out2.maxDepthReached}m 建设值+${out2.buildingPointsEarned} 战利品=${out2.loot.length} 件`);
+    log.push(`结算: 深度=${out2.maxDepthReached}m 金币+${out2.goldEarned} 战利品=${out2.loot.length} 件`);
     if (out2.cause) log.push(`后果: ${out2.cause}`);
   }
 } else if (state.phase.kind === 'gameOver') {
@@ -309,4 +317,4 @@ if (state.phase.kind === 'ascent') {
 console.log(log.join('\n'));
 console.log('\n✓ playthrough 完成');
 console.log(`profile.flags: ${[...state.profile.flags].join(', ')}`);
-console.log(`profile.buildingPoints: ${state.profile.buildingPoints}`);
+console.log(`profile.bankedGold: ${state.profile.bankedGold} / 仓库 ${state.profile.inventory.length} 项`);

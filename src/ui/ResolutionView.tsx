@@ -14,7 +14,6 @@ export function ResolutionView({ outcome, onReturn }: Props) {
       <div className="resolution-rows">
         <div>最深深度：{outcome.maxDepthReached}m</div>
         <div>触发事件：{outcome.eventsTriggered}</div>
-        <div>建设值：+{outcome.buildingPointsEarned}</div>
         <div>金币：+{outcome.goldEarned}</div>
         {outcome.lootValue > 0 && (
           <div className="dim">战利品估价：~{outcome.lootValue} 金（回港找 Mira 兑现）</div>
