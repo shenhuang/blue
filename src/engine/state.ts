@@ -9,9 +9,30 @@ import type {
   EquipmentLoadout,
   InventoryItem,
   LogEntry,
+  Lighthouse,
 } from '@/types';
 
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
+
+/** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile + migrateSave 共用一个来源。 */
+export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
+
+/**
+ * 构造家灯塔——现有岸边港口（鸢尾湾，Aldo 是守灯人）的灯塔化身。
+ * 坐标取海图最左的港口位（POI 在 mapX 0.18+，港口在更左）。
+ * name 暂沿用 SPEC 锁定的「旧灯塔」；与出海点「旧灯塔礁」zone 同源 lore 但是不同地点——
+ * 名字是 content/tunable，Phase C 灯塔上海图可见时再由作者定夺（潜在歧义已记在 NEXT_SESSION/STATUS）。
+ */
+export function createHomeLighthouse(): Lighthouse {
+  return {
+    id: HOME_LIGHTHOUSE_ID,
+    name: '旧灯塔',
+    mapX: 0.06,
+    mapY: 0.5,
+    level: 1,
+    builtUpgrades: new Set(),
+  };
+}
 
 export function createInitialProfile(): PlayerProfile {
   return {
@@ -24,6 +45,7 @@ export function createInitialProfile(): PlayerProfile {
     runsCompleted: 0,
     inventory: [],
     shopStock: {},
+    lighthouses: [createHomeLighthouse()],
   };
 }
 
@@ -214,10 +236,20 @@ function migrateSave(obj: unknown): GameState | null {
       case 0:
       case 1: {
         // 1→2（基建地图 Phase A · 材料经济）：移除建设值。旧点数直接丢弃，不折算成材料——
-        // 内容期还早、存档量极小（决策见 SPEC §6 / §10）。灯塔字段留 Phase B 再迁。
+        // 内容期还早、存档量极小（决策见 SPEC §6 / §10）。
         const prof = o.profile as Record<string, unknown> | undefined;
         if (prof) delete prof.buildingPoints;
         v = 2;
+        break;
+      }
+      case 2: {
+        // 2→3（基建地图 Phase B · 灯塔数据模型）：给旧档种入 home 灯塔（缺 lighthouses 时）。
+        // 注意：migrateSave 在 JSON.parse(reviver) 之后跑，此处 Set 已是真 Set，故直接 new Set()。
+        const prof = o.profile as Record<string, unknown> | undefined;
+        if (prof && !Array.isArray(prof.lighthouses)) {
+          prof.lighthouses = [createHomeLighthouse()];
+        }
+        v = 3;
         break;
       }
       default:

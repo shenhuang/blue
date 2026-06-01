@@ -1,0 +1,44 @@
+{
+  "_doc": "灯塔设施升级（每灯塔，建成写进 lighthouse.builtUpgrades）。账单 = 材料＋金币双资源（同全局升级，基建地图 §2.3/§3.3）。Phase B：机制 + 数据就位、类型钉死；效果（点亮半径 reveal / 出海拉近 reach）由 Phase C 的 chart.ts/dive.ts 消费 getLighthouseBonuses。数值为占位，待平衡（SPEC §9）。",
+  "tracks": [
+    {
+      "id": "lhtrack.beacon",
+      "name": "信标光源",
+      "description": "重燃灯室——点亮的海域更大，照见更远的点位，出海也更近。",
+      "upgrades": [
+        {
+          "id": "lighthouse.beacon.lv1",
+          "level": 1,
+          "name": "信标 Lv.1",
+          "cost": {
+            "materials": [
+              { "itemId": "item.coral_shard", "qty": 4 },
+              { "itemId": "item.brass_fitting", "qty": 2 }
+            ],
+            "gold": 30
+          },
+          "effects": [{ "kind": "lightRadiusBonus", "value": 1 }],
+          "description": "重新点亮灯室。点亮半径 +1。"
+        },
+        {
+          "id": "lighthouse.beacon.lv2",
+          "level": 2,
+          "name": "信标 Lv.2",
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 4 },
+              { "itemId": "item.crab_chitin", "qty": 2 }
+            ],
+            "gold": 60
+          },
+          "effects": [
+            { "kind": "lightRadiusBonus", "value": 1 },
+            { "kind": "reachReduction", "value": 1 }
+          ],
+          "description": "加装聚光镜。点亮半径再 +1，从这座灯塔出海更近 1。",
+          "requiresLighthouseLevel": 1
+        }
+      ]
+    }
+  ]
+}

@@ -39,6 +39,16 @@ s = {
     runsCompleted: 3,
     inventory: [{ itemId: 'item.coral_shard', qty: 5 }],
     shopStock: { 'item.coral_shard': 3 },
+    lighthouses: [
+      {
+        id: 'lighthouse.home',
+        name: '旧灯塔',
+        mapX: 0.06,
+        mapY: 0.5,
+        level: 1,
+        builtUpgrades: new Set(['lighthouse.beacon.lv1']),
+      },
+    ],
     deaths: [
       {
         id: 'death-0',
@@ -101,7 +111,13 @@ assert(
   back!.profile.shopStock?.['item.coral_shard'] === 3,
   'shopStock（普通 Record）应 round-trip',
 );
-L('  round-trip：三个 profile Set + run.activeFlags + deaths + shopStock + 数值 全部还原 ✓');
+assert(
+  back!.profile.lighthouses.length === 1 &&
+    back!.profile.lighthouses[0].builtUpgrades instanceof Set &&
+    back!.profile.lighthouses[0].builtUpgrades.has('lighthouse.beacon.lv1'),
+  'lighthouses（含嵌套 builtUpgrades Set）应 round-trip',
+);
+L('  round-trip：三个 profile Set + run.activeFlags + deaths + shopStock + lighthouses(Set) + 数值 全部还原 ✓');
 
 // 2. 损坏 JSON → null
 assert(deserializeGameState('not json{') === null, '损坏 JSON 应返回 null');
@@ -123,16 +139,26 @@ L(`  缺 version → 补齐到 v${revived!.version} ✓`);
 assert(loadGame() === null, '非浏览器环境 loadGame() 应返回 null');
 L('  非浏览器环境 loadGame() → null ✓');
 
-// 6. v1 → v2 迁移（基建地图 Phase A）：旧档带 buildingPoints → 迁移后删除、version 升 2
+// 6. 旧档迁移（链式到当前 SAVE_VERSION）：
+//    Phase A(1→2) 删 buildingPoints + Phase B(2→3) 种 home 灯塔。
+//    模拟一个真·v1 旧档：有 buildingPoints、没有 lighthouses。
 const v1obj = JSON.parse(raw);
 v1obj.version = 1;
-v1obj.profile.buildingPoints = 42; // 模拟旧档遗留的建设值字段
+v1obj.profile.buildingPoints = 42; // 旧档遗留的建设值字段（应被删）
+delete v1obj.profile.lighthouses; // 真 v1 档没有灯塔字段（应被种入 home）
 const migrated = deserializeGameState(JSON.stringify(v1obj));
 assert(migrated, 'v1 存档应能迁移（非 null）');
-assert(migrated!.version === 2, `迁移后 version 应为 2，实际 ${migrated!.version}`);
+assert(migrated!.version === 3, `迁移后 version 应为 3（当前 SAVE_VERSION），实际 ${migrated!.version}`);
 assert(
   !('buildingPoints' in (migrated!.profile as Record<string, unknown>)),
-  '迁移后 profile.buildingPoints 应被删除',
+  'v1→v2：profile.buildingPoints 应被删除',
+);
+assert(
+  Array.isArray(migrated!.profile.lighthouses) &&
+    migrated!.profile.lighthouses.length === 1 &&
+    migrated!.profile.lighthouses[0].id === 'lighthouse.home' &&
+    migrated!.profile.lighthouses[0].builtUpgrades instanceof Set,
+  'v2→v3：应种入 home 灯塔（builtUpgrades 为真 Set）',
 );
 assert(
   migrated!.profile.bankedGold === 7 &&
@@ -140,7 +166,19 @@ assert(
     migrated!.profile.unlockedUpgrades.has('upgrade.dockyard.lv1'),
   '迁移应保留其它字段（bankedGold / unlockedUpgrades Set）',
 );
-L('  v1→v2 迁移：buildingPoints 删除 / version=2 / 其它字段保留 ✓');
+L('  旧档迁移：v1→v2 删 buildingPoints + v2→v3 种 home 灯塔 / version=3 / 其它字段保留 ✓');
+
+// 6b. v2 档（Phase A 之后、Phase B 之前）→ v3：只补灯塔，不动其它
+const v2obj = JSON.parse(raw);
+v2obj.version = 2;
+delete v2obj.profile.lighthouses;
+const m2 = deserializeGameState(JSON.stringify(v2obj));
+assert(m2 && m2.version === 3, 'v2 档应迁到 v3');
+assert(
+  m2!.profile.lighthouses.length === 1 && m2!.profile.lighthouses[0].id === 'lighthouse.home',
+  'v2→v3：补种 home 灯塔',
+);
+L('  v2→v3 迁移：补种 home 灯塔 ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 存档序列化回归通过');

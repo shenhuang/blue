@@ -5,6 +5,7 @@ import type { EquipmentSlot } from './items';
 import type { DiveMap, NodeKind } from './dive';
 import type { CombatState } from './combat';
 import type { PoiModifier } from './chart';
+import type { Lighthouse } from './lighthouse';
 
 /** 四属性 stat 名称（注意：氧气在战斗/事件中以"回合数"消耗） */
 export type Stat = 'stamina' | 'oxygen' | 'sanity' | 'nitrogen';
@@ -37,6 +38,12 @@ export interface PlayerProfile {
    * 可选 + 普通对象 → 旧存档缺它无妨（懒默认满货），JSON 原生 round-trip，无需额外迁移。
    */
   shopStock?: Record<string, number>;
+  /**
+   * 灯塔基地（基建地图 SPEC §3，Phase B）。家＝第一座（lighthouse.home）。
+   * 现有岸边港口重构成 home 灯塔；其它是前哨（修复废弃灯塔获得，Phase C）。
+   * Phase B 仅是数据模型——灯塔的"点亮海域"（reveal/reach）由 Phase C 消费。
+   */
+  lighthouses: Lighthouse[];
 }
 
 /** 死亡记录，用于尸体回收 */

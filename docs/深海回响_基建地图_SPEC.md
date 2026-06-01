@@ -2,7 +2,7 @@
 
 > 状态：**设计已锁**。2026-06-01 与作者敲定五项决策后落稿，供实装与后续 session 接手。
 > 基线 commit：`ff2cc77`（MVP 之后全部工作）。
-> **实装进度**：✅ **Phase A（材料经济）已实装（2026-06-01）**——见 §8 + STATUS quirk #50。Phase B/C/D 未开工。
+> **实装进度**：✅ **Phase A（材料经济）+ Phase B（灯塔数据模型）已实装（2026-06-01）**——见 §8 + STATUS quirk #50/#51。Phase C（海图集成 + 修复循环）/ D 未开工。
 > 设计原则同项目要求：可扩展、可维护，每阶段都能独立过回归。
 
 ---
@@ -190,7 +190,7 @@ interface Lighthouse {
 ## 8. 实装阶段（每阶段独立可过回归）
 
 - ✅ **Phase A — 材料经济**（**已实装 2026-06-01**）：cost 模型 `UpgradeCost{ materials: MaterialCost[]; gold }`、items `tier 1–4`、canPurchase/purchaseUpgrade 双资源（材料缺口 + 金币）、删 buildingPoints（types/engine/UI/脚本全删）、SAVE_VERSION→2（v1→v2 删点数）、UpgradePanel 账单缺口高亮、**Mira 回购(T1/T2 买价=卖价×2)+`shopStock`(T1=8/T2=4) 限量出售侧 + 回港补满**、改 `playthrough-upgrades.ts`/`-economy.ts`/`-save.ts` + `smoke-chart-ui.tsx` J/K。**自洽可发**（灯塔还没来，升级照常买，只是改用材料+金币）。落地细节 + 易踩坑见 STATUS quirk #50。
-- **Phase B — 灯塔数据模型**：`Lighthouse` 类型、`profile.lighthouses`、home 灯塔种入 + 迁移补全、`engine/lighthouses.ts`（每灯塔升级轨 + 加成 + 最近灯塔距离工具）、`dockyard`→home 灯塔升级（若采纳）。
+- ✅ **Phase B — 灯塔数据模型**（**已实装 2026-06-01**）：`Lighthouse` 类型（`types/lighthouse.ts`）、`profile.lighthouses`、home 灯塔种入（`createHomeLighthouse`）+ 迁移补全（SAVE_VERSION 2→3 `case 2`）、`engine/lighthouses.ts`（每灯塔升级轨 canBuildAt/buildAtLighthouse + getLighthouseBonuses + nearestLighthouse 距离工具，与全局 upgrades.ts 平行）+ `data/lighthouse_upgrades.json`（信标占位轨）。**灯塔 inert**（没接 chart/dive/UI，reveal/reach 留 Phase C）；`dockyard` 暂仍全局（归属决策留 Phase C）。回归：`playthrough-lighthouse.ts` + `-save` v2→v3。落地细节见 STATUS quirk #51。
 - **Phase C — 海图集成 + 修复循环**：chart.ts reveal + nearest-lighthouse distance、`lighthouse_ruin` 下潜点/事件 + 修复账单、SeaChartView 渲染灯塔、新 `scenarios/lighthouse/` + 脚本、`playthrough-chart.ts`/`smoke-chart-ui.tsx` 更新。
 - **Phase D（未来，仅占位）**：invasion/defense——本次只确保 §3.1/§4 的 `integrity`/`threat`/`lighthouse_event` 字段预留，不写逻辑。
 

@@ -48,6 +48,7 @@ const enemies = {
   combatEncounters: enemyData.flatMap((d) => d.combatEncounters ?? []),
 };
 const upgrades = load('src/data/upgrades.json');
+const lighthouseUpgrades = load('src/data/lighthouse_upgrades.json');
 const zones = load('src/data/zones.json').zones;
 const chartPois = load('src/data/chart_pois.json');
 
@@ -128,6 +129,21 @@ for (const e of enemies.enemies ?? []) {
   for (const l of e.loot.guaranteed ?? [])
     err(ITEM_IDS.has(l.itemId), `enemy ${e.id}: loot ${l.itemId} not found`);
 }
+
+// —— 4b. 升级账单材料引用（Phase A 全局升级 + Phase B 灯塔设施）——
+// cost = { materials:[{itemId,qty}], gold }；材料 itemId 必须是真物品（拼错→静默买不起）。
+function checkUpgradeCost(u, ctx) {
+  err(u.cost && Array.isArray(u.cost.materials) && typeof u.cost.gold === 'number',
+    `${ctx}: cost 应为 { materials:[{itemId,qty}], gold:number }`);
+  for (const m of u.cost?.materials ?? []) {
+    err(ITEM_IDS.has(m.itemId), `${ctx}: 账单材料 ${m.itemId} 不存在`);
+    err(typeof m.qty === 'number' && m.qty > 0, `${ctx}: 材料 ${m.itemId} qty 应 > 0`);
+  }
+}
+for (const line of upgrades.lines)
+  for (const u of line.upgrades) checkUpgradeCost(u, `upgrade ${u.id}`);
+for (const track of lighthouseUpgrades.tracks ?? [])
+  for (const u of track.upgrades ?? []) checkUpgradeCost(u, `lighthouse ${u.id}`);
 
 // —— 5. zones ——
 for (const z of zones) {
