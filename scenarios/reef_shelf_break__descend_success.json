@@ -1,0 +1,14 @@
+{
+  "_comment": "旧灯塔礁 · 礁壁的断口（reef 中段 realistic，30-44m，填补 reef 26-44m realistic 缺口）。贴断面下探够珊瑚：stamina vs 12，满 stamina 时 rate=0.95（clamp 上限），seed 1 确定性通过。验证 stamina check 通过分支 + coral_shard loot（onSuccess oxygenTurnCost 2，无 deltas → statsDelta 只 oxygen）。对照 reef.flooded_stair / wreck.silted_hold 的 stamina-success 套路。",
+  "eventId": "reef.shelf_break",
+  "depth": 38,
+  "seed": 1,
+  "choices": ["descend_wall"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2 }
+  }
+}

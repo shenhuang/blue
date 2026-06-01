@@ -1,0 +1,14 @@
+{
+  "_comment": "沉船墓园 · 伙房（wreck realistic，20-34m，新人造内舱质感）。撬开存粮柜：stamina vs 13，满 stamina rate=0.95（clamp 上限），seed 1 确定性通过。验证 stamina check 通过分支 + 人造 loot（canned_food/old_fishing_net，守 quirk #44/#47 跨 zone 共享到灯塔礁 25m+ 不出戏）。onSuccess oxygenTurnCost 2，无 deltas → statsDelta 只 oxygen。",
+  "eventId": "wreck_graveyard.galley",
+  "depth": 28,
+  "seed": 1,
+  "choices": ["force_locker"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2 }
+  }
+}

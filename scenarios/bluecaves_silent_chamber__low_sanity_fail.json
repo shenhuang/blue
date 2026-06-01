@@ -1,0 +1,15 @@
+{
+  "_comment": "沉默的厅 · sanity check 失败路径。sanity=30 时 rate ≈ 20%。seed=1 在该 rate 下确定性失败（rng~0.236 > 0.2）。验证 onFailure 分支：sanity -12, oxygen -5, 无 lore。",
+  "eventId": "bluecaves.silent_chamber",
+  "stats": { "sanity": 30 },
+  "depth": 50,
+  "seed": 1,
+  "choices": ["stay_a_moment"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": [],
+    "checkPassed": false
+  }
+}

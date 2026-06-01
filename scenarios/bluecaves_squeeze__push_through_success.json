@@ -1,0 +1,14 @@
+{
+  "_comment": "蓝洞群 12-25m 浅段 · 窄口 push_through 体力检定通过（quirk #20 浅段密度补充）。默认满体力（100）vs dc 12 → rate 0.95；seed 1 实测通过。成功仅 oxygenTurnCost 1（statsDelta {oxygen:-1}），coral_shard chance 0.6 故不断言 loot。失败分支为 oxygen -2 + stamina -8 + sanity -2（未在此 baseline 覆盖）。",
+  "eventId": "bluecaves.squeeze",
+  "depth": 20,
+  "seed": 1,
+  "choices": ["push_through"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -1 }
+  }
+}

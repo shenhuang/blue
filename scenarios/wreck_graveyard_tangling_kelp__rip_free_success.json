@@ -1,0 +1,14 @@
+{
+  "_comment": "沉船墓园 · 缠住脚的海草，stamina vs 14 撕开路径。满 stamina 时 rate ≈ 95%（clamp 上限），seed=1 在该 rate 下确定性通过。验证 stamina check 通过分支。",
+  "eventId": "wreck_graveyard.tangling_kelp",
+  "depth": 30,
+  "seed": 1,
+  "choices": ["rip_free"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "stamina": -4, "oxygen": -1 }
+  }
+}

@@ -1,0 +1,630 @@
+/* ============================================================
+ * Dev 面板（仅 import.meta.env.DEV）—— 事件回归 Phase 2
+ *
+ * 这个文件只被 EventDevPanel.tsx 静态 import；
+ * 由于 EventDevPanel 在 prod build 走 lazy() + DEV 守卫被 tree-shake，
+ * 整份 css 也不会进 prod 包。
+ *
+ * 选择器全部 .dev-* 前缀，避免与游戏 UI 撞车；颜色变量复用 styles.css 的 :root
+ * ============================================================ */
+
+.dev-panel {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.dev-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dev-panel-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.dev-panel-sub {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+.dev-panel-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dev-filename {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0 4px;
+}
+
+.dev-io-banner {
+  background: var(--bg-elev-2);
+  border-bottom: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 6px 16px;
+  font-size: 12px;
+}
+
+.dev-import-row {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+  align-items: stretch;
+}
+
+.dev-import-row .dev-textarea {
+  flex: 1;
+  min-height: 70px;
+  font-family: inherit;
+}
+
+.dev-import-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.dev-panel-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 280px 1fr 1fr;
+  gap: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.dev-col {
+  padding: 12px 14px;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+
+.dev-col:last-child {
+  border-right: none;
+}
+
+.dev-col-events {
+  background: var(--bg);
+}
+
+.dev-col-form {
+  background: var(--bg-elev);
+}
+
+.dev-col-preview {
+  background: var(--bg);
+}
+
+.dev-col-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+
+.dev-sub-title {
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.dev-section {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.dev-col-form .dev-section {
+  background: var(--bg);
+}
+
+/* —— 输入控件 —— */
+
+.dev-input {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 12px;
+  width: 100%;
+}
+
+.dev-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.dev-input:disabled {
+  opacity: 0.4;
+}
+
+.dev-input-num {
+  width: 80px;
+}
+
+.dev-textarea {
+  resize: vertical;
+}
+
+.dev-range {
+  flex: 1;
+  min-width: 80px;
+}
+
+.dev-btn {
+  background: var(--bg-elev);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.dev-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.dev-btn-tiny {
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+.dev-btn-quiet {
+  color: var(--text-faint);
+}
+
+.dev-btn-danger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.dev-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dev-inline > span {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dev-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.dev-stack > span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.dev-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dev-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  min-width: 90px;
+}
+
+.dev-stat-key {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+/* —— stats / equipment / inventory 行 —— */
+
+.dev-stat-row,
+.dev-eq-row,
+.dev-inv-row,
+.dev-choice-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.dev-eq-row > .dev-input:first-of-type {
+  flex: 1;
+}
+
+.dev-inv-row > .dev-input:first-of-type {
+  flex: 1;
+}
+
+/* —— 事件列表 —— */
+
+.dev-filter-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.dev-event-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  max-height: 40vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+}
+
+.dev-event-item {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.dev-event-item:last-child {
+  border-bottom: none;
+}
+
+.dev-event-item:hover {
+  background: var(--bg-elev);
+}
+
+.dev-event-item.selected {
+  background: var(--bg-elev-2);
+  border-left: 2px solid var(--accent);
+  padding-left: 6px;
+}
+
+.dev-event-id {
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.dev-event-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  color: var(--text);
+}
+
+.dev-event-id-mini {
+  font-size: 11px;
+  flex: 1;
+}
+
+.dev-describe {
+  margin-top: 8px;
+}
+
+.dev-pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-muted);
+}
+
+.dev-faint {
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+/* —— choices —— */
+
+.dev-choices-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dev-step-no {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  min-width: 50px;
+}
+
+/* —— 已存 LS —— */
+
+.dev-saved-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dev-saved-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.dev-saved-key {
+  flex: 1;
+  color: var(--text-muted);
+  font-family: inherit;
+}
+
+/* —— 预览 —— */
+
+.dev-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dev-step {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+
+.dev-step-tone-uncanny {
+  border-color: #5a4970;
+}
+
+.dev-step-tone-cosmic {
+  border-color: #6a2a3e;
+}
+
+.dev-step-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.dev-step-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.dev-step-id {
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+.dev-step-body {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 6px 0;
+}
+
+.dev-step-body p {
+  margin: 0 0 4px;
+}
+
+.dev-options-block {
+  margin: 8px 0;
+}
+
+.dev-options-head {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.dev-options-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dev-option-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.dev-option-row.chosen {
+  background: rgba(78, 209, 193, 0.10);
+}
+
+.dev-option-row.hallucination {
+  color: var(--danger);
+  font-style: italic;
+}
+
+.dev-option-hidden {
+  color: var(--text-faint);
+}
+
+.dev-option-mark {
+  width: 14px;
+  color: var(--accent);
+}
+
+.dev-option-row.chosen .dev-option-mark {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.dev-option-hidden .dev-option-mark {
+  color: var(--text-faint);
+}
+
+.dev-option-id {
+  color: var(--accent);
+  min-width: 100px;
+}
+
+.dev-option-hidden .dev-option-id {
+  color: var(--text-faint);
+}
+
+.dev-option-label {
+  flex: 1;
+  color: var(--text);
+}
+
+.dev-option-hidden .dev-option-label {
+  color: var(--text-faint);
+}
+
+.dev-check {
+  margin: 6px 0;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  background: var(--bg);
+}
+
+.dev-check.pass {
+  color: var(--green);
+  border: 1px solid #2a4d3a;
+}
+
+.dev-check.fail {
+  color: var(--danger);
+  border: 1px solid #6a2a3e;
+}
+
+.dev-narrative {
+  background: var(--bg);
+  border-left: 2px solid var(--accent);
+  padding: 6px 10px;
+  margin: 6px 0;
+  font-size: 12px;
+}
+
+.dev-narrative p {
+  margin: 0 0 3px;
+}
+
+.dev-deltas {
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  padding: 6px 10px;
+  border-radius: 3px;
+  margin: 6px 0;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dev-next {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dev-bad {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.dev-warn {
+  color: var(--warn);
+}
+
+.dev-errors {
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid var(--danger);
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.dev-errors ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.dev-summary {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+
+.dev-summary-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+
+.dev-summary-table td {
+  padding: 3px 6px;
+  vertical-align: top;
+}
+
+.dev-summary-table tr td:first-child {
+  color: var(--text-muted);
+  width: 110px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}

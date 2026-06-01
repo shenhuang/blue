@@ -27,6 +27,35 @@
       ],
       "requiresFlags": ["flag.tutorial_complete"],
       "generation": "random"
+    },
+    {
+      "id": "zone.blue_caves",
+      "name": "蓝洞群",
+      "description": "海岸线再往北一段，礁石下面是一连串相通的水下洞。当地人说洞底的水是发蓝的。Aldo 说很少有人从洞的另一边出来过。",
+      "depthRange": [12, 55],
+      "layerCount": 6,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["cave"] }
+      ],
+      "requiresFlags": ["flag.tutorial_complete"],
+      "generation": "random",
+      "mapShape": "maze",
+      "canFreeAscend": false
+    },
+    {
+      "id": "zone.wreck_graveyard",
+      "name": "沉船墓园",
+      "description": "鸢尾湾外二十海里。一片浅海大陆架在这里塌了个口子，沙底上歪着十几艘船——商船、渔船、半截军舰，年代各不一样。Mira 说这片地像是「被洋流牵着」——每次回来，沙位都不一样。",
+      "depthRange": [18, 50],
+      "layerCount": 6,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["wreck"] }
+      ],
+      "requiresFlags": ["flag.tutorial_complete"],
+      "generation": "random",
+      "canFreeAscend": true
     }
   ]
 }

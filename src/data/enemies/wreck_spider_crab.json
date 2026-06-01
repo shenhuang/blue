@@ -1,0 +1,67 @@
+{
+  "enemies": [
+    {
+      "id": "enemy.wreck_spider_crab",
+      "name": "沉船蛛蟹",
+      "tier": "realistic",
+      "hp": 22,
+      "armor": 2,
+      "evasion": 3,
+      "speed": 5,
+      "threat": 5,
+      "hostility": "territorial",
+      "initialStance": "alerted",
+      "aiPattern": "aggressor",
+      "attacks": [
+        {
+          "id": "crab.pincer",
+          "name": "钳夹",
+          "damageType": "physical",
+          "damage": [3, 5],
+          "description": "它的左侧大钳在水里猛地一闭——你的小腿被夹住。",
+          "weight": 3
+        },
+        {
+          "id": "crab.tackle",
+          "name": "甲壳冲撞",
+          "damageType": "physical",
+          "damage": [4, 7],
+          "description": "它整个身体撞上来，外壳像一面盾。",
+          "weight": 1
+        }
+      ],
+      "physicalDamage": [3, 7],
+      "loot": {
+        "guaranteed": [{ "itemId": "item.crab_chitin", "qty": [1, 1], "weight": 1 }],
+        "rolls": [],
+        "rollCount": 0,
+        "victoryModifier": {
+          "kill": 1.0,
+          "flee": 0.3,
+          "scare": 0.3
+        }
+      },
+      "victoryConditions": ["kill", "flee", "scare"],
+      "loreEntry": "lore.wreck_spider_crab"
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.wreck_spider_crab_solo",
+      "party": {
+        "members": [{ "defId": "enemy.wreck_spider_crab" }]
+      },
+      "introText": "它从渔网里钻出来——比你想象的大。八条腿在锈铁皮上发出刮擦的声音。"
+    },
+    {
+      "id": "combat.wreck_spider_crabs_pair",
+      "party": {
+        "members": [
+          { "defId": "enemy.wreck_spider_crab" },
+          { "defId": "enemy.wreck_spider_crab" }
+        ]
+      },
+      "introText": "船舱口暗处——不是一只。两只一前一后侧着身子涌出来，钳子互相蹭着发出轻响。"
+    }
+  ]
+}

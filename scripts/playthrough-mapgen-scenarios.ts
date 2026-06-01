@@ -1,0 +1,221 @@
+// scripts/playthrough-mapgen-scenarios.ts —— mapgen（节点图生成）回归脚本
+//
+// 第三类 scenario，遵循 quirk #26「子目录 + 独立 playthrough」约定：JSON 放 scenarios/mapgen/，
+// 由本脚本单独扫（不与事件/战斗 scenario 撞 schema）。
+//
+// 每份 scenario = { zoneId, seed, depthOffset?, expect }。脚本用 seeded LCG 复现生成，跑
+// analyzeMap()，按 expect 断言结构性质。除了 curated scenarios，还额外做：
+//   - 确定性：同 seed 生成两次，结构必须逐字节一致
+//   - 种子扫描：blue_caves seeds 1..60，断言迷路不变量对每个 seed 都成立（curated 只覆盖几个点，
+//     扫描覆盖鲁棒性——这是真正值钱的部分）
+//
+// 迷路不变量（每个 seed 都该成立）：全节点从起点可达 / 双向边 / 有环(回边) / 有死路 /
+//   ≥2 个最深点 / 入口即上浮口 / ≥2 个 ascent_point 且全部可达。
+//
+// 跑法： npx tsx scripts/playthrough-mapgen-scenarios.ts
+// 详见 docs/STATUS.md「真'迷路' mapgen」+「mapgen 回归」。
+
+import { readFileSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+import { generateDiveMap, analyzeMap, type MapAnalysis } from '../src/engine/mapgen';
+import { getZone } from '../src/engine/zones';
+import type { DiveMap } from '../src/types';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SCENARIO_DIR = resolve(__dirname, '..', 'scenarios', 'mapgen');
+const FLAGS = new Set(['flag.tutorial_complete']);
+
+// 与 scripts/playthrough-bluecaves.ts 等同款 LCG
+function makeRng(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0x100000000;
+  };
+}
+
+interface MapgenExpect {
+  shape?: 'layered' | 'maze';
+  nodeCount?: number;
+  edgeCount?: number;
+  maxDepth?: number;
+  entranceDepth?: number;
+  allReachable?: boolean;
+  isUndirected?: boolean;
+  hasCycle?: boolean;
+  hasDeadEnd?: boolean;
+  minDeadEnds?: number;
+  minDeepestPoints?: number;
+  minLocalMaxima?: number;
+  minAscentPoints?: number;
+  allAscentReachable?: boolean;
+  entranceIsAscent?: boolean;
+  lastLayerHasAscent?: boolean;
+}
+
+interface MapgenScenario {
+  _comment?: string;
+  zoneId: string;
+  seed: number;
+  depthOffset?: number;
+  expect?: MapgenExpect;
+}
+
+function genMap(zoneId: string, seed: number, depthOffset = 0): DiveMap {
+  const zone = getZone(zoneId);
+  if (!zone) throw new Error(`zone ${zoneId} 不存在`);
+  return generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(seed), depthOffset });
+}
+
+function entranceDepth(map: DiveMap): number {
+  return map.nodes[map.startNodeId].depth;
+}
+
+function lastLayerHasAscent(map: DiveMap): boolean {
+  const nodes = Object.values(map.nodes);
+  const maxLayer = Math.max(...nodes.map((n) => n.layer));
+  return nodes.some((n) => n.layer === maxLayer && n.kind === 'ascent_point');
+}
+
+/** 把 map 序列化成稳定字符串，用于确定性比对 */
+function fingerprint(map: DiveMap): string {
+  const ids = Object.keys(map.nodes).sort();
+  return JSON.stringify(
+    ids.map((id) => {
+      const n = map.nodes[id];
+      return [id, n.kind, n.depth, n.layer, [...n.connectsTo].sort()];
+    }),
+  ) + `|start=${map.startNodeId}`;
+}
+
+const fails: string[] = [];
+function expectEq(name: string, label: string, got: unknown, want: unknown) {
+  if (got !== want) fails.push(`[${name}] ${label}: 期望 ${String(want)}，实际 ${String(got)}`);
+}
+function expectGte(name: string, label: string, got: number, min: number) {
+  if (!(got >= min)) fails.push(`[${name}] ${label}: 期望 ≥ ${min}，实际 ${got}`);
+}
+
+function assertExpect(name: string, map: DiveMap, a: MapAnalysis, zoneShape: string, e?: MapgenExpect) {
+  if (!e) return;
+  if (e.shape !== undefined) expectEq(name, 'shape', zoneShape, e.shape);
+  if (e.nodeCount !== undefined) expectEq(name, 'nodeCount', a.nodeCount, e.nodeCount);
+  if (e.edgeCount !== undefined) expectEq(name, 'edgeCount', a.edgeCount, e.edgeCount);
+  if (e.maxDepth !== undefined) expectEq(name, 'maxDepth', a.maxDepth, e.maxDepth);
+  if (e.entranceDepth !== undefined) expectEq(name, 'entranceDepth', entranceDepth(map), e.entranceDepth);
+  if (e.allReachable !== undefined) expectEq(name, 'allReachable', a.allReachable, e.allReachable);
+  if (e.isUndirected !== undefined) expectEq(name, 'isUndirected', a.isUndirected, e.isUndirected);
+  if (e.hasCycle !== undefined) expectEq(name, 'hasCycle', a.hasCycle, e.hasCycle);
+  if (e.hasDeadEnd !== undefined) expectEq(name, 'hasDeadEnd', a.hasDeadEnd, e.hasDeadEnd);
+  if (e.minDeadEnds !== undefined) expectGte(name, 'deadEnds', a.deadEndIds.length, e.minDeadEnds);
+  if (e.minDeepestPoints !== undefined) expectGte(name, 'deepestPoints', a.deepestNodeIds.length, e.minDeepestPoints);
+  if (e.minLocalMaxima !== undefined) expectGte(name, 'localMaxima', a.localMaximaIds.length, e.minLocalMaxima);
+  if (e.minAscentPoints !== undefined) expectGte(name, 'ascentPoints', a.ascentPointIds.length, e.minAscentPoints);
+  if (e.allAscentReachable !== undefined) expectEq(name, 'allAscentReachable', a.allAscentReachable, e.allAscentReachable);
+  if (e.entranceIsAscent !== undefined) expectEq(name, 'entranceIsAscent', a.entranceIsAscent, e.entranceIsAscent);
+  if (e.lastLayerHasAscent !== undefined) expectEq(name, 'lastLayerHasAscent', lastLayerHasAscent(map), e.lastLayerHasAscent);
+}
+
+// ---------------------------------------------------------------------------
+// main
+// ---------------------------------------------------------------------------
+
+function main() {
+  let files: string[] = [];
+  try {
+    files = readdirSync(SCENARIO_DIR).filter((f) => f.endsWith('.json'));
+  } catch (err) {
+    console.error(`无法读取 scenarios/mapgen/ 目录：${err}`);
+    process.exitCode = 1;
+    return;
+  }
+  files.sort();
+  if (files.length === 0) {
+    console.error(`scenarios/mapgen/ 目录里没有 .json 文件`);
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log(`========== mapgen 回归 (${files.length} scenarios) ==========`);
+  let okCount = 0;
+  for (const f of files) {
+    const before = fails.length;
+    try {
+      const sc = JSON.parse(readFileSync(resolve(SCENARIO_DIR, f), 'utf8')) as MapgenScenario;
+      const zone = getZone(sc.zoneId);
+      const shape = zone?.mapShape ?? 'layered';
+      const map = genMap(sc.zoneId, sc.seed, sc.depthOffset ?? 0);
+      const a = analyzeMap(map);
+      assertExpect(f, map, a, shape, sc.expect);
+
+      // 确定性：同 seed 再生成一次，指纹必须一致
+      const map2 = genMap(sc.zoneId, sc.seed, sc.depthOffset ?? 0);
+      if (fingerprint(map) !== fingerprint(map2)) {
+        fails.push(`[${f}] 非确定性：同 seed 两次生成结构不一致`);
+      }
+
+      if (fails.length === before) {
+        okCount++;
+        console.log(
+          `  ✓ ${f}  [${shape}] N=${a.nodeCount} E=${a.edgeCount} ` +
+            `cyc=${a.cycleRank} dead=${a.deadEndIds.length} deepest=${a.deepestNodeIds.length} ` +
+            `asc=${a.ascentPointIds.length} maxD=${a.maxDepth}m`,
+        );
+      } else {
+        console.log(`  ✗ ${f}`);
+        for (const m of fails.slice(before)) console.log(`      ${m}`);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      fails.push(`[${f}] 加载/执行异常：${msg}`);
+      console.log(`  ✗ ${f}  (异常: ${msg})`);
+    }
+  }
+
+  // —— 种子扫描：迷路不变量对每个 seed 都成立 ——
+  console.log(`\n========== 迷路不变量种子扫描 (zone.blue_caves, seeds 1–60) ==========`);
+  const SWEEP = 60;
+  const badSeeds: string[] = [];
+  let airSeeds = 0;
+  let campSeeds = 0;
+  for (let seed = 1; seed <= SWEEP; seed++) {
+    const map = genMap('zone.blue_caves', seed);
+    const a = analyzeMap(map);
+    const problems: string[] = [];
+    if (!a.allReachable) problems.push('不全可达');
+    if (!a.isUndirected) problems.push('非双向');
+    if (!a.hasCycle) problems.push('无环');
+    if (!a.hasDeadEnd) problems.push('无死路');
+    if (a.deepestNodeIds.length < 2) problems.push(`最深点<2(${a.deepestNodeIds.length})`);
+    if (a.ascentPointIds.length < 2) problems.push(`上浮口<2(${a.ascentPointIds.length})`);
+    if (!a.allAscentReachable) problems.push('上浮口不全可达');
+    if (!a.entranceIsAscent) problems.push('入口非上浮口');
+    if (problems.length > 0) badSeeds.push(`seed=${seed}: ${problems.join(', ')}`);
+    const kinds = new Set(Object.values(map.nodes).map((n) => n.kind));
+    if (kinds.has('air_pocket')) airSeeds++;
+    if (kinds.has('camp')) campSeeds++;
+  }
+  if (badSeeds.length === 0) {
+    console.log(`  ✓ 全部 ${SWEEP} 个 seed 满足迷路不变量`);
+  } else {
+    console.log(`  ✗ ${badSeeds.length}/${SWEEP} 个 seed 违反不变量：`);
+    for (const b of badSeeds) console.log(`      ${b}`);
+    fails.push(`种子扫描有 ${badSeeds.length} 个 seed 违反迷路不变量`);
+  }
+  // 地标（气穴 / 扎营点）应在扫描内出现过——结构地标不依赖事件池，给迷路加值得绕的理由
+  console.log(`  地标出现：气穴 ${airSeeds}/${SWEEP} 局 · 扎营点 ${campSeeds}/${SWEEP} 局`);
+  if (airSeeds === 0) fails.push('60 seed 内从未生成气穴节点');
+  if (campSeeds === 0) fails.push('60 seed 内从未生成扎营点节点');
+
+  console.log('');
+  if (fails.length > 0) {
+    console.log(`✗ 失败 ${fails.length} / 通过 ${okCount}`);
+    process.exitCode = 1;
+    return;
+  }
+  console.log(`✓ playthrough 完成`);
+  console.log(`全部场景通过（${okCount}/${files.length}） + 种子扫描 ${SWEEP}/${SWEEP}`);
+}
+
+main();

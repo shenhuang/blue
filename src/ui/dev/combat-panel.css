@@ -1,0 +1,356 @@
+/* ============================================================
+ * Combat Dev 面板（仅 import.meta.env.DEV）—— 战斗回归 Phase 3
+ *
+ * 通过 @import 复用事件面板的基础变量与控件（.dev-* 前缀）。
+ * 本文件只追加战斗专属样式（.dev-combat-*）。
+ *
+ * 由 CombatDevPanel.tsx 静态 import；prod build 时 lazy + DEV 守卫
+ * 让本文件不进 bundle（与 EventDevPanel 同套验证标准）。
+ * ============================================================ */
+
+@import './dev-panel.css';
+
+/* —— 敌人列表 —— */
+
+.dev-combat-enemy-list,
+.dev-combat-encounter-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  max-height: 25vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+}
+
+.dev-combat-enemy-row,
+.dev-combat-encounter-row {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.dev-combat-enemy-row:last-child,
+.dev-combat-encounter-row:last-child {
+  border-bottom: none;
+}
+
+.dev-combat-enemy-row:hover,
+.dev-combat-encounter-row:hover {
+  background: var(--bg-elev);
+}
+
+.dev-combat-enemy-row.selected,
+.dev-combat-encounter-row.selected {
+  background: var(--bg-elev-2);
+  border-left: 2px solid var(--accent);
+  padding-left: 6px;
+}
+
+.dev-combat-id {
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.dev-combat-meta {
+  color: var(--text);
+  font-size: 11px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dev-combat-meta .dev-faint {
+  font-size: 11px;
+}
+
+/* —— 模式切换 —— */
+
+.dev-combat-mode-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.dev-combat-mode-row label {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* —— ad-hoc 构造器 —— */
+
+.dev-combat-adhoc-builder {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 8px;
+  margin-top: 4px;
+}
+
+.dev-combat-adhoc-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 2px 0;
+}
+
+.dev-combat-adhoc-row input[type="checkbox"] {
+  margin-right: 4px;
+}
+
+/* —— 描述块 —— */
+
+.dev-combat-describe {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.dev-combat-describe h5 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dev-combat-describe ul {
+  margin: 0 0 6px;
+  padding-left: 16px;
+}
+
+.dev-combat-describe li {
+  margin-bottom: 2px;
+}
+
+/* —— action rows —— */
+
+.dev-combat-action-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.dev-combat-action-row > select {
+  flex: 1;
+}
+
+.dev-combat-action-row .dev-input-num {
+  width: 60px;
+}
+
+/* —— 预览：每回合 —— */
+
+.dev-combat-turn {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.dev-combat-turn.unavailable {
+  border-color: var(--danger);
+}
+
+.dev-combat-turn.outcome-victory {
+  border-color: var(--green, #2a4d3a);
+}
+
+.dev-combat-turn.outcome-defeat {
+  border-color: var(--danger);
+}
+
+.dev-combat-turn-head {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.dev-combat-turn-no {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  min-width: 60px;
+}
+
+.dev-combat-turn-action {
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.dev-combat-turn-target {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.dev-combat-turn-log {
+  background: var(--bg);
+  border-left: 2px solid var(--accent);
+  padding: 6px 10px;
+  margin: 6px 0;
+  font-size: 12px;
+}
+
+.dev-combat-turn-log p {
+  margin: 0 0 3px;
+}
+
+.dev-combat-turn-log p.actor-system {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.dev-combat-turn-log p.actor-enemy {
+  color: var(--warn, #d28944);
+}
+
+/* —— enemy HP bar —— */
+
+.dev-combat-enemies-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0;
+}
+
+.dev-combat-enemy-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.dev-combat-enemy-name {
+  min-width: 90px;
+  color: var(--text);
+}
+
+.dev-combat-hpbar {
+  flex: 1;
+  height: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.dev-combat-hpbar-fill {
+  height: 100%;
+  background: var(--green, #4ed1c1);
+  transition: width 0.15s ease;
+}
+
+.dev-combat-hpbar-fill.low {
+  background: var(--warn, #d28944);
+}
+
+.dev-combat-hpbar-fill.dead {
+  background: var(--danger);
+}
+
+.dev-combat-hp-text {
+  min-width: 70px;
+  text-align: right;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.dev-combat-stance {
+  min-width: 75px;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* —— player stat 行 —— */
+
+.dev-combat-player-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  padding: 4px 8px;
+  border-radius: 3px;
+  margin: 4px 0;
+  flex-wrap: wrap;
+}
+
+.dev-combat-player-stats span {
+  white-space: nowrap;
+}
+
+.dev-combat-player-delta {
+  margin-left: 8px;
+  color: var(--text-faint);
+}
+
+.dev-combat-outcome-line {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.dev-combat-outcome-line.victory {
+  color: var(--green, #4ed1c1);
+  font-weight: 600;
+}
+
+.dev-combat-outcome-line.defeat {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.dev-combat-outcome-line.flee,
+.dev-combat-outcome-line.emergency_ascend {
+  color: var(--warn, #d28944);
+}
+
+/* —— summary 表（与事件面板同源） —— */
+
+.dev-combat-summary {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-top: 10px;
+}
+
+.dev-combat-summary-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+
+.dev-combat-summary-table td {
+  padding: 3px 6px;
+  vertical-align: top;
+}
+
+.dev-combat-summary-table tr td:first-child {
+  color: var(--text-muted);
+  width: 130px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}

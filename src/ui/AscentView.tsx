@@ -1,5 +1,5 @@
 import type { GameState } from '@/types';
-import { executeAscent, planAscent } from '@/engine/ascent';
+import { executeAscent, planAscent, isAscentBlocked } from '@/engine/ascent';
 import { StatusBar } from './StatusBar';
 
 interface Props {
@@ -13,6 +13,7 @@ export function AscentView({ state, onStateChange }: Props) {
   const oxygenLeft = state.run.stats.oxygen;
   const normalSafe = oxygenLeft >= plan.normalTurns;
   const rushedSafe = oxygenLeft >= plan.rushedTurns;
+  const blocked = isAscentBlocked(state.run);
 
   function ascend(mode: 'normal' | 'rushed' | 'emergency') {
     const result = executeAscent(state, mode);
@@ -29,11 +30,18 @@ export function AscentView({ state, onStateChange }: Props) {
             当前深度 {state.run.currentDepth}m，氮气浓度{' '}
             {Math.round(state.run.stats.nitrogen)} / 100。
           </p>
-          <p className="dim">
-            需要 {plan.stops} 次减压停留 ・ 正常上浮共耗{' '}
-            <strong>{plan.normalTurns}</strong> 回合 ・ 强行上浮{' '}
-            <strong>{plan.rushedTurns}</strong> 回合（无减压）
-          </p>
+          {blocked ? (
+            <p className="warn">
+              头上是岩顶。你能感觉到水道在收窄。<br />
+              在这里只能凿穿洞顶——别的上浮方式行不通。
+            </p>
+          ) : (
+            <p className="dim">
+              需要 {plan.stops} 次减压停留 ・ 正常上浮共耗{' '}
+              <strong>{plan.normalTurns}</strong> 回合 ・ 强行上浮{' '}
+              <strong>{plan.rushedTurns}</strong> 回合（无减压）
+            </p>
+          )}
         </div>
 
         <ul className="event-options">
@@ -41,20 +49,22 @@ export function AscentView({ state, onStateChange }: Props) {
             <button
               className="btn event-option ascend"
               onClick={() => ascend('normal')}
-              disabled={!normalSafe}
+              disabled={!normalSafe || blocked}
             >
               ↑ 正常上浮（{plan.normalTurns} 回合 氧气）
-              {!normalSafe && <span className="warn"> ⚠ 氧气不够</span>}
+              {blocked && <span className="warn"> ⚠ 洞顶挡着</span>}
+              {!blocked && !normalSafe && <span className="warn"> ⚠ 氧气不够</span>}
             </button>
           </li>
           <li>
             <button
               className="btn event-option"
               onClick={() => ascend('rushed')}
-              disabled={!rushedSafe}
+              disabled={!rushedSafe || blocked}
             >
               强行上浮（{plan.rushedTurns} 回合 氧气，必得减压病）
-              {!rushedSafe && <span className="warn"> ⚠ 氧气不够</span>}
+              {blocked && <span className="warn"> ⚠ 洞顶挡着</span>}
+              {!blocked && !rushedSafe && <span className="warn"> ⚠ 氧气不够</span>}
             </button>
           </li>
           <li>
@@ -62,7 +72,9 @@ export function AscentView({ state, onStateChange }: Props) {
               className="btn event-option danger"
               onClick={() => ascend('emergency')}
             >
-              应急上浮（1 回合，深处必死）
+              {blocked
+                ? '凿穿洞顶上浮（1 回合，深处必死）'
+                : '应急上浮（1 回合，深处必死）'}
             </button>
           </li>
         </ul>

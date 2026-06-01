@@ -1,0 +1,15 @@
+{
+  "_comment": "沉默的厅 · sanity check 通过路径。sanity=70 时 rate ≈ 80%。seed=42 在该 rate 下确定性通过。验证 lore.bluecaves.silent_chamber 解锁。",
+  "eventId": "bluecaves.silent_chamber",
+  "stats": { "sanity": 70 },
+  "depth": 50,
+  "seed": 42,
+  "choices": ["stay_a_moment"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.bluecaves.silent_chamber"],
+    "checkPassed": true
+  }
+}

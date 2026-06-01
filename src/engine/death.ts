@@ -2,17 +2,10 @@
 // 输入：GameState + 死因 → 输出：保留 profile 的新 GameState，phase = funeral
 // 主 SPEC §7.1 / §7.2
 
-import type { GameState, DeathRecord, InventoryItem, ItemDef, DecayTier } from '@/types';
-import itemsData from '@/data/items.json';
+import type { GameState, DeathRecord, DecayTier } from '@/types';
 import { appendLog } from './state';
+import { getItemDef } from './items';
 
-// —— 物品索引 ——
-const ITEM_INDEX = new Map<string, ItemDef>(
-  (itemsData as { items: ItemDef[] }).items.map((i) => [i.id, i]),
-);
-function getItemDef(id: string): ItemDef | undefined {
-  return ITEM_INDEX.get(id);
-}
 function getDecayTier(id: string): DecayTier {
   return getItemDef(id)?.decay ?? 'material';
 }
@@ -39,6 +32,9 @@ const PRESERVATION_BONUS: Record<string, number> = {
 const BASE_SWEEP_CHANCE = 0.06;
 // Lv.3 完全免疫海流
 const SWEEP_IMMUNITY_UPGRADE = 'upgrade.salvage_guild.lv3';
+
+// 尸体在海底"还能被找到"的最大 diveAge（超过则视作彻底散失，不再生成节点）
+const CORPSE_VISIBLE_AGE = 25;
 
 /** 计算当前的保鲜加成（来自港口升级） */
 export function getPreservationBonus(unlockedUpgrades: Set<string>): number {
@@ -136,8 +132,30 @@ export function executeDeath(state: GameState, cause: string): GameState {
 
 function computeRawBuildingPoints(run: NonNullable<GameState['run']>): number {
   const depthCoef = Math.floor(run.currentDepth / 5);
-  const nodeCoef = run.visitedNodeIds.length;
+  // 去重计数：迷路图里回头/绕回会重复 append 同一节点，按"到过的不同节点数"算建设值，
+  // 既不被来回踱步刷高，也与层状图（无重访）保持一致。
+  const nodeCoef = new Set(run.visitedNodeIds).size;
   return depthCoef + nodeCoef;
+}
+
+/**
+ * 一具尸体此刻是否"值得回收"：同 zone、未被全部回收、diveAge 在可见区间、且身上还有东西。
+ * 给海图的出海前选目标（打捞行会 Lv.2）+ mapgen 强制布点共用同一判据。
+ */
+export function isRecoverableCorpse(d: DeathRecord, zoneId: string): boolean {
+  return (
+    d.zoneId === zoneId &&
+    !d.recovered &&
+    d.diveAge < CORPSE_VISIBLE_AGE &&
+    d.inventorySnapshot.length > 0
+  );
+}
+
+/** 列出某 zone 当前所有可回收尸体（最老的在前，制造紧迫感）。海图选目标用。 */
+export function listRecoverableCorpses(deaths: DeathRecord[], zoneId: string): DeathRecord[] {
+  return deaths
+    .filter((d) => isRecoverableCorpse(d, zoneId))
+    .sort((a, b) => b.diveAge - a.diveAge);
 }
 
 /** 找一具可被"本次 run 在此 zone"回收的尸体（用于 mapgen） */
@@ -147,12 +165,10 @@ export function findRecoverableCorpse(
   targetDepth: number,
   alreadyPlaced: Set<string>,
 ): DeathRecord | undefined {
-  // 同 zone，深度 ±10m，未被全部回收，diveAge 在可见区间，且本图未已经放过
+  // 复用 isRecoverableCorpse（同 zone / 未回收 / diveAge 在可见区间 / 还有物品），再加深度窗 + 本图去重
   const candidates = deaths.filter(
     (d) =>
-      d.zoneId === zoneId &&
-      !d.recovered &&
-      d.diveAge < 25 &&
+      isRecoverableCorpse(d, zoneId) &&
       Math.abs(d.depthAtDeath - targetDepth) <= 10 &&
       !alreadyPlaced.has(d.id),
   );
@@ -196,11 +212,6 @@ export function ageAndDecayDeaths(
       recovered: snapshot.length === 0 ? true : d.recovered,
     };
   });
-}
-
-/** UI 用：当前尸体上还能看到的物品（即 snapshot，因为衰减发生在 age 时已经移除了）*/
-export function decayFilter(snapshot: InventoryItem[], _diveAge: number): InventoryItem[] {
-  return snapshot;
 }
 
 /** 玩家从尸体上拿走部分物品：修改 DeathRecord 的 snapshot，必要时标记 recovered */

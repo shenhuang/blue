@@ -1,28 +1,26 @@
 {
-  "npcs": [
-    {
-      "id": "npc.aldo",
-      "name": "Aldo",
-      "role": "mentor",
-      "shortDescription": "守灯人。脸上有大片伤疤，左手少了两根手指。再不下水。",
-      "dialogRoot": {
-        "id": "aldo.root",
-        "text": "黎明前的鸢尾湾。雾还没散。Aldo 坐在长椅上，看着海。他没回头。\n\n「准备好了？」",
-        "choices": [
-          {
-            "id": "ready",
-            "label": "准备好了。",
-            "next": "aldo.briefing"
-          },
-          {
-            "id": "not_yet",
-            "label": "还差一点。",
-            "next": "aldo.look_around"
-          }
-        ]
-      }
+  "npc": {
+    "id": "npc.aldo",
+    "name": "Aldo",
+    "role": "mentor",
+    "shortDescription": "守灯人。脸上有大片伤疤，左手少了两根手指。再不下水。",
+    "dialogRoot": {
+      "id": "aldo.root",
+      "text": "黎明前的鸢尾湾。雾还没散。Aldo 坐在长椅上，看着海。他没回头。\n\n「准备好了？」",
+      "choices": [
+        {
+          "id": "ready",
+          "label": "准备好了。",
+          "next": "aldo.briefing"
+        },
+        {
+          "id": "not_yet",
+          "label": "还差一点。",
+          "next": "aldo.look_around"
+        }
+      ]
     }
-  ],
+  },
   "dialogs": {
     "aldo.briefing": {
       "id": "aldo.briefing",
@@ -39,21 +37,12 @@
           ]
         },
         {
-          "id": "depart_lighthouse",
-          "label": "出海到旧灯塔礁。",
+          "id": "open_chart",
+          "label": "（摊开海图，挑一个潜点）",
           "next": "end",
           "visibleIf": { "kind": "hasFlag", "flag": "flag.tutorial_complete" },
           "effects": [
-            { "kind": "startDive", "zoneId": "zone.old_lighthouse_reef" }
-          ]
-        },
-        {
-          "id": "depart_east_revisit",
-          "label": "再去东礁走一趟。",
-          "next": "end",
-          "visibleIf": { "kind": "hasFlag", "flag": "flag.tutorial_complete" },
-          "effects": [
-            { "kind": "startDive", "zoneId": "zone.east_reef" }
+            { "kind": "openChart" }
           ]
         },
         {
@@ -76,7 +65,7 @@
     },
     "aldo.look_around": {
       "id": "aldo.look_around",
-      "text": "「随你。但太阳一出，潮位就涨。」\n\n你在港口走了一圈。气瓶师 Otto 在仓库门口给一只气瓶上压力，没抬头。打捞商 Mira 的柜台还没开。海鸥在桅杆上叫。\n\n回到长椅时，Aldo 还在那个位置。",
+      "text": "「随你。但太阳一出，潮位就涨。」\n\n你在港口走了一圈。气瓶师 Otto 在仓库门口给一只气瓶上压力，没抬头。打捞商 Mira 的柜台已经开了——可以去找她出手东西。海鸥在桅杆上叫。\n\n回到长椅时，Aldo 还在那个位置。",
       "choices": [
         {
           "id": "now_ready",

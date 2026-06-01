@@ -7,3 +7,5 @@ export * from './items';
 export * from './npcs';
 export * from './dive';
 export * from './combat';
+export * from './upgrades';
+export * from './chart';

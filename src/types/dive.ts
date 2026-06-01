@@ -22,6 +22,23 @@ export interface ZoneDef {
   generation: 'random' | 'linearScripted';
   /** 线性脚本下潜的起始事件 id */
   scriptedStartEventId?: string;
+  /**
+   * 随机图（generation='random'）的拓扑形态。与 canFreeAscend 正交：
+   *  - 'layered'（默认，缺省即此）：层状 DAG——每层 2–3 节点、深度单调递增、只连下一层。
+   *    旧灯塔礁 / 沉船墓园等开阔海域用这套。
+   *  - 'maze'：洞穴"迷路"图——双向边的连通图，有环（绕一圈回到原点）、死路（dead-end）、
+   *    多个"最深点"（局部深度极大）。入口与"洞另一头的出口"都是 ascent_point，其余内部节点
+   *    在 canFreeAscend=false 时仍被 isAscentBlocked 锁住。蓝洞群用这套。
+   * 注：mapShape 只决定拓扑；上浮语义仍由 canFreeAscend 单独控制（解耦，便于未来组合）。
+   */
+  mapShape?: 'layered' | 'maze';
+  /**
+   * 是否允许在任意节点自由上浮（normal / rushed 模式）。
+   *  - true（默认，开阔海域）：玩家可在任何 NodeSelect / RestView 触发 AscentView，三种模式都可用。
+   *  - false（洞穴/封闭水道）：normal / rushed 必须在 ascent_point 节点才允许；其它地方只能 emergency，
+   *    叙事是"凿穿洞顶"。mapgen 也会避免在中间层生成 ascent_point；末层仍保留 ascent_point 作为洞穴另一端的出口。
+   */
+  canFreeAscend?: boolean;
 }
 
 /** 下潜地图（运行时生成） */
@@ -57,6 +74,8 @@ export type NodeKind =
   | 'event' // 普通事件
   | 'ascent_point' // 上浮口
   | 'rest' // 休息点（可消耗回合恢复体力）
+  | 'air_pocket' // 气穴：上浮换气，恢复氧气（一次性，用过即枯）
+  | 'camp' // 扎营点：消耗较多回合，恢复体力/理智（可重复，自带氧气代价）
   | 'corpse' // 尸体回收点
   | 'shop' // 水下黑市（后期）
   | 'boss'; // 区域 BOSS

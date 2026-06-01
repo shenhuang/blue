@@ -1,0 +1,16 @@
+{
+  "_comment": "旧灯塔礁 · 灯室的镜，顺着镜面折回的那道亮线看到底（uncanny, sanity vs 48）。满 sanity 时 rate=0.95（clamp 上限），seed 1/2/3 均确定性通过。验证 uncanny check 通过分支：lore.old_lighthouse.the_lens + sanity -5 + oxygenTurnCost 2。失败分支（未锁 baseline）= oxygen -3 / sanity -10（尽头空沙上有东西把脸转开）。填 reef 26-44m 中段 uncanny 缺口（此前最深 reef-only uncanny 是 fog_bell 到 38m）；只挂 [reef] tag → 隔离在旧灯塔礁（quirk #19），loot 路径 pry_brass 掉 brass_fitting（灯塔黄铜，reef-isolated 故不犯 quirk #44）。镜把光收成一道恒定指向礁坡下方的亮线——延续灯塔『下面的光』母题（呼应 reef.lantern_glow cosmic），但保持 uncanny（物理镜的反常），刻意不触发 flag.d_reveal。dc 48 比 cosmic 事件(vs 55)低，符合 uncanny 档。",
+  "eventId": "reef.lighthouse_lens",
+  "stats": { "sanity": 100 },
+  "depth": 38,
+  "seed": 1,
+  "choices": ["sight_along"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.old_lighthouse.the_lens"],
+    "statsDelta": { "oxygen": -2, "sanity": -5 }
+  }
+}

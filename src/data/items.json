@@ -147,6 +147,64 @@
       "decay": "durable"
     },
     {
+      "id": "item.eel_skin",
+      "name": "盲鳗皮",
+      "category": "material",
+      "rarity": "uncommon",
+      "description": "湿的时候发蓝，干了变成铅灰。Mira 说有人专门收。",
+      "weight": 0.4,
+      "sellPrice": 22,
+      "decay": "organic"
+    },
+    {
+      "id": "item.brass_pocket_watch",
+      "name": "黄铜怀表",
+      "category": "story",
+      "rarity": "uncommon",
+      "description": "罗盘室里的那只怀表，黄铜壳被海水蚀出一层薄薄的绿。底盖上有一行刻字。",
+      "weight": 0.2,
+      "sellPrice": 0,
+      "decay": "eternal",
+      "story": {
+        "triggersEventId": "wreck_graveyard.pocket_watch_log",
+        "unlocksLoreEntry": "lore.wreck_graveyard.h_m"
+      }
+    },
+    {
+      "id": "item.waterlogged_logbook",
+      "name": "泡水的日志",
+      "category": "story",
+      "rarity": "uncommon",
+      "description": "从那具旧潜水服的胸前取下来的——皮面浮肿，大多数页面糊在一起，但末尾的一两页是铅笔写的，撕得开。",
+      "weight": 0.5,
+      "sellPrice": 0,
+      "decay": "eternal",
+      "story": {
+        "triggersEventId": "wreck_graveyard.logbook_read",
+        "unlocksLoreEntry": "lore.wreck_graveyard.last_page"
+      }
+    },
+    {
+      "id": "item.crab_chitin",
+      "name": "蛛蟹甲壳",
+      "category": "material",
+      "rarity": "common",
+      "description": "拳头大小的一块外壳，钙化得很厚。Mira 说几个铸器铺会专门收。",
+      "weight": 0.3,
+      "sellPrice": 8,
+      "decay": "durable"
+    },
+    {
+      "id": "item.brass_fitting",
+      "name": "黄铜配件",
+      "category": "material",
+      "rarity": "common",
+      "description": "从旧灯塔上拆下来的一块黄铜——齿轮、铰链、说不清的零件。海水只在表面蚀了层绿。Mira 说铸器铺称重收。",
+      "weight": 0.4,
+      "sellPrice": 14,
+      "decay": "durable"
+    },
+    {
       "id": "item.med_kit",
       "name": "急救包",
       "category": "consumable",
@@ -162,6 +220,37 @@
           "text": "你撕开急救包，止血带勒紧，疼痛被推到一边。"
         }
       }
+    },
+
+    {
+      "id": "item.barracuda_jaw",
+      "name": "梭鱼颌",
+      "category": "material",
+      "rarity": "common",
+      "description": "一整副下颌，牙朝里倒钩，干了之后白得发亮。Mira 说有铺子拿它做钓具的倒刺。",
+      "weight": 0.2,
+      "sellPrice": 12,
+      "decay": "durable"
+    },
+    {
+      "id": "item.cave_octopus_beak",
+      "name": "章鱼角喙",
+      "category": "material",
+      "rarity": "common",
+      "description": "从那团软东西里取出来的两片黑硬喙，像鸟嘴，又比鸟嘴沉。干了之后乌亮。Mira 说做雕件的肯收。",
+      "weight": 0.1,
+      "sellPrice": 13,
+      "decay": "durable"
+    },
+    {
+      "id": "item.lantern_gland",
+      "name": "冷光腺",
+      "category": "material",
+      "rarity": "uncommon",
+      "description": "从那钟形的伞里取出来的一小囊东西，装在网兜里还在发一点冷光——离了水、过了夜也不灭，也不腐。Mira 不太想碰它，但说港里有个收异物的肯出价。",
+      "weight": 0.1,
+      "sellPrice": 16,
+      "decay": "durable"
     }
   ]
 }

@@ -1,0 +1,15 @@
+{
+  "_comment": "旧灯塔礁 · 下面的光，朝光游过去（sanity vs 50，oncePerRun，cosmic）。满 sanity 时 rate=0.95（clamp 上限），seed=1 确定性通过。验证 cosmic check 通过分支：lore.old_lighthouse.the_light + sanity -6 + oxygenTurnCost 2。对照 silent_chamber / engine_room_hum 的 cosmic 平衡。",
+  "eventId": "reef.lantern_glow",
+  "depth": 34,
+  "seed": 1,
+  "choices": ["go_toward"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.old_lighthouse.the_light"],
+    "statsDelta": { "oxygen": -2, "sanity": -6 }
+  }
+}

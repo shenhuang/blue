@@ -1,0 +1,67 @@
+{
+  "enemies": [
+    {
+      "id": "enemy.cave_octopus",
+      "name": "洞穴章鱼",
+      "tier": "realistic",
+      "hp": 26,
+      "armor": 1,
+      "evasion": 3,
+      "speed": 7,
+      "threat": 6,
+      "hostility": "territorial",
+      "initialStance": "alerted",
+      "aiPattern": "aggressor",
+      "attacks": [
+        {
+          "id": "octopus.coil",
+          "name": "缠臂",
+          "damageType": "physical",
+          "damage": [3, 5],
+          "description": "一条腕从侧面卷上你的小臂，吸盘一个接一个贴死。它在把你往洞口拖。",
+          "weight": 3
+        },
+        {
+          "id": "octopus.beak",
+          "name": "角喙",
+          "damageType": "physical",
+          "damage": [5, 8],
+          "description": "软的身体底下藏着一张硬喙——像两片黑指甲。它咬穿了你的潜水服。",
+          "weight": 1
+        },
+        {
+          "id": "octopus.ink",
+          "name": "喷墨",
+          "damageType": "physical",
+          "damage": [0, 0],
+          "sanityDamage": [2, 4],
+          "description": "墨在水里炸开。你的灯成了一团棕黑，洞顶、洞底、出口——全没了。你听见自己的呼吸快起来。",
+          "weight": 1
+        }
+      ],
+      "physicalDamage": [3, 8],
+      "sanityDamage": [2, 4],
+      "loot": {
+        "guaranteed": [{ "itemId": "item.cave_octopus_beak", "qty": [1, 1], "weight": 1 }],
+        "rolls": [],
+        "rollCount": 0,
+        "victoryModifier": {
+          "kill": 1.0,
+          "flee": 0.3,
+          "scare": 0.3
+        }
+      },
+      "victoryConditions": ["kill", "flee", "scare"],
+      "loreEntry": "lore.cave_octopus"
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.cave_octopus_solo",
+      "party": {
+        "members": [{ "defId": "enemy.cave_octopus" }]
+      },
+      "introText": "壳堆后面那团软的东西不再装石头了——它把自己撑开，比那个洞口大得多。"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "_comment": "盲鳗 lair · freeze 选 stamina check 通过路径。stamina=100 时 rate ≈ 95%。seed=1 在该 rate 下确定性通过，不触发战斗。验证 stamina check 通过 + 无 combat boundary。",
+  "eventId": "bluecaves.blind_eel_lair",
+  "depth": 40,
+  "seed": 1,
+  "choices": ["freeze"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "combatTriggered": null
+  }
+}

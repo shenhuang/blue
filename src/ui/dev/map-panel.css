@@ -1,0 +1,117 @@
+/* ============================================================
+ * 地图调试器 dev 面板（仅 import.meta.env.DEV）—— 迷路 mapgen 可视化
+ *
+ * 只被 MapDevPanel.tsx 静态 import；prod build 时 App.tsx 的 lazy() + DEV 守卫
+ * 让 MapDevPanel 被 tree-shake，这份 css 也不进包（与 combat-panel.css 同套路）。
+ *
+ * 复用事件面板的 .dev-* 基础变量与控件：
+ * ============================================================ */
+
+@import './dev-panel.css';
+
+/* 两栏：左控制 + 结构读数，右图可视化 */
+.dev-map-body {
+  grid-template-columns: 320px 1fr;
+}
+
+.dev-map-canvas-col {
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dev-map-svg-wrap {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(78, 209, 193, 0.05), transparent 60%),
+    var(--bg);
+}
+
+.dev-map-svg {
+  display: block;
+}
+
+/* 节点 */
+.dev-map-node circle {
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+.dev-map-node text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  fill: var(--text);
+  font-size: 9px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.dev-map-node .dev-map-node-sub {
+  fill: var(--text-faint);
+  font-size: 7px;
+}
+
+/* 节点配色（按 kind / 角色） */
+.dev-map-fill-entrance { fill: var(--accent); }
+.dev-map-fill-exit { fill: var(--green, #5fb98e); }
+.dev-map-fill-event { fill: var(--bg-elev-2); }
+.dev-map-fill-rest { fill: var(--bg-elev); }
+.dev-map-fill-corpse { fill: #6a2a3e; }
+.dev-map-fill-air { fill: #1f5b66; }
+.dev-map-fill-camp { fill: #3a5a32; }
+
+.dev-map-node.is-deepest circle {
+  stroke: var(--warn, #d6b25e);
+  stroke-width: 2.5;
+}
+.dev-map-node.is-deadend circle {
+  stroke-dasharray: 3 2;
+}
+
+/* 边 */
+.dev-map-edge {
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+.dev-map-edge.is-chord {
+  stroke: var(--accent);
+  stroke-opacity: 0.55;
+  stroke-dasharray: 4 3;
+}
+
+/* 图例 */
+.dev-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 4px 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.dev-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.dev-map-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: inline-block;
+}
+
+/* 结构读数 */
+.dev-map-check {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  font-size: 12px;
+  border-bottom: 1px dotted var(--border);
+}
+.dev-map-check:last-child { border-bottom: none; }
+.dev-map-check .ok { color: var(--green, #5fb98e); }
+.dev-map-check .bad { color: var(--danger); font-weight: 600; }
+.dev-map-check-key { color: var(--text-muted); }

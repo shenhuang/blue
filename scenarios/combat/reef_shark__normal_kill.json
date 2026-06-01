@@ -1,0 +1,17 @@
+{
+  "_comment": "教学战斗 baseline · knife_stab × 2 击杀 reef_shark.tutorial。验证基本伤害公式 + 战利品 + victoryEventId 跳转。seed=1 下确定性击杀。",
+  "combatId": "combat.tutorial_shark",
+  "seed": 1,
+  "actions": [
+    { "actionId": "action.knife_stab", "targetIndex": 0 },
+    { "actionId": "action.knife_stab", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 2,
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": { "item.shark_tooth": 1 },
+    "enemiesAlive": 0
+  }
+}

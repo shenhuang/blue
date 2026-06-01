@@ -1,0 +1,13 @@
+{
+  "_comment": "旧灯塔礁 · 海胆滩（reef 浅中段 realistic，16-30m，补浅中段 realistic 密度）。在碎礁里翻找：无 check，oxygenTurnCost 1 + deltas sanity -1（秃礁的死寂），coral_shard chance loot → statsDelta {oxygen,-1 sanity,-1}（loot 不进 statsDelta）。对照 reef.bleached_garden 的 no-check loot+sanity 套路。",
+  "eventId": "reef.urchin_barren",
+  "depth": 22,
+  "seed": 1,
+  "choices": ["pick_through"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -1, "sanity": -1 }
+  }
+}

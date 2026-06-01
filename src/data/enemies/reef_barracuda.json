@@ -1,0 +1,57 @@
+{
+  "enemies": [
+    {
+      "id": "enemy.reef_barracuda",
+      "name": "梭鱼",
+      "tier": "realistic",
+      "hp": 16,
+      "armor": 0,
+      "evasion": 4,
+      "speed": 12,
+      "threat": 7,
+      "hostility": "predatory",
+      "initialStance": "alerted",
+      "aiPattern": "flanker",
+      "attacks": [
+        {
+          "id": "barracuda.dart",
+          "name": "突进撕咬",
+          "damageType": "physical",
+          "damage": [5, 9],
+          "description": "它不是游过来的——是弹过来的。一道银线，你眼前只来得及闪一下。",
+          "weight": 3
+        },
+        {
+          "id": "barracuda.veer",
+          "name": "掉头掠咬",
+          "damageType": "physical",
+          "damage": [3, 6],
+          "description": "它擦着你的前臂掠过，一个急转，又咬回来。",
+          "weight": 2
+        }
+      ],
+      "physicalDamage": [3, 9],
+      "loot": {
+        "guaranteed": [{ "itemId": "item.barracuda_jaw", "qty": [1, 1], "weight": 1 }],
+        "rolls": [],
+        "rollCount": 0,
+        "victoryModifier": {
+          "kill": 1.0,
+          "flee": 0.3,
+          "scare": 0.0
+        }
+      },
+      "victoryConditions": ["kill", "flee"],
+      "loreEntry": "lore.reef_barracuda"
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.reef_barracuda_solo",
+      "party": {
+        "members": [{ "defId": "enemy.reef_barracuda" }]
+      },
+      "introText": "它一直停在那儿看你。你一动，它就成了一道银线。"
+    }
+  ]
+}

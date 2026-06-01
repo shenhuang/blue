@@ -1,0 +1,14 @@
+{
+  "_comment": "深水段（48-60m）· 盐线，贴岩壁慢慢下（stamina vs 13，realistic cave 导航）。满 stamina 时 rate=0.95（clamp 上限），seed 1 确定性通过。验证深 cave 下潜通过分支：oxygenTurnCost 1（coral_shard chance loot 不入 statsDelta）。对照 bluecaves.forked_passage 的导航 check。",
+  "eventId": "cave.halocline",
+  "depth": 55,
+  "seed": 1,
+  "choices": ["feel_wall_down"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -1 }
+  }
+}

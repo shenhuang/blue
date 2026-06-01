@@ -1,0 +1,13 @@
+{
+  "_comment": "旧灯塔礁 · 礁壁的断口，沿边不下探的安全选项（无 check）。验证 no-check 资源路径：oxygenTurnCost 1，无 deltas/loot → statsDelta 只 oxygen -1。",
+  "eventId": "reef.shelf_break",
+  "depth": 38,
+  "seed": 1,
+  "choices": ["skirt_edge"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -1 }
+  }
+}

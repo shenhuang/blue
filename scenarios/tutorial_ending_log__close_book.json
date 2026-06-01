@@ -1,0 +1,14 @@
+{
+  "_comment": "加分项：教学结尾日志（portEvent 场景）。tutorial.ending_log 是 oncePerSave 的港口侧 cutscene，depthRange=[0,0]，weight=0。这里直接强制跑该事件，验证 lore + applyFlags 在 portEvent 上下文也能跑通（虽然这里我们仍然给了 run，因为 scenario runner 默认建 run；这等价于 cutscene 在 dive 上下文重播的『白盒』测试）。",
+  "eventId": "tutorial.ending_log",
+  "depth": 0,
+  "seed": 1,
+  "choices": ["close_book"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.father_first_entry"],
+    "flagsAdded": ["flag.tutorial_complete"]
+  }
+}

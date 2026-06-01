@@ -23,7 +23,39 @@ export function createInitialProfile(): PlayerProfile {
     loreEntries: new Set(),
     deaths: [],
     runsCompleted: 0,
+    inventory: [],
   };
+}
+
+/** 合并若干 InventoryItem 到一个 inventory（同 id 累加）；纯函数 */
+export function mergeIntoInventory(
+  inventory: InventoryItem[],
+  add: InventoryItem[]
+): InventoryItem[] {
+  let result = inventory;
+  for (const item of add) {
+    if (item.qty <= 0) continue;
+    result = addToInventory(result, item.itemId, item.qty);
+  }
+  return result;
+}
+
+/** 从 inventory 扣减一个物品；qty 不足时全部扣完；纯函数 */
+export function removeFromInventory(
+  inventory: InventoryItem[],
+  itemId: string,
+  qty: number
+): InventoryItem[] {
+  const out: InventoryItem[] = [];
+  for (const item of inventory) {
+    if (item.itemId !== itemId) {
+      out.push(item);
+      continue;
+    }
+    const remaining = item.qty - qty;
+    if (remaining > 0) out.push({ ...item, qty: remaining });
+  }
+  return out;
 }
 
 export function createInitialGameState(): GameState {
@@ -59,17 +91,33 @@ export function createInitialStats(): Stats {
 export function createNewRun(opts: {
   zoneId: string;
   inventoryCapacity?: number;
+  /** 从港口升级派生的全局加成（可选；脚本/测试可省略） */
+  bonuses?: {
+    oxygenMaxBonus?: number;
+    staminaMaxBonus?: number;
+    extraConsumableSlot?: number;
+  };
 }): RunState {
+  const oxygenBonus = opts.bonuses?.oxygenMaxBonus ?? 0;
+  const staminaBonus = opts.bonuses?.staminaMaxBonus ?? 0;
+  const slotBonus = opts.bonuses?.extraConsumableSlot ?? 0;
+
+  const staminaMax = 100 + staminaBonus;
+  const oxygenMax = 60 + oxygenBonus;
+  const stats = createInitialStats();
+  stats.stamina = staminaMax;
+  stats.oxygen = oxygenMax;
+
   return {
     runId: `run-${Date.now()}`,
     zoneId: opts.zoneId,
     map: null,
-    stats: createInitialStats(),
-    staminaMax: 100,
-    oxygenMax: 60,
+    stats,
+    staminaMax,
+    oxygenMax,
     equipment: createStarterLoadout(),
     inventory: [],
-    inventoryCapacity: opts.inventoryCapacity ?? 8,
+    inventoryCapacity: (opts.inventoryCapacity ?? 8) + slotBonus,
     gold: 0,
     currentDepth: 0,
     currentNodeId: null,
@@ -114,4 +162,92 @@ export function clampStats(stats: Stats, max: { stamina: number; oxygen: number 
     sanity: Math.max(0, Math.min(stats.sanity, 100)),
     nitrogen: Math.max(0, Math.min(stats.nitrogen, 100)),
   };
+}
+
+// ============================================================
+// 存档序列化 / 迁移 / 持久化
+// ============================================================
+//
+// GameState 里有多个 Set（profile.flags / unlockedUpgrades / loreEntries、run.activeFlags），
+// 朴素 JSON.stringify 会把它们序列化成 `{}`。下面用 replacer/reviver 把 Set ↔ {__set:[...]}
+// 互转，整棵 state（含嵌套 Set）都能安全 round-trip。migrateSave 按 version 升级旧存档；
+// SAVE_VERSION 改动时在 migrateSave 的 while 里加迁移步骤。
+
+const SAVE_KEY = 'deepecho.save';
+
+function saveReplacer(_key: string, value: unknown): unknown {
+  return value instanceof Set ? { __set: Array.from(value) } : value;
+}
+
+function saveReviver(_key: string, value: unknown): unknown {
+  if (
+    value &&
+    typeof value === 'object' &&
+    Array.isArray((value as { __set?: unknown[] }).__set)
+  ) {
+    return new Set((value as { __set: unknown[] }).__set);
+  }
+  return value;
+}
+
+export function serializeGameState(state: GameState): string {
+  return JSON.stringify(state, saveReplacer);
+}
+
+/**
+ * 把存档对象迁移到当前 SAVE_VERSION。
+ *  - version > 当前：存档比代码新 → 拒绝（返回 null，避免读坏）。
+ *  - version < 当前：逐步迁移（目前只有 v1，无真实旧版；未来在 while 的 switch 里加 case）。
+ */
+function migrateSave(obj: unknown): GameState | null {
+  if (!obj || typeof obj !== 'object') return null;
+  const o = obj as Record<string, unknown>;
+  let v = typeof o.version === 'number' ? (o.version as number) : 0;
+  if (v > SAVE_VERSION) return null;
+  while (v < SAVE_VERSION) {
+    // switch (v) { case 1: /* 1→2 迁移步骤 */ v = 2; break; default: v = SAVE_VERSION; }
+    v = SAVE_VERSION; // 目前没有 < 当前 的真实旧版，直接对齐
+  }
+  o.version = SAVE_VERSION;
+  return o as unknown as GameState;
+}
+
+/** 反序列化 + 迁移；损坏 / 不兼容 → null */
+export function deserializeGameState(raw: string): GameState | null {
+  try {
+    return migrateSave(JSON.parse(raw, saveReviver));
+  } catch {
+    return null;
+  }
+}
+
+/** 自动存档（localStorage；非浏览器环境 / 隐私模式 / 配额满时静默跳过，不崩游戏） */
+export function saveGame(state: GameState): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(SAVE_KEY, serializeGameState(state));
+  } catch {
+    /* 配额满 / 隐私模式：放弃这次存档 */
+  }
+}
+
+/** 读存档（无 / 损坏 / 版本不兼容 → null，调用方退回 createInitialGameState） */
+export function loadGame(): GameState | null {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    return raw ? deserializeGameState(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 清存档（gameOver / 真正重开时调用） */
+export function clearSave(): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.removeItem(SAVE_KEY);
+  } catch {
+    /* ignore */
+  }
 }

@@ -277,6 +277,589 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "reef.flooded_stair",
+      "depthRange": [10, 24],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 8,
+      "cooldown": 3,
+      "title": "灌满水的旋梯",
+      "body": "灯塔的铁旋梯从礁顶斜插下来，灌满了水。\n二十年的藻把扶手包成了软的。\n梯口卡着一扇锈死的铁格栅。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "pry_grate",
+          "label": "撬开格栅（体力 vs 12）",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "锈层崩开。后面是看守人存渔具的小柜，黄铜活页还转得动。",
+              "oxygenTurnCost": 1,
+              "loot": [
+                { "itemId": "item.brass_fitting", "qty": [1, 1] },
+                { "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.5 }
+              ]
+            },
+            "onFailure": {
+              "text": "格栅纹丝不动。你撬到手腕发酸。",
+              "deltas": { "stamina": -5 }
+            }
+          }
+        },
+        {
+          "id": "descend",
+          "label": "顺着旋梯往下",
+          "outcome": {
+            "text": "你扶着梯往下游。光一节一节地暗下去。",
+            "oxygenTurnCost": 2,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.6 }]
+          }
+        },
+        {
+          "id": "leave",
+          "label": "回到礁面",
+          "outcome": { "text": "你离开梯口。" }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.keepers_footlocker",
+      "depthRange": [12, 26],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 4,
+      "oncePerRun": true,
+      "title": "看守人的箱子",
+      "body": "礁石缝里楔着一只木箱——\n灯塔看守人的，铜锁早烂穿了。\n盖子下面压着没被泡烂的东西。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "open_it",
+          "label": "撬开盖子",
+          "outcome": {
+            "text": "一听没开的罐头、半盒受潮的火柴、一张泡得只剩边框的照片。\n你认不出照片上的人。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.canned_food", "qty": [1, 1] },
+              { "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.5 }
+            ],
+            "loreEntry": "lore.old_lighthouse.keeper"
+          }
+        },
+        {
+          "id": "leave",
+          "label": "盖回去",
+          "outcome": {
+            "text": "你把盖子按回去。让他留着。",
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.bleached_garden",
+      "depthRange": [16, 32],
+      "zoneTags": ["reef"],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "白的那一片",
+      "body": "前面一片珊瑚是白的。\n不是病那种脏白——是干净的、骨头一样的白。\n而且排得太齐，像谁摆过。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "break_piece",
+          "label": "掰一块下来",
+          "outcome": {
+            "text": "白珊瑚是凉的，掰起来像粉笔。\n断口太平整，不像掰断的。",
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 2] }],
+            "deltas": { "sanity": -2 }
+          }
+        },
+        {
+          "id": "leave_it",
+          "label": "不碰，绕过去",
+          "outcome": {
+            "text": "你绕开那片白。它在灯里像一排摆错了位置的牙。",
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.fog_bell",
+      "depthRange": [20, 38],
+      "zoneTags": ["reef"],
+      "weight": 4,
+      "oncePerRun": true,
+      "title": "雾钟",
+      "body": "灯塔的雾钟翻在沙里，钟口朝着你。\n每次水流过，钟就晃一下——\n你不是听见，是胸口先感到那一下。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "still_it",
+          "label": "按住钟，让它停（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你两手抱住钟身。它安静下来。水里一下子空了，连呼吸都显得太响。",
+              "oxygenTurnCost": 1,
+              "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1] }]
+            },
+            "onFailure": {
+              "text": "钟太重。钟舌甩出去，撞在沉船的钢板上。那一声穿过你整个人。",
+              "deltas": { "sanity": -6 },
+              "oxygenTurnCost": 2
+            }
+          }
+        },
+        {
+          "id": "listen",
+          "label": "停下来，听它响",
+          "outcome": {
+            "text": "你停在原地。钟一下、一下地响，间隔和你的心跳错开半拍。\n你忽然记起一个不属于你的号牌。",
+            "deltas": { "sanity": -4 },
+            "oxygenTurnCost": 1,
+            "loreEntry": "lore.old_lighthouse.bell"
+          }
+        },
+        {
+          "id": "swim_clear",
+          "label": "快游开",
+          "outcome": {
+            "text": "你蹬腿离开。那一下、一下，跟了你一段。",
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.lantern_glow",
+      "depthRange": [26, 42],
+      "zoneTags": ["reef"],
+      "weight": 3,
+      "oncePerRun": true,
+      "title": "下面的光",
+      "body": "礁壁底下，塔倒进去的地方，有光。\n它在转。慢慢地，一圈、一圈——\n像那盏灯还在扫。\n可岩石底下没有放灯的地方。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "go_toward",
+          "label": "朝光游过去（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你停在岩壁前。光从石头另一侧扫过来，一圈，又一圈。\n你数到三圈，逼自己掉头。",
+              "deltas": { "sanity": -6 },
+              "oxygenTurnCost": 2,
+              "loreEntry": "lore.old_lighthouse.the_light"
+            },
+            "onFailure": {
+              "text": "你贴着岩壁往下，光始终差一臂远。\n等你回过神，灯照着你自己刚划过的水。氧气表在响。",
+              "deltas": { "sanity": -12 },
+              "oxygenTurnCost": 5
+            }
+          }
+        },
+        {
+          "id": "turn_back",
+          "label": "背过身离开",
+          "outcome": {
+            "text": "你转过身。光在背后继续转，不快不慢。",
+            "deltas": { "sanity": -3 },
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "wreck.silted_hold",
+      "depthRange": [45, 60],
+      "zoneTags": ["wreck"],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "淤住的货舱",
+      "body": "一艘大货船船头扎进沙里，货舱口朝下张着。\n淤泥灌了半舱，软得探不到底。\n灯柱里，泥面上还立着几只没被压垮的铜箍木桶。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "pry_hoops",
+          "label": "撬桶上的铜箍（体力 vs 14）",
+          "check": {
+            "stat": "stamina",
+            "dc": 14,
+            "onSuccess": {
+              "text": "铜箍崩开，木桶塌成一摊朽屑——里面是几听没胀的罐头，和裹在油纸里的一截黄铜管件。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.brass_fitting", "qty": [1, 1] },
+                { "itemId": "item.canned_food", "qty": [1, 2], "chance": 0.6 }
+              ]
+            },
+            "onFailure": {
+              "text": "箍锈死了。你撬到一半，泥从舱顶塌下来，糊住半个灯柱。你退出去时呛了一口。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -8 }
+            }
+          }
+        },
+        {
+          "id": "dig_silt",
+          "label": "在淤泥里掏一把（氧气 -2）",
+          "outcome": {
+            "text": "你把手插进泥里摸。冰冷，什么都抓不实——指尖最后碰到一块带棱的硬东西，是金属。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.5 },
+              { "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.4 }
+            ]
+          }
+        },
+        {
+          "id": "skirt_hold",
+          "label": "不下去，贴舱口绕过",
+          "outcome": {
+            "text": "你贴着舱口外缘游过去。泥面在你身下慢慢合上刚被灯惊起的纹路。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "cave.halocline",
+      "depthRange": [48, 60],
+      "zoneTags": ["cave"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "盐线",
+      "body": "灯柱往下，到某个深度忽然散开，像照进了毛玻璃。\n那是一层水——上面咸，下面更咸，交界处晃得人眼晕。\n那条线底下，水温陡降。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "feel_wall_down",
+          "label": "贴着岩壁慢慢下（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你一手搭着岩壁，顺它往下。毛玻璃那层从身侧滑过去，你始终知道哪边是上。",
+              "oxygenTurnCost": 1,
+              "loot": [
+                { "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.4 }
+              ]
+            },
+            "onFailure": {
+              "text": "你松开了壁。那层晃水里没有上下——等你抓回岩石，已经多沉了几米，氧气表跳了一下。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -5, "sanity": -2 }
+            }
+          }
+        },
+        {
+          "id": "push_through_layer",
+          "label": "直接穿过那层水（氧气 -2）",
+          "outcome": {
+            "text": "你穿过去。有一瞬，手在眼前裂成两半，又合上。线下面冷得贴骨，能见度反而清了。",
+            "oxygenTurnCost": 2,
+            "deltas": { "nitrogen": 3 }
+          }
+        },
+        {
+          "id": "stay_above",
+          "label": "不下去，沿这条深度另找路（氧气 -1）",
+          "outcome": {
+            "text": "你停在线上方，横着找别的下口。背上凉了一阵。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "wreck.porthole",
+      "depthRange": [50, 60],
+      "zoneTags": ["wreck"],
+      "weight": 4,
+      "cooldown": 5,
+      "oncePerRun": true,
+      "title": "舷窗",
+      "body": "深舱一侧嵌着一只黄铜舷窗，玻璃厚得发绿，居然没碎。\n你的灯一打上去——\n玻璃那边是亮的。是白天的、有阳光纹路的浅蓝海水。\n可这只窗的另一面，是塞满淤泥的舱壁。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "look_through",
+          "label": "把脸贴上玻璃看（理智 vs 55）",
+          "check": {
+            "stat": "sanity",
+            "dc": 55,
+            "onSuccess": {
+              "text": "你贴近。阳光纹路在玻璃里游动——再细看，那是你自己的灯，在老玻璃的层裂里散成了一片假的天光。你退开。",
+              "oxygenTurnCost": 1,
+              "deltas": { "sanity": -3 },
+              "loreEntry": "lore.deep_water.the_window"
+            },
+            "onFailure": {
+              "text": "你贴得太久。蓝水里有个影子游近，又游远——像人，又不太像。等你回过神，灯贴在玻璃上，氧气表在响。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -9 }
+            }
+          }
+        },
+        {
+          "id": "pry_ring",
+          "label": "撬下舷窗的铜圈（氧气 -2）",
+          "outcome": {
+            "text": "你用刀柄沿铜圈一点点撬。圈松开的那一下，玻璃那边的光也灭了——像谁吹熄了它。",
+            "oxygenTurnCost": 2,
+            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1] }],
+            "deltas": { "sanity": -2 }
+          }
+        },
+        {
+          "id": "look_away",
+          "label": "不看，游开",
+          "outcome": {
+            "text": "你别开灯柱，绕过那只窗。余光里它还亮着。",
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "cave.blue_floor",
+      "depthRange": [52, 60],
+      "zoneTags": ["cave"],
+      "weight": 3,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "洞底的蓝",
+      "body": "你下到能下的最底。\n沙是冷的，水一丝不动——可沙底透着蓝。\n很淡，很匀，没有源头。像岩床底下埋着一盏灯，隔着几米的沙，还亮着。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "dig_for_source",
+          "label": "扒开沙，看蓝从哪来（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你扒了一阵。蓝没有变近——它在更深的沙里，扒不到底。但你搅起的细沙里有星点的光，聚了又散：是沉在沙里的发光小虫。你逼自己停手。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -6 },
+              "loot": [{ "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.5 }],
+              "loreEntry": "lore.deep_water.cold_light"
+            },
+            "onFailure": {
+              "text": "你扒得停不下来。蓝始终差一层沙。等你回过神，你跪在一个自己挖出的坑里，坑壁齐整得不像手挖的，氧气表早过了红线。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -12 }
+            }
+          }
+        },
+        {
+          "id": "remember_and_leave",
+          "label": "不碰，记住这片蓝，往回走",
+          "outcome": {
+            "text": "你把这片蓝收进记忆，退着往上。它在你脚下，不快不慢，匀匀地亮着。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.barracuda",
+      "depthRange": [
+        26,
+        44
+      ],
+      "zoneTags": [
+        "reef"
+      ],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "停在水里的银影",
+      "body": "礁脊外侧的开阔水里，一条银色的鱼一动不动地悬着，正对着你。\n它比你的小臂还长，嘴微张，一排倒钩的牙。\n它不躲也不退——梭鱼盯的是反光和动作。它在等你先动。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "draw_knife",
+          "label": "拔刀，正面对它",
+          "visibleIf": {
+            "kind": "hasEquipment",
+            "slot": "tool"
+          },
+          "outcome": {
+            "text": "刀出鞘的一瞬，刃面闪了一下——它等的就是这一下。银线射过来。",
+            "triggerCombatId": "combat.reef_barracuda_solo"
+          }
+        },
+        {
+          "id": "go_still",
+          "label": "压低灯，收住所有动作（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你把灯贴向胸口，停下每一个多余的动作，连呼吸都放长。它看了你很久，一摆尾，没进蓝里。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -2
+              }
+            },
+            "onFailure": {
+              "text": "你的手碰到了配重扣，一点金属反光。够了——银线射过来。",
+              "triggerCombatId": "combat.reef_barracuda_solo"
+            }
+          }
+        },
+        {
+          "id": "back_off",
+          "label": "贴礁壁，从阴影里绕开",
+          "outcome": {
+            "text": "你退进珊瑚的阴影里，绕了远路。等你回头，那条银影还停在原处，正对着你来的方向。",
+            "oxygenTurnCost": 2,
+            "deltas": {
+              "stamina": -3
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.lighthouse_lens",
+      "depthRange": [30, 44],
+      "zoneTags": ["reef"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "灯室的镜",
+      "body": "礁底陷着一面弧形的大玻璃——灯塔顶上那盏灯的镜，整片没碎，只蒙了层绿藻。\n你的灯柱扫过去，光从镜里折回来，不散开，收成一道细细的亮线，斜斜地指向礁坡下方。\n你换个角度再照。那道线还在原处，指着同一个方向——下面。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "pry_brass",
+          "label": "把镜框上的黄铜撬一块下来",
+          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "outcome": {
+            "text": "你拿刀撬镜框的接缝。一块巴掌大的黄铜松下来，背面还留着螺纹。\n收进网兜的时候，那道亮线在镜里晃了一下——也许只是你挡了一下光。",
+            "oxygenTurnCost": 2,
+            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1] }],
+            "deltas": { "sanity": -2 }
+          }
+        },
+        {
+          "id": "sight_along",
+          "label": "顺着那道亮线看到底（理智 vs 48）",
+          "check": {
+            "stat": "sanity",
+            "dc": 48,
+            "onSuccess": {
+              "text": "你贴着那道光看过去。它落在礁坡下一片空沙上——什么也没有。\n就是空沙。你把那个位置记进脑子，没游过去。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.old_lighthouse.the_lens"
+            },
+            "onFailure": {
+              "text": "你顺着光看过去的那一瞬，亮线忽然更亮了一截——尽头那片空沙上，有个东西正好把脸转开。\n等你再眨眼，只有沙。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -10 }
+            }
+          }
+        },
+        {
+          "id": "cover_it",
+          "label": "用手罩住镜面，绕开",
+          "outcome": {
+            "text": "你伸手罩住镜面，那道亮线灭了。你绕过那面镜继续往下。\n背后没光了，可你总觉得那个方向还在等着被照亮。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.shelf_break",
+      "depthRange": [30, 44],
+      "zoneTags": ["reef"],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "礁壁的断口",
+      "body": "礁盘在这里到头了。\n再往前，珊瑚的边缘整整齐齐断开，下面是开阔的蓝，深得没有底。\n断口的背阴面长着厚厚一层珊瑚——那是光还够得到、水却不再有人来的地方。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "descend_wall",
+          "label": "贴着断面往下，够那片珊瑚（体力 vs 12）",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你一手扣住礁壁的硬枝，一寸一寸往下挪。背后是空的蓝，你不去看它。\n那片珊瑚就在手边，断起来脆生生的。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.coral_shard", "qty": [1, 2] },
+                { "itemId": "item.lobster", "qty": [1, 1], "chance": 0.3 }
+              ]
+            },
+            "onFailure": {
+              "text": "一股涌浪从断口下面顶上来，把你从壁上推开。你空蹬了几下腿才抓回礁石，心跳撞着耳朵。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -6 }
+            }
+          }
+        },
+        {
+          "id": "skirt_edge",
+          "label": "沿着断口边走，不往下（氧气 -1）",
+          "outcome": {
+            "text": "你贴着边缘横移，让那道空的蓝始终在身体一侧。安全，但你一直没敢回头看它。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.urchin_barren",
+      "depthRange": [16, 30],
+      "zoneTags": ["reef"],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "海胆滩",
+      "body": "前面一大片礁石被啃秃了。\n珊瑚只剩灰白的骨架，缝里挤满了海胆，黑刺一动不动。\n这种地方很安静——把一片礁啃成这样的东西，自己也没什么可吃的了。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "pick_through",
+          "label": "在碎礁里翻一翻（氧气 -1）",
+          "outcome": {
+            "text": "你避开海胆的刺，在啃剩的骨架里翻找。大多是空壳，但也有几块断得还齐整的珊瑚。\n翻的时候你一直没听见别的动静。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.7 }],
+            "deltas": { "sanity": -1 }
+          }
+        },
+        {
+          "id": "move_on",
+          "label": "绕开这片，继续走",
+          "outcome": {
+            "text": "你从秃礁上方游过去。下面那层黑刺，随你的影子转了一下方向。"
+          }
+        }
+      ]
     }
   ]
 }

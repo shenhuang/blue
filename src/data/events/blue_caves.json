@@ -1,0 +1,824 @@
+{
+  "events": [
+    {
+      "id": "bluecaves.entrance_light",
+      "depthRange": [12, 22],
+      "zoneTags": ["cave"],
+      "weight": 8,
+      "cooldown": 4,
+      "title": "洞口",
+      "body": "礁壁上一道横裂。\n上面还能看到阳光打进来的斑——往里几米，光就被吃掉了。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "descend_directly",
+          "label": "顺光打进去的地方下去",
+          "outcome": {
+            "text": "阳光在头顶变得越来越细。最后一缕碎在你左肩。"
+          }
+        },
+        {
+          "id": "scout_edge",
+          "label": "沿洞口绕一圈看看",
+          "outcome": {
+            "text": "你绕着洞口游了一圈。岩缝里有些藤壶，沙地里一片碎瓷——也许是哪条渔船遗的。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.6 }
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.color_shift",
+      "depthRange": [15, 30],
+      "zoneTags": ["cave"],
+      "weight": 7,
+      "cooldown": 5,
+      "title": "水开始变蓝",
+      "body": "你越往里，水越蓝——不是天的蓝，是一种发光的、像被人从下面打了一盏灯的蓝。\n但下面没有灯。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "stop_and_look",
+          "label": "停下来看一会儿",
+          "outcome": {
+            "text": "你浮在水里，看着这片蓝。理智上你知道这是矿物折射。但好看。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": 5 }
+          }
+        },
+        {
+          "id": "press_on",
+          "label": "记住，但继续走",
+          "outcome": {
+            "text": "你把它收在记忆里。脚蹼一蹬，蓝色后退。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.tide_mark",
+      "depthRange": [12, 22],
+      "zoneTags": ["cave"],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "潮线",
+      "body": "洞壁上一道颜色的分界——上面干过，下面没有。\n那条线底下藤壶密密一层，缝里卡着些碎贝壳。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "scrape",
+          "label": "刮下一些能卖的（氧气 -1）",
+          "outcome": {
+            "text": "你用刀背刮。贝壳和一小块断珊瑚掉进网袋。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.7 }]
+          }
+        },
+        {
+          "id": "note_and_go",
+          "label": "记住这条线，往里走",
+          "outcome": {
+            "text": "你记下它的高度。再往里，连这条线也没有了——洞里没有潮。"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.cold_seep",
+      "depthRange": [15, 25],
+      "zoneTags": ["cave"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "冷缝",
+      "body": "岩壁一道缝里渗出一股水，比周围冷得多。\n探照灯打进去——照不到底，光在两米外就被吃掉。\n冷水里有一点点甜味，像金属。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "reach_in",
+          "label": "把手伸进冷流里探一下",
+          "outcome": {
+            "text": "冷得指节发疼。再深一点，指尖碰到一个光滑的、不像石头的东西——你抽回了手。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        },
+        {
+          "id": "skirt_it",
+          "label": "贴着暖的一侧绕过去",
+          "outcome": {
+            "text": "你尽量离那股冷远些。绕过去之后，背上还是凉的。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.left_behind_gear",
+      "depthRange": [14, 25],
+      "zoneTags": ["cave"],
+      "weight": 5,
+      "cooldown": 6,
+      "title": "卡在缝里的配重带",
+      "body": "礁石一道窄缝里卡着一条配重带，铅块还串在上面，扣具锈死了。\n带子上有公会的旧标记，编号被人用刀仔细刮掉了。\n刮痕是新的。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "read_marker",
+          "label": "凑近看那道刮痕",
+          "outcome": {
+            "text": "刀走得很稳，一道一道，把编号刮得干干净净——像是刮的人不想被自己认出来。\n你下意识摸了摸自己带子上的编号。还在。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -4 },
+            "loreEntry": "lore.bluecaves.others_before"
+          }
+        },
+        {
+          "id": "leave_it",
+          "label": "不碰它，往里走",
+          "outcome": {
+            "text": "你绕开那条带子。游出去几米，才发现自己一直屏着呼吸。",
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.forked_passage",
+      "depthRange": [25, 45],
+      "zoneTags": ["cave"],
+      "weight": 9,
+      "cooldown": 3,
+      "title": "分岔水道",
+      "body": "通道在前面分成两条。\n你的灯打在两边——都看不到尽头。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "read_current",
+          "label": "用手感受水流方向（理智 vs 14）",
+          "check": {
+            "stat": "sanity",
+            "dc": 14,
+            "onSuccess": {
+              "text": "右边的水有非常轻微的回流——意思是那边通向开阔。你选右边。",
+              "oxygenTurnCost": 1
+            },
+            "onFailure": {
+              "text": "两边的水都是死的。你猜了一边。一阵之后你发现这边在收窄。你折返。",
+              "oxygenTurnCost": 4,
+              "deltas": { "sanity": -4 }
+            }
+          }
+        },
+        {
+          "id": "pick_left",
+          "label": "走左边",
+          "outcome": {
+            "text": "左边的洞顶低。你蹭着头盔过了一段，然后开阔起来。",
+            "oxygenTurnCost": 2
+          }
+        },
+        {
+          "id": "pick_right",
+          "label": "走右边",
+          "outcome": {
+            "text": "右边的水颜色更深。你跟着颜色走。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.stalactite_hall",
+      "depthRange": [30, 50],
+      "zoneTags": ["cave"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "钟乳石厅",
+      "body": "通道豁然开阔。\n灯光打上去——上面密密一片倒挂的石笋，像被冰冻住的雨。\n有的尖头折断，落在沙地上。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "pick_pieces",
+          "label": "捡几块掰得动的碎片",
+          "outcome": {
+            "text": "你掰下来三块——比想象中沉。Mira 也许会收。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.coral_shard", "qty": [2, 3] }
+            ]
+          }
+        },
+        {
+          "id": "just_look",
+          "label": "什么也不动，只是看",
+          "outcome": {
+            "text": "你浮在中央。你想到——这个厅在没有人来的时候是什么样子的。\n你呼出一口气，气泡顺着石笋升起。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": 8 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.makeshift_ledge",
+      "depthRange": [25, 50],
+      "zoneTags": ["cave"],
+      "weight": 5,
+      "cooldown": 6,
+      "title": "可以坐的礁台",
+      "body": "洞壁上一处天然的窄台。\n刚好够你卡住浮力，背靠着岩石坐下。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "camp_short",
+          "label": "短暂休整（3 回合，体力 +15，理智 +5）",
+          "outcome": {
+            "text": "你卡住自己。听着自己的呼吸。三回合后再起身——膝盖松了一些。",
+            "oxygenTurnCost": 3,
+            "deltas": { "stamina": 15, "sanity": 5 }
+          }
+        },
+        {
+          "id": "camp_long",
+          "label": "认真扎一会儿（6 回合，体力 +30，理智 +10，氮气 −5）",
+          "outcome": {
+            "text": "你关掉灯。完全黑下来的时候，你才意识到自己一直没好好呼吸。\n等你重新打开灯，状态好多了。",
+            "oxygenTurnCost": 6,
+            "deltas": { "stamina": 30, "sanity": 10, "nitrogen": -5 }
+          }
+        },
+        {
+          "id": "skip",
+          "label": "不休息，继续走",
+          "outcome": { "text": "你扫了它一眼，没停。" }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.bioluminescent_curtain",
+      "depthRange": [35, 55],
+      "zoneTags": ["cave"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "蓝色水帘",
+      "body": "通道前方挂着一片像帘子一样的水——蓝得发亮，从洞顶垂到沙地。\n靠近能听见很轻的、像玻璃磨玻璃的声音。\n那不是水流的声音。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "push_through",
+          "label": "推开穿过去（理智 vs 55）",
+          "check": {
+            "stat": "sanity",
+            "dc": 55,
+            "onSuccess": {
+              "text": "你伸手——是亿万只发光的小生物，被你的手分开。\n你穿过去的时候它们贴在你的护目镜上，又散开。",
+              "oxygenTurnCost": 1,
+              "deltas": { "sanity": -3 },
+              "loreEntry": "lore.bluecaves.living_curtain"
+            },
+            "onFailure": {
+              "text": "你伸手——它们爬进你的面镜密封圈。\n你呛了一口水。等你稳下来，你忘了刚才是怎么过来的。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -10, "stamina": -5 }
+            }
+          }
+        },
+        {
+          "id": "go_around",
+          "label": "贴着洞壁绕过去",
+          "outcome": {
+            "text": "你蹭着壁过去。它们没看你——也许它们没在看任何东西。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.blind_eel_lair",
+      "depthRange": [35, 55],
+      "zoneTags": ["cave"],
+      "weight": 6,
+      "cooldown": 0,
+      "title": "岩缝里的东西",
+      "body": "灯光扫过岩缝——\n里面有什么东西很长，反光的皮，没有眼睛。\n它对着你转过来——它在用听的。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "fight",
+          "label": "拿刀防身",
+          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "outcome": {
+            "text": "你的刀出鞘的瞬间，它扑了出来。",
+            "triggerCombatId": "combat.blind_eel_solo"
+          }
+        },
+        {
+          "id": "freeze",
+          "label": "屏住呼吸不动",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你的气泡完全停了几个回合。它转过头，又缩进岩缝。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -5 }
+            },
+            "onFailure": {
+              "text": "你憋不住了。气泡漏出来——它扑了过来。",
+              "triggerCombatId": "combat.blind_eel_solo"
+            }
+          }
+        },
+        {
+          "id": "flee",
+          "label": "立刻退开",
+          "outcome": {
+            "text": "你倒着踢水。它没追，但你能感觉它在听。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4, "stamina": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.silent_chamber",
+      "depthRange": [45, 55],
+      "zoneTags": ["cave"],
+      "weight": 4,
+      "cooldown": 6,
+      "sanityRange": [0, 85],
+      "title": "沉默的厅",
+      "body": "你进入一个圆形的厅。\n灯关上一秒钟——\n你听不到自己的呼吸。也听不到水。也听不到任何东西。\n灯打开。一切回来。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "stay_a_moment",
+          "label": "停留观察",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你逼自己再关一次灯。这次你听见了——非常远，像在水的另一边——有人在敲什么。\n你打开灯，离开。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.bluecaves.silent_chamber"
+            },
+            "onFailure": {
+              "text": "你不知道你在这里待了多久。等回过神，氧气表已经掉了。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -12 }
+            }
+          }
+        },
+        {
+          "id": "leave_fast",
+          "label": "立刻穿过这个厅",
+          "outcome": {
+            "text": "你不停下。出来后你回头看——那个厅看起来很普通。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.squeeze",
+      "depthRange": [
+        14,
+        25
+      ],
+      "zoneTags": [
+        "cave"
+      ],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "窄口",
+      "body": "通道在这里收成一道缝，比你的气瓶宽不了多少。\n缝那头水又开阔起来，沙底反着一点微光。\n要么侧身硬挤，要么退回去绕远。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "push_through",
+          "label": "侧身硬挤过去（体力 vs 12）",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你侧过身，气瓶贴着岩壁刮出一道白印。你吐尽气，缩着肩，过去了。缝那头的沙里嵌着几块碎珊瑚。",
+              "oxygenTurnCost": 1,
+              "loot": [
+                {
+                  "itemId": "item.coral_shard",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 0.6
+                }
+              ]
+            },
+            "onFailure": {
+              "text": "你卡了一下。气瓶顶住岩壁，进退不得。你慌掉半口气，才退出来，喘着。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "stamina": -8,
+                "sanity": -2
+              }
+            }
+          }
+        },
+        {
+          "id": "go_around",
+          "label": "不挤，退回去绕远路",
+          "outcome": {
+            "text": "你退出缝口，绕了另一条更长的水道。多花了些气，但肩膀是完整的。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.other_bubbles",
+      "depthRange": [
+        15,
+        25
+      ],
+      "zoneTags": [
+        "cave"
+      ],
+      "weight": 5,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "另一串气泡",
+      "body": "你停在一处岔口换气。\n一串气泡从你脚下的黑暗里升上来——细，匀，一下，一下，像有人在下面慢慢呼吸。\n你头顶是回去的路。你脚下，只有更深的洞。\n这里只有你一个。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "look_down",
+          "label": "往下探一截，看气泡从哪来",
+          "outcome": {
+            "text": "你往下沉了一个身位。气泡还在升，从比你的灯更深的地方上来，节奏没变。你停住了，没有再往下。",
+            "oxygenTurnCost": 2,
+            "deltas": {
+              "sanity": -6
+            },
+            "loreEntry": "lore.bluecaves.someone_below"
+          }
+        },
+        {
+          "id": "move_on",
+          "label": "告诉自己那是岩缝放的陈气，游开",
+          "outcome": {
+            "text": "你告诉自己，是岩缝在放积了很久的气。你转身游开。背后那串气泡还在按自己的节奏上来。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -3
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.octopus_den",
+      "depthRange": [40, 55],
+      "zoneTags": ["cave"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "贝壳堆",
+      "body": "礁壁下一处洞口，前面堆着一小座壳——蟹钳、贝、一具小鱼的骨架，全嗑空了，码得几乎整齐。\n洞里有东西在看你。一只眼睛，竖的瞳孔，随着你的灯转。\n那堆壳是它丢出来的。它在家。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "draw_knife",
+          "label": "拔刀，把它从洞里逼出来",
+          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "outcome": {
+            "text": "刀尖一探进洞口，那团软的东西就炸开了——八条腕同时朝你卷来。",
+            "triggerCombatId": "combat.cave_octopus_solo"
+          }
+        },
+        {
+          "id": "wait_still",
+          "label": "压住灯，一点一点退开（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你停掉所有动作，连灯都压在胸口。那只眼睛盯了你很久，然后腕一条一条缩回洞里。你倒退着离开。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -2 }
+            },
+            "onFailure": {
+              "text": "你退得太急，脚蹼搅起一团沙。它把这当成了扑过来的东西——软身子从洞里弹出来。",
+              "triggerCombatId": "combat.cave_octopus_solo"
+            }
+          }
+        },
+        {
+          "id": "skirt",
+          "label": "贴另一侧岩壁，绕开巢口",
+          "outcome": {
+            "text": "你贴着对面的壁，离那座壳堆远远地绕。游出去很久，背后那只眼睛大概还在转。",
+            "oxygenTurnCost": 2,
+            "deltas": { "stamina": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.late_shadow",
+      "depthRange": [45, 55],
+      "zoneTags": ["cave"],
+      "weight": 4,
+      "cooldown": 6,
+      "title": "慢半拍的影子",
+      "body": "灯打在对面的洞壁上，你的影子贴在那儿。\n你抬手——影子也抬手。慢了半拍。\n你停住。影子也停。你又抬一次手，盯着它看。\n它跟上来，还是慢那半拍。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "watch_it",
+          "label": "再做一个动作，看准那半拍（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你慢慢地、清楚地比了一个手势。影子原封不动地学，每一次都迟那半拍——像隔着很厚的什么在传话。你记下了，把灯从墙上移开。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.bluecaves.late_shadow"
+            },
+            "onFailure": {
+              "text": "你盯着它做了一个又一个动作，想抓住那半拍的差。等你回过神，不知道过了多久——影子和你的手早就对不上了。它在做你没做过的动作。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -12 }
+            }
+          }
+        },
+        {
+          "id": "look_away",
+          "label": "把灯从墙上移开，不看了",
+          "outcome": {
+            "text": "你把光柱从那面壁上拖开。影子散进黑里。你没有再回头照它。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.sounding_line",
+      "depthRange": [28, 40],
+      "zoneTags": ["cave"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "测深绳",
+      "body": "洞顶一道缝里垂下一根绳，绷得笔直，没进你灯够不到的下方。\n是测深用的——一块坠子沉在末端，量这个洞到底有多深。\n绳是旧的。没人把它收回去。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "haul_up",
+          "label": "把绳收上来，看末端是什么（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你一把一把往上收。坠子上来了——一块公会的铅，裹着一只烂掉的手套。\n铅块底下，绳还接着往更深处去，磨得很细，断口是平的。是被人从下面割断的。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -4 },
+              "loreEntry": "lore.bluecaves.the_line"
+            },
+            "onFailure": {
+              "text": "你拽。绳比一块铅该有的重——像下面也有什么东西在拽。你松了手。绳哧地滑回黑里，缝口冒出一点很旧的气。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -8, "sanity": -4 }
+            }
+          }
+        },
+        {
+          "id": "leave_line",
+          "label": "不碰，记下这道缝往里走",
+          "outcome": {
+            "text": "你绕开那根绳。游出去一段，才发现自己一直在用眼角盯着它有没有动。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.blind_school",
+      "depthRange": [30, 42],
+      "zoneTags": ["cave"],
+      "weight": 5,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "白色的鱼",
+      "body": "一群鱼停在水道中央——白的，没有眼睛，洞里世代不见光的那种。\n它们挤成一个球，悬着不动。\n你往旁边挪，整个球慢慢转了一下，那一面始终对着你。\n它们没有眼睛。它们在用别的东西看你。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "swim_into",
+          "label": "直接游进鱼群中间",
+          "outcome": {
+            "text": "你蹬进那个球。鱼让开，又在你身后合上——有一瞬间四面八方全是白的、没有眼睛的身体，贴着你又不碰你。\n你顶出去。回头看，球又转了过来，对着你。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -6 },
+            "loreEntry": "lore.bluecaves.blind_school"
+          }
+        },
+        {
+          "id": "go_around",
+          "label": "贴着洞壁慢慢绕开",
+          "outcome": {
+            "text": "你贴着壁绕。那个球跟着你转，始终把同一面留给你。直到水道拐弯，把它挡在身后。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.falling_up",
+      "depthRange": [32, 45],
+      "zoneTags": ["cave"],
+      "weight": 4,
+      "cooldown": 6,
+      "title": "往上落的雪",
+      "body": "水里浮着细小的白屑，慢慢地、稳稳地往上飘——朝洞顶去。\n你从手套上弹下一点泥。它也往上落。\n在这个洞里，往下的方向不在下面。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "follow_up",
+          "label": "跟着它升的方向走一段，看尽头（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你跟着那场倒着下的雪往上。它们全汇进洞顶一道缝，被吸进去，没有声音。\n是股上升的冷流，你告诉自己，只是比周围冷的水把碎屑托着走。你记下这道缝，离开。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.bluecaves.wrong_down"
+            },
+            "onFailure": {
+              "text": "你跟着雪往上、再往上。等你停下，分不清哪头是回去的路了——你吐的气泡和那些白屑往同一个方向走。你照着浮力计才重新找到上面在哪。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -12 }
+            }
+          }
+        },
+        {
+          "id": "close_eyes",
+          "label": "闭上眼，只信浮力找上面",
+          "outcome": {
+            "text": "你闭上眼，让身体自己浮。再睁眼时白屑还在往上落，但你知道自己朝着哪。你不再看它们。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.thick_water",
+      "depthRange": [36, 46],
+      "zoneTags": ["cave"],
+      "weight": 4,
+      "cooldown": 6,
+      "title": "变稠的水",
+      "body": "再往下压一点，水就不对了——不是流，是稠。\n每蹬一下腿，推开的水比该有的少。灯也走不远，像被一点一点嚼掉。\n再往下，水稠得你怀疑它快要不肯再当水了。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "push_deeper",
+          "label": "顶着阻力再往下压一段",
+          "outcome": {
+            "text": "你逼自己往下。水裹着你，每一下都像在推一面软墙。压到某个深度，它忽然又松开了——下面是寻常的黑水，仿佛刚才那段从没存在。你回头照那段水，看不出任何分界。",
+            "oxygenTurnCost": 3,
+            "deltas": { "stamina": -6, "sanity": -8 },
+            "loreEntry": "lore.bluecaves.thick_water"
+          }
+        },
+        {
+          "id": "back_off",
+          "label": "退回到水还正常的深度",
+          "outcome": {
+            "text": "你停下，慢慢退上去，直到每一蹬腿都重新推得动水。你在那条看不见的线上方停了一会儿，才接着找别的路。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.the_narrowing",
+      "depthRange": [14, 25],
+      "zoneTags": ["cave"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "回头的路",
+      "body": "你身后是洞口——一小片发蓝的亮，你进来的地方，也是你出去的地方。\n你出于习惯回头看了一眼。它在那儿，大小正常。\n你看向前方，又回头：一样大。大概。\n第三次你没回头——你觉出它小了一点。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "stare_at_it",
+          "label": "转过身，正眼盯着洞口，看够久",
+          "outcome": {
+            "text": "你转过去，死盯着那片蓝。你盯着的整段时间里，它一动不动，大小分毫不差。\n直到你转开眼——就在转开的那一下，你对它的大小，不再有把握了。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -5 },
+            "loreEntry": "lore.bluecaves.the_way_out"
+          }
+        },
+        {
+          "id": "mark_the_rim",
+          "label": "在洞口边的岩上刻一道，记住它的大小（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你游到口边，在岩沿上刻一道深痕，正卡着那片蓝的边。\n有了这道痕，你就有了个能信的数。你带着它往里走。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -3 }
+            },
+            "onFailure": {
+              "text": "你刻好那道痕，回头核对——痕还在，可那片蓝比痕该框住的小了一圈。\n是你刻歪了。一定是你刻歪了。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -9 }
+            }
+          }
+        },
+        {
+          "id": "dont_look",
+          "label": "打定主意不再回头，往里游",
+          "outcome": {
+            "text": "你盯着前面的黑往里走，不再回头。\n身后那片蓝你看不见了——但你越往里，越觉得黑离你近了一点。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.breakdown_pile",
+      "depthRange": [16, 26],
+      "zoneTags": ["cave"],
+      "weight": 8,
+      "cooldown": 3,
+      "title": "塌石堆",
+      "body": "进洞不远，顶板早年塌过一次。\n半条水道被垮下来的石块堆死，棱角还新。\n冷水从石缝之间一丝丝往上渗——下面是通的。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "climb_over",
+          "label": "从石堆上面翻过去（体力 -6）",
+          "outcome": {
+            "text": "你手脚并用爬上松石堆。有块石头在脚下挪了半寸，你赶紧把重心移开。翻过顶，另一边的水道接着往里走。",
+            "oxygenTurnCost": 1,
+            "deltas": { "stamina": -6 }
+          }
+        },
+        {
+          "id": "thread_gap",
+          "label": "钻渗冷水的那道石缝（氧气 -2）",
+          "outcome": {
+            "text": "你贴着底，往渗冷水的缝里钻。缝比看着长，凉水顺着脖子灌进衣领。挤出来时，已经比刚才深了一截。",
+            "oxygenTurnCost": 2,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.3 }]
+          }
+        },
+        {
+          "id": "back_to_mouth",
+          "label": "退回洞口另找路",
+          "outcome": {
+            "text": "你退回亮一点的地方，沿着洞壁另找下口。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    }
+  ]
+}

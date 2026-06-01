@@ -2,8 +2,9 @@
 // 与主 SPEC §3 四属性、§7 死亡与元进度对齐
 
 import type { EquipmentSlot } from './items';
-import type { DiveMap } from './dive';
+import type { DiveMap, NodeKind } from './dive';
 import type { CombatState } from './combat';
+import type { PoiModifier } from './chart';
 
 /** 四属性 stat 名称（注意：氧气在战斗/事件中以"回合数"消耗） */
 export type Stat = 'stamina' | 'oxygen' | 'sanity' | 'nitrogen';
@@ -26,6 +27,11 @@ export interface PlayerProfile {
   loreEntries: Set<string>; // 已解锁的图鉴条目
   deaths: DeathRecord[]; // 历次死亡记录（驱动尸体回收）
   runsCompleted: number;
+  /**
+   * 港口仓库。run 结束回港时 run.inventory 合并到这里：eternal 物品天然长存，
+   * 其它物品要么主动卖给 Mira 要么放着。dive 中的临时背包是 run.inventory，不要和这里搞混。
+   */
+  inventory: InventoryItem[];
 }
 
 /** 死亡记录，用于尸体回收 */
@@ -68,6 +74,11 @@ export interface RunState {
   pendingDecompression: DecompressionDebt;
   activeFlags: Set<string>; // 本次下潜临时 flag
   triggeredEventIds: string[]; // 用于 oncePerRun / cooldown 判定
+  /**
+   * 本次下潜所选 POI 的环境修正（来自海图）。depthOffset 已在 mapgen 生成时消化进各层深度；
+   * current / visibility 暂存于此供未来 hook 读取（冲走 / 光照效果待实装）。可选 → 旧存档/脚本省略即无修正。
+   */
+  diveModifier?: PoiModifier;
 }
 
 /** 装备配置 */
@@ -102,6 +113,9 @@ export interface DecompressionDebt {
 /** 顶层游戏状态机 phase */
 export type GamePhase =
   | { kind: 'port' }
+  | { kind: 'portEvent'; eventId: string } // 港口侧 cutscene（带回剧情物自动触发）
+  | { kind: 'chart' } // 港口海图选点（出海前选 POI）
+  | { kind: 'shop'; shopId: string } // 港口商店（目前只有 Mira）
   | { kind: 'dive'; subPhase: DiveSubPhase }
   | { kind: 'combat'; combat: CombatState }
   | { kind: 'ascent'; targetDepth: number }
@@ -123,6 +137,10 @@ export interface NodeChoice {
   preview: string; // "你看到..." 简短描述
   hasCorpseHint?: boolean;
   isAscentPoint?: boolean;
+  /** 节点类型（供选点界面把 air_pocket / camp 等地标渲染成可见标签；盲航时地标仍显示） */
+  kind?: NodeKind;
+  /** 迷路图：该节点此前是否已到访过（回头/绕回时给"已来过"提示，盲航时也显示） */
+  visited?: boolean;
 }
 
 /** 下潜结算结果 */
@@ -131,7 +149,10 @@ export interface RunOutcome {
   maxDepthReached: number;
   eventsTriggered: number;
   buildingPointsEarned: number;
+  /** 上岸时即时入袋的金币（事件给的 goldDelta + run.gold）。次要货币，建设值仍是主线。 */
   goldEarned: number;
+  /** 战利品的"潜在变卖价值"——按 Mira 的收购价估的，需要回港找她兑现。0 = 没东西可卖。 */
+  lootValue: number;
   loot: InventoryItem[];
   newLoreEntries: string[];
   cause?: string;

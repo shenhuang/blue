@@ -1,14 +1,24 @@
 # 深海回响 · 当前实装状态
 
-> 截至 2026-05-26 第一个开发 session 收尾时的项目状态。
+> 截至 2026-05-29，本 session 做了**洞穴"迷路" mapgen 重写** + **打捞行会 Lv.1/Lv.2**（Lv.1 选点预知尸体、Lv.2 出海前选目标尸体）+ **气穴/扎营节点化**（air_pocket/camp NodeKind）。
+> （上一波：港口海图 POI 选点；再上一波：沉船墓园。）
+> 收尾做了一次**全项目体检 + 清理 pass**：修了一个真 bug（`getEvent` 只装教学事件 → UI 渲染非教学事件"未找到"，quirk #38），并落地存档序列化层 / 共享 LCG / 注册守卫 / 若干去重（quirk #39–#40）。
+> 最后把**海图升级成 2D 地图视图**（标记点 + 选中看信息，quirk #41）+ **D-reveal 程生姓名故障化**（quirk #42）。
+>
+> **2026-05-30 周末内容 pass（两次）**：上午补旧灯塔礁灯塔线 5 reef 事件 + brass_fitting；下午补**深水段 45-60m 共 4 事件**（`wreck.silted_hold`/`cave.halocline`/`wreck.porthole`/`cave.blue_floor`，realistic×2 + uncanny + cosmic）+ 5 baseline + `lore.deep_water.*`，把旧灯塔礁 60m 事件池从 1 填到 5（详见 quirk #44）。事件 38→42。
+> **2026-05-30 第三个周末 pass**：给 **reef（旧灯塔礁）补首个原生战斗**——梭鱼（玻璃大炮：hp16/evasion4/dmg[5,9]/predatory 不退）+ `combat.reef_barracuda_solo` + `item.barracuda_jaw` + 触发事件 `reef.barracuda`（只挂 `[reef]`，隔离 26-44m）；另补蓝洞群 **12-25m 浅段 2 事件**（`bluecaves.squeeze` realistic check + `bluecaves.other_bubbles` uncanny lore，quirk #20）。事件 42→45，敌人 3→4，事件 baseline 21→24，战斗 baseline 5→6（详见 quirk #45）。
+> **2026-05-31 周日内容 pass（第一次）**：补**沉船墓园 4 个 dive 事件**（cosmic 原生 dive 从 1〔engine_room_hum〕补到 3 + uncanny 加厚）——`cold_stores`（uncanny·26-42m·stamina check·canned_food/old_fishing_net 人造 loot）/ `hull_handprints`（uncanny·24-40m·oncePerSave·sanity check·lore.handprints，玻璃里侧的手印）/ `the_knocking`（cosmic·30-48m·oncePerRun·sanity check + 回敲违禁分支·lore.the_knocking，是 dive_slate『不要回敲』的正面付现）/ `the_open_door`（cosmic·40-50m·oncePerRun·sanity check·门槛/吸力意象·lore.the_door）。全挂 `[wreck]`、loot 只人造物（quirk #44/#47）。事件 48→52，事件 baseline 29→34（含 the_knocking 听/回敲双 baseline）。详见 quirk #47。
+> **2026-05-31 周日内容 pass（敌人）**：给**沉船墓园补第二只敌人＝沉灯水母**（`enemy.drowned_lantern`，**项目首只 cosmic-tier 敌人 + 首只 sanity-主导敌人**：hp24/armor1/evasion1/predatory，主攻「脉光」纯 sanity——『理智消耗战』，slow/tanky 反盲鳗·反章鱼）+ 触发事件 `wreck_graveyard.drifting_light`（cosmic·34-50m·拔刀/关灯避战 sanity check/退开）+ `item.lantern_gland`→Mira + combat/event baseline。另补 `reef.lighthouse_lens`（uncanny·30-44m·灯室的镜·填 reef 26-44m 中段 uncanny 缺口）+ `bluecaves.the_narrowing`（cosmic·14-25m·回头的路·填蓝洞 12-25m 浅段 cosmic 缺口）。事件 56→59，敌人 5→6，事件 baseline 39→43，战斗 baseline 7→8。**三个长线缺口（墓园敌人 / reef 中段 uncanny / 蓝洞浅段 cosmic）本 pass 全部补上**。详见 quirk #48。
+> **2026-05-31 周日内容 pass（第四次 · realistic 探索密度）**：轮换离开近几 pass 的 cosmic/uncanny/敌人侧重，回到 **realistic 探索质感**，跨 reef/wreck/cave 三 zone 补 **4 个 realistic dive 事件、无新敌人**（守『敌人别太多·优先事件』）——`reef.shelf_break`（realistic·30-44m·礁壁断口·stamina vs12·coral_shard，**填 reef 26-44m realistic 缺口**：此前该段只有 barracuda 战斗触发 + lobster_hole 尾）/ `reef.urchin_barren`（realistic·16-30m·海胆滩·无 check·coral_shard+sanity-1，补 reef 浅中段 realistic 密度）/ `wreck_graveyard.galley`（realistic·20-34m·伙房·stamina vs13·canned_food/old_fishing_net 人造 loot·守 quirk #44/#47）/ `bluecaves.breakdown_pile`（realistic·16-26m·塌石堆·无 check 资源取舍·稀释 entrance_light 过曝 quirk #20）。全 realistic、全只挂单 zone tag（quirk #19）、无 lore/无 d_reveal。事件 59→63，事件 baseline 43→49（2 个 stamina-success + 4 个 no-check 路径）。详见 quirk #49。
 > 给"未来的自己"和"下一个接手 session 的 Claude"看。
 
 ---
 
 ## 1. 一句话状态
 
-完整 meta-loop 跑通：**港口对话 → 教学线性下潜 → 节点图随机下潜 → 事件 → 战斗 → 上浮 → 减压 → 死亡 → 葬礼 → 尸体回收 → 衰减**。
-TypeScript 类型干净，4 个端到端 playthrough 脚本全部通过。
+完整 meta-loop 跑通：**港口对话 → 海图选点 → 教学线性下潜 / 节点图随机下潜 → 事件 → 战斗 → 上浮 → 减压 → 死亡 → 葬礼 → 尸体回收 → 衰减 → 回港变卖**。
+内容层 3 个 random zone（旧灯塔礁 / 蓝洞群 / 沉船墓园）。**洞穴 zone（蓝洞群）的下潜图已从层状 DAG 重写为洞穴"迷路图"**：双向边的连通图，有绕回的环 / 死路 / 多个最深点 / 入口+远端两个上浮口，由 `ZoneDef.mapShape='maze'` 选择；开阔海域（旧灯塔礁 / 沉船墓园）仍走层状 DAG。详见 §5 +「mapgen 回归」+ quirk #30–#34。出海点位已升级为 **港口海图（POI 选点）**：anchor 持久 + roaming 按 runsCompleted 刷新，两级门控（发现 flag / 抵达 upgrade），POI 带深度偏移·洋流·能见度修正（三种全部实装：深度→耗氧/减压、洋流→移动耗体力+氧、能见度→理智压力+黑暗盲航）。详见 §5 + quirk #27/#28。
+TypeScript 类型干净，**11 个端到端 playthrough 脚本**全部通过（新增 `playthrough-chart.ts`），加上 **事件回归框架**（`scripts/event-runner.ts` + `scripts/playthrough-scenarios.ts`，目前 49 个 baseline scenario）+ **战斗回归框架**（`scripts/combat-runner.ts` + `scripts/playthrough-combat-scenarios.ts`，目前 8 个 baseline scenario）+ **事件 + 战斗双 dev 面板**（DEV 模式 Shift+D / Shift+C 互斥切换，详见 §3）。
 
 ---
 
@@ -22,17 +32,44 @@ npm run typecheck  # tsc --noEmit
 npm run build      # 生产构建到 dist/
 ```
 
-四个 playthrough 验证脚本（用 tsx 直接调引擎）：
+八个 playthrough 验证脚本（用 tsx 直接调引擎）：
 
 ```bash
-npx tsx scripts/playthrough.ts          # 教学关 + 随机图 + 上浮（潜行路径）
-npx tsx scripts/playthrough-combat.ts   # 教学关 + 战斗路径
-npx tsx scripts/playthrough-corpse.ts   # 死亡 + 回港 + 尸体回收
-npx tsx scripts/playthrough-decay.ts    # 衰减阈值 + 升级保鲜 + 海流冲走
-node scripts/verify-tutorial.mjs        # 数据图引用完整性（纯 JS）
+npx tsx scripts/playthrough.ts            # 教学关 + 港口修缮 + 随机图 + 上浮（潜行路径）
+npx tsx scripts/playthrough-combat.ts     # 教学关 + 战斗路径
+npx tsx scripts/playthrough-corpse.ts     # 死亡 + 回港 + 尸体回收
+npx tsx scripts/playthrough-decay.ts      # 衰减阈值 + 升级保鲜 + 海流冲走
+npx tsx scripts/playthrough-upgrades.ts   # 升级购买 / 前置依赖 / hasUpgrade 门控 / startDive 加成
+npx tsx scripts/playthrough-economy.ts    # 仓库合并 / Mira 收购单价 / 拒收剧情物 / outcome.lootValue
+npx tsx scripts/playthrough-bluecaves.ts  # 蓝洞群 mapgen 行为 / canFreeAscend gate / 盲鳗 sanity 攻击 / eel_skin → Mira
+npx tsx scripts/playthrough-wreckyard.ts  # 沉船墓园 mapgen / wreck 事件池 / 蛛蟹 solo+pair / lost_diver+watch portEvent 链 / crab_chitin → Mira
+npx tsx scripts/playthrough-scenarios.ts  # 事件回归：跑 scenarios/*.json 根目录的全部 baseline scenario
+npx tsx scripts/playthrough-combat-scenarios.ts  # 战斗回归：跑 scenarios/combat/*.json 的全部 baseline scenario
+npx tsx scripts/playthrough-mapgen-scenarios.ts  # mapgen 回归：跑 scenarios/mapgen/*.json + 迷路不变量种子扫描 + 确定性
+npx tsx scripts/playthrough-save.ts       # 存档序列化回归：Set round-trip + 版本迁移 + 损坏/未来版本退回
+node scripts/verify-tutorial.mjs          # 数据图引用完整性 + 数据文件注册守卫（纯 JS，按目录扫描）
 ```
 
-每次改完代码或数据建议跑一遍这五个脚本。
+事件回归框架的两个 CLI 脚本（详见 §3 末尾的"事件回归框架"小节）：
+
+```bash
+npx tsx scripts/event-runner.ts <eventId> [--seed n] [--choice id]...   # 快速跑某事件
+npx tsx scripts/event-runner.ts --from scenarios/foo.json               # 跑 JSON 场景
+npx tsx scripts/event-runner.ts --list [--zone-tag cave]                # 列所有事件
+npx tsx scripts/event-runner.ts --show <eventId>                        # 看事件结构
+```
+
+战斗回归框架的 CLI（详见 §3 末尾的"战斗回归框架（Phase 3）"小节）：
+
+```bash
+npx tsx scripts/combat-runner.ts <combatId> --action <id> --target <i> ...   # 多回合 quick mode
+npx tsx scripts/combat-runner.ts --from scenarios/combat/foo.json            # 跑 JSON 场景
+npx tsx scripts/combat-runner.ts --list                                      # 列所有 encounter
+npx tsx scripts/combat-runner.ts --list-enemies / --list-actions
+npx tsx scripts/combat-runner.ts --show <combatId> / --show-enemy <id> / --show-action <id>
+```
+
+每次改完代码或数据建议跑一遍这些脚本（八个 playthrough + scenarios + combat-scenarios + mapgen-scenarios + verify-tutorial）。`playthrough.ts` 有 ~12% RNG flake（quirk #18，与本次改动无关），挂了重试一两次确认。
 
 ---
 
@@ -48,7 +85,8 @@ port → dive → combat → dive → ascent → resolution → port
 
 | Phase | 子状态 | 文件 |
 |---|---|---|
-| port | NPC 对话 + 海域选择 | `PortView.tsx` |
+| port | NPC 对话 + 海域选择 + 修缮升级 | `PortView.tsx` + `UpgradePanel.tsx` |
+| portEvent | 港口侧 cutscene（捡回剧情物时自动触发） | `PortEventView.tsx` |
 | dive.event | 事件选项页 | `EventView.tsx` |
 | dive.nodeSelect | 节点图选择 2–3 路 | `NodeSelectView.tsx` |
 | dive.rest | 休息节点 / 上浮口 | `RestView.tsx` |
@@ -61,26 +99,242 @@ port → dive → combat → dive → ascent → resolution → port
 
 ### 引擎模块（`src/engine/`）
 
-- `state.ts` — GameState 构造 + 不可变操作 + inventory 工具
-- `events.ts` — 事件解析、Outcome 应用、`performCheck` 概率检定、`tickTurns` 标准回合结算
-- `dialog.ts` — NPC 对话树执行
+- `state.ts` — GameState 构造 + 不可变操作 + inventory 工具（`mergeIntoInventory` / `removeFromInventory`）；`createNewRun` 接受 `bonuses` 注入派生加成；**存档层**：`serializeGameState` / `deserializeGameState` / `migrateSave`（按 `SAVE_VERSION` 迁移）/ `saveGame` / `loadGame` / `clearSave`（localStorage，feature-detect；Set ↔ `{__set:[…]}` 的 replacer/reviver 让嵌套 Set 安全 round-trip）。App.tsx 启动 `loadGame() ?? createInitialGameState()` + state 变化自动存 + gameOver `clearSave`
+- `rng.ts` — 共享 `makeLcg(seed)`（Numerical Recipes LCG），chart.ts / eventScenario `withSeededRandom` / MapDevPanel 共用一份常数（quirk #22）
+- `events.ts` — 事件解析、Outcome 应用、`performCheck` 概率检定、`tickTurns` 标准回合结算（含海图能见度理智压力 `visibilitySanityDrain`）；`evalCondition` 支持 `hasUpgrade`
+- `dialog.ts` — NPC 对话树执行；从 `src/data/npcs/*.json` 多文件加载；`startDive` effect 自动从 profile 派生升级 bonuses 注入 run；`openShop` effect 切到 phase.shop；`openChart` effect 切到 phase.chart（出海点位现在走海图，不再由对话逐个列 zone）
+- `chart.ts` — **港口海图（POI 选点）引擎**：`generateChart(profile)` 纯函数（anchor 持久 + roaming 按 `runsCompleted` 种子刷新，派生自 profile 不入存档）；`isPoiVisible` / `poiLockReason` / `isPoiDepartable` 两级门控（requiresFlags=发现、requiresUpgrade=抵达能力）；`describePoi` / `describeModifier`。LCG 与 `withSeededRandom` 同算法但走入参（quirk #22）
 - `zones.ts` — Zone 注册 + 事件池抽取（按 depth/tag/sanity/flag 过滤）
-- `mapgen.ts` — 节点图生成 + corpse pass
-- `dive.ts` — startDive / enterNodeSelection / moveToNode / restAtNode
-- `ascent.ts` — 上浮方案 + 减压病 I/II/III/IV 型判定
+- `mapgen.ts` — 节点图生成，**按 `ZoneDef.mapShape` 分流两套生成器**：`generateLayeredMap`（层状 DAG，行为与重写前逐字节一致）+ `generateMazeMap`（洞穴迷路图：spanning tree + 弦边 → 双向连通图，有环/死路/多最深点，入口+远端两个 `ascent_point`）。`canFreeAscend` 仍单独控制上浮语义（与 mapShape 正交）。`GenOpts.depthOffset` 对两套都生效（先平移 depthRange，clamp depth≥0）。corpse pass 两套各一份（层状按中间层、迷路按非入口非出口节点），都支持 `GenOpts.targetCorpseId` 强制布点（打捞行会 Lv.2，绕过随机 + 深度窗）。新增纯函数 `analyzeMap(map)`——结构分析器（可达/双向/环秩/死路/最深点/局部极大/上浮口可达），dev 面板 + mapgen 回归共用
+- `dive.ts` — startDive（接 `opts.depthOffset` 透传 mapgen）/ `startDiveFromPoi`（海图出海：createNewRun + distance 预耗氧 + diveModifier 落 run + depthOffset + 叙事）/ enterNodeSelection（给每个 choice 标 `visited`）/ moveToNode（含海图洋流移动消耗 `currentMoveCost`；**迷路图重访已到过的节点时事件不重播**——退化成安静水域）/ restAtNode / **breatheAtAirPocket**（气穴换气 +氧+理智，一次性，写 run.activeFlags air_used:*）/ **campAtNode**（短/长扎营，tickTurns 后叠加恢复）。迷路图双向边 → getNextChoices 含来路，玩家可回头
+- `ascent.ts` — 上浮方案 + 减压病 I/II/III/IV 型判定；`computeLootValue` 用 `miraOfferFor` 估战利品潜在价值；`isAscentBlocked(run)` 检测封闭水域（`zone.canFreeAscend=false` 且不在 ascent_point 节点上），AscentView 用它锁 normal/rushed，emergency 仍可用作"凿穿洞顶"
 - `combat.ts` — 战斗状态机、行动消费、敌人 AI、姿态、撤退逻辑
-- `death.ts` — executeDeath / DeathRecord 生成 / ageAndDecayDeaths / findRecoverableCorpse / recoverFromCorpse / 衰减阈值
+- `death.ts` — executeDeath / DeathRecord 生成 / ageAndDecayDeaths / findRecoverableCorpse / recoverFromCorpse / 衰减阈值；`isRecoverableCorpse` + `listRecoverableCorpses(deaths, zoneId)`（海图选目标 + mapgen 强制布点共用判据）
+- `upgrades.ts` — 升级注册表 / `canPurchase` / `purchaseUpgrade` / `getUpgradeBonuses` 派生加成聚合
+- `items.ts` — `getItemDef` 集中索引；death/combat/CorpseView 三处旧 `new Map(ITEM_INDEX)` 已切到这里
+- `portEvents.ts` — 回港 cutscene 调度：扫 inventory 找 `item.story.triggersEventId`，配合 `flag.event_done.<id>` 防重播
+- `port.ts` — `handleReturnToPort`（合并 run.inventory → profile.inventory + 触发 cutscene）+ Mira 收购逻辑（`miraOfferFor` / `listMiraSellables` / `sellItemToMira` / `isSellableToMira`，MIRA_BUY_RATIO = 0.8）
+- `eventScenario.ts` — **事件回归框架**核心 API（`runEventScenario` / `listAllEvents` / `describeEvent` / `withSeededRandom`）。给定 eventId + 自定义起始 state，能走完该事件及其 triggerEventId 链，输出 JSON 或文本，绕开 mapgen 随机抽取。详见本节末尾"事件回归框架"。
 
 ### 数据（`src/data/`）
 
-- `items.json` — 13 件物品，全部标注 `decay` 档位
+- `items.json` — 21 件物品，全部标注 `decay` 档位（新增：brass_pocket_watch / waterlogged_logbook / crab_chitin / brass_fitting / barracuda_jaw / cave_octopus_beak / lantern_gland）。`lantern_gland`（冷光腺，material，sellPrice 16，uncommon，durable——离水过夜不灭不腐的 uncanny 触感）是沉灯水母掉落的天然身体部位，走 Mira（异物收购）。`brass_fitting`（黄铜配件，material，sellPrice 14，durable）是旧灯塔礁打捞向材料，走 Mira 收购；`cave_octopus_beak`（章鱼角喙，material，sellPrice 13，durable）是蓝洞章鱼掉落的天然物，走 Mira
 - `actions.json` — 8 个战斗行动
-- `npcs.json` — Aldo + 3 节点对话树（教学前/教学后分支）
+- `npcs/aldo.json` — Aldo 对话树。教学前 `depart_east`（资格潜水）；教学后出海统一走 `open_chart`（→ openChart effect → 海图）。**旧的逐 zone depart 选项 + 蓝洞/沉船 warning 节点已删**，warning 文案搬进 `chart_pois.json` 的 POI blurb
+- `npcs/mira.json` — Mira + banter；`open_shop` 选项触发 `openShop` 切到 shop phase
+- `chart_pois.json` — **海图 POI 数据**：`anchors`（每 zone 一个持久点）+ `roamingTemplates`（机会点模板，generateChart 按 runsCompleted 抽取）。字段：zoneId / distance / requiresFlags / requiresUpgrade / modifier（depthOffset 已实装；current·visibility 暂叙事+接口）
 - `enemies/reef_shark.json` — 暗礁鲨（HP 32 / armor 0 / 主动撤退）+ 教学战斗 encounter
+- `enemies/blind_eel.json` — 盲鳗（HP 18 / 三种攻击：扑咬 / 缠绕含 sanityDamage / 低频共振纯 sanity）+ `combat.blind_eel_solo`
+- `enemies/wreck_spider_crab.json` — **沉船蛛蟹**（HP 22 / armor 2 / evasion 3 / threat 5 / territorial / aggressor / 两种攻击：钳夹 w=3 / 甲壳冲撞 w=1）+ `combat.wreck_spider_crab_solo` + `combat.wreck_spider_crabs_pair`（**项目首个多体战斗 encounter**）
+- `enemies/reef_barracuda.json` — **梭鱼**（HP 16 / armor 0 / evasion 4 / threat 7 / predatory 不撤退 / 两种攻击：突进撕咬 [5,9] w3 + 掉头掠咬 [3,6] w2）+ `combat.reef_barracuda_solo` —— **reef zone 首个原生战斗 encounter**；玻璃大炮（全场最低 HP + 最高单击），掉 `barracuda_jaw`（material，sellPrice 12，→ Mira）
+- `enemies/cave_octopus.json` — **洞穴章鱼**（HP 26 / armor 1 / evasion 3 / threat 6 / territorial 低血撤退 / aggressor / 三种攻击：缠臂 [3,5] w3 + 角喙 [5,8] w1 + 喷墨 0 物理含 sanityDamage [2,4] w1）+ `combat.cave_octopus_solo` —— **蓝洞群深段（40-55m）首个原生战斗 encounter（盲鳗之外）+ 蓝洞首个 realistic-tone 战斗**；physical 攻坚型「深处闸门」（仅次教学暗礁鲨的最厚 HP），3-4 turn 消耗战，掉 `cave_octopus_beak`（material，sellPrice 13，天然物→ Mira，符合 quirk #44）。详见 quirk #46
+- `enemies/drowned_lantern.json` — **沉灯水母**（HP 24 / armor 1 / evasion 1 / speed 4 / threat 6 / **tier cosmic** / hostility predatory 不撤退 / aiPattern caster / 两攻击：脉光〔纯 sanity [4,7] w3 主攻〕+ 曳丝〔physical [2,4] + sanity [1,2] w2〕）+ `combat.drowned_lantern_solo` —— **沉船墓园第二只敌人（蛛蟹之外，补齐墓园最长线的敌人缺口）+ 项目首只 cosmic-tier 敌人 + 首只 sanity-主导敌人**。设计＝**「理智消耗战」**：slow/tanky（evasion 1 易命中、armor 1 + hp 24 ≈ knife_slash 3 刀杀），但每回合主攻是纯 sanity 脉光——拖得越久脑子越空。与盲鳗（hp18 evasion4 物理主导·sanity 点缀的快速 flanker）/ 章鱼（hp26 纯物理 bruiser）正好互补：**它是「会烧理智的闸门」**。掉 `lantern_gland`（天然身体部位→ Mira，符合 quirk #44 同蟹甲/梭鱼颌/章鱼喙）。触发事件 `wreck_graveyard.drifting_light` 只挂 `[wreck]` tag（按 quirk #47 跨 zone 共享到灯塔礁 25m+，但「漂着的冷光」在礁底沉船间不出戏，且呼应 reef.lantern_glow『下面的光』）。详见 quirk #48
 - `events/tutorial.json` — 6 个教学事件
-- `events/reef.json` — 8 个浅海/中海事件（reef / wreck / cave）
-- `zones.json` — 东礁（教学线性）+ 旧灯塔礁（随机图）
+- `events/reef.json` — 20 个浅海/中海/深海事件（含 reef.barracuda 战斗触发）（reef / wreck / cave）；`cave.*` 事件会同时在蓝洞群深层池里出现，`wreck.*` 事件会同时在沉船墓园里出现（详见 quirk #17 / #19）。**旧灯塔礁专属 `reef.*` 事件（2026-05-30 周末内容 pass 补的灯塔线）**：`flooded_stair`（灌满水的旋梯 realistic·stamina check·brass_fitting loot）/ `keepers_footlocker`（看守人的箱子 realistic·oncePerRun·lore.old_lighthouse.keeper）/ `bleached_garden`（白化珊瑚 uncanny·loot+sanity 无 check）/ `fog_bell`（雾钟 uncanny·oncePerRun·stamina check + lore.old_lighthouse.bell）/ `lantern_glow`（下面的光 cosmic·oncePerRun·sanity check + lore.old_lighthouse.the_light）——给旧灯塔礁补齐 realistic/uncanny/cosmic 全档，10–42m 全覆盖，全部只挂 `reef`/`shallow,reef` tag（quirk #19）。**深水段 cave.*/wreck.*（2026-05-30 第二个周末 pass）**：`wreck.silted_hold`（realistic·45-60m·stamina·brass_fitting/canned_food）/ `cave.halocline`（realistic·48-60m·盐线下潜·stamina）/ `wreck.porthole`（uncanny·50-60m·oncePerRun·sanity·brass_fitting·lore.deep_water.the_window）/ `cave.blue_floor`（cosmic·52-60m·oncePerRun·sanity·lore.deep_water.cold_light）——填 45-60m 深段（旧灯塔礁 60m 事件池 1→5），跨 zone 共享到蓝洞群（cave.*）/ 沉船墓园（wreck.*）；**wreck.* 掉人造物 · cave.* 掉天然物，避免另一个 zone 出戏（quirk #44）**。**reef 26-44m 中段 uncanny（2026-05-31 周日敌人 pass）**：`reef.lighthouse_lens`（uncanny·30-44m·灯室的镜·`sanity vs 48`·pry_brass 掉 brass_fitting / sight_along 看那道恒定指向礁坡下方的折射亮线·lore.old_lighthouse.the_lens）——填 reef 26-44m 中段 uncanny 缺口（此前最深 reef-only uncanny 是 fog_bell 到 38m），只挂 `[reef]` tag 隔离在灯塔礁（quirk #19，loot 故可用灯塔黄铜不犯 quirk #44），延续灯塔『下面的光』母题但保持 uncanny（物理镜的反常），刻意不触发 d_reveal。**reef realistic 探索密度（2026-05-31 周日第四个 pass）**：`reef.shelf_break`（realistic·30-44m·礁壁的断口·开阔水域的断崖边·`descend_wall` stamina vs12 下探够珊瑚→coral_shard+lobster chance / `skirt_edge` 沿边安全·**填 reef 26-44m realistic 缺口**，此前该段只有 barracuda 战斗触发器 + lobster_hole 到 35m）+ `reef.urchin_barren`（realistic·16-30m·海胆滩·`pick_through` 无 check 在碎礁翻找 coral_shard+sanity-1 / `move_on`·补 reef 浅中段 realistic 密度，生态死寂的克制不安——海胆随影子转刺是真行为，不出 realistic）——均只挂 `[reef]` 隔离在灯塔礁，coral_shard 天然 loot
+- `events/blue_caves.json` — 21 个蓝洞事件（入口/中段/深处；2026-05-30 补 12-25m 浅段：窄口 realistic check + 另一串气泡 uncanny lore）；含分岔水道（迷路 sanity 检定）、可扎营的礁台、钟乳石厅、蓝色水帘、沉默的厅、盲鳗 lair。**深段战斗+cosmic（2026-05-30 第四个周末 pass）**：`octopus_den`（贝壳堆 realistic·40-55m·拔刀 / 压灯慢退 stamina check / 绕开 三选 → `combat.cave_octopus_solo`，章鱼遭遇触发器，参照 reef.barracuda）+ `late_shadow`（慢半拍的影子 cosmic·45-55m·sanity check + lore.bluecaves.late_shadow）——给蓝洞深段补首个 realistic 战斗钩子 + 一个 cosmic 厅事件，都只挂 `cave` tag（跨 zone 共享到旧灯塔礁 cave 层，与盲鳗同模式）。**中段 uncanny/cosmic（2026-05-31 周日第二个 pass，填 30-45m 空白）**：`sounding_line`（测深绳 uncanny·28-40m·stamina vs13 收绳·lore.the_line·从黑里收一根没人收回的测深绳，断口是从下面割的）/ `blind_school`（白色的鱼 uncanny·30-42m·oncePerRun·无 check sanity·lore.blind_school·无眼洞鱼挤成球用侧线"看"你）/ `falling_up`（往上落的雪 cosmic·32-45m·sanity vs50·lore.wrong_down·碎屑往上落，洞里"下"的方向不在下面）/ `thick_water`（变稠的水 cosmic·36-46m·无 check sanity·lore.thick_water·越往深水越稠到不肯再当水）——补蓝洞 30-45m 中段（此前几乎全 realistic，cosmic 只在 45m 以下 late_shadow/silent_chamber），+2 uncanny +2 cosmic，蓝洞 cosmic 2→4。全 loot-free（守 quirk #44：falling_up/thick_water 触 45-46m 会经 `[cave]` tag 漏进旧灯塔礁 cave 层，无人造物不出戏），只挂 `[cave]` tag（quirk #19），lore 全在 `lore.bluecaves.*`，延续"先来者 + 深处"母题但**刻意不触发 flag.d_reveal**。**12-25m 浅段 cosmic（2026-05-31 周日敌人 pass，填浅段 cosmic 空白）**：`the_narrowing`（cosmic·14-25m·oncePerRun·回头的路·洞口那片蓝的出口在你不盯着时会缩小·stare_at_it 无 check / mark_the_rim sanity vs50 / dont_look·lore.bluecaves.the_way_out）——把『方向/感知错乱』母题（falling_up/thick_water 都在 32m+ 深段）下放到还看得见真出口的浅段，反而更不安；此前最浅 cosmic 是 32m falling_up。只挂 `[cave]`（深度 14-25 与灯塔 cave-tag 45m+ 不重叠 → 实际仅蓝洞），loot-free，不触发 d_reveal。**12-25m 浅段 realistic 密度（2026-05-31 周日第四个 pass，针对 quirk #20 entrance_light 过曝）**：`bluecaves.breakdown_pile`（realistic·16-26m·塌石堆·顶板塌方堆死半条水道·`climb_over` 翻石堆 stamina-6 / `thread_gap` 钻渗冷水缝 氧-2+coral_shard chance / `back_to_mouth`·无 check 纯资源取舍，参照 reef.current_drag）——蓝洞浅段此前 realistic 只 entrance_light/tide_mark/squeeze，加一个 caving 障碍稀释 entrance 过曝；coral_shard 天然 loot 守 quirk #44（16-26m `[cave]` 不漏进灯塔 45m+）
+- `events/wreck_graveyard.json` — **15 个沉船墓园事件**：12 个 dive（船舱入口 / 塌过道 stamina check / 缠脚海草 stamina × oxygen × 刀三选 / 失踪潜水员遗体 lore+物 / 罗盘室怀表 sanity check / 引擎室共鸣 sanity 二次施压 + 刀敲触发蛛蟹双战 / **写字板 `dive_slate` uncanny·22-40m·oncePerRun·lore.wreck_graveyard.the_slate**——2026-05-30 第四个周末 pass 补的墓园叙事，「敲船壳的节奏」呼应 engine_room_hum / silent_chamber 敲击母题，刻意不触发 d_reveal）+ 2 个 portEvent cutscene（`pocket_watch_log` + `logbook_read`）。**2026-05-31 周日 pass 补 4 个 dive（cosmic 1→3 + uncanny 加厚）**：`cold_stores`（uncanny·26-42m·stamina vs13·canned_food/old_fishing_net 人造 loot·"码得太齐的罐头"）/ `hull_handprints`（uncanny·24-40m·oncePerSave·sanity vs48·lore.handprints·玻璃里侧、从内侧按上的手印，区别于 lost_diver 的尸体）/ `the_knocking`（cosmic·30-48m·oncePerRun+oncePerSave·sanity vs55 听 / 回敲违禁分支·lore.the_knocking·是 dive_slate『不要回敲』的付现，延续敲击母题）/ `the_open_door`（cosmic·40-50m·oncePerRun·sanity vs55·门里是开阔黑水+远处冷光+一呼一吸的水流·lore.the_door·接『深处有光』暗线但不触发 d_reveal）——全挂 `[wreck]`、loot 只人造物（quirk #44/#47）。**2026-05-31 周日敌人 pass 补 1 个 dive（沉灯水母触发器）**：`drifting_light`（cosmic·34-50m·oncePerRun·漂着的光·draw_knife→`combat.drowned_lantern_solo` / hold_still 关灯避战 `sanity vs 50` / back_away·lore.drowned_lantern）——墓园第二个原生战斗钩子（参照 octopus_den / engine_room_hum / reef.barracuda），冷光意象呼应 reef.lantern_glow / lore.deep_water.cold_light『下面的光』暗线但不解释、不触发 d_reveal。**realistic 内舱密度（2026-05-31 周日第四个 pass）**：`wreck_graveyard.galley`（realistic·20-34m·伙房·搪瓷杯/铸铁炉/泡胀顶死的存粮柜·`force_locker` stamina vs13 撬柜→canned_food+old_fishing_net chance / `sift_stove` 无 check 炉膛淤泥摸 canned_food chance / `back_out`）——给墓园补一个生活舱内饰质感（区别于 cabin_entrance 井口 / collapsed_passage 结构挤缝 / tangling_kelp 海草），人造 loot 守 quirk #44/#47（跨 zone 共享到灯塔礁 25m+ 不出戏）
+- `zones.json` — 东礁（教学线性）+ 旧灯塔礁（随机图）+ **蓝洞群**（随机图，`canFreeAscend: false`）+ **沉船墓园**（随机图，开阔水域，6 层 18–50m，zoneTags=["wreck"]，`canFreeAscend: true`）
 - `upgrades.json` — 船坞 / 气瓶库 / **打捞行会**（3 级，含保鲜系数）
+
+### 事件回归框架（Phase 1）
+
+**目的**：随着 EVENT_DB 越来越大，没法靠跑 random playthrough 去逼游戏触发某个特定事件来测试它的某个分支。这套框架让你直接以 (eventId × 自定义起始 state × seed × 选择序列) 调用引擎，绕开 mapgen 抽取。
+
+**两层结构**：
+
+- `src/engine/eventScenario.ts` —— **纯引擎层 API**。不依赖 UI / Node fs / console，可被 Phase 2 的网页 dev 面板复用。导出 `runEventScenario(input)` / `listAllEvents(filter)` / `describeEvent(id)` / `withSeededRandom(seed, fn)`。
+- `scripts/event-runner.ts` —— **CLI 包装**，handwritten argv 解析（无外部 dep）。
+
+**核心机制**：
+
+- **RNG seed**：`withSeededRandom(seed, fn)` 在 fn 期间临时 patch 全局 `Math.random` 为 LCG（Numerical Recipes 参数），fn 跑完恢复。因为 `Math.random()` 散布在 events / combat / mapgen / death 多处，patch 全局比改每个调用点干净。**注意**：runEventScenario 跑的时候不要在同进程并发跑别的引擎代码（quirk #22）。
+- **战斗边界**：碰到 `triggerCombatId` 不自动打，记录到 `summary.combatTriggered` 后停步。战斗的回归归 `playthrough-combat.ts` / 战斗专项脚本管。
+- **chain 模式**：`'follow'`（默认）跟着 `outcome.triggerEventId` 走多步链路；`'isolated'` 跑一步即停。
+- **可见性**：`visibleIf` 严格生效，同时把不可见的选项也列出来并标明被哪个 Condition 挡住（调 visibleIf 时这是核心需求）。
+
+**CLI 用法**：
+
+```bash
+# 1. 快速模式
+npx tsx scripts/event-runner.ts bluecaves.silent_chamber \
+    --sanity 70 --depth 50 --seed 42 --choice stay_a_moment
+
+# 多个 --choice 表示走链
+npx tsx scripts/event-runner.ts tutorial.descent \
+    --choice continue --choice sneak --choice stealth_grab
+
+# 2. 从 JSON 文件读 scenario（推荐：进 git 持久化）
+npx tsx scripts/event-runner.ts --from scenarios/bluecaves_silent_chamber__low_sanity_success.json
+
+# 3. 从 stdin 读 JSON
+echo '{"eventId":"bluecaves.silent_chamber","stats":{"sanity":70},"choices":["stay_a_moment"]}' \
+    | npx tsx scripts/event-runner.ts --in -
+
+# 4. 辅助命令
+npx tsx scripts/event-runner.ts --list                   # 列所有事件
+npx tsx scripts/event-runner.ts --list --zone-tag cave   # 按 tag 过滤
+npx tsx scripts/event-runner.ts --show bluecaves.silent_chamber  # 看结构
+
+# 输出格式：默认文字，--out json 给程序用
+npx tsx scripts/event-runner.ts <id> --out json
+```
+
+**场景库 `scenarios/*.json`**：
+
+- 命名规则：`<event_id_点改下划线>__<variant>.json`，例如 `bluecaves_silent_chamber__low_sanity_success.json`
+- 一个文件就是一份 `ScenarioInput`（外加可选的 `_comment` 和 `expect` 字段）。`expect` 给 `scripts/playthrough-scenarios.ts` 做断言：`steps` 步数、`finalPhase`、`loreAdded` 子集、`flagsAdded` 子集、`statsDelta` 严格相等、`checkPassed` 布尔、`combatTriggered` 字符串/null。
+- 目前 49 个 baseline scenario（**2026-05-31 第四个 pass（realistic 探索密度）+6**：`reef_shelf_break__descend_success`〔reef 中段 stamina check 通过 + coral_shard〕 + `reef_shelf_break__skirt_edge`〔no-check 安全资源路径〕 + `reef_urchin_barren__pick_through`〔no-check loot+sanity〕 + `wreck_graveyard_galley__force_locker_success`〔wreck stamina check 通过 + 人造 loot〕 + `wreck_graveyard_galley__sift_stove`〔no-check loot〕 + `bluecaves_breakdown_pile__climb_over`〔no-check 资源取舍 stamina-6/oxygen-1〕——全 realistic，stamina-check 只锁 success 分支（满 stamina→0.95 clamp，seed 1 确定性过；低 dc 的 stamina fail 无法 clamp 到 0.05，故不做 fail baseline，同既有 reef.flooded_stair / wreck.silted_hold 套路，详见 quirk #43/#49）；**2026-05-31 敌人 pass +4**：`wreck_graveyard_drifting_light__draw_knife_combat`〔战斗边界→沉灯水母〕 + `wreck_graveyard_drifting_light__hold_still_success`〔cosmic 避战 sanity check〕 + `reef_lighthouse_lens__sight_along_success`〔reef uncanny sanity check + lore〕 + `bluecaves_the_narrowing__stare_at_it`〔蓝洞浅段 cosmic 无 check + lore〕；以下为既有：蓝洞群 5 个 + 蓝洞中段 uncanny/cosmic 5 个〔sounding_line haul_up_success〔stamina check 通过〕 + blind_school swim_into〔无 check uncanny〕 + falling_up follow_up_success/follow_up_fail〔cosmic sanity check 双分支〕 + thick_water push_deeper〔无 check cosmic〕〕 + 蓝洞深段战斗/cosmic 4 个〔octopus_den draw_knife 战斗边界 + octopus_den wait_success stamina check + late_shadow watch_success/watch_fail cosmic 双分支〕 + 教学结尾 1 个 + 沉船墓园 4 个 + 墓园 dive_slate 1 个 + 旧灯塔礁 6 个 + 深水段 5 个 + 墓园周日 pass 5 个（cold_stores force_hatch / hull_handprints look_closer / the_knocking listen + knock_back 双 baseline / the_open_door look_in），覆盖：基础 loot / sanity check 通过 / sanity check 失败 / stamina check 通过 / cosmic sanity check 成功+失败两分支 / 多属性同时变化 / 无 check 的 loot+sanity / portEvent-style 事件 / 战斗触发边界 / 剧情物拾取链 + lore）。旧灯塔礁 6 个：`reef_flooded_stair__pry_grate_success` / `reef_keepers_footlocker__open` / `reef_bleached_garden__break_piece` / `reef_fog_bell__listen` / `reef_lantern_glow__descend_success` / `reef_lantern_glow__descend_fail`。深水段 5 个：`wreck_silted_hold__pry_hoops_success`（stamina check 通过）/ `cave_halocline__feel_wall_success`（stamina check 通过）/ `wreck_porthole__look_through_success`（uncanny sanity check 通过 + lore）/ `cave_blue_floor__dig_success`（cosmic sanity check 通过 + lore）/ `cave_blue_floor__dig_fail`（cosmic 失败 -12 sanity + oxygen -5）。
+- **添新事件时建议至少加 1 个 baseline scenario 进 scenarios/**，覆盖典型路径——保证以后修改不破坏既有 outcome 行为。
+
+**回归运行**：
+
+```bash
+npx tsx scripts/playthrough-scenarios.ts
+# ✓ playthrough 完成
+# 全部场景通过（6/6）
+```
+
+**Phase 2 已实装（2026-05-27，本 session）**：网页内 dev 面板，挂在 `src/ui/dev/`。
+
+入口：开发模式下按 **Shift+D** 切换全屏覆盖层（Esc 关闭）。仅 `import.meta.env.DEV`
+才挂载（App.tsx 用 `lazy()` + DEV 守卫；`npm run build` 后 dist JS/CSS 里搜不到
+任何 `EventDevPanel` / `runEventScenario` / `dev-panel` 字串——Vite 把 false 分支的
+dynamic import 当 dead code 消除了，整个 `src/ui/dev/` 不进 prod 包）。
+
+三栏布局：
+
+- **左**：事件下拉/title 过滤 + zoneTag 过滤；点击切到该事件，下方显示 `describeEvent`
+  的 optionSummary（每个选项的 check / outcome / triggerEventId 一目了然）
+- **中**：状态编辑表单
+  - stats：勾选覆写 + 滑动条 + 数字输入（不勾的字段沿用 staminaMax/oxygenMax 满状态）
+  - depth / zoneId（zoneId 留空则按事件 zoneTags 推断）
+  - equipment：5 槽分别可勾覆写（空 itemId = null）
+  - inventory：可加减行
+  - profileFlags / runFlags / unlockedUpgrades / loreEntries（逗号分隔）
+  - bankedGold / seed / chain (follow|isolated) / maxSteps
+  - choices：根据当前预览的 `step.visibleOptions` 动态渲染每步下拉
+- **右**：`runEventScenario` 实时输出。每步显示 title / tone / body / visible options
+  (含 check stat/dc/估算 rate) / hidden options (含 blockedBy 原因) / chosen / narrative
+  / deltas / next；末尾一张 summary 表
+
+**导入导出**：
+
+- 导出 JSON：复制 `ScenarioInput` 到剪贴板，附带文件名建议 `<event_id 下划线>__<variant>.json`
+  （形状与 `scenarios/*.json` 一致，可直接 paste 进 `event-runner.ts --from`）
+- 导入 JSON：textarea 粘贴 `ScenarioInput`，应用后表单同步更新
+- 存到 localStorage：key 命名 `dev.scenarios.<event_id 下划线>__<variant>`，列表里可一键载入/删除
+
+**实现层**：
+
+- `src/ui/dev/EventDevPanel.tsx` —— 主面板组件（三栏 + 工具栏 + Choices/Preview 子组件）
+- `src/ui/dev/ScenarioSerializer.ts` —— form ↔ ScenarioInput 互转、JSON 序列化、localStorage CRUD（纯数据层，无 React 依赖，便于未来挪到战斗 dev 面板复用）
+- `src/ui/dev/dev-panel.css` —— `.dev-*` 前缀样式；由 EventDevPanel.tsx 静态 import，prod build 时随面板一起被 tree-shake 出包
+- `src/App.tsx` —— 顶层 `useState` 管 `devPanelOpen`，**不进 GameState**（quirk #23）
+
+**不在面板里做的事**（一开始就刻意排除）：
+
+- 不实装 "在浏览器里跑全部 scenarios"——那是 `scripts/playthrough-scenarios.ts` 的工作
+- 不自动写文件——浏览器不直接 fs，导出走剪贴板/textarea，用户 Cmd+S 自己存到 `scenarios/`
+- 不引新 npm dependency
+- 不复刻引擎逻辑——所有计算走 `runEventScenario`，面板只是 form ↔ result 的 UI 包装
+
+### 战斗回归框架（Phase 3）
+
+**目的**：随着战斗参数（HP / 伤害区间 / AI 撤退阈值 / 玩家行动消耗）越来越多，没法靠 `scripts/playthrough-combat.ts` 一个完整流程脚本来 iterate 平衡。这套框架让你直接以 (combatId × 自定义 player state × seed × actions[]) 调用引擎，与事件回归同源套路。
+
+**两层结构 + dev 面板**：
+
+- `src/engine/combatScenario.ts` —— **纯引擎层 API**。不依赖 UI / Node fs / console，可被 dev 面板复用。导出 `runCombatScenario(input)` / `listAllCombats()` / `listAllEnemies()` / `listAllActions()` / `describeEnemy(id)` / `describeAction(id)`，并 re-export `withSeededRandom`。
+- `scripts/combat-runner.ts` —— **CLI 包装**，handwritten argv 解析（与 `event-runner.ts` 同套路，无外部 dep）。支持 quick mode（多回合 `--action`/`--target`）/ `--from` / `--in -` / `--list` / `--list-enemies` / `--list-actions` / `--show` / `--show-enemy` / `--show-action` / `--out json`。
+- `src/ui/dev/CombatDevPanel.tsx` + `src/ui/dev/CombatScenarioSerializer.ts` + `src/ui/dev/combat-panel.css` —— **网页内 dev 面板**。Shift+C 切换；与事件面板互斥（详见下文 App.tsx 改造）。
+
+**核心机制**：
+
+- **RNG seed**：复用 `eventScenario.ts::withSeededRandom`——同一套 quirk #22 规矩。
+- **战斗边界**：碰到 victory / defeat / flee / emergency_ascend / 回合数上限 / 行动用完 → 停步。**不实装** "战斗中触发事件 / 战斗结束回到事件链"——战斗只跑战斗。
+- **input.actions[i]**：`{ actionId, targetIndex? }`。`targetIndex` 是 enemies 数组下标（不是 instanceId），让 dev 面板 / JSON / CLI 都能拿数字下标对齐。
+- **ad-hoc encounter**：除了 `combatId` 引用注册过的 `combatEncounters`，也可以传 `enemyDefIds: string[]` 自由组合敌人。dev 面板左栏顶部有"注册 combat / ad-hoc 构造"互斥选项。
+- **不动 combat.ts 内部逻辑**：reducer / AI / 撤退阈值都不碰，只在 `combat.ts` 上加两个纯 getter（`listAllEnemyDefs` / `listAllEncounters`）供 scenarios 层 introspect。
+
+**CLI 用法**：
+
+```bash
+# 1. quick mode（多回合 actions 顺序对齐）
+npx tsx scripts/combat-runner.ts combat.tutorial_shark \
+    --action action.ambush --target 0 \
+    --action action.knife_stab --target 0 \
+    --action action.knife_slash --target 0 \
+    --seed 42
+
+# 2. ad-hoc
+npx tsx scripts/combat-runner.ts \
+    --enemy enemy.reef_shark.tutorial --enemy enemy.blind_eel \
+    --action action.knife_slash --target 0 \
+    --action action.knife_slash --target 1 \
+    --seed 1
+
+# 3. 从 JSON 文件读
+npx tsx scripts/combat-runner.ts --from scenarios/combat/reef_shark__normal_kill.json
+
+# 4. 辅助命令
+npx tsx scripts/combat-runner.ts --list
+npx tsx scripts/combat-runner.ts --show-enemy enemy.blind_eel
+npx tsx scripts/combat-runner.ts --show-action action.knife_stab
+```
+
+**场景库 `scenarios/combat/*.json`**：
+
+- 命名规则：`<combatId 点改下划线>__<variant>.json`，例如 `reef_shark__normal_kill.json` / `blind_eel__sanity_attack_path.json`。
+- 一个文件 = 一份 `CombatScenarioInput` + 可选 `_comment` + 可选 `expect`。`expect` 给 `playthrough-combat-scenarios.ts` 做断言：`outcome` / `turnsElapsed` / `survived` / `finalPhase` / `enemiesAlive` / `lootGained` / `statsDelta`，加上 `sanityDeltaAtMost` / `hpDeltaAtMost` / `oxygenDeltaAtMost` 这种"至少损失这么多"软断言。
+- 目前 8 个 baseline scenario（reef_shark normal_kill + blind_eel sanity_attack_path + 沉船蛛蟹 solo normal_kill + 沉船蛛蟹 solo flee_retreat（territorial 撤退路径）+ 沉船蛛蟹 pair knife_stab_kill（**项目首个多体战斗**）+ reef_barracuda_solo normal_kill + cave_octopus_solo normal_kill（蓝洞深段 physical 攻坚 bruiser，seed 1 = 3 turns / stamina -28，knife_slash×4）+ **drowned_lantern_solo normal_kill**（墓园 cosmic 「理智消耗战」，seed 1 = 3 turns / stamina -20 / oxygen -3 / **sanity -10**，knife_slash×4——首个 sanity Δ 非零的战斗 baseline））。**添新敌人 / 新 encounter / 改平衡数值时建议至少加 1 个 baseline 进 scenarios/combat/**，保证以后改动不破坏既有行为。
+
+**回归运行**：
+
+```bash
+npx tsx scripts/playthrough-combat-scenarios.ts
+# ✓ playthrough 完成
+# 全部场景通过（2/2）
+```
+
+**战斗 dev 面板（Shift+C）**：
+
+三栏布局：
+
+- **左**：模式切换（注册 combat / ad-hoc）+ encounter 列表 + enemy 列表（点击查看 `describeEnemy` 详情：HP/armor/攻击表/撤退阈值/AI/loot）。
+- **中**：状态编辑（stats 滑动条 + 勾选覆写、5 槽 equipment、inventory、unlockedUpgrades、zoneId、depth）+ seed / maxTurns + actions[] 动态行（每行 actionId 下拉 + targetIndex 下拉，targetIndex 选项从 result.turns 反推当回合活敌人）。
+- **右**：`runCombatScenario` 实时输出。每回合：player log（actor 着色）+ 4 stats 数值与 Δ + 全部 enemies 的 HP bar（含 stance + statuses）+ outcome 着色。末尾一张 summary 表（outcome / survived / turnsElapsed / final stats / stats Δ / loot / enemies alive / final phase），与事件面板的 summary 风格一致。
+
+**导入导出 / localStorage**：
+
+- 导出 JSON：复制 `CombatScenarioInput` 到剪贴板，文件名建议 `<combatId 点改下划线>__<variant>.json`（直接 paste 进 `combat-runner.ts --from`）。
+- 导入 JSON：textarea 粘贴 `CombatScenarioInput`，应用后表单同步。
+- 存到 localStorage：key 命名 `dev.scenarios.combat.<combatId 下划线>__<variant>`，**加 `.combat.` 中缀避免与事件 scenario 撞 key**（详见 quirk #25）。
+
+**实现层**：
+
+- `src/engine/combatScenario.ts` —— 纯引擎层 API，re-export `withSeededRandom`
+- `src/engine/combat.ts` —— 仅新增 `listAllEnemyDefs()` / `listAllEncounters()` 两个 read-only getter
+- `src/ui/dev/CombatDevPanel.tsx` —— 主面板组件
+- `src/ui/dev/CombatScenarioSerializer.ts` —— form ↔ CombatScenarioInput / JSON / localStorage（不抽公共底座；等第三个 dev 面板再考虑）
+- `src/ui/dev/combat-panel.css` —— `.dev-combat-*` 战斗专属样式；通过 `@import './dev-panel.css'` 复用事件面板的 .dev-* 基础变量与控件
+- `src/App.tsx` —— 顶层 `devPanel` state 从 `boolean` 改成 `'event' | 'combat' | null` 联合；Shift+D 切事件、Shift+C 切战斗，两个面板互斥（任一打开时按任一快捷键都关闭）
+
+**不在面板里做的事**（一开始就刻意排除）：
+
+- 不实装 "战斗中触发事件 / 事件链跨入战斗回到事件"
+- 不抽 `ScenarioSerializer` / `CombatScenarioSerializer` 公共底座——等第三个 dev 面板出现再考虑
+- 不重做 `playthrough-combat.ts`（保留作为完整流程的端到端测试，`combatScenario.ts` 只是单战斗）
+- 不引新 npm dependency
+- 不复刻战斗逻辑——所有计算走 `runCombatScenario`，面板只是 form ↔ result 的 UI 包装
+
+### mapgen 回归 + 地图调试器 dev 面板（本 session 新增）
+
+**目的**：迷路图是随机拓扑，没法靠肉眼跑 playthrough 确认"每张图都连通/有环/有死路/多最深点"。这套延续事件/战斗的回归文化，但 scenario 更轻（只有 `zoneId × seed × depthOffset`）。
+
+- `src/engine/mapgen.ts::analyzeMap(map)` —— **纯结构分析器**（拓扑无关，层状/迷路都能跑）：`allReachable` / `isUndirected` / `cycleRank`(环秩=边-点+分量) / `deadEndIds` / `deepestNodeIds` / `localMaximaIds` / `ascentPointIds` + 可达性 / `entranceIsAscent`。dev 面板与回归脚本共用，不复刻。
+- `scenarios/mapgen/*.json` —— 4 个 baseline（蓝洞群 seed1/seed7、暗河口 depthOffset 6、沉船墓园层状对照）。schema = `{ zoneId, seed, depthOffset?, expect }`；`expect` 支持精确锁（nodeCount/edgeCount/maxDepth/entranceDepth）+ 布尔不变量 + `min*` 阈值（minDeepestPoints 等）。命名遵循 `<zone 下划线>__<variant>.json`。
+- `scripts/playthrough-mapgen-scenarios.ts` —— 跑 `scenarios/mapgen/` 子目录（quirk #26 约定）：逐 scenario 断言 + 确定性（同 seed 两次生成指纹一致）+ **迷路不变量种子扫描**（blue_caves seeds 1–60，每个 seed 都断言迷路不变量——这是真正值钱的鲁棒性检查，curated 只覆盖几个点）。
+- `src/ui/dev/MapDevPanel.tsx` + `map-panel.css` —— **网页内地图调试器**，DEV 模式 **Shift+M** 切换（与事件/战斗面板互斥；`DevPanelKind` 加 `'map'`）。左栏 zone/seed/depthOffset 控制 + `analyzeMap` 结构读数（迷路不变量着色）；右栏节点图 SVG（按 layer=树距分列、按 kind 配色、标最深点/死路/回边）。同样走 `lazy + DEV 守卫 + co-located css`，prod build tree-shake（已验证 dist 里搜不到 `MapDevPanel`/`map-panel`）。
 
 ### 关键数值（占位平衡，未细调）
 
@@ -119,16 +373,58 @@ port → dive → combat → dive → ascent → resolution → port
 
 ### 高优先级（meta-loop 最后一公里）
 
-- [ ] **港口升级 UI** —— 数据全在 `upgrades.json`，需要 PortView 加面板。玩家能赚建设值但花不出去。
-- [ ] **教学结尾日志的港口触发** —— 玩家拿了 `item.captain_log` 回港，应自动触发 `tutorial.ending_log` 那段 cutscene。
-- [ ] **战利品变卖（goldDelta）** —— 回港后 Mira 收购材料，目前 `computeLootValue` 是占位 0。
+- [x] **港口升级 UI** —— `src/ui/UpgradePanel.tsx` + `engine/upgrades.ts`。Port 界面有"修缮港口"入口。
+      船坞 lv1 通过新的 `hasUpgrade` Condition 严格门控旧灯塔礁；气瓶库 lv1 在 `startDive` 链路真正 +10 oxygenMax。
+      验证脚本：`scripts/playthrough-upgrades.ts`。
+- [x] **教学结尾日志的港口触发** —— 新增 `GamePhase = portEvent`。玩家点 ResolutionView "回到港口" 时，
+      `engine/portEvents.ts::pickReturnTrigger` 扫 inventory 找 `item.story.triggersEventId`，
+      命中即先 null run、再进 portEvent；`PortEventView` 用同一套 DiveEvent schema 渲染，结束写
+      `flag.event_done.<id>` 防重播。`engine/events.ts::applyOutcome` 现在在无 run 时把 applyFlags / goldDelta
+      路由到 `profile.flags` / `profile.bankedGold`。验证路径在 `scripts/playthrough.ts`。
+- [x] **战利品变卖（Mira 柜台）** —— `engine/port.ts` 实装 Mira 收购：`MIRA_BUY_RATIO = 0.8`，
+      `sellItemToMira` / `listMiraSellables` / `miraOfferFor` / `isSellableToMira`。eternal / story / sellPrice=0 物品不收，
+      留在 `profile.inventory`。`engine/ascent.ts::computeLootValue` 接入 `sellPrice × ratio`，但只是显示值；
+      `RunOutcome.goldEarned` 现在只反映 `run.gold`（事件给的），`RunOutcome.lootValue` 是潜在变卖价值，
+      实际入账要走 `ui/MiraShopView`。`engine/dialog.ts::openShop` effect 切 phase 到 `'shop'`，
+      App.tsx 顶层挂 `MiraShopView`。验证脚本：`scripts/playthrough-economy.ts`。
 
 ### 中优先级（味道）
 
-- [ ] **D-reveal 文本故障化** —— FuneralView 按 `profile.deaths.length` 阈值改变 diverName 渲染：1–4 正常，5–9 笔误，10+ 故障文字，触发 lore 后变"你"。
-- [ ] **更多敌人 + 理智伤害实装** —— `EnemyAttack.sanityDamage` 已支持，但没敌人配置。给中海层加 1–2 个 uncanny 敌人。
-- [ ] **打捞行会 Lv.1 的 corpse hint UI 显示** —— `hasCorpseHint` 字段已经透传到 NodeChoice，但目前默认就显示。Lv.1 才该显示。
-- [ ] **打捞行会 Lv.2 的出海前选目标** —— 港口面板加选择 UI，把选定 DeathRecord 强制塞进 mapgen。
+> **设计哲学锚点**：深海回响是 roguelike，每次出海都该不同。引擎层面已经做到了（mapgen 抽事件 / DeathRecord 驱动尸体 / 衰减 / 海流冲走），瓶颈是**内容池太薄**——最初 14 事件 / 1 敌人 / 1 random zone，重复 2–3 次就认脸。下面这组中优先级里，"扩内容"权重比"加新系统"高。
+>
+> **内容进度（周末内容引擎在持续补，每次 pass 换 zone/深度/tone 侧重）**：截至 **2026-05-31**：63 事件 / 6 敌人 / 3 random zone（旧灯塔礁 + 蓝洞群 + 沉船墓园）。各 zone tone 覆盖：蓝洞群 realistic/uncanny/cosmic 齐（**2026-05-30 第四个 pass 补蓝洞深段首个 realistic 战斗＝洞穴章鱼 + 一个 cosmic 影子厅；2026-05-31 周日第二个 pass 补 30-45m 中段 +2 uncanny +2 cosmic**，cosmic 2→4）· 沉船墓园齐 · **旧灯塔礁（reef）2026-05-30 补齐 realistic/uncanny/cosmic（灯塔线 5 事件）+ 深水段 45-60m 4 事件（cave/wreck 跨 zone，60m 池 1→5）**。**敌人 6 只**：reef 梭鱼（玻璃大炮）/ 蓝洞章鱼（深处闸门 physical 攻坚，territorial 撤退）= 2026-05-30 两个 pass 各补一只 / **墓园沉灯水母（cosmic「理智消耗战」，2026-05-31 周日敌人 pass，墓园第二只 + 项目首只 cosmic-tier + 首只 sanity-主导）**；外加暗礁鲨(教学)/盲鳗(蓝洞 uncanny)/蛛蟹(墓园)。**三个长线薄弱处本 pass（2026-05-31 敌人 pass）全部补上**：~~墓园敌人只蛛蟹一只（最长线缺口）~~→ 已补沉灯水母（墓园 2 敌）· ~~reef 26–44m 中段缺 uncanny~~→ 已补 `reef.lighthouse_lens` · ~~蓝洞 12–25m 浅段 cosmic 空（最浅 cosmic 在 32m）~~→ 已补 `bluecaves.the_narrowing`（14-25m）。**当前仍薄的（下一批候选）**：reef 仍只 1 只原生敌人（梭鱼）——可补第二只（reef 中深段 realistic/uncanny tone，与梭鱼玻璃大炮互补，是 §5 点名最久的缺口）· **reef 26-44m realistic 本 pass 已补 `shelf_break`**，但 reef 浅段（10-25m）uncanny/cosmic 仍空（只 bleached_garden 16m 起 uncanny）· 墓园/蓝洞 cosmic 已厚，叙事重心可转向 reef 深段或蓝洞更多敌人 · `flag.d_reveal` 终局揭示钩子**仍刻意保留不触发**（quirk #42/#44/#48/#49，留给在场用户定，不是内容缺口）。【2026-05-31 周日第四个 pass（realistic 探索密度）：事件 59→63、event baseline 43→49、无新敌人；reef 26-44m realistic 缺口（shelf_break）+ reef 浅中段（urchin_barren）/wreck 内舱（galley）/蓝洞浅段（breakdown_pile）realistic 密度各补一个】【2026-05-31 周日敌人 pass：墓园敌人 1→2、事件 56→59、敌人 5→6、event baseline 39→43、combat baseline 7→8，三长线缺口全补】
+
+- [x] **扩 zone 内容池（第一波：蓝洞群）** —— 新 random zone `zone.blue_caves`（12–55m，6 层），8 个事件 +
+      新敌人盲鳗。引入了**封闭水域**机制：`ZoneDef.canFreeAscend: false` + mapgen 不再在中间层生成 ascent_point
+      + AscentView 用 `isAscentBlocked` 锁住 normal/rushed，emergency 重描述为"凿穿洞顶"。
+      验证脚本：`scripts/playthrough-bluecaves.ts`。
+- [x] **扩 zone 内容池（第二波：沉船墓园）** —— 新 random zone `zone.wreck_graveyard`（18–50m，6 层，开阔水域），
+      6 个原生 dive 事件 + 2 个 portEvent cutscene + 沉船蛛蟹（**项目首个多体战斗 encounter**：solo + pair）。
+      与蓝洞群形成对照：开阔水域 `canFreeAscend: true`，中间层会出现 ascent_point。reef.json::wreck.* 跨 zone
+      共享到此（与 cave.* 给蓝洞群是同模式）。验证脚本：`scripts/playthrough-wreckyard.ts`。
+- [x] **港口"海图"选点 UI** —— 已实装。Aldo briefing 的逐 zone 下拉换成港口外的 POI 海图。
+      - **数据/引擎**：`src/data/chart_pois.json`（anchors 每 zone 一个持久点 + roamingTemplates 机会点）+ `src/engine/chart.ts`（`generateChart` 纯函数：anchor 持久、roaming 按 `runsCompleted` 种子刷新，**派生自 profile 不入存档 → 零 SAVE_VERSION 影响**）。
+      - **两级门控**：`requiresFlags`=发现（不满足不出现）、`requiresUpgrade`=抵达能力（不满足则海图灰显可见但不能出海）。旧灯塔礁 = tutorial_complete + dockyard.lv1。
+      - **修正（modifier）·三种全部实装**：`depthOffset`（`mapgen` 平移整图深度 → 经 tickTurns/planAscent 自然更耗氧·更长减压）；`distance`（出海预耗氧 + turn，"远 = 多耗氧 / 路上多 turn"）；`current`（每次节点移动额外耗体力+氧，strong −8/−2、mild −3/−1，`engine/dive.ts::currentMoveCost` + moveToNode，洋流耗氧也能致死）；`visibility`（理智压力 dark −0.35/turn、murky −0.15/turn，`engine/events.ts::visibilitySanityDrain` + tickTurns，且 **dark 时 NodeSelectView 遮蔽前方预览=盲航**）。修正统一暂存 `run.diveModifier`。
+      - **入口/UI**：`openChart` DialogEffect + `phase 'chart'`（镜像 `openShop`→`shop`）；`src/ui/SeaChartView.tsx` 顶层视图（App.tsx 挂载）；PortView 加"摊开海图（出海）"按钮（教学后可见）；`src/engine/dive.ts::startDiveFromPoi` 封装出海。
+      - **2D 地图视图（2026-05-29 升级）**：SeaChartView 从列表改成 2D 海图——港口在左、左→右≈离岸越远/越深，POI 是可点标记（实心=锚点 / 虚线=机会点 / 灰=未解锁），选中后信息面板（桌面右侧 / 手机下方）显示该点 名/标签/blurb/出海 + Lv.2 选目标。POI 带归一化 `mapX/mapY`（anchors 写死在 chart_pois.json，roaming 从模板透传；缺省按 distance 兜底）。**纯展示层重写，engine/门控/startDiveFromPoi 不变**。详见 quirk #41。
+      - **回归**：`scripts/playthrough-chart.ts`（引擎层：门控 / roaming 刷新确定性 / depthOffset 真改深度 / distance 预耗氧）+ `scripts/smoke-chart-ui.tsx`（**React 层**：SeaChartView/PortView 服务端渲染断言——POI 渲染 / 锁定原因 / 空态 / 海图入口门控，补上 playthrough 测不到的 UI 层）。`playthrough.ts` RUN2、`playthrough-upgrades.ts` §6、`playthrough-wreckyard.ts` Phase9、`verify-tutorial.mjs` 已迁到海图机制。
+      - **未做（留给后续）**：海图 dev 面板；地图美术（当前是极简平涂水面 + 深度带，无海岸线绘制）；洋流"冲走物品/位移尸体"这类与 inventory/corpse 交互的进阶效果（当前 `current` 只影响移动消耗）；能见度对技能检定/战斗命中的影响（当前只影响理智 + 节点预览可见性）。
+- [x] **更多敌人 + 理智伤害实装** —— 盲鳗（`enemy.blind_eel`）三种攻击中两种带 `sanityDamage`：缠绕（物理 + sanity 双轨）+ 低频共振（纯 sanity）。`EnemyAttack.sanityDamage` 字段正式走通。
+- [x] **真"迷路" mapgen** —— 已实装。`ZoneDef.mapShape: 'layered' | 'maze'`（与 `canFreeAscend` 正交）分流两套生成器：开阔海域走原层状 DAG（行为不变），洞穴 zone（蓝洞群，`mapShape:'maze'`）走 `generateMazeMap`。
+      - **拓扑**：随机 spanning tree（连通 + 自然死路）+ 弦边（环/绕回），**双向 `connectsTo`**（玩家可回头/绕回，getNextChoices 含来路）。受保护叶子做 2–3 个"最深点"（深度钉 d1、邻居更浅 → 严格局部极大）+ 1 个"洞另一头的出口"。
+      - **上浮语义**：入口（洞口）+ 远端出口都是 `ascent_point`（`isAscentBlocked` 在二者放行，内部节点仍只能 emergency）——**设计决策：入口可退回出去**（realistic + 不剥夺退路，迷路的代价由"往返耗氧"自然承担，而非堵死）。`depthOffset` 对迷路同样生效。
+      - **重访**：`moveToNode` 检测 `visitedNodeIds`，重访已结算的事件节点不重播（退化成安静水域）；NodeSelectView 标"已来过"（盲航也显示，你记得来路）；建设值/eventsTriggered 改用去重计数，防来回踱步刷分。
+      - **验收**：`analyzeMap` + `scripts/playthrough-mapgen-scenarios.ts`（4 baseline + 60-seed 不变量扫描 + 确定性）+ 重写后的 `playthrough-bluecaves.ts`（迷路版 isAscentBlocked）。可视化迭代用 Shift+M 地图调试器。详见 §3「mapgen 回归 + 地图调试器」+ quirk #30–#34。
+      - **未做（留给后续）**：迷路里 `air_pocket`/`camp` 等新 NodeKind 布点（见下条）；尸体提示在迷路里的密度调优；玩家"画过的路线图"持久 UI（visitedNodeIds 是 append-only 全路径，已具备数据）。
+- [x] **气穴 / 扎营节点化** —— 已实装。新增 NodeKind `air_pocket` / `camp`，`generateMazeMap` 在非保护内部节点上布点（气穴 ~0.7、偏深处；扎营 ~0.5）。玩家在选点界面就能看到地标（NodeSelectView 渲染 `○ 气穴` / `⌂ 扎营点`，盲航也显示——是导航地标）。
+      - **气穴**：`breatheAtAirPocket` 氧气 +6 / 理智 +4，**不耗回合**，但**一次性**——用过把 `air_used:<nodeId>` 写进 `run.activeFlags`，重访失效（防迷路里来回蹭气穴刷无限氧）。
+      - **扎营**：`campAtNode(state,'short'|'long')` 短 3 回合/+15 体力/+5 理智，长 6 回合/+30 体力/+10 理智/−5 氮。先 `tickTurns` 再叠加恢复——所以**长档在深处仍净增氮气**（tick 吸氮 > −5），不是减压捷径，代价是流逝的氧气（与普通 rest 同理）。
+      - 两者复用 `dive` 的 `'rest'` subPhase，RestView 按 `node.kind` 分渲染；NodeChoice 加了 `kind` 字段。corpse pass 排除地标（不在气穴/扎营上压尸体）。事件版（`makeshift_ledge`/`cave.air_pocket`）保留共存（随机撞见的版本）。
+      - **验证**：`playthrough-bluecaves.ts` Phase 6（换气增益+枯竭+上限、扎营对 tickTurns 基线断言）+ `playthrough-mapgen-scenarios.ts` 种子扫描里地标出现率（气穴 39/60、扎营 30/60）+ `smoke-chart-ui.tsx` G（地标标签渲染）。详见 quirk #37。
+- [x] **D-reveal 文本故障化** —— 已实装。纯 UI 助手 `src/ui/diverName.ts::renderDiverName(rawName, deathsCount, revealed)`：1–4 次正常、5–9 笔误（相邻字符交换）、10+ 故障文字（叠组合附加符），`revealed`（`profile.flags.has('flag.d_reveal')`）置位后一律显示「你」。确定性（按 name+count 用共享 makeLcg 播种，渲染不闪）。已接进 `FuneralView`（标题）+ `CorpseView`（尸体名 + 取物日志），都读 `profile.deaths.length` + 揭示 flag。**`flag.d_reveal` 目前没有任何内容设置它——留给后续 lore 事件的钩子**（终局揭示）。验证：`playthrough-corpse.ts` 阶段 6（四档 + 确定性单测）+ `smoke-chart-ui.tsx` I（FuneralView SSR 渲染：正常/故障/揭示）。详见 quirk #42。
+- [x] **打捞行会 Lv.1 的 corpse hint UI 显示** —— 已实装。`dive.ts::enterNodeSelection` 现按 `getUpgradeBonuses(profile).revealCorpseHint`（Lv.1 加成）门控：有 Lv.1 时尸体节点在选点界面带提示（`hasCorpseHint` → 红框 + "这一带似乎有熟悉的东西…" + 保留"熟悉的轮廓"预览）；**没有 Lv.1 时尸体节点伪装成普通水道**（hasCorpseHint=false + 中性预览，不剧透），但 `moveToNode` 仍按 `kind==='corpse'` 路由——撞上去照样进 CorpseView。验证：`playthrough-corpse.ts` 阶段 5。详见 quirk #36。
+- [x] **打捞行会 Lv.2 的出海前选目标** —— 已实装。海图 POI 卡片（`SeaChartView`）在拥有 `preDiveCorpseSelect`（Lv.2 派生加成，已有）且该 POI 所在 zone 有可回收尸体时，显示"锁定目标"下拉；选中后 `startDiveFromPoi(state, poi, { targetCorpseId })` → `startDive` → `generateDiveMap` 的 `GenOpts.targetCorpseId`，在 corpse pass 里**保证布点**（绕过 corpseChance 随机 + ±10m 深度窗，放深度最接近 `depthAtDeath` 的可用节点；层状/迷路两套都支持）。可回收判据集中在 `death.ts::isRecoverableCorpse` / `listRecoverableCorpses`（zone 匹配 + 未回收 + diveAge<25 + 还有物品），UI 与 mapgen 共用。无效 id 自动退回随机。验证：`playthrough-corpse.ts` 阶段 4（层状 10/10 + 迷路布点）+ `smoke-chart-ui.tsx` F（picker 渲染门控）。详见 quirk #35。
 
 ### 低优先级（扩展）
 
@@ -149,6 +445,54 @@ port → dive → combat → dive → ascent → resolution → port
 5. **教学暗礁鲨调过两次**：原 50HP/6-10dmg 太硬，现 32HP/4-7dmg + 主动撤退（territorial 类敌人 HP ≤ 30% 时 50% 撤退）。
 6. **diveAge 在两个地方递增**：`executeDeath`（给旧死者）+ `executeAscent`（每次成功上浮也老化海底）。不要再加第三处，否则双计数。
 7. **NPC 对话的 startDive effect** 现在通过 `startDive(state, zoneId)` 拉起，会自动决定线性还是随机图。
+8. **升级派生加成的聚合规则**：`preservationBonus` 取最大值（与 `engine/death.ts::getPreservationBonus` 一致），其它数值类（oxygenMaxBonus 等）取累加。Boolean 类（sweep immune / corpse hint 等）取 OR。改 schema 时记得对齐 `engine/upgrades.ts::getUpgradeBonuses`。
+9. **`hasUpgrade` Condition** 在 dialog 和事件里都可用，运行时查 `profile.unlockedUpgrades`，是当前推荐的"按建设进度门控分支"的方式（不要再用 flag 间接绕）。
+10. **applyOutcome 现在区分 run/无 run**：dive 期间 `applyFlags` 进 `run.activeFlags`（run 结束随之丢弃），portEvent / 其它无 run 场景进 `profile.flags`（永久）。`goldDelta` 同理走 bankedGold。`deltas` / `loot` 在无 run 时无意义会被忽略。**写 portEvent 数据时不要写 deltas / loot**。
+11. **回港 cutscene 是一次性的**：靠 `flag.event_done.<eventId>` 做 oncePerSave。玩家携带多个 story-item 时只会触发查到的第一个；后续 cutscene 要支持队列时再扩 `portEvents.ts`。
+12. **回港时 inventory 已合并进 `profile.inventory`**：`engine/port.ts::handleReturnToPort` 把 `run.inventory` 全量 `mergeIntoInventory` 进 `profile.inventory` 再 null run。eternal / 剧情物天然长存；材料留在仓库等玩家走 Mira 柜台卖掉；`med_kit`（sellPrice=0）这类也在仓库留用。**App.tsx 和 playthrough.ts 都走 `handleReturnToPort`，不要再自己写 `state.run = null` 的复刻代码。**
+13. **`computeLootValue` 不再是 0**：现在按 Mira 收购价（`miraOfferFor` = floor(sellPrice × 0.8)）求和。但它只填 `RunOutcome.lootValue`，**不会**自动入账到 `bankedGold`——`goldEarned` 仅反映 `run.gold`。要真把战利品变成金子必须经过 `sellItemToMira`。
+14. **NPC 数据按 NPC 拆文件**：`src/data/npcs/aldo.json` / `mira.json`，加 NPC 时新增一个文件并在 `engine/dialog.ts::NPC_FILES` 注册一行 import（与 `engine/zones.ts` 的事件 JSON 注册风格一致）。`verify-tutorial.mjs` 已经按目录扫描，加新 NPC 不用动它。
+15. **`GamePhase` 多了 `'shop'`**：目前只有 Mira 一家（shopId = `mira.bench`）。`MiraShopView` 自己负责 phase → port 的退出，关店不会自动播 cutscene（cutscene 已经在 `handleReturnToPort` 阶段播完了）。
+16. **`ZoneDef.canFreeAscend`** 是新引入的封闭水域开关，默认 true。设 false 时（蓝洞群）：mapgen 中间层不放 ascent_point；AscentView 在非末层节点上把 normal/rushed 锁掉、emergency 仍可用。**emergency 在洞里也没有特别加严重**（不动平衡数值）——它本来就是"必得严重减压病、深处会死"，叙事重描述成"凿穿洞顶"已经够痛。
+17. **`cave` zoneTag 的事件是跨 zone 共享的**：`reef.json::cave.*` 和 `blue_caves.json::*`（都 tag cave）都会在两个 zone 的深层池里出现。这是为了让旧灯塔礁的 cave 层也"沾光"到新内容；后续如果要差异化，应该用 `zoneTagsByDepth` 引入更细的 tag（比如 `blue_cave` 专属）。
+18. **`scripts/playthrough.ts` 有 ~12% RNG flake**（独立 bug）：tutorial.wreck 的 `stealth_grab` 是 oxygen vs 30 的 check，正常路径下 87% 成功；失败的 12% 会触发战斗，脚本走到末尾的 "应在上浮" 断言时炸掉。和蓝洞群无关，单独修脚本时一并处理（建议：用 seeded RNG 或 monkey-patch Math.random）。
+19. **zoneTag 跨 zone 污染陷阱**：buildEventPool 用 zoneTag 集合做交集匹配。如果一个 zone 的 zoneTagsByDepth 同时挂了 "shallow"，那 reef.json 里 zoneTags=["shallow","reef"] 的事件就会被抽到——即使该 zone 没有 "reef" 语义。**蓝洞群入口段最初配 ["cave","shallow"] 就吃了这个亏**（reef.kelp_curtain 跨界变成最高频事件），后改成只 ["cave"] 才干净。新 zone 设计时谨慎：只挂真正语义匹配的 tag，宁缺勿滥。
+20. **蓝洞群入口段（12–25m）事件密度偏低**：目前只有 `bluecaves.entrance_light` + `bluecaves.color_shift` 两个事件能命中浅段。`scripts/explore-bluecaves.ts` 30 局测试里 entrance_light 触发了 42 次——玩家几乎每次都见到同一段开场。需要再补 2–3 个 12–25m 段的 cave 事件，**这是内容稀缺，不是 bug**。
+21. **`bluecaves.silent_chamber` 的 sanityRange [0, 85] 几乎永远触发不到**：起步 sanity=100，蓝洞群里没有事件能在到达深段（45m+）前把 sanity 压到 ≤85。这是有意设计——"这个厅只在已经被压垮的潜水员眼里出现"——但短期内基本是死内容。等以后有"sanity 慢压"机制（深度自然衰减 / D-reveal 期间渐损）才会被解锁。
+22. **`runEventScenario` patch 全局 Math.random**：`withSeededRandom(seed, fn)` 在 fn 期间把 `Math.random` 换成 LCG，fn 跑完 finally 块恢复。因此**不要在它运行时并发跑别的引擎代码**（多个 scenario 串行 OK，跨进程并行 OK，同进程异步并发不 OK）。也因此 `result.steps[i].checkResult.roll` 总是 `-1` sentinel——`performCheck` 用掉的那次 random 拿不回来，只能从 narrative 反推 passed。如果以后需要拿到 roll 数值，方案是在 `performCheck` 里增加可选回调，而不是改这套 patch。
+23. **dev 面板状态不进 `GameState`**：`src/App.tsx` 用本地 `useState<boolean>` 管 `devPanelOpen`（Shift+D 切换），**没有**新建 `GamePhase = 'devPanel'`。原因：dev 面板不参与玩家流程，进存档的版本号会让"打开过 dev 面板"和"正常存档"产生迁移负担。如果以后还要加更多 dev 工具（战斗面板、地图调试器），统一在 App.tsx 顶层用本地 state 管开关，不污染 GameState 联合类型。
+24. **Vite tree-shake `src/ui/dev/`**：App.tsx 顶部用 `const EventDevPanel = import.meta.env.DEV ? lazy(...) : null;` 模式。prod build 时 DEV 替换为字面 `false`，Rollup 把 `false ? lazy(() => import('@/ui/dev/EventDevPanel')) : null` 折成 `null`，对应 dynamic import 是 dead code，整个 `src/ui/dev/`（含 ScenarioSerializer / EventDevPanel / CombatDevPanel / CombatScenarioSerializer / dev-panel.css / combat-panel.css）都不会被打包。验证方式：`npx vite build --outDir /tmp/blue-dist` 后 `grep "EventDevPanel\|CombatDevPanel\|combatScenario\|combat-panel\|runCombatScenario\|dev-panel" /tmp/blue-dist/assets/*` 应空白。如果将来要加新的 dev-only 模块，遵循同样的 `lazy + DEV 守卫 + co-located CSS import` 模式。
+25. **战斗 scenario 与事件 scenario 的 localStorage key 隔离（不对称）**：事件面板用 `dev.scenarios.<eventId 下划线>__<variant>`，战斗面板用 `dev.scenarios.combat.<combatId 下划线>__<variant>`——加 `.combat.` 中缀。**战斗侧用 startsWith `dev.scenarios.combat.` 严格匹配，干净**。**事件侧用 startsWith `dev.scenarios.` 会顺带抓到战斗 key**，但 `parseScenarioJson` 要求顶层有 `eventId` 字段（战斗 JSON 是 `combatId`）会抛错，被 listSavedScenarios 的 try/catch 静默吞掉——所以事件面板的"已存 LS"列表里不会出现战斗条目。新加第三类 scenario（mapgen / dialog 等）务必继续 `dev.scenarios.<type>.<id 下划线>__<variant>` 模式，并且让该类 serializer 的 LS_PREFIX 包含完整 `dev.scenarios.<type>.` 段，让兄弟类型的 startsWith 互不污染。附注：事件 / 战斗的 saved-list 显示用的 id（`<eventId>` / `<combatId>`）会把 key 里的下划线全部 `replace(/_/g, '.')` 反推回 dot——所以 `bluecaves.silent_chamber` 会显示成 `bluecaves.silent.chamber`，**仅显示有损，载入的 JSON 内容是 verbatim**。
+26. **scenarios 子目录约定（事件 vs 战斗）**：`playthrough-scenarios.ts` 只扫 `scenarios/*.json` **根目录**（`readdirSync(SCENARIO_DIR).filter(f => f.endsWith('.json'))`，不递归），战斗 scenario 在 `scenarios/combat/` 下由 `playthrough-combat-scenarios.ts` 单独扫，互不干扰。**新增第三类 scenario（例如 mapgen / dialog 回归）请遵循同样的"子目录 + 独立 playthrough 脚本"约定**：JSON 放 `scenarios/<type>/`，配一个 `scripts/playthrough-<type>-scenarios.ts`，避免不同 scenario schema 撞在同一份脚本里。
+27. **海图（POI 选点）派生自 profile，不入存档**：`engine/chart.ts::generateChart(profile)` 是纯函数——anchor 来自 `chart_pois.json` 固定，roaming 用 `runsCompleted` 做 LCG 种子（与 `withSeededRandom` 同算法但走入参，不 patch 全局）。**所以"每次回港换一批机会点"是 `runsCompleted` 自增的副产物，没有把 SeaChart 写进 GameState**——零 SAVE_VERSION 影响、零迁移。两级门控分工要记牢：`requiresFlags`=**发现**（不满足则 POI 根本不出现），`requiresUpgrade`=**抵达能力**（出现但灰显不可出海）。出海点位的"硬门控"已从 Aldo 对话彻底迁到海图（`openChart` effect → `phase 'chart'`，镜像 `openShop`→`shop`）；`startDive` 仍保留 `depart_east` 教学路径。POI 的三种环境修正现已全部实装，都读 `run.diveModifier`：`depthOffset`（mapgen 平移深度）、`current`（moveToNode 每次移动 `currentMoveCost` 耗体力+氧）、`visibility`（tickTurns `visibilitySanityDrain` 理智压力 + dark 时 NodeSelectView 盲航遮蔽预览）。
+28. **`startDiveFromPoi` 是海图唯一出海入口，别再手写 createNewRun+startDive**：`engine/dive.ts::startDiveFromPoi(state, poi)` 已封装"派生升级加成 + distance 预耗氧 + diveModifier 落 run + depthOffset 透传 mapgen + 叙事日志"整套。SeaChartView 和脚本都走它。dialog 的 `startDive` effect（教学 `depart_east`）是另一条更简的路径，不带 POI 修正——两者并存但用途不同，不要合并。
+29. **UI 层冒烟测试套路（`smoke-chart-ui.tsx`）**：playthrough 脚本只测引擎，React 组件从不渲染。要给 UI 兜底，用 `react-dom/server` 的 `renderToStaticMarkup(<View .../>)` 在脚本里把组件渲染成 HTML 串再断言关键文案。两个坑：(a) **tsx/esbuild 对独立脚本用 classic JSX transform**（不是 Vite 的 react-jsx 自动运行时），所以脚本顶部必须 `import React from 'react'`，否则 `React is not defined`；(b) **`scripts/` 不在 `tsconfig.json` 的 `include`（只 `["src"]`）**，所以脚本不进 `npm run typecheck`，只靠 `npx tsx` 运行时验证——这也是为什么脚本里 `import React`（在 react-jsx 下本会被 noUnusedLocals 判未使用）不会让 typecheck 报错。新写 UI 冒烟测试照这套路。
+30. **迷路 mapgen 由 `mapShape` 选择，与 `canFreeAscend` 正交**：`mapShape`（'layered'|'maze'，缺省 layered）决定**拓扑**；`canFreeAscend`（默认 true）决定**上浮语义**。蓝洞群两者都设（maze + false）但概念独立——理论上可以有"开阔水域的迷路"或"封闭的层状图"。新 zone 想要迷路就设 `mapShape:'maze'`；要封闭水域语义再单独设 `canFreeAscend:false`。`generateDiveMap` 先算 depthOffset 后按 mapShape 分流到 `generateLayeredMap` / `generateMazeMap`。
+31. **迷路图入口 = `ascent_point`（可退回洞口），不是堵死**：**设计决策**。入口（洞口）和远端出口都是 `ascent_point`，`isAscentBlocked` 只挡内部节点。迷路的代价由"往返耗氧"自然承担，不靠堵死退路（realistic + 不剥夺退路）。**所以 `playthrough-bluecaves.ts` 旧断言"起点被 block"已翻转**——现在断言入口不 block / 内部 block / 远端出口不 block，Phase 4 的 emergency 前置也改用内部节点。改迷路上浮设计时同步这三处。
+32. **迷路双向边 + 节点重访**：`connectsTo` 在迷路里对称（A↔B），`getNextChoices` 返回含来路，玩家能回头。`moveToNode` 用 `run.visitedNodeIds.includes(target.id)` 判重访：重访 event 节点**不重播事件**（退化成安静 rest，防刷 loot / 重复剧情），corpse 同理（且 `recoverFromCorpse` 本就幂等）。`visitedNodeIds` 仍是 **append-only 全路径**（不去重，留完整轨迹给未来"路线图"UI）；但**建设值 / eventsTriggered 改用 `new Set(visitedNodeIds).size`** 去重计数（`death.ts::computeRawBuildingPoints` + `ascent.ts` 两处）——对层状（无重访）是 no-op，对迷路防来回踱步刷分。
+33. **迷路结构不变量靠 `analyzeMap` + 种子扫描守**：不变量（全可达 / 双向 / 有环 / 有死路 / ≥2 最深点 / 入口=口 / ≥2 上浮口且全可达）对**每个 seed** 都该成立。`scripts/playthrough-mapgen-scenarios.ts` 跑 blue_caves seeds 1–60 扫描断言。**改 `generateMazeMap` 任何常数（minN/maxN 节点数、弦边数 targetChords、deepCount、受保护叶子逻辑）后必跑此脚本**——4 个 curated baseline 锁了精确 nodeCount/edgeCount/maxDepth（确定性，同款 LCG），动了 rng 消耗顺序会红，需有意更新 baseline。
+34. **`DiveNode.layer` 在迷路里语义 = 到入口的树距（BFS hop）**，不再是"第几层"（层状图仍是层号）。dev 面板按 layer 分列布局；`playthrough-corpse.ts` / `playthrough-wreckyard.ts` 仍 log layer（都是层状 zone，语义不变）。迷路的 corpse pass **不用** `layerNodes.slice(1,-1)`（层状专用），改成"非入口、非 `ascent_point` 节点按 depth ±10m 匹配 `findRecoverableCorpse`"。
+35. **打捞行会 Lv.2「出海前选目标」= `GenOpts.targetCorpseId` 强制布点**：与随机 corpse pass 互斥——`targetCorpseId` 有效（`isRecoverableCorpse`：同 zone + 未回收 + diveAge<25 + 还有物品）时**保证布点**，放深度最接近 `depthAtDeath` 的可用节点，**绕过 corpseChance 随机 + ±10m 深度窗**，且**不消耗 rng**（所以不影响 mapgen 确定性 baseline）；无效则退回随机。链路：`SeaChartView` POI 卡片（`preDiveCorpseSelect` 加成 + 该 zone 有可回收尸体才显示选择器）→ `startDiveFromPoi(state, poi, { targetCorpseId })` → `startDive` opts → `generateDiveMap`。判据集中在 `death.ts::isRecoverableCorpse`，UI/mapgen 共用，别各写一份。教学 `depart_east` 路径不带（也用不到，那是 east_reef）。
+37. **气穴 / 扎营是 NodeKind（结构地标），不是事件**：易踩两点——(a) **气穴必须一次性**，否则迷路双向边能来回蹭气穴刷无限氧；用 `run.activeFlags` 的 `air_used:<nodeId>` 标记，`breatheAtAirPocket` 检查它，RestView 据此禁用按钮。(b) **`campAtNode` 先 `tickTurns(turns)` 再叠加恢复**，所以净值 ≠ 标称增益：被动理智衰减吃掉一点、深处 tick 吸氮会让长档"−5 氮"实际净增氮（测试要拿 `tickTurns` 基线比，别断言 `n0−5`）。两者复用 `'rest'` subPhase（RestView 按 `node.kind` 分渲染，与 ascent_point 同套路），不新增 GamePhase/subPhase。mapgen 在 `generateMazeMap` 类型分配段布点，且 corpse pass 候选排除地标。NodeChoice 新增 `kind` 字段供选点界面渲染地标标签（盲航也显示——它们是导航地标）。事件版（`makeshift_ledge` / `cave.air_pocket`）保留共存，不删。
+36. **corpse hint 在 `enterNodeSelection` 里按 Lv.1（`revealCorpseHint`）门控，且连 preview 一起伪装**：易踩——只把 `hasCorpseHint` 标志门控掉、却留着 corpse 节点"一个熟悉的轮廓…"的 `preview`，等于没门控（预览本身就剧透）。所以 `enterNodeSelection` 在无 Lv.1 时**同时**把 `hasCorpseHint` 设 false **和**把该节点 preview 换成中性句。门控只影响"选点界面是否预知"；`moveToNode` 仍按 `kind==='corpse'` 路由（无 Lv.1 = 撞上去才发现，foresight 是 Lv.1 的价值）。Lv.2 选目标隐含 Lv.1（升级按 level 顺序门控），所以选了目标的人必有提示，不冲突。
+38. **`getEvent`（events.ts）委托 `getEventById`（zones.ts::EVENT_DB），别再起第二份事件索引**：曾经 events.ts 只装 `tutorial.json` 建私有 `EVENT_INDEX`，而 `EventView` / `PortEventView` 都走 `getEvent` → **浏览器里任何非教学事件（reef/cave/wreck + portEvent cutscene）渲染成"[事件未找到]"**。playthrough/scenario 走 `getEventById`（全库），所以引擎测试一直全绿、UI 却是坏的——典型"只测引擎"盲区。现已统一委托同一份 `EVENT_DB`；`smoke-chart-ui.tsx` Phase H 守卫（渲染 `bluecaves.color_shift` 断言不出现"事件未找到"）。**教训：UI 的数据查询必须和引擎/测试共用同一索引；纯 playthrough 测不到 React 层，新加 UI 数据路径要补 smoke 渲染断言。**（2026-05-29 体检发现并修复）
+39. **体检清理 pass（2026-05-29）新增的几处共用约定**：(a) **存档**走 `state.ts` 的 serialize/deserialize/migrate + saveGame/loadGame/clearSave，App 自动存读；**改 GameState 形状要同步 bump `SAVE_VERSION` 并在 `migrateSave` 的 while 里加迁移步骤**；Set 字段靠 `{__set:[…]}` replacer/reviver 自动 round-trip（加新 Set 字段无需改序列化）；回归在 `playthrough-save.ts`。(b) **共享 LCG** 在 `src/engine/rng.ts::makeLcg`，src 侧三处（chart/withSeededRandom/MapDevPanel）已统一；**scripts/* 仍各自内联同款常数**（独立 harness，改算法记得一起对齐）。(c) **`moveToNode` 的 NodeKind switch 有 `assertNever` 兜底**——新增 NodeKind 不处理会编译报错。(d) **mapgen 的 corpse 植入统一走 `placeCorpses(nodes, candidateIds, opts)`**，层状/迷路只管准备候选 id。(e) **`verify-tutorial.mjs` 现按目录扫 events/enemies**（不再漏 wreck/crab）**并加了注册守卫**：data 目录里每个 JSON 必须出现在对应 registrar（zones/combat/dialog）源码里，否则报错——把"加了 JSON 忘 import 静默不生效"变成 CI 失败。(f) 减压氮气阈值集中在 `ascent.ts::N2`，尸体可见年龄是 `death.ts::CORPSE_VISIBLE_AGE`。
+40. **`import.meta.glob` 不能用来自动注册数据文件**：它是 Vite 专属转换，`scripts/*` 走 tsx（esbuild，无 Vite）时 `import.meta.glob` 是 `undefined` → 一调就炸，会拖垮整个 playthrough 套件。所以数据文件保持**显式 import**（zones/combat/dialog 各一份列表），靠 quirk #39(e) 的注册守卫兜"忘了登记"。将来若要自动注册，得找 Vite + tsx 都支持的方案（或让 scripts 不直接 import 这些 registrar）。
+41. **海图 2D 地图视图**：`SeaChartView` 用绝对定位的标记按钮（`left/top` = `ChartPoi.mapX/mapY × 100%`）摆在一张 `.chart-map` 上，`useState(selectedId)` 选点 → 信息面板。**纯 UI 重写，engine/`generateChart`/门控/`startDiveFromPoi` 全不动**；POI 加了可选 `mapX/mapY`（anchors 写死 JSON、roaming 从模板透传、缺省按 distance 兜底）。两个 SSR 坑（`smoke-chart-ui` 用 `renderToStaticMarkup`，不能点击）：(a) 标记的**名字 + 锁定原因放进 `aria-label`**（且名字 span 始终在 DOM、CSS 控制可见），这样烟雾测试能断言到所有点位名/锁原因，哪怕只有选中点显示标签；(b) 信息面板只渲染**默认选中点**（= 第一个可出海 POI，教学后通常是东礁），所以测"选目标 picker"时要把那具尸体放进**默认选中点的 zone**，否则 SSR 下 picker 不渲染。`.chart-poi-name` 类语义已从"列表卡片标题"改成"标记标签"。
+42. **D-reveal 程生姓名故障化是纯 UI（`src/ui/diverName.ts`），且揭示 flag 暂无内容触发**：`renderDiverName(name, deathsCount, revealed)` 按死亡数分档（<5 正常 / <10 笔误 / ≥10 故障）、`revealed` 覆盖成「你」。**`flag.d_reveal` 现在没有任何 lore/事件设置它**——这是故意留的钩子，终局揭示要靠后续内容置位（置位即所有死者名变「你」）。计数用 `profile.deaths.length`，而 `executeDeath` 在进 funeral 前已把新死者并进 deaths，所以**第 1 次死亡 = count 1 = 正常名**。确定性靠 `makeLcg(hash(name)+count)`（不闪）。已接 `FuneralView` + `CorpseView`（含取物日志）；改动死者名展示处时记得一并走 `renderDiverName`，别直接渲染 `record.diverName`。SSR 烟雾测试：故障档断言"不含连续原名"、揭示档断言含「你」。
+43. **写 `scenarios/*.json` 的 `expect.statsDelta` 时：`statsDelta` = 选项 `outcome.deltas` ∪（`oxygen -= oxygenTurnCost`），不含每回合基础 −1 氧的节点过渡 tick**。即 `runEventScenario` 的 `summary.statsDelta` 只反映"事件结算本身"改了什么：没写 `oxygenTurnCost` 也没写 `deltas.oxygen` 的选项，`statsDelta` 里**根本没有 oxygen 键**（不是 −1）；写了 `oxygenTurnCost:N` 就是 `oxygen:-N`，再叠加 `deltas.oxygen`。且 `assertScenario` 只逐键比对 `expect.statsDelta` 里**列出的键**（未列的 stat 不校验），所以 nitrogen 这类被动量可以不写。**别凭直觉填，先 `event-runner.ts <id> --choice <opt> --seed <s> --out json` 跑出真实 `statsDelta` 再抄进 baseline**——check 分支要锁 `checkPassed`，就把相关 stat 设到 rate 撞 clamp（满值→0.95 必过 / 设低值→0.05 必败），并确保惩罚后的 stat 不触 0 下限（否则 clamp 会让 delta 对不上，例：cosmic −12 sanity 的失败 baseline 起步设 sanity 20 而非 10）。
+
+44. **深水段（45-60m）cave.*/wreck.* 跨 zone 事件的 loot 语义约定**：深段事件按 tag 跨 zone 共享（quirk #17/#19）——`wreck.*` 进沉船墓园 + 旧灯塔礁 45m+ 深段，`cave.*` 进蓝洞群 + 旧灯塔礁 45m+ 深段（旧灯塔礁 45m+ tag = `[wreck,cave]`，二者都命中）。**所以 `wreck.*` 事件只掉人造打捞物（brass_fitting / canned_food），`cave.*` 只掉天然物（coral_shard）或纯 lore/sanity**——否则会在另一个 zone 里出戏（自然蓝洞里捡黄铜、或天然洞掉船货）。新增深段事件请沿用此分工。深段 lore 用新命名空间 `lore.deep_water.*`（`the_window` / `cold_light`），是跨 zone 的"深处有光"暗线，**与 `flag.d_reveal` 终局揭示无关（刻意没触发该 flag——揭示是不可逆的存档级叙事决定，留给在场的用户定）**。2026-05-30 第二个周末 pass 的 4 事件（silted_hold / halocline / porthole / blue_floor）即按此实现，每个配 ≥1 baseline，60m 事件池由此 1→5。
+
+45. **reef zone 首个原生战斗 encounter＝梭鱼（玻璃大炮原型）**：`enemy.reef_barracuda` hp 16（全场最低）/ armor 0 / evasion 4（最高，命中 0.95−4×0.04＝0.79）/ damage [5,9]（单击最高）/ hostility **predatory**（不触发 territorial 低血撤退，打到死）。knife_slash(8-14) **2 刀即杀**（hp 太薄）；但首回合梭鱼多半会先咬一口（dart [5,9]），所以"大炮"是真威胁，只是速杀下只来得及咬一两口。baseline `reef_barracuda_solo__normal_kill`（knife_slash×3、seed 1）= **2 turns / stamina −19（含一次 7 点突咬）/ oxygen −2** / 掉 barracuda_jaw；**stamina Δ 随 seed 在 −17~−19 浮动（咬不咬、咬多少由 RNG 定），故 baseline 只锁单一 seed**。触发事件 `reef.barracuda` 只挂 `[reef]` tag → 隔离在旧灯塔礁 26-44m（不跨 zone）。**加敌人五件套**：enemies/*.json（含 `combatEncounters` + 敌人自带 `loot.guaranteed`）→ combat.ts 三处注册（import + ENEMY_DEFS + COMBAT_ENCOUNTERS）→ 新 loot item 进 items.json → 触发事件挂对应 zone tag → ≥1 combat baseline + ≥1 event baseline。**敌人 schema 坑**：用 `hp`（非 maxHp）、encounters 放 `combatEncounters`（非 encounters）、loot 在敌人 def 的 `loot.guaranteed`（非 encounter）。
+
+46. **蓝洞群深段敌人＝洞穴章鱼（physical 攻坚「深处闸门」原型 / 反梭鱼）**：`enemy.cave_octopus` hp 26（仅次教学暗礁鲨 32，全场非教学最厚）/ armor 1 / evasion 3 / threat 6 / hostility **territorial**（hp≤30%≈7 时 50% 撤退，能被 scare/flee 收）/ aiPattern aggressor / 三攻击（缠臂 [3,5] w3 + 角喙 [5,8] w1 + 喷墨 0 物理 + sanityDamage [2,4] w1）。与梭鱼（hp16 glass cannon 速杀）正好相反：**厚血 + 甲 → 拖成 3-4 turn 消耗战**，每回合都在烧氧/体力，在深段（40-55m）氧本就紧，是真正的"打还是绕"决策。knife_slash(8-14) 减 1 甲 = 7-13 有效，约 3 刀杀。baseline `cave_octopus_solo__normal_kill`（knife_slash×4、seed 1）= **3 turns / stamina −28 / oxygen −3 / 无喷墨命中故 sanity 0** / 掉 cave_octopus_beak；**stamina −20~−30、sanity 0~−3 随 seed 浮动（咬几下/喷不喷墨由 RNG 定），故只锁 seed 1**（同梭鱼套路）。触发事件 `bluecaves.octopus_den` 挂 `[cave]` tag → 跨 zone 共享到旧灯塔礁 cave 层（与盲鳗同模式，不同于梭鱼的 `[reef]` 隔离）；三选 = 拔刀(hasEquipment tool)/压灯慢退(stamina vs 13 避战)/绕开，参照 reef.barracuda + blind_eel_lair。**意义**：蓝洞战斗 1→2（盲鳗 uncanny sanity flanker + 章鱼 realistic physical bruiser），且是**蓝洞首个 realistic-tone 战斗**。掉天然物（章鱼喙）守 quirk #44。加敌人仍走 quirk #45 五件套。
+
+47. **旧灯塔礁的 `wreck` tag 从 25m 起（不是 45m+），所以全部 `wreck_graveyard.*`（`[wreck]`）事件天然跨 zone 共享到灯塔礁 25m+**：`zones.json::zone.old_lighthouse_reef.zoneTagsByDepth` = 0m `[shallow,reef]` / **25m `[reef,wreck]`** / 45m `[wreck,cave]`。`buildEventPool` 是 tag **交集 `some`**（事件 tag 与当前深度段 tag 有任一交集即入池），所以**任何挂 `[wreck]` 的事件在灯塔礁 25m+ 都会被抽到**——不止 `wreck.*` 跨 zone 料，连墓园原生 `wreck_graveyard.*` 也是。这是**有意**的：灯塔礁描述写了"岩礁下面据说还有些船难的残骸"，礁底本就有沉船，"船舱/引擎室"在礁底不出戏。**推论**：(a) quirk #44 说的"灯塔礁 45m+ = [wreck,cave]"只是最深一段，`wreck` 实际 **25m 起**；(b) 写 `wreck_graveyard.*` 等于同时给灯塔礁 25m+ 供货，所以 **loot 必须人造物**（canned_food/old_fishing_net/brass_* 等，守 quirk #44）、文案别写死"只此墓园才有"的设定；(c) 要让事件**只**在墓园而不漏进礁底，目前没有 zone 专属 tag——得引入 `wreck_graveyard` 专属 tag（类比 quirk #17 对 `blue_cave` 的提议）。**2026-05-31 周日 pass 的 4 个墓园事件即按此实现**（全 `[wreck]`、24-50m、loot 只 canned_food/old_fishing_net）：`the_knocking`/`the_open_door`（cosmic，把墓园原生 cosmic dive 从 1〔engine_room_hum〕补到 3）+ `hull_handprints`/`cold_stores`（uncanny）。叙事母题延续：`the_knocking` 是 `dive_slate`『不要回敲』的正面付现（敲击母题 engine_room_hum / silent_chamber / dive_slate），`the_open_door` 接『深处有光』暗线但**刻意不触发 flag.d_reveal**（留给在场用户，同 quirk #44）。
+
+48. **沉船墓园第二只敌人＝沉灯水母（cosmic-tier「理智消耗战」原型 / 反盲鳗·反章鱼）+ 2026-05-31 周日敌人 pass 三长线缺口全补**：`enemy.drowned_lantern` hp 24 / armor 1 / evasion 1（命中 0.91，易打中）/ speed 4 / threat 6 / **tier cosmic（项目首只）** / hostility **predatory**（不触发 territorial 低血撤退，打到死）/ aiPattern caster（**注意：`aiPattern` 是纯 metadata，引擎不 branch——`combat.ts` 的 runEnemyTurn/enemyAttackPlayer 只按 attack `weight` 随机选招，只有 dev 面板显示它**，所以随便填合法枚举值都行）/ 两攻击（脉光 damageType `sanity`·damage `[0,0]`·sanityDamage `[4,7]` w3 主攻〔纯 sanity 母攻，照 `blind_eel.eel.hum` 套路：damageType sanity + damage [0,0] + sanityDamage〕+ 曳丝 physical `[2,4]` + sanity `[1,2]` w2）。设计＝**「理智消耗战」**，与梭鱼(hp16 glass cannon 速杀)/章鱼(hp26 纯物理 bruiser)/盲鳗(hp18 evasion4 物理主导·sanity 点缀的快速 flanker)全互补：**slow/tanky + 主攻烧 sanity → 拖得越久脑子越空**，是墓园『打还是躲』里"打"的理智代价。knife_slash(8-14)−armor1=7-13，~3 刀杀；baseline `drowned_lantern_solo__normal_kill`（knife_slash×4、seed 1）= **3 turns / stamina -20 / oxygen -3 / sanity -10**（**项目首个 sanity Δ 非零的战斗 baseline**）；**sanity -8~-14 / stamina -20~-29 随 seed 浮动（脉不脉、扫不扫、个别 seed 4 turns 由 RNG），故只锁 seed 1**（同 quirk #45/#46）。掉 `lantern_gland`（天然身体部位→ Mira，符合 quirk #44）。触发事件 `wreck_graveyard.drifting_light` 挂 `[wreck]`（按 quirk #47 跨 zone 共享到灯塔礁 25m+，但「漂着的冷光」在礁底沉船间不出戏，呼应 reef.lantern_glow / lore.deep_water.cold_light『下面的光』暗线——**只呼应不解释、不触发 d_reveal**，否则像 the_knocking 一旦被『解谜』就泄了气）。加敌人仍走 quirk #45 五件套（enemies/*.json → combat.ts 三处注册 import+ENEMY_DEFS+COMBAT_ENCOUNTERS → loot item 进 items.json → 触发事件挂 zone tag → ≥1 combat + ≥1 event baseline；verify-tutorial 的注册守卫会拦未 import 的 enemy 文件）。**同 pass 另两个事件**（补 §5 点名的另两长线缺口，均 ≥1 baseline）：`reef.lighthouse_lens`（uncanny·30-44m·`[reef]` 隔离·sanity vs 48·loot brass_fitting / sight_along → lore.old_lighthouse.the_lens·填 reef 26-44m 中段 uncanny，此前最深 reef-only uncanny 是 fog_bell 到 38m）+ `bluecaves.the_narrowing`（cosmic·14-25m·`[cave]`·oncePerRun·loot-free·lore.bluecaves.the_way_out·填蓝洞 12-25m 浅段 cosmic，此前最浅 cosmic 是 32m falling_up——把『感知/方向错乱』母题下放到还看得见真出口的浅段，反而更不安）。
+
+49. **realistic 探索密度 pass（2026-05-31 周日第四个 pass）＋ stamina-check 为何只锁 success baseline**：本 pass 刻意**轮换离开**前三个 pass 的 cosmic/uncanny/敌人侧重，回到 **realistic 探索质感**，跨 reef/wreck/cave 三 zone 补 **4 个 realistic dive、无新敌人**（守『敌人别太多·优先事件』，且近几 pass 已连加 3 敌人）：`reef.shelf_break`（30-44m·stamina vs12·coral_shard，**填 reef 26-44m realistic 缺口**——此前该段只有 barracuda 战斗触发器 + lobster_hole 到 35m，是 reef 唯一明确 realistic 空档）/ `reef.urchin_barren`（16-30m·无 check·coral_shard+sanity-1）/ `wreck_graveyard.galley`（20-34m·stamina vs13·canned_food/old_fishing_net 人造 loot，守 quirk #44/#47）/ `bluecaves.breakdown_pile`（16-26m·无 check 资源取舍·coral_shard 天然 loot，稀释 quirk #20 的 entrance_light 过曝）。全 realistic、全单 zone tag（quirk #19）、无 lore、**不触发 d_reveal**。事件 59→63、event baseline 43→49。**关键回归坑（承 quirk #43）：低 dc 的 stamina check 无法做 fail baseline**——`successRate=clamp(0.5+(stat-dc)×0.015, .05, .95)`，要 fail 必过的 0.05 clamp 需 `stat ≤ dc-30`，而 stamina dc 12-13、stat 最低 0 → 最低 rate 仅 0.32 左右，撞不到 0.05；**且小 seed（1-7 等）的 LCG 首抽都≈0.236**（NR-LCG 首值随 seed 线性微增，0.000388/seed），任何 rate>0.236 的 check 用小 seed 必过。所以**所有 stamina-check baseline 只锁 success 分支**（满 stamina→1.32→clamp 0.95，seed 1 必过），与既有 reef.flooded_stair/wreck.silted_hold/cave.halocline 一致；fail 分支只在写时用**大 seed**（如 100000，首抽≈0.99）手验 deltas（shelf_break fail={stamina-6,oxygen-2}、galley fail={stamina-8,oxygen-2,sanity-1} 已验），不进 baseline。要给 stamina-check 做 fail baseline 必须改 performCheck 暴露 roll 或换更高 dc——本 pass 没做。事件 baseline 命名/格式同 quirk #43，statsDelta 全部 `event-runner --out json` 实跑抄出，未凭直觉。
 
 ---
 
@@ -164,16 +508,33 @@ Blue/
 │   └── legacy/                        早期草案
 ├── src/
 │   ├── App.tsx, main.tsx, styles.css
-│   ├── types/    (state/events/enemies/items/npcs/dive/combat/index)
-│   ├── engine/   (state/events/dialog/zones/mapgen/dive/ascent/combat/death)
-│   ├── ui/       (PortView/EventView/NodeSelectView/RestView/CombatView/AscentView/CorpseView/ResolutionView/StatusBar)
-│   └── data/     (items/actions/npcs/zones/upgrades + events/ + enemies/)
+│   ├── types/    (state/events/enemies/items/npcs/dive/combat/chart/upgrades/index)
+│   ├── engine/   (state[含存档层]/events/dialog/chart/zones/mapgen/dive/ascent/combat/death/items/port/portEvents/upgrades/eventScenario/combatScenario/rng)
+│   ├── ui/       (PortView/PortEventView/SeaChartView[2D 地图]/MiraShopView/UpgradePanel/EventView/NodeSelectView/RestView/CombatView/AscentView/CorpseView/ResolutionView/StatusBar/diverName[D-reveal 渲染])
+│   │   └── dev/  (EventDevPanel + CombatDevPanel + MapDevPanel + ScenarioSerializer + CombatScenarioSerializer + dev-panel.css + combat-panel.css + map-panel.css — 仅 DEV 模式加载，Shift+D / Shift+C / Shift+M 互斥切面板)
+│   └── data/     (items/actions/zones/upgrades/chart_pois + npcs/<id>.json + events/{tutorial,reef,blue_caves,wreck_graveyard}.json + enemies/{reef_shark,blind_eel,wreck_spider_crab,reef_barracuda,cave_octopus,drowned_lantern}.json)
 ├── scripts/
-│   ├── verify-tutorial.mjs           数据图引用完整性
-│   ├── playthrough.ts                教学+随机图+上浮
-│   ├── playthrough-combat.ts         战斗
-│   ├── playthrough-corpse.ts         死亡+回收
-│   └── playthrough-decay.ts          衰减+海流
+│   ├── verify-tutorial.mjs               数据图引用完整性
+│   ├── playthrough.ts                    教学+随机图+上浮
+│   ├── playthrough-combat.ts             战斗（完整流程端到端）
+│   ├── playthrough-corpse.ts             死亡+回收
+│   ├── playthrough-decay.ts              衰减+海流
+│   ├── playthrough-upgrades.ts           升级树 + 派生加成
+│   ├── playthrough-economy.ts            仓库 + Mira 变卖
+│   ├── playthrough-bluecaves.ts          蓝洞群 + canFreeAscend + 盲鳗
+│   ├── playthrough-wreckyard.ts          沉船墓园 + 蛛蟹 solo+pair + lost_diver/watch portEvent 链 + crab_chitin → Mira
+│   ├── playthrough-chart.ts              海图引擎回归：门控 / roaming 刷新 / depthOffset / distance
+│   ├── smoke-chart-ui.tsx                海图 UI 渲染冒烟：SeaChartView/PortView 服务端渲染断言（React 层）
+│   ├── playthrough-scenarios.ts          事件回归：跑 scenarios/*.json
+│   ├── playthrough-combat-scenarios.ts   战斗回归：跑 scenarios/combat/*.json
+│   ├── playthrough-mapgen-scenarios.ts   mapgen 回归：跑 scenarios/mapgen/*.json + 迷路不变量 60-seed 扫描 + 确定性
+│   ├── playthrough-save.ts               存档序列化回归：Set round-trip + 版本迁移 + 损坏/未来版本
+│   ├── explore-bluecaves.ts              蓝洞群手动多局探索（非 assert，迷路版已修上浮逻辑）
+│   ├── event-runner.ts                   事件回归 CLI（--list / --show / --from / --in / quick mode）
+│   └── combat-runner.ts                  战斗回归 CLI（--list / --list-enemies / --list-actions / --show / --from / quick mode）
+├── scenarios/                            事件回归场景库（JSON，每份一个 ScenarioInput + expect 断言）
+│   ├── combat/                           战斗回归场景库（JSON，每份一个 CombatScenarioInput + expect 断言）
+│   └── mapgen/                           mapgen 回归场景库（JSON，{ zoneId, seed, depthOffset?, expect }）
 ├── package.json, tsconfig.json, vite.config.ts, index.html, README.md
 ```
 
@@ -187,4 +548,4 @@ Blue/
 4. 跑 `npx tsx scripts/playthrough.ts` 看一次完整 trace，几秒搞定
 5. `npm run dev` 在自己机器上点一遍 UI
 
-然后就能开始接「港口升级 UI」或者其他你想做的。
+中优先级已全部做完（迷路 mapgen / 海图 2D / 气穴·扎营 / 打捞行会 Lv.1·Lv.2 / D-reveal）。然后可以接 §5 低优先级（尸体衰减 toast / 亡者之径 / 失能状态 / 战斗氮气·理智系数 / 负重影响上浮），或之前 mock 过但没建的**状态效果系统**（run 级 StatusEffect + StatusBar 图标行，bends II/III 当首个真实消费者），或扩内容（蓝洞 12–25m 浅段缺口 quirk #20 / 更多敌人），或给 `flag.d_reveal` 接一个终局 lore 触发。

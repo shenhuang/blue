@@ -1,0 +1,14 @@
+{
+  "_comment": "旧灯塔礁 · 梭鱼遭遇拔刀触发 combat.reef_barracuda_solo。验证 reef.barracuda → 战斗 hook（reef zone 至此有了首个原生战斗 encounter）+ 在 startCombat 处停步的边界（scenario 不打战斗）。draw_knife 选项无 deltas/oxygenTurnCost，故 statsDelta 为空。draw_knife 需 hasEquipment tool（runner 默认装备标准刀，与 wreck_graveyard.engine_room_hum 同套路）。",
+  "eventId": "reef.barracuda",
+  "depth": 35,
+  "seed": 1,
+  "choices": ["draw_knife"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "combatTriggered": "combat.reef_barracuda_solo",
+    "statsDelta": {}
+  }
+}

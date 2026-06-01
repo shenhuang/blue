@@ -1,0 +1,14 @@
+{
+  "_comment": "沉船墓园 · 拿刀敲锅炉触发蛛蟹双战 encounter。验证战斗 hook 起作用 + sanity 预扣 -4 + 不进入战斗的边界（scenario 在 startCombat 处停步）。",
+  "eventId": "wreck_graveyard.engine_room_hum",
+  "depth": 40,
+  "seed": 7,
+  "choices": ["investigate_with_knife"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "combatTriggered": "combat.wreck_spider_crabs_pair",
+    "statsDelta": { "oxygen": -1, "sanity": -4 }
+  }
+}

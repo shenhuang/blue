@@ -1,0 +1,43 @@
+{
+  "npc": {
+    "id": "npc.mira",
+    "name": "Mira",
+    "role": "merchant",
+    "shortDescription": "打捞商。围裙上永远有鳞片。盘秤就在柜台上。",
+    "dialogRoot": {
+      "id": "mira.root",
+      "text": "Mira 抬眼看你，把一截烟头按进烟灰缸。\n\n「拿来。我看看你今天给我带了什么。」",
+      "choices": [
+        {
+          "id": "open_shop",
+          "label": "把材料摊在柜台上。",
+          "next": "end",
+          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }]
+        },
+        {
+          "id": "chat",
+          "label": "今天行情怎么样？",
+          "next": "mira.banter"
+        },
+        {
+          "id": "leave",
+          "label": "下次。",
+          "next": "end"
+        }
+      ]
+    }
+  },
+  "dialogs": {
+    "mira.banter": {
+      "id": "mira.banter",
+      "text": "「行情？」\n\nMira 用秤砣压住一张油纸。\n\n「鲨鱼牙最近能卖。珊瑚要看断口。锈罐头给的是良心价——人都不爱吃这种东西了。」\n\n「真要赚大钱，不是靠我。是靠你能不能再下去一趟。」",
+      "choices": [
+        {
+          "id": "back",
+          "label": "（点头）",
+          "next": "mira.root"
+        }
+      ]
+    }
+  }
+}

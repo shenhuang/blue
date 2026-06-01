@@ -1,14 +1,11 @@
 import { useState } from 'react';
-import type { GameState, DeathRecord, InventoryItem, ItemDef, DecayTier } from '@/types';
-import { recoverFromCorpse, decayFilter } from '@/engine/death';
+import type { GameState, DeathRecord, InventoryItem, DecayTier } from '@/types';
+import { recoverFromCorpse } from '@/engine/death';
 import { enterNodeSelection } from '@/engine/dive';
 import { appendLog } from '@/engine/state';
-import itemsData from '@/data/items.json';
+import { getItemDef } from '@/engine/items';
+import { renderDiverName, D_REVEAL_FLAG } from './diverName';
 import { StatusBar } from './StatusBar';
-
-const ITEM_INDEX = new Map<string, ItemDef>(
-  (itemsData as { items: ItemDef[] }).items.map((i) => [i.id, i]),
-);
 
 function decayLabel(tier: DecayTier | undefined): { text: string; tone: string } {
   switch (tier) {
@@ -33,7 +30,14 @@ export function CorpseView({ state, deathRecordId, onStateChange }: Props) {
 
   if (!record || !state.run) return null;
   const safeRecord = record;
-  const recoverable = decayFilter(safeRecord.inventorySnapshot, safeRecord.diveAge);
+  // 尸体上还能看到的物品 = snapshot 本身（衰减在 ageAndDecayDeaths 阶段已从 snapshot 移除）
+  const recoverable = safeRecord.inventorySnapshot;
+  // D-reveal：按累计死亡数 + 揭示 flag 故障化死者名（与 FuneralView 同一渲染）
+  const shownName = renderDiverName(
+    safeRecord.diverName,
+    state.profile.deaths.length,
+    state.profile.flags.has(D_REVEAL_FLAG),
+  );
 
   function toggle(itemId: string) {
     setSelected((prev) => {
@@ -49,7 +53,7 @@ export function CorpseView({ state, deathRecordId, onStateChange }: Props) {
     let s = recoverFromCorpse(state, deathRecordId, ids);
     s = appendLog(s, {
       tone: 'uncanny',
-      text: `你从 ${safeRecord.diverName} 身上取走了 ${ids.length} 件物品。`,
+      text: `你从 ${shownName} 身上取走了 ${ids.length} 件物品。`,
     });
     s = enterNodeSelection(s);
     onStateChange(s);
@@ -142,7 +146,7 @@ function CorpseItemRow({
   selected: boolean;
   onToggle: () => void;
 }) {
-  const def = ITEM_INDEX.get(item.itemId);
+  const def = getItemDef(item.itemId);
   const label = decayLabel(def?.decay);
   return (
     <li>
@@ -165,17 +169,23 @@ export function FuneralView({
   record: DeathRecord;
   onReturn: () => void;
 }) {
+  // D-reveal：按累计死亡数 + 揭示 flag 故障化死者名
+  const shownName = renderDiverName(
+    record.diverName,
+    state.profile.deaths.length,
+    state.profile.flags.has(D_REVEAL_FLAG),
+  );
   const goldText = record.goldAtDeath > 0 ? `${record.goldAtDeath} 金币` : '';
   const itemsText =
     record.inventorySnapshot.length > 0
       ? record.inventorySnapshot
-          .map((i) => `${ITEM_INDEX.get(i.itemId)?.name ?? i.itemId}×${i.qty}`)
+          .map((i) => `${getItemDef(i.itemId)?.name ?? i.itemId}×${i.qty}`)
           .join('、')
       : '空背包';
 
   return (
     <div className="resolution funeral">
-      <h2>[ {record.diverName} 没能回来 ]</h2>
+      <h2>[ {shownName} 没能回来 ]</h2>
       <div className="resolution-rows">
         <div>死于 {record.depthAtDeath}m</div>
         <div>{record.cause}</div>

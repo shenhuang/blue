@@ -1,0 +1,14 @@
+{
+  "_comment": "层状图对照组（沉船墓园，mapShape 缺省=layered）：确认 mapShape 分流正确、开阔海域行为未被迷路改动波及。层状图是有向 DAG（isUndirected=false）、起点为同层多入口之一（allReachable=false 属正常）、入口非 ascent_point。",
+  "zoneId": "zone.wreck_graveyard",
+  "seed": 5,
+  "depthOffset": 0,
+  "expect": {
+    "shape": "layered",
+    "nodeCount": 14,
+    "isUndirected": false,
+    "entranceIsAscent": false,
+    "allReachable": false,
+    "lastLayerHasAscent": true
+  }
+}

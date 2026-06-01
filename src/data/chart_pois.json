@@ -1,0 +1,114 @@
+{
+  "_doc": "港口海图 POI 数据。anchors = 持久点（每 zone 一个，永远在）；roamingTemplates = 机会点模板，generateChart 按 runsCompleted 种子抽取若干并生成运行时 id。两级门控：requiresFlags=发现（不满足则不出现），requiresUpgrade=抵达能力（不满足则灰显可见但不能出海）。modifier.depthOffset 已实装，current/visibility 暂为叙事+接口。mapX/mapY = 海图 2D 视图归一化坐标（0–1，左→右≈离岸越远/越深）。",
+  "anchors": [
+    {
+      "id": "poi.anchor.east_reef",
+      "zoneId": "zone.east_reef",
+      "name": "东礁·资格区",
+      "blurb": "你第一次下水的地方。浅、平、平淡——但鱼群还在，珊瑚还在。再走一趟也没什么不好。",
+      "distance": 0,
+      "mapX": 0.18,
+      "mapY": 0.5,
+      "persistent": true,
+      "requiresFlags": ["flag.tutorial_complete"]
+    },
+    {
+      "id": "poi.anchor.old_lighthouse_reef",
+      "zoneId": "zone.old_lighthouse_reef",
+      "name": "旧灯塔礁",
+      "blurb": "灯塔废弃二十年。岩礁下面据说还压着些船难的残骸。要更大的船才出得了这么远。",
+      "distance": 1,
+      "mapX": 0.44,
+      "mapY": 0.72,
+      "persistent": true,
+      "requiresFlags": ["flag.tutorial_complete"],
+      "requiresUpgrade": "upgrade.dockyard.lv1"
+    },
+    {
+      "id": "poi.anchor.blue_caves",
+      "zoneId": "zone.blue_caves",
+      "name": "蓝洞群",
+      "blurb": "进了洞就不能想上就上——头上是岩，要么从另一头出来。氧气备足，看见亮的地方就往亮处走。",
+      "distance": 1,
+      "mapX": 0.46,
+      "mapY": 0.3,
+      "persistent": true,
+      "requiresFlags": ["flag.tutorial_complete"]
+    },
+    {
+      "id": "poi.anchor.wreck_graveyard",
+      "zoneId": "zone.wreck_graveyard",
+      "name": "沉船墓园",
+      "blurb": "开阔水域，想上就能上，氧气自己算。下面什么都有——商船、渔船，还有上一代没回来的那两具。",
+      "distance": 2,
+      "mapX": 0.72,
+      "mapY": 0.55,
+      "persistent": true,
+      "requiresFlags": ["flag.tutorial_complete"]
+    }
+  ],
+  "roamingTemplates": [
+    {
+      "templateId": "roam.wreck_north_collapse",
+      "zoneId": "zone.wreck_graveyard",
+      "name": "塌口北缘",
+      "blurb": "墓园北边大陆架塌得最深的一道口子。洋流在这里打转，沙位天天不一样。东西多，但回不回得来是另一回事。",
+      "distance": 2,
+      "mapX": 0.85,
+      "mapY": 0.64,
+      "weight": 2,
+      "requiresFlags": ["flag.tutorial_complete"],
+      "requiresUpgrade": "upgrade.dockyard.lv1",
+      "modifier": { "depthOffset": 8, "current": "strong" }
+    },
+    {
+      "templateId": "roam.lighthouse_trench",
+      "zoneId": "zone.old_lighthouse_reef",
+      "name": "灯塔礁深槽",
+      "blurb": "礁体侧面裂开的一道深槽，比礁顶冷得多。Mira 说底下沉过一条运瓷器的船。",
+      "distance": 2,
+      "mapX": 0.62,
+      "mapY": 0.84,
+      "weight": 2,
+      "requiresFlags": ["flag.tutorial_complete"],
+      "requiresUpgrade": "upgrade.dockyard.lv1",
+      "modifier": { "depthOffset": 10 }
+    },
+    {
+      "templateId": "roam.bluecaves_dark_mouth",
+      "zoneId": "zone.blue_caves",
+      "name": "蓝洞暗河口",
+      "blurb": "洞群更里面的一处岔口，光进不去。当地人说水声在那儿是反着的。",
+      "distance": 2,
+      "mapX": 0.8,
+      "mapY": 0.22,
+      "weight": 2,
+      "requiresFlags": ["flag.tutorial_complete"],
+      "modifier": { "depthOffset": 6, "visibility": "dark" }
+    },
+    {
+      "templateId": "roam.wreck_murk",
+      "zoneId": "zone.wreck_graveyard",
+      "name": "墓园雾区",
+      "blurb": "悬浮物把光散成一团白。看不远，但浅，洋流也温和——适合稳稳捞一趟。",
+      "distance": 1,
+      "mapX": 0.56,
+      "mapY": 0.45,
+      "weight": 3,
+      "requiresFlags": ["flag.tutorial_complete"],
+      "modifier": { "visibility": "murky", "current": "mild" }
+    },
+    {
+      "templateId": "roam.east_ebb_shallows",
+      "zoneId": "zone.east_reef",
+      "name": "东礁退潮浅滩",
+      "blurb": "退潮把礁盘露出来一截，水浅得能看见底。洋流推着你走，省点力气。",
+      "distance": 0,
+      "mapX": 0.27,
+      "mapY": 0.68,
+      "weight": 3,
+      "requiresFlags": ["flag.tutorial_complete"],
+      "modifier": { "current": "mild" }
+    }
+  ]
+}

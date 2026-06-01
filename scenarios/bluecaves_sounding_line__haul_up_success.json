@@ -1,0 +1,15 @@
+{
+  "_comment": "蓝洞群 28-40m 中段 · 测深绳（uncanny），收绳看末端 体力 vs 13 通过分支。默认满体力（100）→ rate 0.95（clamp 上限），seed 1 确定性通过。验证 uncanny stamina check 通过：lore.bluecaves.the_line + sanity -4 + oxygenTurnCost 2（无 loot，守 quirk #44 cave 不掉人造物）。失败分支 stamina -8 + sanity -4（未在此 baseline 覆盖）。对照 squeeze / forked_passage 的 stamina/sanity 平衡。",
+  "eventId": "bluecaves.sounding_line",
+  "depth": 34,
+  "seed": 1,
+  "choices": ["haul_up"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.bluecaves.the_line"],
+    "statsDelta": { "oxygen": -2, "sanity": -4 }
+  }
+}

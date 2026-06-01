@@ -1,4 +1,5 @@
 import type { GameState, RunOutcome } from '@/types';
+import { getItemDef } from '@/engine/items';
 
 interface Props {
   state: GameState;
@@ -15,8 +16,19 @@ export function ResolutionView({ outcome, onReturn }: Props) {
         <div>触发事件：{outcome.eventsTriggered}</div>
         <div>建设值：+{outcome.buildingPointsEarned}</div>
         <div>金币：+{outcome.goldEarned}</div>
+        {outcome.lootValue > 0 && (
+          <div className="dim">战利品估价：~{outcome.lootValue} 金（回港找 Mira 兑现）</div>
+        )}
         {outcome.cause && <div className="cause">{outcome.cause}</div>}
       </div>
+      {outcome.loot.length > 0 && (
+        <div className="resolution-loot dim">
+          带回：
+          {outcome.loot
+            .map((i) => `${getItemDef(i.itemId)?.name ?? i.itemId}×${i.qty}`)
+            .join('、')}
+        </div>
+      )}
       <button className="btn" onClick={onReturn}>
         回到港口
       </button>

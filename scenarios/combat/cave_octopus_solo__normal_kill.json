@@ -1,0 +1,20 @@
+{
+  "_comment": "洞穴章鱼单体 baseline · knife_slash × 4（4th 在 turn 3 胜利后未用），seed 1。蓝洞群深段（40-55m）首个原生战斗——physical 攻坚型「深处闸门」：hp 26（仅次于教学暗礁鲨）/ armor 1 / evasion 3 / 三攻击（缠臂 3-5 w3 + 角喙 5-8 w1 + 喷墨 0 物理+sanity 2-4 w1）/ hostility territorial（hp≤30% 50% 撤退）。比梭鱼(2 turns)/蛛蟹(3 turns)更耗——seed 1 = 3 turns / stamina -28（含敌方缠咬）/ oxygen -3，无喷墨命中故 sanity 不变。注意：stamina/sanity Δ 随 seed 在 stamina -20~-30、sanity 0~-3 浮动（咬几下、喷不喷墨由 RNG 定），故 baseline 只锁 seed 1。掉 cave_octopus_beak（天然物，符合 quirk #44 蓝洞掉天然物）。对照盲鳗(hp18 sanity 双轨 flanker)/蛛蟹(hp22 armor2 territorial)/梭鱼(hp16 glass cannon)。",
+  "combatId": "combat.cave_octopus_solo",
+  "seed": 1,
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 3,
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": { "item.cave_octopus_beak": 1 },
+    "enemiesAlive": 0,
+    "statsDelta": { "stamina": -28, "oxygen": -3 }
+  }
+}

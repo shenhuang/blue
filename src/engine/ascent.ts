@@ -4,6 +4,11 @@
 import type { GameState, RunState, Stats } from '@/types';
 import { clampStats, appendLog } from './state';
 import { executeDeath, ageAndDecayDeaths, getPreservationBonus } from './death';
+import { miraOfferFor } from './port';
+import { getZone } from './zones';
+
+/** 氮气分档阈值（米制氮浓度 0–100）。减压停留次数与减压病分型共用这一份，避免两处各写一套。 */
+const N2 = { SAFE: 40, ONE_STOP: 60, TWO_STOP: 80 } as const;
 
 export type AscentPlan = {
   /** 减压停留次数（按当前氮气浓度计算） */
@@ -34,10 +39,24 @@ export function planAscent(run: RunState): AscentPlan {
 }
 
 export function computeRequiredStops(nitrogen: number): 0 | 1 | 2 | 3 {
-  if (nitrogen < 40) return 0;
-  if (nitrogen < 60) return 1;
-  if (nitrogen < 80) return 2;
+  if (nitrogen < N2.SAFE) return 0;
+  if (nitrogen < N2.ONE_STOP) return 1;
+  if (nitrogen < N2.TWO_STOP) return 2;
   return 3;
+}
+
+/**
+ * 当前 run 是否处于"封闭水域"（如蓝洞群），且不在 ascent_point 上。
+ * 此时 normal / rushed 不允许（头上是岩顶）；只剩 emergency。
+ */
+export function isAscentBlocked(run: RunState): boolean {
+  const zone = getZone(run.zoneId);
+  if (!zone) return false;
+  if (zone.canFreeAscend !== false) return false; // 默认 true → 不挡
+  if (!run.map || !run.currentNodeId) return false;
+  const node = run.map.nodes[run.currentNodeId];
+  // 在 ascent_point 上就放行（那是洞另一头的开口）
+  return node?.kind !== 'ascent_point';
 }
 
 /** 减压病分级判定 */
@@ -48,18 +67,18 @@ function determineBends(
 ): 0 | 1 | 2 | 3 | 4 {
   if (mode === 'emergency') {
     // 应急上浮：高深度直接致命
-    if (depth >= 25 && nitrogenAtStart >= 60) return 4;
-    if (nitrogenAtStart >= 80) return 4;
+    if (depth >= 25 && nitrogenAtStart >= N2.ONE_STOP) return 4;
+    if (nitrogenAtStart >= N2.TWO_STOP) return 4;
     return 3;
   }
   if (mode === 'rushed') {
-    if (nitrogenAtStart >= 80) return 4;
-    if (nitrogenAtStart >= 60) return 3;
-    if (nitrogenAtStart >= 40) return 2;
+    if (nitrogenAtStart >= N2.TWO_STOP) return 4;
+    if (nitrogenAtStart >= N2.ONE_STOP) return 3;
+    if (nitrogenAtStart >= N2.SAFE) return 2;
     return 1;
   }
   // normal：完全合规 → 无；否则按残余氮判
-  if (nitrogenAtStart >= 80) return 1;
+  if (nitrogenAtStart >= N2.TWO_STOP) return 1;
   return 0;
 }
 
@@ -134,7 +153,7 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
 
   // 推进到结算
   const buildingPoints = computeBuildingPoints(run);
-  const goldFromLoot = computeLootValue(run);
+  const lootValue = computeLootValue(run);
 
   // 这次 run 结束：海底所有死者老化一次 + 衰减
   const agedDeaths = ageAndDecayDeaths(
@@ -156,9 +175,10 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
       outcome: {
         survived: true,
         maxDepthReached: run.currentDepth, // 注意：在这里 run 还是上浮前的 depth
-        eventsTriggered: run.visitedNodeIds.length,
+        eventsTriggered: new Set(run.visitedNodeIds).size,
         buildingPointsEarned: buildingPoints,
-        goldEarned: run.gold + goldFromLoot,
+        goldEarned: run.gold, // 上岸时实际入袋（事件给的金币）；战利品要回港找 Mira 兑
+        lootValue,
         loot: run.inventory,
         newLoreEntries: [],
         cause: bends > 0 ? `减压病 ${'I'.repeat(bends)} 型` : undefined,
@@ -172,11 +192,21 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
 function computeBuildingPoints(run: RunState): number {
   // 主 SPEC §7.1: 最深深度系数 + 触发事件数 × α + 完成事件链 × β
   const depthCoef = Math.floor(run.currentDepth / 5);
-  const nodeCoef = run.visitedNodeIds.length;
+  // 去重计数（见 death.ts::computeRawBuildingPoints 的同理说明）
+  const nodeCoef = new Set(run.visitedNodeIds).size;
   return Math.max(3, depthCoef + nodeCoef);
 }
 
-function computeLootValue(_run: RunState): number {
-  // TODO：接入 items.json 的 sellPrice，目前由 resolution 直接显示战利品列表
-  return 0;
+/**
+ * 战利品的"潜在变卖价值" —— 按 Mira 收购价估算（floor(sellPrice × ratio) × qty）。
+ * eternal/story 物品不计入（不卖）。这只是一个数字给 resolution 显示，
+ * 实际入账要走 Mira 面板 (engine/port.ts::sellItemToMira)。
+ */
+export function computeLootValue(run: RunState): number {
+  let total = 0;
+  for (const inv of run.inventory) {
+    if (inv.qty <= 0) continue;
+    total += miraOfferFor(inv.itemId) * inv.qty;
+  }
+  return total;
 }

@@ -101,6 +101,7 @@ export type Condition =
   | { kind: 'statAtMost'; stat: Stat; value: number }
   | { kind: 'hasFlag'; flag: string }
   | { kind: 'notHasFlag'; flag: string }
+  | { kind: 'hasUpgrade'; upgradeId: string }
   | { kind: 'depthAtLeast'; value: number }
   | { kind: 'all'; of: Condition[] }
   | { kind: 'any'; of: Condition[] };

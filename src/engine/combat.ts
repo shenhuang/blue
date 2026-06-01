@@ -16,9 +16,14 @@ import type {
 } from '@/types';
 import actionData from '@/data/actions.json';
 import sharkData from '@/data/enemies/reef_shark.json';
-import itemsData from '@/data/items.json';
+import eelData from '@/data/enemies/blind_eel.json';
+import crabData from '@/data/enemies/wreck_spider_crab.json';
+import barracudaData from '@/data/enemies/reef_barracuda.json';
+import octopusData from '@/data/enemies/cave_octopus.json';
+import lanternData from '@/data/enemies/drowned_lantern.json';
 import { appendLog, addToInventory, clampStats } from './state';
 import { executeDeath } from './death';
+import { getItemDef } from './items';
 
 // ——— 数据索引 ———
 
@@ -27,16 +32,31 @@ for (const a of (actionData as { actions: CombatAction[] }).actions) ACTIONS.set
 
 const ENEMY_DEFS: Map<string, EnemyDef> = new Map();
 for (const e of sharkData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
+for (const e of eelData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
+for (const e of crabData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
+for (const e of barracudaData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
+for (const e of octopusData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
+for (const e of lanternData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
 
 const COMBAT_ENCOUNTERS: Map<string, CombatEncounterDef> = new Map();
 for (const c of (sharkData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
   COMBAT_ENCOUNTERS.set(c.id, c);
 }
-
-interface ItemsFile {
-  items: Array<{ id: string; consumable?: { effectOnUse: { deltas?: Partial<Record<keyof Stats, number>>; text?: string } } }>;
+for (const c of (eelData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
+  COMBAT_ENCOUNTERS.set(c.id, c);
 }
-const ITEM_INDEX = new Map((itemsData as ItemsFile).items.map((i) => [i.id, i]));
+for (const c of (crabData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
+  COMBAT_ENCOUNTERS.set(c.id, c);
+}
+for (const c of (barracudaData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
+  COMBAT_ENCOUNTERS.set(c.id, c);
+}
+for (const c of (octopusData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
+  COMBAT_ENCOUNTERS.set(c.id, c);
+}
+for (const c of (lanternData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
+  COMBAT_ENCOUNTERS.set(c.id, c);
+}
 
 export function getAction(id: string): CombatAction | undefined { return ACTIONS.get(id); }
 export function getEnemyDef(id: string): EnemyDef | undefined { return ENEMY_DEFS.get(id); }
@@ -44,6 +64,10 @@ export function getEncounter(id: string): CombatEncounterDef | undefined {
   return COMBAT_ENCOUNTERS.get(id);
 }
 export function listActions(): CombatAction[] { return [...ACTIONS.values()]; }
+/** 全部已注册的 EnemyDef（顺序：JSON 文件加载顺序） */
+export function listAllEnemyDefs(): EnemyDef[] { return [...ENEMY_DEFS.values()]; }
+/** 全部已注册的 CombatEncounterDef（顺序：JSON 文件加载顺序） */
+export function listAllEncounters(): CombatEncounterDef[] { return [...COMBAT_ENCOUNTERS.values()]; }
 
 // ——— 战斗发起 ———
 
@@ -376,7 +400,7 @@ function applyCrowdControl(state: GameState, action: CombatAction): GameState {
 
 function applyUseItem(state: GameState, action: CombatAction): GameState {
   if (!state.run || !action.requiresItemId) return state;
-  const itemDef = ITEM_INDEX.get(action.requiresItemId);
+  const itemDef = getItemDef(action.requiresItemId);
   if (!itemDef?.consumable) return state;
 
   // 消耗

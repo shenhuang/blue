@@ -1,0 +1,20 @@
+{
+  "_comment": "沉灯水母单体 baseline · knife_slash × 4（4th 在 turn 3 胜利后未用），seed 1。沉船墓园第二只敌人（蛛蟹之外）+ 项目首只 cosmic-tier 敌人 + 首只 sanity-主导敌人。slow/tanky 反梭鱼/反盲鳗：hp 24 / armor 1 / evasion 1（命中 0.91，易打中）/ predatory（不撤退）/ 两攻击（脉光 纯 sanity 4-7 w3 主攻 + 曳丝 physical 2-4 + sanity 1-2 w2）。设计＝『理智消耗战』：knife_slash ~3 刀杀（armor 1 后 7-13），但每回合 70% 概率脉光烧理智——seed 1 = 3 turns / stamina -20 / oxygen -3 / sanity -10。注意：sanity/stamina Δ 随 seed 浮动（sanity -8~-14、stamina -20~-29、个别 seed 4 turns，脉不脉、扫不扫由 RNG 定），故只锁 seed 1（同梭鱼/章鱼套路 quirk #45/#46）。掉 lantern_gland（敌人天然身体部位→ Mira，与蟹甲/梭鱼颌/章鱼喙同模式）。对照盲鳗(hp18 evasion4 uncanny 物理主导 sanity 点缀 flanker)/章鱼(hp26 armor1 realistic 纯物理 bruiser)/梭鱼(hp16 glass cannon)/蛛蟹(hp22 armor2 territorial)。",
+  "combatId": "combat.drowned_lantern_solo",
+  "seed": 1,
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 3,
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": { "item.lantern_gland": 1 },
+    "enemiesAlive": 0,
+    "statsDelta": { "stamina": -20, "oxygen": -3, "sanity": -10 }
+  }
+}

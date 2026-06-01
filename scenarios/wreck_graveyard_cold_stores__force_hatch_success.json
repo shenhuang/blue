@@ -1,0 +1,15 @@
+{
+  "_comment": "沉船墓园 · 储藏舱，撬开铁门搜罐头（uncanny salvage, stamina vs 13）。满 stamina 时 rate=0.95（clamp 上限），seed 1 确定性通过。验证 loot+check 通过分支：oxygenTurnCost 2 + sanity -3 + canned_food/old_fishing_net loot（loot 不入 statsDelta；seed 1 下 canned_food×2 命中、old_fishing_net chance 0.4 未命中）。掉人造打捞物守 quirk #44（wreck.* 只掉人造物）。dc 13 对照 collapsed_passage 的 stamina check。",
+  "eventId": "wreck_graveyard.cold_stores",
+  "stats": { "stamina": 100 },
+  "depth": 34,
+  "seed": 1,
+  "choices": ["force_hatch"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2, "sanity": -3 }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "_comment": "沉船蛛蟹双体 baseline · knife_stab × 4（target 0 × 2，再 target 1 × 2）击杀。验证项目首个多体战斗 encounter：targetIndex 切换工作 + aggro/AI 同回合多敌响应 + 双份 crab_chitin 战利品。seed=3 下确定性 4 turns 收。",
+  "combatId": "combat.wreck_spider_crabs_pair",
+  "seed": 3,
+  "actions": [
+    { "actionId": "action.knife_stab", "targetIndex": 0 },
+    { "actionId": "action.knife_stab", "targetIndex": 0 },
+    { "actionId": "action.knife_stab", "targetIndex": 1 },
+    { "actionId": "action.knife_stab", "targetIndex": 1 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 4,
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": { "item.crab_chitin": 2 },
+    "enemiesAlive": 0,
+    "hpDeltaAtMost": -30
+  }
+}

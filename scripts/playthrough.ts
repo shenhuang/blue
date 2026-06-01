@@ -1,7 +1,7 @@
 // 真·端到端 playthrough 测试 —— 用项目自身的引擎模块
 // 跑法： npx tsx scripts/playthrough.ts
 
-import { createInitialGameState } from '../src/engine/state';
+import { createInitialGameState, createNewRun } from '../src/engine/state';
 import {
   getDialogNode,
   getNpc,
@@ -10,13 +10,19 @@ import {
 import {
   resolveOption,
   isOptionVisible,
+  evalCondition,
 } from '../src/engine/events';
 import { getEventById } from '../src/engine/zones';
 import {
   moveToNode,
   enterNodeSelection,
+  startDiveFromPoi,
 } from '../src/engine/dive';
+import { generateChart, poiLockReason } from '../src/engine/chart';
 import { planAscent, executeAscent } from '../src/engine/ascent';
+import { purchaseUpgrade } from '../src/engine/upgrades';
+import { eventDoneFlag, pickReturnTrigger } from '../src/engine/portEvents';
+import { handleReturnToPort } from '../src/engine/port';
 import type { GameState, DialogNode, DiveEvent } from '../src/types';
 
 let state: GameState = createInitialGameState();
@@ -47,9 +53,7 @@ function walkConvo(
     log.push(`dialog:${node.id}`);
     const visible = (node.choices ?? []).filter((c) => {
       if (!c.visibleIf) return true;
-      if (c.visibleIf.kind === 'hasFlag') return state.profile.flags.has(c.visibleIf.flag);
-      if (c.visibleIf.kind === 'notHasFlag') return !state.profile.flags.has(c.visibleIf.flag);
-      return true;
+      return evalCondition(state, c.visibleIf);
     });
     if (visible.length === 0) break;
     const targetId = chooseFn(
@@ -152,27 +156,100 @@ if (out1.loot.length > 0) {
   log.push(`战利品: ${out1.loot.map((l: any) => `${l.itemId}×${l.qty}`).join(', ')}`);
 }
 
-// 模拟读完日志后回港 + 设置 flag
+// 模拟"回到港口"按钮：handleReturnToPort 合并 inventory + 检剧情物
+const returnResult = handleReturnToPort(state);
+state = returnResult.state;
+const trigger = returnResult.cutsceneEventId;
+if (!trigger) throw new Error('教学跑完应带回 captain_log → 自动触发 tutorial.ending_log');
+log.push(`\n========== 港口 cutscene ==========`);
+log.push(`回港触发：${trigger}`);
+
+// captain_log 必须已经搬进 profile.inventory（不能像旧版那样直接丢）
+const captainLog = state.profile.inventory.find((i) => i.itemId === 'item.captain_log');
+if (!captainLog || captainLog.qty < 1) {
+  throw new Error('handleReturnToPort 应把 captain_log 合并到 profile.inventory');
+}
+
+// 走 cutscene 的唯一选项（close_book）
+const endingEv = getEventById(trigger)!;
+const closeOpt = endingEv.options[0];
+log.push(`  → ${closeOpt.label}`);
+{
+  const result = resolveOption(state, closeOpt);
+  state = result.state;
+  for (const line of result.narrative) log.push(`     ${line.split('\n')[0].slice(0, 80)}`);
+}
+// 模拟 PortEventView.finalize：写入 event_done flag、null run、回 port
 state = {
   ...state,
-  profile: { ...state.profile, flags: new Set([...state.profile.flags, 'flag.tutorial_complete']) },
+  profile: {
+    ...state.profile,
+    flags: new Set([...state.profile.flags, eventDoneFlag(trigger)]),
+  },
   run: null,
   phase: { kind: 'port' },
 };
+
+// 关键断言：flag.tutorial_complete 必须从 cutscene 自然产生（不是脚本硬塞）
+if (!state.profile.flags.has('flag.tutorial_complete')) {
+  throw new Error('close_book 应让 flag.tutorial_complete 落到 profile.flags');
+}
+if (!state.profile.loreEntries.has('lore.father_first_entry')) {
+  throw new Error('close_book 应解锁 lore.father_first_entry');
+}
+// 二次触发要被吃掉（防 cutscene 重播）：构造一个新 run 把日志再塞回去
+const fakeState: GameState = {
+  ...state,
+  run: {
+    ...createNewRun({ zoneId: 'zone.east_reef' }),
+    inventory: [{ itemId: 'item.captain_log', qty: 1 }],
+  },
+};
+const trigger2 = pickReturnTrigger(fakeState);
+if (trigger2 !== null) {
+  throw new Error('event_done 标记已写入，再次回港不应重复触发，但拿到了 ' + trigger2);
+}
+log.push(`flag.tutorial_complete ✓ / lore.father_first_entry ✓ / 重播被防住 ✓`);
+
+// ========== 港口修缮：买下船坞 Lv.1 解锁旧灯塔礁 ==========
+// 教学关只给 3 建设值，凑不够 10。脚本里直接补到 10 以测试购买流程。
+state = {
+  ...state,
+  profile: { ...state.profile, buildingPoints: Math.max(state.profile.buildingPoints, 10) },
+};
+log.push(`\n========== 港口修缮 ==========`);
+log.push(`修缮前: 建设值 ${state.profile.buildingPoints}, unlockedUpgrades=[${[...state.profile.unlockedUpgrades].join(',')}]`);
+state = purchaseUpgrade(state, 'upgrade.dockyard.lv1');
+log.push(`修缮后: 建设值 ${state.profile.buildingPoints}, unlockedUpgrades=[${[...state.profile.unlockedUpgrades].join(',')}]`);
+if (!state.profile.unlockedUpgrades.has('upgrade.dockyard.lv1')) {
+  throw new Error('船坞 Lv.1 应在购买后入账');
+}
 
 // ========== Run 2: 随机图旧灯塔礁 ==========
 log.push('\n========== RUN 2: 旧灯塔礁（随机图） ==========');
 pretty('init-run2');
 
+// RUN 2 出海：Aldo briefing 不再直接列 zone，而是「摊开海图」(open_chart → phase chart)，
+// 再在海图上选旧灯塔礁 anchor POI（dockyard.lv1 已购 → 可出海）。
 walkConvo('npc.aldo', (nodeId, visible) => {
   if (nodeId === 'aldo.root') return 'ready';
   if (nodeId === 'aldo.briefing') {
-    const lh = visible.find((v) => v.id === 'depart_lighthouse');
-    if (!lh) throw new Error('教学完成后应见 depart_lighthouse，实际: ' + visible.map((v) => v.id).join(','));
-    return 'depart_lighthouse';
+    const chart = visible.find((v) => v.id === 'open_chart');
+    if (!chart) throw new Error('教学完成后应见 open_chart，实际: ' + visible.map((v) => v.id).join(','));
+    return 'open_chart';
   }
   return visible[0].id;
 });
+if (state.phase.kind !== 'chart') {
+  throw new Error('open_chart 应切到 chart phase，实际 ' + state.phase.kind);
+}
+const chart = generateChart({ profile: state.profile });
+const lhPoi = chart.pois.find((p) => p.zoneId === 'zone.old_lighthouse_reef' && p.persistent);
+if (!lhPoi) throw new Error('海图应含旧灯塔礁 anchor POI');
+const lhLock = poiLockReason(state.profile, lhPoi);
+if (lhLock) throw new Error('买了船坞 Lv.1 后旧灯塔礁应可出海，但被锁：' + lhLock);
+log.push(`海图选点：${lhPoi.name} → ${lhPoi.zoneId}（距离 ${lhPoi.distance}）`);
+state = startDiveFromPoi(state, lhPoi);
 pretty('after-startDive-lighthouse');
 
 if (!state.run?.map) throw new Error('旧灯塔礁应生成 DiveMap');

@@ -1,0 +1,14 @@
+{
+  "_comment": "蓝洞群 · 章鱼巢拔刀触发 combat.cave_octopus_solo。验证 bluecaves.octopus_den → 战斗 hook（蓝洞深段至此有第二个原生战斗 encounter，盲鳗之外）+ 在 startCombat 处停步的边界（scenario 不打战斗）。draw_knife 选项无 deltas/oxygenTurnCost，故 statsDelta 为空。draw_knife 需 hasEquipment tool（runner 默认装备标准刀，与 reef.barracuda / wreck_graveyard.engine_room_hum 同套路）。",
+  "eventId": "bluecaves.octopus_den",
+  "depth": 48,
+  "seed": 1,
+  "choices": ["draw_knife"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "combatTriggered": "combat.cave_octopus_solo",
+    "statsDelta": {}
+  }
+}

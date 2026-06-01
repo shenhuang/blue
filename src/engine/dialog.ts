@@ -1,28 +1,38 @@
 // 对话引擎 —— 港口 NPC 对话
-// 数据结构在 src/data/npcs.json 中，引擎只做"按 id 取节点"和"应用 effect"
+// 数据按 NPC 拆分在 src/data/npcs/<npcId>.json，引擎只做"按 id 取节点"和"应用 effect"
 
-import type { GameState, DialogNode, DialogChoice, DialogEffect } from '@/types';
-import npcData from '@/data/npcs.json';
+import type { GameState, DialogNode, DialogChoice, DialogEffect, NpcDef } from '@/types';
+import aldoData from '@/data/npcs/aldo.json';
+import miraData from '@/data/npcs/mira.json';
 import { createNewRun } from './state';
 import { startDive } from './dive';
+import { getUpgradeBonuses } from './upgrades';
 
-interface NpcsFile {
-  npcs: Array<{ id: string; name: string; role: string; shortDescription: string; dialogRoot: DialogNode }>;
-  dialogs: Record<string, DialogNode>;
+interface NpcFile {
+  npc: NpcDef;
+  dialogs?: Record<string, DialogNode>;
 }
 
-const file = npcData as unknown as NpcsFile;
+const NPC_FILES: NpcFile[] = [aldoData as unknown as NpcFile, miraData as unknown as NpcFile];
 
+const NPC_INDEX: Map<string, NpcDef> = new Map();
 const DIALOG_INDEX: Map<string, DialogNode> = new Map();
-for (const npc of file.npcs) {
-  DIALOG_INDEX.set(npc.dialogRoot.id, npc.dialogRoot);
-}
-for (const [id, node] of Object.entries(file.dialogs)) {
-  DIALOG_INDEX.set(id, node);
+for (const f of NPC_FILES) {
+  NPC_INDEX.set(f.npc.id, f.npc);
+  DIALOG_INDEX.set(f.npc.dialogRoot.id, f.npc.dialogRoot);
+  if (f.dialogs) {
+    for (const [id, node] of Object.entries(f.dialogs)) {
+      DIALOG_INDEX.set(id, node);
+    }
+  }
 }
 
-export function getNpc(id: string) {
-  return file.npcs.find((n) => n.id === id);
+export function getNpc(id: string): NpcDef | undefined {
+  return NPC_INDEX.get(id);
+}
+
+export function listNpcs(): NpcDef[] {
+  return [...NPC_INDEX.values()];
 }
 
 export function getDialogNode(id: string): DialogNode | undefined {
@@ -73,15 +83,30 @@ export function applyDialogEffects(
         }
         break;
       case 'startDive': {
-        const run = createNewRun({ zoneId: e.zoneId });
+        const bonuses = getUpgradeBonuses(s.profile);
+        const run = createNewRun({
+          zoneId: e.zoneId,
+          bonuses: {
+            oxygenMaxBonus: bonuses.oxygenMaxBonus,
+            staminaMaxBonus: bonuses.staminaMaxBonus,
+            extraConsumableSlot: bonuses.extraConsumableSlot,
+          },
+        });
         s = { ...s, run };
         s = startDive(s, e.zoneId);
         break;
       }
-      case 'giveItem':
+      case 'openChart':
+        // 切到顶层 chart phase；UI 层（App.tsx）挂 SeaChartView。
+        s = { ...s, phase: { kind: 'chart' } };
+        break;
       case 'openShop':
+        // 切到顶层 shop phase；UI 层（App.tsx）负责挂对应面板。
+        s = { ...s, phase: { kind: 'shop', shopId: e.shopId } };
+        break;
+      case 'giveItem':
       case 'openUpgradeTree':
-        // TODO 实现：开店面板、升级树面板
+        // TODO 实现：直接给物品、升级树面板（Mira 之外的店暂未实现）
         break;
     }
   }

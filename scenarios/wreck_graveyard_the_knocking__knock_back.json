@@ -1,0 +1,15 @@
+{
+  "_comment": "沉船墓园 · 焊死的舱门，回敲三下（cosmic, 无 check, 故确定性与 seed 无关）。这是 dive_slate『不要回敲』的违禁分支——opt-in 的重 cosmic 惩罚：sanity -14 + oxygenTurnCost 4 + lore.wreck_graveyard.the_knocking。锁定该分支的固定代价，防止以后误改文案带偏 deltas。对照 engine_room_hum 失败档 -14。",
+  "eventId": "wreck_graveyard.the_knocking",
+  "stats": { "sanity": 100 },
+  "depth": 40,
+  "seed": 1,
+  "choices": ["knock_back"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.wreck_graveyard.the_knocking"],
+    "statsDelta": { "oxygen": -4, "sanity": -14 }
+  }
+}

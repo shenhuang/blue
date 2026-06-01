@@ -1,0 +1,70 @@
+{
+  "enemies": [
+    {
+      "id": "enemy.blind_eel",
+      "name": "盲鳗",
+      "tier": "uncanny",
+      "hp": 18,
+      "armor": 0,
+      "evasion": 4,
+      "speed": 10,
+      "threat": 7,
+      "hostility": "predatory",
+      "initialStance": "alerted",
+      "aiPattern": "flanker",
+      "attacks": [
+        {
+          "id": "eel.lunge",
+          "name": "扑咬",
+          "damageType": "physical",
+          "damage": [3, 6],
+          "description": "它没有眼睛——但它在跟你的气泡。一瞬间过来。",
+          "weight": 3
+        },
+        {
+          "id": "eel.coil",
+          "name": "缠绕",
+          "damageType": "physical",
+          "damage": [1, 3],
+          "sanityDamage": [3, 6],
+          "description": "它绕住你的左臂。皮在水里发蓝。你感觉到它在用听的——通过你的颤抖。",
+          "weight": 2
+        },
+        {
+          "id": "eel.hum",
+          "name": "低频共振",
+          "damageType": "sanity",
+          "damage": [0, 0],
+          "sanityDamage": [4, 8],
+          "description": "它没动。但你的耳膜里有一种很低的、像是从骨头里来的声音。",
+          "weight": 1
+        }
+      ],
+      "physicalDamage": [3, 6],
+      "sanityDamage": [3, 6],
+      "loot": {
+        "guaranteed": [{ "itemId": "item.eel_skin", "qty": [1, 1], "weight": 1 }],
+        "rolls": [
+          { "itemId": "item.coral_shard", "qty": [1, 2], "weight": 1 }
+        ],
+        "rollCount": 1,
+        "victoryModifier": {
+          "kill": 1.0,
+          "flee": 0.3,
+          "scare": 0.0
+        }
+      },
+      "victoryConditions": ["kill", "flee"],
+      "loreEntry": "lore.blind_eel"
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.blind_eel_solo",
+      "party": {
+        "members": [{ "defId": "enemy.blind_eel" }]
+      },
+      "introText": "它已经在你周围游了——你看到的只是一段，但它比你想得长。"
+    }
+  ]
+}

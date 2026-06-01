@@ -9,19 +9,19 @@ import type {
   Outcome,
   Condition,
   Stats,
+  Visibility,
 } from '@/types';
 import { addToInventory, appendLog, clampStats } from './state';
 
 // —— 数据装载 ——
-import tutorialEvents from '@/data/events/tutorial.json';
-
-const EVENT_INDEX: Map<string, DiveEvent> = new Map();
-for (const ev of tutorialEvents.events as DiveEvent[]) {
-  EVENT_INDEX.set(ev.id, ev);
-}
+// 单一事件库是 zones.ts::EVENT_DB（含全部 zone 的事件）。getEvent 直接委托给它，
+// 不再维护第二份只装 tutorial.json 的索引——旧实现导致 EventView / PortEventView
+// （都走 getEvent）解析不到任何非教学事件，在浏览器里渲染成"[事件未找到]"。
+// playthrough 脚本走 getEventById，所以引擎测试一直绿、UI 却是坏的（典型只测引擎的盲区）。
+import { getEventById } from './zones';
 
 export function getEvent(id: string): DiveEvent | undefined {
-  return EVENT_INDEX.get(id);
+  return getEventById(id);
 }
 
 // —— Condition 解析 ——
@@ -47,6 +47,8 @@ export function evalCondition(state: GameState, c: Condition): boolean {
       return (
         !profile.flags.has(c.flag) && !(run?.activeFlags.has(c.flag) ?? false)
       );
+    case 'hasUpgrade':
+      return profile.unlockedUpgrades.has(c.upgradeId);
     case 'depthAtLeast':
       return run !== null && run.currentDepth >= c.value;
     case 'all':
@@ -144,23 +146,44 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
   }
 
   // ---- Flags ----
-  if (outcome.applyFlags && s.run) {
-    const flags = new Set(s.run.activeFlags);
-    for (const f of outcome.applyFlags) flags.add(f);
-    s = { ...s, run: { ...s.run, activeFlags: flags } };
+  // 有 run = dive 期间，flag 进 run.activeFlags（run 结束后丢弃）；
+  // 无 run = 港口 cutscene（portEvent），flag 直接进 profile.flags（永久）。
+  if (outcome.applyFlags) {
+    if (s.run) {
+      const flags = new Set(s.run.activeFlags);
+      for (const f of outcome.applyFlags) flags.add(f);
+      s = { ...s, run: { ...s.run, activeFlags: flags } };
+    } else {
+      const flags = new Set(s.profile.flags);
+      for (const f of outcome.applyFlags) flags.add(f);
+      s = { ...s, profile: { ...s.profile, flags } };
+    }
   }
-  if (outcome.removeFlags && s.run) {
-    const flags = new Set(s.run.activeFlags);
-    for (const f of outcome.removeFlags) flags.delete(f);
-    s = { ...s, run: { ...s.run, activeFlags: flags } };
+  if (outcome.removeFlags) {
+    if (s.run) {
+      const flags = new Set(s.run.activeFlags);
+      for (const f of outcome.removeFlags) flags.delete(f);
+      s = { ...s, run: { ...s.run, activeFlags: flags } };
+    } else {
+      const flags = new Set(s.profile.flags);
+      for (const f of outcome.removeFlags) flags.delete(f);
+      s = { ...s, profile: { ...s.profile, flags } };
+    }
   }
 
   // ---- 金币 ----
-  if (outcome.goldDelta && s.run) {
-    s = {
-      ...s,
-      run: { ...s.run, gold: s.run.gold + outcome.goldDelta },
-    };
+  if (outcome.goldDelta) {
+    if (s.run) {
+      s = { ...s, run: { ...s.run, gold: s.run.gold + outcome.goldDelta } };
+    } else {
+      s = {
+        ...s,
+        profile: {
+          ...s.profile,
+          bankedGold: Math.max(0, s.profile.bankedGold + outcome.goldDelta),
+        },
+      };
+    }
   }
 
   // ---- Lore ----
@@ -219,6 +242,19 @@ export function resolveOption(state: GameState, opt: EventOption): OutcomeResult
   return { state, narrative: ['（这个选项暂时没接好。）'], next: { kind: 'remainOnEvent' } };
 }
 
+/**
+ * 能见度（海图 POI 修正）对理智的额外消耗：看不清越久越压抑。
+ * 纯函数，便于回归断言。clear / 未设 → 0。
+ */
+export function visibilitySanityDrain(
+  visibility: Visibility | undefined,
+  turns: number,
+): number {
+  if (visibility === 'dark') return 0.35 * turns;
+  if (visibility === 'murky') return 0.15 * turns;
+  return 0;
+}
+
 /** 将一个 RunState 推进 N 个标准回合的氧气/氮气消耗（不处理事件内额外消耗） */
 export function tickTurns(run: RunState, turns: number): RunState {
   if (turns <= 0) return run;
@@ -236,6 +272,11 @@ export function tickTurns(run: RunState, turns: number): RunState {
   if (depth >= 30) {
     const decayPerTurn = depth < 60 ? 0.2 : depth < 100 ? 0.5 : 1.0;
     stats.sanity = Math.max(0, stats.sanity - decayPerTurn * turns);
+  }
+  // 能见度（海图 POI 修正）：看不清 → 额外理智压力
+  const visDrain = visibilitySanityDrain(run.diveModifier?.visibility, turns);
+  if (visDrain > 0) {
+    stats.sanity = Math.max(0, stats.sanity - visDrain);
   }
 
   return { ...run, stats, turn: run.turn + turns };

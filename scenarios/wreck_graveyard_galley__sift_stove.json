@@ -1,0 +1,13 @@
+{
+  "_comment": "沉船墓园 · 伙房，炉膛下淤泥里摸（无 check 的稳妥 loot 路径）。oxygenTurnCost 2，canned_food chance loot → statsDelta 只 oxygen -2（loot 不进 statsDelta）。",
+  "eventId": "wreck_graveyard.galley",
+  "depth": 28,
+  "seed": 1,
+  "choices": ["sift_stove"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -2 }
+  }
+}

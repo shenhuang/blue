@@ -1,0 +1,22 @@
+{
+  "_comment": "蓝洞群迷路图（seed 7）：第二个种子，确认结构不变量在不同布局下依旧成立（本图死路/最深点更多）。",
+  "zoneId": "zone.blue_caves",
+  "seed": 7,
+  "depthOffset": 0,
+  "expect": {
+    "shape": "maze",
+    "nodeCount": 13,
+    "edgeCount": 15,
+    "maxDepth": 55,
+    "entranceDepth": 12,
+    "allReachable": true,
+    "isUndirected": true,
+    "hasCycle": true,
+    "hasDeadEnd": true,
+    "minDeadEnds": 3,
+    "minDeepestPoints": 2,
+    "minAscentPoints": 2,
+    "allAscentReachable": true,
+    "entranceIsAscent": true
+  }
+}

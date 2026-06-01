@@ -1,0 +1,14 @@
+{
+  "_comment": "旧灯塔礁 · 雾钟，停下来听（oncePerRun）。uncanny 的 lore 路径：lore.old_lighthouse.bell + sanity -4 + oxygenTurnCost 1。",
+  "eventId": "reef.fog_bell",
+  "depth": 28,
+  "seed": 1,
+  "choices": ["listen"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.old_lighthouse.bell"],
+    "statsDelta": { "oxygen": -1, "sanity": -4 }
+  }
+}

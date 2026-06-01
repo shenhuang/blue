@@ -140,6 +140,180 @@ html, body, #root {
   margin-bottom: 12px;
 }
 
+/* ——— 港口升级面板 ——— */
+
+.port-upgrade-btn {
+  margin-top: 4px;
+  border-style: dashed;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.port-upgrade-btn:hover:not(:disabled) {
+  color: var(--accent);
+  border-style: solid;
+}
+
+.upgrade-panel {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.upgrade-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.upgrade-title {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.upgrade-sub {
+  font-size: 13px;
+  color: var(--accent);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.upgrade-close {
+  width: auto;
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+.upgrade-line {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+
+.upgrade-line-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.upgrade-line-name {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.upgrade-line-progress {
+  font-size: 12px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.upgrade-line-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.upgrade-line-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.upgrade-row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-elev);
+}
+
+.upgrade-row.owned {
+  border-color: #2a4d3a;
+  background: linear-gradient(180deg, var(--bg-elev), #0e1a14);
+}
+
+.upgrade-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.upgrade-row-name {
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.upgrade-row-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.upgrade-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.upgrade-effect-chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+}
+
+.upgrade-row-side {
+  display: flex;
+  align-items: center;
+  min-width: 132px;
+  justify-content: flex-end;
+}
+
+.upgrade-status {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.upgrade-status.owned {
+  color: var(--green);
+  background: rgba(108, 210, 150, 0.08);
+}
+
+.upgrade-status.locked {
+  color: var(--text-faint);
+  background: var(--bg);
+  border: 1px dashed var(--border);
+}
+
+.upgrade-buy {
+  width: auto;
+  padding: 6px 12px;
+  font-size: 13px;
+  text-align: center;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.upgrade-buy:disabled {
+  color: var(--text-faint);
+  border-color: var(--border);
+}
+
 /* ——— 对话面板 ——— */
 
 .dialog-panel {
@@ -476,6 +650,25 @@ html, body, #root {
   border-color: #6a2a3e;
 }
 
+/* 地标节点（气穴 / 扎营点）—— 选点界面里给一道冷色提示，和事件/上浮口区分 */
+.event-option.landmark {
+  border-color: var(--accent);
+}
+
+.event-option.landmark .node-depth {
+  color: var(--accent);
+}
+
+/* 迷路图：已到访过的节点（回头/绕回的方向）—— 暗一档，与未探索的岔路区分 */
+.event-option.visited {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
+.event-option.visited .node-depth {
+  color: var(--text-muted);
+}
+
 /* 节点选择 ——— */
 
 .node-row {
@@ -634,4 +827,251 @@ html, body, #root {
 
 .gameover h2 {
   color: var(--danger);
+}
+
+/* —— 港口海图选点（SeaChartView） —— */
+.port-chart-btn {
+  margin-top: 4px;
+  text-align: center;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.port-chart-btn:hover:not(:disabled) {
+  background: var(--bg-elev-2);
+}
+
+.chart-2d {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.chart-map {
+  position: relative;
+  flex: 1 1 300px;
+  min-width: 0;
+  height: 260px;
+  background: #0b1116;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.chart-coast {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 15%;
+  background: var(--bg-elev);
+  border-right: 1px dashed var(--border);
+}
+
+.chart-port {
+  position: absolute;
+  left: 7.5%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.7rem;
+  color: var(--warn);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.chart-port-dot {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--warn);
+  margin: 0 auto 3px;
+}
+
+.chart-axis {
+  position: absolute;
+  bottom: 6px;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.chart-map-poi {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 11px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.chart-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--accent);
+  box-sizing: border-box;
+}
+
+.chart-map-poi.roam .chart-dot {
+  background: #0b1116;
+  border-style: dashed;
+}
+
+.chart-map-poi.locked .chart-dot {
+  background: #0b1116;
+  border-color: var(--text-faint);
+}
+
+.chart-map-poi.sel .chart-dot {
+  box-shadow: 0 0 0 4px rgba(78, 209, 193, 0.3);
+}
+
+.chart-poi-name {
+  display: none;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  color: var(--accent);
+  background: rgba(11, 17, 22, 0.85);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.chart-map-poi.sel .chart-poi-name {
+  display: block;
+}
+
+.chart-map-poi.locked.sel .chart-poi-name {
+  color: var(--text-faint);
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  width: 100%;
+  font-size: 0.72rem;
+  color: var(--text-faint);
+}
+
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chart-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--accent);
+  box-sizing: border-box;
+}
+
+.chart-swatch.roam {
+  background: transparent;
+  border-style: dashed;
+}
+
+.chart-swatch.locked {
+  background: transparent;
+  border-color: var(--text-faint);
+}
+
+/* 选中点位的信息面板 */
+.chart-info {
+  flex: 1 1 240px;
+  min-width: 0;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.chart-info.locked {
+  opacity: 0.75;
+}
+
+.chart-info-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chart-info-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.chart-info-zone {
+  font-size: 0.8rem;
+}
+
+.chart-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.chart-info-blurb {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin: 8px 0 10px;
+}
+
+.chart-tag {
+  font-size: 0.75rem;
+  padding: 1px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.chart-tag.mod {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.chart-tag.dist {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+/* 打捞行会 Lv.2：出海前选目标尸体 */
+.chart-poi-target {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+}
+
+.chart-target-select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.chart-target-select:focus {
+  outline: none;
+  border-color: var(--accent);
 }

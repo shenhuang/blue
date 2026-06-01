@@ -45,5 +45,6 @@ export type DialogEffect =
   | { kind: 'takeGold'; amount: number }
   | { kind: 'giveGold'; amount: number }
   | { kind: 'startDive'; zoneId: string }
+  | { kind: 'openChart' } // 摊开港口海图选点（切 phase 'chart'）
   | { kind: 'openShop'; shopId: string }
   | { kind: 'openUpgradeTree'; lineId: string };

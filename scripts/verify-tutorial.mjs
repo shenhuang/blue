@@ -6,7 +6,7 @@
 //
 // 跑法： node scripts/verify-tutorial.mjs
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -18,19 +18,45 @@ function load(rel) {
 }
 
 const items = load('src/data/items.json').items;
-const npcs = load('src/data/npcs.json');
-const eventsTut = load('src/data/events/tutorial.json').events;
-const eventsReef = load('src/data/events/reef.json').events;
-const events = [...eventsTut, ...eventsReef];
-const enemies = load('src/data/enemies/reef_shark.json');
+
+// npcs 现在按文件拆分到 src/data/npcs/<npcId>.json
+const NPC_DIR = resolve(ROOT, 'src/data/npcs');
+const npcFiles = readdirSync(NPC_DIR).filter((f) => f.endsWith('.json'));
+const npcs = {
+  npcs: [],
+  dialogs: {},
+};
+for (const f of npcFiles) {
+  const data = JSON.parse(readFileSync(resolve(NPC_DIR, f), 'utf-8'));
+  if (!data.npc) throw new Error(`${f}: missing top-level .npc`);
+  npcs.npcs.push(data.npc);
+  if (data.dialogs) Object.assign(npcs.dialogs, data.dialogs);
+}
+// 事件 / 敌人按目录扫描全部 JSON（加新文件自动纳入校验，不用再改这里——
+// 旧版手写 tutorial+reef+bluecaves 漏了 wreck_graveyard、手写 shark+eel 漏了 spider_crab）
+const EVENTS_DIR = resolve(ROOT, 'src/data/events');
+const events = readdirSync(EVENTS_DIR)
+  .filter((f) => f.endsWith('.json'))
+  .flatMap((f) => JSON.parse(readFileSync(resolve(EVENTS_DIR, f), 'utf-8')).events ?? []);
+
+const ENEMIES_DIR = resolve(ROOT, 'src/data/enemies');
+const enemyData = readdirSync(ENEMIES_DIR)
+  .filter((f) => f.endsWith('.json'))
+  .map((f) => JSON.parse(readFileSync(resolve(ENEMIES_DIR, f), 'utf-8')));
+const enemies = {
+  enemies: enemyData.flatMap((d) => d.enemies ?? []),
+  combatEncounters: enemyData.flatMap((d) => d.combatEncounters ?? []),
+};
 const upgrades = load('src/data/upgrades.json');
 const zones = load('src/data/zones.json').zones;
+const chartPois = load('src/data/chart_pois.json');
 
 const ITEM_IDS = new Set(items.map((i) => i.id));
 const EVENT_IDS = new Set(events.map((e) => e.id));
 const COMBAT_IDS = new Set((enemies.combatEncounters ?? []).map((c) => c.id));
 const ENEMY_IDS = new Set((enemies.enemies ?? []).map((e) => e.id));
 const ZONE_IDS = new Set(zones.map((z) => z.id));
+const UPGRADE_IDS = new Set(upgrades.lines.flatMap((l) => l.upgrades.map((u) => u.id)));
 
 const errors = [];
 const warnings = [];
@@ -112,6 +138,20 @@ for (const z of zones) {
       `zone ${z.id}: scriptedStartEventId ${z.scriptedStartEventId} not found`);
 }
 
+// —— 5b. 数据文件注册完整性 ——
+// 加了 JSON 却忘在引擎里 import = 静默不生效（最难查的一类 bug，纯 playthrough 也测不到）。
+// 强制：data 目录里每个 JSON 都必须出现在对应 registrar 的源码里。
+function assertRegistered(dataDirRel, registrarRel, label) {
+  const files = readdirSync(resolve(ROOT, dataDirRel)).filter((f) => f.endsWith('.json'));
+  const src = readFileSync(resolve(ROOT, registrarRel), 'utf-8');
+  for (const f of files) {
+    err(src.includes(f), `${label}：${dataDirRel}/${f} 未在 ${registrarRel} 注册（import 缺失 → 引擎静默不生效）`);
+  }
+}
+assertRegistered('src/data/events', 'src/engine/zones.ts', 'event 文件');
+assertRegistered('src/data/enemies', 'src/engine/combat.ts', 'enemy 文件');
+assertRegistered('src/data/npcs', 'src/engine/dialog.ts', 'NPC 文件');
+
 // —— 6. 端到端模拟 ——
 function findDialog(id) {
   for (const npc of npcs.npcs) if (npc.dialogRoot.id === id) return npc.dialogRoot;
@@ -189,8 +229,28 @@ dialog = findDialog('aldo.briefing');
 const visible = dialog.choices.filter((c) => checkCond(c.visibleIf));
 const labels = visible.map(c => c.label).join(' / ');
 log.push(`briefing 可见选项: ${labels}`);
-const lighthouse = visible.find(c => c.effects?.some(e => e.kind === 'startDive' && e.zoneId === 'zone.old_lighthouse_reef'));
-err(lighthouse, '教学完成后应有旧灯塔礁选项');
+// 海图取代了旧 zone 下拉：briefing 教学后应给 open_chart（而非逐个列 zone）
+const openChart = visible.find(c => c.effects?.some(e => e.kind === 'openChart'));
+err(openChart, '教学完成后 briefing 应有 open_chart 选项（海图取代了 zone 下拉）');
+
+// —— 6b'. 海图 POI 数据：引用完整性 + 关键点位/门控 ——
+log.push('\n--- 海图 POI 数据 ---');
+const anchors = chartPois.anchors ?? [];
+const templates = chartPois.roamingTemplates ?? [];
+for (const p of [...anchors, ...templates]) {
+  const tag = p.id ?? p.templateId;
+  err(ZONE_IDS.has(p.zoneId), `海图 POI ${tag}: zoneId ${p.zoneId} 不存在`);
+  if (p.requiresUpgrade) err(UPGRADE_IDS.has(p.requiresUpgrade), `海图 POI ${tag}: requiresUpgrade ${p.requiresUpgrade} 不存在`);
+}
+const lhAnchor = anchors.find((p) => p.zoneId === 'zone.old_lighthouse_reef');
+err(lhAnchor, '海图应有旧灯塔礁 anchor');
+err(lhAnchor && (lhAnchor.requiresFlags ?? []).includes('flag.tutorial_complete'),
+  '旧灯塔礁 anchor 应需 flag.tutorial_complete 才出现');
+err(lhAnchor && lhAnchor.requiresUpgrade === 'upgrade.dockyard.lv1',
+  '旧灯塔礁 anchor 应由 dockyard.lv1 门控抵达能力');
+err(anchors.some((p) => p.zoneId === 'zone.blue_caves'), '海图应有蓝洞群 anchor');
+err(anchors.some((p) => p.zoneId === 'zone.wreck_graveyard'), '海图应有沉船墓园 anchor');
+log.push(`  anchors: ${anchors.length} / roamingTemplates: ${templates.length} ✓`);
 
 // —— 6c. 旧灯塔礁的事件池在各深度都有可抽事件 ——
 log.push('\n--- 旧灯塔礁事件池 ---');
@@ -218,7 +278,7 @@ console.log(log.join('\n'));
 
 console.log('\n=== 数据完整性报告 ===');
 console.log(`items: ${items.length} ・ npcs: ${npcs.npcs.length} (+${Object.keys(npcs.dialogs).length} dialogs)`);
-console.log(`events: ${events.length} (tutorial ${eventsTut.length} + reef ${eventsReef.length})`);
+console.log(`events: ${events.length}（按目录扫描 src/data/events/*.json）`);
 console.log(`enemies: ${enemies.enemies.length} ・ combats: ${(enemies.combatEncounters ?? []).length}`);
 console.log(`zones: ${zones.length} ・ upgrades: ${upgrades.lines.reduce((a, l) => a + l.upgrades.length, 0)}`);
 
