@@ -1,0 +1,57 @@
+{
+  "enemies": [
+    {
+      "id": "enemy.reef_grouper",
+      "name": "石斑鱼",
+      "tier": "realistic",
+      "hp": 30,
+      "armor": 2,
+      "evasion": 1,
+      "speed": 6,
+      "threat": 4,
+      "hostility": "territorial",
+      "initialStance": "alerted",
+      "aiPattern": "observer",
+      "attacks": [
+        {
+          "id": "grouper.gulp",
+          "name": "吞口",
+          "damageType": "physical",
+          "damage": [6, 10],
+          "description": "它的嘴猛地张开，水朝它喉咙里塌进去——你也被那一吸拽得撞上它的牙板。",
+          "weight": 2
+        },
+        {
+          "id": "grouper.buffet",
+          "name": "侧撞",
+          "damageType": "physical",
+          "damage": [3, 6],
+          "description": "它把那身板似的肉横过来，闷闷地撞你一下，撞得你胸口发空。",
+          "weight": 3
+        }
+      ],
+      "physicalDamage": [3, 10],
+      "loot": {
+        "guaranteed": [{ "itemId": "item.grouper_maw", "qty": [1, 1], "weight": 1 }],
+        "rolls": [],
+        "rollCount": 0,
+        "victoryModifier": {
+          "kill": 1.0,
+          "flee": 0.3,
+          "scare": 0.0
+        }
+      },
+      "victoryConditions": ["kill", "flee"],
+      "loreEntry": "lore.reef_grouper"
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.reef_grouper_solo",
+      "party": {
+        "members": [{ "defId": "enemy.reef_grouper" }]
+      },
+      "introText": "它从礁檐下整个压出来，比你还长。一只眼睛钉着你，鳃盖一张一合。这片水是它的。"
+    }
+  ]
+}

@@ -262,6 +262,17 @@
       "sellPrice": 16,
       "decay": "durable",
       "tier": 4
+    },
+    {
+      "id": "item.grouper_maw",
+      "name": "石斑鱼鳔",
+      "category": "material",
+      "rarity": "common",
+      "description": "从那条石斑鱼肚里取出来的鱼鳔，半透明，沉甸甸的一兜。Mira 说港里有铺子论片收，但得趁新鲜送回去——搁久了就坏。",
+      "weight": 0.3,
+      "sellPrice": 15,
+      "decay": "organic",
+      "tier": 2
     }
   ]
 }

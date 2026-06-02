@@ -1,0 +1,14 @@
+{
+  "_comment": "旧灯塔礁中段 · 檐下的影，贴沙摸死角掏洞底（stamina vs 13）。满 stamina→rate 0.95 seed 1 通过（低 dc stamina check 只锁 success，quirk #49）。验证 territorial 避战取 loot 路径：oxygenTurnCost 2，coral+lobster loot（event scenario 不断言 loot）。fail 分支=被顶出洞口无战斗（stamina-7），大 seed 手验、不入 baseline。",
+  "eventId": "reef.coral_overhang",
+  "depth": 28,
+  "seed": 1,
+  "choices": ["sneak_larder"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2 }
+  }
+}

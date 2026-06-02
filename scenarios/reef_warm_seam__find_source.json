@@ -1,0 +1,14 @@
+{
+  "_comment": "旧灯塔礁浅段 · 一道暖水，顺着下到底看它从哪上来（无 check，uncanny）。验证浅段 no-check 探索 + lore 路径：lore.reef_shallows.the_warm_crack + sanity -3 + oxygenTurnCost 2。coral loot chance 0.3 不入断言。暖水从礁底缝里上来『像谁在底下慢慢呼吸』，呼应『下面』暗线但刻意不触发 d_reveal。",
+  "eventId": "reef.warm_seam",
+  "depth": 16,
+  "seed": 1,
+  "choices": ["find_source"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.reef_shallows.the_warm_crack"],
+    "statsDelta": { "oxygen": -2, "sanity": -3 }
+  }
+}

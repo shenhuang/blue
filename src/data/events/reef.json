@@ -860,6 +860,272 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "reef.silversides",
+      "depthRange": [10, 24],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "一墙银鱼",
+      "body": "阳光还够得到的水里，一墙小银鱼厚得遮住了太阳。\n你游近，它们让开——可那个让出来的空洞是个规整的球，始终把你扣在正中间，你停它也停。\n几万条鱼一齐转身，没有一条游开。它们不是在躲你。是在跟着你停。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "push_center",
+          "label": "往银墙最厚处挤，看它们围着什么",
+          "outcome": {
+            "text": "你拨开鱼往里挤。到最密的地方，中心是一小片空沙——一个浅浅的圆坑，里头什么都没有。\n它们围的不是你。是这片空地。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.4 }],
+            "deltas": { "sanity": -2 }
+          }
+        },
+        {
+          "id": "hold_still",
+          "label": "停下，让它们也停（理智 vs 46）",
+          "check": {
+            "stat": "sanity",
+            "dc": 46,
+            "onSuccess": {
+              "text": "你收住每一个动作。鱼墙收拢成一个固定的壳，每个方向到你的距离都一样——只有一处例外：朝着深水那侧的壁，比别处厚出一截，像在替你挡着什么。你记下，呼吸，游开。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -3 },
+              "loreEntry": "lore.reef_shallows.the_gap"
+            },
+            "onFailure": {
+              "text": "你盯着那个壳太久。一眨眼，整墙银鱼一齐没了，水里只剩太阳。\n你比记忆里更靠下了，光也暗了一格。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -8 }
+            }
+          }
+        },
+        {
+          "id": "swim_through",
+          "label": "直接穿过去，不停",
+          "outcome": {
+            "text": "你低头蹬腿撞进去。有一瞬整个世界是晃动的银，什么也看不见——出来的另一边，水是空的，太阳照常。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.sun_net",
+      "depthRange": [14, 25],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 3,
+      "oncePerRun": true,
+      "title": "沙上的网",
+      "body": "浅水的白沙上，太阳把一张晃动的光网铺在底上，随海面一起荡。你见过一千次。\n这一次，网中间有一小块——巴掌大的一格——是不动的。\n四周的光都在荡，水也在荡，只有那一格光纹钉在沙上，纹丝不动。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "stare",
+          "label": "盯着那块不动的光看（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你盯着它。一片云从太阳前过去，整张网暗下来——再亮起时，那一格也跟着大家荡了。\n是云。你告诉自己是云，慢慢把气吐匀。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.reef_shallows.the_still_square"
+            },
+            "onFailure": {
+              "text": "你越看，那一格越像是真正的底——而所有在荡的光，是蒙在底上一层很薄的东西的表面。\n你伸手去碰那格不动的沙。手指穿过了沙该在的地方，往下，没有底。\n等你回过神，你跪在沙上，一只手腕埋在沙里，氧气表早过了红线。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -12 }
+            }
+          }
+        },
+        {
+          "id": "look_away",
+          "label": "别开眼，从旁边绕过去",
+          "outcome": {
+            "text": "你把眼睛从那一格上挪开，侧身游过去。眼角里，光网荡得和别处一样。\n你没回头。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.warm_seam",
+      "depthRange": [12, 24],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "一道暖水",
+      "body": "你游过一道暖水。\n不是晒热的表层——是一条竖着的缝，两三米宽，水温和你嘴里一样，血一样温。穿过去，又是凉的礁水。\n这道暖水没有味道，也不流动。它就立在那儿，从下面上来。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "find_source",
+          "label": "顺着暖水下到底，看它从哪上来",
+          "outcome": {
+            "text": "你贴着那道暖顺下去，到礁底——它从岩缝里冒上来，一指宽的缝，匀匀地、温温地往上吐，从礁石底下某个地方。\n你把手罩在缝上。它一下一下地暖着你的掌心，间隔很稳，像谁在底下，慢慢地呼吸。",
+            "oxygenTurnCost": 2,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.3 }],
+            "deltas": { "sanity": -3 },
+            "loreEntry": "lore.reef_shallows.the_warm_crack"
+          }
+        },
+        {
+          "id": "hurry_through",
+          "label": "屏着气快游过去",
+          "outcome": {
+            "text": "你不去想它从哪来，蹬腿穿过那道温水。背上过了一阵暖，又凉了。\n你没停。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.coral_overhang",
+      "depthRange": [20, 38],
+      "zoneTags": ["reef"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "檐下的影",
+      "body": "一片珊瑚长成了向外探的礁檐，底下是一兜阴影。\n阴影里坐着个大东西——一整片板似的鱼，比你还长，嘴角向下抿成一条线，一只眼睛跟着你转。\n是条石斑。它没跑，只从檐下挪出半个身子，鳃盖一张，闷闷地撞了你胸口一下：警告。\n它身后，礁洞最里头，堆着它攒下的东西。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "draw_knife",
+          "label": "拔刀，把它从檐下逼出来",
+          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "outcome": {
+            "text": "你把刀亮出来，迎着它逼上去。那片板似的身子从阴影里整个压出来，嘴张开——水朝它嘴里塌了一下，你也被拽着往前一冲。",
+            "triggerCombatId": "combat.reef_grouper_solo"
+          }
+        },
+        {
+          "id": "sneak_larder",
+          "label": "贴沙摸到它转不开身的死角，掏洞底（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你贴着沙，绕到礁檐压得最低、它那身板转不过来的一侧。手伸进洞最里头——一窝肥龙虾，几块断得齐整的珊瑚，是它囤了不知多久的食。\n你在它挪过来之前退了出来。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.coral_shard", "qty": [1, 2] },
+                { "itemId": "item.lobster", "qty": [1, 1], "chance": 0.5 }
+              ]
+            },
+            "onFailure": {
+              "text": "你算错了礁檐的角度。它一个侧身撞上来，整个胸口挨了那闷闷的一下，你被顶得倒退，两手空空地刮出洞口。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -7 }
+            }
+          }
+        },
+        {
+          "id": "leave_ledge",
+          "label": "退开，把这檐让给它",
+          "outcome": {
+            "text": "你松开姿势，给那礁檐让出一大圈水。它缩回阴影里，那只眼睛盯着你，直到珊瑚把它挡住。\n它要的只是你走。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "cave.sump_pool",
+      "depthRange": [46, 60],
+      "zoneTags": ["cave"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "回水潭",
+      "body": "通道在这儿往下一沉，沉进一潭不流动的水里。\n那潭水比四周更冷、更沉，灯光打下去，照见对面通道在水潭另一头继续。\n潜过去近，绕过去远。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "dive_sump",
+          "label": "屏息潜过回水潭（体力 vs 14）",
+          "check": {
+            "stat": "stamina",
+            "dc": 14,
+            "onSuccess": {
+              "text": "你压下浮力，一口气贴着潭底潜过去。冷得指尖发木，但对面通道就在前头，一处石台上结着几丛硬珊瑚。",
+              "oxygenTurnCost": 2,
+              "loot": [{ "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.6 }]
+            },
+            "onFailure": {
+              "text": "你低估了潭的长度。潜到一半灯照不到头，你慌了一下，退回原处，呛了一口冷水。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -6 }
+            }
+          }
+        },
+        {
+          "id": "go_around",
+          "label": "绕远路，不潜回水潭（氧气 -2）",
+          "outcome": {
+            "text": "你顺着潭沿绕过去。多走了一截，背上一直凉着，但你始终知道哪边是来路。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "wreck.chain_locker",
+      "depthRange": [44, 60],
+      "zoneTags": ["wreck"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "锚链舱",
+      "body": "船头最里头一间小铁舱，锚链从舱顶的孔一圈圈堆下来，锈成一坨黑红的山。\n链山的缝里卡着些顺着锚链孔一道掉下来的东西——黄铜的、铁的，还有滚到角落的罐头。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "dig_chain",
+          "label": "扒开锚链，掏缝里的东西（体力 vs 14）",
+          "check": {
+            "stat": "stamina",
+            "dc": 14,
+            "onSuccess": {
+              "text": "你一节一节挪开沉重的锈链，从缝里抠出一把黄铜活计，还有两听滚进来的罐头。链子在你手底下一直想往回塌。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.brass_fitting", "qty": [1, 1] },
+                { "itemId": "item.canned_food", "qty": [1, 2], "chance": 0.5 }
+              ]
+            },
+            "onFailure": {
+              "text": "链山没扒动几下就整个塌了半边，砸在你护胸上，闷响在小铁舱里来回撞。你退出去，手是空的。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -7 }
+            }
+          }
+        },
+        {
+          "id": "grab_shackle",
+          "label": "只拿链山顶上那只松脱的卸扣",
+          "outcome": {
+            "text": "你不去动整座链山，只把最上面一只快脱开的黄铜卸扣拧下来，揣好就退。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.5 }]
+          }
+        },
+        {
+          "id": "leave_locker",
+          "label": "太挤，退出去",
+          "outcome": {
+            "text": "你看了一眼那坨随时会塌的链，退回过道。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
     }
   ]
 }

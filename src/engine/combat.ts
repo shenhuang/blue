@@ -21,6 +21,7 @@ import crabData from '@/data/enemies/wreck_spider_crab.json';
 import barracudaData from '@/data/enemies/reef_barracuda.json';
 import octopusData from '@/data/enemies/cave_octopus.json';
 import lanternData from '@/data/enemies/drowned_lantern.json';
+import grouperData from '@/data/enemies/reef_grouper.json';
 import { appendLog, addToInventory, clampStats } from './state';
 import { executeDeath } from './death';
 import { getItemDef } from './items';
@@ -37,6 +38,7 @@ for (const e of crabData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, 
 for (const e of barracudaData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
 for (const e of octopusData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
 for (const e of lanternData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
+for (const e of grouperData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
 
 const COMBAT_ENCOUNTERS: Map<string, CombatEncounterDef> = new Map();
 for (const c of (sharkData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
@@ -55,6 +57,9 @@ for (const c of (octopusData.combatEncounters as unknown as CombatEncounterDef[]
   COMBAT_ENCOUNTERS.set(c.id, c);
 }
 for (const c of (lanternData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
+  COMBAT_ENCOUNTERS.set(c.id, c);
+}
+for (const c of (grouperData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
   COMBAT_ENCOUNTERS.set(c.id, c);
 }
 

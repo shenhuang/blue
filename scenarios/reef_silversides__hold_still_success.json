@@ -1,0 +1,15 @@
+{
+  "_comment": "旧灯塔礁浅段 · 一墙银鱼，停下让它们也停（sanity vs 46，uncanny，fresh shallow-wrongness motif，非灯塔线）。满 sanity→rate 0.95（clamp 上限）seed 1 确定性通过。验证浅段 uncanny sanity check 通过分支：lore.reef_shallows.the_gap + sanity -3 + oxygenTurnCost 2。loot 走 coral（quirk #44，[shallow,reef] 隔离在灯塔礁）。刻意不触发 d_reveal。",
+  "eventId": "reef.silversides",
+  "depth": 16,
+  "seed": 1,
+  "choices": ["hold_still"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.reef_shallows.the_gap"],
+    "statsDelta": { "oxygen": -2, "sanity": -3 }
+  }
+}
