@@ -91,6 +91,7 @@ export function applyDialogEffects(
             oxygenMaxBonus: bonuses.oxygenMaxBonus,
             staminaMaxBonus: bonuses.staminaMaxBonus,
             extraConsumableSlot: bonuses.extraConsumableSlot,
+            sonarUnlocked: bonuses.sonarUnlocked,
           },
         });
         s = { ...s, run };

@@ -13,6 +13,7 @@ export type UpgradeEffect =
   | { kind: 'revealCorpseHint'; value: boolean }
   | { kind: 'preDiveCorpseSelect'; value: boolean }
   | { kind: 'currentSweepImmune'; value: boolean }
+  | { kind: 'unlockSonar'; value: boolean }
   | { kind: 'unlockShopItem'; itemId: string };
 
 /** 一条升级要求的某种材料及数量（qty 量级 ∈ [1,10]） */
@@ -63,6 +64,8 @@ export interface UpgradeBonuses {
   revealCorpseHint: boolean;
   preDiveCorpseSelect: boolean;
   currentSweepImmune: boolean;
+  /** 声呐能力是否已解锁（深水区 Phase 0a：门控在深料升级 upgrade.sonar.lv1）。 */
+  sonarUnlocked: boolean;
   unlockedZones: Set<string>;
   unlockedShopItems: Set<string>;
 }

@@ -110,14 +110,20 @@ L('  教学后有入口 / 教学前无入口 ✓');
 // ============================================
 // E. NodeSelectView · 低能见度（dark）遮蔽前方预览
 // ============================================
-L('\n========== E. NodeSelectView 盲航（dark） ==========');
-function diveState(visibility?: 'murky' | 'dark'): GameState {
+// 深水区 Phase 0a：预览遮蔽已移进引擎（enterNodeSelection 按 clarity 档烤 preview）；
+// NodeSelectView 成纯渲染器——按 choice.clarity 出样式 + 渲染传感器控制/电量。引擎侧门控由 playthrough-sensors 测。
+L('\n========== E. NodeSelectView clarity 渲染 + 传感器 + 电量 ==========');
+function diveState(opts?: { visibility?: 'murky' | 'dark'; sonarUnlocked?: boolean }): GameState {
   const base = createInitialGameState();
+  const r0 = createNewRun({
+    zoneId: 'zone.wreck_graveyard',
+    bonuses: { sonarUnlocked: opts?.sonarUnlocked },
+  });
   const run = {
-    ...createNewRun({ zoneId: 'zone.wreck_graveyard' }),
+    ...r0,
     currentDepth: 20,
     currentNodeId: 'n0',
-    diveModifier: visibility ? { visibility } : undefined,
+    diveModifier: opts?.visibility ? { visibility: opts.visibility } : undefined,
   };
   return {
     ...base,
@@ -125,20 +131,37 @@ function diveState(visibility?: 'murky' | 'dark'): GameState {
     phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } },
   };
 }
-const navChoices: NodeChoice[] = [
-  { nodeId: 'n1', depth: 25, zoneTag: 'wreck', preview: '一段倾斜的船体。' },
+// 引擎已按档烤好 preview；UI 渲染器只读 choice.clarity 配样式。
+const truthChoice: NodeChoice[] = [
+  { nodeId: 'n1', depth: 25, zoneTag: 'wreck', preview: '一段倾斜的船体。', clarity: 'full' },
 ];
-const htmlDark = renderToStaticMarkup(
-  <NodeSelectView state={diveState('dark')} choices={navChoices} onStateChange={noop} />,
+const blindChoice: NodeChoice[] = [
+  { nodeId: 'n1', depth: 25, zoneTag: 'wreck', preview: '看不清，一团黑影。', clarity: 'none' },
+];
+const sonarChoice: NodeChoice[] = [
+  { nodeId: 'n1', depth: 25, zoneTag: 'wreck', preview: '回波画出一处空腔，边缘是乱石。', clarity: 'sonar' },
+];
+
+const htmlTruth = renderToStaticMarkup(
+  <NodeSelectView state={diveState()} choices={truthChoice} onStateChange={noop} />,
 );
-assert(htmlDark.includes('看不清'), 'E: dark 时节点预览应被遮蔽');
-assert(!htmlDark.includes('一段倾斜的船体'), 'E: dark 时原预览文字应隐藏');
-const htmlClear = renderToStaticMarkup(
-  <NodeSelectView state={diveState()} choices={navChoices} onStateChange={noop} />,
+assert(htmlTruth.includes('一段倾斜的船体'), 'E: full 档渲染地面真相预览');
+assert(htmlTruth.includes('电量'), 'E: StatusBar 应有电量');
+assert(htmlTruth.includes('开灯') || htmlTruth.includes('熄灯'), 'E: 应有灯开关按钮');
+assert(!htmlTruth.includes('声呐 ping'), 'E: 未解锁声呐不应显示 ping 按钮');
+
+const htmlBlind = renderToStaticMarkup(
+  <NodeSelectView state={diveState({ visibility: 'dark' })} choices={blindChoice} onStateChange={noop} />,
 );
-assert(htmlClear.includes('一段倾斜的船体'), 'E: 正常能见度预览应可见');
-assert(!htmlClear.includes('看不清'), 'E: 正常能见度不应出现遮蔽文案');
-L('  dark 遮蔽预览 / clear 预览可见 ✓');
+assert(htmlBlind.includes('看不清'), 'E: none 档渲染盲航文案');
+assert(htmlBlind.includes('clar-none'), 'E: none 档预览应带 clar-none 样式类');
+
+const htmlSonar = renderToStaticMarkup(
+  <NodeSelectView state={diveState({ sonarUnlocked: true })} choices={sonarChoice} onStateChange={noop} />,
+);
+assert(htmlSonar.includes('clar-sonar'), 'E: sonar 档预览应带 clar-sonar 样式类');
+assert(htmlSonar.includes('声呐 ping'), 'E: 已解锁声呐应显示 ping 按钮');
+L('  full 真相 / none 盲 / sonar 表象 + 电量 + 灯开关 + 声呐门控 ✓');
 
 // ============================================
 // F. SeaChartView · 打捞行会 Lv.2 出海前选目标尸体

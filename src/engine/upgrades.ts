@@ -166,6 +166,7 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
     revealCorpseHint: false,
     preDiveCorpseSelect: false,
     currentSweepImmune: false,
+    sonarUnlocked: false,
     unlockedZones: new Set(),
     unlockedShopItems: new Set(),
   };
@@ -196,6 +197,9 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
           break;
         case 'currentSweepImmune':
           bonuses.currentSweepImmune = bonuses.currentSweepImmune || e.value;
+          break;
+        case 'unlockSonar':
+          bonuses.sonarUnlocked = bonuses.sonarUnlocked || e.value;
           break;
         case 'unlockZone':
           bonuses.unlockedZones.add(e.zoneId);

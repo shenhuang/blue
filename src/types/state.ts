@@ -67,6 +67,29 @@ export interface DeathRecord {
   timestamp: number;
 }
 
+/**
+ * 微观感知预览档（深水区 Phase 0a，SPEC §3.1/§3.2）：
+ *  - 'full'：灯有效——相邻节点的"地面真相"（细节高、能读 tell）。
+ *  - 'sonar'：关灯但声呐 ping——远端"不可信的返回"（≠ 真内容，可被躲 / 骗 / 低 san 幻觉改写）。
+ *  - 'none'：摸黑——无预览、盲航（沿用旧 visibility:dark 行为，quirk #27/#41）。
+ */
+export type ClarityTier = 'full' | 'sonar' | 'none';
+
+/**
+ * 微观双传感器状态（深水区 Phase 0a）。灯＝近距真相 + 解锁信息、暴露(signature)高；
+ * 声呐＝远距不可信回波、暴露低、费电。关灯关声呐＝致盲但最隐蔽（主动感知是双向的）。
+ * 声呐能力本身是后期解锁（sonarUnlocked，门控在深料升级 upgrade.sonar.lv1）——
+ * 早期＝仅有灯，黑水区天然探索受限，玩家先经历"黑暗中无声呐"（作者 2026-06-02）。
+ */
+export interface SensorState {
+  /** 探照灯开关。开＝灯有效时近距真相 + 解锁信息，但抬高 signature。默认开。 */
+  light: boolean;
+  /** 声呐模式。'ping'＝本次选点扫一发（耗电、回波不可信）；'off'＝不扫。默认 off。移动后归 off（脉冲是瞬时的）。 */
+  sonar: 'off' | 'ping';
+  /** 声呐能力是否已解锁（升级派生，后期才有）。未解锁则 ping 不可用、黑水保持盲航。 */
+  sonarUnlocked: boolean;
+}
+
 /** 玩家在当次下潜中的资源、装备、背包 */
 export interface RunState {
   runId: string;
@@ -86,6 +109,15 @@ export interface RunState {
   pendingDecompression: DecompressionDebt;
   activeFlags: Set<string>; // 本次下潜临时 flag
   triggeredEventIds: string[]; // 用于 oncePerRun / cooldown 判定
+  /**
+   * 微观双传感器状态（深水区 Phase 0a）。createNewRun 设默认（灯开 / 声呐 off / 声呐能力按升级派生），
+   * 旧档迁移补默认（SAVE_VERSION 4→5）。
+   */
+  sensors: SensorState;
+  /** 电池储备（类比 oxygen 的 run 级储备）：灯/声呐耗电；归零 → 强制摸黑（致盲不直接死）。 */
+  power: number;
+  /** 电池总量（升级可提升，留 Phase 2 / 升级轨）。 */
+  powerMax: number;
   /**
    * 本次下潜所选 POI 的环境修正（来自海图）。depthOffset 已在 mapgen 生成时消化进各层深度；
    * current / visibility 暂存于此供未来 hook 读取（冲走 / 光照效果待实装）。可选 → 旧存档/脚本省略即无修正。
@@ -153,6 +185,11 @@ export interface NodeChoice {
   kind?: NodeKind;
   /** 迷路图：该节点此前是否已到访过（回头/绕回时给"已来过"提示，盲航时也显示） */
   visited?: boolean;
+  /**
+   * 该选项预览的感知档（深水区 Phase 0a）：'full' 灯下真相 / 'sonar' 声呐不可信表象 / 'none' 盲。
+   * enterNodeSelection 计算并把对应 preview 文案烤进本结构（引擎侧门控，便于回归断言）；UI 据此渲染样式。
+   */
+  clarity?: ClarityTier;
 }
 
 /** 下潜结算结果 */

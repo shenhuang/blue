@@ -200,6 +200,8 @@ export interface RunStartBonuses {
   oxygenMaxBonus: number;
   staminaMaxBonus: number;
   extraConsumableSlot: number;
+  /** 声呐能力是否已解锁（深水区 Phase 0a：来自全局升级 upgrade.sonar.lv1）。 */
+  sonarUnlocked: boolean;
 }
 
 /**
@@ -215,6 +217,7 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
     oxygenMaxBonus: g.oxygenMaxBonus,
     staminaMaxBonus: g.staminaMaxBonus,
     extraConsumableSlot: g.extraConsumableSlot + homeSlot,
+    sonarUnlocked: g.sonarUnlocked,
   };
 }
 

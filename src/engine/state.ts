@@ -11,8 +11,9 @@ import type {
   LogEntry,
   Lighthouse,
 } from '@/types';
+import { POWER_MAX } from './clarity';
 
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 5;
 
 /** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile + migrateSave 共用一个来源。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
@@ -123,11 +124,14 @@ export function createNewRun(opts: {
     oxygenMaxBonus?: number;
     staminaMaxBonus?: number;
     extraConsumableSlot?: number;
+    /** 声呐能力是否已解锁（深水区 Phase 0a；省略 = 未解锁 = 早期仅有灯）。 */
+    sonarUnlocked?: boolean;
   };
 }): RunState {
   const oxygenBonus = opts.bonuses?.oxygenMaxBonus ?? 0;
   const staminaBonus = opts.bonuses?.staminaMaxBonus ?? 0;
   const slotBonus = opts.bonuses?.extraConsumableSlot ?? 0;
+  const sonarUnlocked = opts.bonuses?.sonarUnlocked ?? false;
 
   const staminaMax = 100 + staminaBonus;
   const oxygenMax = 60 + oxygenBonus;
@@ -153,6 +157,10 @@ export function createNewRun(opts: {
     pendingDecompression: { requiredStops: 0, bendsRisk: 0 },
     activeFlags: new Set(),
     triggeredEventIds: [],
+    // 深水区 Phase 0a：灯默认开（清水里＝今天的"所见为真"），声呐 off + 能力按升级派生，电池满。
+    sensors: { light: true, sonar: 'off', sonarUnlocked },
+    power: POWER_MAX,
+    powerMax: POWER_MAX,
   };
 }
 
@@ -271,6 +279,20 @@ function migrateSave(obj: unknown): GameState | null {
           }
         }
         v = 4;
+        break;
+      }
+      case 4: {
+        // 4→5（深水区 Phase 0a · 微观双传感器）：给"正在下潜中存档"的旧 run 补默认 sensors/power。
+        // 旧档默认声呐未解锁（早期仅有灯）；不在下潜时 run=null 无需迁移（出海时 createNewRun 现种字段）。
+        const run = o.run as Record<string, unknown> | null | undefined;
+        if (run && typeof run === 'object') {
+          if (!run.sensors || typeof run.sensors !== 'object') {
+            run.sensors = { light: true, sonar: 'off', sonarUnlocked: false };
+          }
+          if (typeof run.power !== 'number') run.power = POWER_MAX;
+          if (typeof run.powerMax !== 'number') run.powerMax = POWER_MAX;
+        }
+        v = 5;
         break;
       }
       default:

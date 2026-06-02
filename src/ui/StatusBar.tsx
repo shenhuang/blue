@@ -34,6 +34,7 @@ export function StatusBar({ run }: Props) {
         <StatPill label="氧气" value={stats.oxygen} max={oxygenMax} tint="cyan" suffix=" 回合" />
         <StatPill label="氮气" value={stats.nitrogen} max={100} tint="yellow" invert />
         <StatPill label="理智" value={stats.sanity} max={100} tint="violet" />
+        <StatPill label="电量" value={run.power} max={run.powerMax} tint="amber" />
       </div>
       <div className={`status-warn ${overstayed ? 'danger' : ''}`}>
         氧气剩余 {remainingOxygenTurns} 回合 ・ 安全上浮需 {ascentTurns} 回合
@@ -47,7 +48,7 @@ interface PillProps {
   label: string;
   value: number;
   max: number;
-  tint: 'green' | 'cyan' | 'yellow' | 'violet';
+  tint: 'green' | 'cyan' | 'yellow' | 'violet' | 'amber';
   suffix?: string;
   invert?: boolean;
 }

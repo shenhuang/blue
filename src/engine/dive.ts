@@ -1,7 +1,16 @@
 // Dive 引擎：节点移动、回合 tick、上浮判定
 // 与 events.ts 解耦：events 负责事件内的 outcome 应用；dive 负责事件间的"地图层"逻辑
 
-import type { GameState, RunState, DiveNode, DiveMap, ChartPoi, CurrentStrength } from '@/types';
+import type {
+  GameState,
+  RunState,
+  DiveNode,
+  DiveMap,
+  ChartPoi,
+  CurrentStrength,
+  NodeChoice,
+  ClarityTier,
+} from '@/types';
 import { tickTurns } from './events';
 import { generateDiveMap, getNextChoices } from './mapgen';
 import { getZone } from './zones';
@@ -10,6 +19,14 @@ import { getUpgradeBonuses } from './upgrades';
 import { getRunBonuses } from './lighthouses';
 import { effectiveDistance } from './chart';
 import { executeDeath } from './death';
+import {
+  clarity,
+  sonarReturn,
+  lampPreview,
+  BLIND_PREVIEW,
+  BLIND_VISITED_PREVIEW,
+  SONAR_PING_COST,
+} from './clarity';
 
 /** 编译期穷尽性检查：将来新增 NodeKind 却忘了在 moveToNode 里处理时，这里会直接报类型错误。 */
 function assertNever(x: never): never {
@@ -99,6 +116,7 @@ export function startDiveFromPoi(
       oxygenMaxBonus: bonuses.oxygenMaxBonus,
       staminaMaxBonus: bonuses.staminaMaxBonus,
       extraConsumableSlot: bonuses.extraConsumableSlot,
+      sonarUnlocked: bonuses.sonarUnlocked,
     },
   });
 
@@ -139,6 +157,15 @@ export function startDiveFromPoi(
           ? '光几乎照不进来，探照灯只够看清面前一臂。'
           : '悬浮物把光散成一团白，看不远。',
     });
+    // 黑水里灯打不透 → 教学声呐 / 声呐门控（深水区 Phase 0a）
+    if (m.visibility === 'dark') {
+      s = appendLog(s, {
+        tone: 'uncanny',
+        text: run.sensors.sonarUnlocked
+          ? '（灯吃不透这片黑。也许声呐还能从前方探回点轮廓——只是回波信不信得过，另说。）'
+          : '（灯吃不透这片黑。你没有能用的声呐，只能贴着石壁一点点摸过去。）',
+      });
+    }
   }
   return s;
 }
@@ -162,30 +189,103 @@ export function enterNodeSelection(state: GameState): GameState {
   // 打捞行会 Lv.1（revealCorpseHint）才在选点界面"预知"尸体；否则尸体节点伪装成普通水道，
   // 玩家只能撞上去才发现（moveToNode 仍按 kind==='corpse' 路由到 CorpseView，与提示无关）。
   const revealCorpseHint = getUpgradeBonuses(state.profile).revealCorpseHint;
+  // 微观 clarity（深水区 Phase 0a）：灯 full（真相）/ 声呐 sonar（不可信表象）/ 摸黑 none（盲）。
+  // 引擎侧把对应预览文案烤进 choice（便于 playthrough-sensors 断言，承 quirk #38「别只测引擎」）。
+  const tier = clarity(run);
+  const NEUTRAL_CORPSE = '前方的水暗下去，看不清里面有什么。';
+
+  const choices: NodeChoice[] = nextChoices.map((n) => {
+    const isCorpse = n.kind === 'corpse';
+    // 地标（上浮口 / 气穴 / 扎营点）结构性可感——盲航也认得，始终给真相文案、不被声呐/盲改写。
+    const isLandmark = n.kind === 'ascent_point' || n.kind === 'air_pocket' || n.kind === 'camp';
+    const visited = visitedSet.has(n.id);
+
+    let preview: string;
+    let choiceTier: ClarityTier;
+    if (isLandmark) {
+      preview = n.preview;
+      choiceTier = 'full';
+    } else if (tier === 'full') {
+      // 灯下真相（san 极低时 lampPreview 把它改写成幻觉）；尸体无 Lv.1 仍伪装成中性水道。
+      preview = isCorpse && !revealCorpseHint ? NEUTRAL_CORPSE : lampPreview(run, n);
+      choiceTier = 'full';
+    } else if (tier === 'sonar') {
+      preview = sonarReturn(run, n); // 不可信表象（≠ 真内容，可被躲/骗/低 san 假回波改写）
+      choiceTier = 'sonar';
+    } else {
+      preview = visited ? BLIND_VISITED_PREVIEW : BLIND_PREVIEW;
+      choiceTier = 'none';
+    }
+
+    return {
+      nodeId: n.id,
+      depth: n.depth,
+      zoneTag: n.zoneTag,
+      preview,
+      isAscentPoint: n.kind === 'ascent_point',
+      kind: n.kind,
+      // 尸体提示只在灯下（full）+ 有 Lv.1 才给——声呐/盲都读不出"熟悉的轮廓"。
+      hasCorpseHint: isCorpse && revealCorpseHint && tier === 'full',
+      visited,
+      clarity: choiceTier,
+    };
+  });
 
   return {
     ...state,
-    phase: {
-      kind: 'dive',
-      subPhase: {
-        kind: 'nodeSelect',
-        choices: nextChoices.map((n) => {
-          const isCorpse = n.kind === 'corpse';
-          return {
-            nodeId: n.id,
-            depth: n.depth,
-            zoneTag: n.zoneTag,
-            // 无 Lv.1 时不剧透 corpse 的"熟悉的轮廓"预览，换成中性水道描述
-            preview: isCorpse && !revealCorpseHint ? '前方的水暗下去，看不清里面有什么。' : n.preview,
-            isAscentPoint: n.kind === 'ascent_point',
-            kind: n.kind,
-            hasCorpseHint: isCorpse && revealCorpseHint,
-            visited: visitedSet.has(n.id),
-          };
-        }),
-      },
-    },
+    phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices } },
   };
+}
+
+/** 选点期若在 nodeSelect，重算预览（切灯 / ping 后刷新；其它 phase 原样返回）。 */
+function refreshSelection(state: GameState): GameState {
+  if (state.phase.kind === 'dive' && state.phase.subPhase.kind === 'nodeSelect') {
+    return enterNodeSelection(state);
+  }
+  return state;
+}
+
+/**
+ * 切换探照灯（深水区 Phase 0a）。开＝灯有效时近距真相 + 解锁信息，但抬高 signature（被探测，0b 接战斗）；
+ * 关＝省电、最隐蔽，但盲。主动感知是双向的——看清世界＝把自己暴露给世界。
+ */
+export function setLight(state: GameState, on: boolean): GameState {
+  const run = state.run;
+  if (!run) return state;
+  if ((run.sensors?.light ?? true) === on) return state;
+  let s: GameState = { ...state, run: { ...run, sensors: { ...run.sensors, light: on } } };
+  s = appendLog(s, {
+    tone: 'realistic',
+    text: on
+      ? '你打开探照灯，一柱光劈进水里。'
+      : '你关掉灯。黑暗合拢上来——但你也不再是黑水里那么扎眼的一团亮。',
+  });
+  return refreshSelection(s);
+}
+
+/**
+ * 发一记声呐 ping（深水区 Phase 0a）：耗一大口电，本次选点改读"不可信的声呐返回"（≠ 真内容）。
+ * 需已解锁声呐能力（后期深料升级）；电量不足则只叙事不消费。移动后 ping 自动消散（脉冲是瞬时的）。
+ */
+export function pingSonar(state: GameState): GameState {
+  const run = state.run;
+  if (!run) return state;
+  if (!(run.sensors?.sonarUnlocked ?? false)) {
+    return appendLog(state, { tone: 'system', text: '你还没有能用的声呐。' });
+  }
+  if ((run.power ?? 0) < SONAR_PING_COST) {
+    return appendLog(state, { tone: 'realistic', text: '电量不够再发一记声呐了。' });
+  }
+  const power = Math.max(0, (run.power ?? 0) - SONAR_PING_COST);
+  let s: GameState = {
+    ...state,
+    run: { ...run, power, sensors: { ...run.sensors, sonar: 'ping' } },
+  };
+  s = appendLog(s, {
+    tone: 'uncanny',
+    text: '你发出一记脉冲。回波荡了回来——只是你说不准能不能信它。',
+  });
+  return refreshSelection(s);
 }
 
 /**
@@ -214,6 +314,8 @@ function applyTransit(state: GameState, target: DiveNode): GameState {
     currentDepth: target.depth,
     currentNodeId: target.id,
     visitedNodeIds: [...ticked.visitedNodeIds, target.id],
+    // 声呐脉冲是瞬时的：移动后归 off，下个路口要重新 ping（深水区 Phase 0a）。
+    sensors: { ...ticked.sensors, sonar: 'off' },
   };
 
   // 洋流（海图 POI 修正）：每次移动额外耗体力 + 氧气（在死亡判定前应用，使洋流耗氧也能致死）

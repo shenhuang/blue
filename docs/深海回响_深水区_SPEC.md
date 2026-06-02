@@ -188,6 +188,7 @@
 - 2026-06-02（续，「pin it down」对话）：定 §7.1 **声呐独立**（不接灯塔网）；**声呐返回不可信**（生物躲/骗 + 低 san 幻觉）＝核心欺骗面、把「是世界坏了还是你疯了」做成屏上一物；灯近距地面真相、声呐远距不可信；**耗电**（声呐 >> 灯）+ **暴露**（灯高、声呐较低）双轴权衡；灯/声呐 效果·耗能·电量**可升级**（接材料经济）。已并入 §2/§3.2/§3.3/§6/§8。**Phase 0 设计基本 pin 实。**
 - 2026-06-02（续，「继续 pin」Phase 1-2）：定 **蛙跳下潜**（一潜一 band、从最深前哨起、复用 depthOffset + reach/reveal + 尸体回收）；**前哨经济**——水上前哨只增不减、水下前哨衰减（水流区更快、但可水力发电）；**能源**（base 层、≠ 潜水员电池）决定同时在线设施数；补给（充电/充氧/中转）是设施、越深越要自建；**灯也会在 san 足够低时幻觉**（无完全可信传感器、灯最后崩）。并入 §3.2/§3.6（新）/§5 P1-P2/§6/§7（#4#6 resolved、新增 #7#8）/§8。**Phase 1-2 设计 pin 实；剩衰减后果细节（§7#7）+ Phase 3 mimic 逐拍演出。**
 - 2026-06-02（续，收束）：定 **理智＝双向门**——低 san 解锁可探索的「另一个世界」（亦真亦假、拒绝裁决；§1 + §3.7 新增），把低-san 门控从死内容（quirk #21）变成正向去处；衰减后果加重为 **变暗 + 修建进度回退 + 寄存材料丢失**（§3.6 / §7#7 resolved）。**Phase 3（mimic 演出 + 另一个世界）＝与作者一起一个个敲定的专门 session，不在草案写死；Phase 0 仍是下一个 build 起手。**
+- 2026-06-03（**Phase 0a 开建** · 深水区第一笔代码）：实装微观双传感器 clarity + 不可信声呐 + 电池 + 低 san 腐蚀（详见 STATUS quirk #58）。建前作者过 §7/§11 取舍，四点拍板（AskUserQuestion）：① clarity↔visibility＝**并入·保留字段**（dark→灯打不透→`none`，`murky` 不挡灯）；② 浅水手感＝**默认灯亮·浅水近免费**（电/声呐张力只在 dark/深 band）；③+④ 作者中途**复盘声呐**：先想"仅做灯"，旋即意识到**黑暗里仅有灯无法继续探索→声呐是必需的**，回到本 SPEC 双传感器模型，并**新增关键约束：声呐能力后期才解锁（深料升级），玩家先经历"黑暗中无声呐"、黑水天然探索受限，分级解锁（即使有灯仍有受限处）**。据此偏差三点并入 §11 0a（声呐解锁轨 / `clarity(run)` 不带 node / visibility 并入非删）。低 san 阈值＝声呐<60、灯<25（§8 tunable）。**0b（探测/隐身、碰 combat、消费 signature）留下一 session。**
 
 ---
 
@@ -195,25 +196,30 @@
 
 > 给开建 Phase 0 的 session。**0b 依赖 0a 的 `signature`**；每个勾选项收尾跑全绿（§9）。先 0a（纯感知、不碰 combat、可独立全绿），再 0b。
 
-### 0a — 微观 clarity + 不可信声呐（纯感知，不碰 combat）
+### 0a — 微观 clarity + 不可信声呐（纯感知，不碰 combat）✅ 已实装（2026-06-03，提交见 STATUS quirk #58）
+
+**实装期三处与原清单的偏差（作者在场敲定，见 §10 决策日志 2026-06-03）：**
+1. **声呐后期解锁**（作者新增）：声呐能力门控在深料升级 `upgrade.sonar.lv1`（T4 冷光腺 + T3 料 + 金）。早期＝仅有灯，黑水区天然探索受限——玩家先经历"黑暗中无声呐"，再分级解锁。`run.sensors.sonarUnlocked` 派生自 `getUpgradeBonuses().sonarUnlocked`。
+2. **`clarity(run)` 而非 `clarity(run, node)`**：0a 的预览档只读 run 级传感器状态（灯/声呐/电/dark）；node 级细分（按深度/band 提成本曲线）留 Phase 1。
+3. **`DiveModifier.visibility` 并入而非删除**：作为 clarity 的**输入**保留（`dark` → 灯打不透 → `none`；`murky` 不挡灯但耗电 + 理智压力照旧）。`visibilitySanityDrain` 不动。
 
 **数据 / 类型**
-- [ ] run 加 `sensors: { light: boolean; sonar: 'off'|'ping' }` + `power: number`（电池储备）；派生 `signature(run)`。
-- [ ] 新 `engine/clarity.ts`：`clarity(run, node)` → 预览档（`full` 真相 / `sonar` 远端表象 / `none` 盲）；`sonarReturn(run, node)` → 声呐对该节点的表象（可被改写、≠ 真内容）。
-- [ ] 节点可选字段 `evadesSonar?` / `spoofsSonar?`（生物/地标用；先加字段 + 默认不改写，留 Phase 3 填）。
-- [ ] `DiveModifier.visibility` 退役 → 并入 clarity（旧 `dark`＝clarity 的 `none` 档，沿用 quirk #27/#41 盲航 + #36 尸体提示门控）。
+- [x] run 加 `sensors: { light; sonar; sonarUnlocked }` + `power`/`powerMax`（电池）；派生 `signature(run)`（`engine/clarity.ts`）。
+- [x] 新 `engine/clarity.ts`：`clarity(run)` → 预览档（`full`/`sonar`/`none`）；`sonarReturn(run, node)` → 不可信表象（可被 evade/spoof/低 san 改写、≠ 真内容）；`lampPreview(run, node)`（真相 / 极低 san 幻觉）。tunables 集中文件顶（§8）。
+- [x] 节点可选字段 `evadesSonar?` / `spoofsSonar?`（先加字段 + 默认不改写，留 Phase 3 填；`sonarReturn` 已读它们）。
+- [x] `DiveModifier.visibility` 并入 clarity（旧 `dark`＝`none` 档，沿用 quirk #27/#41 盲航 + #36 尸体提示门控）。
 
 **引擎**
-- [ ] `dive.ts::enterNodeSelection`：预览改读 `clarity(run, node)`——灯=相邻真相 / 声呐 ping=远端走 `sonarReturn`（可不实）/ 摸黑=无预览。
-- [ ] 传感器开关 + ping：dive 操作切 `sensors`；ping 耗一大口 power + 落一次远端 `sonarReturn` 快照；灯每回合耗少量 power；`power` 归 0 → 强制摸黑。
-- [ ] 低 san 注入（接 §3.2/§3.7）：低 `sanityRange` 时 `sonarReturn` 注入假回波；更低阈值时灯也产假预览（无完全可信传感器）。
-- [ ] `tickTurns`/移动消费 power（类比 oxygen 的 turn 消耗）。
+- [x] `dive.ts::enterNodeSelection`：按 `clarity(run)` 把每个选项 preview 烤成 真相 / `sonarReturn` 表象 / 盲（地标盲航仍显示）；choice 带 `clarity` 档供 UI。
+- [x] 传感器开关 + ping：`setLight` / `pingSonar`（耗 `SONAR_PING_COST` 电 + sonar='ping' + 刷新选点；需已解锁；移动后 ping 归 off）；`power` 归 0 → `clarity` 强制 `none`。
+- [x] 低 san 注入（§3.2/§3.7）：san < `SONAR_FALSE_ECHO_SANITY`(60) → `sonarReturn` 注入假回波；san < `LAMP_HALLUCINATION_SANITY`(25) → 连灯也产假预览。确定性哈希（不消耗 RNG），叙述永不交底（#54）。
+- [x] `tickTurns` 消费 power（灯耗电，清水因子 0 → 浅水近免费；黑水/微浊才耗；类比 oxygen）。
 
-**存档** — [ ] SAVE_VERSION bump + `migrateSave` 给旧档默认 `sensors`/`power`；`playthrough-save` 加一步（quirk #39）。
+**存档** — [x] SAVE_VERSION 4→5 + `migrateSave` case 4 给下潜中旧 run 补默认 `sensors`/`power`；`playthrough-save` 加 step 6d（quirk #39）。
 
-**UI** — [ ] `NodeSelectView` 按 clarity 档渲染预览（真相 / 声呐表象 / 盲）+ 传感器开关 + 电量；`StatusBar` 加电量。[ ] **补 `smoke-chart-ui.tsx` SSR 断言**（碰 UI 数据路径，quirk #38）。
+**UI** — [x] `NodeSelectView` 成纯渲染器：按 `choice.clarity` 渲染预览 + 灯开关 / 声呐 ping 按钮（门控解锁 + 电量）；`StatusBar` 加电量 pill。[x] `smoke-chart-ui.tsx` E 改写为 clarity 渲染 + 电量 + 传感器断言（quirk #38）。
 
-**回归** — [ ] 新 `playthrough-sensors.ts`：灯预览=真相 / 声呐 ping 可被 spoof 改写 / 摸黑无预览 + power 归零强制摸黑 / 低 san 假回波 / 更低 san 灯幻觉。全绿 + prod build。
+**回归** — [x] 新 `playthrough-sensors.ts`（10 节）：灯=真相 / 黑水无声呐=盲 / ping 可被 spoof 改写 + 耗电 / 未解锁 ping 无效 / power 归零摸黑 / 低 san 假回波 / 更低 san 灯幻觉 / tickTurns 分级耗电 / 移动 ping 消散 / signature 排序。全绿 + prod build。
 
 ### 0b — 探测 / 隐身（碰 combat，依赖 0a 的 signature）
 
@@ -224,6 +230,7 @@
 - [ ] 平衡：signature 权重、警觉阈值、ambush 触发（§8 tunables）。
 
 ### 升级（0a 尾或挪 Phase 2）
-- [ ] 灯/声呐 效果·耗能 + 电量做 `upgrades.json` 轨（材料经济双资源）；`getUpgradeBonuses` 聚合进 run sensors 派生。
+- [x] **声呐解锁轨**（0a 已做）：`upgrade.sonar.lv1`（`line.sonar_rig`，深料账单：lantern_gland T4 + eel_skin/cave_octopus_beak T3 + 金）→ `unlockSonar` effect → `getUpgradeBonuses().sonarUnlocked` → `getRunBonuses` → `createNewRun` 种 `run.sensors.sonarUnlocked`。
+- [ ] 灯/声呐 **效果·耗能 + 电量** 档位（范围/分辨/抗欺骗 + 各传感器耗电 + powerMax）做升级轨（材料经济双资源）；聚合进 run sensors 派生。留 Phase 2 / 后续。
 
 **全程守 §9**：每勾全绿、SAVE_VERSION 迁移、UI 补 smoke、tunables 集中（§8）、叙述永不交底（低 san 假回波/幻觉文案也不交底）。

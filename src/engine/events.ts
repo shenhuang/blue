@@ -13,6 +13,7 @@ import type {
 } from '@/types';
 import { addToInventory, appendLog, clampStats } from './state';
 import { restoreLighthouse } from './lighthouses';
+import { lampPowerDrain } from './clarity';
 
 // —— 数据装载 ——
 // 单一事件库是 zones.ts::EVENT_DB（含全部 zone 的事件）。getEvent 直接委托给它，
@@ -287,5 +288,9 @@ export function tickTurns(run: RunState, turns: number): RunState {
     stats.sanity = Math.max(0, stats.sanity - visDrain);
   }
 
-  return { ...run, stats, turn: run.turn + turns };
+  // 深水区 Phase 0a：灯耗电（清水因子 0 → 浅水近免费；黑水/微浊才耗；归零 → clarity 强制摸黑）。
+  const curPower = run.power ?? 0;
+  const power = Math.max(0, curPower - lampPowerDrain(run, turns));
+
+  return { ...run, stats, power, turn: run.turn + turns };
 }

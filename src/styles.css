@@ -705,6 +705,32 @@ html, body, #root {
   flex: 1;
 }
 
+/* 深水区 Phase 0a：声呐表象不可信（暖色斜体）、盲航更暗。灯下真相用默认色。 */
+.node-preview.clar-sonar {
+  color: var(--warn);
+  font-style: italic;
+}
+.node-preview.clar-none {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+/* 传感器控制行（灯 / 声呐 ping） */
+.sensor-controls {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+.sensor-btn {
+  flex: 1;
+  font-size: 0.85em;
+  padding: 6px 10px;
+}
+.sensor-btn.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .node-hint {
   margin-top: 6px;
   font-size: 12px;
@@ -787,6 +813,7 @@ html, body, #root {
 .tint-cyan .stat-fill { background: var(--cyan); }
 .tint-yellow .stat-fill { background: var(--yellow); }
 .tint-violet .stat-fill { background: var(--violet); }
+.tint-amber .stat-fill { background: var(--warn); }
 
 .stat-fill.invert { background: var(--warn); }
 

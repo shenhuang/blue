@@ -64,10 +64,18 @@ export interface DiveNode {
   corpseRecordId?: string;
   /** 该节点能去往下一层的节点 ids */
   connectsTo: string[];
-  /** 节点选择时的简短预览文本 */
+  /** 节点选择时的简短预览文本（灯下看到的"地面真相"；声呐表象 / 盲航由 clarity 在选点时改写） */
   preview: string;
   /** UI 提示：附近可能有尸体 */
   hasCorpseHint?: boolean;
+  /**
+   * 深水区 Phase 0a 声呐钩子（默认 unset，留 Phase 3 mimic / 深水生物填；先加字段不改写）：
+   *  - evadesSonar：该节点对声呐"没回波"（生物躲开声呐）。
+   *  - spoofsSonar：该节点给声呐"喂假回波"——把自己显示成此处写的东西（地形 / 信标 / 空水，mimic 即此类）。
+   * 仅影响 `engine/clarity.ts::sonarReturn` 的不可信表象；灯（近距真相）不被改写。
+   */
+  evadesSonar?: boolean;
+  spoofsSonar?: string;
 }
 
 export type NodeKind =

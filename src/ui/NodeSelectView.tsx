@@ -1,5 +1,6 @@
 import type { GameState, NodeChoice } from '@/types';
-import { moveToNode } from '@/engine/dive';
+import { moveToNode, setLight, pingSonar } from '@/engine/dive';
+import { clarity, SONAR_PING_COST } from '@/engine/clarity';
 import { StatusBar } from './StatusBar';
 
 interface Props {
@@ -10,35 +11,64 @@ interface Props {
 
 export function NodeSelectView({ state, choices, onStateChange }: Props) {
   if (!state.run) return null;
+  const run = state.run;
 
-  // 能见度（海图 POI 修正）：dark 时看不清前方，节点预览被遮蔽（盲航）。
-  // 深度数字 + 上浮口标识仍显示——你有深度表，也分得清向上的礁脊。
-  const blind = state.run.diveModifier?.visibility === 'dark';
+  // 当前预览档（深水区 Phase 0a）：灯 full / 声呐 sonar / 摸黑 none。
+  // 每个选项的预览文案已由引擎 enterNodeSelection 按档烤进 choice.preview；这里只渲染 + 按档配样式。
+  const tier = clarity(run);
+  const lightOn = run.sensors?.light ?? true;
+  const sonarUnlocked = run.sensors?.sonarUnlocked ?? false;
+  const canPing = sonarUnlocked && (run.power ?? 0) >= SONAR_PING_COST;
+
+  const headerText =
+    tier === 'full'
+      ? '前方有几条路。'
+      : tier === 'sonar'
+        ? '你靠回波拼出前方的样子——只是这些回波信不信得过，难说。'
+        : '光照不进来。前方只有几团模糊的黑影。';
 
   function handlePick(nodeId: string) {
     onStateChange(moveToNode(state, nodeId));
   }
-
   function handleAscendNow() {
     onStateChange({ ...state, phase: { kind: 'ascent', targetDepth: 0 } });
   }
 
   return (
     <div className="dive">
-      <StatusBar run={state.run} />
+      <StatusBar run={run} />
       <article className="event tone-realistic">
         <h2 className="event-title">下一步</h2>
         <div className="event-body">
           <p>你停在水里，向前看去。</p>
-          <p className="dim">{blind ? '光照不进来。前方只有几团模糊的黑影。' : '前方有几条路。'}</p>
+          <p className="dim">{headerText}</p>
         </div>
+
+        {/* 传感器控制（深水区 Phase 0a）：灯＝近距真相 + 暴露；声呐 ping＝远距不可信回波、耗电、后期解锁 */}
+        <div className="sensor-controls">
+          <button
+            className={`btn sensor-btn ${lightOn ? 'on' : ''}`}
+            onClick={() => onStateChange(setLight(state, !lightOn))}
+          >
+            {lightOn ? '熄灯（隐蔽 / 省电）' : '开灯（看清 / 暴露）'}
+          </button>
+          {sonarUnlocked && (
+            <button
+              className="btn sensor-btn"
+              disabled={!canPing}
+              onClick={() => onStateChange(pingSonar(state))}
+            >
+              {canPing ? `声呐 ping（−${SONAR_PING_COST} 电）` : '声呐（电量不足）'}
+            </button>
+          )}
+        </div>
+
         <ul className="event-options">
           {choices.map((c) => {
             const isAscent = c.isAscentPoint;
             const isAir = c.kind === 'air_pocket';
             const isCamp = c.kind === 'camp';
-            const isLandmark = isAscent || isAir || isCamp; // 地标：盲航也看得见
-            const cur = state.run!.currentDepth;
+            const cur = run.currentDepth;
             const dir = c.depth > cur ? '更深处。' : c.depth < cur ? '更浅处。' : '同等深度。';
             const label = isAscent
               ? '↑ 上浮口'
@@ -55,24 +85,12 @@ export function NodeSelectView({ state, choices, onStateChange }: Props) {
                 >
                   <div className="node-row">
                     <span className="node-depth">{label}</span>
-                    <span className="node-preview">
-                      {/* 盲航遮蔽前方预览，但地标（上浮口/气穴/扎营点）和"来过"的路你还认得 */}
-                      {c.visited
-                        ? blind && !isLandmark
-                          ? '来过的方向，记得这片黑。'
-                          : c.preview
-                        : blind && !isLandmark
-                          ? '看不清，一团黑影。'
-                          : c.preview}
-                    </span>
+                    {/* 预览已按 clarity 档烤好（灯下真相 / 声呐不可信表象 / 盲）；clar-<档> 控制样式 */}
+                    <span className={`node-preview clar-${c.clarity ?? 'full'}`}>{c.preview}</span>
                   </div>
-                  {c.hasCorpseHint && (
-                    <div className="node-hint">这一带似乎有熟悉的东西…</div>
-                  )}
+                  {c.hasCorpseHint && <div className="node-hint">这一带似乎有熟悉的东西…</div>}
                   {!isAscent && (
-                    <div className="node-hint dim">
-                      {c.visited ? `已来过 · ${dir}` : dir}
-                    </div>
+                    <div className="node-hint dim">{c.visited ? `已来过 · ${dir}` : dir}</div>
                   )}
                 </button>
               </li>

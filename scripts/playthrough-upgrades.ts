@@ -65,7 +65,7 @@ function withHomeDockyard(g: GameState): GameState {
 log.push('========== 1. 升级数据可读 ==========');
 const lines = getUpgradeLines();
 log.push(`共 ${lines.length} 条升级线：${lines.map((l) => l.name).join('、')}`);
-assert(lines.length === 2, '应有 2 条升级线（打捞行会 / 气瓶库；船坞已迁灯塔设施）');
+assert(lines.length === 3, '应有 3 条升级线（打捞行会 / 气瓶库 / 声呐组件；船坞已迁灯塔设施）');
 
 log.push('\n========== 2. 双资源门控：材料不够 / 金币不够 都买不了 ==========');
 // (a) 空仓 + 满金 → 材料不足（金币买不了升级——下深拿料是核心门控）

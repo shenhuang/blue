@@ -190,6 +190,8 @@ function renderEffect(e: UpgradeEffect): string {
       return e.value ? '出海前可选目标尸体' : '';
     case 'currentSweepImmune':
       return e.value ? '海流不再冲走物品' : '';
+    case 'unlockSonar':
+      return e.value ? '解锁声呐：黑水里可发脉冲探路' : '';
     case 'unlockShopItem':
       return `解锁商店：${itemLabel(e.itemId)}`;
   }
