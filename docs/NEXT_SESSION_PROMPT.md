@@ -29,7 +29,7 @@
 - **Phase 0（下一步）— 微观双传感器 clarity + 探测双刃**：把 `visibility:dark` 泛化成 `clarity(灯/声呐/静默, 节点距离, 深度)` 统一预览/tell 门控；新增 signature → 捕食者探测/接近模型。**可拆 0a（clarity 三态+预览，纯感知）/ 0b（探测/隐身，碰 combat 遭遇）**。触 `dive.ts`/`NodeSelectView`/新 run `sensors` 状态/`combat.ts`——**碰 UI 数据路径必补 smoke（#29/#41）**。
 - Phase 1 — 可扩展纵向深度轴（band 数据化、去 60m 上限）。
 - Phase 2 — 跨 run 供给前哨＝深度门 + clarity 网络下延（多阶段持久 per-ruin 进度，扩 `lighthouse.ruin_north`；SAVE_VERSION bump）。
-- Phase 3 — mimic capstone（海图假 POI→入潜、tell↔sanity both、corpse-wearer、d_reveal）。**必须 0–2 就位后做、开建前再确认遭遇演出。**
+- Phase 3 — mimic capstone（海图假 POI→入潜、tell↔sanity both、corpse-wearer、d_reveal）+ **「另一个世界」**（低 san 解锁、亦真亦假，SPEC §3.7——理智＝双向门，低 san 是进那一侧的钥匙）。**必须 0–2 就位后做；演出＝与作者一起一个个敲定的专门 session，不预先写死。**
 
 ## 备选：低强度内容打磨（无人值守也能做，但回报递减）
 内容层已饱和（浅/中/深伏笔 + realistic 密度全齐）。只剩零星：深段欺骗 register 的**其它感官变体**（会合拢的出口 / 错误方向回来的气泡 / 假 rest 节点，SPEC §3.5/[[deep-game-vision]] 列）。守：深段只 cave/wreck 两 tag（#57）、cosmic/loot-free/叙述永不交底/不触发 d_reveal、**别加敌人**、**别堆 realistic**（#56 已饱和）、**别擅自触发 d_reveal**（#42，留 capstone）。
