@@ -686,6 +686,57 @@
     },
 
     {
+      "id": "cave.false_beacon",
+      "depthRange": [46, 60],
+      "zoneTags": ["cave"],
+      "weight": 3,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "灯塔的光",
+      "body": "这么深、离岸这么远的地方，前面亮着一点光。\n不是洞里那种磷火的冷蓝——是暖的，稳的，正是岸上灯塔该有的那种颜色，一明一暗，像有人守着它、替你点着。\n可你心里清楚：你早游过了自家灯塔的光能照到的边界。这么深的地方，没有灯塔。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "account_for_it",
+          "label": "停下来，逼自己想清楚那是什么（理智 vs 55）",
+          "check": {
+            "stat": "sanity",
+            "dc": 55,
+            "onSuccess": {
+              "text": "你停桨，盯着那点暖光，一样一样地数：是你自己的头灯，照在远处一片悬浮的盐雾上，散成了一团假的暖黄；是缺氧把冷蓝看成了暖色。\n道理都对。你把灯压低，绕开它走，没有再往那个方向看第二眼。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.deep_water.the_false_beacon"
+            },
+            "onFailure": {
+              "text": "你越看，那光越像在回看你。它不明也不暗了，就那么稳稳地悬着，悬在水里，没有贴着任何石头、任何东西——一盏灯，得有人提着，才会这样停在半空。\n你不记得自己什么时候开始朝它游的。等你回过神，氧气表过了红线，那点暖光在你正前方，还是那么远，还在等。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -13 }
+            }
+          }
+        },
+        {
+          "id": "swim_for_it",
+          "label": "朝那盏灯游过去",
+          "outcome": {
+            "text": "你朝暖光去。它不变大，也不变近，始终隔着同一段黑水——可你的深度表在往下走，是它把你往更深处领。\n你及时刹住，吹起气囊。回头时，那点光不在前面了，到了你身后，还亮着，还稳着，等你再调一次头。",
+            "oxygenTurnCost": 3,
+            "deltas": { "sanity": -7 }
+          }
+        },
+        {
+          "id": "put_it_behind",
+          "label": "把它关在身后，往上走",
+          "outcome": {
+            "text": "你认准来路，背对那点暖光往上爬。它一直停在你余光的最边上，不追，也不灭，直到一道石壁把它挡掉。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
       "id": "cave.blue_floor",
       "depthRange": [52, 60],
       "zoneTags": ["cave"],

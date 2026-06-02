@@ -1,0 +1,15 @@
+{
+  "_comment": "深水伏笔深段 · 灯塔的光（cosmic·46-60m·oncePerRun·[cave]）——把『无灯之光』母题从中段 bluecaves.the_glow 推进到深段、做成最强的 mimic 假信标伏笔：这么深离岸这么远、超出自家灯塔光照边界，却有一点暖得正是岸上灯塔该有的颜色的光稳稳悬着＝deep-game vision 里伪装成灯塔的安康鱼（海图『无灯之光』假 POI）的直接预告，借 deep_water『下面的光』暗线（cold_light/the_window）落地。停下逼自己想清楚那是什么（sanity vs 55）。满 sanity→rate 0.95，seed 1 确定性通过：lore.deep_water.the_false_beacon〔新〕+ sanity -5 + oxygenTurnCost 2，loot-free。叙述永不交底（quirk #54：『是你自己的头灯……是缺氧把冷蓝看成了暖色。道理都对』），刻意不触发 d_reveal。statsDelta event-runner --out json 实跑抄（quirk #43）。",
+  "eventId": "cave.false_beacon",
+  "depth": 52,
+  "seed": 1,
+  "choices": ["account_for_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.deep_water.the_false_beacon"],
+    "statsDelta": { "oxygen": -2, "sanity": -5 }
+  }
+}

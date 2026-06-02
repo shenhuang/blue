@@ -1,6 +1,56 @@
 {
   "events": [
     {
+      "id": "wreck_graveyard.the_wearer",
+      "depthRange": [44, 56],
+      "zoneTags": ["wreck"],
+      "weight": 3,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "招手的人",
+      "body": "两条沉船之间的开阔黑水里，有个人。\n穿着潜水服，旧式的——铜盔、帆布、配重靴，几十年没人再穿那样下水了。他正对着你，抬起一只手，慢慢地、一下一下地招，叫你过去。\n这么深，黑成这样，他没有灯。头顶没有一个泡。他不必看得见，就知道你在哪。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "read_him",
+          "label": "不过去，停住，把哪里不对一样样看清（理智 vs 55）",
+          "check": {
+            "stat": "sanity",
+            "dc": 55,
+            "onSuccess": {
+              "text": "你按住自己，不动，一样样地数：没有灯，没有泡，那身装备是博物馆里的老古董——招手的胳膊，抬下去又抬起来，每一次都一模一样，没有一点活人的零碎。\n你也给得出别的解释：一具挂在断缆上的旧尸，让深流摆着。你挑不出哪个更真，可你数出来的那些『不对』，已经够你把整条船壳横到你俩中间，慢慢退开。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.wreck_graveyard.the_wearer"
+            },
+            "onFailure": {
+              "text": "你盯着那只招手的手，看得太久。它招的节奏，不知什么时候，跟上了你的心跳。\n然后它不招了——手停在半空，铜盔慢慢偏过来对正你，没有蹬腿，整个人朝你这边平平地滑近。你没让自己去看那面镜里有没有脸，撞着船舷退开，半天找不回上浮的方向。",
+              "oxygenTurnCost": 4,
+              "deltas": { "sanity": -12 }
+            }
+          }
+        },
+        {
+          "id": "go_to_him",
+          "label": "下面不该有人——过去看看他",
+          "outcome": {
+            "text": "你没法把一个人丢在这么深的地方。你朝他游过去。\n他不迎上来，也不退，就停在原地等你靠近。等你近得能碰到那只手，帆布手套是瘪的，盔里是满的黑水——空的，你告诉自己，是空的。你没有伸手去确认，退着离开，背后一直发凉。",
+            "oxygenTurnCost": 3,
+            "deltas": { "sanity": -8 }
+          }
+        },
+        {
+          "id": "keep_hull_between",
+          "label": "把船体挡在中间，绕开走",
+          "outcome": {
+            "text": "你让一整条沉船的铁壳挡住你俩，闷头绕开。等你从船尾出来，那个穿旧装的人还在原处招手，对着你刚才站的地方——不是现在的你。这一回，它没看出你换了位置。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+    {
       "id": "wreck_graveyard.deck_cargo",
       "depthRange": [18, 26],
       "zoneTags": ["wreck"],
