@@ -1,0 +1,14 @@
+{
+  "_comment": "旧灯塔礁 · 礁沟（reef realistic，34-44m，填 reef-only 深中段 realistic 缺口——此前只有 shelf_break 触到 44m，lobster_hole→35/urchin_barren→30）。顶涌摸沟底珊瑚：stamina vs 12，满 stamina rate=0.95（clamp 上限），seed 1 确定性通过。验证 stamina check 通过分支 + 天然 loot（coral_shard 主 + lobster chance）。[reef] tag 隔离在灯塔礁 0-44m（quirk #19/#47）。onSuccess oxygenTurnCost 2，无 deltas → statsDelta 只 oxygen。",
+  "eventId": "reef.sand_channel",
+  "depth": 40,
+  "seed": 1,
+  "choices": ["work_groove"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2 }
+  }
+}

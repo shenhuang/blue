@@ -1,6 +1,56 @@
 {
   "events": [
     {
+      "id": "wreck_graveyard.deck_cargo",
+      "depthRange": [18, 26],
+      "zoneTags": ["wreck"],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "甲板上的货",
+      "body": "浅处的光还照得到后甲板。\n一船没卸完的货还捆在那儿——木箱、铁桶，叫一张垮下来的旧货网盖了个严实，绳扣都泡烂了。\n几十年的涌浪一下一下，把整堆货往倾斜的舷边推。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "cut_lashings",
+          "label": "割开烂绳，撬开一只木箱（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你割断泡烂的绳扣，撬开最上面一只木箱。盖板一掀，里头码着没胀的罐头，箱角还塞着一卷扎紧的旧渔网。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.canned_food", "qty": [1, 2] },
+                { "itemId": "item.old_fishing_net", "qty": [1, 1], "chance": 0.5 }
+              ]
+            },
+            "onFailure": {
+              "text": "绳一割断，整堆货顺着斜甲板往舷边塌。你抽手不及，铁桶擦着护胸滚进舷外的黑里，闷响半天才到底。你空着手退开。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -8 }
+            }
+          }
+        },
+        {
+          "id": "pick_spillage",
+          "label": "只在散落在沙里的货里捡（氧气 -1）",
+          "outcome": {
+            "text": "你不去碰那堆悬着的货，只在早年散到沙里的零碎中翻找——一只滚出来的铜活计，半埋在淤泥里。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.5 }]
+          }
+        },
+        {
+          "id": "leave_cargo",
+          "label": "货堆要塌，退开",
+          "outcome": {
+            "text": "你看了一眼那堆随涌浪晃动的货，退回甲板中央。绳扣还在一根根地、慢慢地崩。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
       "id": "wreck_graveyard.cabin_entrance",
       "depthRange": [18, 32],
       "zoneTags": ["wreck"],

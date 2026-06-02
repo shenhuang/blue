@@ -1,6 +1,56 @@
 {
   "events": [
     {
+      "id": "bluecaves.lobster_crack",
+      "depthRange": [26, 44],
+      "zoneTags": ["cave"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "石缝里的钳子",
+      "body": "水道侧壁裂着一道横缝，缝口的水比别处略暖一点，攒着一小簇活珊瑚。\n缝里探出两根带节的长须，慢慢地试着外头的水——一只礁虾，缩在你手臂够不太到的深处。\n这种地方东西不多，但都是趁手的。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "reach_in",
+          "label": "探进横缝，连虾带珊瑚一起够（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你侧过肩，把胳膊探到缝最里头。指尖先掐住那对挣扎的钳子，退出来时顺手掰下缝口那簇硬珊瑚。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.coral_shard", "qty": [1, 2] },
+                { "itemId": "item.lobster", "qty": [1, 1], "chance": 0.5 }
+              ]
+            },
+            "onFailure": {
+              "text": "你够得太深，肩膀卡在缝口动弹不得。那只虾一弹尾退进黑里，你也得使劲才把胳膊抽回来，缝边的石棱划过手背。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -6 }
+            }
+          }
+        },
+        {
+          "id": "snap_coral",
+          "label": "不碰虾，只掰缝口那簇珊瑚（氧气 -1）",
+          "outcome": {
+            "text": "你不去招惹缝深处的东西，只把缝口那簇够得着的硬珊瑚掰下来，揣好。那对长须在暗里又缩回去一截。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.7 }]
+          }
+        },
+        {
+          "id": "leave_crack",
+          "label": "留着它，继续往里走",
+          "outcome": {
+            "text": "你由它去，顺着水道往里。身后那道暖缝很快没在冷水里。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
       "id": "bluecaves.entrance_light",
       "depthRange": [12, 22],
       "zoneTags": ["cave"],

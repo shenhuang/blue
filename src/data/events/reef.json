@@ -1,6 +1,56 @@
 {
   "events": [
     {
+      "id": "reef.sand_channel",
+      "depthRange": [34, 44],
+      "zoneTags": ["reef"],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "礁沟",
+      "body": "礁盘到了深处裂成一道道平行的沙沟，珊瑚的脊背夹在中间，像谁用梳子梳过。\n沟里来回涌着流，一阵推你往里、一阵又往外拽。\n最深一条沟的尽头，水流常年扫得干净，长着一丛难得没被淤住的好珊瑚，脊根下还压着半截礁虾的须。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "work_groove",
+          "label": "顶着来回的涌，摸到沟底那丛珊瑚（体力 vs 12）",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你掐着涌的节奏，推你时贴住沙底，拽你时扣住礁脊，一段段挪到沟尾。那丛珊瑚脆生生的，脊根下的礁虾也没躲过你的手。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.coral_shard", "qty": [1, 2] },
+                { "itemId": "item.lobster", "qty": [1, 1], "chance": 0.3 }
+              ]
+            },
+            "onFailure": {
+              "text": "一道回涌比你料的猛，把你侧着甩进珊瑚脊。护胸磕在硬枝上闷响一声，你顺着流退出沟口，手是空的。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -6 }
+            }
+          }
+        },
+        {
+          "id": "near_ledge",
+          "label": "只在近处沟口的礁檐下摸一把（氧气 -1）",
+          "outcome": {
+            "text": "你不进深沟，只在沟口的礁檐下探了探手。够着一小块断珊瑚，凉的、糙的，掰下来揣好。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.6 }]
+          }
+        },
+        {
+          "id": "cross_over",
+          "label": "从沟脊上方横过去，不下沟",
+          "outcome": {
+            "text": "你从珊瑚脊的上方横游过去，让那些来回的涌在身下空推。省力，但沟底那丛干净珊瑚，也只能看着。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
       "id": "reef.kelp_curtain",
       "depthRange": [10, 25],
       "zoneTags": ["shallow", "reef"],

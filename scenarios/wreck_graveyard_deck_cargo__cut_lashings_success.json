@@ -1,0 +1,14 @@
+{
+  "_comment": "沉船墓园 · 甲板上的货（wreck realistic，18-26m，填墓园浅段 realistic 缺口——#54 把该段堆成 uncanny/cosmic，补一个无错位的打捞质感）。割绳撬箱：stamina vs 13，满 stamina rate=0.95（clamp 上限），seed 1 确定性通过。验证 stamina check 通过分支 + 人造 loot（canned_food/old_fishing_net，守 quirk #44/#47 跨 zone 共享到灯塔礁 25m+ 不出戏）。onSuccess oxygenTurnCost 2，无 deltas → statsDelta 只 oxygen。",
+  "eventId": "wreck_graveyard.deck_cargo",
+  "depth": 22,
+  "seed": 1,
+  "choices": ["cut_lashings"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2 }
+  }
+}
