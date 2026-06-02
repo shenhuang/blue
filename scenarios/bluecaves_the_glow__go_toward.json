@@ -1,0 +1,14 @@
+{
+  "_comment": "蓝洞群中段 · 前面的光（uncanny·30-44m·[cave]）——深水伏笔 mid 层：『无灯之光』母题，是 deep-game vision 里伪装成灯塔的 mimic / 假信标的预告，借蓝洞的黑暗做画布，并加厚蓝洞『有人在下面 / 先来者』暗线（other_bubbles / left_behind_gear / sounding_line）。朝那点光游过去（无 check）：光拐过石壁就不在了、又在另一头亮起。lore.bluecaves.the_glow + sanity -5 + oxygenTurnCost 2，loot-free。叙述永不交底（quirk #54：douse_lamp 给『会发光的虫子』的平淡解释，body/go_toward/douse-fail 留『一个点，悬在水里，没贴着任何东西，像在等』的错读），刻意不触发 d_reveal。statsDelta 实跑抄出（quirk #43）。",
+  "eventId": "bluecaves.the_glow",
+  "depth": 35,
+  "seed": 1,
+  "choices": ["go_toward"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.bluecaves.the_glow"],
+    "statsDelta": { "oxygen": -2, "sanity": -5 }
+  }
+}

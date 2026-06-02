@@ -1,0 +1,14 @@
+{
+  "_comment": "沉船墓园中段 · 不冒泡的潜水员（uncanny·26-42m·[wreck]，按 quirk #47 也跨灯塔礁 25m+，loot-free 故不犯 #44）——深水伏笔 mid 层：把浅段 the_other（同步的潜水员）往深里推一格＝corpse-wearer『穿尸体的东西』预告，并埋一个可读的 tell（不冒泡＝不呼吸）。敲气瓶叫他回头（无 check）：背影不回头、只停一拍又接着动手，头顶始终没泡。lore.wreck_graveyard.no_bubbles + sanity -5 + oxygenTurnCost 2，loot-free。叙述永不交底（quirk #54：watch 成功给『空潜水服／闭路呼吸器不冒泡』两个平淡解释『挑了你更想信的那个』，body/fail 留『没回头、平平地朝你移过来，速度和你一模一样』的错读），刻意不触发 d_reveal、无新敌人（不接 combat）。statsDelta 实跑抄出（quirk #43）。",
+  "eventId": "wreck_graveyard.no_bubbles",
+  "depth": 30,
+  "seed": 1,
+  "choices": ["rap_tank"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.wreck_graveyard.no_bubbles"],
+    "statsDelta": { "oxygen": -2, "sanity": -5 }
+  }
+}
