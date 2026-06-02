@@ -632,6 +632,150 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "wreck_graveyard.the_other",
+      "depthRange": [18, 25],
+      "zoneTags": ["wreck"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "水里的另一个人",
+      "body": "浅处的光还够。两排沉船之间的开阔水里，有另一个潜水员。\n和你一样的装束，不远不近地吊在那儿。你动，他也动；你停，他也停，始终隔着同样一段水。\n今天这片海，出海的只有你一个。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "signal_light",
+          "label": "打灯光信号，看他回不回（理智 vs 48）",
+          "check": {
+            "stat": "sanity",
+            "dc": 48,
+            "onSuccess": {
+              "text": "你晃了三下回收信号。对面也晃了三下——一模一样，慢了半拍，像你的光打在两船之间的浮沙上弹回来的影。\n你没再打第二次，干活时一直把船体挡在你俩中间。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -4 },
+              "loreEntry": "lore.wreck_graveyard.the_other"
+            },
+            "onFailure": {
+              "text": "你晃灯。对面没回——只是跟着你的节奏，停在那段水里。\n你停下，直直地盯过去想看清他的面镜——那一下他不见了，水里只剩你自己发抖的灯柱。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -9 }
+            }
+          }
+        },
+        {
+          "id": "cross_to_it",
+          "label": "横过去看清他是谁（氧气 -2）",
+          "outcome": {
+            "text": "你蹬水穿过那段开阔水。到他那儿——什么都没有，只有一柱慢慢升起来的浮沙，和你自己的气泡，不知怎么从上面绕回来落在你肩上。\n你比出发时离深水更近了一点。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -5 }
+          }
+        },
+        {
+          "id": "keep_distance",
+          "label": "贴着船体绕开，别靠近",
+          "outcome": {
+            "text": "你把沉船的铁壳留在你和他之间，加快手上的活。\n他一直在视野的边上，不近一寸，也不消失，直到你绕过最后一条断龙骨。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "wreck_graveyard.all_facing",
+      "depthRange": [18, 25],
+      "zoneTags": ["wreck"],
+      "weight": 3,
+      "oncePerRun": true,
+      "title": "都朝着一个方向",
+      "body": "你升高了一点，从两片残骸之间横过去——一抬头，整座墓园在你脚下铺开。\n各个年代的船，沉得乱七八糟，什么角度都有。\n可它们的船首——每一道船首、每一扇敞开的舱口、沙面上那几具看得见的人——全都朝着同一个方向。\n朝着大陆架的边缘，沙子塌进蓝里的那个口子。\n像是到最后，它们都想往同一个方向去。或者，是被转成了那样。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "fix_bearing",
+          "label": "停在上方，把这个方向看准（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你悬住，顺着那些船首望过去。它们连成一条线，落在塌口外、深水暗处的某一点上。\n你把那个方位记下，告诉自己是洋流——几十年的洋流，会把沉船都梳成一个朝向。\n你信了一半。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.wreck_graveyard.all_facing"
+            },
+            "onFailure": {
+              "text": "你看得越久，那一片铁就越不像被水流放倒的残骸——更像一口屏住的气，一整片指着同一处的铁，在等它们所指的那个东西回应。\n等你回过神，你比刚才低了好几米，不记得自己沉下来过。",
+              "oxygenTurnCost": 4,
+              "deltas": { "sanity": -12 }
+            }
+          }
+        },
+        {
+          "id": "dont_dwell",
+          "label": "别多看，横过这片去干活",
+          "outcome": {
+            "text": "你把目光从那个口子上挪开，闷头往对面游。\n眼角里，每一道船首还指着同一个方向。你没有低头去看它们指的地方。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "wreck_graveyard.full_nets",
+      "depthRange": [18, 25],
+      "zoneTags": ["wreck"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "拉满的网",
+      "body": "一艘拖网船侧躺在浅处，网还放在外头——网是满的：绷紧，鼓胀，沉甸甸。\n可本该把网顶浮起来的那排浮子，全被拽到了水下，整张网朝下坡绷进更深的水里，吃着力，像底下的渔获正往下沉、往深处扎，怎么也不肯停。\n沉了几十年，这张网还在干活。还在被往下拉。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "cut_upper",
+          "label": "从上半截还好的网上割一段（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你在网绷向深处之前、网眼还结实的上半截下刀。割下好一段网；拖网船甲板上滚出来的几听罐头也在手边。\n你没顺着网往下去看，是什么把它拉得那么紧。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.old_fishing_net", "qty": [1, 1] },
+                { "itemId": "item.canned_food", "qty": [1, 2], "chance": 0.5 }
+              ]
+            },
+            "onFailure": {
+              "text": "刀卡在网眼里。整张网猛地一抖，往下又吃进一截，把你的手腕朝深水那边拽了一掌宽，你才割脱开。\n你退回浅处，手是空的。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -7 }
+            }
+          }
+        },
+        {
+          "id": "follow_down",
+          "label": "顺着网往下看，是什么把它拉住",
+          "outcome": {
+            "text": "你顺着绷紧的网往下望。网吃着力，一直绷过你灯照得到的地方，再往下，进了蓝。\n那底下还在动——还在拉，慢慢的，匀匀的，没有停的意思。\n你把灯收回来。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 },
+            "loreEntry": "lore.wreck_graveyard.full_nets"
+          }
+        },
+        {
+          "id": "leave_net",
+          "label": "不碰那张网，绕过去",
+          "outcome": {
+            "text": "你给那张绷着的网让出一大圈水。你经过的时候，网又往下坡吃进一寸——没有一点声音。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
     }
   ]
 }

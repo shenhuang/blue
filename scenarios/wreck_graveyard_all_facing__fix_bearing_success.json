@@ -1,0 +1,15 @@
+{
+  "_comment": "沉船墓园浅段 · 都朝着一个方向，停在上方看准方位（sanity vs 50，cosmic，oncePerRun，墓园首个浅段 cosmic·foreshadow 深处的『拉力』）。满 sanity→rate 0.95 seed 1 通过。验证墓园浅段 cosmic check 通过分支：lore.wreck_graveyard.all_facing + sanity -5 + oxygenTurnCost 2。loot-free。叙述永不交底（『告诉自己是洋流……信了一半』），刻意不触发 d_reveal。",
+  "eventId": "wreck_graveyard.all_facing",
+  "depth": 20,
+  "seed": 1,
+  "choices": ["fix_bearing"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.wreck_graveyard.all_facing"],
+    "statsDelta": { "oxygen": -2, "sanity": -5 }
+  }
+}

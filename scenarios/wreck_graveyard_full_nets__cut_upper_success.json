@@ -1,0 +1,14 @@
+{
+  "_comment": "沉船墓园浅段 · 拉满的网，从上半截割一段（stamina vs 13，uncanny，foreshadow 深处的『渔夫/拉力』）。满 stamina→rate 0.95 seed 1 通过（低 dc stamina check 只锁 success，quirk #49）。验证墓园浅段 uncanny 取 loot 路径：oxygenTurnCost 2，old_fishing_net+canned 人造 loot（quirk #44/#47，event scenario 不断言 loot）。fail 分支=网吃力拽手腕、空手退（stamina-7），大 seed 手验、不入 baseline。",
+  "eventId": "wreck_graveyard.full_nets",
+  "depth": 20,
+  "seed": 1,
+  "choices": ["cut_upper"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2 }
+  }
+}
