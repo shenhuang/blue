@@ -11,7 +11,7 @@ import type {
   LogEntry,
   Lighthouse,
 } from '@/types';
-import { POWER_MAX } from './clarity';
+import { POWER_MAX, deriveSensorTuning } from './clarity';
 
 const SAVE_VERSION = 4;
 
@@ -119,19 +119,38 @@ export function createInitialStats(): Stats {
 export function createNewRun(opts: {
   zoneId: string;
   inventoryCapacity?: number;
-  /** 从港口升级派生的全局加成（可选；脚本/测试可省略） */
+  /**
+   * 从港口升级派生的全局加成（可选；脚本/测试可省略）。
+   * 字段全可选，故可直接把 getRunBonuses() 的结果整个传进来（结构兼容、避免逐字段抄漏，见 dive.ts/dialog.ts）。
+   */
   bonuses?: {
     oxygenMaxBonus?: number;
     staminaMaxBonus?: number;
     extraConsumableSlot?: number;
     /** 声呐能力是否已解锁（深水区 Phase 0a；省略 = 未解锁 = 早期仅有灯）。 */
     sonarUnlocked?: boolean;
+    // 深水区 Phase 0 升级轨（省略 = 未升级 = 基线，行为与 0a/0b 一致）。
+    powerMaxBonus?: number;
+    sonarPingCostReduction?: number;
+    lampEfficiency?: number;
+    sonarRobustness?: number;
+    lampRobustness?: number;
+    signatureReduction?: number;
   };
 }): RunState {
   const oxygenBonus = opts.bonuses?.oxygenMaxBonus ?? 0;
   const staminaBonus = opts.bonuses?.staminaMaxBonus ?? 0;
   const slotBonus = opts.bonuses?.extraConsumableSlot ?? 0;
   const sonarUnlocked = opts.bonuses?.sonarUnlocked ?? false;
+  // 深水区 Phase 0 升级轨：电池总量 = 基线 + 加成；其余传感器旋钮烤成 sensorTuning（地板/上限在 deriveSensorTuning）。
+  const powerMax = POWER_MAX + (opts.bonuses?.powerMaxBonus ?? 0);
+  const sensorTuning = deriveSensorTuning({
+    sonarPingCostReduction: opts.bonuses?.sonarPingCostReduction,
+    lampEfficiency: opts.bonuses?.lampEfficiency,
+    sonarRobustness: opts.bonuses?.sonarRobustness,
+    lampRobustness: opts.bonuses?.lampRobustness,
+    signatureReduction: opts.bonuses?.signatureReduction,
+  });
 
   const staminaMax = 100 + staminaBonus;
   const oxygenMax = 60 + oxygenBonus;
@@ -159,8 +178,9 @@ export function createNewRun(opts: {
     triggeredEventIds: [],
     // 深水区 Phase 0a：灯默认开（清水里＝今天的"所见为真"），声呐 off + 能力按升级派生，电池满。
     sensors: { light: true, sonar: 'off', sonarUnlocked },
-    power: POWER_MAX,
-    powerMax: POWER_MAX,
+    power: powerMax,
+    powerMax,
+    sensorTuning,
     // 深水区 Phase 0b：警觉从 0 起（点灯/ping 在深水抬、摸黑降）。
     alert: 0,
   };

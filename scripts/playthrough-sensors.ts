@@ -9,6 +9,7 @@
 //   8. tickTurns 灯耗电：清水近免费 / 黑水耗 / 关灯不耗
 //   9. 移动后声呐 ping 自动消散（脉冲瞬时）
 //  10. signature：灯 > 声呐 > 摸黑（0b 接遭遇/combat）
+//  11. 升级轨（深水区 Phase 0 升级轨）：powerMax/ping 耗电/灯效率/抗欺骗(声呐&灯)/隐蔽 随升级派生，含地板/上限 + 未升级=基线
 //
 // 跑法： npx tsx scripts/playthrough-sensors.ts
 
@@ -24,6 +25,17 @@ import {
   lampPowerDrain,
   POWER_MAX,
   SONAR_PING_COST,
+  // 深水区 Phase 0 升级轨（section 11）
+  deriveSensorTuning,
+  sonarPingCost,
+  SONAR_PING_COST_MIN,
+  LAMP_DRAIN_MULT_MIN,
+  SONAR_FALSE_ECHO_SANITY_MIN,
+  LAMP_HALLUCINATION_SANITY_MIN,
+  SIGNATURE_BASE,
+  SIGNATURE_LIGHT,
+  SIGNATURE_MIN_ACTIVE,
+  SIGNATURE_REDUCTION_MAX,
 } from '../src/engine/clarity';
 
 const log: string[] = [];
@@ -222,6 +234,100 @@ L('\n========== 10. signature 排序 ==========');
   L(`  灯=${sigLamp} 声呐=${sigSonar} 摸黑=${sigDark}`);
   assert(sigLamp > sigSonar && sigSonar > sigDark, '10: signature 灯 > 声呐 > 摸黑（主动感知=暴露）');
   L('  暴露排序 灯 > 声呐 > 摸黑（0b 接遭遇）✓');
+}
+
+// ============================================================
+// 11. 升级轨：传感器随港口升级成长（深水区 Phase 0 升级轨）
+// ============================================================
+// 与 1-10 用裸 mk()（基线）不同，这里走 createNewRun({ bonuses })——真实出海路径（getRunBonuses → run.sensorTuning）。
+/** 同 mk() 但带升级 bonuses（经 createNewRun 烤成 run.sensorTuning / powerMax）。 */
+function mkUp(
+  bonuses: NonNullable<Parameters<typeof createNewRun>[0]['bonuses']>,
+  opts?: { visibility?: 'murky' | 'dark'; light?: boolean; sanity?: number; power?: number },
+): GameState {
+  const base = createInitialGameState();
+  const r0 = createNewRun({ zoneId: 'zone.blue_caves', bonuses });
+  const run: RunState = {
+    ...r0,
+    map: makeMap(),
+    currentNodeId: 'n0',
+    currentDepth: 20,
+    power: opts?.power ?? r0.power,
+    sensors: { ...r0.sensors, light: opts?.light ?? true },
+    stats: { ...r0.stats, sanity: opts?.sanity ?? 100 },
+    diveModifier: opts?.visibility ? { visibility: opts.visibility } : undefined,
+  };
+  return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
+}
+
+L('\n========== 11. 升级轨：传感器随升级成长 ==========');
+{
+  const node = makeMap().nodes.n1;
+
+  // 11.0 未升级 = 基线（守"defaults 复现 0a/0b 行为"）
+  const baseTuning = createNewRun({ zoneId: 'zone.blue_caves' }).sensorTuning!;
+  assert(
+    baseTuning.pingCost === SONAR_PING_COST &&
+      baseTuning.lampDrainMult === 1 &&
+      baseTuning.signatureReduction === 0,
+    '11.0: 未升级 sensorTuning = 基线',
+  );
+
+  // 11a powerMax（电池容量）
+  const upPow = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { powerMaxBonus: 20 } });
+  assert(upPow.powerMax === POWER_MAX + 20, '11a: powerMaxBonus → powerMax +20');
+  assert(upPow.power === upPow.powerMax, '11a: 电池起手＝满（powerMax）');
+
+  // 11b ping 耗电（能耗效率）+ 地板 + 端到端实扣
+  assert(sonarPingCost(mkUp({ sonarUnlocked: true, sonarPingCostReduction: 2 }).run!) === SONAR_PING_COST - 2, '11b: ping 耗电减免');
+  assert(deriveSensorTuning({ sonarPingCostReduction: 99 }).pingCost === SONAR_PING_COST_MIN, '11b: ping 耗电有地板');
+  {
+    let s = enterNodeSelection(mkUp({ sonarUnlocked: true, sonarPingCostReduction: 2 }));
+    s = setLight(s, false);
+    const p0 = s.run!.power;
+    s = pingSonar(s);
+    assert(s.run!.power === p0 - (SONAR_PING_COST - 2), '11b: pingSonar 实扣减免后耗电');
+  }
+
+  // 11c 灯效率（能耗效率）：黑水耗电减半 + 地板
+  const baseDark = lampPowerDrain(mk({ visibility: 'dark' }).run!, 3);
+  const upDark = lampPowerDrain(mkUp({ lampEfficiency: 0.5 }, { visibility: 'dark' }).run!, 3);
+  assert(upDark === baseDark * 0.5 && upDark < baseDark, '11c: 灯效率 → 黑水耗电减半');
+  assert(deriveSensorTuning({ lampEfficiency: 1 }).lampDrainMult === LAMP_DRAIN_MULT_MIN, '11c: 灯耗电乘子有地板');
+
+  // 11d 声呐抗欺骗：阈值 60→40，san50 仍是稳定表象（不再注入假回波）+ 地板
+  const truthful = sonarReturn(mk({ sonarUnlocked: true, sanity: 100 }).run!, node); // 稳定的"真实但粗糙"表象
+  assert(sonarReturn(mk({ sonarUnlocked: true, sanity: 50 }).run!, node) !== truthful, '11d: 基线 san50<60 → 假回波');
+  assert(sonarReturn(mkUp({ sonarUnlocked: true, sonarRobustness: 20 }, { sanity: 50 }).run!, node) === truthful, '11d: 抗欺骗阈值降到40 → san50 仍稳定表象');
+  assert(deriveSensorTuning({ sonarRobustness: 99 }).sonarFalseEchoSanity === SONAR_FALSE_ECHO_SANITY_MIN, '11d: 声呐抗欺骗有地板（永不全可信）');
+
+  // 11e 灯抗欺骗：阈值 25→15，san20 灯下仍真相 + 地板
+  assert(lampPreview(mk({ sanity: 20 }).run!, node) !== N1_TRUTH, '11e: 基线 san20<25 → 灯幻觉');
+  assert(lampPreview(mkUp({ lampRobustness: 10 }, { sanity: 20 }).run!, node) === N1_TRUTH, '11e: 灯抗欺骗阈值降到15 → san20 仍真相');
+  assert(deriveSensorTuning({ lampRobustness: 99 }).lampHallucinationSanity === LAMP_HALLUCINATION_SANITY_MIN, '11e: 灯抗欺骗有地板（灯最后崩、仍会崩）');
+
+  // 11f 隐蔽：降 signature + 上限 + 结构地板（点灯永不归零暴露）
+  const sigBase = signature(mk().run!); // 灯开清水 = BASE + LIGHT
+  const sigStealth = signature(mkUp({ signatureReduction: 3 }).run!);
+  assert(sigStealth < sigBase, '11f: 隐蔽降 signature');
+  assert(sigStealth === SIGNATURE_BASE + Math.max(SIGNATURE_MIN_ACTIVE, SIGNATURE_LIGHT - 3), '11f: 隐蔽后 signature 精确值');
+  assert(deriveSensorTuning({ signatureReduction: 99 }).signatureReduction === SIGNATURE_REDUCTION_MAX, '11f: 隐蔽有上限');
+  const sigDark2 = signature({ ...mk().run!, sensors: { light: false, sonar: 'off', sonarUnlocked: false } });
+  assert(sigStealth > sigDark2, '11f: 隐蔽再强、点灯 signature 仍 > 摸黑（读真相必自曝，§3.2/§3.3）');
+
+  // 11g createNewRun 端到端把全部 bonus 烤进 sensorTuning
+  const allUp = createNewRun({
+    zoneId: 'zone.blue_caves',
+    bonuses: { powerMaxBonus: 40, sonarPingCostReduction: 2, lampEfficiency: 0.5, sonarRobustness: 20, lampRobustness: 10, signatureReduction: 3 },
+  });
+  assert(allUp.powerMax === POWER_MAX + 40, '11g: powerMax');
+  assert(allUp.sensorTuning!.pingCost === SONAR_PING_COST - 2, '11g: sensorTuning.pingCost');
+  assert(allUp.sensorTuning!.lampDrainMult === 0.5, '11g: sensorTuning.lampDrainMult');
+  assert(allUp.sensorTuning!.sonarFalseEchoSanity === 40, '11g: sensorTuning.sonarFalseEchoSanity');
+  assert(allUp.sensorTuning!.lampHallucinationSanity === 15, '11g: sensorTuning.lampHallucinationSanity');
+  assert(allUp.sensorTuning!.signatureReduction === 3, '11g: sensorTuning.signatureReduction');
+
+  L('  powerMax / ping 耗电 / 灯效率 / 抗欺骗(声呐&灯) / 隐蔽 随升级成长，地板上限守铁律 ✓');
 }
 
 console.log(log.join('\n'));

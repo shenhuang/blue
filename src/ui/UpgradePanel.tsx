@@ -192,6 +192,19 @@ function renderEffect(e: UpgradeEffect): string {
       return e.value ? '海流不再冲走物品' : '';
     case 'unlockSonar':
       return e.value ? '解锁声呐：黑水里可发脉冲探路' : '';
+    // 深水区 Phase 0 升级轨
+    case 'powerMaxBonus':
+      return `电池总量 +${e.value}`;
+    case 'sonarPingCostReduction':
+      return `声呐 ping 耗电 −${e.value}`;
+    case 'lampEfficiency':
+      return `黑/浊水灯耗电 −${Math.round(e.value * 100)}%`;
+    case 'sonarRobustness':
+      return '声呐更抗欺骗：理智更低些才开始失真';
+    case 'lampRobustness':
+      return '灯更抗幻觉：理智更低些灯才开始骗你';
+    case 'signatureReduction':
+      return `更隐蔽：被探测 −${e.value}（点灯/ping 仍会暴露）`;
     case 'unlockShopItem':
       return `解锁商店：${itemLabel(e.itemId)}`;
   }

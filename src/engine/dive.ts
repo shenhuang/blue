@@ -26,7 +26,7 @@ import {
   lampPreview,
   BLIND_PREVIEW,
   BLIND_VISITED_PREVIEW,
-  SONAR_PING_COST,
+  sonarPingCost,
   predatorApproaches,
   ALERT_AFTER_TRIGGER,
 } from './clarity';
@@ -112,16 +112,9 @@ export function startDiveFromPoi(
   opts?: { targetCorpseId?: string },
 ): GameState {
   // 随身加成 = 全局升级 ＋ 家灯塔「船坞」设施（dockyard 迁灯塔后由 getRunBonuses 并回，见 lighthouses.ts）
+  // RunStartBonuses 字段全是 createNewRun bonuses 的超集，直接整个传（含深水区 Phase 0 升级轨，避免逐字段抄漏）。
   const bonuses = getRunBonuses(state.profile);
-  let run = createNewRun({
-    zoneId: poi.zoneId,
-    bonuses: {
-      oxygenMaxBonus: bonuses.oxygenMaxBonus,
-      staminaMaxBonus: bonuses.staminaMaxBonus,
-      extraConsumableSlot: bonuses.extraConsumableSlot,
-      sonarUnlocked: bonuses.sonarUnlocked,
-    },
-  });
+  let run = createNewRun({ zoneId: poi.zoneId, bonuses });
 
   // reach：距离按最近的已拥有灯塔算（出海预耗氧 + turn）；写死 distance 仍作 fallback（SPEC §3.4/§4）
   const dist = effectiveDistance(state.profile, poi);
@@ -276,10 +269,11 @@ export function pingSonar(state: GameState): GameState {
   if (!(run.sensors?.sonarUnlocked ?? false)) {
     return appendLog(state, { tone: 'system', text: '你还没有能用的声呐。' });
   }
-  if ((run.power ?? 0) < SONAR_PING_COST) {
+  const pingCost = sonarPingCost(run); // 升级派生（缺省 SONAR_PING_COST）
+  if ((run.power ?? 0) < pingCost) {
     return appendLog(state, { tone: 'realistic', text: '电量不够再发一记声呐了。' });
   }
-  const power = Math.max(0, (run.power ?? 0) - SONAR_PING_COST);
+  const power = Math.max(0, (run.power ?? 0) - pingCost);
   let s: GameState = {
     ...state,
     run: { ...run, power, sensors: { ...run.sensors, sonar: 'ping' } },

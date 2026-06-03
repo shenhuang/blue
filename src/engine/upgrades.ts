@@ -167,6 +167,12 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
     preDiveCorpseSelect: false,
     currentSweepImmune: false,
     sonarUnlocked: false,
+    powerMaxBonus: 0,
+    sonarPingCostReduction: 0,
+    lampEfficiency: 0,
+    sonarRobustness: 0,
+    lampRobustness: 0,
+    signatureReduction: 0,
     unlockedZones: new Set(),
     unlockedShopItems: new Set(),
   };
@@ -200,6 +206,25 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
           break;
         case 'unlockSonar':
           bonuses.sonarUnlocked = bonuses.sonarUnlocked || e.value;
+          break;
+        // 深水区 Phase 0 升级轨：sum 聚合（地板/上限在 clarity.ts::deriveSensorTuning 出海时统一夹紧）。
+        case 'powerMaxBonus':
+          bonuses.powerMaxBonus += e.value;
+          break;
+        case 'sonarPingCostReduction':
+          bonuses.sonarPingCostReduction += e.value;
+          break;
+        case 'lampEfficiency':
+          bonuses.lampEfficiency += e.value;
+          break;
+        case 'sonarRobustness':
+          bonuses.sonarRobustness += e.value;
+          break;
+        case 'lampRobustness':
+          bonuses.lampRobustness += e.value;
+          break;
+        case 'signatureReduction':
+          bonuses.signatureReduction += e.value;
           break;
         case 'unlockZone':
           bonuses.unlockedZones.add(e.zoneId);

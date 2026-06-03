@@ -8,7 +8,8 @@
 //
 // 跑法：npx tsx scripts/playthrough-upgrades.ts
 
-import { createInitialGameState, countInInventory, HOME_LIGHTHOUSE_ID } from '../src/engine/state';
+import { createInitialGameState, createNewRun, countInInventory, HOME_LIGHTHOUSE_ID } from '../src/engine/state';
+import { POWER_MAX, SONAR_PING_COST } from '../src/engine/clarity';
 import {
   canPurchase,
   getUpgradeBonuses,
@@ -65,7 +66,7 @@ function withHomeDockyard(g: GameState): GameState {
 log.push('========== 1. 升级数据可读 ==========');
 const lines = getUpgradeLines();
 log.push(`共 ${lines.length} 条升级线：${lines.map((l) => l.name).join('、')}`);
-assert(lines.length === 3, '应有 3 条升级线（打捞行会 / 气瓶库 / 声呐组件；船坞已迁灯塔设施）');
+assert(lines.length === 4, '应有 4 条升级线（打捞行会 / 气瓶库 / 声呐组件 / 潜水装备；船坞已迁灯塔设施）');
 
 log.push('\n========== 2. 双资源门控：材料不够 / 金币不够 都买不了 ==========');
 // (a) 空仓 + 满金 → 材料不足（金币买不了升级——下深拿料是核心门控）
@@ -217,6 +218,60 @@ log.push(`run.inventoryCapacity = ${s3.run!.inventoryCapacity} （应为 8 + 1 =
 assert(s3.run!.oxygenMax === 70, '气瓶库 lv1 应让 oxygenMax = 70');
 assert(s3.run!.stats.oxygen === 70, '初始 oxygen 应填到上限');
 assert(s3.run!.inventoryCapacity === 9, '家灯塔船坞应让 inventoryCapacity = 9');
+
+log.push('\n========== 8. 深水区 Phase 0 升级轨：传感器随材料成长 ==========');
+// 给足 dive_kit lv1-3 + sonar lv1-2 的全部材料 + 金币，逐级买，断言 bonuses → getRunBonuses → createNewRun。
+state = createInitialGameState();
+state = withProfile(
+  [
+    { itemId: 'item.coral_shard', qty: 4 }, // dk lv1
+    { itemId: 'item.lobster', qty: 3 }, // dk lv1
+    { itemId: 'item.brass_fitting', qty: 3 }, // dk lv2
+    { itemId: 'item.crab_chitin', qty: 2 }, // dk lv2
+    { itemId: 'item.lantern_gland', qty: 3 }, // dk lv3 + sonar lv1 + sonar lv2
+    { itemId: 'item.cave_octopus_beak', qty: 5 }, // dk lv3 + sonar lv1
+    { itemId: 'item.eel_skin', qty: 5 }, // sonar lv1 + sonar lv2
+  ],
+  600,
+);
+state = { ...state, profile: { ...state.profile, unlockedUpgrades: new Set() } };
+
+// 前置门控：lv2 在 lv1 前买不了（即便材料金币都够）
+const dkPrereq = canPurchase(state.profile, 'upgrade.dive_kit.lv2');
+assert(!dkPrereq.ok && dkPrereq.reason === 'needsPrev', '8: dive_kit lv2 需先买 lv1');
+const sonarPrereq = canPurchase(state.profile, 'upgrade.sonar.lv2');
+assert(!sonarPrereq.ok && sonarPrereq.reason === 'needsPrev', '8: sonar lv2 需先买 lv1');
+
+for (const id of ['upgrade.dive_kit.lv1', 'upgrade.dive_kit.lv2', 'upgrade.dive_kit.lv3', 'upgrade.sonar.lv1', 'upgrade.sonar.lv2']) {
+  const av = canPurchase(state.profile, id);
+  assert(av.ok, `8: 应可购买 ${id}（${JSON.stringify(av)}）`);
+  state = purchaseUpgrade(state, id);
+  assert(state.profile.unlockedUpgrades.has(id), `8: ${id} 入账`);
+}
+
+const sb = getUpgradeBonuses(state.profile);
+log.push(`  传感器升级聚合: powerMax+${sb.powerMaxBonus} ping-${sb.sonarPingCostReduction} lampEff${sb.lampEfficiency} 隐蔽${sb.signatureReduction} 灯抗${sb.lampRobustness} 声抗${sb.sonarRobustness}`);
+assert(sb.powerMaxBonus === 40, '8: powerMaxBonus = 20(lv1)+20(lv3)');
+assert(sb.lampEfficiency === 0.5, '8: lampEfficiency = 0.5（lv2 聚光灯具）');
+assert(sb.signatureReduction === 3, '8: signatureReduction = 3（lv2）');
+assert(sb.lampRobustness === 10, '8: lampRobustness = 10（lv3 抗扰灯罩）');
+assert(sb.sonarUnlocked === true, '8: 声呐解锁（sonar lv1）');
+assert(sb.sonarPingCostReduction === 2, '8: sonarPingCostReduction = 2（sonar lv2）');
+assert(sb.sonarRobustness === 20, '8: sonarRobustness = 20（sonar lv2）');
+
+// 桥：getRunBonuses 透传 → createNewRun 把升级烤进 run.powerMax / run.sensorTuning
+const rb = getRunBonuses(state.profile);
+assert(rb.powerMaxBonus === 40 && rb.sonarRobustness === 20 && rb.sonarUnlocked === true, '8: getRunBonuses 透传升级轨');
+const upRun = createNewRun({ zoneId: 'zone.old_lighthouse_reef', bonuses: rb });
+assert(upRun.powerMax === POWER_MAX + 40, `8: createNewRun powerMax = ${POWER_MAX}+40`);
+assert(upRun.power === upRun.powerMax, '8: 电池起手＝满');
+assert(upRun.sensors.sonarUnlocked === true, '8: run 声呐解锁');
+assert(upRun.sensorTuning!.pingCost === SONAR_PING_COST - 2, '8: run.sensorTuning.pingCost');
+assert(upRun.sensorTuning!.lampDrainMult === 0.5, '8: run.sensorTuning.lampDrainMult');
+assert(upRun.sensorTuning!.sonarFalseEchoSanity === 40, '8: run.sensorTuning.sonarFalseEchoSanity');
+assert(upRun.sensorTuning!.lampHallucinationSanity === 15, '8: run.sensorTuning.lampHallucinationSanity');
+assert(upRun.sensorTuning!.signatureReduction === 3, '8: run.sensorTuning.signatureReduction');
+log.push('  dive_kit lv1-3 + sonar lv1-2 → bonuses 聚合 → getRunBonuses 透传 → createNewRun 烤进 run ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 港口升级 playthrough 通过');

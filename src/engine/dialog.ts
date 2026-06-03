@@ -84,16 +84,9 @@ export function applyDialogEffects(
         break;
       case 'startDive': {
         // 随身加成 = 全局升级 ＋ 家灯塔「船坞」设施（dockyard 迁灯塔后的桥，见 lighthouses.ts::getRunBonuses）
+        // RunStartBonuses 字段全是 createNewRun bonuses 的超集，直接整个传（含深水区 Phase 0 升级轨，避免抄漏）。
         const bonuses = getRunBonuses(s.profile);
-        const run = createNewRun({
-          zoneId: e.zoneId,
-          bonuses: {
-            oxygenMaxBonus: bonuses.oxygenMaxBonus,
-            staminaMaxBonus: bonuses.staminaMaxBonus,
-            extraConsumableSlot: bonuses.extraConsumableSlot,
-            sonarUnlocked: bonuses.sonarUnlocked,
-          },
-        });
+        const run = createNewRun({ zoneId: e.zoneId, bonuses });
         s = { ...s, run };
         s = startDive(s, e.zoneId);
         break;

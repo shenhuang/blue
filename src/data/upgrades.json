@@ -103,6 +103,78 @@
           },
           "effects": [{ "kind": "unlockSonar", "value": true }],
           "description": "组起一台手持声呐。关灯时可发脉冲探测前方——但回波远不如灯下所见可靠。黑水区从此能摸着探路。"
+        },
+        {
+          "id": "upgrade.sonar.lv2",
+          "level": 2,
+          "name": "声呐组件 Lv.2",
+          "cost": {
+            "materials": [
+              { "itemId": "item.lantern_gland", "qty": 1 },
+              { "itemId": "item.eel_skin", "qty": 3 }
+            ],
+            "gold": 160
+          },
+          "effects": [
+            { "kind": "sonarPingCostReduction", "value": 2 },
+            { "kind": "sonarRobustness", "value": 20 }
+          ],
+          "description": "换上更省电的换能器、给回波加一层滤噪。每记 ping 省 2 电；理智更低些时回波才开始骗你（仍不全可信）。"
+        }
+      ]
+    },
+    {
+      "id": "line.dive_kit",
+      "name": "潜水装备",
+      "description": "电池、灯具、配重。灯与声呐是 0 号传感器；这条线让它们随你带回来的料一起长结实。",
+      "upgrades": [
+        {
+          "id": "upgrade.dive_kit.lv1",
+          "level": 1,
+          "name": "加大电池组",
+          "cost": {
+            "materials": [
+              { "itemId": "item.coral_shard", "qty": 4 },
+              { "itemId": "item.lobster", "qty": 3 }
+            ],
+            "gold": 30
+          },
+          "effects": [{ "kind": "powerMaxBonus", "value": 20 }],
+          "description": "电池总量 +20。待得更久、多会几次灯、多 ping 几记。"
+        },
+        {
+          "id": "upgrade.dive_kit.lv2",
+          "level": 2,
+          "name": "聚光灯具",
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 3 },
+              { "itemId": "item.crab_chitin", "qty": 2 }
+            ],
+            "gold": 70
+          },
+          "effects": [
+            { "kind": "lampEfficiency", "value": 0.5 },
+            { "kind": "signatureReduction", "value": 3 }
+          ],
+          "description": "收束的光束：黑/浊水里灯耗电减半，外溢更少、没那么扎眼——被探测得更慢（但点着灯永远暴露你）。"
+        },
+        {
+          "id": "upgrade.dive_kit.lv3",
+          "level": 3,
+          "name": "抗扰灯罩",
+          "cost": {
+            "materials": [
+              { "itemId": "item.lantern_gland", "qty": 1 },
+              { "itemId": "item.cave_octopus_beak", "qty": 3 }
+            ],
+            "gold": 150
+          },
+          "effects": [
+            { "kind": "lampRobustness", "value": 10 },
+            { "kind": "powerMaxBonus", "value": 20 }
+          ],
+          "description": "拿冷光腺给灯罩做了层稳光滤层。理智压到更低时灯才开始骗你（灯最后崩、但仍会崩）；电池再 +20。"
         }
       ]
     }

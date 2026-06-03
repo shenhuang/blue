@@ -1,6 +1,6 @@
 import type { GameState, NodeChoice } from '@/types';
 import { moveToNode, setLight, pingSonar } from '@/engine/dive';
-import { clarity, SONAR_PING_COST, ALERT_WARN, ALERT_THRESHOLD } from '@/engine/clarity';
+import { clarity, sonarPingCost, ALERT_WARN, ALERT_THRESHOLD } from '@/engine/clarity';
 import { StatusBar } from './StatusBar';
 
 interface Props {
@@ -18,7 +18,8 @@ export function NodeSelectView({ state, choices, onStateChange }: Props) {
   const tier = clarity(run);
   const lightOn = run.sensors?.light ?? true;
   const sonarUnlocked = run.sensors?.sonarUnlocked ?? false;
-  const canPing = sonarUnlocked && (run.power ?? 0) >= SONAR_PING_COST;
+  const pingCost = sonarPingCost(run); // 升级派生（缺省 SONAR_PING_COST）
+  const canPing = sonarUnlocked && (run.power ?? 0) >= pingCost;
   // 深水区 Phase 0b：警觉预警——给玩家"读出 tell → 熄灯甩开"的窗口（越线则进下一节点会被接近）。
   const alert = run.alert ?? 0;
 
@@ -60,7 +61,7 @@ export function NodeSelectView({ state, choices, onStateChange }: Props) {
               disabled={!canPing}
               onClick={() => onStateChange(pingSonar(state))}
             >
-              {canPing ? `声呐 ping（−${SONAR_PING_COST} 电）` : '声呐（电量不足）'}
+              {canPing ? `声呐 ping（−${pingCost} 电）` : '声呐（电量不足）'}
             </button>
           )}
         </div>

@@ -90,6 +90,24 @@ export interface SensorState {
   sonarUnlocked: boolean;
 }
 
+/**
+ * 本次下潜的"有效传感器参数"（深水区 Phase 0 升级轨）。由港口升级派生、出海前由 createNewRun 一次性烤进 run，
+ * 之后下潜内不再变（同 powerMax / sonarUnlocked 的快照模式）。clarity.ts 的纯函数读这里，缺省回退到文件顶常量
+ * （故脚本构造的部分 run / 旧存档 缺此字段时行为＝未升级基线）。各值的下限/上限（地板）集中在 clarity.ts::deriveSensorTuning。
+ */
+export interface SensorTuning {
+  /** 声呐 ping 单次耗电（默认 SONAR_PING_COST；升级下调，有地板）。 */
+  pingCost: number;
+  /** 灯每回合耗电的乘子（默认 1；升级下调＝更省电，有地板）。清水因子仍 0，只在黑/浊水生效。 */
+  lampDrainMult: number;
+  /** 声呐注入假回波的 san 阈值（默认 SONAR_FALSE_ECHO_SANITY；升级下调＝更抗欺骗，但留地板＝永不全可信）。 */
+  sonarFalseEchoSanity: number;
+  /** 灯产生幻觉的 san 阈值（默认 LAMP_HALLUCINATION_SANITY；升级下调＝灯更晚崩，但留地板＝灯也终会崩）。 */
+  lampHallucinationSanity: number;
+  /** signature 减免（默认 0；升级上调＝更隐蔽，有上限＝点灯/ping 暴露永不归零，守"读真相必自曝"）。 */
+  signatureReduction: number;
+}
+
 /** 玩家在当次下潜中的资源、装备、背包 */
 export interface RunState {
   runId: string;
@@ -116,8 +134,14 @@ export interface RunState {
   sensors: SensorState;
   /** 电池储备（类比 oxygen 的 run 级储备）：灯/声呐耗电；归零 → 强制摸黑（致盲不直接死）。 */
   power: number;
-  /** 电池总量（升级可提升，留 Phase 2 / 升级轨）。 */
+  /** 电池总量（深水区 Phase 0 升级轨：POWER_MAX + powerMaxBonus；createNewRun 种、power 起手＝powerMax）。 */
   powerMax: number;
+  /**
+   * 本次下潜的有效传感器参数（深水区 Phase 0 升级轨：耗电/抗欺骗/隐蔽随港口升级成长）。
+   * 由 createNewRun 从 getRunBonuses 一次性派生（deriveSensorTuning）；缺省（旧存档/部分 run）→ clarity.ts 回退基线常量。
+   * 未发布故不做迁移（同 sensors/power/alert）：JSON 自动 round-trip + 读取处 `?? 常量` 兜底，不 bump SAVE_VERSION。
+   */
+  sensorTuning?: SensorTuning;
   /**
    * 被探测度 / 「警觉」（深水区 Phase 0b）：点灯/ping 在深水逐回合抬升、摸黑消退（见 clarity.ts::alertDelta）；
    * 越过 ALERT_THRESHOLD 时进节点 → 潜伏捕食者接近、触发遭遇（moveToNode）。浅水不积累（§7.5）。

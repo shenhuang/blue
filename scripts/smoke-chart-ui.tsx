@@ -294,6 +294,11 @@ const htmlJ1 = renderToStaticMarkup(<UpgradePanel state={J1} onStateChange={noop
 assert(htmlJ1.includes('珊瑚碎片×5'), 'J1: 账单应列出材料名×需求量');
 assert(htmlJ1.includes('＋ 30 金'), 'J1: 账单应列出金币价（salvage_guild.lv1 = 30 金）');
 assert(htmlJ1.includes('upgrade-buy">修缮'), 'J1: 账单满足应出现可点（非 disabled）"修缮"按钮（面板渲染全部升级线，其它行显示不足是正常的）');
+// J4. 深水区 Phase 0 升级轨：新「潜水装备」线 + 声呐 lv2 + 传感器效果标签都渲染（UI 数据路径，quirk #38/#58）
+assert(htmlJ1.includes('潜水装备'), 'J4: 应渲染新「潜水装备」升级线');
+assert(htmlJ1.includes('加大电池组') && htmlJ1.includes('电池总量 +20'), 'J4: 渲染电池升级 + powerMaxBonus 效果标签');
+assert(htmlJ1.includes('声呐组件 Lv.2'), 'J4: 渲染声呐 lv2（前置未满足仍列出，状态=需要前一级）');
+assert(htmlJ1.includes('更隐蔽') && (htmlJ1.includes('抗欺骗') || htmlJ1.includes('抗幻觉')), 'J4: 渲染隐蔽 + 抗欺骗/抗幻觉 传感器效果标签');
 // J2. 空仓 + 满金 → "材料不足" + 缺口"（有 0）"
 const J2 = upgradeState([], 9999);
 const htmlJ2 = renderToStaticMarkup(<UpgradePanel state={J2} onStateChange={noop} onClose={noop} />);

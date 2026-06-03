@@ -11,7 +11,7 @@
 // 纯函数 + 防御性读取（run 字段可能因脚本构造的部分 run 而缺失 → 用默认兜底）。
 // 低 san 腐蚀走确定性哈希（不消耗 Math.random）——既不扰动 withSeededRandom 的场景回归，又让 playthrough-sensors 可稳定断言。
 
-import type { RunState, DiveNode, ClarityTier } from '@/types';
+import type { RunState, DiveNode, ClarityTier, SensorTuning } from '@/types';
 
 // ============================================================
 // 可调参数（tunables，SPEC §8）
@@ -33,6 +33,57 @@ export const LAMP_HALLUCINATION_SANITY = 25;
 export const SIGNATURE_BASE = 1;
 export const SIGNATURE_LIGHT = 6;
 export const SIGNATURE_SONAR = 3;
+
+// ----- 升级轨地板/上限（深水区 Phase 0 升级轨，SPEC §8 / §11「升级」） -----
+// 升级把上面的基线常量往"更强"推；这里的地板/上限守两条铁律：
+//   ① 无完全可信传感器（§3.2）——抗欺骗能下调失真阈值，但不归零（声呐≥30、灯≥10 仍会崩）。
+//   ② 读真相永远要自曝（§3.2/§3.3）——隐蔽能降 signature，但点灯/ping 暴露永不为 0。
+/** 声呐 ping 耗电下限（升级最省也到此为止）。 */
+export const SONAR_PING_COST_MIN = 3;
+/** 灯耗电乘子下限（升级最省也到此为止；清水仍 0，只压黑/浊水那段）。 */
+export const LAMP_DRAIN_MULT_MIN = 0.25;
+/** 声呐假回波 san 阈值下限（抗欺骗升满也到此为止——声呐永不全可信）。 */
+export const SONAR_FALSE_ECHO_SANITY_MIN = 30;
+/** 灯幻觉 san 阈值下限（抗欺骗升满也到此为止——灯最后崩、但仍会崩）。 */
+export const LAMP_HALLUCINATION_SANITY_MIN = 10;
+/** signature 减免上限（隐蔽升满也到此为止）。 */
+export const SIGNATURE_REDUCTION_MAX = 3;
+/** 灯/声呐开着时的暴露下限（signature 超基线部分的地板）——保"自曝"结构张力，隐蔽再强也甩不掉。 */
+export const SIGNATURE_MIN_ACTIVE = 2;
+
+/** 升级派生的传感器加成（来自 getRunBonuses；各项可缺，缺＝0）。 */
+export interface SensorUpgradeBonus {
+  sonarPingCostReduction?: number;
+  lampEfficiency?: number; // 从灯耗电乘子 1 里减去的量（sum）
+  sonarRobustness?: number; // 从声呐假回波阈值里减去的量（sum）
+  lampRobustness?: number; // 从灯幻觉阈值里减去的量（sum）
+  signatureReduction?: number; // signature 减免（sum）
+}
+
+/**
+ * 把"升级加成"烤成本次下潜的有效传感器参数（应用地板/上限）。createNewRun 出海前调一次，结果存 run.sensorTuning。
+ * 空入参（未升级）→ 全基线（与 0a/0b 行为逐字节一致）。
+ */
+export function deriveSensorTuning(b: SensorUpgradeBonus = {}): SensorTuning {
+  return {
+    pingCost: Math.max(SONAR_PING_COST_MIN, SONAR_PING_COST - (b.sonarPingCostReduction ?? 0)),
+    lampDrainMult: Math.max(LAMP_DRAIN_MULT_MIN, 1 - (b.lampEfficiency ?? 0)),
+    sonarFalseEchoSanity: Math.max(
+      SONAR_FALSE_ECHO_SANITY_MIN,
+      SONAR_FALSE_ECHO_SANITY - (b.sonarRobustness ?? 0),
+    ),
+    lampHallucinationSanity: Math.max(
+      LAMP_HALLUCINATION_SANITY_MIN,
+      LAMP_HALLUCINATION_SANITY - (b.lampRobustness ?? 0),
+    ),
+    signatureReduction: Math.min(SIGNATURE_REDUCTION_MAX, Math.max(0, b.signatureReduction ?? 0)),
+  };
+}
+
+/** 本次下潜声呐 ping 的有效耗电（升级派生，缺省回退 SONAR_PING_COST）。dive.ts / NodeSelectView 共用。 */
+export function sonarPingCost(run: RunState): number {
+  return run.sensorTuning?.pingCost ?? SONAR_PING_COST;
+}
 
 /** 'none' 档（摸黑 / 灯打不透）的盲航预览文案——沿用旧 visibility:dark 行为（quirk #27/#41）。 */
 export const BLIND_PREVIEW = '看不清，一团黑影。';
@@ -86,15 +137,18 @@ export function lightDrainFactor(run: RunState): number {
 /** 灯每回合耗电（仅灯亮时）。tickTurns 调用，类比 oxygen 的 turn 消耗。 */
 export function lampPowerDrain(run: RunState, turns: number): number {
   if (turns <= 0 || !lampOn(run)) return 0;
-  return LIGHT_POWER_PER_TURN * lightDrainFactor(run) * turns;
+  // 升级轨：lampDrainMult 缺省 1（未升级＝基线）；只压黑/浊水那段（清水因子本就 0）。
+  const mult = run.sensorTuning?.lampDrainMult ?? 1;
+  return LIGHT_POWER_PER_TURN * lightDrainFactor(run) * mult * turns;
 }
 
 /** signature（被探测度）：灯亮高、声呐 ping 中、全关低。0a 只派生，0b 接遭遇/combat。 */
 export function signature(run: RunState): number {
-  let s = SIGNATURE_BASE;
-  if (lampOn(run)) s += SIGNATURE_LIGHT;
-  if (sonarActive(run)) s += SIGNATURE_SONAR;
-  return s;
+  const raw = (lampOn(run) ? SIGNATURE_LIGHT : 0) + (sonarActive(run) ? SIGNATURE_SONAR : 0);
+  if (raw <= 0) return SIGNATURE_BASE; // 摸黑：最低暴露（隐蔽升级不影响关灯静默）
+  // 升级轨：隐蔽降 signature 超基线部分，但留 SIGNATURE_MIN_ACTIVE 地板（点灯/ping 永远暴露你，守"读真相必自曝"）。
+  const reduction = run.sensorTuning?.signatureReduction ?? 0;
+  return SIGNATURE_BASE + Math.max(SIGNATURE_MIN_ACTIVE, raw - reduction);
 }
 
 // ============================================================
@@ -184,7 +238,9 @@ const LAMP_HALLUCINATION: string[] = [
 export function sonarReturn(run: RunState, node: DiveNode): string {
   if (node.evadesSonar) return '声呐打过去，那片水把脉冲吞了——什么都没回来。';
   if (node.spoofsSonar) return `回波很干净，太干净了——像${node.spoofsSonar}。`;
-  if ((run.stats?.sanity ?? 100) < SONAR_FALSE_ECHO_SANITY) {
+  // 升级轨：抗欺骗下调失真阈值（缺省回退基线常量），但 deriveSensorTuning 留地板＝声呐永不全可信。
+  const falseEchoSanity = run.sensorTuning?.sonarFalseEchoSanity ?? SONAR_FALSE_ECHO_SANITY;
+  if ((run.stats?.sanity ?? 100) < falseEchoSanity) {
     return pick(SONAR_FAKE, `fake:${node.id}:${Math.round(run.stats?.sanity ?? 100)}`);
   }
   const table = SONAR_PLAUSIBLE[node.kind] ?? SONAR_PLAUSIBLE.default;
@@ -196,7 +252,9 @@ export function sonarReturn(run: RunState, node: DiveNode): string {
  * 连灯也产生假预览（无完全可信的传感器、灯最后崩）。
  */
 export function lampPreview(run: RunState, node: DiveNode): string {
-  if ((run.stats?.sanity ?? 100) < LAMP_HALLUCINATION_SANITY) {
+  // 升级轨：抗欺骗下调灯幻觉阈值（缺省回退基线），但留地板＝灯最后崩、仍会崩。
+  const halluSanity = run.sensorTuning?.lampHallucinationSanity ?? LAMP_HALLUCINATION_SANITY;
+  if ((run.stats?.sanity ?? 100) < halluSanity) {
     return pick(LAMP_HALLUCINATION, `lamp:${node.id}:${Math.round(run.stats?.sanity ?? 100)}`);
   }
   return node.preview;

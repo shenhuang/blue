@@ -14,6 +14,13 @@ export type UpgradeEffect =
   | { kind: 'preDiveCorpseSelect'; value: boolean }
   | { kind: 'currentSweepImmune'; value: boolean }
   | { kind: 'unlockSonar'; value: boolean }
+  // 深水区 Phase 0 升级轨：让 0a/0b 造的传感器随材料经济成长（聚合进 run.sensorTuning / powerMax，见 clarity.ts）。
+  | { kind: 'powerMaxBonus'; value: number } // 电池总量 +value
+  | { kind: 'sonarPingCostReduction'; value: number } // 声呐 ping 耗电 −value（有地板）
+  | { kind: 'lampEfficiency'; value: number } // 灯耗电乘子 −value（更省电，有地板）
+  | { kind: 'sonarRobustness'; value: number } // 声呐假回波 san 阈值 −value（更抗欺骗，有地板）
+  | { kind: 'lampRobustness'; value: number } // 灯幻觉 san 阈值 −value（灯更晚崩，有地板）
+  | { kind: 'signatureReduction'; value: number } // signature 减免 +value（更隐蔽，有上限）
   | { kind: 'unlockShopItem'; itemId: string };
 
 /** 一条升级要求的某种材料及数量（qty 量级 ∈ [1,10]） */
@@ -66,6 +73,19 @@ export interface UpgradeBonuses {
   currentSweepImmune: boolean;
   /** 声呐能力是否已解锁（深水区 Phase 0a：门控在深料升级 upgrade.sonar.lv1）。 */
   sonarUnlocked: boolean;
+  // 深水区 Phase 0 升级轨（sum 聚合）：经 getRunBonuses → createNewRun → run.powerMax / run.sensorTuning。
+  /** 电池总量加成（+到 POWER_MAX）。 */
+  powerMaxBonus: number;
+  /** 声呐 ping 耗电减免（从 SONAR_PING_COST 减，有地板）。 */
+  sonarPingCostReduction: number;
+  /** 灯耗电乘子减免（从 1 减，更省电，有地板）。 */
+  lampEfficiency: number;
+  /** 声呐抗欺骗（从假回波 san 阈值减，有地板）。 */
+  sonarRobustness: number;
+  /** 灯抗欺骗（从灯幻觉 san 阈值减，有地板）。 */
+  lampRobustness: number;
+  /** 隐蔽（signature 减免，有上限）。 */
+  signatureReduction: number;
   unlockedZones: Set<string>;
   unlockedShopItems: Set<string>;
 }

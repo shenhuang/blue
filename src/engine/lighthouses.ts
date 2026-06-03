@@ -202,6 +202,13 @@ export interface RunStartBonuses {
   extraConsumableSlot: number;
   /** 声呐能力是否已解锁（深水区 Phase 0a：来自全局升级 upgrade.sonar.lv1）。 */
   sonarUnlocked: boolean;
+  // 深水区 Phase 0 升级轨（全局升级派生，前哨灯塔暂不贡献）：createNewRun 据此种 powerMax / sensorTuning。
+  powerMaxBonus: number;
+  sonarPingCostReduction: number;
+  lampEfficiency: number;
+  sonarRobustness: number;
+  lampRobustness: number;
+  signatureReduction: number;
 }
 
 /**
@@ -218,6 +225,12 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
     staminaMaxBonus: g.staminaMaxBonus,
     extraConsumableSlot: g.extraConsumableSlot + homeSlot,
     sonarUnlocked: g.sonarUnlocked,
+    powerMaxBonus: g.powerMaxBonus,
+    sonarPingCostReduction: g.sonarPingCostReduction,
+    lampEfficiency: g.lampEfficiency,
+    sonarRobustness: g.sonarRobustness,
+    lampRobustness: g.lampRobustness,
+    signatureReduction: g.signatureReduction,
   };
 }
 
