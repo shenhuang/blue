@@ -189,6 +189,7 @@
 - 2026-06-02（续，「继续 pin」Phase 1-2）：定 **蛙跳下潜**（一潜一 band、从最深前哨起、复用 depthOffset + reach/reveal + 尸体回收）；**前哨经济**——水上前哨只增不减、水下前哨衰减（水流区更快、但可水力发电）；**能源**（base 层、≠ 潜水员电池）决定同时在线设施数；补给（充电/充氧/中转）是设施、越深越要自建；**灯也会在 san 足够低时幻觉**（无完全可信传感器、灯最后崩）。并入 §3.2/§3.6（新）/§5 P1-P2/§6/§7（#4#6 resolved、新增 #7#8）/§8。**Phase 1-2 设计 pin 实；剩衰减后果细节（§7#7）+ Phase 3 mimic 逐拍演出。**
 - 2026-06-02（续，收束）：定 **理智＝双向门**——低 san 解锁可探索的「另一个世界」（亦真亦假、拒绝裁决；§1 + §3.7 新增），把低-san 门控从死内容（quirk #21）变成正向去处；衰减后果加重为 **变暗 + 修建进度回退 + 寄存材料丢失**（§3.6 / §7#7 resolved）。**Phase 3（mimic 演出 + 另一个世界）＝与作者一起一个个敲定的专门 session，不在草案写死；Phase 0 仍是下一个 build 起手。**
 - 2026-06-03（**Phase 0a 开建** · 深水区第一笔代码）：实装微观双传感器 clarity + 不可信声呐 + 电池 + 低 san 腐蚀（详见 STATUS quirk #58）。建前作者过 §7/§11 取舍，四点拍板（AskUserQuestion）：① clarity↔visibility＝**并入·保留字段**（dark→灯打不透→`none`，`murky` 不挡灯）；② 浅水手感＝**默认灯亮·浅水近免费**（电/声呐张力只在 dark/深 band）；③+④ 作者中途**复盘声呐**：先想"仅做灯"，旋即意识到**黑暗里仅有灯无法继续探索→声呐是必需的**，回到本 SPEC 双传感器模型，并**新增关键约束：声呐能力后期才解锁（深料升级），玩家先经历"黑暗中无声呐"、黑水天然探索受限，分级解锁（即使有灯仍有受限处）**。据此偏差三点并入 §11 0a（声呐解锁轨 / `clarity(run)` 不带 node / visibility 并入非删）。低 san 阈值＝声呐<60、灯<25（§8 tunable）。**另：作者定未发布暂不做存档迁移**——run.sensors/power 不 bump SAVE_VERSION（留 4）、不加 migrate 步，靠 createNewRun 种默认 + 反序列化兜底；发布前再统一补（#39 流程留备用）。**0b（探测/隐身、碰 combat、消费 signature）留下一 session。**
+- 2026-06-03（**Phase 0b 开建** · 同日续）：实装探测/隐身（详见 STATUS quirk #59）。作者拍板探测＝「**警觉积累 → 接近/伏击**」（§3.3 最完整形态）。发现今天战斗 100% 事件选项触发、零自动遭遇 → 这是**新增自动遭遇路径**。实装：`run.alert`（run 级，点灯/ping 深水抬、摸黑/浅水降，tickTurns 累加）+ `clarity.ts::alertDelta`/`predatorApproaches` + `dive.ts::moveToNode` 越线触发 `startCombat`（复用 zone `ambushEncounters` 现有 solo 敌）+ `ZoneDef.ambushEncounters`（三深水 zone 配、浅/教学不配＝§7.5 兜底）+ NodeSelectView 预警 + `playthrough-stealth`。守则：地标不伏击（留出路）、预警有窗口、摸黑能甩、可生存无脚本死。**Phase 0（0a 感知 + 0b 探测）至此完成；下一步 Phase 1 深度轴（banded 蛙跳）或 Phase 0 升级轨（灯/声呐效果·电量）。**
 
 ---
 
@@ -221,13 +222,17 @@
 
 **回归** — [x] 新 `playthrough-sensors.ts`（10 节）：灯=真相 / 黑水无声呐=盲 / ping 可被 spoof 改写 + 耗电 / 未解锁 ping 无效 / power 归零摸黑 / 低 san 假回波 / 更低 san 灯幻觉 / tickTurns 分级耗电 / 移动 ping 消散 / signature 排序。全绿 + prod build。
 
-### 0b — 探测 / 隐身（碰 combat，依赖 0a 的 signature）
+### 0b — 探测 / 隐身（碰 combat，依赖 0a 的 signature）✅ 已实装（2026-06-03，提交见 STATUS quirk #59）
 
-- [ ] `signature(run)` 接进遭遇/combat：高 signature → 捕食者接近/伏击/提高遭遇；摸黑低 signature → 可滑过。
-- [ ] （可选）节点级「警觉」度：主动感知抬、静默降；高警觉触发接近/ambush。
-- [ ] `combat.ts` / 遭遇触发 / `moveToNode` 读 signature。
-- [ ] 回归：新 stealth 场景（点灯/ping 抬警觉→接近；摸黑→滑过）；`playthrough-combat` / `combat-scenarios` 视情况加。
-- [ ] 平衡：signature 权重、警觉阈值、ambush 触发（§8 tunables）。
+**作者拍板（AskUserQuestion）**：探测做成「**警觉积累 → 接近/伏击**」（§3.3 最完整形态，非轻量 roll、非只调现有战斗）。**关键发现**：今天战斗 100% 由事件选项触发（零自动遭遇），故这是**新增的自动遭遇路径**。
+
+- [x] `signature(run)` 经 `alertDelta` 接进 run 级**警觉** `run.alert`：点灯/ping 在深水逐回合抬、摸黑/浅水消退（`tickTurns` 累加、clamp 0–100）。
+- [x] **警觉积累**（实装为 **run 级**而非 node 级——警觉是"捕食者对你的注意"、随你移动，比 per-node 更贴）：`alertDelta = (signature 超基线 × 深度因子 × GAIN) − DECAY`；深度因子浅水 0（§7.5）、25m 起爬升、60m 满。
+- [x] `moveToNode` 读警觉：`predatorApproaches(run)`（alert ≥ THRESHOLD 60 + 够深）+ 进的是非地标节点（事件/尸体）+ 该 zone 有 `ambushEncounters` → `startCombat` 触发接近遭遇（复用 zone 现有 solo 敌），触发后 alert 落回缓冲。地标（上浮口/气穴/扎营）不被伏击＝总留「摸黑奔向出口」的出路。**可生存无脚本死**：UI 预警有窗口（ALERT_WARN 35）+ 摸黑能甩 + 遭遇本身可打可逃。
+- [x] `zones.json` 加 `ZoneDef.ambushEncounters`：reef/cave/wreck 三深水 zone 各配 2 个现有 solo encounter；教学/浅水 zone 不配（§7.5 数据兜底）。
+- [x] UI：`NodeSelectView` 高警觉预警（WARN 黄 / THRESHOLD 红，提示熄灯）；`smoke-chart-ui` E2 断言。
+- [x] 回归：新 `playthrough-stealth.ts`（6 节：抬升/消退/浅水免压/越线触发/摸黑滑过/无池不触发）。`playthrough-combat`+`combat-scenarios` 不变（既有事件触发战斗未动）。
+- [x] 平衡（§8 tunable）：ALERT_GAIN 1.5 / DECAY 3 / THRESHOLD 60 / WARN 35 / MIN_DEPTH 25 / AFTER_TRIGGER 0 / signature 权重沿用 0a。60m 满因子约 10 回合到阈值、声呐 ping 远慢于举灯。
 
 ### 升级（0a 尾或挪 Phase 2）
 - [x] **声呐解锁轨**（0a 已做）：`upgrade.sonar.lv1`（`line.sonar_rig`，深料账单：lantern_gland T4 + eel_skin/cave_octopus_beak T3 + 金）→ `unlockSonar` effect → `getUpgradeBonuses().sonarUnlocked` → `getRunBonuses` → `createNewRun` 种 `run.sensors.sonarUnlocked`。

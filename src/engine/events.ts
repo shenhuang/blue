@@ -13,7 +13,7 @@ import type {
 } from '@/types';
 import { addToInventory, appendLog, clampStats } from './state';
 import { restoreLighthouse } from './lighthouses';
-import { lampPowerDrain } from './clarity';
+import { lampPowerDrain, alertDelta, ALERT_MAX } from './clarity';
 
 // —— 数据装载 ——
 // 单一事件库是 zones.ts::EVENT_DB（含全部 zone 的事件）。getEvent 直接委托给它，
@@ -292,5 +292,8 @@ export function tickTurns(run: RunState, turns: number): RunState {
   const curPower = run.power ?? 0;
   const power = Math.max(0, curPower - lampPowerDrain(run, turns));
 
-  return { ...run, stats, power, turn: run.turn + turns };
+  // 深水区 Phase 0b：警觉积累（点灯/ping 在深水抬、摸黑/浅水降）；clamp 0–ALERT_MAX。
+  const alert = Math.max(0, Math.min(ALERT_MAX, (run.alert ?? 0) + alertDelta(run, turns)));
+
+  return { ...run, stats, power, alert, turn: run.turn + turns };
 }

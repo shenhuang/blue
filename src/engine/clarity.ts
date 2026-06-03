@@ -98,6 +98,51 @@ export function signature(run: RunState): number {
 }
 
 // ============================================================
+// 探测 / 被探测：警觉（深水区 Phase 0b）
+// ============================================================
+// 主动感知是双向的——你照亮 / ping 越久越深，潜伏的捕食者越「警觉」；摸黑让它消退。
+// 警觉越过阈值 → 进节点时捕食者接近、触发遭遇（dive.ts::moveToNode）。摸黑是逃出生天的阀门；
+// 浅水不积累、不触发（§7.5「浅水免探测压力」）。可生存无脚本死：预警有窗口、摸黑能甩、遭遇本身可打可逃。
+
+export const ALERT_MAX = 100;
+/** ≥ 此值：进节点时潜伏捕食者接近、触发遭遇（dive.ts）。 */
+export const ALERT_THRESHOLD = 60;
+/** ≥ 此值：UI/日志预警，给玩家熄灯反应的窗口（读 tell → 主动降暴露）。 */
+export const ALERT_WARN = 35;
+/**
+ * 暴露增益系数（× signature 超出静默基线 × 深度因子）。
+ * 校准：60m（因子 1）灯亮 exposure 6 → gain 9、净 +6/回合 → 约 10 回合到阈值（一段持续点灯的深水穿行）；
+ * 声呐 ping（exposure 3）净 +1.5/回合，比举灯安全得多。50m（因子≈0.71）更慢。§8 tunable，作者可调。
+ */
+export const ALERT_GAIN = 1.5;
+/** 每回合基础消退（摸黑 / 浅水时净消退——逃出生天的阀门；高警觉摸黑约 8 回合回到预警线下）。 */
+export const ALERT_DECAY = 3;
+/** 浅于此深度不积累 / 不触发警觉（浅水免探测压力 §7.5；与深 band 斜坡共用）。 */
+export const ALERT_MIN_DEPTH = 25;
+/** 触发遭遇后警觉落到的值（留一段缓冲，避免连环伏击）。 */
+export const ALERT_AFTER_TRIGGER = 0;
+
+/** 深度因子：浅水 0（§7.5），ALERT_MIN_DEPTH 起线性爬升、60m 满（更深 band 的斜坡留 Phase 1）。 */
+export function alertDepthFactor(run: RunState): number {
+  const d = run.currentDepth ?? 0;
+  if (d <= ALERT_MIN_DEPTH) return 0;
+  return Math.min(1, (d - ALERT_MIN_DEPTH) / (60 - ALERT_MIN_DEPTH));
+}
+
+/** 警觉每回合净变化：暴露增益（signature 超基线 × 深度因子 × GAIN）− 基础消退。摸黑/浅水 → 负（消退）。 */
+export function alertDelta(run: RunState, turns: number): number {
+  if (turns <= 0) return 0;
+  const exposure = Math.max(0, signature(run) - SIGNATURE_BASE); // 灯 +6 / 声呐 +3 / 摸黑 0
+  const gain = exposure * alertDepthFactor(run) * ALERT_GAIN;
+  return (gain - ALERT_DECAY) * turns;
+}
+
+/** 警觉是否已到「捕食者接近」线（moveToNode 据此触发遭遇）；需够深（§7.5）。 */
+export function predatorApproaches(run: RunState): boolean {
+  return (run.alert ?? 0) >= ALERT_THRESHOLD && (run.currentDepth ?? 0) >= ALERT_MIN_DEPTH;
+}
+
+// ============================================================
 // 预览文案：灯下真相（可被极低 san 幻觉改写）/ 声呐不可信表象
 // ============================================================
 

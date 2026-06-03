@@ -731,6 +731,20 @@ html, body, #root {
   color: var(--accent);
 }
 
+/* 深水区 Phase 0b：警觉预警（被探测） */
+.alert-warning {
+  margin: 10px 0 0;
+  padding: 6px 10px;
+  border-left: 3px solid var(--warn);
+  color: var(--warn);
+  font-size: 0.9em;
+  font-style: italic;
+}
+.alert-warning.danger {
+  border-left-color: var(--danger);
+  color: var(--danger);
+}
+
 .node-hint {
   margin-top: 6px;
   font-size: 12px;

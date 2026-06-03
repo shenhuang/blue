@@ -119,6 +119,12 @@ export interface RunState {
   /** 电池总量（升级可提升，留 Phase 2 / 升级轨）。 */
   powerMax: number;
   /**
+   * 被探测度 / 「警觉」（深水区 Phase 0b）：点灯/ping 在深水逐回合抬升、摸黑消退（见 clarity.ts::alertDelta）；
+   * 越过 ALERT_THRESHOLD 时进节点 → 潜伏捕食者接近、触发遭遇（moveToNode）。浅水不积累（§7.5）。
+   * 未发布故不做迁移（同 sensors/power）：createNewRun 种 0 + 反序列化处 `?? 0` 兜底。
+   */
+  alert: number;
+  /**
    * 本次下潜所选 POI 的环境修正（来自海图）。depthOffset 已在 mapgen 生成时消化进各层深度；
    * current / visibility 暂存于此供未来 hook 读取（冲走 / 光照效果待实装）。可选 → 旧存档/脚本省略即无修正。
    */

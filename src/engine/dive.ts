@@ -19,6 +19,7 @@ import { getUpgradeBonuses } from './upgrades';
 import { getRunBonuses } from './lighthouses';
 import { effectiveDistance } from './chart';
 import { executeDeath } from './death';
+import { startCombat } from './combat';
 import {
   clarity,
   sonarReturn,
@@ -26,6 +27,8 @@ import {
   BLIND_PREVIEW,
   BLIND_VISITED_PREVIEW,
   SONAR_PING_COST,
+  predatorApproaches,
+  ALERT_AFTER_TRIGGER,
 } from './clarity';
 
 /** 编译期穷尽性检查：将来新增 NodeKind 却忘了在 moveToNode 里处理时，这里会直接报类型错误。 */
@@ -349,6 +352,29 @@ function applyTransit(state: GameState, target: DiveNode): GameState {
   return s;
 }
 
+/**
+ * 深水区 Phase 0b：警觉越线 → 潜伏的捕食者接近、触发遭遇。
+ * 仅当该 zone 配了 `ambushEncounters` + 警觉够 + 够深（§7.5）+ 进入的是非地标节点（事件/尸体）时触发——
+ * 地标（上浮口/气穴/扎营）是落脚点，不在此被伏击，总留「摸黑奔向出口」的出路。
+ * 选遭遇用确定性索引（不消耗 Math.random，保 mapgen/场景确定性）。返回 combat 态 GameState，否则 null。
+ */
+function maybeApproachEncounter(state: GameState, target: DiveNode): GameState | null {
+  const run = state.run;
+  if (!run) return null;
+  if (!predatorApproaches(run)) return null;
+  if (target.kind !== 'event' && target.kind !== 'corpse') return null;
+  const pool = getZone(run.zoneId)?.ambushEncounters;
+  if (!pool || pool.length === 0) return null;
+  const combatId = pool[run.visitedNodeIds.length % pool.length];
+  // 触发后警觉落回缓冲值，避免连环伏击
+  let s: GameState = { ...state, run: { ...run, alert: ALERT_AFTER_TRIGGER } };
+  s = appendLog(s, {
+    tone: 'uncanny',
+    text: '你举着的光招来了东西——它从黑里径直朝你来，没有半点犹豫。',
+  });
+  return startCombat(s, combatId);
+}
+
 /** 玩家点选了一个节点 → 进入该节点。过渡耗回合，再按节点 kind 决定下一步 */
 export function moveToNode(state: GameState, nodeId: string): GameState {
   const run = state.run;
@@ -370,6 +396,10 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
   if (ticked.stats.sanity <= 0) {
     return executeDeath(s, '理智崩溃，疯狂上浮');
   }
+
+  // 深水区 Phase 0b：高警觉 + 该 zone 有潜伏捕食者 → 接近并触发遭遇（先于节点 kind 分发；摸黑可避免）。
+  const approached = maybeApproachEncounter(s, target);
+  if (approached) return approached;
 
   // 根据节点 kind 决定下一步
   switch (target.kind) {

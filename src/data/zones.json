@@ -26,7 +26,8 @@
         { "minDepth": 45, "tags": ["wreck", "cave"] }
       ],
       "requiresFlags": ["flag.tutorial_complete"],
-      "generation": "random"
+      "generation": "random",
+      "ambushEncounters": ["combat.reef_barracuda_solo", "combat.reef_grouper_solo"]
     },
     {
       "id": "zone.blue_caves",
@@ -41,7 +42,8 @@
       "requiresFlags": ["flag.tutorial_complete"],
       "generation": "random",
       "mapShape": "maze",
-      "canFreeAscend": false
+      "canFreeAscend": false,
+      "ambushEncounters": ["combat.blind_eel_solo", "combat.cave_octopus_solo"]
     },
     {
       "id": "zone.wreck_graveyard",
@@ -55,7 +57,8 @@
       ],
       "requiresFlags": ["flag.tutorial_complete"],
       "generation": "random",
-      "canFreeAscend": true
+      "canFreeAscend": true,
+      "ambushEncounters": ["combat.wreck_spider_crab_solo", "combat.drowned_lantern_solo"]
     }
   ]
 }

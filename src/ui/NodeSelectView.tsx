@@ -1,6 +1,6 @@
 import type { GameState, NodeChoice } from '@/types';
 import { moveToNode, setLight, pingSonar } from '@/engine/dive';
-import { clarity, SONAR_PING_COST } from '@/engine/clarity';
+import { clarity, SONAR_PING_COST, ALERT_WARN, ALERT_THRESHOLD } from '@/engine/clarity';
 import { StatusBar } from './StatusBar';
 
 interface Props {
@@ -19,6 +19,8 @@ export function NodeSelectView({ state, choices, onStateChange }: Props) {
   const lightOn = run.sensors?.light ?? true;
   const sonarUnlocked = run.sensors?.sonarUnlocked ?? false;
   const canPing = sonarUnlocked && (run.power ?? 0) >= SONAR_PING_COST;
+  // 深水区 Phase 0b：警觉预警——给玩家"读出 tell → 熄灯甩开"的窗口（越线则进下一节点会被接近）。
+  const alert = run.alert ?? 0;
 
   const headerText =
     tier === 'full'
@@ -62,6 +64,14 @@ export function NodeSelectView({ state, choices, onStateChange }: Props) {
             </button>
           )}
         </div>
+
+        {alert >= ALERT_WARN && (
+          <p className={`alert-warning ${alert >= ALERT_THRESHOLD ? 'danger' : ''}`}>
+            {alert >= ALERT_THRESHOLD
+              ? '有东西已经循着你的光逼近了——再往前走，它就到你跟前。熄灯，现在。'
+              : '水里有什么被你的光惊动了，正慢慢靠过来。熄灯也许能甩开它。'}
+          </p>
+        )}
 
         <ul className="event-options">
           {choices.map((c) => {

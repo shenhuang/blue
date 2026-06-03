@@ -39,6 +39,12 @@ export interface ZoneDef {
    *    叙事是"凿穿洞顶"。mapgen 也会避免在中间层生成 ascent_point；末层仍保留 ascent_point 作为洞穴另一端的出口。
    */
   canFreeAscend?: boolean;
+  /**
+   * 深水区 Phase 0b：该 zone 潜伏捕食者可用的遭遇 id 池。警觉越过阈值时 moveToNode 触发其一
+   * （复用该 zone 现有的 solo encounter）。空 / 未设 → 该 zone 无主动遭遇——浅水 / 教学 zone 不设，
+   * §7.5「浅水免探测压力」天然成立。
+   */
+  ambushEncounters?: string[];
 }
 
 /** 下潜地图（运行时生成） */

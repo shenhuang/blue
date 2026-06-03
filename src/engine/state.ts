@@ -161,6 +161,8 @@ export function createNewRun(opts: {
     sensors: { light: true, sonar: 'off', sonarUnlocked },
     power: POWER_MAX,
     powerMax: POWER_MAX,
+    // 深水区 Phase 0b：警觉从 0 起（点灯/ping 在深水抬、摸黑降）。
+    alert: 0,
   };
 }
 
