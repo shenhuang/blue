@@ -1,0 +1,35 @@
+{
+  "_doc": "深度 band 全局阶梯（深水区 Phase 1）。每个 band 引用一个 zone 提供内容，用自己的绝对 depthRange 覆盖该 zone 的 depthRange（band 决定下到多深、zone 决定那里有什么）。软门控：不带硬解锁 flag——能否在这深度活下来由装备（声呐解锁+电池/升级，都吃深料）和后续强敌决定。深 band 更暗（visibility）→灯打不透→被迫用更耗电的声呐→电量压力间接抬升（不在耗电上加深度税）。order 升序＝越来越深、可续写更深 band（架构不硬编码地板）。trench_* 暂借蓝洞群内容＝占位，专属 trench/abyss zone 与事件留后续内容期。",
+  "bands": [
+    {
+      "id": "band.reef_deep",
+      "name": "灯塔礁·深槽",
+      "zoneId": "zone.old_lighthouse_reef",
+      "depthRange": [45, 60],
+      "order": 1,
+      "visibility": "murky",
+      "blurb": "礁体侧面那道深槽的底。水冷下来，悬浮物把灯光散成一团白——还看得见，只是看不远。",
+      "danger": "悬浮物里灯只够看清面前一臂。声呐能扫远些，但回波信不信得过另说。"
+    },
+    {
+      "id": "band.trench_mouth",
+      "name": "竖井·口",
+      "zoneId": "zone.blue_caves",
+      "depthRange": [60, 82],
+      "order": 2,
+      "visibility": "dark",
+      "blurb": "蓝洞群最里头，岩壁裂开一道一直向下的竖井。没人量过底。当地人说，从这儿下去的，水声是反着回来的。",
+      "danger": "黑水——没有声呐你会瞎着下去；灯打不透，举着只是费电。够不够强，下去才知道。"
+    },
+    {
+      "id": "band.trench_throat",
+      "name": "竖井·喉",
+      "zoneId": "zone.blue_caves",
+      "depthRange": [82, 108],
+      "order": 3,
+      "visibility": "dark",
+      "blurb": "竖井在这里先收窄又骤然张开。越往下，声呐的回波越不像话——它扫出来的东西，和你点灯凑近看到的，对不上。",
+      "danger": "比上面更黑、更深。电量、理智、回波——到这里没有一样是你信得过的。"
+    }
+  ]
+}

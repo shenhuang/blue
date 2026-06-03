@@ -6,8 +6,9 @@
 import { useMemo, useState, useEffect } from 'react';
 import type { GameState, ChartPoi } from '@/types';
 import { generateChart, poiLockReason, isPoiDepartable, describeModifier } from '@/engine/chart';
-import { startDiveFromPoi } from '@/engine/dive';
-import { revealRadius } from '@/engine/lighthouses';
+import { startDiveFromPoi, startDiveFromOutpost } from '@/engine/dive';
+import { revealRadius, getHomeLighthouse } from '@/engine/lighthouses';
+import { getBands } from '@/engine/bands';
 import { getZone } from '@/engine/zones';
 import { getUpgradeBonuses } from '@/engine/upgrades';
 import { listRecoverableCorpses } from '@/engine/death';
@@ -69,6 +70,13 @@ export function SeaChartView({ state, onStateChange }: Props) {
 
   function handleLeave() {
     onStateChange({ ...state, phase: { kind: 'port' } });
+  }
+
+  // 深水区 Phase 1：从前哨「蛙跳」直接下到一个深度 band（本期最小版＝home 灯塔出潜）。
+  // 软门控：band 不锁，列出全部——越深越黑，能不能活由装备（声呐/电量/升级）决定，不是开关。
+  const home = getHomeLighthouse(state.profile);
+  function handleOutpostDive(bandId: string) {
+    onStateChange(startDiveFromOutpost(state, bandId));
   }
 
   return (
@@ -165,6 +173,27 @@ export function SeaChartView({ state, onStateChange }: Props) {
               onDepart={handleDepart}
             />
           )}
+        </div>
+      )}
+
+      {home && (
+        <div className="chart-outpost-dive">
+          <h3 className="chart-outpost-title">深潜 · 蛙跳（试验）</h3>
+          <p className="dim">
+            从{home.name}直接下到更深的水段。越深越黑——没有声呐和电量，别硬下。
+          </p>
+          <div className="chart-band-list">
+            {getBands().map((b) => (
+              <button
+                key={b.id}
+                className="btn small chart-band-btn"
+                onClick={() => handleOutpostDive(b.id)}
+                title={b.danger ?? ''}
+              >
+                {b.name}（{b.depthRange[0]}–{b.depthRange[1]}m）
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

@@ -70,6 +70,10 @@ assert(htmlA.includes('蓝洞群'), 'A: 应含蓝洞群 POI');
 assert(htmlA.includes('沉船墓园'), 'A: 应含沉船墓园 POI');
 assert(htmlA.includes('需要「船坞 Lv.1」'), 'A: 旧灯塔礁应显示锁定原因（disabled 按钮）');
 assert(htmlA.includes('出海'), 'A: 蓝洞/沉船应有可点的出海按钮');
+// A2. 深水区 Phase 1：蛙跳深潜 band 列表（home 灯塔在 → 列出全部 band，软门控不锁）
+assert(htmlA.includes('蛙跳'), 'A2: 应渲染蛙跳深潜入口（home 灯塔出潜）');
+assert(htmlA.includes('竖井'), 'A2: 应列出深 band（竖井·口/喉，突破 60m）');
+assert(htmlA.includes('60–82m'), 'A2: band 按钮带绝对深度窗口');
 L('  渲染成功，灯塔礁锁定 + 蓝洞/沉船可出海 ✓');
 
 // ============================================

@@ -8,6 +8,7 @@ import type {
   DiveMap,
   ChartPoi,
   CurrentStrength,
+  Visibility,
   NodeChoice,
   ClarityTier,
 } from '@/types';
@@ -16,7 +17,8 @@ import { generateDiveMap, getNextChoices } from './mapgen';
 import { getZone } from './zones';
 import { appendLog, createNewRun } from './state';
 import { getUpgradeBonuses } from './upgrades';
-import { getRunBonuses } from './lighthouses';
+import { getRunBonuses, getHomeLighthouse } from './lighthouses';
+import { getBand, bandDiveModifier } from './bands';
 import { effectiveDistance } from './chart';
 import { executeDeath } from './death';
 import { startCombat } from './combat';
@@ -44,7 +46,7 @@ function assertNever(x: never): never {
 export function startDive(
   state: GameState,
   zoneId: string,
-  opts?: { depthOffset?: number; targetCorpseId?: string },
+  opts?: { depthOffset?: number; depthRange?: [number, number]; targetCorpseId?: string },
 ): GameState {
   const zone = getZone(zoneId);
   if (!zone) {
@@ -61,6 +63,7 @@ export function startDive(
     profileFlags: state.profile.flags,
     deaths: state.profile.deaths,
     depthOffset: opts?.depthOffset,
+    depthRange: opts?.depthRange,
     targetCorpseId: opts?.targetCorpseId,
   });
 
@@ -145,23 +148,79 @@ export function startDiveFromPoi(
       text: m.current === 'strong' ? '一股急流斜斜地推着你，得用力才稳得住。' : '水里有股缓慢的洋流。',
     });
   }
-  if (m?.visibility && m.visibility !== 'clear') {
+  s = appendVisibilityLog(s, m?.visibility, run.sensors.sonarUnlocked);
+  return s;
+}
+
+/**
+ * 出潜时按能见度追加叙事（startDiveFromPoi / startDiveFromOutpost 共用，避免文案漂移）。
+ * 黑水里灯打不透 → 提示声呐门控（深水区 Phase 0a：有声呐能扫远但回波不可信 / 没声呐只能摸黑）。
+ */
+function appendVisibilityLog(
+  s: GameState,
+  visibility: Visibility | undefined,
+  sonarUnlocked: boolean,
+): GameState {
+  if (!visibility || visibility === 'clear') return s;
+  s = appendLog(s, {
+    tone: 'realistic',
+    text:
+      visibility === 'dark'
+        ? '光几乎照不进来，探照灯只够看清面前一臂。'
+        : '悬浮物把光散成一团白，看不远。',
+  });
+  if (visibility === 'dark') {
     s = appendLog(s, {
-      tone: 'realistic',
-      text:
-        m.visibility === 'dark'
-          ? '光几乎照不进来，探照灯只够看清面前一臂。'
-          : '悬浮物把光散成一团白，看不远。',
+      tone: 'uncanny',
+      text: sonarUnlocked
+        ? '（灯吃不透这片黑。也许声呐还能从前方探回点轮廓——只是回波信不信得过，另说。）'
+        : '（灯吃不透这片黑。你没有能用的声呐，只能贴着石壁一点点摸过去。）',
     });
-    // 黑水里灯打不透 → 教学声呐 / 声呐门控（深水区 Phase 0a）
-    if (m.visibility === 'dark') {
-      s = appendLog(s, {
-        tone: 'uncanny',
-        text: run.sensors.sonarUnlocked
-          ? '（灯吃不透这片黑。也许声呐还能从前方探回点轮廓——只是回波信不信得过，另说。）'
-          : '（灯吃不透这片黑。你没有能用的声呐，只能贴着石壁一点点摸过去。）',
-      });
-    }
+  }
+  return s;
+}
+
+/**
+ * 从前哨「蛙跳」下潜到一个深度 band（深水区 Phase 1）。镜像 startDiveFromPoi，但：
+ *   - 出潜点＝前哨（**本期最小版用 home 灯塔当 stand-in**；真·最深前哨是 Phase 2）；
+ *   - 目标＝一个 band：用 band 的**绝对 depthRange 覆盖** zone.depthRange（band 决定下到多深、zone 决定那里有什么）；
+ *   - **软门控**：不查解锁 flag——能不能活由装备（声呐解锁 + 电池/升级，吃深料，见 quirk #60）+ 后续强敌决定。
+ *     深 band 的 visibility=dark → 灯打不透 → 被迫用更耗电的声呐（间接电量压力，不加深度耗电税；作者 2026-06-03）。
+ *   - 随身加成走 getRunBonuses（含 Phase 0 升级轨的 sensorTuning/powerMax）——装备越强越下得去。
+ */
+export function startDiveFromOutpost(state: GameState, bandId: string): GameState {
+  const band = getBand(bandId);
+  if (!band) {
+    console.warn(`Band ${bandId} not found`);
+    return state;
+  }
+  // 最小版 stand-in：用 home 灯塔当出潜前哨（Phase 2 换成沿深度建的最深前哨）。
+  const outpost = getHomeLighthouse(state.profile);
+  const bonuses = getRunBonuses(state.profile);
+  let run = createNewRun({ zoneId: band.zoneId, bonuses });
+
+  // 蛙跳「航行预耗氧」：按 band 顶端深度粗估（越深越远），每 20m 约一档，避免引入新平衡旋钮。
+  const dist = Math.max(1, Math.round(band.depthRange[0] / 20));
+  const transitOxygen = dist * 2;
+  const m = bandDiveModifier(band);
+  run = {
+    ...run,
+    diveModifier: m,
+    turn: dist,
+    stats: { ...run.stats, oxygen: Math.max(1, run.stats.oxygen - transitOxygen) },
+  };
+
+  let s: GameState = { ...state, run };
+  // band 用绝对 depthRange 覆盖 zone.depthRange（透传 mapgen GenOpts.depthRange）。
+  s = startDive(s, band.zoneId, { depthRange: band.depthRange });
+
+  s = appendLog(s, {
+    tone: 'system',
+    text: `自${outpost?.name ?? '前哨'}蛙跳下潜至「${band.name}」（${band.depthRange[0]}–${band.depthRange[1]}m）。路上耗气约 ${transitOxygen} 回合。`,
+  });
+  s = appendVisibilityLog(s, m.visibility, run.sensors.sonarUnlocked);
+  if (band.danger) {
+    s = appendLog(s, { tone: 'uncanny', text: band.danger });
   }
   return s;
 }

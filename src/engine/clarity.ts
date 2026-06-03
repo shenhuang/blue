@@ -173,6 +173,12 @@ export const ALERT_GAIN = 1.5;
 export const ALERT_DECAY = 3;
 /** 浅于此深度不积累 / 不触发警觉（浅水免探测压力 §7.5；与深 band 斜坡共用）。 */
 export const ALERT_MIN_DEPTH = 25;
+/**
+ * 警觉深度因子到达「满档 1」的深度（深水区 Phase 1：命名替代曾写死的 60）。
+ * 更深 band（> 此值）在此饱和＝维持最高探测压力，不封顶、不报错（Math.min 兜底）。
+ * 后续若要「越深越狠、不饱和」可改成不封顶斜坡或 band 级 alert 倍率（留内容期）。
+ */
+export const ALERT_DEPTH_FULL = 60;
 /** 触发遭遇后警觉落到的值（留一段缓冲，避免连环伏击）。 */
 export const ALERT_AFTER_TRIGGER = 0;
 
@@ -180,7 +186,7 @@ export const ALERT_AFTER_TRIGGER = 0;
 export function alertDepthFactor(run: RunState): number {
   const d = run.currentDepth ?? 0;
   if (d <= ALERT_MIN_DEPTH) return 0;
-  return Math.min(1, (d - ALERT_MIN_DEPTH) / (60 - ALERT_MIN_DEPTH));
+  return Math.min(1, (d - ALERT_MIN_DEPTH) / (ALERT_DEPTH_FULL - ALERT_MIN_DEPTH));
 }
 
 /** 警觉每回合净变化：暴露增益（signature 超基线 × 深度因子 × GAIN）− 基础消退。摸黑/浅水 → 负（消退）。 */

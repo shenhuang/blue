@@ -27,6 +27,12 @@ interface GenOpts {
    */
   depthOffset?: number;
   /**
+   * 深度 band（深水区 Phase 1）：覆盖 zone.depthRange 的绝对深度窗口 [d0, d1]。
+   * band 引用 zone 提供内容、用自己的窗口决定下到多深；缺省（POI / 教学路径不传）→ 回退 zone.depthRange。
+   * depthOffset 仍叠加在其上（band 出潜默认 0）。
+   */
+  depthRange?: [number, number];
+  /**
    * 打捞行会 Lv.2「出海前选目标」：指定一具 DeathRecord.id 作为本次必定出现的尸体。
    * 若该尸体在本 zone 且仍可回收（isRecoverableCorpse），则**保证**布点（绕过 corpseChance 随机），
    * 放在深度最接近其 depthAtDeath 的可用节点上。无效 / 未设则退回原有随机 corpse pass。
@@ -134,9 +140,11 @@ function placeCorpses(
 export function generateDiveMap(opts: GenOpts): DiveMap {
   const { zone, depthOffset = 0 } = opts;
 
-  // 海图 POI 深度偏移：平移 zone.depthRange，clamp 下限到 0，保证 d1 > d0
-  const baseD0 = Math.max(0, zone.depthRange[0] + depthOffset);
-  const baseD1 = Math.max(baseD0 + 1, zone.depthRange[1] + depthOffset);
+  // band（Phase 1）可用 depthRange 覆盖 zone.depthRange；缺省回退 zone 自身（POI / 教学路径不传）。
+  // 然后叠加海图 POI 深度偏移：平移，clamp 下限到 0，保证 d1 > d0。
+  const range = opts.depthRange ?? zone.depthRange;
+  const baseD0 = Math.max(0, range[0] + depthOffset);
+  const baseD1 = Math.max(baseD0 + 1, range[1] + depthOffset);
 
   if (zone.generation === 'linearScripted') {
     // 教学关：单节点指向起始事件
