@@ -38,7 +38,7 @@ Phase 0a 已就位的地基（0b 直接用）：
 
 ## 关键约束（§9 完整版）
 * **回归文化（#22/#26）**：每步全绿——`npm run typecheck` + 全部 playthrough（**含 `-sensors`**）+ `-scenarios` + `-combat-scenarios` + `-mapgen-scenarios` + `verify-tutorial` + `smoke-chart-ui.tsx` + prod build（`npx vite build --outDir $(mktemp -d) --emptyOutDir`）。`playthrough.ts` ~12% flake（#18）重试。
-* **存档（#39）**：若 0b 动 run/profile 形状 → bump `SAVE_VERSION`(现 5) + `migrateSave` 加步 + `playthrough-save` 回归。
+* **存档**：**未发布暂不做迁移**（作者 2026-06-03）——0b 动 run/profile 形状也无需 bump `SAVE_VERSION`(现 4) / 加 `migrateSave` 步；新字段靠 `createNewRun` 种默认 + 反序列化处 `?? 默认` 兜底即可；`playthrough-save` 仍校验序列化 round-trip。发布前再按 #39 统一补迁移（流程留备用）。
 * **UI smoke（#38/#41）**：改了 UI 数据路径必补 `smoke-chart-ui.tsx` SSR 断言。
 * **加敌人五件套（#45）**：若 0b 真要加遭遇敌人——但**各 zone 已 2 敌、守『敌人别太多』**，mimic/corpse-wearer 是 Phase 3 apex 例外，0b 别加常规第三只。
 * **叙述永不交底（#54）**：低 san 假回波/幻觉文案不交底。

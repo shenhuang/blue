@@ -13,7 +13,7 @@ import type {
 } from '@/types';
 import { POWER_MAX } from './clarity';
 
-const SAVE_VERSION = 5;
+const SAVE_VERSION = 4;
 
 /** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile + migrateSave 共用一个来源。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
@@ -279,20 +279,6 @@ function migrateSave(obj: unknown): GameState | null {
           }
         }
         v = 4;
-        break;
-      }
-      case 4: {
-        // 4→5（深水区 Phase 0a · 微观双传感器）：给"正在下潜中存档"的旧 run 补默认 sensors/power。
-        // 旧档默认声呐未解锁（早期仅有灯）；不在下潜时 run=null 无需迁移（出海时 createNewRun 现种字段）。
-        const run = o.run as Record<string, unknown> | null | undefined;
-        if (run && typeof run === 'object') {
-          if (!run.sensors || typeof run.sensors !== 'object') {
-            run.sensors = { light: true, sonar: 'off', sonarUnlocked: false };
-          }
-          if (typeof run.power !== 'number') run.power = POWER_MAX;
-          if (typeof run.powerMax !== 'number') run.powerMax = POWER_MAX;
-        }
-        v = 5;
         break;
       }
       default:

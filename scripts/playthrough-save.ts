@@ -4,9 +4,10 @@
 //   3. 更高 version → null（拒绝读比代码新的存档）
 //   4. 缺 version 的旧存档 → 补齐到当前 version
 //   5. 非浏览器环境 loadGame() → null（feature-detect）
-//   6. 旧档链式迁移到当前 SAVE_VERSION(5)：v1→v2 删 buildingPoints / v2→v3 种 home 灯塔 /
-//      v3→v4 dockyard 迁进 home 灯塔 builtUpgrades（基建地图 Phase A/B/C）/
-//      v4→v5 给下潜中旧 run 补默认 sensors/power（深水区 Phase 0a）
+//   6. 旧档链式迁移到当前 SAVE_VERSION(4)：v1→v2 删 buildingPoints / v2→v3 种 home 灯塔 /
+//      v3→v4 dockyard 迁进 home 灯塔 builtUpgrades（基建地图 Phase A/B/C）
+//   注：深水区 Phase 0a 的 run.sensors/power 未发布故**不做迁移**（作者 2026-06-03），靠 createNewRun 种默认 +
+//      反序列化处 `?? 默认` 兜底，不 bump SAVE_VERSION；下方 round-trip 仍校验其序列化往返。
 //
 // 跑法： npx tsx scripts/playthrough-save.ts
 
@@ -157,7 +158,7 @@ v1obj.profile.buildingPoints = 42; // 旧档遗留的建设值字段（应被删
 delete v1obj.profile.lighthouses; // 真 v1 档没有灯塔字段（应被种入 home）
 const migrated = deserializeGameState(JSON.stringify(v1obj));
 assert(migrated, 'v1 存档应能迁移（非 null）');
-assert(migrated!.version === 5, `迁移后 version 应为 5（当前 SAVE_VERSION），实际 ${migrated!.version}`);
+assert(migrated!.version === 4, `迁移后 version 应为 4（当前 SAVE_VERSION），实际 ${migrated!.version}`);
 assert(
   !('buildingPoints' in (migrated!.profile as Record<string, unknown>)),
   'v1→v2：profile.buildingPoints 应被删除',
@@ -180,14 +181,14 @@ assert(
   migrated!.profile.lighthouses[0].builtUpgrades.has('lighthouse.dockyard.lv1'),
   'v3→v4：旧档已购 dockyard 迁进 home 灯塔 builtUpgrades',
 );
-L('  旧档迁移：v1→v2 删 buildingPoints + v2→v3 种 home + v3→v4 dockyard 迁灯塔 / version=5 ✓');
+L('  旧档迁移：v1→v2 删 buildingPoints + v2→v3 种 home + v3→v4 dockyard 迁灯塔 / version=4 ✓');
 
 // 6b. v2 档（Phase A 之后、Phase B 之前）→ v4：补灯塔 + dockyard 迁灯塔
 const v2obj = JSON.parse(raw);
 v2obj.version = 2;
 delete v2obj.profile.lighthouses;
 const m2 = deserializeGameState(JSON.stringify(v2obj));
-assert(m2 && m2.version === 5, 'v2 档应迁到 v5');
+assert(m2 && m2.version === 4, 'v2 档应迁到 v4');
 assert(
   m2!.profile.lighthouses.length === 1 &&
     m2!.profile.lighthouses[0].id === 'lighthouse.home' &&
@@ -201,32 +202,11 @@ const v3NoDock = JSON.parse(raw);
 v3NoDock.version = 3;
 v3NoDock.profile.unlockedUpgrades = { __set: ['upgrade.salvage_guild.lv2'] }; // 模拟"没买过 dockyard"
 const m3 = deserializeGameState(JSON.stringify(v3NoDock));
-assert(m3 && m3.version === 5, 'v3 档应迁到 v5');
+assert(m3 && m3.version === 4, 'v3 档应迁到 v4');
 const home3 = m3!.profile.lighthouses.find((l) => l.id === 'lighthouse.home')!;
 assert(!home3.builtUpgrades.has('lighthouse.dockyard.lv1'), 'v3→v4：没买过 dockyard 的档不应被塞船坞');
 assert(home3.builtUpgrades.has('lighthouse.beacon.lv1'), 'v3→v4：home 原有 builtUpgrades（beacon.lv1）应保留');
 L('  v3→v4 迁移：没 dockyard 的档不塞、原有 home builtUpgrades 保留 ✓');
-
-// 6d. v4 档（基建地图 Phase C 之后、深水区 Phase 0a 之前）→ v5：
-//     模拟"下潜中存档"的真 v4 run（没有 sensors/power 字段）→ 应被补默认（灯开 / 声呐 off+未解锁 / 电池满）。
-const v4obj = JSON.parse(raw);
-v4obj.version = 4;
-delete v4obj.run.sensors;
-delete v4obj.run.power;
-delete v4obj.run.powerMax;
-const m4 = deserializeGameState(JSON.stringify(v4obj));
-assert(m4 && m4.version === 5, 'v4 档应迁到 v5');
-assert(
-  m4!.run?.sensors?.light === true &&
-    m4!.run?.sensors?.sonar === 'off' &&
-    m4!.run?.sensors?.sonarUnlocked === false,
-  'v4→v5：旧 run 应补默认 sensors（灯开 / 声呐 off / 未解锁）',
-);
-assert(
-  typeof m4!.run?.power === 'number' && typeof m4!.run?.powerMax === 'number',
-  'v4→v5：旧 run 应补默认 power / powerMax',
-);
-L('  v4→v5 迁移：下潜中旧 run 补默认 sensors/power（深水区 Phase 0a）✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 存档序列化回归通过');

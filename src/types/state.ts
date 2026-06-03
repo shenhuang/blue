@@ -110,8 +110,8 @@ export interface RunState {
   activeFlags: Set<string>; // 本次下潜临时 flag
   triggeredEventIds: string[]; // 用于 oncePerRun / cooldown 判定
   /**
-   * 微观双传感器状态（深水区 Phase 0a）。createNewRun 设默认（灯开 / 声呐 off / 声呐能力按升级派生），
-   * 旧档迁移补默认（SAVE_VERSION 4→5）。
+   * 微观双传感器状态（深水区 Phase 0a）。createNewRun 设默认（灯开 / 声呐 off / 声呐能力按升级派生）。
+   * 未发布故不做存档迁移（作者 2026-06-03）；反序列化读取处用 `?? 默认` 兜底，不 bump SAVE_VERSION。
    */
   sensors: SensorState;
   /** 电池储备（类比 oxygen 的 run 级储备）：灯/声呐耗电；归零 → 强制摸黑（致盲不直接死）。 */

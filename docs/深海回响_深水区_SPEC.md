@@ -188,7 +188,7 @@
 - 2026-06-02（续，「pin it down」对话）：定 §7.1 **声呐独立**（不接灯塔网）；**声呐返回不可信**（生物躲/骗 + 低 san 幻觉）＝核心欺骗面、把「是世界坏了还是你疯了」做成屏上一物；灯近距地面真相、声呐远距不可信；**耗电**（声呐 >> 灯）+ **暴露**（灯高、声呐较低）双轴权衡；灯/声呐 效果·耗能·电量**可升级**（接材料经济）。已并入 §2/§3.2/§3.3/§6/§8。**Phase 0 设计基本 pin 实。**
 - 2026-06-02（续，「继续 pin」Phase 1-2）：定 **蛙跳下潜**（一潜一 band、从最深前哨起、复用 depthOffset + reach/reveal + 尸体回收）；**前哨经济**——水上前哨只增不减、水下前哨衰减（水流区更快、但可水力发电）；**能源**（base 层、≠ 潜水员电池）决定同时在线设施数；补给（充电/充氧/中转）是设施、越深越要自建；**灯也会在 san 足够低时幻觉**（无完全可信传感器、灯最后崩）。并入 §3.2/§3.6（新）/§5 P1-P2/§6/§7（#4#6 resolved、新增 #7#8）/§8。**Phase 1-2 设计 pin 实；剩衰减后果细节（§7#7）+ Phase 3 mimic 逐拍演出。**
 - 2026-06-02（续，收束）：定 **理智＝双向门**——低 san 解锁可探索的「另一个世界」（亦真亦假、拒绝裁决；§1 + §3.7 新增），把低-san 门控从死内容（quirk #21）变成正向去处；衰减后果加重为 **变暗 + 修建进度回退 + 寄存材料丢失**（§3.6 / §7#7 resolved）。**Phase 3（mimic 演出 + 另一个世界）＝与作者一起一个个敲定的专门 session，不在草案写死；Phase 0 仍是下一个 build 起手。**
-- 2026-06-03（**Phase 0a 开建** · 深水区第一笔代码）：实装微观双传感器 clarity + 不可信声呐 + 电池 + 低 san 腐蚀（详见 STATUS quirk #58）。建前作者过 §7/§11 取舍，四点拍板（AskUserQuestion）：① clarity↔visibility＝**并入·保留字段**（dark→灯打不透→`none`，`murky` 不挡灯）；② 浅水手感＝**默认灯亮·浅水近免费**（电/声呐张力只在 dark/深 band）；③+④ 作者中途**复盘声呐**：先想"仅做灯"，旋即意识到**黑暗里仅有灯无法继续探索→声呐是必需的**，回到本 SPEC 双传感器模型，并**新增关键约束：声呐能力后期才解锁（深料升级），玩家先经历"黑暗中无声呐"、黑水天然探索受限，分级解锁（即使有灯仍有受限处）**。据此偏差三点并入 §11 0a（声呐解锁轨 / `clarity(run)` 不带 node / visibility 并入非删）。低 san 阈值＝声呐<60、灯<25（§8 tunable）。**0b（探测/隐身、碰 combat、消费 signature）留下一 session。**
+- 2026-06-03（**Phase 0a 开建** · 深水区第一笔代码）：实装微观双传感器 clarity + 不可信声呐 + 电池 + 低 san 腐蚀（详见 STATUS quirk #58）。建前作者过 §7/§11 取舍，四点拍板（AskUserQuestion）：① clarity↔visibility＝**并入·保留字段**（dark→灯打不透→`none`，`murky` 不挡灯）；② 浅水手感＝**默认灯亮·浅水近免费**（电/声呐张力只在 dark/深 band）；③+④ 作者中途**复盘声呐**：先想"仅做灯"，旋即意识到**黑暗里仅有灯无法继续探索→声呐是必需的**，回到本 SPEC 双传感器模型，并**新增关键约束：声呐能力后期才解锁（深料升级），玩家先经历"黑暗中无声呐"、黑水天然探索受限，分级解锁（即使有灯仍有受限处）**。据此偏差三点并入 §11 0a（声呐解锁轨 / `clarity(run)` 不带 node / visibility 并入非删）。低 san 阈值＝声呐<60、灯<25（§8 tunable）。**另：作者定未发布暂不做存档迁移**——run.sensors/power 不 bump SAVE_VERSION（留 4）、不加 migrate 步，靠 createNewRun 种默认 + 反序列化兜底；发布前再统一补（#39 流程留备用）。**0b（探测/隐身、碰 combat、消费 signature）留下一 session。**
 
 ---
 
@@ -215,7 +215,7 @@
 - [x] 低 san 注入（§3.2/§3.7）：san < `SONAR_FALSE_ECHO_SANITY`(60) → `sonarReturn` 注入假回波；san < `LAMP_HALLUCINATION_SANITY`(25) → 连灯也产假预览。确定性哈希（不消耗 RNG），叙述永不交底（#54）。
 - [x] `tickTurns` 消费 power（灯耗电，清水因子 0 → 浅水近免费；黑水/微浊才耗；类比 oxygen）。
 
-**存档** — [x] SAVE_VERSION 4→5 + `migrateSave` case 4 给下潜中旧 run 补默认 `sensors`/`power`；`playthrough-save` 加 step 6d（quirk #39）。
+**存档** — [x] **未发布暂不做迁移**（作者 2026-06-03）：不 bump SAVE_VERSION（留 4）、不加 `migrateSave` 步；run 新字段靠 `createNewRun` 种默认 + 反序列化处 `?? 默认` 兜底。`playthrough-save` 仍校验 sensors/power 序列化 round-trip。发布前再按 quirk #39 补迁移。
 
 **UI** — [x] `NodeSelectView` 成纯渲染器：按 `choice.clarity` 渲染预览 + 灯开关 / 声呐 ping 按钮（门控解锁 + 电量）；`StatusBar` 加电量 pill。[x] `smoke-chart-ui.tsx` E 改写为 clarity 渲染 + 电量 + 传感器断言（quirk #38）。
 
