@@ -578,7 +578,7 @@ npx tsx scripts/playthrough-combat-scenarios.ts
     - **存档（不做迁移，作者 2026-06-03：未发布）**：**不 bump SAVE_VERSION（留 4）、不加 migrateSave 步**；run 新字段靠 createNewRun 种默认 + 反序列化读取处 `?? 默认` 兜底（clarity.ts 全防御性读）。`playthrough-save` 仍校验 sensors/power 的**序列化 round-trip**（序列化≠迁移，仍需保证存读不丢字段）。发布前再按 #39 流程统一补迁移。
     - **UI**：`NodeSelectView` 按 `choice.clarity` 渲染（`.clar-sonar` 暖色斜体不可信 / `.clar-none` 更暗）+ 灯开关 / 声呐 ping 按钮（门控 sonarUnlocked + 电量足）；`StatusBar` 加电量 pill（tint-amber）。`smoke-chart-ui` E 改写为 clarity 渲染 + 电量 + 传感器 + 声呐门控断言。
     - **三处偏差**（作者在场敲定，SPEC §10/§11）：① `clarity(run)` 不带 node（node 级细分留 Phase 1）；② `DiveModifier.visibility` **并入而非删**（作 clarity 输入：dark→none、murky 不挡灯但耗电+理智压力照旧）；③ 声呐解锁轨在 0a 做（效果/耗能/电量档位留 Phase 2）。低 san 阈值 60/25 是 §8 tunable。
-    - **回归**：新 `playthrough-sensors.ts`（10 节）。改 `playthrough-upgrades`（线 2→3 加声呐组件）、`playthrough-save`（v4→v5）、`smoke-chart-ui`（E）。全绿（typecheck / 12 playthrough / scenarios 75 / combat 9 / mapgen 4+60 / verify-tutorial / smoke）+ prod build + dev tree-shake 干净。
+    - **回归**：新 `playthrough-sensors.ts`（10 节）。改 `playthrough-upgrades`（线 2→3 加声呐组件）、`playthrough-save`（加 sensors/power **序列化 round-trip** 断言；不做迁移）、`smoke-chart-ui`（E）。全绿（typecheck / 12 playthrough / scenarios 75 / combat 9 / mapgen 4+60 / verify-tutorial / smoke）+ prod build + dev tree-shake 干净。
     - **下一步 = 0b（探测/隐身，碰 combat，消费 `signature(run)`）**：高 signature→捕食者接近/伏击/提高遭遇；摸黑滑过。见 SPEC §11 0b + NEXT_SESSION_PROMPT.md。**别预先触发 d_reveal（#42）；别加第三只常规敌人（mimic/corpse-wearer 是 Phase 3 apex 例外）。**
 
 ---
