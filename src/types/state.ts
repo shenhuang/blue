@@ -44,6 +44,13 @@ export interface PlayerProfile {
    * Phase B 仅是数据模型——灯塔的"点亮海域"（reveal/reach）由 Phase C 消费。
    */
   lighthouses: Lighthouse[];
+  /**
+   * 水下前哨的维护状态（深水区 Phase 2b 衰减）：outpostId → { maintainedRun }。
+   * maintainedRun = 上次建造/维护时的 runsCompleted；衰减 = (runsCompleted − maintainedRun) × 速率（水流前哨更快）。
+   * 可选 + 普通对象 → 旧档/脚本缺它无妨（懒默认＝刚维护、零衰减），JSON 原生 round-trip，无需迁移、不 bump SAVE_VERSION
+   * （同 shopStock 套路；作者 2026-06-04 未发布不迁移）。advanceOutpost / maintainOutpost 写它。
+   */
+  outpostState?: Record<string, { maintainedRun: number }>;
 }
 
 /** 死亡记录，用于尸体回收 */

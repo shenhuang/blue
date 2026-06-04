@@ -47,6 +47,7 @@ export function createInitialProfile(): PlayerProfile {
     inventory: [],
     shopStock: {},
     lighthouses: [createHomeLighthouse()],
+    outpostState: {},
   };
 }
 

@@ -18,6 +18,7 @@ import {
   getBuiltLevelInTrack,
   revealRadius,
 } from '@/engine/lighthouses';
+import { getOutpostForLighthouse } from '@/engine/outposts';
 import { countInInventory, HOME_LIGHTHOUSE_ID } from '@/engine/state';
 import { getItemDef } from '@/engine/items';
 
@@ -48,7 +49,16 @@ export function LighthouseBuildPanel({ state, onStateChange, onClose }: Props) {
         </button>
       </div>
 
-      {state.profile.lighthouses.map((lh) => (
+      {state.profile.lighthouses.map((lh) => {
+        // 深水区 Phase 2b：能源设施（充电/制氧/水力）只在 OutpostDef 支撑的深水前哨可建；水力再限水流前哨。
+        const outpost = getOutpostForLighthouse(lh.id);
+        const trackVisible = (t: LighthouseTrack): boolean => {
+          if (t.homeOnly) return lh.id === HOME_LIGHTHOUSE_ID;
+          if (t.currentOnly) return !!outpost?.current;
+          if (t.outpostOnly) return !!outpost;
+          return true;
+        };
+        return (
         <div key={lh.id} className="lighthouse-section">
           <div className="lighthouse-section-head">
             <span className="lighthouse-section-name">{lh.name}</span>
@@ -57,7 +67,7 @@ export function LighthouseBuildPanel({ state, onStateChange, onClose }: Props) {
             </span>
           </div>
           {tracks
-            .filter((t) => !t.homeOnly || lh.id === HOME_LIGHTHOUSE_ID)
+            .filter(trackVisible)
             .map((track) => (
               <LighthouseTrackCard
                 key={track.id}
@@ -68,7 +78,8 @@ export function LighthouseBuildPanel({ state, onStateChange, onClose }: Props) {
               />
             ))}
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

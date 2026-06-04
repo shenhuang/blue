@@ -1,0 +1,16 @@
+{
+  "_comment": "超渊·缝 · 软的底 失败分支（uncanny 理智 vs 60·apex 伏笔）。sanity=22→rate 0.05 clamp、seed 1 确定失败：灯里那片软像皮肤、像一整个大东西伏在底、你正站它身上——sanity -15 + oxygenTurnCost 5（无 lore）。错读重罚、伏笔不交底、不触发 d_reveal。",
+  "eventId": "hadal.the_soft_floor",
+  "stats": { "sanity": 22 },
+  "depth": 160,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["look_closer"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": { "oxygen": -5, "sanity": -15 }
+  }
+}

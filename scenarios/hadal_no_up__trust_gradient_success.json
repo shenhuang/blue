@@ -1,0 +1,16 @@
+{
+  "_comment": "超渊·缝 · 没有上的上 成功分支（cosmic 理智 vs 58）。满 san→rate 0.95、seed 1 成功：只读温度梯度、用温度计把『上』找回来——sanity -6 + oxygenTurnCost 3 + lore.hadal.no_up。读 tell 给较轻代价、cosmic 仍不免单。#43 实跑抄。",
+  "eventId": "hadal.no_up",
+  "depth": 160,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["trust_gradient"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.hadal.no_up"],
+    "statsDelta": { "oxygen": -3, "sanity": -6 }
+  }
+}

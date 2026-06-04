@@ -19,6 +19,7 @@ import type {
   LighthouseUpgradesFile,
   MaterialCost,
   OutpostDef,
+  OutpostStageDef,
   PlayerProfile,
 } from '@/types';
 import lighthouseData from '@/data/lighthouse_upgrades.json';
@@ -175,6 +176,10 @@ export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses 
     lightRadiusBonus: 0,
     reachReduction: 0,
     extraConsumableSlot: 0,
+    energyGen: 0,
+    energyDraw: 0,
+    rechargeBonus: 0,
+    oxygenSupply: 0,
   };
   for (const id of lighthouse.builtUpgrades) {
     const def = getLighthouseUpgradeDef(id);
@@ -189,6 +194,18 @@ export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses 
           break;
         case 'extraConsumableSlot':
           bonuses.extraConsumableSlot += e.value;
+          break;
+        case 'energyGen':
+          bonuses.energyGen += e.value;
+          break;
+        case 'energyDraw':
+          bonuses.energyDraw += e.value;
+          break;
+        case 'rechargeBonus':
+          bonuses.rechargeBonus += e.value;
+          break;
+        case 'oxygenSupply':
+          bonuses.oxygenSupply += e.value;
           break;
       }
     }
@@ -427,6 +444,13 @@ export function advanceOutpost(state: GameState, outpostId: string): GameState {
   const flags = new Set(state.profile.flags);
   flags.add(outpostStageFlag(outpostId, newStage));
 
+  // 深水区 Phase 2b：建造一阶＝刚 ferry 过料 → 重置衰减计时（maintainedRun = 当前 run）。
+  // 水上前哨（!submerged）outpostDecayLevel 恒 0、写它也无害（保持一致、零分支）。
+  const outpostState = {
+    ...(state.profile.outpostState ?? {}),
+    [outpostId]: { maintainedRun: state.profile.runsCompleted },
+  };
+
   // 点亮 → promote：push 一座灯塔（复用 Phase C reveal/reach；幂等防重复 push）。
   let lighthouses = state.profile.lighthouses;
   const lit = newStage >= def.stages.length;
@@ -442,6 +466,7 @@ export function advanceOutpost(state: GameState, outpostId: string): GameState {
       bankedGold: state.profile.bankedGold - stageDef.cost.gold,
       lighthouses,
       flags,
+      outpostState,
     },
   };
   next = appendLog(next, {
@@ -451,4 +476,23 @@ export function advanceOutpost(state: GameState, outpostId: string): GameState {
       : stageDef.narrative ?? `「${def.name}」的修建往前推了一阶。（${describeUpgradeCost(stageDef.cost)}）`,
   });
   return next;
+}
+
+/** 前哨下一阶段的建造定义（已点亮 → undefined）。UI 显示账单 / label 用。 */
+export function nextOutpostStage(
+  profile: PlayerProfile,
+  outpostId: string,
+): OutpostStageDef | undefined {
+  const def = OUTPOST_INDEX.get(outpostId);
+  if (!def) return undefined;
+  const cur = outpostStage(profile, outpostId);
+  return cur < def.stages.length ? def.stages[cur] : undefined;
+}
+
+/** 前哨下一阶段是否建得起（材料＋金币够、未点亮）。UI disable 建造按钮用，校验逻辑与 advanceOutpost 一致。 */
+export function canAdvanceOutpost(profile: PlayerProfile, outpostId: string): boolean {
+  const stageDef = nextOutpostStage(profile, outpostId);
+  if (!stageDef) return false; // 已点亮 / 未知
+  if (materialShortfall(profile, stageDef.cost).length > 0) return false;
+  return profile.bankedGold >= stageDef.cost.gold;
 }

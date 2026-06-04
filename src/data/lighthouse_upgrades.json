@@ -62,6 +62,81 @@
           "requiresLighthouseLevel": 1
         }
       ]
+    },
+    {
+      "id": "lhtrack.hydro",
+      "name": "水力发电",
+      "description": "在激流里架起水轮——只有水流够急的前哨才转得动。转起来，前哨的能源足以同时跑更多补给设施。",
+      "currentOnly": true,
+      "upgrades": [
+        {
+          "id": "lighthouse.hydro.lv1",
+          "level": 1,
+          "name": "水轮机组",
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 3 },
+              { "itemId": "item.crab_chitin", "qty": 2 }
+            ],
+            "gold": 80
+          },
+          "effects": [{ "kind": "energyGen", "value": 2 }],
+          "description": "架起水轮机组。前哨能源 +2——但只在水流（激流）前哨才转得起来，静水前哨建了也不产电。",
+          "requiresLighthouseLevel": 1
+        }
+      ]
+    },
+    {
+      "id": "lhtrack.recharge",
+      "name": "充电站",
+      "description": "前哨的充电桩——从这儿蛙跳出潜时电池充得更满。要占用前哨的能源。",
+      "outpostOnly": true,
+      "upgrades": [
+        {
+          "id": "lighthouse.recharge.lv1",
+          "level": 1,
+          "name": "充电桩",
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 2 },
+              { "itemId": "item.eel_skin", "qty": 1 }
+            ],
+            "gold": 60
+          },
+          "effects": [
+            { "kind": "energyDraw", "value": 1 },
+            { "kind": "rechargeBonus", "value": 20 }
+          ],
+          "description": "建一座充电桩。从这座前哨蛙跳时电池总量 +20（占用能源 1——前哨能源不够它会掉线）。",
+          "requiresLighthouseLevel": 1
+        }
+      ]
+    },
+    {
+      "id": "lhtrack.oxygen_supply",
+      "name": "制氧站",
+      "description": "前哨的制氧机——从这儿蛙跳出潜时气瓶补得更足。要占用前哨的能源。",
+      "outpostOnly": true,
+      "upgrades": [
+        {
+          "id": "lighthouse.oxygen_supply.lv1",
+          "level": 1,
+          "name": "制氧机",
+          "cost": {
+            "materials": [
+              { "itemId": "item.crab_chitin", "qty": 2 },
+              { "itemId": "item.lantern_gland", "qty": 1 }
+            ],
+            "gold": 70
+          },
+          "effects": [
+            { "kind": "energyDraw", "value": 1 },
+            { "kind": "oxygenSupply", "value": 10 }
+          ],
+          "description": "建一座制氧机。从这座前哨蛙跳时氧气上限 +10（占用能源 1——前哨能源不够它会掉线）。",
+          "requiresLighthouseLevel": 1
+        }
+      ]
     }
   ],
   "ruins": [
@@ -90,6 +165,7 @@
       "id": "outpost.reef_deep",
       "name": "深槽前哨",
       "bandId": "band.reef_deep",
+      "submerged": true,
       "stages": [
         {
           "label": "勘察并清理塔基（珊瑚碎片×4 ＋ 50 金）",
@@ -125,6 +201,49 @@
         "mapY": 0.66,
         "level": 1,
         "region": "old_lighthouse_reef"
+      }
+    },
+    {
+      "id": "outpost.trench_deep",
+      "name": "竖井前哨",
+      "bandId": "band.trench_throat",
+      "submerged": true,
+      "current": true,
+      "stages": [
+        {
+          "label": "在竖井壁上凿出锚位（章鱼角喙×2 ＋ 90 金）",
+          "cost": { "materials": [{ "itemId": "item.cave_octopus_beak", "qty": 2 }], "gold": 90 },
+          "narrative": "你在竖井收窄处的岩壁上凿出几个锚位，把第一批桩子打了进去。急流一直在拽你，但架子算是有了起点。"
+        },
+        {
+          "label": "运来抗流支架与浮筒（鳗皮×3·黄铜配件×3 ＋ 150 金）",
+          "cost": {
+            "materials": [
+              { "itemId": "item.eel_skin", "qty": 3 },
+              { "itemId": "item.brass_fitting", "qty": 3 }
+            ],
+            "gold": 150
+          },
+          "narrative": "抗流支架一根根固定下去，浮筒在急流里稳住了前哨的骨架。半个前哨——能在这个深度落脚、起跳了。急流会一直啃它，得常回来照看。"
+        },
+        {
+          "label": "通电点亮（冷光腺×2·章鱼角喙×2 ＋ 240 金）",
+          "cost": {
+            "materials": [
+              { "itemId": "item.lantern_gland", "qty": 2 },
+              { "itemId": "item.cave_octopus_beak", "qty": 2 }
+            ],
+            "gold": 240
+          }
+        }
+      ],
+      "result": {
+        "id": "lighthouse.trench_deep_outpost",
+        "name": "竖井前哨",
+        "mapX": 0.62,
+        "mapY": 0.78,
+        "level": 1,
+        "region": "blue_caves"
       }
     }
   ]

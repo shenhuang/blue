@@ -271,5 +271,50 @@ for (let seed = 1; seed <= 16; seed++) {
 assert(abyssLeakCave === 0 && abyssLeakTrench === 0, `10b: abyssal 事件不泄漏到 cave/trench 池（cave ${abyssLeakCave} / trench ${abyssLeakTrench}）`);
 L(`  深渊 >108m·dark·倍率 ${abyss!.alertFactor} / 抽出 ${abyssSeen} abyssal 事件 / 泄漏 ${abyssLeakCave}+${abyssLeakTrench} ✓`);
 
+// ============================================================
+// 11. 超渊 band（深水区 B）：>140m 再递归更深 + hadal 专属事件池『连更深/上下都不是连续的线』
+//     越深越凶续到超渊（alertFactor > 深渊）；hadal 事件不泄漏到 abyssal/cave 池、abyssal 也不漏进超渊
+// ============================================================
+L('\n========== 11. 超渊 band + hadal 内容 ==========');
+const hadal = getBand('band.hadal');
+assert(hadal, '11: 存在 band.hadal');
+assert(hadal!.depthRange[0] >= 140, `11: 超渊 >140m（架构不硬编码地板、可续写更深，实际起 ${hadal!.depthRange[0]}m）`);
+assert(hadal!.order > abyss!.order, '11: 超渊 order 在深渊之后（最深一级）');
+assert(hadal!.visibility === 'dark', '11: 超渊 = 黑水');
+assert(hadal!.tags?.includes('hadal'), '11: 超渊带 hadal 专属 tag（新增 ZoneTag、无穷尽-switch 破坏）');
+assert(
+  (hadal!.alertFactor ?? 1) > (abyss!.alertFactor ?? 1),
+  '11: 超渊探测压力倍率 > 深渊（越深越凶续到最深一层）',
+);
+
+// (a) band.tags 让超渊蛙跳抽出 hadal 专属事件；abyssal 不漏进来
+const hadalZone = getZone(hadal!.zoneId)!;
+let hadalSeen = 0, hadalEventNodes = 0, abyssInHadal = 0;
+for (let seed = 1; seed <= 16; seed++) {
+  const m = generateDiveMap({
+    zone: hadalZone, profileFlags: new Set(), rng: makeLcg(seed),
+    depthRange: hadal!.depthRange, bandTags: hadal!.tags,
+  });
+  for (const n of Object.values(m.nodes)) {
+    if (!n.eventId) continue;
+    hadalEventNodes++;
+    if (n.eventId.startsWith('hadal.')) hadalSeen++;
+    if (n.eventId.startsWith('abyssal.')) abyssInHadal++;
+  }
+}
+assert(hadalEventNodes > 0 && hadalSeen > 0, `11a: 超渊蛙跳抽出专属 hadal 事件（实际 ${hadalSeen}/${hadalEventNodes}）`);
+assert(abyssInHadal === 0, `11a: 深渊(abyssal)事件不漏进超渊（深度+tag 双隔离，实际 ${abyssInHadal}）`);
+
+// (b) hadal 事件不泄漏：普通 cave 池 → 0；深渊 band（abyssal tag）→ 0
+let hadalLeakCave = 0, hadalLeakAbyss = 0;
+for (let seed = 1; seed <= 16; seed++) {
+  const mc = generateDiveMap({ zone: hadalZone, profileFlags: new Set(), rng: makeLcg(seed), depthRange: hadal!.depthRange });
+  for (const n of Object.values(mc.nodes)) if (n.eventId?.startsWith('hadal.')) hadalLeakCave++;
+  const ma = generateDiveMap({ zone: abyssZone, profileFlags: new Set(), rng: makeLcg(seed), depthRange: abyss!.depthRange, bandTags: abyss!.tags });
+  for (const n of Object.values(ma.nodes)) if (n.eventId?.startsWith('hadal.')) hadalLeakAbyss++;
+}
+assert(hadalLeakCave === 0 && hadalLeakAbyss === 0, `11b: hadal 事件不泄漏到 cave/abyssal 池（cave ${hadalLeakCave} / abyssal ${hadalLeakAbyss}）`);
+L(`  超渊 >140m·dark·倍率 ${hadal!.alertFactor} / 抽出 ${hadalSeen} hadal 事件 / 泄漏 ${hadalLeakCave}+${hadalLeakAbyss} ✓`);
+
 console.log(log.join('\n'));
 console.log('\n✓ 深度 band / 蛙跳下潜回归通过');

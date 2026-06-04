@@ -1,0 +1,211 @@
+{
+  "_doc": "超渊（hadal）专属事件池 —— 深水区内容期『永远有比最深更深的』递归最深一层（band.hadal >140m，经 DepthBand.tags 覆盖 zoneTagsByDepth，绑新 ZoneTag hadal，与借来的蓝洞内容隔离）。母题从深渊的『底在退/拽/招』(abyssal.*, STATUS #65) 推进到：连『更深』『上』『下』都不再是一条连续的线——水里有缝，缝那边的深度/方向得重认；仪表报出从没有过的读数；想往上却越爬越深；终于探到的『底』是软的、会动、像在回看你（apex/mimic/corpse-wearer 伏笔，本层只埋不登场）。守则同 trench/abyssal：全 loot-free / cosmic·uncanny / 无敌人（mimic·corpse-wearer 是 Phase 3 apex 例外）/ 不触发 d_reveal（#42）/ 叙述永不交底（#54：理性解释与错读始终叠着、游戏拒绝裁决）。每个事件留一条『关灯关声呐 / 别动数呼吸 / 蹬开往上』的诚实但盲/退的出口＝最低 signature 的逃生阀门（无脚本死、§9）。新 lore.hadal.*，the_soft_floor 不交底地预告最深的 apex。",
+  "events": [
+    {
+      "id": "hadal.the_seam",
+      "depthRange": [140, 180],
+      "zoneTags": ["hadal"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "水里的缝",
+      "body": "黑水里有一道线。\n不是石头的棱，不是温跃层那种看得见的晃——是一道缝，像两片不一样的深处被勉强缝在了一起，缝的这边和那边，水的冷法都不同。\n你的声呐扫到缝就乱：缝那边回来的，是另一套对不上的数。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "cross_it",
+          "label": "穿过那道缝，往缝那边去",
+          "outcome": {
+            "text": "你穿过去。一瞬间，冷的方式换了，耳压换了，连水推你的方向都换了。\n你回头找那道缝，没有了——只有你刚离开的、和你现在所在的，两片对不上的黑。你不知道自己是下深了，还是去了另一个『深』。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -8 },
+            "loreEntry": "lore.hadal.the_seam"
+          }
+        },
+        {
+          "id": "map_the_seam",
+          "label": "贴着缝，逼自己把它读成一种水文（理智 vs 60）",
+          "check": {
+            "stat": "sanity",
+            "dc": 60,
+            "onSuccess": {
+              "text": "你逼自己数：盐度、温度突变的交界面会折射声呐、会显出一道『线』，深海里不算稀奇。是两层水，不是两个世界。\n道理都对。你顺着缝走，不穿过去，把它当一堵看不见的墙绕开了。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.hadal.the_seam"
+            },
+            "onFailure": {
+              "text": "你越贴近那道缝，越觉得缝那边在等你。等你回过神，你已经在缝的另一边了，不记得自己什么时候过来的。\n这边的表全乱：深度在跳，方向认不得，连你来时的那道缝都找不回。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -15 }
+            }
+          }
+        },
+        {
+          "id": "dont_cross",
+          "label": "灭灯灭声呐，不去碰那道缝，原路摸回",
+          "outcome": {
+            "text": "你把灯和声呐都关了。没有光，没有脉冲，那道缝也就不再对你显形。\n你贴着摸来的石壁，一寸寸往回。瞎，但缝那边是什么、缝这件事是不是真的，你这一趟不去验。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "hadal.no_up",
+      "depthRange": [140, 180],
+      "zoneTags": ["hadal"],
+      "weight": 4,
+      "cooldown": 5,
+      "oncePerRun": true,
+      "title": "没有上的上",
+      "body": "你决定上浮。你朝你认定是『上』的方向蹬。\n水越来越冷，耳压越来越重——你在往下。你换一个方向，再蹬。还是更冷，更重。\n在这个深度，『上』被抽走了。每一条你以为通向水面的路，都通向更深。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "climb_anyway",
+          "label": "认准一个方向，闭着眼一直『往上』爬",
+          "outcome": {
+            "text": "你挑一个方向，咬死了往那儿爬，告诉自己那就是上。\n它不是。越爬越冷，越爬越沉，可你不敢停——停下来就得承认每个方向都是下。你把『往上』变成一件只在你脑子里成立的事，靠它往前。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -8 },
+            "loreEntry": "lore.hadal.no_up"
+          }
+        },
+        {
+          "id": "trust_gradient",
+          "label": "信仪表的冷暖梯度，往『没那么冷』的一侧走（理智 vs 58）",
+          "check": {
+            "stat": "sanity",
+            "dc": 58,
+            "onSuccess": {
+              "text": "你不信耳朵，只读表：哪一侧水温升得最快，哪一侧就是真的上。你压住恐慌，照着那个微弱的暖差挪。\n慢，但表上的深度在退。『上』被你用一根温度计找了回来。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.hadal.no_up"
+            },
+            "onFailure": {
+              "text": "你盯着表找暖的那一侧，可每一侧都在变冷，数都在涨。你挑了一个，蹬过去——更深了。\n你开始怀疑表，怀疑自己的手，最后怀疑『上』这个词。你还在动，但不知道朝哪儿。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -14 }
+            }
+          }
+        },
+        {
+          "id": "hold_and_wait",
+          "label": "停下，抓住石壁，数呼吸，等浮力把你认出来",
+          "outcome": {
+            "text": "你不再乱蹬。抓住石壁，把自己交给最笨的那条道理：人比水轻，松开手，迟早会浮。\n你数着呼吸等。气瓶的每一口都是真的。你不急着找上——你等上来找你。",
+            "oxygenTurnCost": 3,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "hadal.the_reading",
+      "depthRange": [140, 180],
+      "zoneTags": ["hadal"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "对不上的读数",
+      "body": "你低头看表。\n深度读数是一个你认得的数——一个浅得不可能的数，一个你在港口边练习潜水时见过的数。\n你分明在最深的黑里，冷得发僵，可表说你在十二米。它甚至开始往更浅里跳。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "read_it_off",
+          "label": "顺着表走——表说你在上浮，那就当在上浮",
+          "outcome": {
+            "text": "你决定信表。表说浅，你就当自己在往家走，按浅水的节奏放松呼吸、收手脚。\n身体却一直在告诉你另一回事：冷没退，压没松。你卡在两套数中间——一套来自仪表，一套来自皮肤，你不知道该把命押给哪一套。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -7 },
+            "loreEntry": "lore.hadal.the_reading"
+          }
+        },
+        {
+          "id": "recalibrate",
+          "label": "强制把表归零、按手感重新估深（理智 vs 56）",
+          "check": {
+            "stat": "sanity",
+            "dc": 56,
+            "onSuccess": {
+              "text": "你敲掉那个荒唐的读数：低温高压会让压力传感器漂移、卡死、乱跳，深海里仪表不可全信。你按耳压、按冷、按下潜时间，给自己估了个真深度。\n表还在胡说，但你不再听它的。你照自己估的数稳住了。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.hadal.the_reading"
+            },
+            "onFailure": {
+              "text": "那个浅水的数太诱人了。它说你快到家了，说这一切只是一场深得不像话的噩梦的尾巴。\n你信了。你按浅水的样子松了口气，加快上浮——身体却在这个『十二米』里继续被压着、冻着。你不知道自己刚才把多少安全余量，押给了一块在说谎的表。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -13 }
+            }
+          }
+        },
+        {
+          "id": "kill_instruments",
+          "label": "不看表了，灭了显示，凭身体往上摸",
+          "outcome": {
+            "text": "你把表的背光摁灭，不看任何数。冷、压、呼吸——只认身体给的这三样。\n它们都说同一件事：你很深，你得慢慢上。瞎着仪表，但至少没有一个会说谎的数在你眼前晃。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "hadal.the_soft_floor",
+      "depthRange": [140, 180],
+      "zoneTags": ["hadal"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "软的底",
+      "body": "你终于探到一个底。\n这一整片深里第一个能让你落脚的东西——可你的手按上去，它是软的，温的，微微地起伏，像在你掌心下面缓缓地呼吸。\n你按住不动。它也停了一下，然后那一片软，朝你这边，轻轻地凑近了一点。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "stand_on_it",
+          "label": "就着这个底站稳，先喘口气",
+          "outcome": {
+            "text": "你太需要一个底了。你不去想它为什么是软的、温的，把重量交给它，喘了口气。\n它稳稳托着你，匀匀地起伏，像在配合你的呼吸——或者让你配合它的。你站在这个深里唯一肯托住你的东西上面，分不清自己是得救了，还是被接住了。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -9 },
+            "loreEntry": "lore.hadal.the_soft_floor"
+          }
+        },
+        {
+          "id": "look_closer",
+          "label": "举灯凑近，逼自己看清这个『底』是什么（理智 vs 60）",
+          "check": {
+            "stat": "sanity",
+            "dc": 60,
+            "onSuccess": {
+              "text": "你举灯凑近看：极深处的沉积是稀软的生物泥，底栖的毯状群落会随水流起伏、随触碰收缩。软、温、会动——都能解释。\n道理都对。你认下它只是一片活着的泥，没有久留，也没有把全身的重量交给它。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -7 },
+              "loreEntry": "lore.hadal.the_soft_floor"
+            },
+            "onFailure": {
+              "text": "你举灯凑近——那片软在你光里轻轻地动，动的方式不像泥，像皮肤，像有一整个大东西把背脊朝上、伏在这片黑的底，而你正站在它身上。\n它没有醒，或者它一直醒着，只是还没决定。你不敢挪重心，连灯都不敢关——关了，你就再也不知道它在哪。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -15 }
+            }
+          }
+        },
+        {
+          "id": "push_off",
+          "label": "不踩它，蹬开，往水里悬着",
+          "outcome": {
+            "text": "你不要这个底。你轻轻把自己从那片软上推开，重新悬进没有底的黑里。\n没有落脚的地方，累，慌，可你宁愿累着、悬着，也不把重量交给一个会朝你凑近的『底』。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    }
+  ]
+}

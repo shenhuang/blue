@@ -1,4 +1,4 @@
-// 深水前哨：跨 run 分阶段建造 + 真蛙跳出潜点回归（深水区 Phase 2a 脊柱）。
+// 深水前哨：跨 run 分阶段建造 + 真蛙跳出潜点回归（深水区 Phase 2a 脊柱 + Phase 2b 能源/衰减/多前哨链）。
 // 覆盖：
 //   1. advanceOutpost 三阶段推进（按当前阶段扣材料＋金币、置阶段 flag、进度靠 flag 持久）
 //   2. 不够料 / 已点亮 → no-op（半亮扛过死亡：进度不退）
@@ -6,6 +6,11 @@
 //   4. 真蛙跳出潜点：半亮（≥ USABLE）的前哨缩短**更深** band 的蛙跳预耗氧（run.turn）；本层/更浅 band 不受益
 //   5. 建造事件 lighthouse.outpost_reef_deep 的阶段门控（isOptionVisible：每阶段只露当前阶段的选项）
 //   6. 阶段进度 round-trip（flag 持久、不动存档形状、不 bump SAVE_VERSION）
+//   —— Phase 2b ——
+//   7. 能源：静水前哨 base 能源只够 1 个补给设施在线；占用超容量 → 设施掉线（不计加成）
+//   8. 衰减：水下前哨按 run 累积衰减 → 容量缩（补给掉线＝变暗）/ 重度衰减回退有效阶段（蛙跳失效）
+//   9. 维护（re-ferry）：扣账单、重置衰减计时；无衰减/未建不可维护
+//  10. 多前哨链：trench_deep（水流前哨）服务 abyssal 蛙跳、不服务更浅 band、多前哨选最深起跳
 //
 // 跑法： npx tsx scripts/playthrough-outpost.ts
 
@@ -17,6 +22,8 @@ import {
 } from '../src/engine/state';
 import {
   advanceOutpost,
+  buildAtLighthouse,
+  getLighthouse,
   outpostStage,
   outpostStageFlag,
   isOutpostLit,
@@ -24,6 +31,16 @@ import {
   OUTPOST_MAX_STAGE,
   OUTPOST_USABLE_STAGE,
 } from '../src/engine/lighthouses';
+import {
+  outpostEnergy,
+  effectiveOutpostBonuses,
+  outpostDecayLevel,
+  effectiveOutpostStage,
+  maintainOutpost,
+  canMaintainOutpost,
+  OUTPOST_BASE_ENERGY,
+  OUTPOST_DECAY_MAX,
+} from '../src/engine/outposts';
 import { startDiveFromOutpost } from '../src/engine/dive';
 import { isOptionVisible } from '../src/engine/events';
 import { getEventById } from '../src/engine/zones';
@@ -203,5 +220,129 @@ assert(outpostStage(round!.profile, OUTPOST) === 2, '5: round-trip 后 stage 仍
 assert(round!.version === 4, '5: SAVE_VERSION 仍为 4（未发布不迁移）');
 L('  stage flag round-trip / SAVE_VERSION 4 不变 ✓');
 
+// ============================================================
+// 6. 能源（Phase 2b）：静水前哨 base 能源只够 1 个补给设施在线
+// ============================================================
+L('\n========== 6. 能源：静水前哨只够 1 个补给在线 ==========');
+let sE = stateWith(
+  [
+    { itemId: 'item.coral_shard', qty: 4 },
+    { itemId: 'item.brass_fitting', qty: 7 }, // 5 建造 + 2 充电桩
+    { itemId: 'item.crab_chitin', qty: 4 }, // 2 建造 + 2 制氧机
+    { itemId: 'item.cave_octopus_beak', qty: 2 },
+    { itemId: 'item.eel_skin', qty: 1 }, // 充电桩
+    { itemId: 'item.lantern_gland', qty: 1 }, // 制氧机
+  ],
+  500,
+);
+sE = advanceOutpost(sE, OUTPOST);
+sE = advanceOutpost(sE, OUTPOST);
+sE = advanceOutpost(sE, OUTPOST); // 点亮
+assert(isOutpostLit(sE.profile, OUTPOST), '6: reef_deep 点亮');
+sE = buildAtLighthouse(sE, RESULT_LH, 'lighthouse.recharge.lv1'); // 充电桩 draw1 / +20 电池
+sE = buildAtLighthouse(sE, RESULT_LH, 'lighthouse.oxygen_supply.lv1'); // 制氧机 draw1 / +10 氧
+const lhE = getLighthouse(sE.profile, RESULT_LH)!;
+assert(
+  lhE.builtUpgrades.has('lighthouse.recharge.lv1') &&
+    lhE.builtUpgrades.has('lighthouse.oxygen_supply.lv1'),
+  '6: 两个补给设施都建上',
+);
+const en = outpostEnergy(sE.profile, lhE);
+assert(en.capacity === OUTPOST_BASE_ENERGY, `6: 静水前哨容量 = base ${OUTPOST_BASE_ENERGY}（无水力、无衰减）`);
+assert(en.demand === 2, '6: 两个补给设施占用共 2');
+const drawOnline = [...en.online].filter(
+  (id) => id === 'lighthouse.recharge.lv1' || id === 'lighthouse.oxygen_supply.lv1',
+);
+assert(drawOnline.length === 1, `6: 容量 1 → 只能 1 个补给在线（实 ${drawOnline.length}）`);
+const effE = effectiveOutpostBonuses(sE.profile, lhE);
+const onlineSupplies = (effE.rechargeBonus > 0 ? 1 : 0) + (effE.oxygenSupply > 0 ? 1 : 0);
+assert(onlineSupplies === 1, '6: 有效加成只反映 1 个在线补给设施（超容量的掉线）');
+L(`  静水 reef_deep：容量 ${en.capacity} / 占用 ${en.demand} / 在线补给 ${drawOnline.length} ✓`);
+
+// ============================================================
+// 7. 衰减（Phase 2b）：容量缩（补给掉线）/ 重度衰减回退有效阶段（蛙跳失效）
+// ============================================================
+L('\n========== 7. 衰减：变暗 / 半亮回退 ==========');
+const atRuns = (st: GameState, n: number): GameState => ({
+  ...st,
+  profile: { ...st.profile, runsCompleted: n },
+});
+assert(outpostDecayLevel(sE.profile, OUTPOST) === 0, '7: 刚建零衰减');
+const d2 = atRuns(sE, 2); // elapsed 2，静水速率 .5 → 衰减 1
+assert(outpostDecayLevel(d2.profile, OUTPOST) === 1, `7: 静水过 2 run → 衰减 1（实 ${outpostDecayLevel(d2.profile, OUTPOST)}）`);
+const enD = outpostEnergy(d2.profile, getLighthouse(d2.profile, RESULT_LH)!);
+assert(enD.capacity === OUTPOST_BASE_ENERGY - 1, '7: 衰减 1 → 容量 -1');
+const effD = effectiveOutpostBonuses(d2.profile, getLighthouse(d2.profile, RESULT_LH)!);
+assert(effD.rechargeBonus === 0 && effD.oxygenSupply === 0, '7: 容量被吃空 → 补给全掉线（变暗/补给减）');
+const d8 = atRuns(sE, 8); // elapsed 8 → 衰减封顶
+assert(outpostDecayLevel(d8.profile, OUTPOST) === OUTPOST_DECAY_MAX, '7: 久不维护 → 衰减封顶');
+assert(
+  effectiveOutpostStage(d8.profile, OUTPOST) < OUTPOST_USABLE_STAGE,
+  '7: 重度衰减 → 有效阶段回退到 < USABLE（蛙跳失效）',
+);
+const d8Mouth = startDiveFromOutpost(d8, 'band.trench_mouth');
+assert(d8Mouth.run!.turn === turnHome, '7: 重度衰减前哨 → trench_mouth 蛙跳退回 home 预耗氧');
+L(`  衰减 0→1（过2run·容量-1·补给掉线）→ 封顶 ${OUTPOST_DECAY_MAX}（有效阶段回退·蛙跳失效）✓`);
+
+// ============================================================
+// 8. 维护（re-ferry）：扣账单、重置衰减；无衰减/未建不可维护
+// ============================================================
+L('\n========== 8. 维护重置衰减 ==========');
+let sM: GameState = {
+  ...d2,
+  profile: { ...d2.profile, inventory: [{ itemId: 'item.brass_fitting', qty: 1 }], bankedGold: 50 },
+};
+assert(canMaintainOutpost(sM.profile, OUTPOST).ok, '8: 衰减 + 有料 → 可维护');
+sM = maintainOutpost(sM, OUTPOST);
+assert(outpostDecayLevel(sM.profile, OUTPOST) === 0, '8: 维护后衰减归 0');
+assert(countInInventory(sM.profile.inventory, 'item.brass_fitting') === 0, '8: 扣维护料 brass×1');
+assert(sM.profile.bankedGold === 30, '8: 扣维护金 20');
+assert(!canMaintainOutpost(sM.profile, OUTPOST).ok, '8: 已维护（零衰减）→ 不可再维护（noDecay）');
+assert(
+  !canMaintainOutpost(createInitialGameState().profile, OUTPOST).ok,
+  '8: 没建过的前哨不可维护',
+);
+L('  维护扣料＋金 / 衰减归 0 / 零衰减·未建不可维护 ✓');
+
+// ============================================================
+// 9. 多前哨链（Phase 2b）：trench_deep 服务 abyssal 蛙跳
+// ============================================================
+L('\n========== 9. 多前哨链：trench_deep → abyssal ==========');
+const TRENCH = 'outpost.trench_deep';
+const tdef = getOutpostDef(TRENCH);
+assert(tdef && tdef.bandId === 'band.trench_throat', '9: trench_deep 在 band.trench_throat');
+assert(tdef!.submerged && tdef!.current, '9: trench_deep 是水流(current)水下前哨');
+let sT = stateWith(
+  [
+    { itemId: 'item.cave_octopus_beak', qty: 2 }, // s1
+    { itemId: 'item.eel_skin', qty: 3 }, // s2
+    { itemId: 'item.brass_fitting', qty: 3 }, // s2
+  ],
+  300,
+);
+sT = advanceOutpost(sT, TRENCH); // 1
+sT = advanceOutpost(sT, TRENCH); // 2 半亮
+assert(outpostStage(sT.profile, TRENCH) === OUTPOST_USABLE_STAGE, '9: trench_deep 半亮');
+const homeAby = startDiveFromOutpost(base, 'band.abyssal').run!.turn;
+const tAby = startDiveFromOutpost(sT, 'band.abyssal').run!.turn;
+assert(tAby < homeAby, `9: trench_deep 半亮 → abyssal 蛙跳更省（home ${homeAby} → 竖井前哨 ${tAby}）`);
+const tMouth = startDiveFromOutpost(sT, 'band.trench_mouth').run!.turn;
+assert(tMouth === turnHome, '9: trench_deep（order3）不服务更浅的 trench_mouth（order2）');
+// reef_deep + trench_deep 都半亮 → abyssal 从最深的 trench_deep 起跳
+const bothFlags = new Set([...sUsable.profile.flags, ...sT.profile.flags]);
+const sBoth: GameState = {
+  ...sUsable,
+  profile: {
+    ...sUsable.profile,
+    flags: bothFlags,
+    outpostState: { ...sUsable.profile.outpostState, ...sT.profile.outpostState },
+  },
+};
+const bothAby = startDiveFromOutpost(sBoth, 'band.abyssal').run!.turn;
+assert(bothAby === tAby, '9: reef_deep + trench_deep 都半亮 → abyssal 从最深的 trench_deep 起跳');
+L(`  trench_deep 半亮服务 abyssal（home ${homeAby}→${tAby}）/ 不服务更浅 band / 多前哨选最深 ✓`);
+
 console.log(log.join('\n'));
-console.log('\n✓ 深水前哨（Phase 2a 跨 run 分阶段建造 + 真蛙跳出潜点）回归通过');
+console.log(
+  '\n✓ 深水前哨（Phase 2a 建造/蛙跳 + Phase 2b 能源/衰减/维护/多前哨链）回归通过',
+);

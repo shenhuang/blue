@@ -12,6 +12,7 @@ import type {
   NodeChoice,
   PlayerProfile,
   ZoneTag,
+  Lighthouse,
 } from '@/types';
 import { tickTurns } from './events';
 import { generateDiveMap, getNextChoices } from './mapgen';
@@ -21,10 +22,11 @@ import { getUpgradeBonuses } from './upgrades';
 import {
   getRunBonuses,
   getHomeLighthouse,
+  getLighthouse,
   getOutposts,
-  outpostStage,
   OUTPOST_USABLE_STAGE,
 } from './lighthouses';
+import { effectiveOutpostStage, effectiveOutpostBonuses } from './outposts';
 import { getBand, bandDiveModifier } from './bands';
 import { effectiveDistance } from './chart';
 import { executeDeath } from './death';
@@ -201,17 +203,27 @@ function appendVisibilityLog(
 function deepestOutpostLaunch(
   profile: PlayerProfile,
   targetOrder: number,
-): { name: string; launchDepth: number } | null {
-  let best: { name: string; launchDepth: number; order: number } | null = null;
+): { name: string; launchDepth: number; lighthouse?: Lighthouse } | null {
+  let best: { name: string; launchDepth: number; order: number; lighthouse?: Lighthouse } | null =
+    null;
   for (const def of getOutposts()) {
-    if (outpostStage(profile, def.id) < OUTPOST_USABLE_STAGE) continue;
+    // 深水区 Phase 2b：用衰减后的**有效**阶段——荒废到半亮回退（< USABLE）的前哨会丢失蛙跳资格。
+    if (effectiveOutpostStage(profile, def.id) < OUTPOST_USABLE_STAGE) continue;
     const ob = getBand(def.bandId);
     if (!ob || ob.order >= targetOrder) continue; // 前哨必须比目标更浅（不能从同层/更深起跳）
     if (!best || ob.order > best.order) {
-      best = { name: def.name, launchDepth: ob.depthRange[1], order: ob.order };
+      best = {
+        name: def.name,
+        launchDepth: ob.depthRange[1],
+        order: ob.order,
+        // 点亮的前哨才有 Lighthouse 对象（半亮未 push）→ 充电/充氧补给设施只有点亮前哨提供（深水区 Phase 2b）。
+        lighthouse: getLighthouse(profile, def.result.id),
+      };
     }
   }
-  return best ? { name: best.name, launchDepth: best.launchDepth } : null;
+  return best
+    ? { name: best.name, launchDepth: best.launchDepth, lighthouse: best.lighthouse }
+    : null;
 }
 
 /**
@@ -235,7 +247,17 @@ export function startDiveFromOutpost(state: GameState, bandId: string): GameStat
   const launchName = launch?.name ?? outpost?.name ?? '前哨';
   const launchDepth = launch?.launchDepth ?? 0;
 
-  const bonuses = getRunBonuses(state.profile);
+  // 随身加成 = 全局升级 + 家灯塔船坞（getRunBonuses）+ 蛙跳出潜前哨的**在线**补给设施（深水区 Phase 2b）：
+  // 充电（电池总量）/ 充氧（氧气上限）只有在能源够、且前哨没荒废到设施掉线时才计入（effectiveOutpostBonuses）。
+  let bonuses = getRunBonuses(state.profile);
+  if (launch?.lighthouse) {
+    const ob = effectiveOutpostBonuses(state.profile, launch.lighthouse);
+    bonuses = {
+      ...bonuses,
+      powerMaxBonus: bonuses.powerMaxBonus + ob.rechargeBonus,
+      oxygenMaxBonus: bonuses.oxygenMaxBonus + ob.oxygenSupply,
+    };
+  }
   let run = createNewRun({ zoneId: band.zoneId, bonuses });
 
   // 蛙跳「航行预耗氧」：按**从出潜点到 band 顶端**的深度差粗估（前哨越深起跳越省），每 20m 约一档。

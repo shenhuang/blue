@@ -7,7 +7,25 @@ import { useMemo, useState, useEffect } from 'react';
 import type { GameState, ChartPoi } from '@/types';
 import { generateChart, poiLockReason, isPoiDepartable, describeModifier } from '@/engine/chart';
 import { startDiveFromPoi, startDiveFromOutpost } from '@/engine/dive';
-import { revealRadius, getHomeLighthouse } from '@/engine/lighthouses';
+import {
+  revealRadius,
+  getHomeLighthouse,
+  getLighthouse,
+  getOutposts,
+  outpostStage,
+  nextOutpostStage,
+  canAdvanceOutpost,
+  advanceOutpost,
+  OUTPOST_MAX_STAGE,
+  OUTPOST_USABLE_STAGE,
+} from '@/engine/lighthouses';
+import {
+  effectiveOutpostStage,
+  outpostDecayLevel,
+  outpostEnergy,
+  maintainOutpost,
+  canMaintainOutpost,
+} from '@/engine/outposts';
 import { getBands } from '@/engine/bands';
 import { getZone } from '@/engine/zones';
 import { getUpgradeBonuses } from '@/engine/upgrades';
@@ -197,6 +215,8 @@ export function SeaChartView({ state, onStateChange }: Props) {
         </div>
       )}
 
+      <OutpostPanel state={state} onStateChange={onStateChange} />
+
       <div className="chart-actions">
         <button className="btn" onClick={() => setShowBuild(true)}>
           灯塔设施
@@ -278,6 +298,86 @@ function ChartInfo({
           {showPicker && target ? '出海（带着目标）' : '出海'}
         </button>
       )}
+    </div>
+  );
+}
+
+/**
+ * 深水前哨面板（深水区 Phase 2b · UI surfacing）：把 2a「建造走 dive 事件」补一个海图上的直观入口——
+ * 分阶段建造（advanceOutpost）+ 维护衰减（maintainOutpost）+ 能源/衰减/半亮状态。蛙跳出潜点本身仍走上面的
+ * band 列表（半亮前哨自动缩短预耗氧、收益透明）。账单从 profile 银行出（同 advanceOutpost）。
+ */
+function OutpostPanel({ state, onStateChange }: Props) {
+  const outposts = getOutposts();
+  if (outposts.length === 0) return null;
+
+  return (
+    <div className="chart-outposts">
+      <h3 className="chart-outpost-title">深水前哨</h3>
+      <p className="dim">
+        跨次下潜分阶段修建的落脚点：半亮（{OUTPOST_USABLE_STAGE}/{OUTPOST_MAX_STAGE}）即可当蛙跳出潜点。
+        水下前哨会随时间荒废——变暗、补给掉线、退回半亮，得回来维护。料从岸上家底里出。
+      </p>
+      <ul className="chart-outpost-list">
+        {outposts.map((o) => {
+          const stage = outpostStage(state.profile, o.id);
+          const effStage = effectiveOutpostStage(state.profile, o.id);
+          const lit = stage >= OUTPOST_MAX_STAGE;
+          const usable = effStage >= OUTPOST_USABLE_STAGE;
+          const decay = outpostDecayLevel(state.profile, o.id);
+          const next = nextOutpostStage(state.profile, o.id);
+          const canBuild = canAdvanceOutpost(state.profile, o.id);
+          const lh = getLighthouse(state.profile, o.result.id);
+          const energy = lh ? outpostEnergy(state.profile, lh) : null;
+          const maint = canMaintainOutpost(state.profile, o.id);
+
+          const status = lit
+            ? usable
+              ? '已点亮'
+              : '荒废 · 蛙跳失效'
+            : stage === 0
+              ? '未动工'
+              : `修建中 ${stage}/${OUTPOST_MAX_STAGE}${usable ? ' · 半亮可用' : ''}`;
+
+          return (
+            <li key={o.id} className="chart-outpost-item">
+              <div className="chart-outpost-head">
+                <span className="chart-outpost-name">{o.name}</span>
+                <span className="dim chart-outpost-status" aria-label={`${o.name} 状态：${status}`}>
+                  {status}
+                </span>
+              </div>
+              {energy && (
+                <span className="dim chart-outpost-energy">
+                  能源 {energy.capacity}（占用 {energy.demand}
+                  {energy.demand > energy.capacity ? ' · 部分补给掉线' : ''}）
+                  {decay > 0 ? ` · 衰减 ${decay}` : ''}
+                </span>
+              )}
+              <div className="chart-outpost-actions">
+                {next && (
+                  <button
+                    className="btn small chart-outpost-build"
+                    disabled={!canBuild}
+                    onClick={() => onStateChange(advanceOutpost(state, o.id))}
+                  >
+                    {next.label}
+                  </button>
+                )}
+                {decay > 0 && (
+                  <button
+                    className="btn small chart-outpost-maintain"
+                    disabled={!maint.ok}
+                    onClick={() => onStateChange(maintainOutpost(state, o.id))}
+                  >
+                    维护
+                  </button>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

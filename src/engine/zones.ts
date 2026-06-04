@@ -9,6 +9,7 @@ import wreckGraveyardEvents from '@/data/events/wreck_graveyard.json';
 import lighthouseEvents from '@/data/events/lighthouse.json';
 import trenchEvents from '@/data/events/trench.json';
 import abyssalEvents from '@/data/events/abyssal.json';
+import hadalEvents from '@/data/events/hadal.json';
 import zonesData from '@/data/zones.json';
 
 export const ZONES: Map<string, ZoneDef> = new Map();
@@ -24,6 +25,7 @@ for (const e of (wreckGraveyardEvents.events as DiveEvent[])) EVENT_DB.set(e.id,
 for (const e of (lighthouseEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (trenchEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (abyssalEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
+for (const e of (hadalEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 
 export function getZone(id: string): ZoneDef | undefined {
   return ZONES.get(id);

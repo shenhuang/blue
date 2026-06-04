@@ -58,6 +58,36 @@ function withHomeDockyard(s: GameState): GameState {
   };
 }
 
+/** 深水区 Phase 2b：构造一个「前哨已点亮」的 state（三阶段 flag + push 一座结果灯塔 + 维护计时）。 */
+function litOutpostState(opts: {
+  outpostId: string;
+  resultLh: { id: string; name: string; mapX: number; mapY: number };
+  facilities?: string[];
+  runsCompleted?: number;
+  maintainedRun?: number;
+}): GameState {
+  const base = createInitialGameState();
+  const flags = new Set([
+    'flag.tutorial_complete',
+    `flag.${opts.outpostId}.s1`,
+    `flag.${opts.outpostId}.s2`,
+    `flag.${opts.outpostId}.s3`,
+  ]);
+  const lh = { ...opts.resultLh, level: 1, builtUpgrades: new Set(opts.facilities ?? []) };
+  return {
+    ...base,
+    profile: {
+      ...base.profile,
+      flags,
+      runsCompleted: opts.runsCompleted ?? 0,
+      lighthouses: [...base.profile.lighthouses, lh],
+      outpostState: { [opts.outpostId]: { maintainedRun: opts.maintainedRun ?? 0 } },
+    },
+  };
+}
+const REEF_DEEP_LH = { id: 'lighthouse.reef_deep_outpost', name: '深槽前哨', mapX: 0.5, mapY: 0.66 };
+const TRENCH_DEEP_LH = { id: 'lighthouse.trench_deep_outpost', name: '竖井前哨', mapX: 0.62, mapY: 0.78 };
+
 // ============================================
 // A. SeaChartView · 教学后无升级 → 灯塔礁锁、蓝洞/沉船可出海
 // ============================================
@@ -370,7 +400,60 @@ assert(htmlM1.includes('旧灯塔'), 'M: 应列出家灯塔');
 assert(htmlM1.includes('船坞'), 'M: home 应显示船坞轨（homeOnly）');
 assert(htmlM1.includes('信标光源'), 'M: 应显示信标轨');
 assert(htmlM1.includes('upgrade-buy">建造'), 'M: 材料金币够 → 船坞应有可点"建造"按钮');
-L('  家灯塔船坞/信标轨渲染 + 可建造 ✓');
+// M2/M3/M4：深水区 Phase 2b 能源设施轨的 outpostOnly / currentOnly 门控
+const homeOnlyPanel = renderToStaticMarkup(
+  <LighthouseBuildPanel state={createInitialGameState()} onStateChange={noop} onClose={noop} />,
+);
+assert(!homeOnlyPanel.includes('充电站'), 'M2: 家灯塔不显示前哨能源设施（充电站 outpostOnly）');
+assert(!homeOnlyPanel.includes('水力发电'), 'M2: 家灯塔不显示水力发电（currentOnly）');
+const reefDeepPanel = renderToStaticMarkup(
+  <LighthouseBuildPanel
+    state={litOutpostState({ outpostId: 'outpost.reef_deep', resultLh: REEF_DEEP_LH })}
+    onStateChange={noop}
+    onClose={noop}
+  />,
+);
+assert(reefDeepPanel.includes('充电站'), 'M3: 静水前哨显示充电站（outpostOnly）');
+assert(reefDeepPanel.includes('制氧站'), 'M3: 静水前哨显示制氧站');
+assert(!reefDeepPanel.includes('水力发电'), 'M3: 静水前哨不显示水力发电（currentOnly 不满足）');
+const trenchPanel = renderToStaticMarkup(
+  <LighthouseBuildPanel
+    state={litOutpostState({ outpostId: 'outpost.trench_deep', resultLh: TRENCH_DEEP_LH })}
+    onStateChange={noop}
+    onClose={noop}
+  />,
+);
+assert(trenchPanel.includes('水力发电'), 'M4: 水流前哨显示水力发电（currentOnly 满足）');
+L('  家灯塔船坞/信标轨 + 能源设施轨 outpostOnly/currentOnly 门控（家×/静水/水流）✓');
+
+// ============================================
+// N. SeaChartView · 深水前哨面板（Phase 2b：建造/维护/能源/衰减 surfacing）
+// ============================================
+L('\n========== N. SeaChartView 深水前哨面板 ==========');
+// N1：未动工 → 列出前哨 + 状态 + 建造按钮（label 含账单）
+const htmlN1 = renderToStaticMarkup(
+  <SeaChartView state={stateWith(['flag.tutorial_complete'], [])} onStateChange={noop} />,
+);
+assert(htmlN1.includes('深水前哨'), 'N1: 应渲染深水前哨面板标题');
+assert(htmlN1.includes('深槽前哨'), 'N1: 应列出 reef_deep 前哨');
+assert(htmlN1.includes('竖井前哨'), 'N1: 应列出 trench_deep 前哨（多前哨链）');
+assert(htmlN1.includes('未动工'), 'N1: 未建前哨显示「未动工」');
+assert(htmlN1.includes('勘察并清理塔基'), 'N1: 建造按钮 label 含下一阶段账单');
+// N2：reef_deep 点亮 + 重度衰减（runs 8）→ 能源/衰减/荒废/维护
+const N2 = litOutpostState({
+  outpostId: 'outpost.reef_deep',
+  resultLh: REEF_DEEP_LH,
+  facilities: ['lighthouse.recharge.lv1', 'lighthouse.oxygen_supply.lv1'],
+  runsCompleted: 8,
+  maintainedRun: 0,
+});
+const htmlN2 = renderToStaticMarkup(<SeaChartView state={N2} onStateChange={noop} />);
+assert(htmlN2.includes('能源'), 'N2: 点亮前哨显示能源状态');
+assert(htmlN2.includes('衰减'), 'N2: 衰减的前哨显示衰减级');
+assert(htmlN2.includes('部分补给掉线'), 'N2: 容量不足 → 标注补给掉线（变暗）');
+assert(htmlN2.includes('荒废 · 蛙跳失效'), 'N2: 重度衰减 → 有效阶段回退、蛙跳失效');
+assert(htmlN2.includes('维护'), 'N2: 衰减的前哨有「维护」按钮');
+L('  前哨面板：未动工/建造按钮 + 点亮/能源/衰减/荒废/维护 ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 海图 UI 冒烟测试通过');

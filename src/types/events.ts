@@ -14,6 +14,7 @@ export type ZoneTag =
   | 'twilight'
   | 'midnight'
   | 'abyssal'
+  | 'hadal'
   | 'ruins'
   | 'tutorial';
 

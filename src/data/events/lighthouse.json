@@ -71,6 +71,54 @@
           "outcome": { "text": "你把深槽底这座塔基的方位记在随身石板上。料齐了再来推进。" }
         }
       ]
+    },
+    {
+      "id": "lighthouse.outpost_trench_deep",
+      "depthRange": [82, 108],
+      "zoneTags": ["midnight"],
+      "weight": 2,
+      "oncePerRun": true,
+      "forbiddenFlags": ["flag.outpost.trench_deep.s3"],
+      "title": "竖井壁上的旧锚位",
+      "body": "竖井收窄又张开的地方，岩壁上有一排早年凿出的锚位——有人想在这个深度立过桩，没立成。\n急流斜斜地灌过竖井喉，可这排锚位正背着流，是这一段唯一落得住脚的地方。在这儿撑起一座前哨，你就能从竖井底再往下面那片纯黑里起跳，不必每趟都从上头一路沉下来。\n水流会一直啃它，架起来也得常回来照看。料从岸上家底里出，更不是一趟能成的。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "anchor",
+          "label": "在竖井壁上凿出锚位（章鱼角喙×2 ＋ 90 金）",
+          "visibleIf": { "kind": "notHasFlag", "flag": "flag.outpost.trench_deep.s1" },
+          "outcome": { "advanceOutpostId": "outpost.trench_deep" }
+        },
+        {
+          "id": "ferry_struts",
+          "label": "运来抗流支架与浮筒（鳗皮×3·黄铜配件×3 ＋ 150 金）",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "flag.outpost.trench_deep.s1" },
+              { "kind": "notHasFlag", "flag": "flag.outpost.trench_deep.s2" }
+            ]
+          },
+          "outcome": { "advanceOutpostId": "outpost.trench_deep" }
+        },
+        {
+          "id": "power_on",
+          "label": "通电点亮（冷光腺×2·章鱼角喙×2 ＋ 240 金）",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "flag.outpost.trench_deep.s2" },
+              { "kind": "notHasFlag", "flag": "flag.outpost.trench_deep.s3" }
+            ]
+          },
+          "outcome": { "advanceOutpostId": "outpost.trench_deep" }
+        },
+        {
+          "id": "leave",
+          "label": "先记下方位，回头再来",
+          "outcome": { "text": "你把竖井壁上这排锚位的方位记在石板上。料齐了，再下来这一趟。" }
+        }
+      ]
     }
   ]
 }

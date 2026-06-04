@@ -1,0 +1,15 @@
+{
+  "_comment": "超渊·缝 · 软的底，就着这个会呼吸的『底』站稳喘气（无 check·apex/mimic/corpse-wearer 伏笔，不交底）。它匀匀托着你、像让你配合它呼吸——分不清得救还是被接住。loot-free、lore.hadal.the_soft_floor + sanity -9 + oxygenTurnCost 4。不触发 d_reveal（#43 实跑抄）。",
+  "eventId": "hadal.the_soft_floor",
+  "depth": 160,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["stand_on_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.hadal.the_soft_floor"],
+    "statsDelta": { "oxygen": -4, "sanity": -9 }
+  }
+}
