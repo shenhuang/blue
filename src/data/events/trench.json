@@ -1,0 +1,311 @@
+{
+  "_doc": "竖井（trench）专属事件池 —— 深水区内容期，母题『回波对不上』（声呐返回 ≠ 点灯凑近的真相）。绑 band 专属 tag：twilight=竖井·口(60-82m)、midnight=竖井·喉(82-108m)，经 DepthBand.tags 覆盖 zoneTagsByDepth、与借来的蓝洞内容隔离（见 engine/bands.ts / depth_bands.json）。这是 45-60m 深段欺骗封顶（cave.false_beacon / wreck_graveyard.the_wearer，STATUS #57）之下、整套伏笔最深的一层——把 Phase 0 不可信声呐（#58）+ 节点级 clarity 陡降变黑（#62）的机制做成事件付现：你看不清，只能 ping，ping 在骗你，你还是得往下。守则：全 loot-free / cosmic·uncanny / 无敌人（mimic·corpse-wearer 是 Phase 3 apex 例外）/ 不触发 d_reveal / 叙述永不交底（#54：理性解释与错读始终叠着、游戏拒绝裁决）。每个事件都留一条『关声呐/摸黑』的出口＝最低 signature 的诚实但盲的选择（呼应感知双刃 §3.2-3.3），无脚本死、可生还有代价。新 lore.trench.*。六个事件系统地覆盖一次 ping 能骗你的全部方式：假底(the_return)/假人(second_diver)/距离不对(the_sounding)/假墙(the_wall)/被应答(the_answer)/没有回波(no_echo)。",
+  "events": [
+    {
+      "id": "trench.the_return",
+      "depthRange": [60, 82],
+      "zoneTags": ["twilight"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "回的波",
+      "body": "竖井往下没有底，灯尖探不到。\n你打了一记声呐。回波给你画出一道平台，就在脚下几米——一块能站、能歇口气的底。\n声呐说那儿有底。你把灯压低照过去：灯柱够得到的地方，只有继续往下的黑。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "drop_to_floor",
+          "label": "信那记回波，沉到它说有底的地方去",
+          "outcome": {
+            "text": "你收拢手脚往下沉，去够那块平台。\n灯尖扫过——什么也没有，你的手按在一片不存在的东西上，扑了个空，又坠了两米才稳住。\n你回头再打一记声呐：平台又在你脚下几米，平平的，稳稳的，还是那么近。",
+            "oxygenTurnCost": 3,
+            "deltas": { "sanity": -6 },
+            "loreEntry": "lore.trench.the_return"
+          }
+        },
+        {
+          "id": "read_the_gap",
+          "label": "用灯照着，逼自己读清回波和灯之间那道差（理智 vs 55）",
+          "check": {
+            "stat": "sanity",
+            "dc": 55,
+            "onSuccess": {
+              "text": "你逼自己一样一样数：冷水分层会把声音折弯，回波早回来一截，就扫出一道根本不存在的平台——书上写过这种事。\n道理都对。你认下灯里那片黑，扶着石壁继续往下，没再打第二记声呐。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.trench.the_return"
+            },
+            "onFailure": {
+              "text": "你越照那道声呐里的平台，越觉得它清楚——灯里明明是黑的，可你分明记得脚下踩到过它，硬的，平的。\n你不记得自己是什么时候把灯压下去的。等你回过神，深度表又掉了几米，声呐还在你脚下铺着那片不存在的底，等你踩。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -13 }
+            }
+          }
+        },
+        {
+          "id": "go_dark_feel",
+          "label": "关掉声呐，贴着石壁摸下去（没有回波就没有人骗你）",
+          "outcome": {
+            "text": "你灭了声呐，伸手贴住石壁，一寸一寸往下探。\n没有回波，就没有平台，也没有底——只有石头在你掌心慢慢过。瞎，但至少没有一样东西在替你编一个站得住脚的地方。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "trench.second_diver",
+      "depthRange": [60, 82],
+      "zoneTags": ["twilight"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "回波里的人",
+      "body": "你打了一记声呐探前面的路。\n回波里，侧前方有一团和你差不多大的东西，悬在水里，跟你隔着一段不变的距离。\n你把灯转过去——灯柱里是空的。你再打一记，它还在，还是那么远，跟着你一起往下。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "ping_again",
+          "label": "再打一记声呐，把它钉清楚",
+          "outcome": {
+            "text": "你又打一记。它没躲，回波清清楚楚——一个人形，手脚都全，停在你灯够不到的那一圈外。\n你每打一次，它就近一点点，每次都只近一点点。你停了手。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -6 },
+            "loreEntry": "lore.trench.the_company"
+          }
+        },
+        {
+          "id": "hold_the_beam",
+          "label": "把灯钉在回波说的那个点上，照住别动（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你把灯死死对住声呐说有人的那个点。空的。水是空的。\n是声呐把你自己搅起的悬浮物扫成了个影子，是这种深度谁都会疑神疑鬼——你对自己说，没把灯移开，一直照到那东西在回波里散掉。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -4 }
+            },
+            "onFailure": {
+              "text": "灯柱里什么都没有，可声呐里它清楚得很，近得很，已经到了你灯边上。\n你猛地把灯甩过去——空的。甩回来——空的。它始终停在你灯刚扫过、此刻照不到的那个角度上，差一点，永远差那一点。\n你不敢再打声呐了。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -10 },
+              "loreEntry": "lore.trench.the_company"
+            }
+          }
+        },
+        {
+          "id": "kill_sonar_swim",
+          "label": "关掉声呐，自己往前游",
+          "outcome": {
+            "text": "你关掉声呐。没有回波，就没有那个人。\n黑水里只剩你自己的呼吸——本来也只有你自己，你这么说服自己，往前游。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "trench.the_sounding",
+      "depthRange": [60, 82],
+      "zoneTags": ["twilight"],
+      "weight": 5,
+      "cooldown": 4,
+      "title": "数不对的回声",
+      "body": "竖井在这儿岔成两道。\n你朝左边打声呐——回波几乎立刻撞回来，近，像一堵就贴在脸前的墙。\n你朝右边打——半天没有回音，太久，像那边压根没有底。\n当地人说的没错：这儿的水声，是反着回来的。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "follow_near_echo",
+          "label": "信那声近的回波，往左边窄道挤（体力 vs 12）",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你信那声近的，侧身往左挤。\n回波这一次没骗你——是条窄道，刮着你的气瓶，但通。也可能只是这一次没骗你。",
+              "oxygenTurnCost": 1,
+              "deltas": { "sanity": -2 }
+            },
+            "onFailure": {
+              "text": "你往左挤，那堵『墙』却比回波说的远得多——你扑了个空，踉跄着撞到更后头才真有的石壁上，气瓶磕得当一声。\n近的不一定近。你记下这一条，如果还记得住的话。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -6, "sanity": -3 }
+            }
+          }
+        },
+        {
+          "id": "drop_into_silence",
+          "label": "信那片没有回声的，往右边沉下去",
+          "outcome": {
+            "text": "你选那条没有回声的，往下，往下。灯照不到底，声呐也不肯回话。\n你下了很久才碰到底——或者那只是你需要相信有个底。",
+            "oxygenTurnCost": 3,
+            "deltas": { "sanity": -5 },
+            "loreEntry": "lore.trench.the_sounding"
+          }
+        },
+        {
+          "id": "pick_by_hand",
+          "label": "不再听回波，伸手探两个岔口、凭石壁走向选",
+          "outcome": {
+            "text": "你灭了声呐，把手伸进两道岔口各探了探，凭石壁的走向选了一条。\n没有回波替你撒谎，也没有回波替你带路。慢，但每一下都是你自己的手量出来的。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "trench.the_wall",
+      "depthRange": [82, 108],
+      "zoneTags": ["midnight"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "扫出来的墙",
+      "body": "声呐扫回一堵墙。\n整整一面，横在竖井前头，把路堵死了——到头了，你想，几乎松了口气。\n你点灯凑近去看那堵墙。灯柱里没有墙。竖井在你面前张着口，一直往下黑下去。\n它扫出来的东西，和你点灯看到的，对不上。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "swim_through",
+          "label": "信灯，从声呐说有墙的地方游进去（理智 vs 55）",
+          "check": {
+            "stat": "sanity",
+            "dc": 55,
+            "onSuccess": {
+              "text": "你信灯。你朝那堵声呐里的墙游进去——穿过去了，水是通的，墙是假的。\n是回波在这种冷水里乱折，叠成一面根本不存在的墙，你查过资料。道理都对。\n你过了墙继续往下，没回头确认它还在不在声呐里。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.trench.the_wall"
+            },
+            "onFailure": {
+              "text": "你朝那堵『假』墙游过去——灯里明明是空的——可你的头盔结结实实撞上了什么，硬的，凉的，正好在声呐说有墙的地方。\n你伸手去摸，灯照过去，手是悬在空水里的。你又撞了一次。\n是有墙，还是没有墙；是灯在骗你，还是声呐在骗你，还是你自己——你分不出来。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -13 }
+            }
+          }
+        },
+        {
+          "id": "turn_back",
+          "label": "信声呐，有墙就是到头了，往回折",
+          "outcome": {
+            "text": "你信声呐。有墙就是到头，你认了这个底，往上折返。\n也许是躲过了什么，也许是被一堵不存在的墙拦着、没敢往下。哪个是真的，你不会知道了。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -6 }
+          }
+        },
+        {
+          "id": "go_dark_wall",
+          "label": "关灯关声呐，伸手摸那堵墙",
+          "outcome": {
+            "text": "你灭了声呐和灯，伸手往前探。\n指尖只有水，一直是水，竖井在你手底下继续往下。没有墙，也没有底。\n你摸着黑往下，谁也没骗你，谁也没拦你。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 },
+            "loreEntry": "lore.trench.the_wall"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "trench.the_answer",
+      "depthRange": [82, 108],
+      "zoneTags": ["midnight"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "回的不是你的声音",
+      "body": "你打了一记声呐。\n回波回来了——可它不对。你的声呐打出去是一个脆响，回来的却长、却低，拖着尾音，像底下有什么学了你的调子，慢半拍，应了你一声。\n你僵在水里。要不要再打一次。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "answer_it",
+          "label": "再打一记，逼自己听清那回声（理智 vs 55）",
+          "check": {
+            "stat": "sanity",
+            "dc": 55,
+            "onSuccess": {
+              "text": "你又打一记，逼自己听明白：是这条竖井。声音在这种先收窄又骤张的石喉里会被拉长、压低，回得不像原样——是声学，不是别的。\n道理对。你把声呐关了，安安静静往下，不再跟那东西对话。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.trench.the_answer"
+            },
+            "onFailure": {
+              "text": "你又打一记。这回它应得快了，近了，调子跟你的几乎一样了，像学会了。\n你又打，它又应，一来一回，你竟分不清哪一声是你打的、哪一声是它回的。\n等你停手，黑水里还有一声在往下沉。那一声不是你打的。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -14 }
+            }
+          }
+        },
+        {
+          "id": "go_silent",
+          "label": "立刻关掉声呐，不再打",
+          "outcome": {
+            "text": "你立刻关了声呐。不再打，就没有回的。\n黑水里你贴着石壁往下，把那半拍的尾音留在身后——如果它真在那儿，你不想再叫它应第二次。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -5 },
+            "loreEntry": "lore.trench.the_answer"
+          }
+        },
+        {
+          "id": "lamp_only_down",
+          "label": "不再 ping，只举着灯一寸寸往下",
+          "outcome": {
+            "text": "你不再打声呐，只把灯举在前头，一寸一寸往下。\n灯够得到的，都是真的——你这么告诉自己——够不到的，你不去想。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "trench.no_echo",
+      "depthRange": [82, 108],
+      "zoneTags": ["midnight"],
+      "weight": 5,
+      "cooldown": 4,
+      "title": "没有回的地方",
+      "body": "竖井在这里又陡降一截，黑得灯尖都探不进去。\n你打声呐。等回波。没有。\n你再打，加大功率。还是没有——不是『没有底』那种迟迟才回的没有，是声音打进去就再没出来，像下面有个地方，进得去，回不来。\n灯照不到那么深。要往下，就得瞎着往下。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "drop_blind",
+          "label": "瞎着沉进去",
+          "outcome": {
+            "text": "你收了没用的声呐，把灯也压暗，让自己沉进那段连声音都不肯回来的黑里。\n下了很久。你没数着多少米——你不敢数。后来脚下有了底，或者是你撞上了别的什么。\n你活着上来了，这一次。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -8 },
+            "loreEntry": "lore.trench.the_quiet"
+          }
+        },
+        {
+          "id": "climb_the_sides",
+          "label": "不往吞声音的正中去，贴侧壁一段段 ping 着下（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你不往那个吞声音的正中间去，贴着竖井侧壁，一段一段打声呐探石头——石壁还肯回话。\n慢，费力，但每一脚都踩在回得来的地方。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -3 }
+            },
+            "onFailure": {
+              "text": "你想贴着壁下，可侧壁也一段段没了回声，你够不着、抓不住，滑了一截，半天才在更下面卡住。\n这地方连墙都开始不肯回话了。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -6, "sanity": -6 }
+            }
+          }
+        },
+        {
+          "id": "turn_back_quiet",
+          "label": "不下去——有些地方连声音都回不来",
+          "outcome": {
+            "text": "你不下去。有些地方连声音都回不来，你没打算做第一个试出来回不回得来的人。\n你认了路，往上。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    }
+  ]
+}

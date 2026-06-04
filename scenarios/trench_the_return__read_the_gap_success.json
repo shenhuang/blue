@@ -1,0 +1,16 @@
+{
+  "_comment": "竖井·口 trench 『回波对不上』· 回的波（cosmic·60-82m·oncePerRun·[twilight]）——声呐画出脚下一道不存在的『底』，灯里只有继续往下的黑。逼自己读清回波与灯之间那道差（理智 vs 55）。满 sanity→rate 0.95、seed 1 确定性成功：理性解释（冷水分层折弯声音、扫出假平台）+ lore.trench.the_return + sanity -5 + oxygenTurnCost 2，loot-free。叙述永不交底（#54：道理都对、却不裁决底到底有没有），刻意不触发 d_reveal。statsDelta event-runner --out json 实跑抄（#43）。",
+  "eventId": "trench.the_return",
+  "depth": 70,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["read_the_gap"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.trench.the_return"],
+    "statsDelta": { "oxygen": -2, "sanity": -5 }
+  }
+}

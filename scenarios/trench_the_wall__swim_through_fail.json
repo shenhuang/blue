@@ -1,0 +1,16 @@
+{
+  "_comment": "竖井·喉 · 扫出来的墙 失败分支（cosmic 理智 vs 55）。sanity=22→rate 0.05 clamp，seed 1 确定性失败。灯里空的、头盔却撞上凉硬的东西——『是有墙还是没有墙，是灯骗你还是声呐骗你，还是你自己，你分不出来』＝把『是世界坏了还是你疯了』做成屏上一物、游戏拒绝裁决（#54 / SPEC §3.2）。sanity -13 + oxygenTurnCost 5、无 lore，不触发 d_reveal。",
+  "eventId": "trench.the_wall",
+  "stats": { "sanity": 22 },
+  "depth": 95,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["swim_through"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": { "oxygen": -5, "sanity": -13 }
+  }
+}

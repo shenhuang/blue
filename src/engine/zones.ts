@@ -7,6 +7,7 @@ import reefEvents from '@/data/events/reef.json';
 import blueCavesEvents from '@/data/events/blue_caves.json';
 import wreckGraveyardEvents from '@/data/events/wreck_graveyard.json';
 import lighthouseEvents from '@/data/events/lighthouse.json';
+import trenchEvents from '@/data/events/trench.json';
 import zonesData from '@/data/zones.json';
 
 export const ZONES: Map<string, ZoneDef> = new Map();
@@ -20,6 +21,7 @@ for (const e of (reefEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (blueCavesEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (wreckGraveyardEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (lighthouseEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
+for (const e of (trenchEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 
 export function getZone(id: string): ZoneDef | undefined {
   return ZONES.get(id);
@@ -46,8 +48,10 @@ export function buildEventPool(opts: {
   profileFlags: Set<string>;
   triggeredEventIds: string[];
   excludeIds?: Set<string>;
+  /** band 专属 tag 池（深水区内容期）：覆盖 zoneTagsByDepth，让 trench 用 twilight/midnight 专属事件。缺省→回退按深度算。 */
+  tagsOverride?: ZoneTag[];
 }): DiveEvent[] {
-  const tags = new Set(tagsForDepth(opts.zone, opts.depth));
+  const tags = new Set(opts.tagsOverride ?? tagsForDepth(opts.zone, opts.depth));
   const triggered = new Set(opts.triggeredEventIds);
   const exclude = opts.excludeIds ?? new Set();
   const pool: DiveEvent[] = [];

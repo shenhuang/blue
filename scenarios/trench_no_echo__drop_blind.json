@@ -1,0 +1,15 @@
+{
+  "_comment": "竖井·喉 · 没有回的地方（uncanny·82-108m·[midnight]）——陡降黑得灯探不进、声呐打进去再不出来（借节点级 clarity #62 的『看不清才往下走』）。瞎着沉进去（无 check）：没数米数、脚下后来有了底『或者是你撞上了别的什么』『你活着上来了，这一次』＝可生还有代价、无脚本死。lore.trench.the_quiet + sanity -8 + oxygenTurnCost 4，loot-free。永不交底。#43 实跑抄。",
+  "eventId": "trench.no_echo",
+  "depth": 95,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["drop_blind"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.trench.the_quiet"],
+    "statsDelta": { "oxygen": -4, "sanity": -8 }
+  }
+}

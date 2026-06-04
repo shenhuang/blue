@@ -1,0 +1,16 @@
+{
+  "_comment": "竖井·喉 · 回的不是你的声音（cosmic·82-108m·oncePerRun·[midnight]）——你的脆响 ping 回来却长、低、拖尾，像底下有什么学了你的调子慢半拍应你一声（轻触 §3.7『另一个世界』、不推进 Phase 3）。再 ping、逼自己听清（理智 vs 55）。满 sanity→rate 0.95、seed 1 成功：石喉把声音拉长压低、是声学不是别的 + lore.trench.the_answer + sanity -6 + oxygenTurnCost 2，loot-free。永不交底、不触发 d_reveal。#43 实跑抄。",
+  "eventId": "trench.the_answer",
+  "depth": 95,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["answer_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.trench.the_answer"],
+    "statsDelta": { "oxygen": -2, "sanity": -6 }
+  }
+}

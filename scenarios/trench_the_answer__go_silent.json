@@ -1,0 +1,15 @@
+{
+  "_comment": "竖井·喉 · 回的不是你的声音，立刻关声呐不再打（无 check）＝感知双刃的诚实出口（不打就没有回的、把尾音留身后）。lore.trench.the_answer + sanity -5 + oxygenTurnCost 2，loot-free。可生还有代价、无脚本死。#43 实跑抄。",
+  "eventId": "trench.the_answer",
+  "depth": 95,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["go_silent"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.trench.the_answer"],
+    "statsDelta": { "oxygen": -2, "sanity": -5 }
+  }
+}

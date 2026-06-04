@@ -1,0 +1,16 @@
+{
+  "_comment": "竖井·喉 trench · 扫出来的墙（cosmic·82-108m·oncePerRun·[midnight]）——声呐扫回一堵堵死路的墙，灯里却是张着口的竖井（直接付现 throat blurb『扫出来的，和点灯看到的，对不上』）。信灯、从声呐说有墙处游进去（理智 vs 55）。满 sanity→rate 0.95、seed 1 成功：穿过去了、墙是假的（回波乱折叠成假墙）+ lore.trench.the_wall + sanity -5 + oxygenTurnCost 2，loot-free。永不交底、不触发 d_reveal。#43 实跑抄。",
+  "eventId": "trench.the_wall",
+  "depth": 95,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["swim_through"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.trench.the_wall"],
+    "statsDelta": { "oxygen": -2, "sanity": -5 }
+  }
+}

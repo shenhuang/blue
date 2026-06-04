@@ -33,6 +33,12 @@ interface GenOpts {
    */
   depthRange?: [number, number];
   /**
+   * 深度 band 的专属事件 tag 池（深水区内容期）：覆盖 zone.zoneTagsByDepth，让 band（trench）用自己的
+   * twilight/midnight 专属事件池、与借来的 zone 内容隔离。缺省（POI / 教学 / 普通 zone 不传）→ 回退 tagsForDepth。
+   * 同时作用于「节点 zoneTag 抽取」与「buildEventPool 事件筛选」两处，保证图与池一致。
+   */
+  bandTags?: ZoneTag[];
+  /**
    * 打捞行会 Lv.2「出海前选目标」：指定一具 DeathRecord.id 作为本次必定出现的尸体。
    * 若该尸体在本 zone 且仍可回收（isRecoverableCorpse），则**保证**布点（绕过 corpseChance 随机），
    * 放在深度最接近其 depthAtDeath 的可用节点上。无效 / 未设则退回原有随机 corpse pass。
@@ -221,7 +227,7 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
 
       let eventId: string | undefined;
       let preview = '';
-      let zoneTag: ZoneTag = pickFrom(tagsForDepth(zone, depth), rng) ?? 'reef';
+      let zoneTag: ZoneTag = pickFrom(opts.bandTags ?? tagsForDepth(zone, depth), rng) ?? 'reef';
 
       if (kind === 'event') {
         const pool = buildEventPool({
@@ -230,6 +236,7 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
           sanity: 100, // 生成时按 100 算；真实 sanity 在抽取那一刻可能改变可见性，但 MVP 阶段先这样
           profileFlags,
           triggeredEventIds: triggeredFakeIds,
+          tagsOverride: opts.bandTags,
         });
         if (pool.length === 0) {
           // 没有匹配事件，退化为 rest
@@ -464,7 +471,7 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
 
   for (let i = 0; i < N; i++) {
     const depthI = depth[i];
-    const zoneTag: ZoneTag = pickFrom(tagsForDepth(zone, depthI), rng) ?? 'reef';
+    const zoneTag: ZoneTag = pickFrom(opts.bandTags ?? tagsForDepth(zone, depthI), rng) ?? 'reef';
     let kind: NodeKind;
     let eventId: string | undefined;
     let preview: string;
@@ -494,6 +501,7 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
           sanity: 100,
           profileFlags,
           triggeredEventIds: triggeredFakeIds,
+          tagsOverride: opts.bandTags,
         });
         if (pool.length === 0) {
           kind = 'rest';

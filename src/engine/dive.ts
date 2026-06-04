@@ -10,6 +10,7 @@ import type {
   CurrentStrength,
   Visibility,
   NodeChoice,
+  ZoneTag,
 } from '@/types';
 import { tickTurns } from './events';
 import { generateDiveMap, getNextChoices } from './mapgen';
@@ -46,7 +47,12 @@ function assertNever(x: never): never {
 export function startDive(
   state: GameState,
   zoneId: string,
-  opts?: { depthOffset?: number; depthRange?: [number, number]; targetCorpseId?: string },
+  opts?: {
+    depthOffset?: number;
+    depthRange?: [number, number];
+    bandTags?: ZoneTag[];
+    targetCorpseId?: string;
+  },
 ): GameState {
   const zone = getZone(zoneId);
   if (!zone) {
@@ -64,6 +70,7 @@ export function startDive(
     deaths: state.profile.deaths,
     depthOffset: opts?.depthOffset,
     depthRange: opts?.depthRange,
+    bandTags: opts?.bandTags,
     targetCorpseId: opts?.targetCorpseId,
   });
 
@@ -212,7 +219,8 @@ export function startDiveFromOutpost(state: GameState, bandId: string): GameStat
 
   let s: GameState = { ...state, run };
   // band 用绝对 depthRange 覆盖 zone.depthRange（透传 mapgen GenOpts.depthRange）。
-  s = startDive(s, band.zoneId, { depthRange: band.depthRange });
+  // band.tags（如有）覆盖 zoneTagsByDepth＝trench 专属事件池（twilight/midnight），与借来的 zone 内容隔离。
+  s = startDive(s, band.zoneId, { depthRange: band.depthRange, bandTags: band.tags });
 
   s = appendLog(s, {
     tone: 'system',

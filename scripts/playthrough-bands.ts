@@ -15,6 +15,7 @@ import { getBands, getBand, bandDiveModifier } from '../src/engine/bands';
 import { startDiveFromOutpost } from '../src/engine/dive';
 import { generateDiveMap } from '../src/engine/mapgen';
 import { getZone } from '../src/engine/zones';
+import { makeLcg } from '../src/engine/rng';
 import {
   clarity,
   lampEffective,
@@ -123,6 +124,60 @@ assert(alertDepthFactor({ ...r, currentDepth: ALERT_DEPTH_FULL }) === 1, '7: 满
 assert(alertDepthFactor({ ...r, currentDepth: 100 }) === 1, '7: 深 band(>60m) 饱和=1（去掉写死 60、不溢出/报错）');
 assert(alertDepthFactor({ ...r, currentDepth: 20 }) === 0, '7: 浅水仍免探测压力（§7.5）');
 L('  深 band 警觉因子饱和、浅水免压 ✓');
+
+// ============================================================
+// 8. band.tags 覆盖：trench band 用专属事件池（twilight/midnight），与借来的 zone 内容隔离
+//    （深水区内容期 · 母题『回波对不上』，见 data/events/trench.json）
+// ============================================================
+L('\n========== 8. band.tags 专属事件池 ==========');
+const mouth = getBand('band.trench_mouth')!;
+const throat = getBand('band.trench_throat')!;
+assert(mouth.tags?.includes('twilight'), '8: trench_mouth 带专属 tags（含 twilight）');
+assert(throat.tags?.includes('midnight'), '8: trench_throat 带专属 tags（含 midnight）');
+const reefDeepBand = getBand('band.reef_deep')!;
+assert(!reefDeepBand.tags, '8: reef_deep 不带 tags（缺省回退 zoneTagsByDepth、行为不变）');
+
+const mouthZone = getZone(mouth.zoneId)!;
+// (a) 带 band.tags 生成 → 事件节点抽到 trench 专属事件（plumbing 端到端：bands → dive → mapgen → buildEventPool）
+let trenchSeen = 0;
+let eventNodes = 0;
+for (let seed = 1; seed <= 16; seed++) {
+  const m = generateDiveMap({
+    zone: mouthZone,
+    profileFlags: new Set(),
+    rng: makeLcg(seed),
+    depthRange: mouth.depthRange,
+    bandTags: mouth.tags,
+  });
+  for (const n of Object.values(m.nodes)) {
+    if (n.eventId) {
+      eventNodes++;
+      if (n.eventId.startsWith('trench.')) trenchSeen++;
+    }
+  }
+}
+assert(
+  eventNodes > 0 && trenchSeen > 0,
+  `8a: band.tags 让 trench 蛙跳下潜抽出专属 trench 事件（实际 ${trenchSeen}/${eventNodes} 事件节点）`,
+);
+
+// (b) 不传 bandTags（缺省）→ 回退 tagsForDepth（cave）：trench.* 只挂 twilight/midnight，不泄漏到普通蓝洞池。
+//     同时证明：没有 band.tags 时这片深度本是空水道（trench 借蓝洞内容＝占位的旧状态）。
+let trenchLeak = 0;
+for (let seed = 1; seed <= 16; seed++) {
+  const m = generateDiveMap({
+    zone: mouthZone,
+    profileFlags: new Set(),
+    rng: makeLcg(seed),
+    depthRange: mouth.depthRange,
+  });
+  for (const n of Object.values(m.nodes)) if (n.eventId?.startsWith('trench.')) trenchLeak++;
+}
+assert(
+  trenchLeak === 0,
+  `8b: 不传 bandTags → trench 专属事件不泄漏到普通（cave）池（实际泄漏 ${trenchLeak}）`,
+);
+L(`  trench_mouth 带 tags → ${trenchSeen} trench 事件 / 不带 tags → ${trenchLeak} 泄漏 ✓`);
 
 console.log(log.join('\n'));
 console.log('\n✓ 深度 band / 蛙跳下潜回归通过');

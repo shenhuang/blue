@@ -11,6 +11,7 @@
 // 故 band 的核心成本杠杆＝visibility，而非新的 depth→drain 项。
 
 import type { CurrentStrength, Visibility } from './chart';
+import type { ZoneTag } from './events';
 
 export interface DepthBand {
   /** 稳定 id（如 band.trench_mouth）。 */
@@ -31,6 +32,13 @@ export interface DepthBand {
   blurb: string;
   /** 危险提示（软门控：不锁、只标——UI 提醒「装备不够别硬下」）。 */
   danger?: string;
+  /**
+   * 本 band 的专属事件 tag 池（深水区内容期）：**覆盖** zone.zoneTagsByDepth，让 band 用自己的
+   * 事件池、与「借来的」zone 内容隔离（trench 借蓝洞 mapgen 形状，但事件走 twilight/midnight 专属池）。
+   * 约定**附加而非纯替换**——列表里带上 zone 自身的 tag（如 cave）＝保留 zone 回退池 + 叠加 band 专属，
+   * 避免深 band 事件稀时退化成空水道。缺省（reef_deep 等不设）→ 回退 tagsForDepth，行为不变。
+   */
+  tags?: ZoneTag[];
 }
 
 export interface BandsFile {
