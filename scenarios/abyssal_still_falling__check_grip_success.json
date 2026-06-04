@@ -1,0 +1,23 @@
+{
+  "_comment": "深渊·界 · 停不下来的沉 成功分支（cosmic 理智 vs 58）。满 san→rate 0.95、seed 1 成功：灯照手是握着的、棱硌进掌心、『沉』是内耳乱报——sanity -6 + oxygenTurnCost 2 + lore.abyssal.still_falling。扶住硌人的真实稳住、读 tell 较轻代价仍 -6。#43 实跑抄。",
+  "eventId": "abyssal.still_falling",
+  "depth": 120,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": [
+    "check_the_grip"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": [
+      "lore.abyssal.still_falling"
+    ],
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -6
+    }
+  }
+}

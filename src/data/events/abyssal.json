@@ -1,0 +1,262 @@
+{
+  "_doc": "深渊（abyssal）专属事件池 —— 深水区内容期，母题『永远有比最深更深的』（没有底、被拽着继续下沉、更深处替你点着的光）。绑 band 专属 tag abyssal（=深渊·界 >108m，经 DepthBand.tags 覆盖 zoneTagsByDepth、与借来的蓝洞内容隔离）。这是整套『越深越欺骗』伏笔最深的一层：竖井『回波对不上』(trench.*, STATUS #63) 之下，深渊不再只是声呐骗你——是『底』本身在退、在拽、在从更深处招你。守则同 trench：全 loot-free / cosmic·uncanny / 无敌人（mimic·corpse-wearer 是 Phase 3 apex 例外，本层只埋伏笔不登场）/ 不触发 d_reveal（#42）/ 叙述永不交底（#54：理性解释与错读始终叠着、游戏拒绝裁决）。每个事件都留一条『关灯关声呐/往上爬/抓住别动』的诚实但盲/退的出口＝最低 signature 的逃生阀门（守无脚本死、§9）。新 lore.abyssal.*，douse_and_turn 交叉勾连既有暗线 lore.deep_water.cold_light（『下面的光』，呼应 reef.lantern_glow / bluecaves.the_glow / wreck 伏笔，Phase 3 capstone 回收）。五个事件覆盖深渊欺骗的不同侧：没有底(no_floor)/从下面上来的东西(the_rising·apex 伏笔)/更深处的假灯(deeper_light·mimic 伏笔)/不该活着却活着(the_permission·生存铁律恐怖侧)/身体停了沉没停(still_falling·reef.no_bottom 拉力最深兑现)。",
+  "events": [
+    {
+      "id": "abyssal.no_floor",
+      "depthRange": [108, 140],
+      "zoneTags": ["abyssal"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "到不了的底",
+      "body": "你一直在往下，可深度表停了——停在一个数上，不动了。\n水还在变冷，耳朵还在被压着，你分明还在沉。\n你打声呐探底。等。没有底回来——不是迟迟才回的那种没有，是这下面根本没有一个让声音折回来的地方。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "keep_sinking",
+          "label": "信自己还在沉，继续往下",
+          "outcome": {
+            "text": "你不看那块停住的表了，凭身上的冷往下沉。\n越往下越冷，耳压越重，可那个数始终不动。你不知道自己下了十米还是一百米。\n这下面没有底，或者底在一个你的仪表数不到的地方。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -7 },
+            "loreEntry": "lore.abyssal.no_floor"
+          }
+        },
+        {
+          "id": "trust_the_gauge",
+          "label": "信那块表——表说你到底了（理智 vs 60）",
+          "check": {
+            "stat": "sanity",
+            "dc": 60,
+            "onSuccess": {
+              "text": "你逼自己信仪表：低温会让膜片发涩、读数卡住，耳压是另一回事——是表卡了，不是没有底。\n道理都对。你照着停住的数把自己稳在原处，没再往那个『更深』里探。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.abyssal.no_floor"
+            },
+            "onFailure": {
+              "text": "你盯着那个不动的数，越盯越冷。表说你到底了，可你的每一寸皮肤都说你还在下沉。\n你信了皮肤。等你回过神，表还停在那个数上，而你不知道此刻自己在它下面多深。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -13 }
+            }
+          }
+        },
+        {
+          "id": "hold_still_dark",
+          "label": "停下，关掉声呐，不再去试有没有底",
+          "outcome": {
+            "text": "你停住手脚，灭了声呐。不去探，就没有『没有底』这件事。\n你浮在黑里，冷着，等氧气、等自己。够得着的只有眼前这点水。瞎，但脚下是没有底还是有底，你这一刻不需要知道。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "abyssal.the_rising",
+      "depthRange": [108, 140],
+      "zoneTags": ["abyssal"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "上来的东西",
+      "body": "你打声呐探下方的路。\n回波里，正下方有个大东西。比你大得多。\n你又打一记——它的位置变了，浅了一点。它在往上来，朝你来，慢，但不停。\n在这个深度，第一次，你成了浅的那一个。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "track_it",
+          "label": "再 ping，把它钉清楚、看它到底是什么",
+          "outcome": {
+            "text": "你一记一记打下去，想把它看清。它不躲，每一记回波都更大、更近，轮廓一记比一记实。\n你看清了一件事：你每打一记，它就上来一截。是声呐在叫它。\n你停了手。它停在你灯够不到的下方那一圈，等着。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -7 },
+            "loreEntry": "lore.abyssal.the_rising"
+          }
+        },
+        {
+          "id": "go_still",
+          "label": "关灯关声呐，悬着不动，赌它够不到不亮不响的你（理智 vs 56）",
+          "check": {
+            "stat": "sanity",
+            "dc": 56,
+            "onSuccess": {
+              "text": "你灭了灯，停了声呐，把自己缩成黑水里一团不亮不响的东西，不动。\n下方那点动静慢下来，迟疑，散开——它跟的是你的光、你的脉冲，不是你。等它沉回更深处，你才敢呼吸。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.abyssal.the_rising"
+            },
+            "onFailure": {
+              "text": "你想灭灯静默，可手在抖，灯灭了又亮，亮了又灭——每亮一次，下方就近一截。\n等你终于把一切都关死，它已经到了你脚边的黑里，停住，和你一起悬着，不远不近。你不敢动，它也不动。很久。",
+              "oxygenTurnCost": 4,
+              "deltas": { "sanity": -12 }
+            }
+          }
+        },
+        {
+          "id": "climb_away",
+          "label": "立刻往上爬，把下面让给它",
+          "outcome": {
+            "text": "你不看它是什么了，转身往上爬，把这片最深的水让出来。\n爬得狼狈，气也乱，但每一下都是往光的方向。下面是什么，你不想做那个查清楚的人。",
+            "oxygenTurnCost": 3,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "abyssal.deeper_light",
+      "depthRange": [108, 140],
+      "zoneTags": ["abyssal"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "更深处的光",
+      "body": "你脚下有光。\n不是你的灯——你的灯在手里。不是信标——没有哪座灯塔的网点到这么深。\n在你下方，更深的地方，有一点光，稳稳地亮着。暖，匀，像有人在比这更深的地方，特意给你留了一盏。\n它在等你下去。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "descend_to_it",
+          "label": "往那点光沉下去",
+          "outcome": {
+            "text": "你朝那点光沉。它不躲，不灭，越近越暖，越近越像一扇开着的门里透出来的。\n你沉了很久，它还在下面——始终在下面，始终差那么一段。你够不到它，它也不打算被你够到。它只要你一直往下。\n等你停住，已经不知道自己下了多深。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -8 },
+            "loreEntry": "lore.abyssal.deeper_light"
+          }
+        },
+        {
+          "id": "read_the_glow",
+          "label": "盯住它，逼自己读那是什么光（理智 vs 58）",
+          "check": {
+            "stat": "sanity",
+            "dc": 58,
+            "onSuccess": {
+              "text": "你逼自己数：深海里会自己发光的东西不计其数，鮟鱇、磷虾、说不上名字的冷光生物——一点光不稀奇。稀奇的是你想下去。\n道理都对。你把灯举在自己这边，认下脚下那点暖光只是又一头会发光的东西，没往下追。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.abyssal.deeper_light"
+            },
+            "onFailure": {
+              "text": "你越盯那点光，它越像一盏为你点的灯。你开始替它编一个点灯的人，一个在更深处等着、希望你下去的人。\n你不记得自己什么时候开始往下沉的。等你回过神，那点光近了些，暖了些，而上面的黑比下面还多。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -14 }
+            }
+          }
+        },
+        {
+          "id": "douse_and_turn",
+          "label": "灭了自己的灯，连那点光一起当没看见，往别处摸",
+          "outcome": {
+            "text": "你把自己的灯也灭了。两点光都没了，黑成一片，分不出哪儿是下、哪儿是那盏不属于任何人的灯。\n你贴着石壁，往光没有许诺过你的方向摸。瞎，但没有谁在下面替你点着一盏，等你去够。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -5 },
+            "loreEntry": "lore.deep_water.cold_light"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "abyssal.the_permission",
+      "depthRange": [108, 140],
+      "zoneTags": ["abyssal"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "被允许的深",
+      "body": "这个深度不该有人活着。\n压强该把你的胸腔压扁，该把你装具上的每一道焊缝挤开。你的表在报警，你的气瓶接口在低声呻吟。\n可你还在。还能动，还能想，还能怕。\n像是有什么，允许你下到这里来。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "press_the_permission",
+          "label": "既然没事，就着这份『没事』继续往下",
+          "outcome": {
+            "text": "你不去想那些该发生却没发生的事，着这份『没事』往下。\n压强还在涨，警报还在响，你还是好好的——好得不正常。你下得越深，越觉得这份平安不是你挣来的，是借来的，迟早要还。\n你不知道利息是什么。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -7 },
+            "loreEntry": "lore.abyssal.the_permission"
+          }
+        },
+        {
+          "id": "refuse_it",
+          "label": "不赌这份『允许』，趁还能动往上浮（体力 vs 14）",
+          "check": {
+            "stat": "stamina",
+            "dc": 14,
+            "onSuccess": {
+              "text": "你不赌。不管是什么允许你下来的，你不打算欠它。\n你用尽力气往上蹬，压强一点点松开胸口，警报一声声退下去。你没回头看自己刚才悬着的那片黑。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -4 }
+            },
+            "onFailure": {
+              "text": "你想往上，可这份『允许』太稳、太舒服，你的身体竟不太想走——明明该逃的深度，你却有一瞬舍不得。\n你跟自己较着劲往上蹭，慢，乱，半路还停了一下，回头望了望那片不肯放你走的黑。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -6, "sanity": -6 }
+            }
+          }
+        },
+        {
+          "id": "ascend_quiet",
+          "label": "不声不响往上，别惊动那个『允许』你的东西",
+          "outcome": {
+            "text": "你不报警、不打灯、不出声，慢慢往上挪，像怕吵醒什么。\n那份平安一直跟到你离开这片深水才淡下去。你说不清是它放你走的，还是它根本没在意过你。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "abyssal.still_falling",
+      "depthRange": [108, 140],
+      "zoneTags": ["abyssal"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "停不下来的沉",
+      "body": "你伸手抓住了石壁，停住了。\n可有一种往下沉的感觉，没有跟着停——身体定在原处，那个『沉』还在继续，匀匀地，把你往下拽。\n你抓得更紧。没用。停住的是你的手，不是你。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "let_go",
+          "label": "松开手，让那个『沉』把你带下去",
+          "outcome": {
+            "text": "你松了手。\n那个一直在沉的感觉立刻接管了你，匀匀地，不快，把你往一个没有底的方向带。你没有挣。\n你说不清自己是真的在往下，还是只是终于不再抵抗那种一直在往下的错觉。两样在这个深度没有区别。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -8 },
+            "loreEntry": "lore.abyssal.still_falling"
+          }
+        },
+        {
+          "id": "check_the_grip",
+          "label": "低头确认——手是握着石头的（理智 vs 58）",
+          "check": {
+            "stat": "sanity",
+            "dc": 58,
+            "onSuccess": {
+              "text": "你低头，用灯照自己的手：握着的，指节发白，石头的棱硌进掌心。是真的握着。\n那个『沉』是内耳在低温和高压里乱报的方向，不是你在动。道理都对。你扶着这份硌人的真实，稳住了。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.abyssal.still_falling"
+            },
+            "onFailure": {
+              "text": "你低头去看自己的手——灯照过去，掌心是空的。你什么也没抓着，你一直在沉，从你以为停住的那一刻起就在沉。\n你慌忙去抓最近的石壁，抓住了，可那个『沉』告诉你这一把也是假的，下一刻就会松开。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -14 }
+            }
+          }
+        },
+        {
+          "id": "hold_and_breathe",
+          "label": "死死抓住，数自己的呼吸，等那感觉过去",
+          "outcome": {
+            "text": "你不松手，把全部注意力压到呼吸上：吸，停，吐。一次，又一次。\n那个『沉』没立刻走，可你的呼吸是真的，气瓶的每一口都是真的，你抓着这个数往下。慢慢地，匀匀的下坠淡成了背景，淡成了你可以不去管的东西。",
+            "oxygenTurnCost": 2,
+            "deltas": { "stamina": -2, "sanity": -4 }
+          }
+        }
+      ]
+    }
+  ]
+}

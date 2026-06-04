@@ -213,6 +213,9 @@ export function startDiveFromOutpost(state: GameState, bandId: string): GameStat
   run = {
     ...run,
     diveModifier: m,
+    // 深水区 C：band 探测压力倍率落 run（缺省 undefined → alertDelta 视作 1）。越深 band 越凶，
+    // 在深度因子饱和（ALERT_DEPTH_FULL）之上继续加压；摸黑/浅水消退不受倍率影响（逃生阀门不被买断）。
+    bandAlertFactor: band.alertFactor,
     turn: dist,
     stats: { ...run.stats, oxygen: Math.max(1, run.stats.oxygen - transitOxygen) },
   };

@@ -7,6 +7,9 @@
 //   5. 软门控：深黑 band + 无声呐 → clarity none（瞎）；买了声呐 → run 解锁（装备＝钥匙）
 //   6. Phase 0 升级轨直通蛙跳：powerMax 加成进 run（装备成长直接进深潜）
 //   7. alertDepthFactor 去掉写死 60：深 band(>60m) 饱和=1、不报错、浅水仍免压
+//   8. band.tags 专属事件池：trench band 抽 twilight/midnight 事件、不泄漏到普通 cave 池
+//   9. band 级探测压力倍率（深水区 C）：alertFactor 让 trench_throat > trench_mouth > reef_deep；只乘增益不动消退
+//  10. 深渊 band（深水区 B）：>108m 递归更深 + abyssal 专属事件池『永远有比最深更深的』、不泄漏、越深越凶续到最深
 //
 // 跑法： npx tsx scripts/playthrough-bands.ts
 
@@ -20,6 +23,7 @@ import {
   clarity,
   lampEffective,
   alertDepthFactor,
+  alertDelta,
   ALERT_DEPTH_FULL,
   POWER_MAX,
 } from '../src/engine/clarity';
@@ -178,6 +182,94 @@ assert(
   `8b: 不传 bandTags → trench 专属事件不泄漏到普通（cave）池（实际泄漏 ${trenchLeak}）`,
 );
 L(`  trench_mouth 带 tags → ${trenchSeen} trench 事件 / 不带 tags → ${trenchLeak} 泄漏 ✓`);
+
+// ============================================================
+// 9. band 级探测压力倍率（深水区 C）：深度因子在 60m 饱和后，更深 band 靠 alertFactor 继续「越深越凶」
+//    （trench_throat > trench_mouth > reef_deep）；只乘暴露增益、不动消退＝逃生阀门买不断
+// ============================================================
+L('\n========== 9. band 探测压力倍率（越深越凶）==========');
+// (a) 数据：trench 倍率随深度升、reef_deep 缺省（深度因子未饱和的过渡段、不额外加压）
+assert((mouth.alertFactor ?? 1) > 1, '9: trench_mouth 有 >1 探测压力倍率');
+assert((throat.alertFactor ?? 1) > (mouth.alertFactor ?? 1), '9: trench_throat 比 trench_mouth 更凶');
+assert(reefDeepBand.alertFactor === undefined, '9: reef_deep 缺省倍率（=1，45-60m 深度因子未饱和、不额外加压）');
+
+// (b) startDiveFromOutpost 落 run.bandAlertFactor = band.alertFactor（端到端）
+const sMouth = startDiveFromOutpost(base, mouth.id);
+const sThroat = startDiveFromOutpost(base, throat.id);
+assert(sMouth.run!.bandAlertFactor === mouth.alertFactor, '9: 蛙跳 trench_mouth 落 run.bandAlertFactor');
+assert(sThroat.run!.bandAlertFactor === throat.alertFactor, '9: 蛙跳 trench_throat 落 run.bandAlertFactor');
+
+// (c) alertDelta 真随倍率放大：同样点灯、同样满档深度（100m，深度因子饱和=1），throat 涨得比 mouth 快、都比无倍率快。
+const lit = (factor?: number) => ({ ...sMouth.run!, currentDepth: 100, alert: 0, bandAlertFactor: factor });
+const dNone = alertDelta(lit(undefined), 1); // 缺省（POI 下潜 / reef_deep 饱和段）= 旧行为
+const dMouth = alertDelta(lit(mouth.alertFactor), 1);
+const dThroat = alertDelta(lit(throat.alertFactor), 1);
+assert(
+  dThroat > dMouth && dMouth > dNone,
+  `9: alertDelta 随 band 倍率放大（none ${dNone} < mouth ${dMouth} < throat ${dThroat}）`,
+);
+
+// (d) 倍率只乘增益、不动消退：摸黑（关灯关声呐）净消退与倍率无关＝逃生阀门倍率买不断（守无脚本死 §9）。
+const dark = (factor?: number) => ({
+  ...sMouth.run!,
+  currentDepth: 100,
+  alert: 50,
+  bandAlertFactor: factor,
+  sensors: { ...sMouth.run!.sensors, light: false, sonar: 'off' as const },
+});
+const decayNone = alertDelta(dark(undefined), 1);
+const decayThroat = alertDelta(dark(throat.alertFactor), 1);
+assert(
+  decayNone < 0 && decayNone === decayThroat,
+  `9: 摸黑净消退不被倍率放大（逃生阀门：none ${decayNone} === throat ${decayThroat}）`,
+);
+L(`  数据升序 / 落 run / alertDelta 放大(${dNone}→${dMouth.toFixed(1)}→${dThroat.toFixed(1)}) / 消退买不断(${decayThroat}) ✓`);
+
+// ============================================================
+// 10. 深渊 band（深水区 B）：>108m 递归更深 + abyssal 专属事件池『永远有比最深更深的』
+//     越深越凶续到深渊（alertFactor > 竖井·喉）；abyssal 事件不泄漏到 trench/cave 池、trench 也不漏进深渊
+// ============================================================
+L('\n========== 10. 深渊 band + abyssal 内容 ==========');
+const abyss = getBand('band.abyssal');
+assert(abyss, '10: 存在 band.abyssal');
+assert(abyss!.depthRange[0] >= 108, `10: 深渊 >108m（递归更深、不硬编码地板，实际起 ${abyss!.depthRange[0]}m）`);
+assert(abyss!.order > throat.order, '10: 深渊 order 在竖井·喉之后（最深一级）');
+assert(abyss!.visibility === 'dark', '10: 深渊 = 黑水');
+assert(abyss!.tags?.includes('abyssal'), '10: 深渊带 abyssal 专属 tag（既有闲置 ZoneTag、零类型改动）');
+// 越深越凶续到深渊：alertFactor 续 §9 的升序（深渊 > 竖井·喉 > 竖井·口）
+assert(
+  (abyss!.alertFactor ?? 1) > (throat.alertFactor ?? 1),
+  '10: 深渊探测压力倍率 > 竖井·喉（越深越凶续到最深一层）',
+);
+
+// (a) band.tags 让深渊蛙跳抽出 abyssal 专属事件（端到端 bands→dive→mapgen→buildEventPool）；trench 不漏进来
+const abyssZone = getZone(abyss!.zoneId)!;
+let abyssSeen = 0, abyssEventNodes = 0, trenchInAbyss = 0;
+for (let seed = 1; seed <= 16; seed++) {
+  const m = generateDiveMap({
+    zone: abyssZone, profileFlags: new Set(), rng: makeLcg(seed),
+    depthRange: abyss!.depthRange, bandTags: abyss!.tags,
+  });
+  for (const n of Object.values(m.nodes)) {
+    if (!n.eventId) continue;
+    abyssEventNodes++;
+    if (n.eventId.startsWith('abyssal.')) abyssSeen++;
+    if (n.eventId.startsWith('trench.')) trenchInAbyss++;
+  }
+}
+assert(abyssEventNodes > 0 && abyssSeen > 0, `10a: 深渊蛙跳抽出专属 abyssal 事件（实际 ${abyssSeen}/${abyssEventNodes}）`);
+assert(trenchInAbyss === 0, `10a: 竖井(trench)事件不漏进深渊（深度+tag 双隔离，实际 ${trenchInAbyss}）`);
+
+// (b) abyssal 事件不泄漏：不传 bandTags（普通 cave 池）→ 0；trench band（twilight/midnight）→ 0
+let abyssLeakCave = 0, abyssLeakTrench = 0;
+for (let seed = 1; seed <= 16; seed++) {
+  const mc = generateDiveMap({ zone: abyssZone, profileFlags: new Set(), rng: makeLcg(seed), depthRange: abyss!.depthRange });
+  for (const n of Object.values(mc.nodes)) if (n.eventId?.startsWith('abyssal.')) abyssLeakCave++;
+  const mt = generateDiveMap({ zone: mouthZone, profileFlags: new Set(), rng: makeLcg(seed), depthRange: mouth.depthRange, bandTags: mouth.tags });
+  for (const n of Object.values(mt.nodes)) if (n.eventId?.startsWith('abyssal.')) abyssLeakTrench++;
+}
+assert(abyssLeakCave === 0 && abyssLeakTrench === 0, `10b: abyssal 事件不泄漏到 cave/trench 池（cave ${abyssLeakCave} / trench ${abyssLeakTrench}）`);
+L(`  深渊 >108m·dark·倍率 ${abyss!.alertFactor} / 抽出 ${abyssSeen} abyssal 事件 / 泄漏 ${abyssLeakCave}+${abyssLeakTrench} ✓`);
 
 console.log(log.join('\n'));
 console.log('\n✓ 深度 band / 蛙跳下潜回归通过');

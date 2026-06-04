@@ -219,7 +219,9 @@ export const ALERT_MIN_DEPTH = 25;
 /**
  * 警觉深度因子到达「满档 1」的深度（深水区 Phase 1：命名替代曾写死的 60）。
  * 更深 band（> 此值）在此饱和＝维持最高探测压力，不封顶、不报错（Math.min 兜底）。
- * 后续若要「越深越狠、不饱和」可改成不封顶斜坡或 band 级 alert 倍率（留内容期）。
+ * 「越深越狠、不饱和」由 band 级倍率 DepthBand.alertFactor 承担（深水区 C，2026-06-04）：
+ * 深度因子在这里饱和，band.alertFactor 在 alertDelta 里继续把更深 band 的增益往上推
+ * （trench_throat > trench_mouth > reef_deep）。只乘增益、不动消退＝逃生阀门不被加压买断。
  */
 export const ALERT_DEPTH_FULL = 60;
 /** 触发遭遇后警觉落到的值（留一段缓冲，避免连环伏击）。 */
@@ -236,7 +238,9 @@ export function alertDepthFactor(run: RunState): number {
 export function alertDelta(run: RunState, turns: number): number {
   if (turns <= 0) return 0;
   const exposure = Math.max(0, signature(run) - SIGNATURE_BASE); // 灯 +6 / 声呐 +3 / 摸黑 0
-  const gain = exposure * alertDepthFactor(run) * ALERT_GAIN;
+  // 深水区 C：band 探测压力倍率只乘暴露增益（不动消退）——更深 band 在深度因子饱和后仍「越深越凶」，
+  // 但摸黑/浅水的净消退不变＝逃生阀门倍率买不断。缺省（POI 下潜 / reef_deep）→ 1，逐字节复现旧行为。
+  const gain = exposure * alertDepthFactor(run) * ALERT_GAIN * (run.bandAlertFactor ?? 1);
   return (gain - ALERT_DECAY) * turns;
 }
 

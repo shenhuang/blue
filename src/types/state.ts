@@ -157,6 +157,12 @@ export interface RunState {
    * current / visibility 暂存于此供未来 hook 读取（冲走 / 光照效果待实装）。可选 → 旧存档/脚本省略即无修正。
    */
   diveModifier?: PoiModifier;
+  /**
+   * 本次蛙跳下潜所在 band 的探测压力倍率（深水区 C）：startDiveFromOutpost 从 band.alertFactor 落到 run，
+   * clarity.ts::alertDelta 乘进暴露增益＝更深 band 在深度因子饱和后仍「越深越凶」。
+   * 可选 → POI 下潜 / 旧存档省略即 1（无加压）。派生自 band，未发布不 bump SAVE_VERSION（JSON 自动 round-trip）。
+   */
+  bandAlertFactor?: number;
 }
 
 /** 装备配置 */

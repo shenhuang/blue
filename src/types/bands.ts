@@ -33,6 +33,13 @@ export interface DepthBand {
   /** 危险提示（软门控：不锁、只标——UI 提醒「装备不够别硬下」）。 */
   danger?: string;
   /**
+   * 探测压力倍率（深水区 C，2026-06-04）：× alertDelta 的暴露增益。深度因子在 ALERT_DEPTH_FULL(60m)
+   * 饱和后，更深 band 靠它继续「越深越凶」——trench_throat 比 trench_mouth 比 reef_deep 更快被盯上。
+   * 只乘增益、不动消退（DECAY）：摸黑/浅水仍是逃出生天的阀门，倍率再高也甩得掉（守无脚本死）。
+   * 缺省（reef_deep / 非 band 的 POI 下潜）→ 1，行为与 C 之前逐字节一致。
+   */
+  alertFactor?: number;
+  /**
    * 本 band 的专属事件 tag 池（深水区内容期）：**覆盖** zone.zoneTagsByDepth，让 band 用自己的
    * 事件池、与「借来的」zone 内容隔离（trench 借蓝洞 mapgen 形状，但事件走 twilight/midnight 专属池）。
    * 约定**附加而非纯替换**——列表里带上 zone 自身的 tag（如 cave）＝保留 zone 回退池 + 叠加 band 专属，
