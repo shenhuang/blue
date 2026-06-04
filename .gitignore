@@ -38,3 +38,6 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+
+# unattended deploy token (holds a GitHub PAT — never commit this)
+.deploy-token

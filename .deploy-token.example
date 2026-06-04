@@ -1,0 +1,18 @@
+# .deploy-token.example  →  copy to ".deploy-token" and paste your GitHub PAT
+#
+# The nightly "publish" scheduled task pushes to GitHub unattended using a token
+# stored in a sibling file named ".deploy-token" in this folder (gitignored).
+#
+# One-time setup (run on your Mac):
+#   1. Create a fine-grained Personal Access Token:
+#        https://github.com/settings/personal-access-tokens/new
+#      - Resource owner:        shenhuang
+#      - Repository access:     Only select repositories -> shenhuang/blue
+#      - Permissions -> Repository -> Contents: Read and write
+#      - Generate token, copy it (starts with github_pat_...).
+#   2. Save it as a single line, no quotes, no trailing newline/space:
+#        printf '%s' 'PASTE_TOKEN_HERE' > "/Users/huangshen/Desktop/Blue/.deploy-token"
+#        chmod 600 "/Users/huangshen/Desktop/Blue/.deploy-token"
+#
+# .deploy-token is gitignored and is NEVER committed or pushed.
+# Delete it any time to disable unattended publishing.
