@@ -90,6 +90,13 @@ export interface Outcome {
    * 与 loreEntry 同属"少数能从下潜里持久写 profile 的 outcome"（其余 flag/loot/gold 都是 run 局部）。
    */
   restoreRuinId?: string;
+  /**
+   * 推进一座深水前哨的建造一阶（深水区 Phase 2a）：引用一个 OutpostDef.id。applyOutcome 调
+   * `engine/lighthouses.ts::advanceOutpost` 按当前阶段权威校验账单（profile 银行材料＋金币）、扣料、
+   * 置阶段 flag（持久进度）；建到点亮（OUTPOST_MAX_STAGE）则 push 一座灯塔到 profile.lighthouses。
+   * 与 restoreRuinId 同属"少数能从下潜里持久写 profile 的 outcome"。
+   */
+  advanceOutpostId?: string;
 }
 
 /** 掉落表条目 */

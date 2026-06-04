@@ -84,5 +84,48 @@
         "region": "wreck_graveyard"
       }
     }
+  ],
+  "outposts": [
+    {
+      "id": "outpost.reef_deep",
+      "name": "深槽前哨",
+      "bandId": "band.reef_deep",
+      "stages": [
+        {
+          "label": "勘察并清理塔基（珊瑚碎片×4 ＋ 50 金）",
+          "cost": { "materials": [{ "itemId": "item.coral_shard", "qty": 4 }], "gold": 50 },
+          "narrative": "你摸清了深槽底那座旧测候塔的骨架，把灯室口的淤泥和碎玻璃清了出去。塔基还立得住——能往下修了。"
+        },
+        {
+          "label": "运来支柱与浮筒部件（黄铜配件×3·蛛蟹甲壳×2 ＋ 90 金）",
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 3 },
+              { "itemId": "item.crab_chitin", "qty": 2 }
+            ],
+            "gold": 90
+          },
+          "narrative": "你一趟趟把支柱和浮筒部件运到深槽底，把前哨的架子撑了起来。它还没亮，但已经能当个落脚、换气、起跳的点——半个前哨，好过没有。"
+        },
+        {
+          "label": "通电点亮（章鱼角喙×2·黄铜配件×2 ＋ 140 金）",
+          "cost": {
+            "materials": [
+              { "itemId": "item.cave_octopus_beak", "qty": 2 },
+              { "itemId": "item.brass_fitting", "qty": 2 }
+            ],
+            "gold": 140
+          }
+        }
+      ],
+      "result": {
+        "id": "lighthouse.reef_deep_outpost",
+        "name": "深槽前哨",
+        "mapX": 0.5,
+        "mapY": 0.66,
+        "level": 1,
+        "region": "old_lighthouse_reef"
+      }
+    }
   ]
 }

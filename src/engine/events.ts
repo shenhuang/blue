@@ -12,7 +12,7 @@ import type {
   Visibility,
 } from '@/types';
 import { addToInventory, appendLog, clampStats } from './state';
-import { restoreLighthouse } from './lighthouses';
+import { restoreLighthouse, advanceOutpost } from './lighthouses';
 import { lampPowerDrain, alertDelta, ALERT_MAX } from './clarity';
 
 // —— 数据装载 ——
@@ -200,6 +200,13 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
   // （按 profile 银行材料＋金币），成功则 push 新灯塔到 profile.lighthouses，否则只叙事不改档。
   if (outcome.restoreRuinId) {
     s = restoreLighthouse(s, outcome.restoreRuinId);
+  }
+
+  // ---- 推进深水前哨建造一阶（深水区 Phase 2a）----
+  // 同 restoreRuinId：从下潜里持久写 profile。advanceOutpost 按当前阶段权威校验账单（profile 银行）、
+  // 扣料、置阶段 flag（持久进度，半亮扛过死亡）；建满（点亮）则 push 一座灯塔到 profile.lighthouses。
+  if (outcome.advanceOutpostId) {
+    s = advanceOutpost(s, outcome.advanceOutpostId);
   }
 
   // ---- 叙事日志 ----

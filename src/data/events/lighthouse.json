@@ -23,6 +23,54 @@
           "outcome": { "text": "你把它的方位刻在随身石板的边角。也许下次带够料再来。" }
         }
       ]
+    },
+    {
+      "id": "lighthouse.outpost_reef_deep",
+      "depthRange": [45, 60],
+      "zoneTags": ["wreck"],
+      "weight": 2,
+      "oncePerRun": true,
+      "forbiddenFlags": ["flag.outpost.reef_deep.s3"],
+      "title": "深槽底的塔基",
+      "body": "深槽的底，一座旧测候塔斜插在淤泥里——比你见过的那些灯塔矮，是早年量水文用的桩塔。\n它的位置正好卡在再往下那条竖井的口子上方。修起来，它当不了照远路的灯塔，却能当个落脚点：在这么深的地方换气、再往更深处起跳，省掉每次从水面一路沉下来的那段。\n料得从你岸上的家底里出，而且不是一趟能成的。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "scout",
+          "label": "勘察并清理塔基（珊瑚碎片×4 ＋ 50 金）",
+          "visibleIf": { "kind": "notHasFlag", "flag": "flag.outpost.reef_deep.s1" },
+          "outcome": { "advanceOutpostId": "outpost.reef_deep" }
+        },
+        {
+          "id": "ferry_parts",
+          "label": "运来支柱与浮筒部件（黄铜配件×3·蛛蟹甲壳×2 ＋ 90 金）",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "flag.outpost.reef_deep.s1" },
+              { "kind": "notHasFlag", "flag": "flag.outpost.reef_deep.s2" }
+            ]
+          },
+          "outcome": { "advanceOutpostId": "outpost.reef_deep" }
+        },
+        {
+          "id": "power_on",
+          "label": "通电点亮（章鱼角喙×2·黄铜配件×2 ＋ 140 金）",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "flag.outpost.reef_deep.s2" },
+              { "kind": "notHasFlag", "flag": "flag.outpost.reef_deep.s3" }
+            ]
+          },
+          "outcome": { "advanceOutpostId": "outpost.reef_deep" }
+        },
+        {
+          "id": "leave",
+          "label": "先记下方位，回头再来",
+          "outcome": { "text": "你把深槽底这座塔基的方位记在随身石板上。料齐了再来推进。" }
+        }
+      ]
     }
   ]
 }

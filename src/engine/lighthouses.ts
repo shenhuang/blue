@@ -18,6 +18,7 @@ import type {
   LighthouseUpgradeDef,
   LighthouseUpgradesFile,
   MaterialCost,
+  OutpostDef,
   PlayerProfile,
 } from '@/types';
 import lighthouseData from '@/data/lighthouse_upgrades.json';
@@ -35,6 +36,11 @@ for (const track of TRACKS) {
 const RUINS: LighthouseRuinDef[] = file.ruins ?? [];
 const RUIN_INDEX = new Map<string, LighthouseRuinDef>();
 for (const r of RUINS) RUIN_INDEX.set(r.id, r);
+
+/** 可分阶段建造的深水前哨（深水区 Phase 2a 跨 run 前哨脊柱）。 */
+const OUTPOSTS: OutpostDef[] = file.outposts ?? [];
+const OUTPOST_INDEX = new Map<string, OutpostDef>();
+for (const o of OUTPOSTS) OUTPOST_INDEX.set(o.id, o);
 
 // —— 点亮半径 / reach 换算的 tunable 常数（SPEC §3.4 / §4 / §9）——
 // 半径用海图归一化坐标（0–1）。home（level 1，无 beacon）= BASE，刚好覆盖现有 4 个锚点
@@ -345,6 +351,104 @@ export function restoreLighthouse(state: GameState, ruinId: string): GameState {
   next = appendLog(next, {
     tone: 'system',
     text: `你重燃了「${newLighthouse.name}」。它的光扫过这一带——海图上多出一片亮的水域，从这里出海也更近了。（${describeUpgradeCost(ruin.cost)}）`,
+  });
+  return next;
+}
+
+// ============================================================
+// 深水前哨：跨 run 分阶段建造（深水区 Phase 2a 脊柱）
+// ============================================================
+// 复用灯塔网（点亮即 push 一座 Lighthouse、沿用 Phase C reveal/reach），但建造是**多阶段、跨 run 持久**：
+// 进度＝profile.flags 的阶段标记（outpostStageFlag），半亮扛过死亡、**不动存档形状**（作者 2026-06-04 未发布不迁移）。
+// 半亮（≥ OUTPOST_USABLE_STAGE）即可作蛙跳出潜点（dive.ts::startDiveFromOutpost 读 outpostStage 缩短下一更深 band 的预耗氧）。
+
+/** 前哨建造的总阶段数（点亮）。OutpostDef.stages 长度应等于此。 */
+export const OUTPOST_MAX_STAGE = 3;
+/** 前哨可作蛙跳出潜点的最低阶段（半亮即起跳＝中间阶段已给部分收益）。 */
+export const OUTPOST_USABLE_STAGE = 2;
+
+export function getOutposts(): OutpostDef[] {
+  return OUTPOSTS;
+}
+export function getOutpostDef(id: string): OutpostDef | undefined {
+  return OUTPOST_INDEX.get(id);
+}
+
+/** 前哨某阶段的持久进度标记（profile.flags）。stage ∈ 1..OUTPOST_MAX_STAGE。 */
+export function outpostStageFlag(outpostId: string, stage: number): string {
+  return `flag.${outpostId}.s${stage}`;
+}
+
+/** 前哨当前已建到的阶段（0 = 没动过；读 profile.flags 的阶段标记、取最高）。 */
+export function outpostStage(profile: PlayerProfile, outpostId: string): number {
+  for (let s = OUTPOST_MAX_STAGE; s >= 1; s--) {
+    if (profile.flags.has(outpostStageFlag(outpostId, s))) return s;
+  }
+  return 0;
+}
+
+/** 前哨是否已点亮（建满）。 */
+export function isOutpostLit(profile: PlayerProfile, outpostId: string): boolean {
+  return outpostStage(profile, outpostId) >= OUTPOST_MAX_STAGE;
+}
+
+/**
+ * 推进一座前哨的建造一阶（深水区 Phase 2a，applyOutcome 的 advanceOutpostId 调）。
+ * 权威校验**当前阶段**账单（profile 银行材料＋金币）：
+ *   - 够 → 扣料＋扣金 + 置阶段 flag（持久进度）；建满（点亮）→ push 一座灯塔到 profile.lighthouses（reveal/reach）。
+ *   - 不够 / 已点亮 → 不改 profile，仅叙事（applyOutcome 在下潜里调，只读不破 run）。
+ * 幂等安全：建满后再调落「已点亮」no-op；不够料保持当前阶段、可下次带够再来（半亮扛过死亡）。
+ */
+export function advanceOutpost(state: GameState, outpostId: string): GameState {
+  const def = OUTPOST_INDEX.get(outpostId);
+  if (!def) {
+    console.warn(`Outpost ${outpostId} not found`);
+    return state;
+  }
+  const cur = outpostStage(state.profile, outpostId);
+  if (cur >= def.stages.length) {
+    return appendLog(state, { tone: 'system', text: `「${def.name}」已经点亮了。` });
+  }
+  const stageDef = def.stages[cur]; // 下一阶段（cur 是 0-based 已建数 = 下一阶段索引）
+  const shortfall = materialShortfall(state.profile, stageDef.cost);
+  if (shortfall.length > 0 || state.profile.bankedGold < stageDef.cost.gold) {
+    return appendLog(state, {
+      tone: 'system',
+      text: `材料或金币不够，这一阶段还推不动（需要：${describeUpgradeCost(stageDef.cost)}）。`,
+    });
+  }
+
+  // 扣材料（profile 银行）
+  let inventory = state.profile.inventory;
+  for (const m of stageDef.cost.materials) {
+    inventory = removeFromInventory(inventory, m.itemId, m.qty);
+  }
+  const newStage = cur + 1;
+  const flags = new Set(state.profile.flags);
+  flags.add(outpostStageFlag(outpostId, newStage));
+
+  // 点亮 → promote：push 一座灯塔（复用 Phase C reveal/reach；幂等防重复 push）。
+  let lighthouses = state.profile.lighthouses;
+  const lit = newStage >= def.stages.length;
+  if (lit && !lighthouses.some((l) => l.id === def.result.id)) {
+    lighthouses = [...lighthouses, { ...def.result, builtUpgrades: new Set<string>() }];
+  }
+
+  let next: GameState = {
+    ...state,
+    profile: {
+      ...state.profile,
+      inventory,
+      bankedGold: state.profile.bankedGold - stageDef.cost.gold,
+      lighthouses,
+      flags,
+    },
+  };
+  next = appendLog(next, {
+    tone: 'system',
+    text: lit
+      ? `你给「${def.name}」通上了电。灯亮起来，扫过这一带的深水——海图上多出一片亮的水域，往后从这儿蛙跳下潜也近得多。（${describeUpgradeCost(stageDef.cost)}）`
+      : stageDef.narrative ?? `「${def.name}」的修建往前推了一阶。（${describeUpgradeCost(stageDef.cost)}）`,
   });
   return next;
 }

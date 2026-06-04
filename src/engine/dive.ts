@@ -10,6 +10,7 @@ import type {
   CurrentStrength,
   Visibility,
   NodeChoice,
+  PlayerProfile,
   ZoneTag,
 } from '@/types';
 import { tickTurns } from './events';
@@ -17,7 +18,13 @@ import { generateDiveMap, getNextChoices } from './mapgen';
 import { getZone } from './zones';
 import { appendLog, createNewRun } from './state';
 import { getUpgradeBonuses } from './upgrades';
-import { getRunBonuses, getHomeLighthouse } from './lighthouses';
+import {
+  getRunBonuses,
+  getHomeLighthouse,
+  getOutposts,
+  outpostStage,
+  OUTPOST_USABLE_STAGE,
+} from './lighthouses';
 import { getBand, bandDiveModifier } from './bands';
 import { effectiveDistance } from './chart';
 import { executeDeath } from './death';
@@ -188,7 +195,27 @@ function appendVisibilityLog(
 }
 
 /**
- * 从前哨「蛙跳」下潜到一个深度 band（深水区 Phase 1）。镜像 startDiveFromPoi，但：
+ * 比目标 band（targetOrder）更浅、且已半亮（≥ OUTPOST_USABLE_STAGE）的最深前哨蛙跳出潜点（深水区 Phase 2a）。
+ * 进度读 profile.flags（outpostStage）、出潜深度＝前哨所在 band 底。没有合格前哨 → null（退回 home stand-in）。
+ */
+function deepestOutpostLaunch(
+  profile: PlayerProfile,
+  targetOrder: number,
+): { name: string; launchDepth: number } | null {
+  let best: { name: string; launchDepth: number; order: number } | null = null;
+  for (const def of getOutposts()) {
+    if (outpostStage(profile, def.id) < OUTPOST_USABLE_STAGE) continue;
+    const ob = getBand(def.bandId);
+    if (!ob || ob.order >= targetOrder) continue; // 前哨必须比目标更浅（不能从同层/更深起跳）
+    if (!best || ob.order > best.order) {
+      best = { name: def.name, launchDepth: ob.depthRange[1], order: ob.order };
+    }
+  }
+  return best ? { name: best.name, launchDepth: best.launchDepth } : null;
+}
+
+/**
+ * 从前哨「蛙跳」下潜到一个深度 band（深水区 Phase 1 plumbing + Phase 2a 真前哨出潜点）。镜像 startDiveFromPoi，但：
  *   - 出潜点＝前哨（**本期最小版用 home 灯塔当 stand-in**；真·最深前哨是 Phase 2）；
  *   - 目标＝一个 band：用 band 的**绝对 depthRange 覆盖** zone.depthRange（band 决定下到多深、zone 决定那里有什么）；
  *   - **软门控**：不查解锁 flag——能不能活由装备（声呐解锁 + 电池/升级，吃深料，见 quirk #60）+ 后续强敌决定。
@@ -201,13 +228,18 @@ export function startDiveFromOutpost(state: GameState, bandId: string): GameStat
     console.warn(`Band ${bandId} not found`);
     return state;
   }
-  // 最小版 stand-in：用 home 灯塔当出潜前哨（Phase 2 换成沿深度建的最深前哨）。
-  const outpost = getHomeLighthouse(state.profile);
+  // 蛙跳出潜点（深水区 Phase 2a）：从**已半亮（≥ OUTPOST_USABLE_STAGE）、且比目标 band 更浅**的最深前哨起跳，
+  // 起跳深度＝该前哨所在 band 底（省掉从水面到那里的下潜）。没有这样的前哨 → 退回 home 灯塔 stand-in（从水面起跳＝Phase 1 旧行为）。
+  const launch = deepestOutpostLaunch(state.profile, band.order);
+  const outpost = launch ? undefined : getHomeLighthouse(state.profile);
+  const launchName = launch?.name ?? outpost?.name ?? '前哨';
+  const launchDepth = launch?.launchDepth ?? 0;
+
   const bonuses = getRunBonuses(state.profile);
   let run = createNewRun({ zoneId: band.zoneId, bonuses });
 
-  // 蛙跳「航行预耗氧」：按 band 顶端深度粗估（越深越远），每 20m 约一档，避免引入新平衡旋钮。
-  const dist = Math.max(1, Math.round(band.depthRange[0] / 20));
+  // 蛙跳「航行预耗氧」：按**从出潜点到 band 顶端**的深度差粗估（前哨越深起跳越省），每 20m 约一档。
+  const dist = Math.max(1, Math.round((band.depthRange[0] - launchDepth) / 20));
   const transitOxygen = dist * 2;
   const m = bandDiveModifier(band);
   run = {
@@ -227,7 +259,7 @@ export function startDiveFromOutpost(state: GameState, bandId: string): GameStat
 
   s = appendLog(s, {
     tone: 'system',
-    text: `自${outpost?.name ?? '前哨'}蛙跳下潜至「${band.name}」（${band.depthRange[0]}–${band.depthRange[1]}m）。路上耗气约 ${transitOxygen} 回合。`,
+    text: `自${launchName}蛙跳下潜至「${band.name}」（${band.depthRange[0]}–${band.depthRange[1]}m）。路上耗气约 ${transitOxygen} 回合。`,
   });
   s = appendVisibilityLog(s, m.visibility, run.sensors.sonarUnlocked);
   if (band.danger) {
