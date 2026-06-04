@@ -1,0 +1,14 @@
+{
+  "_comment": "Phase 3 corpse-wearer 姊妹 apex · 招手的人 游过去拉他（无 check·本作对死者的温柔被反用）。盔里没有脸要救、那只手扣住你、掰开五指逃开 → sanity -22 + stamina -18 + oxygenTurnCost 6，无 lore、不置 d_reveal。无脚本死：盲信仍活着但惨重（#43 实跑抄）。",
+  "eventId": "mimic.the_wearer_apex",
+  "depth": 150,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["go_to_him"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -6, "sanity": -22, "stamina": -18 }
+  }
+}

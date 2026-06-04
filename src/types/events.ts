@@ -98,6 +98,13 @@ export interface Outcome {
    * 与 restoreRuinId 同属"少数能从下潜里持久写 profile 的 outcome"。
    */
   advanceOutpostId?: string;
+  /**
+   * 直接、持久地置一个或多个 **profile** flag（深水区 Phase 3 mimic capstone）。
+   * 区别于 `applyFlags`（下潜中只进 run.activeFlags、run 结束即丢）：这些写进 `profile.flags`、跨 run 永久。
+   * 与 loreEntry/restoreRuinId/advanceOutpostId 同属"少数能从下潜里持久写 profile 的 outcome"。
+   * 用于终局开关（如 `flag.d_reveal`：读穿 mimic 活下来后翻转死者名）+ 跨 run 解锁钩子。**保持暧昧**（#42/#54）。
+   */
+  setProfileFlags?: string[];
 }
 
 /** 掉落表条目 */

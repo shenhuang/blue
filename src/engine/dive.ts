@@ -28,7 +28,7 @@ import {
 } from './lighthouses';
 import { effectiveOutpostStage, effectiveOutpostBonuses } from './outposts';
 import { getBand, bandDiveModifier } from './bands';
-import { effectiveDistance } from './chart';
+import { effectiveDistance, MIMIC_DIVE_EVENT_ID } from './chart';
 import { executeDeath } from './death';
 import { startCombat } from './combat';
 import {
@@ -165,6 +165,16 @@ export function startDiveFromPoi(
     });
   }
   s = appendVisibilityLog(s, m?.visibility, run.sensors.sonarUnlocked);
+
+  // 深水区 Phase 3：横渡到「无灯之光」→ 入潜兑现（§3.5）。强制把这次下潜的开场设成 mimic 兑现事件
+  // （run/map 已就位，事件自身以 forceAscend 收尾＝一次性 capstone 遭遇，不靠节点池抽取、不可错过）。
+  if (poi.mimic) {
+    s = appendLog(s, {
+      tone: 'uncanny',
+      text: '你贴近那盏光。它不躲，不灭——越近越不像一座灯塔。',
+    });
+    s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: MIMIC_DIVE_EVENT_ID } } };
+  }
   return s;
 }
 

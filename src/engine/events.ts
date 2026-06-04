@@ -209,6 +209,15 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
     s = advanceOutpost(s, outcome.advanceOutpostId);
   }
 
+  // ---- 持久 profile flag（深水区 Phase 3 mimic capstone）----
+  // 区别于 applyFlags（dive 中只进 run.activeFlags）：直接、跨 run 持久地写 profile.flags
+  // （如 flag.d_reveal：读穿 mimic 活下来后翻转死者名；保持暧昧 #42/#54）。
+  if (outcome.setProfileFlags) {
+    const flags = new Set(s.profile.flags);
+    for (const f of outcome.setProfileFlags) flags.add(f);
+    s = { ...s, profile: { ...s.profile, flags } };
+  }
+
   // ---- 叙事日志 ----
   if (outcome.text) {
     s = appendLog(s, { tone: 'realistic', text: outcome.text });

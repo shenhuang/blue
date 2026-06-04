@@ -15,6 +15,9 @@ import {
   getLighthouseBonuses,
   getHomeLighthouse,
   getLighthouseUpgradeDef,
+  getOutposts,
+  outpostStage,
+  OUTPOST_USABLE_STAGE,
 } from './lighthouses';
 import { makeLcg } from './rng';
 
@@ -57,6 +60,38 @@ function flagsSatisfied(profile: PlayerProfile, requiresFlags?: string[]): boole
   return requiresFlags.every((f) => profile.flags.has(f));
 }
 
+/** 深水区 Phase 3 mimic 假 POI 的运行时 id + 它引向的兑现事件。 */
+export const MIMIC_POI_ID = 'poi.mimic.false_beacon';
+export const MIMIC_DIVE_EVENT_ID = 'mimic.false_beacon';
+
+/**
+ * 「无灯之光」是否该出现在海图上（深水区 Phase 3，§3.5）。**软门控**：你在深处立稳脚
+ * （任一**水下**前哨达半亮 ≥ OUTPOST_USABLE_STAGE）后才被引诱——绝望/盲目地往深里去的人，才看得见那盏不属于谁的光。
+ * 不带硬故事 flag（守软门控）；它一直引诱、不因「读穿过一次」消失（保持暧昧、可复诱）。
+ */
+function shouldLureMimic(profile: PlayerProfile): boolean {
+  return getOutposts().some(
+    (o) => o.submerged && outpostStage(profile, o.id) >= OUTPOST_USABLE_STAGE,
+  );
+}
+
+/** 海图上的 mimic 假 POI（§3.5）：恒亮、网外、引向最深处的兑现。坐标摆在远海一角（仅显示；tell 不靠几何）。 */
+function makeMimicPoi(): ChartPoi {
+  return {
+    id: MIMIC_POI_ID,
+    zoneId: 'zone.blue_caves',
+    name: '无名的光',
+    blurb:
+      '海图最远的角上，一点光稳稳亮着——暖，匀，像一座灯塔。可你数过自己点亮的每一盏灯，没有一盏在那儿。它不在你的网里，却亮着，等你过去。',
+    distance: 4,
+    mapX: 0.93,
+    mapY: 0.9,
+    modifier: { depthOffset: 100, visibility: 'dark', current: 'strong' },
+    persistent: false,
+    mimic: true,
+  };
+}
+
 /**
  * 给定坐标是否被某座已拥有灯塔点亮（落在其 revealRadius 内）。
  * 无坐标 → 默认点亮（不因缺坐标而隐藏，向后兼容）。
@@ -69,8 +104,19 @@ function isLit(profile: PlayerProfile, mapX?: number, mapY?: number): boolean {
   return false;
 }
 
-/** POI 是否被灯塔点亮（reveal，基建地图 Phase C）。 */
+/** POI 是否被灯塔点亮（reveal，基建地图 Phase C）。mimic「无灯之光」恒亮（这是诱饵，§3.5）。 */
 export function isPoiLit(profile: PlayerProfile, poi: ChartPoi): boolean {
+  if (poi.mimic) return true; // 无灯之光：海图上点亮，引诱你横渡
+  return isLit(profile, poi.mapX, poi.mapY);
+}
+
+/**
+ * 这个点亮的 POI 能否被你**自家灯塔网**解释（深水区 Phase 3 宏观 tell，§3.5）。
+ * mimic「无灯之光」恒 false ＝「它亮着，可你的网里没有这一盏」——你清楚自己的灯塔都在哪，这一盏不是你点的。
+ * 普通 POI ＝ 是否落在自家灯塔点亮半径内（你的网照得到它）。UI 据此给「交叉比对」的那条 tell。
+ */
+export function isPoiExplainedByLighthouse(profile: PlayerProfile, poi: ChartPoi): boolean {
+  if (poi.mimic) return false; // 无灯之光：不是你网里的任何一盏
   return isLit(profile, poi.mapX, poi.mapY);
 }
 
@@ -186,6 +232,10 @@ export function generateChart(opts: {
       requiresFlags: t.requiresFlags,
     });
   });
+
+  // 深水区 Phase 3：mimic「无灯之光」假 POI（§3.5）。软门控——你在深处立了脚后才被引诱。
+  // 注入在最后＝海图远海一角多出一盏不属于你网的光（isPoiLit 恒真·isPoiExplainedByLighthouse 恒假 → UI tell）。
+  if (shouldLureMimic(profile)) pois.push(makeMimicPoi());
 
   return { generatedForRun: profile.runsCompleted, pois };
 }

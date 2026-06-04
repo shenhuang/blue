@@ -1,0 +1,14 @@
+{
+  "_comment": "Phase 3 capstone · 无灯之光 灭灯摸黑退回（无 check·诚实但盲的出口）。不去确认它是什么、宁可不知道 → sanity -8 + oxygenTurnCost 4 + forceAscend，不置 d_reveal（不读＝不揭、暧昧保留）。最低代价的逃生阀门（#43 实跑抄）。",
+  "eventId": "mimic.false_beacon",
+  "depth": 150,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["douse_and_back"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "ascent",
+    "errors": [],
+    "statsDelta": { "oxygen": -4, "sanity": -8 }
+  }
+}

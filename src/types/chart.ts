@@ -62,6 +62,13 @@ export interface ChartPoi {
   requiresLighthouseUpgrade?: string;
   /** 发现门控：这些 flag 都满足才出现在海图上（镜像 ZoneDef.requiresFlags）。 */
   requiresFlags?: string[];
+  /**
+   * 「无灯之光」假 POI（深水区 Phase 3 mimic capstone，§3.5）。true = 这个点在海图上**点亮**（引诱），
+   * 却**没有任何自家灯塔能解释**它为什么亮（宏观 tell：交叉比对灯塔网就看出「我的网点不亮那儿」）。
+   * 远距分辨不出它和真信标；绝望/盲目的玩家照样横渡过去 → startDiveFromPoi 路由进 mimic 兑现事件。
+   * isPoiLit 对 mimic 恒真（这是诱饵），isPoiExplainedByLighthouse 恒假（这是 tell）。
+   */
+  mimic?: boolean;
 }
 
 /** 一张生成出来的海图 */
