@@ -106,6 +106,10 @@ export interface SensorTuning {
   lampHallucinationSanity: number;
   /** signature 减免（默认 0；升级上调＝更隐蔽，有上限＝点灯/ping 暴露永不归零，守"读真相必自曝"）。 */
   signatureReduction: number;
+  /** 灯给真相的最大深度差 m（默认 LAMP_DEPTH_REACH；升级上调＝灯探得更深，有上限＝再陡的坑仍照不穿）。节点级 clarity·范围/分辨。 */
+  lampDepthReach: number;
+  /** 声呐够到的最大深度差 m（默认 SONAR_DEPTH_REACH，> 灯；升级上调，有上限）。 */
+  sonarDepthReach: number;
 }
 
 /** 玩家在当次下潜中的资源、装备、背包 */

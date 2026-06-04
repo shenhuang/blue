@@ -10,7 +10,6 @@ import type {
   CurrentStrength,
   Visibility,
   NodeChoice,
-  ClarityTier,
 } from '@/types';
 import { tickTurns } from './events';
 import { generateDiveMap, getNextChoices } from './mapgen';
@@ -23,7 +22,8 @@ import { effectiveDistance } from './chart';
 import { executeDeath } from './death';
 import { startCombat } from './combat';
 import {
-  clarity,
+  clarityForNode,
+  lampEffective,
   sonarReturn,
   lampPreview,
   BLIND_PREVIEW,
@@ -244,32 +244,32 @@ export function enterNodeSelection(state: GameState): GameState {
   // 打捞行会 Lv.1（revealCorpseHint）才在选点界面"预知"尸体；否则尸体节点伪装成普通水道，
   // 玩家只能撞上去才发现（moveToNode 仍按 kind==='corpse' 路由到 CorpseView，与提示无关）。
   const revealCorpseHint = getUpgradeBonuses(state.profile).revealCorpseHint;
-  // 微观 clarity（深水区 Phase 0a）：灯 full（真相）/ 声呐 sonar（不可信表象）/ 摸黑 none（盲）。
+  // 微观 clarity（深水区 Phase 0a + Phase 1 续节点级降档）：灯 full（真相）/ 声呐 sonar（不可信表象）/ 摸黑 none（盲）。
+  // run 级 clarity(run) 是天花板；clarityForNode 在它之上按"节点比你深多少"降档（陡降的深坑灯打不透→声呐→黑）。
   // 引擎侧把对应预览文案烤进 choice（便于 playthrough-sensors 断言，承 quirk #38「别只测引擎」）。
-  const tier = clarity(run);
   const NEUTRAL_CORPSE = '前方的水暗下去，看不清里面有什么。';
 
   const choices: NodeChoice[] = nextChoices.map((n) => {
     const isCorpse = n.kind === 'corpse';
-    // 地标（上浮口 / 气穴 / 扎营点）结构性可感——盲航也认得，始终给真相文案、不被声呐/盲改写。
+    // 地标（上浮口 / 气穴 / 扎营点）结构性可感——盲航也认得，始终给真相文案、不被声呐/盲/深度改写。
     const isLandmark = n.kind === 'ascent_point' || n.kind === 'air_pocket' || n.kind === 'camp';
     const visited = visitedSet.has(n.id);
+    // 节点级档：浅水/近处 full、陡降按 reach 降档（深水区 Phase 1 续）。两类不参与深度降档：
+    //   ① 地标（上浮口/气穴/扎营）结构性可感；
+    //   ② 打捞行会 Lv.1 标记的尸体——尸体定位是地图知识、不被深度藏住，灯有效就认得出那具熟悉的轮廓（守 quirk #36/#58）。
+    const corpseMarked = isCorpse && revealCorpseHint && lampEffective(run);
+    const nodeTier = isLandmark || corpseMarked ? 'full' : clarityForNode(run, n);
 
     let preview: string;
-    let choiceTier: ClarityTier;
     if (isLandmark) {
       preview = n.preview;
-      choiceTier = 'full';
-    } else if (tier === 'full') {
+    } else if (nodeTier === 'full') {
       // 灯下真相（san 极低时 lampPreview 把它改写成幻觉）；尸体无 Lv.1 仍伪装成中性水道。
       preview = isCorpse && !revealCorpseHint ? NEUTRAL_CORPSE : lampPreview(run, n);
-      choiceTier = 'full';
-    } else if (tier === 'sonar') {
+    } else if (nodeTier === 'sonar') {
       preview = sonarReturn(run, n); // 不可信表象（≠ 真内容，可被躲/骗/低 san 假回波改写）
-      choiceTier = 'sonar';
     } else {
       preview = visited ? BLIND_VISITED_PREVIEW : BLIND_PREVIEW;
-      choiceTier = 'none';
     }
 
     return {
@@ -279,10 +279,10 @@ export function enterNodeSelection(state: GameState): GameState {
       preview,
       isAscentPoint: n.kind === 'ascent_point',
       kind: n.kind,
-      // 尸体提示只在灯下（full）+ 有 Lv.1 才给——声呐/盲都读不出"熟悉的轮廓"。
-      hasCorpseHint: isCorpse && revealCorpseHint && tier === 'full',
+      // 尸体提示只在灯下（该节点读到 full）+ 有 Lv.1 才给——声呐/盲/太深都读不出"熟悉的轮廓"。
+      hasCorpseHint: isCorpse && revealCorpseHint && nodeTier === 'full',
       visited,
-      clarity: choiceTier,
+      clarity: nodeTier,
     };
   });
 

@@ -173,6 +173,8 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
     sonarRobustness: 0,
     lampRobustness: 0,
     signatureReduction: 0,
+    lampRangeBonus: 0,
+    sonarRangeBonus: 0,
     unlockedZones: new Set(),
     unlockedShopItems: new Set(),
   };
@@ -225,6 +227,13 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
           break;
         case 'signatureReduction':
           bonuses.signatureReduction += e.value;
+          break;
+        // 深水区 Phase 1 续·节点级 clarity 范围/分辨（sum 聚合，上限在 deriveSensorTuning）。
+        case 'lampRangeBonus':
+          bonuses.lampRangeBonus += e.value;
+          break;
+        case 'sonarRangeBonus':
+          bonuses.sonarRangeBonus += e.value;
           break;
         case 'unlockZone':
           bonuses.unlockedZones.add(e.zoneId);

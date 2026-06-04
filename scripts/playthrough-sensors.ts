@@ -10,6 +10,7 @@
 //   9. 移动后声呐 ping 自动消散（脉冲瞬时）
 //  10. signature：灯 > 声呐 > 摸黑（0b 接遭遇/combat）
 //  11. 升级轨（深水区 Phase 0 升级轨）：powerMax/ping 耗电/灯效率/抗欺骗(声呐&灯)/隐蔽 随升级派生，含地板/上限 + 未升级=基线
+//  12. 节点级 clarity·深度分档（深水区 Phase 1 续）：浅水豁免 / 仅灯陡降黑 / 声呐补中段 / 黑水全声呐 / 灯&声呐 reach 升级扩 + 上限
 //
 // 跑法： npx tsx scripts/playthrough-sensors.ts
 
@@ -36,6 +37,13 @@ import {
   SIGNATURE_LIGHT,
   SIGNATURE_MIN_ACTIVE,
   SIGNATURE_REDUCTION_MAX,
+  // 深水区 Phase 1 续·节点级 clarity（section 12）
+  clarityForNode,
+  CLARITY_FULL_DEPTH,
+  LAMP_DEPTH_REACH,
+  SONAR_DEPTH_REACH,
+  LAMP_DEPTH_REACH_MAX,
+  SONAR_DEPTH_REACH_MAX,
 } from '../src/engine/clarity';
 
 const log: string[] = [];
@@ -328,6 +336,162 @@ L('\n========== 11. 升级轨：传感器随升级成长 ==========');
   assert(allUp.sensorTuning!.signatureReduction === 3, '11g: sensorTuning.signatureReduction');
 
   L('  powerMax / ping 耗电 / 灯效率 / 抗欺骗(声呐&灯) / 隐蔽 随升级成长，地板上限守铁律 ✓');
+}
+
+// ============================================================
+// 12. 节点级 clarity：深度分档（深水区 Phase 1 续）
+// ============================================================
+// clarity(run) 是天花板；clarityForNode 在它之上按"节点比你深多少 m"降档：
+//   灯只照得到近处（≤ lampReach）；更深的陡降灯打不透 → 声呐够到（≤ sonarReach）才给表象、否则黑。
+//   浅水（≤ CLARITY_FULL_DEPTH）豁免：所见为真、不按深度降档。reach 升级可扩、有上限。
+const DEEP_NEAR = '近处的坑，看得清。'; // dd 4
+const DEEP_EDGE = '刚够到的坑沿。'; // dd 8
+const DEEP_MID = '中段沉下去的水道。'; // dd 12
+const DEEP_FAR = '更深处，一道直坠下去的裂口。'; // dd 20
+
+/** d0(40m) 连到四个不同深度差的事件节点 + 一个深处尸体（测尸体也被深度藏住）。 */
+function makeDeepMap(): DiveMap {
+  const ev = (id: string, depth: number, preview: string): DiveNode => ({
+    id, layer: 1, depth, zoneTag: 'cave', kind: 'event', connectsTo: [], preview,
+  });
+  return {
+    zoneId: 'zone.blue_caves',
+    generatedAt: 0,
+    startNodeId: 'd0',
+    nodes: {
+      d0: { id: 'd0', layer: 0, depth: 40, zoneTag: 'cave', kind: 'event', connectsTo: ['near', 'edge', 'mid', 'far', 'dcorpse'], preview: '起点。' },
+      near: ev('near', 44, DEEP_NEAR),
+      edge: ev('edge', 48, DEEP_EDGE),
+      mid: ev('mid', 52, DEEP_MID),
+      far: ev('far', 60, DEEP_FAR),
+      dcorpse: { id: 'dcorpse', layer: 1, depth: 60, zoneTag: 'cave', kind: 'corpse', connectsTo: [], preview: '一具卡在深处的尸体。' },
+    },
+  };
+}
+
+/** 深图版 mk()：currentDepth 默认 40（深水），可覆盖；bonuses 走 createNewRun（reach 升级直通）。 */
+function mkDeep(opts?: {
+  curDepth?: number;
+  visibility?: 'murky' | 'dark';
+  sonarUnlocked?: boolean;
+  light?: boolean;
+  power?: number;
+  sanity?: number;
+  bonuses?: NonNullable<Parameters<typeof createNewRun>[0]['bonuses']>;
+}): GameState {
+  const base = createInitialGameState();
+  const r0 = createNewRun({ zoneId: 'zone.blue_caves', bonuses: opts?.bonuses ?? { sonarUnlocked: opts?.sonarUnlocked } });
+  const run: RunState = {
+    ...r0,
+    map: makeDeepMap(),
+    currentNodeId: 'd0',
+    currentDepth: opts?.curDepth ?? 40,
+    power: opts?.power ?? r0.power,
+    sensors: { ...r0.sensors, light: opts?.light ?? true, sonarUnlocked: opts?.sonarUnlocked ?? r0.sensors.sonarUnlocked },
+    stats: { ...r0.stats, sanity: opts?.sanity ?? 100 },
+    diveModifier: opts?.visibility ? { visibility: opts.visibility } : undefined,
+  };
+  return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
+}
+
+L('\n========== 12. 节点级 clarity：深度分档 ==========');
+{
+  // 12a 浅水豁免：currentDepth ≤ 25 → 即便 far 是 dd40 的陡降，灯下也全 full（所见为真）
+  {
+    const cs = choicesOf(enterNodeSelection(mkDeep({ curDepth: 20 })));
+    assert(cs.every((c) => c.clarity === 'full'), '12a: 浅水（≤25m）所有选项 full、不按深度降档');
+    assert(byId(cs, 'far').preview === DEEP_FAR, '12a: 浅水 far 给真相');
+    L('  浅水豁免：陡降在浅水也是真相 ✓');
+  }
+
+  // 12b 深水 + 仅灯（无声呐）：近处 full、灯够不到的陡降 = 黑（没声呐填不上）
+  {
+    const cs = choicesOf(enterNodeSelection(mkDeep())); // curDepth 40，灯开，声呐未解锁
+    assert(byId(cs, 'near').clarity === 'full', '12b: dd4(≤lampReach6) 灯下 full');
+    assert(byId(cs, 'near').preview === DEEP_NEAR, '12b: near 给真相');
+    assert(byId(cs, 'edge').clarity === 'none', '12b: dd8(>lampReach6) 无声呐 = 黑');
+    assert(byId(cs, 'mid').clarity === 'none', '12b: dd12 无声呐 = 黑');
+    assert(byId(cs, 'far').clarity === 'none', '12b: dd20 无声呐 = 黑');
+    assert(byId(cs, 'far').preview !== DEEP_FAR, '12b: 陡降里看不到真相');
+    assert(byId(cs, 'dcorpse').clarity === 'none', '12b: 深处尸体也被深度藏住（none，不漏真相/提示）');
+    L('  深水仅灯：近 full / 陡降黑（没声呐摸不到深处）✓');
+  }
+
+  // 12c 深水 + 灯 + 声呐 ping：近 full（灯）/ 中段 sonar（声呐补）/ 太深仍黑
+  {
+    let s = enterNodeSelection(mkDeep({ sonarUnlocked: true })); // 灯开 + 解锁
+    s = pingSonar(s); // 灯仍开 → 天花板 full；声呐补灯够不到的中段
+    const cs = choicesOf(s);
+    assert(byId(cs, 'near').clarity === 'full', '12c: 近处灯下真相（full）');
+    assert(byId(cs, 'edge').clarity === 'sonar', '12c: dd8 灯够不到、声呐够到 → sonar');
+    assert(byId(cs, 'mid').clarity === 'sonar', '12c: dd12(≤sonarReach14) → sonar');
+    assert(byId(cs, 'mid').preview !== DEEP_MID, '12c: 声呐表象 ≠ 真内容');
+    assert(byId(cs, 'far').clarity === 'none', '12c: dd20(>sonarReach14) 连声呐都够不到 = 黑');
+    L('  灯近真相 + 声呐补中段 + 最深仍黑（用途分工）✓');
+  }
+
+  // 12d 深水 + 黑水（灯无效）+ 声呐 ping：天花板 = sonar，近/中都 sonar、太深黑
+  {
+    let s = enterNodeSelection(mkDeep({ sonarUnlocked: true, visibility: 'dark' }));
+    s = pingSonar(s);
+    const cs = choicesOf(s);
+    assert(clarity(s.run!) === 'sonar', '12d: 黑水灯无效、声呐在跑 → 天花板 sonar');
+    assert(byId(cs, 'near').clarity === 'sonar', '12d: 黑水近处也只有声呐表象（无灯真相）');
+    assert(byId(cs, 'mid').clarity === 'sonar', '12d: dd12 ≤ sonarReach → sonar');
+    assert(byId(cs, 'far').clarity === 'none', '12d: dd20 > sonarReach → 黑');
+    L('  黑水：全靠声呐、近处也无真相、最深仍黑 ✓');
+  }
+
+  // 12e 灯 reach 升级（lampRangeBonus）：原先黑的 dd8 陡降变 full
+  {
+    const csBase = choicesOf(enterNodeSelection(mkDeep())); // 基线 lampReach 6
+    assert(byId(csBase, 'edge').clarity === 'none', '12e: 基线 dd8 灯够不到 = 黑');
+    const csUp = choicesOf(enterNodeSelection(mkDeep({ bonuses: { lampRangeBonus: 4 } }))); // reach 6→10
+    assert(byId(csUp, 'edge').clarity === 'full', '12e: 灯 reach 升级(+4→10) → dd8 看清 full');
+    assert(byId(csUp, 'edge').preview === DEEP_EDGE, '12e: 升级后 edge 给真相');
+    assert(byId(csUp, 'mid').clarity === 'none', '12e: dd12 仍超 reach10（升级不是万能、深处仍要声呐/摸黑）');
+    L('  灯 reach 升级把陡降里看清更远（填 #60 范围/分辨钩子）✓');
+  }
+
+  // 12f 声呐 reach 升级（sonarRangeBonus）：原先黑的 dd20 变 sonar
+  {
+    let sBase = pingSonar(enterNodeSelection(mkDeep({ sonarUnlocked: true })));
+    assert(byId(choicesOf(sBase), 'far').clarity === 'none', '12f: 基线 dd20 > sonarReach14 = 黑');
+    let sUp = pingSonar(enterNodeSelection(mkDeep({ bonuses: { sonarUnlocked: true, sonarRangeBonus: 8 } }))); // reach 14→22
+    assert(byId(choicesOf(sUp), 'far').clarity === 'sonar', '12f: 声呐 reach 升级(+8→22) → dd20 扫得到 sonar');
+    L('  声呐 reach 升级把更深的陡降扫回个轮廓 ✓');
+  }
+
+  // 12g 未升级 = 基线 + reach 上限（守"永远有比最深更深的"：最深处灯/声呐都买不穿）
+  {
+    const baseTuning = createNewRun({ zoneId: 'zone.blue_caves' }).sensorTuning!;
+    assert(baseTuning.lampDepthReach === LAMP_DEPTH_REACH, '12g: 未升级灯 reach = 基线');
+    assert(baseTuning.sonarDepthReach === SONAR_DEPTH_REACH, '12g: 未升级声呐 reach = 基线');
+    assert(deriveSensorTuning({ lampRangeBonus: 99 }).lampDepthReach === LAMP_DEPTH_REACH_MAX, '12g: 灯 reach 有上限');
+    assert(deriveSensorTuning({ sonarRangeBonus: 99 }).sonarDepthReach === SONAR_DEPTH_REACH_MAX, '12g: 声呐 reach 有上限');
+    // 灯 reach 上限 < 深图最深陡降（dd20）：灯升满也照不穿最深，守北极星
+    assert(LAMP_DEPTH_REACH_MAX < 20, '12g: 灯 reach 上限 < 最深陡降（最深处必须自己摸黑/声呐下去）');
+    L('  reach 默认=基线 + 有上限（最深处灯也买不穿）✓');
+  }
+
+  // 12h 横行 / 上行不降档：与你同深或更浅的节点，深水里也始终给天花板档
+  {
+    const flat = clarityForNode(mkDeep().run!, makeDeepMap().nodes.d0); // d0 与自己同深 dd0
+    assert(flat === 'full', '12h: 同深/上行节点不被深度降档（只有"往下要"才读不到）');
+    L('  横行/上行不降档（深度只藏"下面"）✓');
+  }
+
+  // 12i 尸体定位（打捞行会 Lv.1）不被深度藏住：深处尸体 + Lv.1 + 灯 → full + hint；无 Lv.1 → 黑（守 quirk #36）
+  {
+    const deepBase = mkDeep(); // dcorpse 是 dd20 深处尸体；无升级
+    const withLv1: GameState = { ...deepBase, profile: { ...deepBase.profile, unlockedUpgrades: new Set(['upgrade.salvage_guild.lv1']) } };
+    const csHint = choicesOf(enterNodeSelection(withLv1));
+    assert(byId(csHint, 'dcorpse').clarity === 'full', '12i: Lv.1 标记的深处尸体不被深度降档（full、地图知识）');
+    assert(byId(csHint, 'dcorpse').hasCorpseHint === true, '12i: Lv.1 深处尸体仍给 corpse hint');
+    const csNo = choicesOf(enterNodeSelection(deepBase));
+    assert(byId(csNo, 'dcorpse').hasCorpseHint !== true, '12i: 无 Lv.1 深处尸体无 hint（且 12b 已测其 clarity=none）');
+    L('  尸体定位(Lv.1)不被深度藏住 / 无 Lv.1 仍黑（守 quirk #36）✓');
+  }
 }
 
 console.log(log.join('\n'));

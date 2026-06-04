@@ -21,6 +21,9 @@ export type UpgradeEffect =
   | { kind: 'sonarRobustness'; value: number } // 声呐假回波 san 阈值 −value（更抗欺骗，有地板）
   | { kind: 'lampRobustness'; value: number } // 灯幻觉 san 阈值 −value（灯更晚崩，有地板）
   | { kind: 'signatureReduction'; value: number } // signature 减免 +value（更隐蔽，有上限）
+  // 深水区 Phase 1 续·节点级 clarity 范围/分辨：灯/声呐 reach（够到的深度差）随升级扩，有上限。
+  | { kind: 'lampRangeBonus'; value: number } // 灯 reach +value m（节点级 clarity，有上限）
+  | { kind: 'sonarRangeBonus'; value: number } // 声呐 reach +value m（有上限）
   | { kind: 'unlockShopItem'; itemId: string };
 
 /** 一条升级要求的某种材料及数量（qty 量级 ∈ [1,10]） */
@@ -86,6 +89,10 @@ export interface UpgradeBonuses {
   lampRobustness: number;
   /** 隐蔽（signature 减免，有上限）。 */
   signatureReduction: number;
+  /** 灯 reach 加成（节点级 clarity·范围/分辨，深水区 Phase 1 续；有上限）。 */
+  lampRangeBonus: number;
+  /** 声呐 reach 加成（有上限）。 */
+  sonarRangeBonus: number;
   unlockedZones: Set<string>;
   unlockedShopItems: Set<string>;
 }

@@ -209,6 +209,9 @@ export interface RunStartBonuses {
   sonarRobustness: number;
   lampRobustness: number;
   signatureReduction: number;
+  // 深水区 Phase 1 续·节点级 clarity 范围/分辨：灯/声呐 reach 加成。
+  lampRangeBonus: number;
+  sonarRangeBonus: number;
 }
 
 /**
@@ -231,6 +234,8 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
     sonarRobustness: g.sonarRobustness,
     lampRobustness: g.lampRobustness,
     signatureReduction: g.signatureReduction,
+    lampRangeBonus: g.lampRangeBonus,
+    sonarRangeBonus: g.sonarRangeBonus,
   };
 }
 

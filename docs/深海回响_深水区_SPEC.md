@@ -193,6 +193,7 @@
 - 2026-06-03（**Phase 0b 开建** · 同日续）：实装探测/隐身（详见 STATUS quirk #59）。作者拍板探测＝「**警觉积累 → 接近/伏击**」（§3.3 最完整形态）。发现今天战斗 100% 事件选项触发、零自动遭遇 → 这是**新增自动遭遇路径**。实装：`run.alert`（run 级，点灯/ping 深水抬、摸黑/浅水降，tickTurns 累加）+ `clarity.ts::alertDelta`/`predatorApproaches` + `dive.ts::moveToNode` 越线触发 `startCombat`（复用 zone `ambushEncounters` 现有 solo 敌）+ `ZoneDef.ambushEncounters`（三深水 zone 配、浅/教学不配＝§7.5 兜底）+ NodeSelectView 预警 + `playthrough-stealth`。守则：地标不伏击（留出路）、预警有窗口、摸黑能甩、可生存无脚本死。**Phase 0（0a 感知 + 0b 探测）至此完成；下一步 Phase 1 深度轴（banded 蛙跳）或 Phase 0 升级轨（灯/声呐效果·电量）。**
 - 2026-06-03（**Phase 0 升级轨**，§11 最后一项收尾 → Phase 0 全闭）：作者选方向 B（升级轨），**四旋钮全选**（powerMax / 能耗效率 / 抗欺骗 / 隐蔽），轨道结构「你觉得怎么做最合适」→ 我定**复用 `line.sonar_rig` 续 lv2 + 新 `line.dive_kit` 两条线、深度分层账单**。关键设计取舍：① **范围/分辨不做**——0a 把 clarity 定为 run 级二元（full/sonar/none），节点级 clarity 是 Phase 1，故"范围/分辨"现在没机械钩子，本期只做四个能接的旋钮；② 新增 `run.sensorTuning`（出海前由 `deriveSensorTuning` 一次性烤、下潜内不变，同 powerMax 快照模式），clarity.ts 纯函数读它 + 缺省回退基线常量＝**未升级/旧档/部分 run 逐字节复现 0a/0b**；③ 地板/上限守北极星——抗欺骗有地板（声呐≥30、灯≥10 仍崩＝**无完全可信传感器**）、隐蔽有上限 + 点灯 signature 永 > 摸黑（**读真相必自曝**结构张力不被升级买断）；④ DRY：`RunStartBonuses` 现是 `createNewRun` bonuses 的超集，dive.ts/dialog.ts 直接整个传、不再逐字段抄。未发布不 bump SAVE_VERSION（`run.sensorTuning` 普通对象 JSON 自动 round-trip + `?? 常量` 兜底）。回归：`playthrough-sensors` 加 §11、`-upgrades` 加 §8、`-save` 升级值 round-trip、`smoke-chart-ui` J4 渲染新线，全绿 + prod build。详见 STATUS quirk #60。**Phase 0 完整闭环（感知 + 探测 + 成长）；下一步 Phase 1 深度轴（开建前 AskUserQuestion pin band 表/解锁门/蛙跳/成本曲线）或内容打磨。**
 - 2026-06-03（**Phase 1 plumbing 开建** · 可扩展深度轴）：开建前 AskUserQuestion pin 四点。作者拍板：① band 结构＝**新全局 `data/depth_bands.json`**（跨 zone 共享深度阶梯，匹配 §6 草案 + 递归无界愿景；band 引用 zone 提供内容、用绝对 depthRange 覆盖 zone.depthRange）；② 解锁＝**软门控**——「准备做成软控，首先材料装备限制探索，然后后面会有一些强力敌人做战斗力检测」→ band **不带硬解锁 flag**，可达性由装备（声呐解锁 + 电池/升级，吃深料，#60）+ 后续强敌决定。**Phase 0 升级轨即是这道门**：深 band 黑水里没声呐就瞎、没电池撑不久；③ 蛙跳 `startDiveFromOutpost`＝**做最小版**（home 灯塔当 stand-in outpost，真·最深前哨留 Phase 2）；④ 成本曲线＝**不加深度耗电税**——「不会增加耗电，但是更深的地方需要用更耗电的声呐，以及更频繁的使用探测设备，变相增加耗电」→ 深 band 更暗（visibility）→ 灯打不透 → 被迫声呐 + 重 ping → 电量压力**间接**涌现（复用现有 visibility→forced-sonar→power 回路，不动 lightDrainFactor）。实装＝`types/bands.ts` + `data/depth_bands.json`（reef_deep murky + trench_mouth/throat dark·>60m·借蓝洞内容占位）+ `engine/bands.ts` + `mapgen GenOpts.depthRange` 覆盖（band 绝对窗口、缺省回退 zone）+ `dive.ts::startDiveFromOutpost`（镜像 startDiveFromPoi、走 getRunBonuses＝升级直通）+ `clarity.ts` 写死 60→`ALERT_DEPTH_FULL`（深 band 饱和不报错）+ SeaChartView 蛙跳列表（软门控不锁全列）。回归新 `playthrough-bands.ts`（7 节）+ smoke A2，全绿 + prod build。详见 STATUS quirk #61 + §12 清单。**内容（trench 专属 zone/事件/tag、范围/分辨节点级 clarity）+ 真前哨蛙跳（Phase 2）留后续。下一步＝Phase 2 跨 run 前哨/能源、或深段内容、或 Phase 1 续（band 级 tag 池/成本档细化）。**
+- 2026-06-04（**Phase 1 续·节点级 clarity** · 引擎打磨，作者选 C「Phase 1 续」→ 子方向「节点级 clarity·深度分档」）：把 0a 的 run 级二元 clarity 升成节点级（"范围/分辨"，#60 明确 defer 到此那块）。开建前实测真实地图深度差定 reach（层状区子节点同 depthStep〔浅 reef 12-13m / 深 band 4m / wreck 6-7m〕、maze 区选内异质 dd 1→35m）——据此定**按 depth-delta 降档 + 绝对深度（≤25m）门控豁免浅水**，避免浅 reef 大步长误降。`clarity(run)` 留天花板、新 `clarityForNode(run,node)` 降档（灯近 full / 声呐补中段 / 太深黑 / 横上行不降）。范围/分辨做升级轨（`SensorTuning` + lampDepthReach/sonarDepthReach + 2 UpgradeEffect 沿用 #58/#60 桥 + dive_kit.lv4/sonar.lv3，reach 上限 < 最深陡降＝守"最深处也买不穿"）。护栏：Lv.1 尸体豁免深度降档（地图知识，守 #36）。UI 零改（per-choice 渲染早在 0a 就位）、未发布不迁移。回归 `-sensors`§12/`-upgrades`§8/`-save`/smoke J5，全绿 + prod build。详见 STATUS quirk #62 + §12（范围/分辨已勾）。**Phase 1 续仅余 band 级 alert 曲线（小）；下一步＝Phase 2 跨 run 前哨/能源、或深段内容。**
 
 ---
 
@@ -268,8 +269,17 @@
 
 **回归** ✅ — [x] 新 `playthrough-bands.ts`（7 节：band 表/破 60m/depthRange 覆盖/startDiveFromOutpost/软门控瞎着下/升级直通/alert 饱和）。全绿 + prod build。未发布不 bump SAVE_VERSION（band 派生、不入存档）。
 
+### 节点级 clarity：深度分档 + 范围/分辨升级（✅ 2026-06-04，quirk #62）
+
+> §12 plumbing 把 60m 上限打通；本续把 0a 的 run 级二元 clarity 做到节点级（"范围/分辨"，#60 明确 defer 到此的那块）。无新存档形状、UI 零改（per-choice 渲染早在 0a 就位）。
+
+- [x] `engine/clarity.ts::clarityForNode(run, node)`：在 `clarity(run)` 天花板之上按节点**深度差** `node.depth − currentDepth`（只算往下的陡降）降档——浅水 `≤ CLARITY_FULL_DEPTH`(25，§7.5 浅水线) 豁免＝所见为真；深水灯档 dd≤`LAMP_DEPTH_REACH`(6) full / 超灯且 sonarActive 且 dd≤`SONAR_DEPTH_REACH`(14) sonar / 再深 none；声呐档 dd≤sonarReach sonar 否则 none；横上行不降档。`clarity(run)` 保留作天花板（UI header）。
+- [x] **范围/分辨升级轨（填 #60 缺口）**：`SensorTuning` 加 `lampDepthReach`/`sonarDepthReach`；2 新 `UpgradeEffect`（`lampRangeBonus`/`sonarRangeBonus`）沿用 #58/#60 桥；`data/upgrades.json` 加 `dive_kit.lv4`（灯 reach +4）+ `sonar.lv3`（声呐 reach +8）。`deriveSensorTuning` 夹上限 `LAMP_DEPTH_REACH_MAX`(14)/`SONAR_DEPTH_REACH_MAX`(26)——**均 < 最深陡降＝灯/声呐升满也照/扫不穿最深、最深处必须自己摸黑或委身声呐**（守"永远有比最深更深的"/"读真相要付代价"）。`UpgradePanel::renderEffect` 补 2 标签（quirk #38 护栏）。
+- [x] **护栏**：`enterNodeSelection` per-choice 烤 `clarityForNode`；**Lv.1 标记的尸体 + 灯有效 → 豁免深度降档**（尸体定位是地图知识、不被深度藏住，守 quirk #36，避免节点级 clarity 误伤既有功能）。
+- [x] **回归**：`playthrough-sensors` §12（9 节）+ `-upgrades`§8（dk lv4/sonar lv3 reach 聚合直通）+ `-save`（reach round-trip）+ `smoke` J5。全绿 + prod build。未发布不 bump SAVE_VERSION（sensorTuning 普通对象 round-trip + 兜底）。
+
 **Deferred（明确留后续）**
 - [ ] **内容**：trench 专属 zone + 事件 + 专属 tag 池（band 级 `tags` 覆盖 zoneTagsByDepth）；现 trench 借蓝洞内容、事件池稀（深 cave 事件多 ≤60m）。
-- [ ] **范围/分辨**：节点级 clarity（band/深度提成本曲线）——Phase 0 已 deferred 到此，仍未做（run 级二元）。
+- [x] ~~**范围/分辨**：节点级 clarity~~ → **已实装（2026-06-04，quirk #62，见上）。**
 - [ ] **真前哨蛙跳**：`startDiveFromOutpost` 现用 home stand-in；Phase 2 跨 run 持久前哨建成后换成「最深前哨」+ 蛙跳出潜点经济。
 - [ ] **成本曲线细化**：band 级 alert 倍率 / 越深越狠不饱和（现 ALERT_DEPTH_FULL 饱和）；视内容期需要再做。

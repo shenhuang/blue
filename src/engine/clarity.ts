@@ -51,6 +51,21 @@ export const SIGNATURE_REDUCTION_MAX = 3;
 /** 灯/声呐开着时的暴露下限（signature 超基线部分的地板）——保"自曝"结构张力，隐蔽再强也甩不掉。 */
 export const SIGNATURE_MIN_ACTIVE = 2;
 
+// ----- 节点级 clarity：范围/分辨（深水区 Phase 1 续，clarityForNode 消费） -----
+// run 级 clarity(run) 是"这一潜你带的灯/声呐能给的最好档"；clarityForNode 在它之上按节点的
+// **深度差**（节点比你深多少 m）降档——灯只照得到近处，陡降的深坑灯打不透 → 声呐表象 → 黑。
+// 浅水（≤ CLARITY_FULL_DEPTH）豁免：所见为真、不按深度降档（§7.5，与警觉 ALERT_MIN_DEPTH 同一条浅水线）。
+/** 当前深度 ≤ 此值：浅水所见为真，所有选项给 run 级天花板档、不按深度差降档（§7.5）。 */
+export const CLARITY_FULL_DEPTH = 25;
+/** 深水里灯给"地面真相"的最大深度差（m）：节点比你深 ≤ 此值＝灯照得到 full；更深的陡降灯打不透。 */
+export const LAMP_DEPTH_REACH = 6;
+/** 深水里声呐够得到的最大深度差（m，> 灯）：更深的坑连回波都没有＝黑。 */
+export const SONAR_DEPTH_REACH = 14;
+/** 灯 reach 升满上限（守"永远有比最深更深的"：灯不可能照穿任意深的陡降，最深处必须自己摸黑下去）。 */
+export const LAMP_DEPTH_REACH_MAX = 14;
+/** 声呐 reach 升满上限。 */
+export const SONAR_DEPTH_REACH_MAX = 26;
+
 /** 升级派生的传感器加成（来自 getRunBonuses；各项可缺，缺＝0）。 */
 export interface SensorUpgradeBonus {
   sonarPingCostReduction?: number;
@@ -58,6 +73,8 @@ export interface SensorUpgradeBonus {
   sonarRobustness?: number; // 从声呐假回波阈值里减去的量（sum）
   lampRobustness?: number; // 从灯幻觉阈值里减去的量（sum）
   signatureReduction?: number; // signature 减免（sum）
+  lampRangeBonus?: number; // 灯 reach 加成（节点级 clarity·范围/分辨，sum，有上限）
+  sonarRangeBonus?: number; // 声呐 reach 加成（sum，有上限）
 }
 
 /**
@@ -77,6 +94,8 @@ export function deriveSensorTuning(b: SensorUpgradeBonus = {}): SensorTuning {
       LAMP_HALLUCINATION_SANITY - (b.lampRobustness ?? 0),
     ),
     signatureReduction: Math.min(SIGNATURE_REDUCTION_MAX, Math.max(0, b.signatureReduction ?? 0)),
+    lampDepthReach: Math.min(LAMP_DEPTH_REACH_MAX, LAMP_DEPTH_REACH + (b.lampRangeBonus ?? 0)),
+    sonarDepthReach: Math.min(SONAR_DEPTH_REACH_MAX, SONAR_DEPTH_REACH + (b.sonarRangeBonus ?? 0)),
   };
 }
 
@@ -124,6 +143,30 @@ export function clarity(run: RunState): ClarityTier {
   if (lampEffective(run)) return 'full';
   if (sonarActive(run)) return 'sonar';
   return 'none';
+}
+
+/**
+ * 节点级预览档（深水区 Phase 1 续）：在 run 级 clarity(run)「天花板」之上，按节点的**深度差**降档。
+ * 你的灯只照得到近处——一个比你深得多的陡降，灯打不透（→ 声呐表象，没声呐就是黑）；够深连声呐都没回波（→ 黑）。
+ *   - 浅水（currentDepth ≤ CLARITY_FULL_DEPTH）：所见为真，所有节点给天花板档、不降档（§7.5）。
+ *   - 横行 / 上行（节点不比你深）：始终给天花板档（只有"往下要"才读不到）。
+ * reach（灯/声呐各自够到的深度差）由 run.sensorTuning 派生（升级可扩，有上限＝最深处必须自己摸黑下去）。
+ */
+export function clarityForNode(run: RunState, node: DiveNode): ClarityTier {
+  const ceiling = clarity(run); // 灯 full / 声呐 sonar / 摸黑 none
+  if (ceiling === 'none') return 'none';
+  const cur = run.currentDepth ?? 0;
+  if (cur <= CLARITY_FULL_DEPTH) return ceiling; // 浅水所见为真
+  const dd = Math.max(0, (node.depth ?? cur) - cur); // 只有"比你深"的陡降才读不到
+  const lampReach = run.sensorTuning?.lampDepthReach ?? LAMP_DEPTH_REACH;
+  const sonarReach = run.sensorTuning?.sonarDepthReach ?? SONAR_DEPTH_REACH;
+  if (ceiling === 'full') {
+    if (dd <= lampReach) return 'full'; // 灯够得到：地面真相
+    if (sonarActive(run) && dd <= sonarReach) return 'sonar'; // 灯够不到、声呐还够到：粗略回波
+    return 'none'; // 灯声呐都够不到＝黑（没 ping 的陡降也是黑）
+  }
+  // ceiling === 'sonar'（灯无效 / dark band，仅声呐在跑）
+  return dd <= sonarReach ? 'sonar' : 'none';
 }
 
 /** 灯每回合耗电的水况因子：清水/未设 ≈ 0（浅水近免费，Q2）/ 微浊 0.5 / 黑水 1（+ 深 band 斜坡留 Phase 1）。 */

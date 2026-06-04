@@ -18,7 +18,7 @@ import {
   deserializeGameState,
   loadGame,
 } from '../src/engine/state';
-import { POWER_MAX, SONAR_PING_COST } from '../src/engine/clarity';
+import { POWER_MAX, SONAR_PING_COST, LAMP_DEPTH_REACH, SONAR_DEPTH_REACH } from '../src/engine/clarity';
 import type { GameState } from '../src/types';
 
 const log: string[] = [];
@@ -74,7 +74,7 @@ s = {
     // 深水区 Phase 0 升级轨：给非默认 bonuses，让 powerMax/sensorTuning 带可辨识值，验证它们也 round-trip。
     ...createNewRun({
       zoneId: 'zone.blue_caves',
-      bonuses: { powerMaxBonus: 20, sonarPingCostReduction: 2, lampEfficiency: 0.5, sonarRobustness: 20, lampRobustness: 10, signatureReduction: 3 },
+      bonuses: { powerMaxBonus: 20, sonarPingCostReduction: 2, lampEfficiency: 0.5, sonarRobustness: 20, lampRobustness: 10, signatureReduction: 3, lampRangeBonus: 4, sonarRangeBonus: 8 },
     }),
     currentDepth: 30,
     activeFlags: new Set(['air_used:node.5', 'run.scratch']),
@@ -134,8 +134,10 @@ assert(
     back!.run?.sensorTuning?.lampDrainMult === 0.5 &&
     back!.run?.sensorTuning?.sonarFalseEchoSanity === 40 &&
     back!.run?.sensorTuning?.lampHallucinationSanity === 15 &&
-    back!.run?.sensorTuning?.signatureReduction === 3,
-  'run.sensors / power / powerMax / sensorTuning（深水区 Phase 0 升级轨）应 round-trip',
+    back!.run?.sensorTuning?.signatureReduction === 3 &&
+    back!.run?.sensorTuning?.lampDepthReach === LAMP_DEPTH_REACH + 4 &&
+    back!.run?.sensorTuning?.sonarDepthReach === SONAR_DEPTH_REACH + 8,
+  'run.sensors / power / powerMax / sensorTuning（深水区 Phase 0 升级轨 + Phase 1 续节点级 reach）应 round-trip',
 );
 L('  round-trip：三个 profile Set + run.activeFlags/sensors/power/sensorTuning + deaths + shopStock + lighthouses(Set) + 数值 全部还原 ✓');
 

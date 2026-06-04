@@ -205,6 +205,11 @@ function renderEffect(e: UpgradeEffect): string {
       return '灯更抗幻觉：理智更低些灯才开始骗你';
     case 'signatureReduction':
       return `更隐蔽：被探测 −${e.value}（点灯/ping 仍会暴露）`;
+    // 深水区 Phase 1 续·节点级 clarity 范围/分辨
+    case 'lampRangeBonus':
+      return `灯探得更深 +${e.value}m（陡降里看清更远）`;
+    case 'sonarRangeBonus':
+      return `声呐探得更深 +${e.value}m`;
     case 'unlockShopItem':
       return `解锁商店：${itemLabel(e.itemId)}`;
   }

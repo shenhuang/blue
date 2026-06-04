@@ -120,6 +120,20 @@
             { "kind": "sonarRobustness", "value": 20 }
           ],
           "description": "换上更省电的换能器、给回波加一层滤噪。每记 ping 省 2 电；理智更低些时回波才开始骗你（仍不全可信）。"
+        },
+        {
+          "id": "upgrade.sonar.lv3",
+          "level": 3,
+          "name": "声呐组件 Lv.3",
+          "cost": {
+            "materials": [
+              { "itemId": "item.eel_skin", "qty": 3 },
+              { "itemId": "item.cave_octopus_beak", "qty": 2 }
+            ],
+            "gold": 200
+          },
+          "effects": [{ "kind": "sonarRangeBonus", "value": 8 }],
+          "description": "更高增益的发射阵列：脉冲打得更远，深得多的陡坑也能扫回个轮廓——只是越远的回波越不能当真。"
         }
       ]
     },
@@ -175,6 +189,20 @@
             { "kind": "powerMaxBonus", "value": 20 }
           ],
           "description": "拿冷光腺给灯罩做了层稳光滤层。理智压到更低时灯才开始骗你（灯最后崩、但仍会崩）；电池再 +20。"
+        },
+        {
+          "id": "upgrade.dive_kit.lv4",
+          "level": 4,
+          "name": "远摄灯组",
+          "cost": {
+            "materials": [
+              { "itemId": "item.cave_octopus_beak", "qty": 2 },
+              { "itemId": "item.crab_chitin", "qty": 3 }
+            ],
+            "gold": 130
+          },
+          "effects": [{ "kind": "lampRangeBonus", "value": 4 }],
+          "description": "一组可调焦的远摄灯头：把光柱送进更深的陡坑，原先黑下去的地方现在能看清几米——但再深的坑，灯还是照不穿。"
         }
       ]
     }
