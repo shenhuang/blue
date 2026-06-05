@@ -8,7 +8,6 @@ import type { GameState, ChartPoi } from '@/types';
 import { generateChart, poiLockReason, isPoiDepartable, describeModifier } from '@/engine/chart';
 import { startDiveFromPoi, startDiveFromOutpost } from '@/engine/dive';
 import {
-  revealRadius,
   getHomeLighthouse,
   getLighthouse,
   getOutposts,
@@ -20,6 +19,7 @@ import {
   OUTPOST_USABLE_STAGE,
 } from '@/engine/lighthouses';
 import {
+  effectiveRevealRadius,
   effectiveOutpostStage,
   outpostDecayLevel,
   outpostEnergy,
@@ -122,7 +122,8 @@ export function SeaChartView({ state, onStateChange }: Props) {
 
             {/* 灯塔节点 + 点亮范围（reveal）。半径用海图归一化坐标，渲染在 POI 之下。 */}
             {state.profile.lighthouses.map((lh) => {
-              const r = revealRadius(lh);
+              // 有效半径＝随前哨衰减收缩（深水区 Phase 2b 真 reveal dimming）：荒废的前哨光圈在海图上缩小。
+              const r = effectiveRevealRadius(state.profile, lh);
               return (
                 <div key={`lh-${lh.id}`}>
                   <span

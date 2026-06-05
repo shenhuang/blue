@@ -28,6 +28,7 @@ import {
   getOutpostDef,
   getOutposts,
   outpostStage,
+  revealRadius,
 } from './lighthouses';
 
 // ============================================================
@@ -43,6 +44,12 @@ export const OUTPOST_CURRENT_DECAY_MULT = 2;
 export const OUTPOST_DECAY_MAX = 4;
 /** 每多少衰减级回退一个有效建造阶段（半亮回退 → 蛙跳失效）。 */
 export const OUTPOST_DECAY_PER_STAGE_DROP = 2;
+/**
+ * 真·reveal dimming（深水区 Phase 2b 收尾，SPEC §3.6）：满衰减时前哨在海图上的点亮半径最多收缩这么多。
+ * 0.5 ＝荒废到顶的前哨只剩半径的一半（仍照亮自身近处，但它点亮的远海机会点重新隐没＝海图「变暗」）；
+ * 永不归零（结构还在）→ 守「衰减非永久全损、可 re-ferry 补回」。
+ */
+export const OUTPOST_REVEAL_DECAY_SHRINK = 0.5;
 /** 维护（re-ferry）账单：小额材料 + 金，重置衰减计时（§3.6 可重新 ferry 补回）。tunable。 */
 export const OUTPOST_MAINTENANCE_COST: UpgradeCost = {
   materials: [{ itemId: 'item.brass_fitting', qty: 1 }],
@@ -84,6 +91,21 @@ export function effectiveOutpostStage(profile: PlayerProfile, outpostId: string)
   const raw = outpostStage(profile, outpostId);
   const drop = Math.floor(outpostDecayLevel(profile, outpostId) / OUTPOST_DECAY_PER_STAGE_DROP);
   return Math.max(0, raw - drop);
+}
+
+/**
+ * 一座灯塔在海图上的**有效**点亮半径（深水区 Phase 2b·真 reveal dimming，SPEC §3.6）。
+ * 前哨灯塔随衰减线性收缩（满衰减时缩到 1 − OUTPOST_REVEAL_DECAY_SHRINK 倍，永不归零）——久不维护＝海图「变暗」，
+ * 它点亮的远海机会点重新隐没（chart.ts::isLit 用本函数取代裸 revealRadius）。
+ * home / 废墟 / 水上（!submerged）灯塔：无衰减 → 原样 revealRadius（既有 reveal 行为逐字节不变）。
+ */
+export function effectiveRevealRadius(profile: PlayerProfile, lighthouse: Lighthouse): number {
+  const base = revealRadius(lighthouse);
+  const def = getOutpostForLighthouse(lighthouse.id);
+  if (!def || !def.submerged) return base;
+  const decay = outpostDecayLevel(profile, def.id);
+  if (decay <= 0) return base;
+  return base * (1 - (decay / OUTPOST_DECAY_MAX) * OUTPOST_REVEAL_DECAY_SHRINK);
 }
 
 // ============================================================

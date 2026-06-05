@@ -11,7 +11,6 @@ import { getUpgradeDef } from './upgrades';
 import {
   distanceBetween,
   nearestLighthouse,
-  revealRadius,
   getLighthouseBonuses,
   getHomeLighthouse,
   getLighthouseUpgradeDef,
@@ -19,6 +18,7 @@ import {
   outpostStage,
   OUTPOST_USABLE_STAGE,
 } from './lighthouses';
+import { effectiveRevealRadius } from './outposts';
 import { makeLcg } from './rng';
 
 /**
@@ -99,7 +99,8 @@ function makeMimicPoi(): ChartPoi {
 function isLit(profile: PlayerProfile, mapX?: number, mapY?: number): boolean {
   if (mapX === undefined || mapY === undefined) return true;
   for (const lh of profile.lighthouses) {
-    if (distanceBetween(lh.mapX, lh.mapY, mapX, mapY) <= revealRadius(lh)) return true;
+    // 有效半径＝随前哨衰减收缩（深水区 Phase 2b 真 reveal dimming）；home/废墟/水上灯塔无衰减＝原样。
+    if (distanceBetween(lh.mapX, lh.mapY, mapX, mapY) <= effectiveRevealRadius(profile, lh)) return true;
   }
   return false;
 }

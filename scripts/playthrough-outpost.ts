@@ -25,6 +25,8 @@ import {
   advanceOutpost,
   buildAtLighthouse,
   getLighthouse,
+  getHomeLighthouse,
+  revealRadius,
   outpostStage,
   outpostStageFlag,
   isOutpostLit,
@@ -35,17 +37,20 @@ import {
 import {
   outpostEnergy,
   effectiveOutpostBonuses,
+  effectiveRevealRadius,
   outpostDecayLevel,
   effectiveOutpostStage,
   maintainOutpost,
   canMaintainOutpost,
   OUTPOST_BASE_ENERGY,
   OUTPOST_DECAY_MAX,
+  OUTPOST_REVEAL_DECAY_SHRINK,
 } from '../src/engine/outposts';
 import { startDiveFromOutpost } from '../src/engine/dive';
+import { isPoiVisible } from '../src/engine/chart';
 import { isOptionVisible } from '../src/engine/events';
 import { getEventById } from '../src/engine/zones';
-import type { GameState, InventoryItem } from '../src/types';
+import type { ChartPoi, GameState, InventoryItem } from '../src/types';
 
 const log: string[] = [];
 const L = (s: string) => log.push(s);
@@ -385,7 +390,46 @@ const allSub = startDiveFromOutpost(sAll, 'band.subhadal').run!.turn;
 assert(allSub === hSub, '10: reef_deep+trench_deep+hadal_deep 都半亮 → subhadal 从最深的 hadal_deep 起跳');
 L(`  hadal_deep 半亮服务 subhadal（home ${homeSub}→${hSub}）/ 不服务更浅 band / 三前哨选最深 ✓`);
 
+// ============================================================
+// 11. 真·reveal dimming（Phase 2b 收尾，方向 D）：前哨衰减 → 海图点亮半径收缩 → 远点重新隐没
+//     home/废墟灯塔不受影响（既有 reveal 行为不变）。复用 §6 的 sE（reef_deep 已点亮 promote 出 RESULT_LH）。
+// ============================================================
+L('\n========== 11. 真 reveal dimming：衰减→海图变暗 ==========');
+const lhRD = getLighthouse(sE.profile, RESULT_LH)!;
+const fullR = revealRadius(lhRD);
+// 零衰减 → 有效半径 = 原始 revealRadius
+assert(effectiveRevealRadius(sE.profile, lhRD) === fullR, '11: 零衰减→有效半径=原始 revealRadius');
+// 满衰减（runsCompleted+8）→ 缩到 (1 − SHRINK) 倍、永不归零
+const dMaxR = atRuns(sE, 8);
+assert(outpostDecayLevel(dMaxR.profile, OUTPOST) === OUTPOST_DECAY_MAX, '11: 封顶衰减');
+const shrunkR = effectiveRevealRadius(dMaxR.profile, lhRD);
+assert(Math.abs(shrunkR - fullR * (1 - OUTPOST_REVEAL_DECAY_SHRINK)) < 1e-9, `11: 满衰减→半径缩到 (1−${OUTPOST_REVEAL_DECAY_SHRINK}) 倍`);
+assert(shrunkR > 0 && shrunkR < fullR, '11: 收缩但永不归零（结构还在）');
+// 中度衰减单调：在原始与封顶之间
+const dMidR = atRuns(sE, 4); // 衰减 2
+const midR = effectiveRevealRadius(dMidR.profile, lhRD);
+assert(midR < fullR && midR > shrunkR, '11: 中度衰减→半径在原始与封顶之间（单调收缩）');
+// home 灯塔不是前哨 → 不受衰减影响（既有 reveal 逐字节不变）
+const home = getHomeLighthouse(dMaxR.profile)!;
+assert(effectiveRevealRadius(dMaxR.profile, home) === revealRadius(home), '11: home 灯塔无衰减·半径原样');
+// 海图后果：在前哨外、满半径内、背向 home 方向放一个探针 POI → 满衰减时该远点重新隐没
+const ax = lhRD.mapX - home.mapX, ay = lhRD.mapY - home.mapY;
+const nrm = Math.hypot(ax, ay) || 1;
+const probe: ChartPoi = {
+  id: 'poi.__reveal_probe',
+  zoneId: 'zone.blue_caves',
+  name: '探针',
+  blurb: '',
+  distance: 1,
+  mapX: lhRD.mapX + (ax / nrm) * fullR * 0.75,
+  mapY: lhRD.mapY + (ay / nrm) * fullR * 0.75,
+  persistent: false,
+};
+assert(isPoiVisible(sE.profile, probe), '11: 零衰减→前哨满半径点亮该远点');
+assert(!isPoiVisible(dMaxR.profile, probe), '11: 满衰减→前哨光圈缩小·该远点重新隐没（海图变暗，须 re-ferry 补回）');
+L(`  零衰减半径 ${fullR.toFixed(2)} → 满衰减 ${shrunkR.toFixed(2)}（单调收缩·永不归零）/ home 不受影响 / 远点重新隐没 ✓`);
+
 console.log(log.join('\n'));
 console.log(
-  '\n✓ 深水前哨（Phase 2a 建造/蛙跳 + Phase 2b 能源/衰减/维护/多前哨链）回归通过',
+  '\n✓ 深水前哨（Phase 2a 建造/蛙跳 + Phase 2b 能源/衰减/维护/多前哨链/reveal dimming）回归通过',
 );
