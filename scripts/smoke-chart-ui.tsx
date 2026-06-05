@@ -493,6 +493,7 @@ const htmlN1 = renderToStaticMarkup(
 assert(htmlN1.includes('深水前哨'), 'N1: 应渲染深水前哨面板标题');
 assert(htmlN1.includes('深槽前哨'), 'N1: 应列出 reef_deep 前哨');
 assert(htmlN1.includes('竖井前哨'), 'N1: 应列出 trench_deep 前哨（多前哨链）');
+assert(htmlN1.includes('超渊前哨'), 'N1: 应列出 hadal_deep 前哨（方向 D·脊柱延到 band.hadal，服务渊外蛙跳）');
 assert(htmlN1.includes('未动工'), 'N1: 未建前哨显示「未动工」');
 assert(htmlN1.includes('勘察并清理塔基'), 'N1: 建造按钮 label 含下一阶段账单');
 // N2：reef_deep 点亮 + 重度衰减（runs 8）→ 能源/衰减/荒废/维护

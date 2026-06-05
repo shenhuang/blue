@@ -119,6 +119,54 @@
           "outcome": { "text": "你把竖井壁上这排锚位的方位记在石板上。料齐了，再下来这一趟。" }
         }
       ]
+    },
+    {
+      "id": "lighthouse.outpost_hadal_deep",
+      "depthRange": [140, 180],
+      "zoneTags": ["hadal"],
+      "weight": 2,
+      "oncePerRun": true,
+      "forbiddenFlags": ["flag.outpost.hadal_deep.s3"],
+      "title": "超渊壁上的窄台",
+      "body": "超渊这一段几乎没有立得住脚的地方——壁是软的，再往下就是连名字都没有的水。可这里有一道窄台，背着那些往下拽的暗流，是这一程唯一卡得住桩的地方。\n在这儿撑起一座前哨，你就能从超渊的底再往渊外那片黑里起跳，不必每趟都从竖井一路沉下来。\n这么深，架起来也撑不了多久，得常回来照看。料从你岸上的家底里出，更不是一趟能成的。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "scout",
+          "label": "在超渊壁上找一处立得住的窄台（章鱼角喙×2 ＋ 120 金）",
+          "visibleIf": { "kind": "notHasFlag", "flag": "flag.outpost.hadal_deep.s1" },
+          "outcome": { "advanceOutpostId": "outpost.hadal_deep" }
+        },
+        {
+          "id": "ferry_struts",
+          "label": "运来耐压支架与浮筒（鳗皮×4·黄铜配件×3 ＋ 200 金）",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "flag.outpost.hadal_deep.s1" },
+              { "kind": "notHasFlag", "flag": "flag.outpost.hadal_deep.s2" }
+            ]
+          },
+          "outcome": { "advanceOutpostId": "outpost.hadal_deep" }
+        },
+        {
+          "id": "power_on",
+          "label": "通电点亮（冷光腺×3·章鱼角喙×3 ＋ 340 金）",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "flag.outpost.hadal_deep.s2" },
+              { "kind": "notHasFlag", "flag": "flag.outpost.hadal_deep.s3" }
+            ]
+          },
+          "outcome": { "advanceOutpostId": "outpost.hadal_deep" }
+        },
+        {
+          "id": "leave",
+          "label": "先记下方位，回头再来",
+          "outcome": { "text": "你把超渊壁上这道窄台的方位刻在石板上。料齐了，再下来这一趟。" }
+        }
+      ]
     }
   ]
 }

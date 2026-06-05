@@ -11,6 +11,7 @@
 //   8. 衰减：水下前哨按 run 累积衰减 → 容量缩（补给掉线＝变暗）/ 重度衰减回退有效阶段（蛙跳失效）
 //   9. 维护（re-ferry）：扣账单、重置衰减计时；无衰减/未建不可维护
 //  10. 多前哨链：trench_deep（水流前哨）服务 abyssal 蛙跳、不服务更浅 band、多前哨选最深起跳
+//  11. 多前哨链续（方向 D）：hadal_deep（超渊静水前哨）服务 subhadal（渊外 >180m）蛙跳、是最深起跳点
 //
 // 跑法： npx tsx scripts/playthrough-outpost.ts
 
@@ -341,6 +342,48 @@ const sBoth: GameState = {
 const bothAby = startDiveFromOutpost(sBoth, 'band.abyssal').run!.turn;
 assert(bothAby === tAby, '9: reef_deep + trench_deep 都半亮 → abyssal 从最深的 trench_deep 起跳');
 L(`  trench_deep 半亮服务 abyssal（home ${homeAby}→${tAby}）/ 不服务更浅 band / 多前哨选最深 ✓`);
+
+// ============================================================
+// 10. 多前哨链续（方向 D）：hadal_deep（超渊·静水前哨）服务 subhadal（渊外 >180m）蛙跳、最深起跳点
+//     #66/#67 模板：脊柱再延一段 home → reef_deep → trench_deep → hadal_deep，让 C 开的渊外 band 蛙跳可达
+// ============================================================
+L('\n========== 10. 多前哨链：hadal_deep → subhadal ==========');
+const HADAL = 'outpost.hadal_deep';
+const hdef = getOutpostDef(HADAL);
+assert(hdef && hdef.bandId === 'band.hadal', '10: hadal_deep 在 band.hadal');
+assert(hdef!.submerged && !hdef!.current, '10: hadal_deep 是静水(无 current)水下前哨——base 能源吃紧（最深的基地养不起几盏补给）');
+assert(hdef!.stages.length === OUTPOST_MAX_STAGE, `10: hadal_deep 三阶段（${hdef!.stages.length}）`);
+// 备半亮料：s1 beak×2 / s2 eel×4+brass×3 → beak2 eel4 brass3，gold 320
+let sH = stateWith(
+  [
+    { itemId: 'item.cave_octopus_beak', qty: 2 },
+    { itemId: 'item.eel_skin', qty: 4 },
+    { itemId: 'item.brass_fitting', qty: 3 },
+  ],
+  320,
+);
+sH = advanceOutpost(sH, HADAL); // 1
+sH = advanceOutpost(sH, HADAL); // 2 半亮
+assert(outpostStage(sH.profile, HADAL) === OUTPOST_USABLE_STAGE, '10: hadal_deep 半亮');
+const homeSub = startDiveFromOutpost(base, 'band.subhadal').run!.turn;
+const hSub = startDiveFromOutpost(sH, 'band.subhadal').run!.turn;
+assert(hSub < homeSub, `10: hadal_deep 半亮 → subhadal 蛙跳更省（home ${homeSub} → 超渊前哨 ${hSub}）`);
+// hadal_deep（order5）不服务更浅的 abyssal（order4）——前哨须比目标更浅
+const hAby = startDiveFromOutpost(sH, 'band.abyssal').run!.turn;
+assert(hAby === homeAby, '10: hadal_deep（order5）不服务更浅的 abyssal（order4）');
+// 三前哨都半亮 → subhadal 从最深的 hadal_deep 起跳
+const allFlags = new Set([...sBoth.profile.flags, ...sH.profile.flags]);
+const sAll: GameState = {
+  ...sBoth,
+  profile: {
+    ...sBoth.profile,
+    flags: allFlags,
+    outpostState: { ...sBoth.profile.outpostState, ...sH.profile.outpostState },
+  },
+};
+const allSub = startDiveFromOutpost(sAll, 'band.subhadal').run!.turn;
+assert(allSub === hSub, '10: reef_deep+trench_deep+hadal_deep 都半亮 → subhadal 从最深的 hadal_deep 起跳');
+L(`  hadal_deep 半亮服务 subhadal（home ${homeSub}→${hSub}）/ 不服务更浅 band / 三前哨选最深 ✓`);
 
 console.log(log.join('\n'));
 console.log(
