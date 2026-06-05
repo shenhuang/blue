@@ -33,6 +33,16 @@ export function getZone(id: string): ZoneDef | undefined {
   return ZONES.get(id);
 }
 
+/**
+ * 这个 zone 的下潜图能否「回头」（节点级 backtrack）。
+ * 迷路图（mapShape='maze'，如蓝洞群 + 借它的 trench/abyssal/hadal band）双向连通＝能原路返回；
+ * 层状图（开阔水域 reef/wreck，缺省）connectsTo 只向下＝一旦往深处走，走过的节点不再是选项（单向下潜·设计如此）。
+ * UI 据此在层状 zone 给「只能往下、回不去」的预告，避免玩家在过了上浮口后才被「回不了头」打个措手不及。
+ */
+export function zoneAllowsBacktrack(zoneId: string): boolean {
+  return getZone(zoneId)?.mapShape === 'maze';
+}
+
 export function getEventById(id: string): DiveEvent | undefined {
   return EVENT_DB.get(id);
 }

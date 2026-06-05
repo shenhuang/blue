@@ -212,6 +212,19 @@ const htmlNoAlert = renderToStaticMarkup(
 assert(!htmlNoAlert.includes('alert-warning'), 'E2: 低警觉不应渲染预警');
 L('  高警觉预警渲染 / 低警觉无预警 ✓');
 
+// E3. NodeSelectView · 单向下潜预告（层状 zone 给「只能往下」提示，迷路图 zone 不给）
+const htmlOneWay = renderToStaticMarkup(
+  <NodeSelectView state={diveState()} choices={truthChoice} onStateChange={noop} />,
+); // diveState() = zone.wreck_graveyard = 层状（单向下潜）
+assert(htmlOneWay.includes('只往下通'), 'E3: 层状（开阔水域）zone 应给「只能往下、回不去」的单向下潜预告');
+const md = diveState();
+const mazeDive: GameState = { ...md, run: { ...md.run!, zoneId: 'zone.blue_caves' } };
+const htmlMaze = renderToStaticMarkup(
+  <NodeSelectView state={mazeDive} choices={truthChoice} onStateChange={noop} />,
+);
+assert(!htmlMaze.includes('只往下通'), 'E3: 迷路图（蓝洞群）zone 能回头 → 不给单向预告（免得误导）');
+L('  层状给单向预告 / 迷路图不给 ✓');
+
 // ============================================
 // F. SeaChartView · 打捞行会 Lv.2 出海前选目标尸体
 // ============================================
