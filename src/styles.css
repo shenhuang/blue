@@ -884,6 +884,35 @@ html, body, #root {
   fill: #eafffb;
 }
 
+/* 深水区 Phase 2b 续：前哨材料中转站（寄存区）—— 与无样式的 chart-outpost-* 同列，只给两排按钮一点排版 */
+.chart-outpost-depot {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--border);
+}
+.chart-outpost-depot-head {
+  display: block;
+  margin-bottom: 3px;
+}
+.chart-depot-stored {
+  list-style: none;
+  margin: 0 0 3px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chart-depot-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.chart-depot-deposit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 /* 深水区 Phase 0b：警觉预警（被探测） */
 .alert-warning {
   margin: 10px 0 0;

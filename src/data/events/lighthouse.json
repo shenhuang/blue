@@ -167,6 +167,54 @@
           "outcome": { "text": "你把超渊壁上这道窄台的方位刻在石板上。料齐了，再下来这一趟。" }
         }
       ]
+    },
+    {
+      "id": "lighthouse.outpost_abyssal_deep",
+      "depthRange": [108, 140],
+      "zoneTags": ["abyssal"],
+      "weight": 2,
+      "oncePerRun": true,
+      "forbiddenFlags": ["flag.outpost.abyssal_deep.s3"],
+      "title": "深渊边沿的崖肩",
+      "body": "深渊里石壁退尽，几乎没有能立桩的地方——再往外，就是没有壁、没有底的纯粹的黑。可这道崖肩还算结实，背着那些往下要你的暗流，是这一带唯一卡得住桩的地方。\n在这儿撑起一座前哨，你就能从深渊的边沿再往超渊那条缝里起跳，不必每趟都从竖井一路沉下来。\n这么深，架起来淤积和锈蚀都来得快，得常回来照看。料从你岸上的家底里出，更不是一趟能成的。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "scout",
+          "label": "在深渊边沿找一处立得住的崖肩（章鱼角喙×2 ＋ 110 金）",
+          "visibleIf": { "kind": "notHasFlag", "flag": "flag.outpost.abyssal_deep.s1" },
+          "outcome": { "advanceOutpostId": "outpost.abyssal_deep" }
+        },
+        {
+          "id": "ferry_struts",
+          "label": "运来耐压支架与浮筒（鳗皮×3·黄铜配件×3 ＋ 180 金）",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "flag.outpost.abyssal_deep.s1" },
+              { "kind": "notHasFlag", "flag": "flag.outpost.abyssal_deep.s2" }
+            ]
+          },
+          "outcome": { "advanceOutpostId": "outpost.abyssal_deep" }
+        },
+        {
+          "id": "power_on",
+          "label": "通电点亮（冷光腺×2·章鱼角喙×3 ＋ 290 金）",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "flag.outpost.abyssal_deep.s2" },
+              { "kind": "notHasFlag", "flag": "flag.outpost.abyssal_deep.s3" }
+            ]
+          },
+          "outcome": { "advanceOutpostId": "outpost.abyssal_deep" }
+        },
+        {
+          "id": "leave",
+          "label": "先记下方位，回头再来",
+          "outcome": { "text": "你把深渊边沿这道崖肩的方位刻在石板上。料齐了，再下来这一趟。" }
+        }
+      ]
     }
   ]
 }

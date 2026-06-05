@@ -65,6 +65,7 @@ function litOutpostState(opts: {
   facilities?: string[];
   runsCompleted?: number;
   maintainedRun?: number;
+  stored?: { itemId: string; qty: number }[];
 }): GameState {
   const base = createInitialGameState();
   const flags = new Set([
@@ -74,6 +75,13 @@ function litOutpostState(opts: {
     `flag.${opts.outpostId}.s3`,
   ]);
   const lh = { ...opts.resultLh, level: 1, builtUpgrades: new Set(opts.facilities ?? []) };
+  const entry: { maintainedRun: number; stored?: { itemId: string; qty: number }[]; storedRun?: number } = {
+    maintainedRun: opts.maintainedRun ?? 0,
+  };
+  if (opts.stored) {
+    entry.stored = opts.stored;
+    entry.storedRun = opts.runsCompleted ?? 0; // storedRun=当前 run → 零寄存损耗（除非测试另设）
+  }
   return {
     ...base,
     profile: {
@@ -81,7 +89,7 @@ function litOutpostState(opts: {
       flags,
       runsCompleted: opts.runsCompleted ?? 0,
       lighthouses: [...base.profile.lighthouses, lh],
-      outpostState: { [opts.outpostId]: { maintainedRun: opts.maintainedRun ?? 0 } },
+      outpostState: { [opts.outpostId]: entry },
     },
   };
 }
@@ -569,7 +577,10 @@ const trenchPanel = renderToStaticMarkup(
   />,
 );
 assert(trenchPanel.includes('水力发电'), 'M4: 水流前哨显示水力发电（currentOnly 满足）');
-L('  家灯塔船坞/信标轨 + 能源设施轨 outpostOnly/currentOnly 门控（家×/静水/水流）✓');
+// M5：材料中转站（outpostOnly）—— 前哨显示、家灯塔不显示
+assert(reefDeepPanel.includes('材料中转站'), 'M5: 前哨显示材料中转站轨（outpostOnly·Phase 2b 续）');
+assert(!homeOnlyPanel.includes('材料中转站'), 'M5: 家灯塔不显示材料中转站（outpostOnly）');
+L('  家灯塔船坞/信标轨 + 能源/中转设施轨 outpostOnly/currentOnly 门控（家×/静水/水流）✓');
 
 // ============================================
 // N. SeaChartView · 深水前哨面板（Phase 2b：建造/维护/能源/衰减 surfacing）
@@ -583,6 +594,7 @@ assert(htmlN1.includes('深水前哨'), 'N1: 应渲染深水前哨面板标题')
 assert(htmlN1.includes('深槽前哨'), 'N1: 应列出 reef_deep 前哨');
 assert(htmlN1.includes('竖井前哨'), 'N1: 应列出 trench_deep 前哨（多前哨链）');
 assert(htmlN1.includes('超渊前哨'), 'N1: 应列出 hadal_deep 前哨（方向 D·脊柱延到 band.hadal，服务渊外蛙跳）');
+assert(htmlN1.includes('深渊前哨'), 'N1: 应列出 abyssal_deep 前哨（Phase 2b 续·补脊柱 abyssal 缺口）');
 assert(htmlN1.includes('未动工'), 'N1: 未建前哨显示「未动工」');
 assert(htmlN1.includes('勘察并清理塔基'), 'N1: 建造按钮 label 含下一阶段账单');
 // N2：reef_deep 点亮 + 重度衰减（runs 8）→ 能源/衰减/荒废/维护
@@ -599,7 +611,26 @@ assert(htmlN2.includes('衰减'), 'N2: 衰减的前哨显示衰减级');
 assert(htmlN2.includes('部分补给掉线'), 'N2: 容量不足 → 标注补给掉线（变暗）');
 assert(htmlN2.includes('荒废 · 蛙跳失效'), 'N2: 重度衰减 → 有效阶段回退、蛙跳失效');
 assert(htmlN2.includes('维护'), 'N2: 衰减的前哨有「维护」按钮');
-L('  前哨面板：未动工/建造按钮 + 点亮/能源/衰减/荒废/维护 ✓');
+// N3：建了材料中转站 + 寄存了料 → 渲染寄存区（容量/库存/存取按钮）（Phase 2b 续·方向 D）
+const N3 = litOutpostState({
+  outpostId: 'outpost.reef_deep',
+  resultLh: REEF_DEEP_LH,
+  facilities: ['lighthouse.depot.lv1'],
+  stored: [{ itemId: 'item.brass_fitting', qty: 3 }],
+});
+const htmlN3 = renderToStaticMarkup(<SeaChartView state={N3} onStateChange={noop} />);
+assert(htmlN3.includes('中转站 3/6'), 'N3: 建了中转站的前哨显示寄存区（用量/容量）');
+assert(htmlN3.includes('取'), 'N3: 寄存的料有「取」按钮');
+assert(htmlN3.includes('存'), 'N3: 寄存区有「存」料按钮');
+// N4：未建中转站的前哨不显示寄存区
+const htmlN4 = renderToStaticMarkup(
+  <SeaChartView
+    state={litOutpostState({ outpostId: 'outpost.reef_deep', resultLh: REEF_DEEP_LH })}
+    onStateChange={noop}
+  />,
+);
+assert(!htmlN4.includes('中转站'), 'N4: 未建中转站的前哨不显示寄存区（软门控）');
+L('  前哨面板：未动工/建造按钮 + 点亮/能源/衰减/荒废/维护 + 中转站寄存区（建了才显示）✓');
 
 // ============================================
 // O. SeaChartView · mimic「无灯之光」引诱 + 宏观 tell（深水区 Phase 3）

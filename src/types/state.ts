@@ -6,6 +6,7 @@ import type { DiveMap, NodeKind } from './dive';
 import type { CombatState } from './combat';
 import type { PoiModifier } from './chart';
 import type { Lighthouse } from './lighthouse';
+import type { MaterialCost } from './upgrades';
 
 /** 四属性 stat 名称（注意：氧气在战斗/事件中以"回合数"消耗） */
 export type Stat = 'stamina' | 'oxygen' | 'sanity' | 'nitrogen';
@@ -45,12 +46,16 @@ export interface PlayerProfile {
    */
   lighthouses: Lighthouse[];
   /**
-   * 水下前哨的维护状态（深水区 Phase 2b 衰减）：outpostId → { maintainedRun }。
-   * maintainedRun = 上次建造/维护时的 runsCompleted；衰减 = (runsCompleted − maintainedRun) × 速率（水流前哨更快）。
-   * 可选 + 普通对象 → 旧档/脚本缺它无妨（懒默认＝刚维护、零衰减），JSON 原生 round-trip，无需迁移、不 bump SAVE_VERSION
-   * （同 shopStock 套路；作者 2026-06-04 未发布不迁移）。advanceOutpost / maintainOutpost 写它。
+   * 水下前哨的维护 + 寄存状态（深水区 Phase 2b / 2b 续）：outpostId → { maintainedRun, stored?, storedRun? }。
+   * - maintainedRun = 上次建造/维护时的 runsCompleted；结构衰减 = (runsCompleted − maintainedRun) × 速率（水流前哨更快）。
+   * - stored = 寄存在该前哨「材料中转站」里的材料（Phase 2b 续：深水前哨可寄存材料、维护就近取用并免 ferry 金费）。
+   * - storedRun = 上次「打理寄存」（存/取/维护）时的 runsCompleted；寄存损耗 = (runsCompleted − storedRun) × 速率独立计
+   *   （与 maintainedRun 解耦——建造一阶重置结构衰减但不一定补寄存；维护两者都重置）。
+   * 三者都可选 + 普通对象/数组 → 旧档/脚本缺它无妨（懒默认＝刚维护、空寄存、零损耗），JSON 原生 round-trip，
+   * 无需迁移、不 bump SAVE_VERSION（同 shopStock 套路；作者 2026-06-04 未发布不迁移）。
+   * advanceOutpost / maintainOutpost / depositToDepot / withdrawFromDepot 写它。
    */
-  outpostState?: Record<string, { maintainedRun: number }>;
+  outpostState?: Record<string, { maintainedRun: number; stored?: MaterialCost[]; storedRun?: number }>;
 }
 
 /** 死亡记录，用于尸体回收 */

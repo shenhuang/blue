@@ -38,7 +38,8 @@ export type LighthouseEffect =
   | { kind: 'energyGen'; value: number } // 水力发电：能源产出 +value（仅在水流 current 前哨有产出，否则计 0）
   | { kind: 'energyDraw'; value: number } // 设施能源占用 +value（超出该前哨能源容量的设施掉线）
   | { kind: 'rechargeBonus'; value: number } // 充电设施：从该前哨蛙跳时电池总量 +value（设施在线才生效）
-  | { kind: 'oxygenSupply'; value: number }; // 充氧设施：从该前哨蛙跳时氧气上限 +value（设施在线才生效）
+  | { kind: 'oxygenSupply'; value: number } // 充氧设施：从该前哨蛙跳时氧气上限 +value（设施在线才生效）
+  | { kind: 'storageCapacity'; value: number }; // 材料中转/寄存设施：该前哨可寄存 +value 单位材料（深水区 Phase 2b 续；engine/outposts.ts 消费，**不耗能源**＝被动库房恒可用）
 
 /** 一条灯塔设施升级定义。账单复用全局的材料＋金币双资源 UpgradeCost（Phase A）。 */
 export interface LighthouseUpgradeDef {
@@ -160,4 +161,6 @@ export interface LighthouseBonuses {
   rechargeBonus: number;
   /** 充氧设施给的氧气上限加成（在线才计入蛙跳 run）。 */
   oxygenSupply: number;
+  /** 材料中转/寄存设施给的寄存容量（单位材料数；深水区 Phase 2b 续，engine/outposts.ts 的 depotCapacity 读它）。 */
+  storageCapacity: number;
 }

@@ -25,10 +25,19 @@ import {
   outpostEnergy,
   maintainOutpost,
   canMaintainOutpost,
+  depotCapacity,
+  effectiveStored,
+  storedUnits,
+  depotDecayLevel,
+  depositToDepot,
+  withdrawFromDepot,
+  canDeposit,
+  OUTPOST_MAINTENANCE_COST,
 } from '@/engine/outposts';
 import { getBands } from '@/engine/bands';
 import { getZone } from '@/engine/zones';
 import { getUpgradeBonuses } from '@/engine/upgrades';
+import { getItemDef } from '@/engine/items';
 import { listRecoverableCorpses } from '@/engine/death';
 import { LighthouseBuildPanel } from './LighthouseBuildPanel';
 
@@ -338,6 +347,22 @@ function OutpostPanel({ state, onStateChange }: Props) {
           const energy = lh ? outpostEnergy(state.profile, lh) : null;
           const maint = canMaintainOutpost(state.profile, o.id);
 
+          // 材料中转站（深水区 Phase 2b 续）：建了中转站（storageCapacity>0）的前哨才显示寄存区。
+          const cap = depotCapacity(state.profile, o.id);
+          const stored = cap > 0 ? effectiveStored(state.profile, o.id) : [];
+          const depotUsed = storedUnits(stored);
+          const depotDecay = cap > 0 ? depotDecayLevel(state.profile, o.id) : 0;
+          // 可寄存的相关材料＝维护材料 ∪ 下一阶段材料（最常想前置到深处的料），取仓库里有的。
+          const depositables =
+            cap > 0
+              ? Array.from(
+                  new Set([
+                    ...OUTPOST_MAINTENANCE_COST.materials.map((m) => m.itemId),
+                    ...(next?.cost.materials.map((m) => m.itemId) ?? []),
+                  ]),
+                )
+              : [];
+
           const status = lit
             ? usable
               ? '已点亮'
@@ -381,6 +406,48 @@ function OutpostPanel({ state, onStateChange }: Props) {
                   </button>
                 )}
               </div>
+              {cap > 0 && (
+                <div className="chart-outpost-depot">
+                  <span className="dim chart-outpost-depot-head">
+                    中转站 {depotUsed}/{cap}
+                    {depotDecay > 0 ? ` · 锈蚀 ${depotDecay}（存料在流失，回来补一补）` : ''}
+                  </span>
+                  {stored.length > 0 && (
+                    <ul className="chart-depot-stored">
+                      {stored.map((m) => (
+                        <li key={m.itemId} className="chart-depot-item">
+                          <span className="chart-depot-mat">
+                            {getItemDef(m.itemId)?.name ?? m.itemId}×{m.qty}
+                          </span>
+                          <button
+                            className="btn small chart-depot-withdraw"
+                            onClick={() => onStateChange(withdrawFromDepot(state, o.id, m.itemId, 1))}
+                          >
+                            取
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="chart-depot-deposit">
+                    {depositables.map((itemId) => {
+                      const have = state.profile.inventory.find((i) => i.itemId === itemId)?.qty ?? 0;
+                      const dep = canDeposit(state.profile, o.id, itemId, 1);
+                      return (
+                        <button
+                          key={itemId}
+                          className="btn small chart-depot-store"
+                          disabled={!dep.ok}
+                          title={`岸上仓库：${have}`}
+                          onClick={() => onStateChange(depositToDepot(state, o.id, itemId, 1))}
+                        >
+                          存 {getItemDef(itemId)?.name ?? itemId}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </li>
           );
         })}

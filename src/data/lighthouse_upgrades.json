@@ -137,6 +137,44 @@
           "requiresLighthouseLevel": 1
         }
       ]
+    },
+    {
+      "id": "lhtrack.depot",
+      "name": "材料中转站",
+      "description": "在前哨搭起料棚与吊架——把材料就近寄存在这里，维护时就地取用、省下从岸上运料的船钱。不占能源（被动库房），但水下的存料会随前哨荒废而锈蚀流失（激流前哨更快），得回来补。",
+      "outpostOnly": true,
+      "upgrades": [
+        {
+          "id": "lighthouse.depot.lv1",
+          "level": 1,
+          "name": "料棚",
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 2 },
+              { "itemId": "item.crab_chitin", "qty": 1 }
+            ],
+            "gold": 40
+          },
+          "effects": [{ "kind": "storageCapacity", "value": 6 }],
+          "description": "搭起料棚。可在这座前哨寄存 6 单位材料；维护时就地取料、免去那趟运料的船钱。",
+          "requiresLighthouseLevel": 1
+        },
+        {
+          "id": "lighthouse.depot.lv2",
+          "level": 2,
+          "name": "料棚扩建",
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 3 },
+              { "itemId": "item.eel_skin", "qty": 2 }
+            ],
+            "gold": 80
+          },
+          "effects": [{ "kind": "storageCapacity", "value": 6 }],
+          "description": "扩建料棚与吊架。寄存容量再 +6（共 12 单位）。",
+          "requiresLighthouseLevel": 1
+        }
+      ]
     }
   ],
   "ruins": [
@@ -242,6 +280,48 @@
         "name": "竖井前哨",
         "mapX": 0.62,
         "mapY": 0.78,
+        "level": 1,
+        "region": "blue_caves"
+      }
+    },
+    {
+      "id": "outpost.abyssal_deep",
+      "name": "深渊前哨",
+      "bandId": "band.abyssal",
+      "submerged": true,
+      "stages": [
+        {
+          "label": "在深渊边沿找一处立得住的崖肩（章鱼角喙×2 ＋ 110 金）",
+          "cost": { "materials": [{ "itemId": "item.cave_octopus_beak", "qty": 2 }], "gold": 110 },
+          "narrative": "深渊里石壁退尽，几乎没有能立桩的硬岩。你顺着最后一道还算结实的崖肩摸了很久，总算卡住第一批桩子——再往外，就是没有壁、没有底的纯粹的黑了。"
+        },
+        {
+          "label": "运来耐压支架与浮筒（鳗皮×3·黄铜配件×3 ＋ 180 金）",
+          "cost": {
+            "materials": [
+              { "itemId": "item.eel_skin", "qty": 3 },
+              { "itemId": "item.brass_fitting", "qty": 3 }
+            ],
+            "gold": 180
+          },
+          "narrative": "你一趟趟把耐压支架和浮筒沉到那道崖肩上，在深渊的边沿撑起前哨的骨架。半个前哨——能在这个深度落脚、再往超渊那条缝里起跳了。这么深，淤积和锈蚀来得快，得常回来照看。"
+        },
+        {
+          "label": "通电点亮（冷光腺×2·章鱼角喙×3 ＋ 290 金）",
+          "cost": {
+            "materials": [
+              { "itemId": "item.lantern_gland", "qty": 2 },
+              { "itemId": "item.cave_octopus_beak", "qty": 3 }
+            ],
+            "gold": 290
+          }
+        }
+      ],
+      "result": {
+        "id": "lighthouse.abyssal_deep_outpost",
+        "name": "深渊前哨",
+        "mapX": 0.68,
+        "mapY": 0.84,
         "level": 1,
         "region": "blue_caves"
       }
