@@ -1,0 +1,15 @@
+{
+  "_comment": "竖井·喉 · 往下的口，信声呐朝那道口钻（无 check）。头盔撞上石壁（正撞在声呐说有口处）、退开口又往前挪、总在够不到看不真处等你钻——loot-free、lore.trench.the_opening + sanity -6 + oxygenTurnCost 3。叙述永不交底（#43 实跑抄）。",
+  "eventId": "trench.the_opening",
+  "depth": 95,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["swim_for_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.trench.the_opening"],
+    "statsDelta": { "oxygen": -3, "sanity": -6 }
+  }
+}

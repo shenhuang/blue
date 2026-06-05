@@ -1,0 +1,16 @@
+{
+  "_comment": "竖井·喉 · 往下的口（uncanny·82-108m·[midnight]）——声呐在石壁上让出一道灯里并不存在的下行口（the_wall 的反面：声呐减一道障，引你钻进石头）。信灯沿石壁自己找真路（理智 vs 50）。满 sanity→rate 0.95、seed 1 成功：绕开声呐画的口、从真有的低矮缝下去 + lore.trench.the_opening + sanity -4 + oxygenTurnCost 2，loot-free。永不交底、不触发 d_reveal。#43 实跑抄。",
+  "eventId": "trench.the_opening",
+  "depth": 95,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["trust_the_lamp"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.trench.the_opening"],
+    "statsDelta": { "oxygen": -2, "sanity": -4 }
+  }
+}

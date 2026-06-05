@@ -1,5 +1,5 @@
 {
-  "_doc": "竖井（trench）专属事件池 —— 深水区内容期，母题『回波对不上』（声呐返回 ≠ 点灯凑近的真相）。绑 band 专属 tag：twilight=竖井·口(60-82m)、midnight=竖井·喉(82-108m)，经 DepthBand.tags 覆盖 zoneTagsByDepth、与借来的蓝洞内容隔离（见 engine/bands.ts / depth_bands.json）。这是 45-60m 深段欺骗封顶（cave.false_beacon / wreck_graveyard.the_wearer，STATUS #57）之下、整套伏笔最深的一层——把 Phase 0 不可信声呐（#58）+ 节点级 clarity 陡降变黑（#62）的机制做成事件付现：你看不清，只能 ping，ping 在骗你，你还是得往下。守则：全 loot-free / cosmic·uncanny / 无敌人（mimic·corpse-wearer 是 Phase 3 apex 例外）/ 不触发 d_reveal / 叙述永不交底（#54：理性解释与错读始终叠着、游戏拒绝裁决）。每个事件都留一条『关声呐/摸黑』的出口＝最低 signature 的诚实但盲的选择（呼应感知双刃 §3.2-3.3），无脚本死、可生还有代价。新 lore.trench.*。六个事件系统地覆盖一次 ping 能骗你的全部方式：假底(the_return)/假人(second_diver)/距离不对(the_sounding)/假墙(the_wall)/被应答(the_answer)/没有回波(no_echo)。",
+  "_doc": "竖井（trench）专属事件池 —— 深水区内容期，母题『回波对不上』（声呐返回 ≠ 点灯凑近的真相）。绑 band 专属 tag：twilight=竖井·口(60-82m)、midnight=竖井·喉(82-108m)，经 DepthBand.tags 覆盖 zoneTagsByDepth、与借来的蓝洞内容隔离（见 engine/bands.ts / depth_bands.json）。这是 45-60m 深段欺骗封顶（cave.false_beacon / wreck_graveyard.the_wearer，STATUS #57）之下、整套伏笔最深的一层——把 Phase 0 不可信声呐（#58）+ 节点级 clarity 陡降变黑（#62）的机制做成事件付现：你看不清，只能 ping，ping 在骗你，你还是得往下。守则：全 loot-free / cosmic·uncanny / 无敌人（mimic·corpse-wearer 是 Phase 3 apex 例外）/ 不触发 d_reveal / 叙述永不交底（#54：理性解释与错读始终叠着、游戏拒绝裁决）。每个事件都留一条『关声呐/摸黑』的出口＝最低 signature 的诚实但盲的选择（呼应感知双刃 §3.2-3.3），无脚本死、可生还有代价。新 lore.trench.*。十个事件系统地覆盖一次 ping 能骗你的全部方式：假底(the_return)/假人(second_diver)/距离不对(the_sounding)/假墙(the_wall)/被应答(the_answer)/没有回波(no_echo)/会走的活底(the_moving_floor·灯笼鱼层＝海军当年的『幻影海底』DSL，声呐把活物读成海底)/迟来变老的回波(the_old_ping·声音绕远路过很久才回，SOFAR 声道)/攒出来的错图(the_remembered·一路 ping 拼出的图是另一条竖井，勾连 S0 声呐扫描余像)/画在石头上的口(the_opening·the_wall 的反面，声呐让出一道灯里并不存在的下行口)。2026-06-05 周末内容 pass 续：+4，twilight/midnight 各 +2，tone 均衡（twilight c2/u3、midnight c3/u2）。",
   "events": [
     {
       "id": "trench.the_return",
@@ -302,6 +302,212 @@
           "outcome": {
             "text": "你不下去。有些地方连声音都回不来，你没打算做第一个试出来回不回得来的人。\n你认了路，往上。",
             "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "trench.the_moving_floor",
+      "depthRange": [60, 82],
+      "zoneTags": ["twilight"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "会走的底",
+      "body": "声呐扫回一片底，平整，连绵，横在竖井下头——总算到底了。\n你点灯压低照过去。那不是底。\n是鱼。无数指头长的小鱼，银的，挤成厚厚一层，密得连成一片，把灯光和声呐都挡了回来。\n你看着它，那一整层慢慢往上移，朝你来。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "drop_onto_it",
+          "label": "信声呐当它是底，落到那层上去歇口气",
+          "outcome": {
+            "text": "你放松手脚，往那片『底』落下去。\n你没有落在任何东西上——那层鱼在你够到它的前一刻散开，让出一个正好你大小的洞，又在你头顶合拢。\n你悬在它们当中，上下都是缓缓游动的银鱼，没有底，从来没有过底。",
+            "oxygenTurnCost": 3,
+            "deltas": { "sanity": -6 },
+            "loreEntry": "lore.trench.the_moving_floor"
+          }
+        },
+        {
+          "id": "name_it",
+          "label": "举灯照着，逼自己看清那到底是什么（理智 vs 55）",
+          "check": {
+            "stat": "sanity",
+            "dc": 55,
+            "onSuccess": {
+              "text": "你逼自己一条一条地看：是灯笼鱼，成层地浮在这个深度，白天聚、夜里散，密到能把声呐骗成一整片海底——船上的老书里有这一页。\n道理都对。你认下灯里这层活物，从它们让开的缝里继续往下，没再回头看那片『底』升到了哪儿。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.trench.the_moving_floor"
+            },
+            "onFailure": {
+              "text": "你越看那层鱼，越觉得它们不像在游——像被什么托着，整整齐齐往上送。\n你想数清它们，数着数着，发现它们全停了，全朝着你。\n等你回过神，那片『底』已经漫过了你的脚，正不紧不慢地往上，把你往更深处让。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -13 }
+            }
+          }
+        },
+        {
+          "id": "feel_past_it",
+          "label": "关掉声呐，贴着石壁从那层鱼边上摸下去",
+          "outcome": {
+            "text": "你灭了声呐，不去管它是底还是不是底。\n你贴着竖井的石壁往下，银鱼擦过你的手背、你的面镜，凉的，软的，活的，一路让着你。\n没有底。你早知道没有底——至少这一次，是你自己的手知道的。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "trench.the_old_ping",
+      "depthRange": [60, 82],
+      "zoneTags": ["twilight"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "迟来的回",
+      "body": "你打了一记声呐，等回波。没有。\n你当这儿和别处一样吞声音，便收了声呐往下走。\n走了好一阵，回波才回来——你那一记，终于回来了。\n可它老了。脆响出去，回来的却闷、却糊、却拖着长尾，像在外头走了很久很久，才找着回家的路。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "ping_for_more",
+          "label": "再打几记，看它要多久回、回成什么样",
+          "outcome": {
+            "text": "你又打几记，记着时辰等。\n一记比一记回得慢，回得老，尾巴拖得更长，糊得快听不出原是你的声音。\n到后来你分不清哪一声是刚打的，哪一声是很久以前那一记，绕了一大圈，这会儿才到。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -6 },
+            "loreEntry": "lore.trench.the_long_water"
+          }
+        },
+        {
+          "id": "reason_it_out",
+          "label": "逼自己把这桩怪事想通（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你逼自己想：低沉的声音在某一层水里能跑出很远很远，绕着那层来回折，过很久才漏回来一点——不是这一记没回，是它走了远路。书上管那叫声道。\n道理对。你把声呐收了，不再等回来的旧声音，自己往下。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -4 }
+            },
+            "onFailure": {
+              "text": "你想算清它走了多远才回来，可越算越不对——按这个迟法，它得绕到海的另一头再绕回来。\n你停了手。黑水里还在陆陆续续回着旧波，一记，又一记，都是你早先打的，排着队，迟迟地回家。\n你没再打。你怕这队里掺进一记，不是你打的。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -10 },
+              "loreEntry": "lore.trench.the_long_water"
+            }
+          }
+        },
+        {
+          "id": "stop_pinging",
+          "label": "不再打了，收了声呐往下",
+          "outcome": {
+            "text": "你收了声呐。不打，就没有回来的，也不必等。\n那些迟来的旧波，你留在身后——谁的也好，你的也好，与往下走的你无关了。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "trench.the_remembered",
+      "depthRange": [82, 108],
+      "zoneTags": ["midnight"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "记得的水路",
+      "body": "你一路打着声呐下来，心里攒出了一张图：这条竖井哪儿宽、哪儿岔、哪儿能上。\n这会儿你停下来对一对，举灯照向图里记着该有岔口的地方。\n灯里是一面整石壁，没有岔口。\n你低头看声呐攒出的那张图。图上，你此刻正浮在一处三道分岔的宽厅当中。可你一伸手，两边都是贴脸的窄壁。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "trust_the_map",
+          "label": "信你攒下的那张图，照图往岔口走",
+          "outcome": {
+            "text": "你信那张图，朝图上记着的岔口游过去。\n你结结实实撞上一面石壁——图上说那儿是空的。\n你扶着壁再打一记声呐校对。图变了：岔口挪到了别处，宽厅还在，只是换了个地方等你。它一直比你脚下的石头大一圈，宽一圈，多一条路。",
+            "oxygenTurnCost": 3,
+            "deltas": { "sanity": -6 },
+            "loreEntry": "lore.trench.the_remembered"
+          }
+        },
+        {
+          "id": "void_the_map",
+          "label": "把那张图作废，只认灯照得到、手摸得着的（理智 vs 55）",
+          "check": {
+            "stat": "sanity",
+            "dc": 55,
+            "onSuccess": {
+              "text": "你把心里那张图划掉。声呐攒出来的东西，在这种水里本就靠不住——回波这一记长那一记短，拼出来的图自然是张错图，越攒越错。你查过这个理。\n道理都对。你只认灯尖那一小圈、手底下那一段石头，慢，但走的是真有的路。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.trench.the_remembered"
+            },
+            "onFailure": {
+              "text": "你想把那张图扔了，可它在你脑子里比眼前的石壁还清楚——你明明记得这儿是个宽厅，记得三条岔，记得哪条通上去。\n你顺着记忆里那条上行的岔游过去，游了很久，深度表一直在掉。\n你记得的那张图，每一处都对，只有一件事不对：它画的不是你正在的这条竖井。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -13 }
+            }
+          }
+        },
+        {
+          "id": "forget_and_feel",
+          "label": "灭了声呐，把图忘干净，重新一寸寸摸",
+          "outcome": {
+            "text": "你关了声呐，逼自己把那张攒了一路的图忘掉。\n没有图，就没有一处对不上的地方。只剩此刻手底下这一段石壁，和它通向的下一段。\n慢得像重新学着潜水。但每一段都是你刚摸过的，还没来得及记错。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "trench.the_opening",
+      "depthRange": [82, 108],
+      "zoneTags": ["midnight"],
+      "weight": 5,
+      "cooldown": 4,
+      "title": "往下的口",
+      "body": "声呐在正前方扫出一个口——竖井的壁上开着一道豁，正好够你钻过去，接着往下。\n一路的壁都是死的，就这儿松了一道缝。你点灯凑近去看那道口。\n灯里是整面石壁。没有口，没有缝，石头一直长到灯照不到的两边。\n你退开半米再打声呐。口还在，还在正前方，还正好够你过去。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "swim_for_it",
+          "label": "信声呐，朝那道口钻过去",
+          "outcome": {
+            "text": "你朝声呐里的口钻过去。\n头盔闷一声撞上石壁，正撞在声呐说有口的地方。你伸手摸，整面是石头，一道缝都没有。\n你退开。声呐里那道口又往前挪了挪，还开着，还在等你钻——总在你够不到、看不真的那一点远。",
+            "oxygenTurnCost": 3,
+            "deltas": { "sanity": -6 },
+            "loreEntry": "lore.trench.the_opening"
+          }
+        },
+        {
+          "id": "trust_the_lamp",
+          "label": "信灯不信声呐，沿石壁自己找真有的路（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你不去够那道口，沿着灯照得到的石壁，一段一段摸真有的走向。\n回波在这种窄水里会乱叠，叠出一道根本不存在的开口，专挑你最想找到路的时候——你提醒自己。\n你绕开声呐画的那道口，从石壁真有的一处低矮缝隙钻了下去。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -4 },
+              "loreEntry": "lore.trench.the_opening"
+            },
+            "onFailure": {
+              "text": "那道口在声呐里清清楚楚，明明就是路，你怎么会舍近求远。\n你一次次朝它钻，一次次撞在石头上，退开，它又开在前头。你记不清撞了几回，深度表却没动——你一直在原地，对着一堵墙上不存在的门。\n等你停下，气表比你以为的低了一大截。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -10 }
+            }
+          }
+        },
+        {
+          "id": "feel_for_gap",
+          "label": "关掉声呐，伸手在石壁上摸真有的缝",
+          "outcome": {
+            "text": "你灭了声呐，省得它再给你画门。\n你把手贴在石壁上，一寸寸往下摸过去，找一道真能过人的缝。\n手底下的石头不会开口骗你。它要么是实的，要么有缝——慢，但摸到的都作得了数。",
+            "oxygenTurnCost": 2,
             "deltas": { "sanity": -3 }
           }
         }
