@@ -1,0 +1,16 @@
+{
+  "_comment": "渊外·无底 · 递到手里的 失败分支（cosmic 理智 vs 60）。sanity=22→rate 0.05 clamp、seed 1 确定失败：说不出哪里不对就先搭了那道檐、被暖水引着又下去一截（无 lore）——sanity -14 + oxygenTurnCost 5。cosmic 错读重罚、永不交底。",
+  "eventId": "subhadal.the_offer",
+  "stats": { "sanity": 22 },
+  "depth": 200,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["read_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": { "oxygen": -5, "sanity": -14 }
+  }
+}

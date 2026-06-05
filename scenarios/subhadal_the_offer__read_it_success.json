@@ -1,0 +1,16 @@
+{
+  "_comment": "渊外·无底 · 递到手里的 成功分支（cosmic 理智 vs 60）。满 san→rate 0.95、seed 1 成功：识破是自己累极了在替这片黑找好处、没接它递来的——sanity -6 + oxygenTurnCost 2 + lore.subhadal.the_offer。读 tell 较轻、cosmic 仍不免单。#43 实跑抄。",
+  "eventId": "subhadal.the_offer",
+  "depth": 200,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["read_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.subhadal.the_offer"],
+    "statsDelta": { "oxygen": -2, "sanity": -6 }
+  }
+}

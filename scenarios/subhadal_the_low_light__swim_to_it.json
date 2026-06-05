@@ -1,0 +1,15 @@
+{
+  "_comment": "渊外·无底 · 底下的光，朝那盏像家的暖光游下去（uncanny·无 check·mimic『假信标』最深一层伏笔，承 deeper_light/false_beacon，不交底）。出路怎会在下面——可你已朝它去、没问谁在那点着灯。loot-free、lore.subhadal.the_low_light + sanity -9 + oxygenTurnCost 5。不触发 d_reveal（#43 实跑抄）。",
+  "eventId": "subhadal.the_low_light",
+  "depth": 200,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["swim_to_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.subhadal.the_low_light"],
+    "statsDelta": { "oxygen": -5, "sanity": -9 }
+  }
+}
