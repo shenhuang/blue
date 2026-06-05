@@ -54,6 +54,7 @@
 - **地图是记忆、会过时（作者 2026-06-05）**：余像是你**上一记 ping** 的记忆、不是实时真相——**会改变房间的事件**（塌方/开口/水位）只在**下一记 ping** 才反映；**敌人位置只在被扫到的瞬间更新**（两记 ping 之间它在动、你看到的是旧 blip）。所以你常按着**过时的图**行动，要刷新就得再 ping（再耗电、再暴露）——staleness 本身就是张力（原型已演示冻结的接触 blip）。
 - **代价（双刃，深水区 §3.2-3.3）**：每 ping 耗 `sonarPingCost` 电 + 抬 `alert`（点亮水里＝招捕食者）。所以「要不要 ping」是真两难：ping 才看得见洞与威胁，但费电、暴露、还可能骗你。摸黑＝瞎着摸，但最省最隐。
 - **不可信（核心）**：高 san＝大致为真；san 越低 → 假通道 / 假房间 / 假读数（`sonarReturn` 注入）；`spoofsSonar` 节点画成它伪装的样子（mimic ＝空水/信标/地形）；`evadesSonar`＝无回波（捕食者躲过你的 ping）。**深 band 更狠**（band 倍率思路同 #64）。
+- **形状要像真·水下洞（渲染层，2026-06-05 据真实洞穴形态校准）**：别画成「圆房间 + 直棍」。被淹的（phreatic）洞穴是**圆/椭圆截面的管道**（截面对了——用 capsule SDF），但平面形态是**蜿蜒、忽宽忽窄、回环互通（anastomotic）/ 沿裂隙的折线网（network maze）**，房间＝裂隙交汇处的**不规则扩大**（fracture-controlled rooms），不是圆。实现＝把每条 `connectsTo` 边渲染成**带中途偏移的弯折折线 + 沿途变宽变窄的 capsule SDF**，房间＝交汇处几个不同半径 blob 的簇；外加值噪声扰墙 + 半分辨率 SDF 提速。**纯渲染/生成层、节点图模型不变**（节点＝交汇/房、边＝passage，只是画得像真洞）。参考：Palmer 洞穴形态分类（branchwork / network / anastomotic / spongework）、Sistema Sac Actun（最长水下洞·linear phreatic conduits·anastomotic·fracture-controlled rooms·椭圆 passage）。
 
 ---
 
