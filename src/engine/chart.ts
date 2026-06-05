@@ -5,7 +5,7 @@
 //   2. 两级门控：requiresFlags = 发现（不满足不出现）；requiresUpgrade = 抵达能力
 //      （不满足则海图上灰显可见但不能出海）。
 
-import type { ChartPoi, PoiModifier, PlayerProfile, SeaChart } from '@/types';
+import type { ChartPoi, PoiModifier, PlayerProfile, SeaChart, ChartConditions } from '@/types';
 import chartData from '@/data/chart_pois.json';
 import { getUpgradeDef } from './upgrades';
 import {
@@ -53,6 +53,33 @@ const FILE = chartData as unknown as ChartPoiFile;
 
 /** 每次出海海图上展示的 roaming 机会点数量 */
 const ROAMING_COUNT = 2;
+
+/**
+ * 确定性海况种子（声呐与房间 §6.5）：FNV-1a on `salt:runsCompleted`，不碰 roaming 的 LCG（互不串）。
+ * 同 runsCompleted → 同海况（可回归）；跨 runsCompleted → 换一批（潮位/天气变）。
+ */
+function condHash(runsCompleted: number, salt: string): number {
+  let h = 2166136261 >>> 0;
+  const s = `${salt}:${runsCompleted}`;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/**
+ * 当前海况（潮汐 + 天气），派生自 runsCompleted（§6.5「POI 不总全揭、随回合变」）。
+ * 纯函数、不入存档；UI 据此显示「活的海图」，浓雾时遮蔽一处机会点（见 generateChart）。
+ * 分布：晴 ~55% / 薄雾 ~27% / 浓雾 ~18%（雾少见＝遮蔽是偶发的张力，不是常态）。
+ */
+export function chartConditions(profile: PlayerProfile): ChartConditions {
+  const run = profile.runsCompleted;
+  const tide: ChartConditions['tide'] = condHash(run, 'tide') % 2 === 0 ? 'ebb' : 'flood';
+  const w = condHash(run, 'weather') % 100;
+  const weather: ChartConditions['weather'] = w < 55 ? 'clear' : w < 82 ? 'mist' : 'fog';
+  return { tide, weather };
+}
 
 /** requiresFlags 是否全满足 */
 function flagsSatisfied(profile: PlayerProfile, requiresFlags?: string[]): boolean {
@@ -203,10 +230,11 @@ export function generateChart(opts: {
   const { profile } = opts;
   // +1 避免 runsCompleted=0 时种子为 0
   const rng = opts.rng ?? makeLcg(profile.runsCompleted + 1);
+  const conditions = chartConditions(profile);
 
   const pois: ChartPoi[] = [];
 
-  // anchor：所有"已发现"的都进
+  // anchor：所有"已发现"的都进（锚点是你的可靠网——海况/天气永不遮蔽它们，守进度安全）
   for (const a of FILE.anchors) {
     if (isPoiVisible(profile, a)) pois.push(a);
   }
@@ -217,28 +245,34 @@ export function generateChart(opts: {
     (t) => flagsSatisfied(profile, t.requiresFlags) && isLit(profile, t.mapX, t.mapY),
   );
   const picked = pickWithoutReplacement(visibleTemplates, ROAMING_COUNT, rng);
-  picked.forEach((t, i) => {
-    pois.push({
-      id: `poi.roam.${profile.runsCompleted}.${i}`,
-      zoneId: t.zoneId,
-      name: t.name,
-      blurb: t.blurb,
-      distance: t.distance,
-      mapX: t.mapX,
-      mapY: t.mapY,
-      modifier: t.modifier,
-      persistent: false,
-      requiresUpgrade: t.requiresUpgrade,
-      requiresLighthouseUpgrade: t.requiresLighthouseUpgrade,
-      requiresFlags: t.requiresFlags,
-    });
-  });
+  let roaming: ChartPoi[] = picked.map((t, i) => ({
+    id: `poi.roam.${profile.runsCompleted}.${i}`,
+    zoneId: t.zoneId,
+    name: t.name,
+    blurb: t.blurb,
+    distance: t.distance,
+    mapX: t.mapX,
+    mapY: t.mapY,
+    modifier: t.modifier,
+    persistent: false,
+    requiresUpgrade: t.requiresUpgrade,
+    requiresLighthouseUpgrade: t.requiresLighthouseUpgrade,
+    requiresFlags: t.requiresFlags,
+  }));
+
+  // §6.5 天气/潮汐遮蔽：浓雾时一处 roaming 机会点被一时盖住、这一拍不显（确定性挑·随 runsCompleted 变＝
+  // 下次回港潮退又回来）。只遮 roaming（机会点），锚点/mimic 永不遮（海面相对可信、不挡进度，§6.5/§10）。
+  if (conditions.weather === 'fog' && roaming.length > 0) {
+    const hideIdx = condHash(profile.runsCompleted, 'occlude') % roaming.length;
+    roaming = roaming.filter((_, i) => i !== hideIdx);
+  }
+  pois.push(...roaming);
 
   // 深水区 Phase 3：mimic「无灯之光」假 POI（§3.5）。软门控——你在深处立了脚后才被引诱。
   // 注入在最后＝海图远海一角多出一盏不属于你网的光（isPoiLit 恒真·isPoiExplainedByLighthouse 恒假 → UI tell）。
   if (shouldLureMimic(profile)) pois.push(makeMimicPoi());
 
-  return { generatedForRun: profile.runsCompleted, pois };
+  return { generatedForRun: profile.runsCompleted, pois, conditions };
 }
 
 /** 从一张海图里按 id 取 POI */

@@ -81,7 +81,7 @@ s = {
     // 深水区 Phase 0 升级轨：给非默认 bonuses，让 powerMax/sensorTuning 带可辨识值，验证它们也 round-trip。
     ...createNewRun({
       zoneId: 'zone.blue_caves',
-      bonuses: { powerMaxBonus: 20, sonarPingCostReduction: 2, lampEfficiency: 0.5, sonarRobustness: 20, lampRobustness: 10, signatureReduction: 3, lampRangeBonus: 4, sonarRangeBonus: 8 },
+      bonuses: { powerMaxBonus: 20, sonarPingCostReduction: 2, lampEfficiency: 0.5, sonarRobustness: 20, lampRobustness: 10, signatureReduction: 3, lampRangeBonus: 4, sonarRangeBonus: 8, sonarScanRangeBonus: 1 },
     }),
     currentDepth: 30,
     activeFlags: new Set(['air_used:node.5', 'run.scratch']),

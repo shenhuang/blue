@@ -71,10 +71,24 @@ export interface ChartPoi {
   mimic?: boolean;
 }
 
+/**
+ * 海况（声呐与房间 SPEC §6.5「灯塔＝海图声呐」之「POI 不总全揭、随回合变」）。
+ * 派生自 profile.runsCompleted（同 roaming 的潮位套路·不入存档·零 SAVE_VERSION 影响）；
+ * 宏观偏「天气/潮汐的不全」、相对可信（欺骗留微观声呐 + mimic 假 POI）。
+ */
+export interface ChartConditions {
+  /** 潮汐：涨潮 / 退潮（叙事 + 影响遮蔽）。 */
+  tide: 'flood' | 'ebb';
+  /** 天气：晴 / 薄雾 / 浓雾。浓雾时一处 roaming 机会点被一时盖住、这一拍不显（下次回港潮退又回来）。 */
+  weather: 'clear' | 'mist' | 'fog';
+}
+
 /** 一张生成出来的海图 */
 export interface SeaChart {
   /** 生成时的 runsCompleted（roaming 的种子；UI 可据此显示「潮位已变」） */
   generatedForRun: number;
   /** 当前对玩家"可见"（requiresFlags 已满足）的 POI；能否出海另由 requiresUpgrade 决定 */
   pois: ChartPoi[];
+  /** 本次海况（潮汐/天气）——§6.5「海图是活的、随回合变」。 */
+  conditions: ChartConditions;
 }

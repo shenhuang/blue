@@ -239,6 +239,8 @@ export interface RunStartBonuses {
   // 深水区 Phase 1 续·节点级 clarity 范围/分辨：灯/声呐 reach 加成。
   lampRangeBonus: number;
   sonarRangeBonus: number;
+  // 声呐与房间 §8.1：声呐扫描跳数加成（主升级轴）。
+  sonarScanRangeBonus: number;
 }
 
 /**
@@ -263,6 +265,7 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
     signatureReduction: g.signatureReduction,
     lampRangeBonus: g.lampRangeBonus,
     sonarRangeBonus: g.sonarRangeBonus,
+    sonarScanRangeBonus: g.sonarScanRangeBonus,
   };
 }
 

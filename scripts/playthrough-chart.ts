@@ -10,6 +10,7 @@
 import { createInitialGameState, createNewRun, HOME_LIGHTHOUSE_ID } from '../src/engine/state';
 import {
   generateChart,
+  chartConditions,
   poiLockReason,
   isPoiVisible,
   isPoiLit,
@@ -156,8 +157,14 @@ const rB = generateChart({ profile: profileWith(['flag.tutorial_complete'], [], 
 const roamA = rA.pois.filter((p) => !p.persistent).map((p) => p.name).join('|');
 const roamB = rB.pois.filter((p) => !p.persistent).map((p) => p.name).join('|');
 assert(roamA === roamB, `同 runsCompleted 的 roaming 应一致：${roamA} vs ${roamB}`);
-assert(rA.pois.filter((p) => !p.persistent).length === 2, 'roaming 数应为 2');
-L(`  runsCompleted=3 → roaming: ${roamA}（确定性 ✓）`);
+// 机会点数随海况：晴/雾 2、浓雾遮一处 → 1（§6.5）。从 chartConditions 派生期望值＝seed 无关、robust。
+const cond3 = chartConditions(profileWith(['flag.tutorial_complete'], [], 3));
+const expectRoam3 = cond3.weather === 'fog' ? 1 : 2;
+assert(
+  rA.pois.filter((p) => !p.persistent).length === expectRoam3,
+  `roaming 数应为 ${expectRoam3}（runsCompleted=3 天气=${cond3.weather}）`,
+);
+L(`  runsCompleted=3 → roaming: ${roamA}（确定性 ✓·天气 ${cond3.weather}）`);
 
 const variants = new Set<string>();
 for (let r = 0; r < 8; r++) {
@@ -262,6 +269,42 @@ assert(
   'none / 无 current 应零消耗',
 );
 L('  current：strong −8体力/−2氧、mild −3/−1、none/无 0（每次移动）✓');
+
+// ============================================
+// 7. 海况（§6.5 宏观灯塔扫描）：潮汐/天气派生 + 浓雾遮蔽一处机会点（锚点不受影响）
+// ============================================
+L('\n========== 7. 海况 + 天气遮蔽（§6.5）==========');
+// (a) 确定性：同 runsCompleted → 同海况
+const condA = chartConditions(profileWith([], [], 5));
+const condB = chartConditions(profileWith([], [], 5));
+assert(condA.tide === condB.tide && condA.weather === condB.weather, '7: 同 runsCompleted → 同海况（确定性）');
+// (b) 随回合变：跨多 run 出现多种天气 + 涨/退潮都出现；记下第一个浓雾 run 与第一个非浓雾 run
+const weathers = new Set<string>();
+const tides = new Set<string>();
+let fogRun = -1;
+let calmRun = -1;
+for (let r = 0; r < 40; r++) {
+  const c = chartConditions(profileWith([], [], r));
+  weathers.add(c.weather);
+  tides.add(c.tide);
+  if (c.weather === 'fog' && fogRun < 0) fogRun = r;
+  if (c.weather !== 'fog' && calmRun < 0) calmRun = r;
+}
+assert(weathers.size >= 2 && tides.size === 2, `7: 海况随回合变（天气 ${weathers.size} 种 / 潮汐 ${tides.size} 态）`);
+assert(fogRun >= 0 && calmRun >= 0, '7: 40 run 内浓雾与非浓雾都出现');
+// (c) 浓雾遮一处 roaming（晴/雾 2 → 浓雾 1）；锚点 4 个不受影响；conditions 落返回结构
+const fogChart = generateChart({ profile: profileWith(['flag.tutorial_complete'], [], fogRun) });
+const calmChart = generateChart({ profile: profileWith(['flag.tutorial_complete'], [], calmRun) });
+const fogRoam = fogChart.pois.filter((p) => !p.persistent && !p.mimic).length;
+const calmRoam = calmChart.pois.filter((p) => !p.persistent && !p.mimic).length;
+assert(calmRoam === 2 && fogRoam === 1, `7: 浓雾遮一处机会点（非雾 ${calmRoam} → 浓雾 ${fogRoam}）`);
+assert(
+  fogChart.pois.filter((p) => p.persistent).length === 4 &&
+    calmChart.pois.filter((p) => p.persistent).length === 4,
+  '7: 锚点不受天气遮蔽（4 个都在·守进度安全）',
+);
+assert(fogChart.conditions.weather === 'fog' && calmChart.conditions.weather !== 'fog', '7: SeaChart.conditions 落返回结构');
+L(`  海况确定性 + 随回合变 + 浓雾遮一处（run ${fogRun} 雾→${fogRoam} / run ${calmRun} ${calmChart.conditions.weather}→${calmRoam}）+ 锚点不受影响 ✓`);
 
 console.log(log.join('\n'));
 console.log('\n✓ 海图 playthrough 完成');

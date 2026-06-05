@@ -175,6 +175,7 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
     signatureReduction: 0,
     lampRangeBonus: 0,
     sonarRangeBonus: 0,
+    sonarScanRangeBonus: 0,
     unlockedZones: new Set(),
     unlockedShopItems: new Set(),
   };
@@ -234,6 +235,10 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
           break;
         case 'sonarRangeBonus':
           bonuses.sonarRangeBonus += e.value;
+          break;
+        // 声呐与房间 §8.1：声呐扫描跳数（主升级轴，sum 聚合，上限在 deriveSensorTuning）。
+        case 'sonarScanRangeBonus':
+          bonuses.sonarScanRangeBonus += e.value;
           break;
         case 'unlockZone':
           bonuses.unlockedZones.add(e.zoneId);

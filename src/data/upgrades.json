@@ -134,6 +134,34 @@
           },
           "effects": [{ "kind": "sonarRangeBonus", "value": 8 }],
           "description": "更高增益的发射阵列：脉冲打得更远，深得多的陡坑也能扫回个轮廓——只是越远的回波越不能当真。"
+        },
+        {
+          "id": "upgrade.sonar.lv4",
+          "level": 4,
+          "name": "声呐组件 Lv.4",
+          "cost": {
+            "materials": [
+              { "itemId": "item.eel_skin", "qty": 3 },
+              { "itemId": "item.cave_octopus_beak", "qty": 3 }
+            ],
+            "gold": 240
+          },
+          "effects": [{ "kind": "sonarScanRangeBonus", "value": 1 }],
+          "description": "宽频扫描阵列：一记 ping 铺开的扇面更阔，扫描图一次多照亮一圈洞——黑里能看清的范围大了些。再广的回波也照不全整座洞。"
+        },
+        {
+          "id": "upgrade.sonar.lv5",
+          "level": 5,
+          "name": "声呐组件 Lv.5",
+          "cost": {
+            "materials": [
+              { "itemId": "item.lantern_gland", "qty": 2 },
+              { "itemId": "item.cave_octopus_beak", "qty": 3 }
+            ],
+            "gold": 320
+          },
+          "effects": [{ "kind": "sonarScanRangeBonus", "value": 1 }],
+          "description": "相控阵换能器：扫描扇面再阔一圈，一记脉冲拼出的洞形最广——但整座洞、尤其最深那道陡降，声呐永远扫不穿。那儿只能自己摸黑下去。"
         }
       ]
     },

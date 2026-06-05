@@ -366,6 +366,25 @@ assert(htmlDecHigh.includes('is-spoof') && !htmlDecHigh.includes('199m'), 'E6: s
 L('  spoof 假信标 / evade 无回波 / 低 san 乱码+伪接触 / 高 san 控制组 ✓');
 
 // ============================================
+// E7. SonarScanPanel · 威胁定位（声呐与房间 SPEC §7 S3 廉价版）：
+//   alert 高 + 已扫描 → 琥珀威胁接触 blip（越过接近线 is-near 脉动）；alert 低 → 无接触（alert 驱动·非欺骗）。
+// ============================================
+L('\n========== E7. SonarScanPanel 威胁定位 (S3) ==========');
+const threatBase = sonarState({ scanMemory: { n0: 0, n1: 0 } });
+const threatHi: GameState = { ...threatBase, run: { ...threatBase.run!, alert: 60 } }; // ≥ 接近线(60) → imminent
+const htmlThreatHi = renderToStaticMarkup(
+  <NodeSelectView state={threatHi} choices={[]} onStateChange={noop} />,
+);
+assert(htmlThreatHi.includes('sonar-threat'), 'E7: 高警觉 + 已扫描 → 画威胁接触 blip');
+assert(htmlThreatHi.includes('is-near'), 'E7: 越过接近线 → 威胁 blip imminent（is-near 脉动）');
+const threatLo: GameState = { ...threatBase, run: { ...threatBase.run!, alert: 0 } };
+const htmlThreatLo = renderToStaticMarkup(
+  <NodeSelectView state={threatLo} choices={[]} onStateChange={noop} />,
+);
+assert(!htmlThreatLo.includes('sonar-threat'), 'E7: 低警觉 → 无威胁接触 blip（alert 驱动·非欺骗）');
+L('  高警觉→威胁接触(imminent) / 低警觉→无 ✓');
+
+// ============================================
 // F. SeaChartView · 打捞行会 Lv.2 出海前选目标尸体
 // ============================================
 L('\n========== F. SeaChartView 选目标（Lv.2） ==========');
@@ -489,6 +508,9 @@ assert(htmlJ1.includes('更隐蔽') && (htmlJ1.includes('抗欺骗') || htmlJ1.i
 // J5. 深水区 Phase 1 续·节点级 clarity 范围/分辨升级（dive_kit lv4 灯 reach + sonar lv3 声呐 reach，新 effect 标签，quirk #38/#62）
 assert(htmlJ1.includes('远摄灯组') && htmlJ1.includes('灯探得更深'), 'J5: 渲染 dive_kit lv4「远摄灯组」+ lampRangeBonus 效果标签');
 assert(htmlJ1.includes('声呐组件 Lv.3') && htmlJ1.includes('声呐探得更深'), 'J5: 渲染 sonar lv3 + sonarRangeBonus 效果标签');
+// J6. 声呐与房间 §8.1：声呐扫描范围主升级轴（sonar lv4/lv5，新 sonarScanRangeBonus 效果标签）
+assert(htmlJ1.includes('声呐组件 Lv.4') && htmlJ1.includes('声呐组件 Lv.5'), 'J6: 渲染 sonar lv4/lv5（扫描范围轴）');
+assert(htmlJ1.includes('声呐扫得更广'), 'J6: 渲染 sonarScanRangeBonus 效果标签（一记 ping 多照一圈洞）');
 // J2. 空仓 + 满金 → "材料不足" + 缺口"（有 0）"
 const J2 = upgradeState([], 9999);
 const htmlJ2 = renderToStaticMarkup(<UpgradePanel state={J2} onStateChange={noop} onClose={noop} />);
@@ -537,7 +559,11 @@ assert(htmlL.includes('chart-lighthouse'), 'L: 应渲染灯塔节点');
 assert(htmlL.includes('灯塔：旧灯塔'), 'L: 灯塔节点 aria-label 应含家灯塔名');
 assert(htmlL.includes('chart-light-radius'), 'L: 应渲染点亮范围圈');
 assert(htmlL.includes('灯塔设施'), 'L: 应有"灯塔设施"建造入口');
-L('  灯塔节点 + 点亮范围 + 建造入口 ✓');
+// §6.5 宏观灯塔扫描：测绘扫描揭示动画 + POI 逐个浮现 + 活的海况（潮汐/天气）
+assert(htmlL.includes('chart-survey-sweep'), 'L: 灯塔应播测绘扫描揭示动画（§6.5 sweep）');
+assert(htmlL.includes('chart-poi-arrive'), 'L: POI 随扫描逐个浮现（§6.5 arrive）');
+assert(htmlL.includes('chart-conditions') && /涨潮|退潮/.test(htmlL), 'L: 应渲染海况（潮汐·活的海图）');
+L('  灯塔节点 + 点亮范围 + 建造入口 + 测绘扫描/POI 浮现/海况 ✓');
 
 // ============================================
 // M. LighthouseBuildPanel · 家灯塔船坞/信标轨 + 可建造

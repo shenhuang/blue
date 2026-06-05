@@ -12,6 +12,9 @@
 // 低 san 腐蚀走确定性哈希（不消耗 Math.random）——既不扰动 withSeededRandom 的场景回归，又让 playthrough-sensors 可稳定断言。
 
 import type { RunState, DiveNode, ClarityTier, SensorTuning, NodeKind } from '@/types';
+// 声呐扫描跳数的基线/上限住 sonar.ts（声呐扫描的家）；deriveSensorTuning 在此夹紧它。
+// 无环：sonar.ts 只 import 类型，不 import clarity。
+import { SONAR_SCAN_RANGE, SONAR_SCAN_RANGE_MAX } from './sonar';
 
 // ============================================================
 // 可调参数（tunables，SPEC §8）
@@ -85,7 +88,8 @@ export interface SensorUpgradeBonus {
   lampRobustness?: number; // 从灯幻觉阈值里减去的量（sum）
   signatureReduction?: number; // signature 减免（sum）
   lampRangeBonus?: number; // 灯 reach 加成（节点级 clarity·范围/分辨，sum，有上限）
-  sonarRangeBonus?: number; // 声呐 reach 加成（sum，有上限）
+  sonarRangeBonus?: number; // 声呐 reach 加成（节点级 clarity·深度差·sum，有上限）
+  sonarScanRangeBonus?: number; // 声呐扫描跳数加成（声呐与房间 §8.1 主升级轴·sum，有上限 SONAR_SCAN_RANGE_MAX）
 }
 
 /**
@@ -107,6 +111,8 @@ export function deriveSensorTuning(b: SensorUpgradeBonus = {}): SensorTuning {
     signatureReduction: Math.min(SIGNATURE_REDUCTION_MAX, Math.max(0, b.signatureReduction ?? 0)),
     lampDepthReach: Math.min(LAMP_DEPTH_REACH_MAX, LAMP_DEPTH_REACH + (b.lampRangeBonus ?? 0)),
     sonarDepthReach: Math.min(SONAR_DEPTH_REACH_MAX, SONAR_DEPTH_REACH + (b.sonarRangeBonus ?? 0)),
+    // 声呐扫描跳数（声呐与房间 §8.1）：基线 + 加成，夹到上限＝再升也扫不穿整洞、扫不到最深（守北极星）。
+    sonarScanRange: Math.min(SONAR_SCAN_RANGE_MAX, SONAR_SCAN_RANGE + (b.sonarScanRangeBonus ?? 0)),
   };
 }
 
@@ -272,6 +278,49 @@ export function predatorApproaches(run: RunState): boolean {
  */
 export function sonarPingAlertDelta(run: RunState): number {
   return SONAR_PING_ALERT * alertDepthFactor(run) * (run.bandAlertFactor ?? 1);
+}
+
+// ============================================================
+// 威胁定位（声呐与房间 SPEC §7 S3 · 廉价版）
+// ============================================================
+// 把 Phase 0b 一直抽象的 run.alert 做成声呐图上一处**近似接触**：警觉高＝水里有东西循着你逼近，
+// 声呐能听出个大概方位 + 远近，但读不准——廉价版**不定位到具体节点**（那是 stalker 版，§8.7 留作者拍板）。
+// 单一来源（SonarScanPanel 纯渲染、不加判定分支，§10）。与低 san 伪接触（sonarPhantoms）**分两轴**：
+// 威胁由 alert 驱动＝真危险（高 san 也在）；伪接触由 san 驱动＝你的脑子（san 回满即消）。
+
+/** 声呐图上开始听得到威胁接触的警觉线（沿用 ALERT_WARN＝既有「熄灯反应窗口」预警线）。 */
+export const THREAT_CONTACT_ALERT = ALERT_WARN;
+
+export interface ThreatContact {
+  /** 近似方位角（弧度）——按 turn 漂移，你定不住它（廉价版不锚到节点·确定性）。 */
+  angle: number;
+  /** 逼近度 0..1（0＝预警线刚到/最远，1＝最高警觉/最近）；blip 画得离你越近＝越逼近。 */
+  proximity: number;
+  /** 粗距标签：远 / 中 / 近（读不出精确距离·廉价版只给档）。 */
+  range: 'far' | 'mid' | 'near';
+  /** 已越过接近线（ALERT_THRESHOLD）——它到你跟前了、下一步移动会被接近遭遇（predatorApproaches）。 */
+  imminent: boolean;
+  /** 读数损坏（低 san：连这处接触的距离都读不出·与 nodeSonarView.garbled 同一脑子在崩）。 */
+  garbled: boolean;
+}
+
+/**
+ * 声呐图上的近似威胁接触（S3 廉价版）：由 run.alert 派生。alert < 预警线 → null（水里还算静、无接触）。
+ * 越过预警线 → 一处听得见、定不住的接触：方位按 turn 漂移、距离只给粗档、低 san 连距离都读不出。
+ * 确定性哈希（不耗 RNG·SSR 安全）。stalker（图上占位、逐回合逼近、可 evadesSonar 躲扫描）是更大改动、§8.7 留作者拍板。
+ */
+export function threatContact(run: RunState): ThreatContact | null {
+  const alert = run.alert ?? 0;
+  if (alert < THREAT_CONTACT_ALERT) return null;
+  const span = Math.max(1, ALERT_MAX - THREAT_CONTACT_ALERT);
+  const proximity = Math.min(1, (alert - THREAT_CONTACT_ALERT) / span);
+  const imminent = alert >= ALERT_THRESHOLD;
+  const range: ThreatContact['range'] = imminent ? 'near' : proximity > 0.45 ? 'mid' : 'far';
+  const angle = (hashStr(`threat:${run.turn ?? 0}`) % 360) * (Math.PI / 180);
+  const garbled =
+    (run.stats?.sanity ?? 100) < effectiveFalseEchoSanity(run) &&
+    hashStr(`threatgarble:${run.turn ?? 0}`) % 10 < 4;
+  return { angle, proximity, range, imminent, garbled };
 }
 
 // ============================================================

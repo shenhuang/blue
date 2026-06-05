@@ -24,11 +24,15 @@ import {
   SONAR_PING_COST,
   SONAR_PING_ALERT,
   ALERT_MAX,
+  ALERT_WARN,
+  ALERT_THRESHOLD,
+  THREAT_CONTACT_ALERT,
   sonarPingAlertDelta,
   alertDepthFactor,
   sonarReturn,
   nodeSonarView,
   sonarPhantoms,
+  threatContact,
   effectiveFalseEchoSanity,
   SONAR_FALSE_ECHO_SANITY,
   SONAR_FALSE_ECHO_SANITY_BAND_MAX,
@@ -42,6 +46,7 @@ import {
   sonarScanRange,
   scanFreshness,
   SONAR_SCAN_RANGE,
+  SONAR_SCAN_RANGE_MAX,
   SCAN_FADE_TURNS,
 } from '../src/engine/sonar';
 
@@ -160,12 +165,23 @@ L('========== 1. revealSonarScan 有限程 BFS ==========');
 }
 
 // ============================================================
-// 2. sonarScanRange：S0 基线常量
+// 2. sonarScanRange：范围升级轴（声呐与房间 §8.1）——基线 + 升级逐级扩、有上限（< 最深 + < 全洞）
 // ============================================================
-L('\n========== 2. sonarScanRange 基线 ==========');
+L('\n========== 2. sonarScanRange 范围升级轴（§8.1）==========');
 {
-  assert(sonarScanRange(mk().run!) === SONAR_SCAN_RANGE, '2: 范围 = 基线常量（升级轨留后续）');
-  L(`  基线范围 ${SONAR_SCAN_RANGE} 跳 ✓`);
+  // 缺省（未升级 / 部分 run）→ 基线
+  assert(sonarScanRange(mk().run!) === SONAR_SCAN_RANGE, '2: 缺省 = 基线常量');
+  // 升级 +1（经 deriveSensorTuning 烤进 run.sensorTuning）→ 范围 +1
+  const up1 = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true, sonarScanRangeBonus: 1 } });
+  assert(sonarScanRange(up1) === SONAR_SCAN_RANGE + 1, '2: +1 升级 → 扫描范围 +1');
+  // 升满有上限——守北极星「扫不穿整洞、照不到最深」
+  const upMax = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true, sonarScanRangeBonus: 99 } });
+  assert(sonarScanRange(upMax) === SONAR_SCAN_RANGE_MAX, '2: 升满夹到上限 SONAR_SCAN_RANGE_MAX');
+  // 范围 +1 → 一记 ping 揭示更多节点（makeMap：range2=5 → range3=7 全揭）
+  const baseReveal = revealSonarScan(makeMap(), 'n0', SONAR_SCAN_RANGE);
+  const upReveal = revealSonarScan(makeMap(), 'n0', SONAR_SCAN_RANGE + 1);
+  assert(upReveal.length > baseReveal.length, '2: 范围 +1 → 一记 ping 揭示更多节点');
+  L(`  基线 ${SONAR_SCAN_RANGE} → 升级 ${SONAR_SCAN_RANGE + 1} → 上限 ${SONAR_SCAN_RANGE_MAX}；揭示 ${baseReveal.length}→${upReveal.length} 节点 ✓`);
 }
 
 // ============================================================
@@ -416,5 +432,37 @@ L('\n========== 11. 不可信扫描（S2）==========');
   L('  spoof/evade 表象 + 深 band 失真阈值(封顶/回落) + 低 san 伪接触/乱码 + mapgen 欺骗(门控/豁免/确定性) ✓');
 }
 
+// ============================================================
+// 12. 威胁定位（声呐与房间 S3 廉价版）：run.alert → 近似接触 + 粗距档 + 低 san 读不出
+// ============================================================
+L('\n========== 12. 威胁定位（S3 廉价版）==========');
+{
+  const tr = (o: { alert?: number; sanity?: number; turn?: number; dec?: number }): RunState =>
+    ({ alert: o.alert ?? 0, stats: { sanity: o.sanity ?? 100 }, turn: o.turn ?? 0, sonarDeception: o.dec } as unknown as RunState);
+
+  // (a) 预警线下 → 无接触（水里还算静）
+  assert(threatContact(tr({ alert: THREAT_CONTACT_ALERT - 1 })) === null, '12a: 警觉未到预警线 → 无威胁接触');
+  // (b) 越过预警线 → 有接触；逼近度随 alert 涨（blip 离你越近）
+  const warn = threatContact(tr({ alert: THREAT_CONTACT_ALERT }))!;
+  const hi = threatContact(tr({ alert: ALERT_MAX }))!;
+  assert(warn && hi, '12b: 越过预警线 → 有威胁接触');
+  assert(hi.proximity > warn.proximity, '12b: 警觉越高逼近度越高');
+  // (c) 越过接近线（ALERT_THRESHOLD）→ imminent + range=near；预警线刚到 → 未 imminent
+  const near = threatContact(tr({ alert: ALERT_THRESHOLD }))!;
+  assert(near.imminent && near.range === 'near', '12c: 越过接近线 → imminent + 近');
+  assert(!warn.imminent, '12c: 预警线刚到 → 未 imminent（还有熄灯反应窗口）');
+  // (d) 低 san + 深 band → 距离偶尔读不出（garbled·按 turn 变）；高 san 读得出
+  const hiSan = threatContact(tr({ alert: ALERT_MAX, sanity: 100 }))!;
+  assert(!hiSan.garbled, '12d: 高 san → 威胁距离读得出（不 garbled）');
+  let everGarbled = false;
+  for (let t = 0; t < 12; t++) if (threatContact(tr({ alert: ALERT_MAX, sanity: 15, dec: 0.32, turn: t }))!.garbled) everGarbled = true;
+  assert(everGarbled, '12d: 低 san → 威胁距离偶尔读不出（garbled）');
+  // (e) 确定性（不耗 RNG·SSR 安全）：同输入同方位/逼近度
+  const a = threatContact(tr({ alert: 70, turn: 3 }))!;
+  const b = threatContact(tr({ alert: 70, turn: 3 }))!;
+  assert(a.angle === b.angle && a.proximity === b.proximity, '12e: 威胁接触确定性（同输入同结果）');
+  L('  预警线门 / 逼近度随 alert / imminent 近 / 低 san 读不出 / 确定性 ✓');
+}
+
 console.log(log.join('\n'));
-console.log('\n✓ 声呐探索扫描回归通过（S0 + S1 多事件房间 + S2 不可信扫描）');
+console.log('\n✓ 声呐探索扫描回归通过（S0 + S1 多事件房间 + S2 不可信扫描 + S3 威胁定位）');

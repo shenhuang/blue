@@ -23,7 +23,9 @@ export type UpgradeEffect =
   | { kind: 'signatureReduction'; value: number } // signature 减免 +value（更隐蔽，有上限）
   // 深水区 Phase 1 续·节点级 clarity 范围/分辨：灯/声呐 reach（够到的深度差）随升级扩，有上限。
   | { kind: 'lampRangeBonus'; value: number } // 灯 reach +value m（节点级 clarity，有上限）
-  | { kind: 'sonarRangeBonus'; value: number } // 声呐 reach +value m（有上限）
+  | { kind: 'sonarRangeBonus'; value: number } // 声呐 reach +value m（节点级 clarity·深度差，有上限）
+  // 声呐与房间 §8.1：声呐探索扫描跳数 +value（一记 ping 照得更广），有上限 SONAR_SCAN_RANGE_MAX。
+  | { kind: 'sonarScanRangeBonus'; value: number }
   | { kind: 'unlockShopItem'; itemId: string };
 
 /** 一条升级要求的某种材料及数量（qty 量级 ∈ [1,10]） */
@@ -91,8 +93,10 @@ export interface UpgradeBonuses {
   signatureReduction: number;
   /** 灯 reach 加成（节点级 clarity·范围/分辨，深水区 Phase 1 续；有上限）。 */
   lampRangeBonus: number;
-  /** 声呐 reach 加成（有上限）。 */
+  /** 声呐 reach 加成（节点级 clarity·深度差；有上限）。 */
   sonarRangeBonus: number;
+  /** 声呐扫描跳数加成（声呐与房间 §8.1 主升级轴；有上限 SONAR_SCAN_RANGE_MAX）。 */
+  sonarScanRangeBonus: number;
   unlockedZones: Set<string>;
   unlockedShopItems: Set<string>;
 }

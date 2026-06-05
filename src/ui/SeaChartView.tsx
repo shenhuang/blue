@@ -54,6 +54,14 @@ function poiPos(poi: ChartPoi): { x: number; y: number } {
   };
 }
 
+/** 海况一行文案（§6.5「活的海图」）：潮汐 + 天气；浓雾时提示「有处机会点这一拍没显出来」。 */
+function conditionLine(c: { tide: 'flood' | 'ebb'; weather: 'clear' | 'mist' | 'fog' }): string {
+  const tide = c.tide === 'flood' ? '涨潮' : '退潮';
+  const weather = c.weather === 'clear' ? '晴' : c.weather === 'mist' ? '薄雾' : '浓雾';
+  const fog = c.weather === 'fog' ? '——浓雾里有处机会点没显出来，潮一退就回来' : '';
+  return `${tide} · ${weather}${fog}`;
+}
+
 export function SeaChartView({ state, onStateChange }: Props) {
   // 海图派生自 profile；出海前 profile 不变，按 runsCompleted 记忆即可（roaming 的种子）
   const chart = useMemo(
@@ -111,6 +119,7 @@ export function SeaChartView({ state, onStateChange }: Props) {
       <header className="port-header">
         <h1>海图</h1>
         <p className="port-sub">摊在长桌上的旧海图，铅笔印一层盖一层。挑一个点。</p>
+        <p className="chart-conditions">{conditionLine(chart.conditions)}</p>
         <div className="port-meta">
           银行 {state.profile.bankedGold} 金币
         </div>
@@ -135,6 +144,19 @@ export function SeaChartView({ state, onStateChange }: Props) {
               const r = effectiveRevealRadius(state.profile, lh);
               return (
                 <div key={`lh-${lh.id}`}>
+                  {/* §6.5 测绘扫描揭示：灯塔点亮/升级时播一记很慢的暖色 sweep（覆盖其点亮范围）。
+                      key 绑灯塔签名 → 新灯塔或新设施时重挂＝重播（点亮的回报演出）；≠ 旋转探照灯（那是灯塔本身）。 */}
+                  <span
+                    key={`sweep-${lh.builtUpgrades.size}`}
+                    className="chart-survey-sweep"
+                    aria-hidden="true"
+                    style={{
+                      left: `${lh.mapX * 100}%`,
+                      top: `${lh.mapY * 100}%`,
+                      width: `${r * 2 * 100}%`,
+                      height: `${r * 2 * 100}%`,
+                    }}
+                  />
                   <span
                     className="chart-light-radius"
                     aria-hidden="true"
@@ -157,7 +179,7 @@ export function SeaChartView({ state, onStateChange }: Props) {
               );
             })}
 
-            {chart.pois.map((poi) => {
+            {chart.pois.map((poi, idx) => {
               const { x, y } = poiPos(poi);
               const lock = poiLockReason(state.profile, poi);
               const isSel = selected?.id === poi.id;
@@ -166,6 +188,7 @@ export function SeaChartView({ state, onStateChange }: Props) {
                 poi.persistent ? 'anchor' : 'roam',
                 lock ? 'locked' : '',
                 isSel ? 'sel' : '',
+                'chart-poi-arrive',
               ]
                 .filter(Boolean)
                 .join(' ');
@@ -174,7 +197,7 @@ export function SeaChartView({ state, onStateChange }: Props) {
                   key={poi.id}
                   type="button"
                   className={cls}
-                  style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
+                  style={{ left: `${x * 100}%`, top: `${y * 100}%`, animationDelay: `${0.12 * idx}s` }}
                   aria-label={lock ? `${poi.name}（${lock}）` : poi.name}
                   onClick={() => setSelectedId(poi.id)}
                 >

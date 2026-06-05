@@ -11,7 +11,7 @@
 import type { RunState } from '@/types';
 import { deriveMapLayout } from './mapLayout';
 import { scanFreshness } from '@/engine/sonar';
-import { nodeSonarView, sonarPhantoms, type NodeSonarView } from '@/engine/clarity';
+import { nodeSonarView, sonarPhantoms, threatContact, type NodeSonarView } from '@/engine/clarity';
 
 /** 主图缩放窗口（布局坐标单位）：只显示当前节点周围一小片＝SPEC「默认放大、几乎看不到全貌」。 */
 const VIEW_W = 240;
@@ -78,6 +78,16 @@ export function SonarScanPanel({ run }: { run: RunState }) {
   const views: Record<string, NodeSonarView> = {};
   for (const id of scannedIds) views[id] = nodeSonarView(run, map.nodes[id]);
   const phantoms = sonarPhantoms(run, memory);
+
+  // 威胁接触（声呐与房间 S3 廉价版）：run.alert 高 → 一处近似接触（琥珀色），随逼近向你收拢。
+  // 廉价版不锚到节点——方位/距离都读不准（clarity.threatContact 单一来源；面板纯渲染）。
+  const threat = threatContact(run);
+  const threatPos = threat
+    ? {
+        x: here.x + Math.cos(threat.angle) * VIEW_H * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
+        y: here.y + Math.sin(threat.angle) * VIEW_H * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
+      }
+    : null;
 
   // evade（无回波）的节点不画——它在记忆里有拓扑、但声呐图上是一处空缺（捕食者躲过你的 ping）。
   const mainNodes = scannedIds.filter((id) => fresh[id] > 0 && !views[id].noEcho);
@@ -187,6 +197,15 @@ export function SonarScanPanel({ run }: { run: RunState }) {
               />
             );
           })}
+          {/* 威胁接触（S3 廉价版）：琥珀 blip + 粗距标（远/中/近·低 san 读不出）。逼近（越过接近线）→ 偏红脉动。 */}
+          {threat && threatPos && (
+            <g className={`sonar-threat ${threat.imminent ? 'is-near' : ''}`}>
+              <circle cx={threatPos.x} cy={threatPos.y} r={6} />
+              <text className="sonar-threat-label" x={threatPos.x} y={threatPos.y - 9}>
+                {threat.garbled ? '?' : threat.range === 'near' ? '近' : threat.range === 'mid' ? '中' : '远'}
+              </text>
+            </g>
+          )}
         </svg>
 
         {/* 残图小地图：外框 = 全洞范围，点 = 已 mapped 的那一小块，亮点 = 你 */}

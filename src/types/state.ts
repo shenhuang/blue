@@ -122,6 +122,12 @@ export interface SensorTuning {
   lampDepthReach: number;
   /** 声呐够到的最大深度差 m（默认 SONAR_DEPTH_REACH，> 灯；升级上调，有上限）。 */
   sonarDepthReach: number;
+  /**
+   * 声呐探索扫描的有效跳数（声呐与房间 SPEC §8.1：范围是声呐主升级轴）。默认 SONAR_SCAN_RANGE，
+   * 升级上调、有上限 SONAR_SCAN_RANGE_MAX（< 最深 + < 全洞——再升也扫不穿整洞、照不到最深处）。
+   * sonar.ts::sonarScanRange(run) 读它；缺省（旧档/部分 run）→ 回退基线常量。
+   */
+  sonarScanRange: number;
 }
 
 /** 玩家在当次下潜中的资源、装备、背包 */

@@ -18,18 +18,28 @@ import type { DiveMap, RunState } from '@/types';
 // ============================================================
 
 /**
- * 一记 ping 揭示的图跳数（无向 BFS 半径）。起步小＝只照身边一小圈（SPEC §5「早期几乎看不出眼前几步之外」）。
- * **范围是声呐最主要的升级轴**（SPEC §8.1/§8.6）——升级轨（接 #62 reach 那套桥）留后续；S0 先给基线常量，
- * 双上限天然成立：BFS 跳数固定 < 大洞全貌；最深的陡降若在跳数之外则照不到（< 最深）。
+ * 一记 ping 揭示的图跳数（无向 BFS 半径）的**基线**。起步小＝只照身边一小圈（SPEC §5「早期几乎看不出眼前几步之外」）。
+ * **范围是声呐最主要的升级轴**（SPEC §8.1/§8.6）：升级把它从基线逐级推到 SONAR_SCAN_RANGE_MAX（接 #60 桥，
+ * 经 sonarScanRangeBonus → deriveSensorTuning → run.sensorTuning.sonarScanRange）。
  */
 export const SONAR_SCAN_RANGE = 2;
+
+/**
+ * 声呐扫描跳数的**上限**（升级升满也到此为止）——守 SPEC §8.1「双上限：< 最深 + < 全洞」：
+ * BFS 跳数封顶 < 大洞直径（迷路图层多支多，4 跳照不全）；最深的陡降若在 4 跳之外则永远扫不到
+ *（< 最深）。即「再升级也扫不穿整洞、也照不到最深处」——最深处仍得自己摸黑下去（守北极星）。
+ */
+export const SONAR_SCAN_RANGE_MAX = 4;
 
 /** 余像完全淡出所需的回合数（age ≥ 此值 → 主图不再画该节点；残图小地图仍留极淡残迹）。 */
 export const SCAN_FADE_TURNS = 6;
 
-/** 本次下潜的有效声呐扫描跳数（S0：基线常量；升级派生留后续，签名先就位便于将来接桥）。 */
-export function sonarScanRange(_run: RunState): number {
-  return SONAR_SCAN_RANGE;
+/**
+ * 本次下潜的有效声呐扫描跳数：读 run.sensorTuning（升级派生·deriveSensorTuning 已夹紧到 [基线, 上限]）；
+ * 缺省（旧档 / 脚本构造的部分 run / 未升级）→ 回退基线常量＝S0 行为逐字节不变。
+ */
+export function sonarScanRange(run: RunState): number {
+  return run.sensorTuning?.sonarScanRange ?? SONAR_SCAN_RANGE;
 }
 
 // ============================================================

@@ -210,6 +210,8 @@ function renderEffect(e: UpgradeEffect): string {
       return `灯探得更深 +${e.value}m（陡降里看清更远）`;
     case 'sonarRangeBonus':
       return `声呐探得更深 +${e.value}m`;
+    case 'sonarScanRangeBonus':
+      return `声呐扫得更广 +${e.value} 跳（一记 ping 多照一圈洞）`;
     case 'unlockShopItem':
       return `解锁商店：${itemLabel(e.itemId)}`;
   }
