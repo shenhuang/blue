@@ -257,6 +257,109 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "abyssal.the_company",
+      "depthRange": [108, 140],
+      "zoneTags": ["abyssal"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "同行",
+      "body": "下沉久了，你开始确信自己不是一个人在下。\n黑里，你视野的边上，总有别的轮廓——和你一样头朝下、慢慢地沉，速度跟你分毫不差，却从不肯进你的光。\n你数了数：左边两个，右边一个，下面还有。你停，他们好像也停；你沉，他们陪着沉。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "go_with_them",
+          "label": "由着他们，一起匀速往下沉",
+          "outcome": {
+            "text": "你不再去够他们，也不再加速去甩开。就这样，一群头朝下的影子，匀速地、安静地，一起往更深里去。\n你成了其中一个，不再去问别人是谁、要往哪——反正这片黑里方向只剩一个，下。有人陪着，连这一点都不再让你害怕了，这才是最该害怕的。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -8 },
+            "loreEntry": "lore.abyssal.the_company"
+          }
+        },
+        {
+          "id": "light_one",
+          "label": "拿灯死死照住最近的一个，逼自己看清（理智 vs 58）",
+          "check": {
+            "stat": "sanity",
+            "dc": 58,
+            "onSuccess": {
+              "text": "你把光钉在最近那个轮廓上不放。光里什么都没有——是悬浮的絮，是视网膜在黑里熬太久造出来的边，是人独自下潜时大脑硬替自己凑出来的『同伴』。\n深海里没人陪你下。你认下这一点，松了口气，也比刚才更孤独了。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.abyssal.the_company"
+            },
+            "onFailure": {
+              "text": "你把光照过去——那一个，在光到的前一刻，恰好偏开了头，像不愿被看清。你换一个照，也偏开。\n他们都在，都跟着你沉，都不肯让你看脸。你不敢再照下去了，怕照到一张你认得的。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -14 }
+            }
+          }
+        },
+        {
+          "id": "douse_and_climb",
+          "label": "灭灯，独自蹬水往上，不再看身边",
+          "outcome": {
+            "text": "你关掉灯。没有光，边上那些轮廓也就没了形——眼前只剩干净的黑。\n你认准浮力，自己往上蹬，不去管刚才那些是不是还跟着沉。瞎，孤单，但至少这一程，是你一个人的。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "abyssal.lower_still",
+      "depthRange": [108, 140],
+      "zoneTags": ["abyssal"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "更低",
+      "body": "你终于摸到一道边。\n一道石唇，一道沿——深渊像是在这里到了底。你扶着它喘气。\n然后你往那道沿外看：水没有停。沿之下，是黑里更黑的一层，一直往下，没有尽头。你刚才扶住的『底』，只是一道探在虚空上的檐。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "go_over",
+          "label": "翻过那道沿，往沿下更黑的一层去",
+          "outcome": {
+            "text": "你翻过石唇。脚下那点虚假的踏实没了，水重新从四面合拢，比上面还沉、还冷、还静。\n你想：原来每一个『到底了』，都只是下一段的开头。你不再找底了——找不到的东西，找它做什么。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -9 },
+            "loreEntry": "lore.abyssal.lower_still"
+          }
+        },
+        {
+          "id": "hold_the_lip",
+          "label": "死扶着这道沿，把它当真正的底待住（理智 vs 60）",
+          "check": {
+            "stat": "sanity",
+            "dc": 60,
+            "onSuccess": {
+              "text": "你逼自己认死理：这道石唇是真的，是岩石，扶得住、踩得稳。至于沿下有没有底，与你这一程无关——你不下去，就完了。\n你抓着它，把『更深』关在视野之外，稳住了呼吸。这道檐够不够格当底不重要，它够你站。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.abyssal.lower_still"
+            },
+            "onFailure": {
+              "text": "你想扶住它，可眼睛一直往沿外瞟。那层更黑的下面像有极轻的一点引，看久了，连你扶着的这道沿都不像底了，倒像悬在更大一片空里的一根刺。\n你松了一点手——只一点，就觉得自己又往下漂了一截。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -15 }
+            }
+          }
+        },
+        {
+          "id": "back_up_the_wall",
+          "label": "背对那道沿，贴着来路的石壁往上摸",
+          "outcome": {
+            "text": "你不去看沿下。背过身，把那道更深的黑留在身后，两手贴着来时的石壁，一寸寸往上挪。\n看不清，也不回头看——有些『更深』，你不去验它有多深，是因为你还想上去。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
     }
   ]
 }

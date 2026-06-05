@@ -205,6 +205,109 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "subhadal.the_current",
+      "depthRange": [180, 230],
+      "zoneTags": ["subhadal"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "顺水",
+      "body": "一股暖流，往下走。\n不急，不冲，刚好托着你，让往下这件事一点都不费力——你只要不动，它就温柔地、稳稳地，带你再低一些。\n在这个深度，省下来的每一口气，都像一份恰好送到的礼物。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "ride_it",
+          "label": "什么都不做，由这股暖流带你往下",
+          "outcome": {
+            "text": "你松开手脚，让暖流接管。它不费你一点力，省气、省力，连恐惧都替你省了——往下变成了最舒服的那个选项。\n你顺着它走，心里清楚得很：让下潜变容易的东西，从不是为了送你回家。可它太舒服了。",
+            "oxygenTurnCost": 3,
+            "deltas": { "sanity": -8 },
+            "loreEntry": "lore.subhadal.the_current"
+          }
+        },
+        {
+          "id": "angle_out",
+          "label": "认出它只是一股流，斜着切出去（理智 vs 58）",
+          "check": {
+            "stat": "sanity",
+            "dc": 58,
+            "onSuccess": {
+              "text": "你提醒自己：暖、向下、省力，不等于善意——密度差驱动的下降流，本就又暖又顺，深海里常见得很。它不为你，它只是往下。\n你不顺它，斜着切出流轴。费力，但方向是你自己挑的。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.subhadal.the_current"
+            },
+            "onFailure": {
+              "text": "你想切出去，可它太舒服了，每次一发力，都觉得是自己在跟一份好意过不去。\n你切了两下，又被那股暖托回去，于是告诉自己歇一口再切。你歇着，它带着你，往下。你没再切第三下。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -14 }
+            }
+          }
+        },
+        {
+          "id": "claw_out",
+          "label": "灭灯，横着拼命扒拉，硬挣出这股流",
+          "outcome": {
+            "text": "你关了灯，不再去感受它有多舒服，只认一件事：它往下，我要往上。\n你横着、笨拙地、用尽力气往流的侧面扒，直到水不再推着你下沉。累得发抖，可你重新成了那个自己决定去哪的人。",
+            "oxygenTurnCost": 3,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "subhadal.the_quiet_yes",
+      "depthRange": [180, 230],
+      "zoneTags": ["subhadal"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "静静的好",
+      "body": "你忽然发现，已经有好一阵，你没再找过往上的理由了。\n这片黑没抢你的气，没骗你的表，没有任何一处不对——它只是不再给你一个『不』。而你，不知从什么时候起，也停止了说不。\n下潜不再需要被催促。你只是，安安静静地，同意着。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "keep_agreeing",
+          "label": "什么都不必想，继续往下",
+          "outcome": {
+            "text": "你想不起来上面有什么非回去不可的，也想不起来该怎么害怕。这里没有怪物，没有谎，只有一个一直摊开着、等你点头的方向。\n你点了头——不是被骗的，是自己愿意的。这才是这片深最深的那一手：到最后，它不必骗你，你自己同意。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -9 },
+            "loreEntry": "lore.subhadal.the_quiet_yes"
+          }
+        },
+        {
+          "id": "name_a_reason",
+          "label": "逼自己说出一个具体的、要活着上去的理由，咬住它（理智 vs 60）",
+          "check": {
+            "stat": "sanity",
+            "dc": 60,
+            "onSuccess": {
+              "text": "你逼自己具体起来：一个名字，一顿饭，一句没说完的话，一件只有你回得去才做得成的小事。不是『活着』这种大词——是一件小到不容置疑的事。\n你咬住它，像咬住一根绳。这片黑给不出一个『不』，可你自己有了一个。你转身往上。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.subhadal.the_quiet_yes"
+            },
+            "onFailure": {
+              "text": "你去找那个理由——一个名字，一件事——可在这个深度，它们都显得那么远、那么轻，轻得压不过这一片安静的好。\n你想了很久，没能咬住任何一个。没有理由不下去，于是你继续下去。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -15 }
+            }
+          }
+        },
+        {
+          "id": "turn_without_one",
+          "label": "不找理由了，灭灯，纯凭一股拧着的劲掉头往上",
+          "outcome": {
+            "text": "你给不出理由，就不给了。关掉灯，不靠任何想得通的道理，只靠骨头里一股说不清的、不肯的劲，硬把自己掉过头，往上。\n没有理由地活着，有时就是不讲理地往上爬。瞎着，倔着，往上。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
     }
   ]
 }

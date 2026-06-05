@@ -206,6 +206,109 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "hadal.the_fold",
+      "depthRange": [140, 180],
+      "zoneTags": ["hadal"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "折",
+      "body": "你认准一个方向，直直地往前游，数着蹬腿的次数，想穿过这片黑到另一头。\n游了很久，前面浮起一处你认得的石形——是你出发的地方。\n你绕了一圈？可你明明走的是直线。而且：这一次的它，更深。直线把你带回了原点，又低了一截。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "keep_going_straight",
+          "label": "不信邪，照同一个方向再直直地游一程",
+          "outcome": {
+            "text": "你咬死那个方向，再走一遍。又是很久，又是那处石形，又低了一截。\n这里的『直』不通向远方，通向同一个地方的更深处。你还在往前，每一程都把你叠回原点下面一层，像沿着一道看不见的螺旋往下拧。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -9 },
+            "loreEntry": "lore.hadal.the_fold"
+          }
+        },
+        {
+          "id": "map_the_loop",
+          "label": "强迫自己把这段路画成一张能闭合的图（理智 vs 60）",
+          "check": {
+            "stat": "sanity",
+            "dc": 60,
+            "onSuccess": {
+              "text": "你不信『空间在折』。你数蹬腿、记转角、把水流和缓降都算进去——一条看着笔直、其实在缓缓下沉转弯的水道，绕回起点之下，完全讲得通。\n你不是被折叠了，是被一道骗过你方向感的缓坡领着转了一圈。你照自己画的图，找了条真正向上的岔。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -7 },
+              "loreEntry": "lore.hadal.the_fold"
+            },
+            "onFailure": {
+              "text": "你想把它画成一张图，可每记一段，图就和上一版对不上：同一处石形，在你的草图里同时落在三个深度。\n你画不出一张能闭合的图。最后你盯着自己乱成一团的线，分不清是这片水折了，还是你记数的脑子折了。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -15 }
+            }
+          }
+        },
+        {
+          "id": "feel_for_up",
+          "label": "不认方向了，灭灯，只凭浮力往轻的那头浮",
+          "outcome": {
+            "text": "你放弃『往前』和『往哪』。关掉灯，松开所有想穿过去的念头，只把自己交给最笨的一件事：哪边轻，往哪边去。\n你不再试图理解这片水是怎么折的——理解它要命，浮上去不要。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "hadal.the_return_path",
+      "depthRange": [140, 180],
+      "zoneTags": ["hadal"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "回去的路",
+      "body": "你一路小心做了记号——一道刻痕，一处记住的石棱，按顺序排好，好让自己回得去。\n现在你要回头了。你顺着记号倒着走：第一个，第二个，第三个，都对，一个不差。\n只是每一个，都比前一个深。你做的记号没错，它们正确地、依次地，把你往更深领。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "follow_them_down",
+          "label": "信自己的记号，顺着它们一路走下去",
+          "outcome": {
+            "text": "你告诉自己：记号是你亲手做的，不会错。你顺着它们走，一个接一个，正确无误地，越走越深。\n你把『回去』交给了一串忠实的记号，它们忠实地，把你往下交。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -8 },
+            "loreEntry": "lore.hadal.the_return_path"
+          }
+        },
+        {
+          "id": "distrust_marks",
+          "label": "不信记号，凭冷暖和耳压自己判上下（理智 vs 58）",
+          "check": {
+            "stat": "sanity",
+            "dc": 58,
+            "onSuccess": {
+              "text": "你停下，把对记号的信任整个扔掉。记号会被水流挪、被你自己在黑里认错——它们不是『上』，只是一串你记住的点。\n你改用身体：哪边在变暖、哪边耳压在松，哪边才是上。你背过那串往下的记号，照着暖意走。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.hadal.the_return_path"
+            },
+            "onFailure": {
+              "text": "你试着不信记号，可你没有别的东西可信了——冷得分不清暖向，耳朵被压得辨不出松紧。\n最后你还是回到那串记号边上，因为它们至少是你自己做的。你顺着它们走，明知道在往下，还是走——不顺着它们，你连方向都没有了。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -14 }
+            }
+          }
+        },
+        {
+          "id": "drop_and_rise",
+          "label": "丢掉所有记号，灭灯，只往浮力轻的一侧蹬",
+          "outcome": {
+            "text": "你把那串记号从脑子里抹掉，连灯一起关了。没有记号，没有光，也就没有那条正确地通向深处的路。\n只剩浮力——身体比水轻，往轻处去。瞎着上，总好过顺着一串忠实的记号往下。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,23 @@
+{
+  "_comment": "深段·多事件房间内容（C）成功分支（uncanny 理智 vs 58）。满 san→rate 0.95、seed 1 成功：扔掉一路把你往深领的记号、凭冷暖耳压判上下——sanity -6 + oxygenTurnCost 3 + lore.hadal.the_return_path。loot-free、不触发 d_reveal、永不交底。#43 实跑抄。",
+  "eventId": "hadal.the_return_path",
+  "depth": 160,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": [
+    "distrust_marks"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": [
+      "lore.hadal.the_return_path"
+    ],
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": -6
+    }
+  }
+}

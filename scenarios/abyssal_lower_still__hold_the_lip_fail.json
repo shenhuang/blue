@@ -1,0 +1,23 @@
+{
+  "_comment": "深段·多事件房间内容（C）失败分支（cosmic 理智 vs 60）。sanity=22→rate 0.05 clamp、seed 1 失败：错读/没咬住——sanity -15 + oxygenTurnCost 5、无 lore。永不交底、不触发 d_reveal。",
+  "eventId": "abyssal.lower_still",
+  "stats": {
+    "sanity": 22
+  },
+  "depth": 120,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": [
+    "hold_the_lip"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": {
+      "oxygen": -5,
+      "sanity": -15
+    }
+  }
+}
