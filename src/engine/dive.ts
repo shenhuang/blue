@@ -41,7 +41,10 @@ import {
   sonarPingCost,
   predatorApproaches,
   ALERT_AFTER_TRIGGER,
+  ALERT_MAX,
+  sonarPingAlertDelta,
 } from './clarity';
+import { revealSonarScan, sonarScanRange } from './sonar';
 
 /** 编译期穷尽性检查：将来新增 NodeKind 却忘了在 moveToNode 里处理时，这里会直接报类型错误。 */
 function assertNever(x: never): never {
@@ -403,14 +406,28 @@ export function pingSonar(state: GameState): GameState {
   if (!(run.sensors?.sonarUnlocked ?? false)) {
     return appendLog(state, { tone: 'system', text: '你还没有能用的声呐。' });
   }
+  // 1 scan / 停留（声呐与房间 SPEC §8「1 scan/turn」）：这一站已 ping 过（未移动）→ 不重复耗电/暴露。
+  // 移动后 applyTransit 把 sonar 归 off（脉冲瞬时），下个路口才能再 ping。
+  if ((run.sensors?.sonar ?? 'off') === 'ping') {
+    return appendLog(state, { tone: 'system', text: '脉冲还在水里荡，等它散了再扫一记。' });
+  }
   const pingCost = sonarPingCost(run); // 升级派生（缺省 SONAR_PING_COST）
   if ((run.power ?? 0) < pingCost) {
     return appendLog(state, { tone: 'realistic', text: '电量不够再发一记声呐了。' });
   }
   const power = Math.max(0, (run.power ?? 0) - pingCost);
+  // 声呐图（S0）：从你当前位置揭示有限程内的真实节点为草图，stamp 当前 turn（余像随回合渐隐、重复 ping 不更亮）。
+  const scanMemory: Record<string, number> = { ...(run.scanMemory ?? {}) };
+  if (run.map && run.currentNodeId) {
+    for (const id of revealSonarScan(run.map, run.currentNodeId, sonarScanRange(run))) {
+      scanMemory[id] = run.turn;
+    }
+  }
+  // ping 当场抬警觉（暴露双刃，SPEC §5）：浅水免压、深 band 更狠（sonarPingAlertDelta），clamp 上限。
+  const alert = Math.min(ALERT_MAX, (run.alert ?? 0) + sonarPingAlertDelta(run));
   let s: GameState = {
     ...state,
-    run: { ...run, power, sensors: { ...run.sensors, sonar: 'ping' } },
+    run: { ...run, power, alert, scanMemory, sensors: { ...run.sensors, sonar: 'ping' } },
   };
   s = appendLog(s, {
     tone: 'uncanny',

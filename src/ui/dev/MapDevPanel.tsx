@@ -17,6 +17,7 @@ import './map-panel.css';
 import { generateDiveMap, analyzeMap } from '@/engine/mapgen';
 import { ZONES } from '@/engine/zones';
 import { makeLcg } from '@/engine/rng';
+import { deriveMapLayout } from '../mapLayout';
 import type { DiveMap, DiveNode, ZoneDef } from '@/types';
 
 export interface MapDevPanelProps {
@@ -89,50 +90,8 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
 
   const analysis = useMemo(() => (map ? analyzeMap(map) : null), [map]);
 
-  // —— 布局：按 layer 分列，列内堆叠 ——
-  const layout = useMemo(() => {
-    if (!map) return null;
-    const nodes = Object.values(map.nodes);
-    const byLayer = new Map<number, DiveNode[]>();
-    for (const n of nodes) {
-      if (!byLayer.has(n.layer)) byLayer.set(n.layer, []);
-      byLayer.get(n.layer)!.push(n);
-    }
-    const layers = [...byLayer.keys()].sort((a, b) => a - b);
-    for (const l of layers) byLayer.get(l)!.sort((a, b) => a.id.localeCompare(b.id));
-
-    const colW = 116;
-    const rowH = 64;
-    const padX = 44;
-    const padY = 40;
-    const r = 17;
-    const pos: Record<string, { x: number; y: number }> = {};
-    let maxRows = 1;
-    layers.forEach((l, ci) => {
-      const col = byLayer.get(l)!;
-      maxRows = Math.max(maxRows, col.length);
-      col.forEach((n, ri) => {
-        pos[n.id] = { x: padX + ci * colW, y: padY + ri * rowH };
-      });
-    });
-    const width = padX * 2 + Math.max(1, layers.length - 1) * colW;
-    const height = padY * 2 + Math.max(0, maxRows - 1) * rowH;
-
-    // 边（无向去重）
-    const edges: Array<{ a: string; b: string; chord: boolean }> = [];
-    const seen = new Set<string>();
-    for (const n of nodes) {
-      for (const to of n.connectsTo) {
-        if (!map.nodes[to]) continue;
-        const key = n.id < to ? `${n.id}|${to}` : `${to}|${n.id}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const layerDiff = Math.abs(map.nodes[n.id].layer - map.nodes[to].layer);
-        edges.push({ a: n.id, b: to, chord: layerDiff !== 1 }); // 跨层/同层 = 回边(近似)
-      }
-    }
-    return { pos, edges, width, height, r };
-  }, [map]);
+  // —— 布局：抽到共享 deriveMapLayout（声呐探索图 SonarScanPanel 与本面板同一套铺点，避免漂移）——
+  const layout = useMemo(() => (map ? deriveMapLayout(map) : null), [map]);
 
   const deepestSet = useMemo(() => new Set(analysis?.deepestNodeIds ?? []), [analysis]);
   const deadEndSet = useMemo(() => new Set(analysis?.deadEndIds ?? []), [analysis]);

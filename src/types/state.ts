@@ -170,6 +170,12 @@ export interface RunState {
    * 可选 → POI 下潜 / 旧存档省略即 1（无加压）。派生自 band，未发布不 bump SAVE_VERSION（JSON 自动 round-trip）。
    */
   bandAlertFactor?: number;
+  /**
+   * 声呐探索图记忆（声呐与房间 SPEC §5「会过时的记忆」）：nodeId → 上次被 ping 扫到时的 run.turn。
+   * 累积（每次 ping 把扫到的节点 stamp 成当前 turn）；UI 据 (turn − stamp) 渐隐余像。run 级、不入存档、
+   * 不 bump SAVE_VERSION——createNewRun 种 {} + 反序列化 `?? {}` 兜底（同 shopStock/outpostState 套路）。
+   */
+  scanMemory?: Record<string, number>;
 }
 
 /** 装备配置 */

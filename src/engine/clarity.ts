@@ -226,6 +226,12 @@ export const ALERT_MIN_DEPTH = 25;
 export const ALERT_DEPTH_FULL = 60;
 /** 触发遭遇后警觉落到的值（留一段缓冲，避免连环伏击）。 */
 export const ALERT_AFTER_TRIGGER = 0;
+/**
+ * 一记声呐 ping 的**直接**警觉尖峰（声呐与房间 SPEC §5「每 ping … 抬 alert：点亮水里＝招捕食者」）。
+ * 主动发声当场暴露你，区别于点灯/ping 在 tickTurns 里逐回合积累的那份（signature→alertDelta）。
+ * 同守浅水免压（× alertDepthFactor，浅水 0）+ 越深越狠（× bandAlertFactor）；摸黑消退阀门不受影响。
+ */
+export const SONAR_PING_ALERT = 8;
 
 /** 深度因子：浅水 0（§7.5），ALERT_MIN_DEPTH 起线性爬升、60m 满（更深 band 的斜坡留 Phase 1）。 */
 export function alertDepthFactor(run: RunState): number {
@@ -247,6 +253,14 @@ export function alertDelta(run: RunState, turns: number): number {
 /** 警觉是否已到「捕食者接近」线（moveToNode 据此触发遭遇）；需够深（§7.5）。 */
 export function predatorApproaches(run: RunState): boolean {
   return (run.alert ?? 0) >= ALERT_THRESHOLD && (run.currentDepth ?? 0) >= ALERT_MIN_DEPTH;
+}
+
+/**
+ * 一记 ping 当场抬升的警觉量（dive.ts::pingSonar 调用）：浅水免压（深度因子 0）、深 band 更狠（band 倍率）。
+ * 与逐回合积累分开——ping 是离散的主动暴露事件，故在动作里直接结算、不依赖之后是否移动。
+ */
+export function sonarPingAlertDelta(run: RunState): number {
+  return SONAR_PING_ALERT * alertDepthFactor(run) * (run.bandAlertFactor ?? 1);
 }
 
 // ============================================================

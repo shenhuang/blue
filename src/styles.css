@@ -731,6 +731,118 @@ html, body, #root {
   color: var(--accent);
 }
 
+/* —— 声呐探索图（声呐与房间 SPEC §5/§7 S0）：冷色、接触式草图、随回合渐隐的余像 —— */
+.sonar-panel {
+  margin: 12px 0 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-elev);
+  overflow: hidden;
+}
+.sonar-panel-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.sonar-panel-title {
+  font-size: 0.8em;
+  letter-spacing: 0.12em;
+  color: var(--cyan);
+}
+.sonar-panel-sub {
+  font-size: 0.74em;
+  color: var(--text-faint);
+  font-style: italic;
+}
+.sonar-scan-wrap {
+  position: relative;
+}
+.sonar-scan {
+  display: block;
+  width: 100%;
+  height: 168px;
+  background:
+    radial-gradient(120% 80% at 50% 50%, rgba(78, 209, 193, 0.06), transparent 70%),
+    #060b0d;
+}
+.sonar-scan-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sonar-empty-note {
+  color: var(--text-faint);
+  letter-spacing: 0.5em;
+  font-size: 1.4em;
+  opacity: 0.5;
+}
+.sonar-range-ring {
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 0.6;
+  opacity: 0.16;
+  stroke-dasharray: 3 5;
+}
+.sonar-edge {
+  stroke: var(--cyan);
+  stroke-width: 1.4;
+}
+.sonar-edge.is-chord {
+  stroke-dasharray: 3 4;
+}
+.sonar-blip circle {
+  fill: var(--cyan);
+}
+.sonar-blip.is-here circle {
+  fill: #eafffb;
+  stroke: var(--cyan);
+  stroke-width: 2;
+}
+.sonar-blip.is-exit circle {
+  fill: var(--green);
+}
+.sonar-blip.is-air circle {
+  fill: var(--yellow);
+}
+.sonar-blip.is-camp circle {
+  fill: var(--violet);
+}
+.sonar-blip-glyph {
+  fill: #04110f;
+  font-size: 7px;
+  text-anchor: middle;
+  font-weight: 700;
+}
+.sonar-blip-depth {
+  fill: var(--cyan);
+  font-size: 7px;
+  text-anchor: middle;
+  opacity: 0.7;
+}
+.sonar-mini {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 96px;
+  height: 60px;
+  background: rgba(4, 11, 13, 0.82);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.sonar-mini-extent {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 0.8;
+}
+.sonar-mini-blip {
+  fill: var(--cyan);
+}
+.sonar-mini-blip.is-here {
+  fill: #eafffb;
+}
+
 /* 深水区 Phase 0b：警觉预警（被探测） */
 .alert-warning {
   margin: 10px 0 0;

@@ -3,6 +3,7 @@ import { moveToNode, setLight, pingSonar } from '@/engine/dive';
 import { clarity, sonarPingCost, ALERT_WARN, ALERT_THRESHOLD } from '@/engine/clarity';
 import { zoneAllowsBacktrack } from '@/engine/zones';
 import { StatusBar } from './StatusBar';
+import { SonarScanPanel } from './SonarScanPanel';
 
 interface Props {
   state: GameState;
@@ -21,6 +22,8 @@ export function NodeSelectView({ state, choices, onStateChange }: Props) {
   const sonarUnlocked = run.sensors?.sonarUnlocked ?? false;
   const pingCost = sonarPingCost(run); // 升级派生（缺省 SONAR_PING_COST）
   const canPing = sonarUnlocked && (run.power ?? 0) >= pingCost;
+  // 1 scan / 停留（声呐与房间 §8）：这一站已 ping 过 → 等移动后才能再扫（脉冲移动后归 off）。
+  const alreadyPinged = (run.sensors?.sonar ?? 'off') === 'ping';
   // 深水区 Phase 0b：警觉预警——给玩家"读出 tell → 熄灯甩开"的窗口（越线则进下一节点会被接近）。
   const alert = run.alert ?? 0;
 
@@ -68,13 +71,20 @@ export function NodeSelectView({ state, choices, onStateChange }: Props) {
           {sonarUnlocked && (
             <button
               className="btn sensor-btn"
-              disabled={!canPing}
+              disabled={!canPing || alreadyPinged}
               onClick={() => onStateChange(pingSonar(state))}
             >
-              {canPing ? `声呐 ping（−${pingCost} 电）` : '声呐（电量不足）'}
+              {alreadyPinged
+                ? '已扫描 · 移动后再 ping'
+                : canPing
+                  ? `声呐 ping（−${pingCost} 电）`
+                  : '声呐（电量不足）'}
             </button>
           )}
         </div>
+
+        {/* 声呐探索图（声呐与房间 SPEC §5/§7 S0）：解锁声呐后才有；起手全黑、随 ping 一块块点亮、渐隐余像 */}
+        {sonarUnlocked && <SonarScanPanel run={run} />}
 
         {alert >= ALERT_WARN && (
           <p className={`alert-warning ${alert >= ALERT_THRESHOLD ? 'danger' : ''}`}>

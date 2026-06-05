@@ -17,7 +17,7 @@ import { FuneralView } from '../src/ui/CorpseView';
 import { UpgradePanel } from '../src/ui/UpgradePanel';
 import { MiraShopView } from '../src/ui/MiraShopView';
 import { LighthouseBuildPanel } from '../src/ui/LighthouseBuildPanel';
-import type { GameState, InventoryItem, NodeChoice } from '../src/types';
+import type { GameState, InventoryItem, NodeChoice, DiveMap } from '../src/types';
 
 const log: string[] = [];
 const L = (s: string) => log.push(s);
@@ -224,6 +224,49 @@ const htmlMaze = renderToStaticMarkup(
 );
 assert(!htmlMaze.includes('只往下通'), 'E3: 迷路图（蓝洞群）zone 能回头 → 不给单向预告（免得误导）');
 L('  层状给单向预告 / 迷路图不给 ✓');
+
+// E4. NodeSelectView · 声呐探索图（声呐与房间 SPEC §5/§7 S0）：
+//   解锁声呐 → 面板出现；未 ping → 全黑空态；有扫描记忆 → 画出 blip + 深度 + 残图小地图；未解锁 → 无面板
+L('\n========== E4. NodeSelectView 声呐探索图 (S0) ==========');
+function sonarMap(): DiveMap {
+  return {
+    zoneId: 'zone.wreck_graveyard',
+    generatedAt: 0,
+    startNodeId: 'n0',
+    nodes: {
+      n0: { id: 'n0', layer: 0, depth: 30, zoneTag: 'wreck', kind: 'event', connectsTo: ['n1'], preview: '' },
+      n1: { id: 'n1', layer: 1, depth: 38, zoneTag: 'wreck', kind: 'ascent_point', connectsTo: [], preview: '' },
+    },
+  };
+}
+function sonarState(opts?: { scanMemory?: Record<string, number>; sonarUnlocked?: boolean }): GameState {
+  const base = createInitialGameState();
+  const r0 = createNewRun({
+    zoneId: 'zone.wreck_graveyard',
+    bonuses: { sonarUnlocked: opts?.sonarUnlocked ?? true },
+  });
+  const run = { ...r0, map: sonarMap(), currentDepth: 30, currentNodeId: 'n0', turn: 0, scanMemory: opts?.scanMemory };
+  return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
+}
+// 解锁声呐、未 ping（空记忆）→ 面板在、空态（全黑）
+const htmlSonarEmpty = renderToStaticMarkup(
+  <NodeSelectView state={sonarState({ scanMemory: {} })} choices={[]} onStateChange={noop} />,
+);
+assert(htmlSonarEmpty.includes('声呐图'), 'E4: 解锁声呐应渲染声呐图面板');
+assert(htmlSonarEmpty.includes('sonar-scan-empty'), 'E4: 未 ping 时声呐图为空态（全黑）');
+// 有扫描记忆 → 画出节点 blip + 深度标 + 残图小地图
+const htmlSonarMapped = renderToStaticMarkup(
+  <NodeSelectView state={sonarState({ scanMemory: { n0: 0, n1: 0 } })} choices={[]} onStateChange={noop} />,
+);
+assert(htmlSonarMapped.includes('sonar-blip'), 'E4: 有扫描记忆应画出节点 blip');
+assert(htmlSonarMapped.includes('30m'), 'E4: 声呐图应标注扫到节点的深度');
+assert(htmlSonarMapped.includes('sonar-mini'), 'E4: 应渲染残图小地图（方位感）');
+// 未解锁声呐 → 无声呐图面板（软门控：声呐图随声呐解锁才有，SPEC §8.6）
+const htmlNoSonar = renderToStaticMarkup(
+  <NodeSelectView state={sonarState({ scanMemory: { n0: 0 }, sonarUnlocked: false })} choices={[]} onStateChange={noop} />,
+);
+assert(!htmlNoSonar.includes('声呐图'), 'E4: 未解锁声呐不应渲染声呐图面板');
+L('  解锁→面板/空态全黑 · 有记忆→blip+深度+残图 · 未解锁→无面板 ✓');
 
 // ============================================
 // F. SeaChartView · 打捞行会 Lv.2 出海前选目标尸体

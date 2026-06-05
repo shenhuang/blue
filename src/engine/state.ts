@@ -188,6 +188,8 @@ export function createNewRun(opts: {
     sensorTuning,
     // 深水区 Phase 0b：警觉从 0 起（点灯/ping 在深水抬、摸黑降）。
     alert: 0,
+    // 声呐与房间 S0：声呐图记忆起手为空（全黑，只随 ping 一块块点亮）。
+    scanMemory: {},
   };
 }
 
