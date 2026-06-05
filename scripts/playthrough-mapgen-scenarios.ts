@@ -208,6 +208,52 @@ function main() {
   if (airSeeds === 0) fails.push('60 seed 内从未生成气穴节点');
   if (campSeeds === 0) fails.push('60 seed 内从未生成扎营点节点');
 
+  // —— 多事件房间（声呐与房间 S1）不变量：maxRoomFeatures>1 时偶尔生成 2–3 feature「大房间」——
+  // 守则：features 只挂 event 节点 / 每房 2–3 feature（≥2 才叫大房间、≤maxRoomFeatures）/ 大房间不再带单 eventId /
+  //       同图事件不重复（features + 单事件共用 triggeredFakeIds 去重）/ 同 seed 确定性。
+  console.log(`\n========== 多事件房间不变量 (zone.blue_caves, maxRoomFeatures=3, seeds 1–60) ==========`);
+  let roomsTotal = 0;
+  let featuresTotal = 0;
+  let maxFeatSeen = 0;
+  const featProblems: string[] = [];
+  const featFp = (m: DiveMap) =>
+    Object.keys(m.nodes)
+      .sort()
+      .map((id) => `${id}:${(m.nodes[id].features ?? []).map((f) => f.id + '=' + f.eventId).join(',')}`)
+      .join('|');
+  for (let seed = 1; seed <= SWEEP; seed++) {
+    const zone = getZone('zone.blue_caves')!;
+    const map = generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(seed), maxRoomFeatures: 3 });
+    for (const n of Object.values(map.nodes)) {
+      if (n.features && n.features.length > 0) {
+        if (n.kind !== 'event') featProblems.push(`seed=${seed} ${n.id}: features 挂在非 event 节点(${n.kind})`);
+        if (n.features.length < 2) featProblems.push(`seed=${seed} ${n.id}: features 数<2(${n.features.length})`);
+        if (n.features.length > 3) featProblems.push(`seed=${seed} ${n.id}: features 数>3(${n.features.length})`);
+        if (n.eventId !== undefined) featProblems.push(`seed=${seed} ${n.id}: 大房间不应再带单 eventId`);
+        // 同房不放重复 feature（excludeIds 硬去重）；跨房非 oncePerRun 事件可重复＝既有行为，不查。
+        const ids = n.features.map((f) => f.eventId);
+        if (new Set(ids).size !== ids.length) featProblems.push(`seed=${seed} ${n.id}: 同房重复 feature`);
+        roomsTotal++;
+        featuresTotal += n.features.length;
+        maxFeatSeen = Math.max(maxFeatSeen, n.features.length);
+      }
+    }
+    const map2 = generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(seed), maxRoomFeatures: 3 });
+    if (featFp(map) !== featFp(map2)) featProblems.push(`seed=${seed}: feature 非确定性`);
+  }
+  if (featProblems.length === 0 && roomsTotal >= 5) {
+    console.log(`  ✓ 60 seed 共 ${roomsTotal} 个大房间 / ${featuresTotal} feature / 最大 ${maxFeatSeen}·全 2–3·同图不重复·确定性`);
+  } else {
+    if (roomsTotal < 5) {
+      console.log(`  ✗ 大房间太少（${roomsTotal}），机制疑似没触发`);
+      fails.push(`多事件房间机制 60 seed 只生成 ${roomsTotal} 个大房间`);
+    }
+    for (const p of featProblems.slice(0, 10)) {
+      console.log(`      ${p}`);
+      fails.push(p);
+    }
+  }
+
   console.log('');
   if (fails.length > 0) {
     console.log(`✗ 失败 ${fails.length} / 通过 ${okCount}`);

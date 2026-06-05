@@ -118,6 +118,7 @@ export default function App() {
         <NodeSelectView
           state={state}
           choices={state.phase.subPhase.choices}
+          features={state.phase.subPhase.features}
           onStateChange={setState}
         />
       )}

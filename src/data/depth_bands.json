@@ -1,5 +1,5 @@
 {
-  "_doc": "深度 band 全局阶梯（深水区 Phase 1）。每个 band 引用一个 zone 提供内容，用自己的绝对 depthRange 覆盖该 zone 的 depthRange（band 决定下到多深、zone 决定那里有什么）。软门控：不带硬解锁 flag——能否在这深度活下来由装备（声呐解锁+电池/升级，都吃深料）和后续强敌决定。深 band 更暗（visibility）→灯打不透→被迫用更耗电的声呐→电量压力间接抬升（不在耗电上加深度税）。order 升序＝越来越深、可续写更深 band（架构不硬编码地板）。trench_* 借蓝洞群的 maze mapgen 形状，但事件走 band 专属 tags（twilight/midnight）覆盖 zoneTagsByDepth＝专属事件池、与蓝洞内容隔离（深水区内容期）。专属 trench/abyss zone 仍可后续再拆。alertFactor（深水区 C）＝探测压力倍率：深度因子在 60m 饱和后更深 band 靠它继续越深越凶（reef_deep 缺省 1 / trench_mouth 1.3 / trench_throat 1.6），只乘暴露增益不动消退（摸黑/浅水逃生阀门买不断）。",
+  "_doc": "深度 band 全局阶梯（深水区 Phase 1）。每个 band 引用一个 zone 提供内容，用自己的绝对 depthRange 覆盖该 zone 的 depthRange（band 决定下到多深、zone 决定那里有什么）。软门控：不带硬解锁 flag——能否在这深度活下来由装备（声呐解锁+电池/升级，都吃深料）和后续强敌决定。深 band 更暗（visibility）→灯打不透→被迫用更耗电的声呐→电量压力间接抬升（不在耗电上加深度税）。order 升序＝越来越深、可续写更深 band（架构不硬编码地板）。trench_* 借蓝洞群的 maze mapgen 形状，但事件走 band 专属 tags（twilight/midnight）覆盖 zoneTagsByDepth＝专属事件池、与蓝洞内容隔离（深水区内容期）。专属 trench/abyss zone 仍可后续再拆。alertFactor（深水区 C）＝探测压力倍率：深度因子在 60m 饱和后更深 band 靠它继续越深越凶（reef_deep 缺省 1 / trench_mouth 1.3 / trench_throat 1.6），只乘暴露增益不动消退（摸黑/浅水逃生阀门买不断）。maxRoomFeatures（声呐与房间 S1）＝本 band 事件房间的多 feature 上限：深 band 设 2–3，事件房间偶尔升级成 2–3 feature 的「大房间」（大房间稀有），深段内容铺在其中、配合声呐扫描逐点点亮的探索质感；缺省（reef_deep 等）单事件＝旧图不变。",
   "bands": [
     {
       "id": "band.reef_deep",
@@ -20,6 +20,7 @@
       "visibility": "dark",
       "alertFactor": 1.3,
       "tags": ["cave", "twilight"],
+      "maxRoomFeatures": 2,
       "blurb": "蓝洞群最里头，岩壁裂开一道一直向下的竖井。没人量过底。当地人说，从这儿下去的，水声是反着回来的。",
       "danger": "黑水——没有声呐你会瞎着下去；灯打不透，举着只是费电。够不够强，下去才知道。"
     },
@@ -32,6 +33,7 @@
       "visibility": "dark",
       "alertFactor": 1.6,
       "tags": ["cave", "midnight"],
+      "maxRoomFeatures": 2,
       "blurb": "竖井在这里先收窄又骤然张开。越往下，声呐的回波越不像话——它扫出来的东西，和你点灯凑近看到的，对不上。",
       "danger": "比上面更黑、更深。电量、理智、回波——到这里没有一样是你信得过的。"
     },
@@ -44,6 +46,7 @@
       "visibility": "dark",
       "alertFactor": 2.0,
       "tags": ["cave", "abyssal"],
+      "maxRoomFeatures": 3,
       "blurb": "竖井的喉之下，石壁退尽，水成了纯粹的、向下的黑。没有壁，没有底，连『下到多深』这件事都开始没有意义。这里不该有人来——可你的灯还亮着，你还在往下。",
       "danger": "比最深更深。没有底让你站，没有壁让你扶，连那个『沉』都不肯停。下得来，未必上得去。"
     },
@@ -56,6 +59,7 @@
       "visibility": "dark",
       "alertFactor": 2.5,
       "tags": ["cave", "hadal"],
+      "maxRoomFeatures": 3,
       "blurb": "深渊之下，水里开始有不该有的『缝』——像两片不一样的深处被勉强缝在一起。越过一道缝，深度表、方向、连『上』和『下』，都得重新认一遍。这里没有底可言，也没有『更深』可言：只有缝，和缝那边。",
       "danger": "到了这里，『往下』不再是一条线。表会报出从没有过的数，『上』可能也没有底。没有声呐你连缝在哪都看不见，有声呐它也未必告诉你真话。"
     },
@@ -68,6 +72,7 @@
       "visibility": "dark",
       "alertFactor": 3.0,
       "tags": ["cave", "subhadal"],
+      "maxRoomFeatures": 3,
       "blurb": "海图上没有这一层的名字——过了超渊就不该再有地方。可水还在往下，你也还在往下。到了这里，那些骗你的把戏都停了：声呐不再扫出假底，黑里不再有错位的形状。它不骗你了，因为它不必再骗——你已经在它肯让你到的地方。这里给你的每一样东西，都是让你再下去一点的理由。",
       "danger": "比超渊更外。这里不靠吓你、不靠骗你——它给你恰好需要的：一处落脚、一道暖水、一盏像家的光。每一样都让你愿意再往下。能上得去的，是没把这些当真的人。"
     }

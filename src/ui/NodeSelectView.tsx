@@ -1,5 +1,5 @@
-import type { GameState, NodeChoice } from '@/types';
-import { moveToNode, setLight, pingSonar } from '@/engine/dive';
+import type { GameState, NodeChoice, FeatureChoice } from '@/types';
+import { moveToNode, setLight, pingSonar, exploreFeature } from '@/engine/dive';
 import { clarity, sonarPingCost, ALERT_WARN, ALERT_THRESHOLD } from '@/engine/clarity';
 import { zoneAllowsBacktrack } from '@/engine/zones';
 import { StatusBar } from './StatusBar';
@@ -8,10 +8,12 @@ import { SonarScanPanel } from './SonarScanPanel';
 interface Props {
   state: GameState;
   choices: NodeChoice[];
+  /** 当前房间内未探的 feature（多事件房间 S1）。缺省/空 → 不渲染「凑近看」组（单事件房间＝旧 UI）。 */
+  features?: FeatureChoice[];
   onStateChange: (s: GameState) => void;
 }
 
-export function NodeSelectView({ state, choices, onStateChange }: Props) {
+export function NodeSelectView({ state, choices, features, onStateChange }: Props) {
   if (!state.run) return null;
   const run = state.run;
 
@@ -41,9 +43,15 @@ export function NodeSelectView({ state, choices, onStateChange }: Props) {
   function handlePick(nodeId: string) {
     onStateChange(moveToNode(state, nodeId));
   }
+  function handleExplore(featureId: string) {
+    onStateChange(exploreFeature(state, featureId));
+  }
   function handleAscendNow() {
     onStateChange({ ...state, phase: { kind: 'ascent', targetDepth: 0 } });
   }
+
+  // 多事件房间（S1）：当前房间里还没探的几处「事件点」。
+  const roomFeatures = features ?? [];
 
   return (
     <div className="dive">
@@ -93,6 +101,30 @@ export function NodeSelectView({ state, choices, onStateChange }: Props) {
               : '水里有什么被你的光惊动了，正慢慢靠过来。熄灯也许能甩开它。'}
           </p>
         )}
+
+        {/* 多事件房间（声呐与房间 S1）：当前这片水域里还能凑近看的几处 feature（每探付氧）。 */}
+        {roomFeatures.length > 0 && (
+          <div className="room-features">
+            <p className="dim">这片水域开阔，里头还有几处可以凑近看——每翻一处都要费点气。</p>
+            <ul className="event-options room-feature-list">
+              {roomFeatures.map((f) => (
+                <li key={f.featureId}>
+                  <button
+                    className="btn event-option feature"
+                    onClick={() => handleExplore(f.featureId)}
+                  >
+                    <div className="node-row">
+                      <span className="node-depth">凑近看</span>
+                      <span className={`node-preview clar-${f.clarity ?? 'full'}`}>{f.preview}</span>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {roomFeatures.length > 0 && <p className="dim">或者，离开这片水域：</p>}
 
         <ul className="event-options">
           {choices.map((c) => {

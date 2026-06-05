@@ -122,13 +122,31 @@ export function SonarScanPanel({ run }: { run: RunState }) {
             const node = map.nodes[id];
             const isCurrent = id === curId;
             const glyph = kindGlyph(node.kind);
+            // 多事件房间（声呐与房间 S1）：声呐先扫出一个开阔「房间」的大轮廓 + 里头几颗 feature blip
+            //（S0 只读真图——房间结构是真的；各 feature 的真假留 S2 在 clarity.sonarReturn 侧改写）。
+            const feats = node.features ?? [];
+            const isRoom = feats.length > 1;
+            const baseR = isRoom ? 10 : isCurrent ? 7 : 5;
             return (
               <g
                 key={id}
-                className={`sonar-blip ${kindClass(node.kind, isCurrent)}`}
+                className={`sonar-blip ${kindClass(node.kind, isCurrent)} ${isRoom ? 'is-room' : ''}`}
                 style={{ opacity: isCurrent ? 1 : 0.35 + 0.6 * fresh[id] }}
               >
-                <circle cx={p.x} cy={p.y} r={isCurrent ? 7 : 5} />
+                <circle cx={p.x} cy={p.y} r={baseR} />
+                {isRoom &&
+                  feats.map((_, fi) => {
+                    const ang = (fi / feats.length) * Math.PI * 2 - Math.PI / 2;
+                    return (
+                      <circle
+                        key={fi}
+                        className="sonar-feature-dot"
+                        cx={p.x + Math.cos(ang) * 5}
+                        cy={p.y + Math.sin(ang) * 5}
+                        r={1.6}
+                      />
+                    );
+                  })}
                 {glyph && (
                   <text className="sonar-blip-glyph" x={p.x} y={p.y + 3}>
                     {glyph}

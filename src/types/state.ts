@@ -222,7 +222,7 @@ export type GamePhase =
 
 export type DiveSubPhase =
   | { kind: 'event'; eventId: string }
-  | { kind: 'nodeSelect'; choices: NodeChoice[] }
+  | { kind: 'nodeSelect'; choices: NodeChoice[]; features?: FeatureChoice[] }
   | { kind: 'rest' }
   | { kind: 'corpse'; deathRecordId: string };
 
@@ -242,6 +242,22 @@ export interface NodeChoice {
    * 该选项预览的感知档（深水区 Phase 0a）：'full' 灯下真相 / 'sonar' 声呐不可信表象 / 'none' 盲。
    * enterNodeSelection 计算并把对应 preview 文案烤进本结构（引擎侧门控，便于回归断言）；UI 据此渲染样式。
    */
+  clarity?: ClarityTier;
+}
+
+/**
+ * 多事件房间里的一个可探索「事件点」（声呐与房间 SPEC §6 S1）。enterNodeSelection 在 nodeSelect 阶段
+ * 把**当前房间**未探的 feature 摆进 subPhase.features（与去往别处的 choices 并列）；UI 渲染成「凑近看」一组，
+ * 点选触发 dive.ts::exploreFeature（付氧 + 触发其事件）。你就在房间里、灯照得到 → preview 取 full 档真相。
+ */
+export interface FeatureChoice {
+  /** 对应 DiveNode.features[].id（节点内唯一）。 */
+  featureId: string;
+  /** 探索触发的事件 id。 */
+  eventId: string;
+  /** 灯下真相短标签（事件标题）。 */
+  preview: string;
+  /** 感知档（房内＝近处，通常 full；低 san 幻觉仍可由引擎改写）。 */
   clarity?: ClarityTier;
 }
 

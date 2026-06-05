@@ -10,6 +10,7 @@ import type {
   CurrentStrength,
   Visibility,
   NodeChoice,
+  FeatureChoice,
   PlayerProfile,
   ZoneTag,
   Lighthouse,
@@ -52,6 +53,31 @@ function assertNever(x: never): never {
 }
 
 /**
+ * 多事件房间里「凑近探一处 feature」的回合开销（声呐与房间 SPEC §6/§8「连探付氧」）。
+ * 不含洋流移动费（你没离开房间）——只是房内挪近、细看的时间。小值＝连探不致命，但每探都耗氧，
+ * 形成「再翻一处还是趁早走」的张力（press-your-luck）。
+ */
+const FEATURE_EXPLORE_TURNS = 1;
+
+/** run.activeFlags 里「某房某 feature 已探」的 key（run 级、不入存档形状）。 */
+function featureDoneFlag(nodeId: string, featureId: string): string {
+  return `feat:${nodeId}:${featureId}`;
+}
+
+/**
+ * 当前房间内**未探**的 feature（多事件房间 S1）→ FeatureChoice[]。
+ * 你就在房间里、灯照得到＝近处真相（full 档，S1 只读真相；S2 才在此填欺骗）。单事件房间 / 普通节点 → []。
+ */
+function roomFeatureChoices(run: RunState): FeatureChoice[] {
+  if (!run.map || !run.currentNodeId) return [];
+  const node = run.map.nodes[run.currentNodeId];
+  if (!node?.features) return [];
+  return node.features
+    .filter((f) => !run.activeFlags.has(featureDoneFlag(node.id, f.id)))
+    .map((f) => ({ featureId: f.id, eventId: f.eventId, preview: f.preview, clarity: 'full' as const }));
+}
+
+/**
  * 在港口选定 zone，开始一次下潜。
  * @param opts.depthOffset 海图 POI 深度偏移（米），透传给 mapgen 平移整图深度。
  * @param opts.targetCorpseId 打捞行会 Lv.2 出海前选定的目标尸体 id，透传给 mapgen 保证布点。
@@ -63,6 +89,7 @@ export function startDive(
     depthOffset?: number;
     depthRange?: [number, number];
     bandTags?: ZoneTag[];
+    maxRoomFeatures?: number;
     targetCorpseId?: string;
   },
 ): GameState {
@@ -83,6 +110,7 @@ export function startDive(
     depthOffset: opts?.depthOffset,
     depthRange: opts?.depthRange,
     bandTags: opts?.bandTags,
+    maxRoomFeatures: opts?.maxRoomFeatures,
     targetCorpseId: opts?.targetCorpseId,
   });
 
@@ -290,7 +318,12 @@ export function startDiveFromOutpost(state: GameState, bandId: string): GameStat
   let s: GameState = { ...state, run };
   // band 用绝对 depthRange 覆盖 zone.depthRange（透传 mapgen GenOpts.depthRange）。
   // band.tags（如有）覆盖 zoneTagsByDepth＝trench 专属事件池（twilight/midnight），与借来的 zone 内容隔离。
-  s = startDive(s, band.zoneId, { depthRange: band.depthRange, bandTags: band.tags });
+  // band.maxRoomFeatures（如有）开多事件「大房间」（声呐与房间 S1）——深段内容（C）铺在这些大房间里。
+  s = startDive(s, band.zoneId, {
+    depthRange: band.depthRange,
+    bandTags: band.tags,
+    maxRoomFeatures: band.maxRoomFeatures,
+  });
 
   s = appendLog(s, {
     tone: 'system',
@@ -309,9 +342,12 @@ export function enterNodeSelection(state: GameState): GameState {
   if (!run || !run.map || !run.currentNodeId) return state;
 
   const nextChoices = getNextChoices(run.map, run.currentNodeId);
+  // 当前房间内未探的 feature（多事件房间 S1）：与去往别处的出口并列摆出（一房可连探付氧、选出口走人）。
+  const features = roomFeatureChoices(run);
 
-  // 没有下一节点 = 走到了图的尽头，自动进入上浮
-  if (nextChoices.length === 0) {
+  // 没有下一节点、且房内也没剩可探的 → 走到图的尽头，自动进入上浮。
+  // （多 feature 房间还有没探完的不自动上浮——先让玩家选探还是走。）
+  if (nextChoices.length === 0 && features.length === 0) {
     return {
       ...state,
       phase: { kind: 'ascent', targetDepth: 0 },
@@ -366,7 +402,10 @@ export function enterNodeSelection(state: GameState): GameState {
 
   return {
     ...state,
-    phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices } },
+    phase: {
+      kind: 'dive',
+      subPhase: { kind: 'nodeSelect', choices, features: features.length ? features : undefined },
+    },
   };
 }
 
@@ -549,7 +588,12 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
   // 根据节点 kind 决定下一步
   switch (target.kind) {
     case 'event':
-      // 重访：事件已结算过，不重播——退化成一段安静水域（仍可休息/继续/回头）。
+      // 多事件「大房间」(S1)：到房间不自动触发——摆出房内未探 feature ＋ 出口，玩家自己选探哪个 / 走哪条。
+      // 重访也走这条：enterNodeSelection 据 activeFlags 过滤掉已探的 feature（探完只剩出口＝安静房间）。
+      if (target.features && target.features.length > 0) {
+        return enterNodeSelection(s);
+      }
+      // 重访：（单事件房间）事件已结算过，不重播——退化成一段安静水域（仍可休息/继续/回头）。
       if (isRevisit) {
         s = appendLog(s, { tone: 'realistic', text: '你回到这片水域，只剩自己搅起的沉积慢慢落下。' });
         return { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
@@ -581,6 +625,36 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
     default:
       return assertNever(target.kind);
   }
+}
+
+/**
+ * 探索当前房间里的一个 feature（多事件房间 S1）。在房内凑近细看：
+ *   - 付 FEATURE_EXPLORE_TURNS 回合的氧（不含洋流移动费——你没离开房间）；
+ *   - 标记已探（run.activeFlags，回到 enterNodeSelection 时该 feature 不再列出）；
+ *   - 触发其事件。
+ * 与「移动到新节点」解耦：不切 currentNodeId、不触发接近遭遇（探测只在跨节点 moveToNode 触发——
+ * 但连探累积的 alert 会在你**下一次移动**时兑现，故「在大房间里翻太久」自有代价）。
+ */
+export function exploreFeature(state: GameState, featureId: string): GameState {
+  const run = state.run;
+  if (!run || !run.map || !run.currentNodeId) return state;
+  const node = run.map.nodes[run.currentNodeId];
+  const feat = node?.features?.find((f) => f.id === featureId);
+  if (!feat) return state;
+  const doneFlag = featureDoneFlag(node.id, feat.id);
+  if (run.activeFlags.has(doneFlag)) return state; // 已探过（守卫，避免重复触发同一 feature）
+
+  // 连探付氧：房内挪近这处、细看（耗回合 + 灯/声呐随 tick 耗电、深水抬 alert）。标记已探。
+  const ticked = tickTurns(run, FEATURE_EXPLORE_TURNS);
+  const activeFlags = new Set(ticked.activeFlags);
+  activeFlags.add(doneFlag);
+  let s: GameState = { ...state, run: { ...ticked, activeFlags } };
+
+  // 氧气/理智死亡判定（与 moveToNode 同口径——连探也会把氧/理智耗到见底）
+  if (s.run!.stats.oxygen <= 0) return executeDeath(s, '氧气耗尽，溺亡');
+  if (s.run!.stats.sanity <= 0) return executeDeath(s, '理智崩溃，疯狂上浮');
+
+  return { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: feat.eventId } } };
 }
 
 /** 休息节点：消耗 N 回合换体力恢复 */

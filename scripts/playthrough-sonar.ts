@@ -18,7 +18,7 @@ import {
   serializeGameState,
   deserializeGameState,
 } from '../src/engine/state';
-import { pingSonar, moveToNode } from '../src/engine/dive';
+import { pingSonar, moveToNode, enterNodeSelection, exploreFeature } from '../src/engine/dive';
 import {
   POWER_MAX,
   SONAR_PING_COST,
@@ -86,6 +86,45 @@ function mk(opts?: {
     power: opts?.power ?? r0.power,
     alert: opts?.alert ?? 0,
     bandAlertFactor: opts?.bandAlertFactor,
+  };
+  return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
+}
+
+/**
+ * 多事件房间地图（声呐与房间 S1）：r0 = 3-feature 大房间，连到单事件房间 r1 + 上浮口 rx。
+ * 事件 id 任意（本脚本只测「地图层」路由——不查事件表）。
+ */
+function makeRoomMap(): DiveMap {
+  return {
+    zoneId: 'zone.blue_caves',
+    generatedAt: 0,
+    startNodeId: 'r0',
+    nodes: {
+      r0: {
+        id: 'r0', layer: 0, depth: 120, zoneTag: 'cave', kind: 'event',
+        features: [
+          { id: 'f0', eventId: 'ev.a', preview: '一处 A' },
+          { id: 'f1', eventId: 'ev.b', preview: '一处 B' },
+          { id: 'f2', eventId: 'ev.c', preview: '一处 C' },
+        ],
+        connectsTo: ['r1', 'rx'], preview: '前方水域开阔。',
+      },
+      r1: { id: 'r1', layer: 1, depth: 128, zoneTag: 'cave', kind: 'event', eventId: 'ev.single', connectsTo: ['rx'], preview: '单事件房间' },
+      rx: { id: 'rx', layer: 2, depth: 120, zoneTag: 'cave', kind: 'ascent_point', connectsTo: [], preview: '出口' },
+    },
+  };
+}
+
+function mkAt(map: DiveMap, nodeId: string): GameState {
+  const base = createInitialGameState();
+  const r0 = createNewRun({ zoneId: map.zoneId });
+  const node = map.nodes[nodeId];
+  const run: RunState = {
+    ...r0,
+    map,
+    currentNodeId: nodeId,
+    currentDepth: node.depth,
+    visitedNodeIds: [nodeId],
   };
   return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
 }
@@ -236,5 +275,57 @@ L('\n========== 9. scanMemory round-trip ==========');
   L('  scanMemory JSON round-trip、版本不 bump ✓');
 }
 
+// ============================================================
+// 10. 多事件房间（声呐与房间 S1）：房间菜单 + 连探付氧 + 已探过滤 + 路由 + 向后兼容
+// ============================================================
+L('\n========== 10. 多事件房间（S1）==========');
+{
+  const map = makeRoomMap();
+
+  // (a) enterNodeSelection 在大房间里把未探 feature + 出口一起摆出
+  const sel = enterNodeSelection(mkAt(map, 'r0'));
+  assert(sel.phase.kind === 'dive' && sel.phase.subPhase.kind === 'nodeSelect', '10a: 大房间→nodeSelect');
+  assert(sel.phase.subPhase.features?.length === 3, '10a: 房内 3 个未探 feature 全摆出');
+  assert(sel.phase.subPhase.choices.length === 2, '10a: 出口（r1 + rx）作为 choices 并列');
+
+  // (b) exploreFeature 触发其事件 + 连探付氧 + 标记已探 + 不离开房间
+  const oxBefore = sel.run!.stats.oxygen;
+  const ex = exploreFeature(sel, 'f0');
+  assert(ex.phase.kind === 'dive' && ex.phase.subPhase.kind === 'event' && ex.phase.subPhase.eventId === 'ev.a', '10b: 探 f0 → 触发 ev.a');
+  assert(ex.run!.stats.oxygen < oxBefore, '10b: 连探付氧（氧减少）');
+  assert(ex.run!.activeFlags.has('feat:r0:f0'), '10b: 标记 f0 已探');
+  assert(ex.run!.currentNodeId === 'r0', '10b: 没离开房间（currentNodeId 不变）');
+
+  // (c) 事件结算后回房间菜单：f0 不再列出，剩 f1/f2
+  const back = enterNodeSelection(ex);
+  assert(back.phase.kind === 'dive' && back.phase.subPhase.kind === 'nodeSelect', '10c: 回 nodeSelect');
+  const remain = back.phase.subPhase.features ?? [];
+  assert(remain.length === 2 && remain.every((f) => f.featureId !== 'f0'), '10c: f0 已探→不再列出，剩 f1/f2');
+
+  // (d) 已探的 feature 再 explore = no-op（守卫，原样返回）
+  const noop = exploreFeature(ex, 'f0');
+  assert(noop === ex, '10d: 已探 feature 再探 no-op（原样返回）');
+
+  // (e) moveToNode 进多事件房间 → 房间菜单（不自动触发事件）
+  const entered = moveToNode(mkAt(map, 'r1'), 'r0');
+  assert(entered.phase.kind === 'dive' && entered.phase.subPhase.kind === 'nodeSelect', '10e: 进大房间→nodeSelect 菜单（非 event）');
+  assert(entered.phase.subPhase.features?.length === 3, '10e: 菜单含 3 feature');
+
+  // (f) 向后兼容：单事件节点 moveToNode → 仍自动触发事件（旧行为）
+  const single = moveToNode(mkAt(map, 'r0'), 'r1');
+  assert(single.phase.kind === 'dive' && single.phase.subPhase.kind === 'event' && single.phase.subPhase.eventId === 'ev.single', '10f: 单事件节点仍自动触发（向后兼容）');
+
+  // (g) 探完所有 feature 后回菜单：只剩出口（features 为空）
+  let s2 = sel;
+  for (const fid of ['f0', 'f1', 'f2']) {
+    s2 = exploreFeature(s2, fid);
+    s2 = enterNodeSelection(s2);
+  }
+  assert(s2.phase.kind === 'dive' && s2.phase.subPhase.kind === 'nodeSelect', '10g: 探完回 nodeSelect');
+  assert((s2.phase.subPhase.features ?? []).length === 0, '10g: 全探完→features 清空，只剩出口');
+
+  L('  房间菜单 / 连探付氧 / 已探过滤 / 进房路由 / 向后兼容 / 探完清空 ✓');
+}
+
 console.log(log.join('\n'));
-console.log('\n✓ 声呐探索扫描回归通过（S0）');
+console.log('\n✓ 声呐探索扫描回归通过（S0 + S1 多事件房间）');

@@ -64,8 +64,20 @@ export interface DiveNode {
   zoneTag: ZoneTag;
   /** 节点类型 */
   kind: NodeKind;
-  /** 事件型节点的事件 id（运行时根据池子抽取） */
+  /**
+   * 事件型节点的事件 id（运行时根据池子抽取）。
+   * 「单 feature 房间」(声呐与房间 SPEC §6/§7 S1) 仍走这条：到房间即自动触发＝旧行为不变。
+   * 多 feature 房间用下面的 `features`，此字段留空（moveToNode 据 features 路由到房间菜单而非自动触发）。
+   */
   eventId?: string;
+  /**
+   * 多事件房间（声呐与房间 SPEC §6「房间可含多个事件点」· §7 S1）。设了即「大房间」：
+   * 到达不自动触发，而是把房内**未探**的 feature ＋ 出口一起摆成选项（enterNodeSelection），
+   * 玩家逐个凑近看、每探一处付氧（dive.ts::exploreFeature），选出口走人。
+   * 缺省（绝大多数房间）→ 走 `eventId` 单事件 ＝ 旧行为（向后兼容，#19 单 tag / #44/#47 loot 隔离在事件数据侧成立）。
+   * run 级探索进度记在 run.activeFlags（`feat:<nodeId>:<featureId>`），不入存档形状、不 bump SAVE_VERSION。
+   */
+  features?: NodeFeature[];
   /** corpse 节点指向的 DeathRecord.id */
   corpseRecordId?: string;
   /** 该节点能去往下一层的节点 ids */
@@ -82,6 +94,19 @@ export interface DiveNode {
    */
   evadesSonar?: boolean;
   spoofsSonar?: string;
+}
+
+/**
+ * 房间内的一个「事件点」（声呐与房间 SPEC §6 S1）。一个多事件房间含 1..N 个 feature，
+ * 玩家在房内逐个探索（每探付氧），各自触发自己的事件。
+ */
+export interface NodeFeature {
+  /** 节点内唯一 id（f0/f1/f2）。run.activeFlags 用 `feat:<nodeId>:<id>` 记「已探」。 */
+  id: string;
+  /** 探索该 feature 触发的事件 id。 */
+  eventId: string;
+  /** 灯下/近处真相短标签（事件标题）——你就在房间里、灯照得到，故按 full 档真相显示。 */
+  preview: string;
 }
 
 export type NodeKind =

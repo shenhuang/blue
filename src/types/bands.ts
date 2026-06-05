@@ -46,6 +46,13 @@ export interface DepthBand {
    * 避免深 band 事件稀时退化成空水道。缺省（reef_deep 等不设）→ 回退 tagsForDepth，行为不变。
    */
   tags?: ZoneTag[];
+  /**
+   * 多事件「大房间」上限（声呐与房间 SPEC §6/§7 S1）：本 band 的事件房间最多含几个 feature。
+   * 缺省 / ≤1（reef_deep 等不设）→ 永远单事件房间 ＝ 旧图逐字节不变（向后兼容、不破 mapgen 快照）。
+   * >1（深 band 设 2–3）→ 事件房间偶尔升级成 2–3 feature 的大房间（大房间稀有）；深段内容（C）铺在其中，
+   * 配合声呐扫描「先看见一个开阔房间、再凑近逐个点亮」的探索质感。透传 startDiveFromOutpost → mapgen。
+   */
+  maxRoomFeatures?: number;
 }
 
 export interface BandsFile {

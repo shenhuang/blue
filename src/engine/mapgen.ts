@@ -9,7 +9,7 @@
 // 不论哪种拓扑：depthOffset（海图 POI 修正）都先平移 depthRange 再生成；corpse pass 仍按
 // depth ±10m 匹配 findRecoverableCorpse。analyzeMap() 是纯结构分析器，给 dev 面板 + 回归脚本复用。
 
-import type { DiveMap, DiveNode, ZoneDef, NodeKind, ZoneTag, DeathRecord } from '@/types';
+import type { DiveMap, DiveNode, NodeFeature, ZoneDef, NodeKind, ZoneTag, DeathRecord } from '@/types';
 import { buildEventPool, pickWeighted, tagsForDepth } from './zones';
 import { findRecoverableCorpse, isRecoverableCorpse } from './death';
 
@@ -39,6 +39,13 @@ interface GenOpts {
    */
   bandTags?: ZoneTag[];
   /**
+   * 多事件房间上限（声呐与房间 SPEC §6/§7 S1）：一个事件房间最多含几个 feature。
+   * 缺省 / ≤1（POI / 教学 / 浅水 zone 不传）→ 永远单事件房间 ＝ **不消耗任何额外 rng、逐字节复现旧图**
+   *（向后兼容、不破现有 mapgen 场景快照）。>1（深 band 出潜传 band.maxRoomFeatures）→ 事件房间按
+   * rollExtraFeatures 偶尔升级成 2–3 feature 的「大房间」（大房间稀有）。深段内容（C）即铺在这些大房间里。
+   */
+  maxRoomFeatures?: number;
+  /**
    * 打捞行会 Lv.2「出海前选目标」：指定一具 DeathRecord.id 作为本次必定出现的尸体。
    * 若该尸体在本 zone 且仍可回收（isRecoverableCorpse），则**保证**布点（绕过 corpseChance 随机），
    * 放在深度最接近其 depthAtDeath 的可用节点上。无效 / 未设则退回原有随机 corpse pass。
@@ -56,6 +63,74 @@ function pickFrom<T>(arr: T[], rng = Math.random): T {
 
 function clamp(x: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, x));
+}
+
+// ============================================================
+// 多事件房间（声呐与房间 SPEC §6/§7 S1）—— 把一个事件房间偶尔升级成含 2–3 个 feature 的「大房间」
+// ============================================================
+
+/**
+ * 掷出一个事件房间的**额外** feature 数（0..maxFeatures-1）。多数房间是单 feature（返回 0＝旧形状），
+ * 约三成两 feature，三 feature「大房间」稀有（SPEC §6「大房间稀有」）。
+ * **只有 maxFeatures>1 时才调用**——调用方先判，故缺省路径零额外 rng（逐字节复现旧图、不破场景快照）。
+ */
+function rollExtraFeatures(maxFeatures: number, rng: () => number): number {
+  const r = rng();
+  if (r < 0.62) return 0; // 多数：单 feature（旧形状）
+  if (r < 0.88) return Math.min(1, maxFeatures - 1); // ~26%：两 feature
+  return Math.min(2, maxFeatures - 1); // ~12%：大房间（最多三 feature）
+}
+
+interface MultiFeatureArgs {
+  zone: ZoneDef;
+  depth: number;
+  profileFlags: Set<string>;
+  triggeredFakeIds: string[];
+  bandTags?: ZoneTag[];
+  rng: () => number;
+  maxFeatures: number;
+}
+
+/**
+ * 给一个已抽到首事件（first）的房间，可能再抽出几个 feature 凑成多事件房间。
+ * 返回 ≥2 的 NodeFeature[] 即「大房间」（调用方据此置 node.features、清 eventId、改 preview）；
+ * 返回 undefined → 保持单事件房间（旧形状）。额外事件从同一池子抽、靠 triggeredFakeIds 去重（同 run 不重复）、
+ * 抽干就少给——房内各 feature 同 zoneTag（#19 单 tag 不破）、loot 隔离在事件数据侧（#44/#47）。
+ */
+function maybeMultiFeatureRoom(
+  first: { id: string; title: string },
+  args: MultiFeatureArgs,
+): NodeFeature[] | undefined {
+  if (args.maxFeatures <= 1) return undefined;
+  const extra = rollExtraFeatures(args.maxFeatures, args.rng);
+  if (extra <= 0) return undefined;
+  const feats: NodeFeature[] = [{ id: 'f0', eventId: first.id, preview: first.title }];
+  // 同房不放重复 feature：用 excludeIds 硬排除本房已用事件（≠ triggeredFakeIds 的 oncePerRun 软去重）。
+  const used = new Set<string>([first.id]);
+  for (let k = 0; k < extra; k++) {
+    const pool = buildEventPool({
+      zone: args.zone,
+      depth: args.depth,
+      sanity: 100,
+      profileFlags: args.profileFlags,
+      triggeredEventIds: args.triggeredFakeIds,
+      excludeIds: used,
+      tagsOverride: args.bandTags,
+    });
+    if (pool.length === 0) break; // 池子抽干（或同房可用事件用尽）→ 少给几个 feature
+    const chosen = pickWeighted(pool, args.rng)!;
+    feats.push({ id: `f${feats.length}`, eventId: chosen.id, preview: chosen.title });
+    used.add(chosen.id);
+    args.triggeredFakeIds.push(chosen.id);
+  }
+  return feats.length > 1 ? feats : undefined;
+}
+
+/** 多事件房间从远处（相邻节点）看到的预览——只暗示「开阔、有好几处」，不剧透各 feature（灯下/声呐/盲都先过这层）。 */
+function roomPreview(featureCount: number): string {
+  return featureCount >= 3
+    ? '前方的水域开阔下来，黑里隐约有好几处轮廓，值得一个个凑近看。'
+    : '前方的水域开阔了些，约略有两处地方值得凑近看看。';
 }
 
 /** 在候选节点里挑深度最接近 targetDepth 的一个（强制布尸用） */
@@ -204,7 +279,7 @@ function chooseLayeredNodeKind(
 }
 
 function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap {
-  const { zone, profileFlags, rng = Math.random, deaths = [], corpseChance = 0.6, targetCorpseId } = opts;
+  const { zone, profileFlags, rng = Math.random, deaths = [], corpseChance = 0.6, targetCorpseId, maxRoomFeatures = 1 } = opts;
 
   const totalLayers = zone.layerCount;
   const d0 = baseD0;
@@ -226,6 +301,7 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
       const kind = chooseLayeredNodeKind(L, totalLayers, rng, { canFreeAscend });
 
       let eventId: string | undefined;
+      let features: NodeFeature[] | undefined;
       let preview = '';
       let zoneTag: ZoneTag = pickFrom(opts.bandTags ?? tagsForDepth(zone, depth), rng) ?? 'reef';
 
@@ -249,6 +325,15 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
         eventId = chosen.id;
         preview = chosen.title;
         triggeredFakeIds.push(chosen.id); // 同 run 不再选
+        // 多事件房间（S1）：偶尔升级成大房间（maxRoomFeatures>1 才进；缺省零额外 rng＝旧图不变）。
+        const feats = maybeMultiFeatureRoom(chosen, {
+          zone, depth, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, rng, maxFeatures: maxRoomFeatures,
+        });
+        if (feats) {
+          features = feats;
+          eventId = undefined; // 大房间不用单 eventId：moveToNode 据 features 路由到房间菜单
+          preview = roomPreview(feats.length);
+        }
       } else if (kind === 'rest') {
         preview = '一片可以喘息的水域。';
       } else if (kind === 'ascent_point') {
@@ -262,6 +347,7 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
         zoneTag,
         kind,
         eventId,
+        features,
         connectsTo: [],
         preview,
       };
@@ -333,7 +419,7 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
 //   7. connectsTo 双向：邻接表两边都写，玩家可回头/重访（重访不重播事件见 dive.ts::moveToNode）。
 
 function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap {
-  const { zone, profileFlags, rng = Math.random, deaths = [], corpseChance = 0.6, targetCorpseId } = opts;
+  const { zone, profileFlags, rng = Math.random, deaths = [], corpseChance = 0.6, targetCorpseId, maxRoomFeatures = 1 } = opts;
   const d0 = baseD0;
   const d1 = baseD1;
   const canFreeAscend = zone.canFreeAscend !== false;
@@ -474,6 +560,7 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
     const zoneTag: ZoneTag = pickFrom(opts.bandTags ?? tagsForDepth(zone, depthI), rng) ?? 'reef';
     let kind: NodeKind;
     let eventId: string | undefined;
+    let features: NodeFeature[] | undefined;
     let preview: string;
 
     if (i === 0) {
@@ -512,6 +599,15 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
           eventId = chosen.id;
           preview = chosen.title;
           triggeredFakeIds.push(chosen.id);
+          // 多事件房间（S1）：洞里大房间偶尔含多个 feature（maxRoomFeatures>1 才进；缺省零额外 rng＝旧迷路图不变）。
+          const feats = maybeMultiFeatureRoom(chosen, {
+            zone, depth: depthI, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, rng, maxFeatures: maxRoomFeatures,
+          });
+          if (feats) {
+            features = feats;
+            eventId = undefined; // 大房间不用单 eventId：moveToNode 据 features 路由到房间菜单
+            preview = roomPreview(feats.length);
+          }
         }
       }
     }
@@ -523,6 +619,7 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
       zoneTag,
       kind,
       eventId,
+      features,
       connectsTo: [...adj[i]].map(idOf), // 双向边
       preview,
     };

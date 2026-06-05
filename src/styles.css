@@ -686,6 +686,21 @@ html, body, #root {
   color: var(--text-muted);
 }
 
+/* 多事件房间（声呐与房间 S1）—— 当前房间里「凑近看」的几处 feature，与「去向」出口区分一道暖色 */
+.room-features {
+  margin: 0.25rem 0 0.35rem;
+}
+.room-feature-list {
+  margin-bottom: 0.35rem;
+}
+.event-option.feature {
+  border-color: var(--cyan);
+  border-left-width: 3px;
+}
+.event-option.feature .node-depth {
+  color: var(--cyan);
+}
+
 /* 节点选择 ——— */
 
 .node-row {
@@ -820,6 +835,15 @@ html, body, #root {
   font-size: 7px;
   text-anchor: middle;
   opacity: 0.7;
+}
+/* 多事件房间（声呐与房间 S1）：声呐扫出的「房间」大轮廓画成空心圈，里头几颗小点＝feature blip */
+.sonar-blip.is-room circle {
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 1.2;
+}
+.sonar-feature-dot {
+  fill: var(--cyan);
 }
 .sonar-mini {
   position: absolute;

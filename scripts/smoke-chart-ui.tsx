@@ -17,7 +17,7 @@ import { FuneralView } from '../src/ui/CorpseView';
 import { UpgradePanel } from '../src/ui/UpgradePanel';
 import { MiraShopView } from '../src/ui/MiraShopView';
 import { LighthouseBuildPanel } from '../src/ui/LighthouseBuildPanel';
-import type { GameState, InventoryItem, NodeChoice, DiveMap } from '../src/types';
+import type { GameState, InventoryItem, NodeChoice, FeatureChoice, DiveMap } from '../src/types';
 
 const log: string[] = [];
 const L = (s: string) => log.push(s);
@@ -267,6 +267,57 @@ const htmlNoSonar = renderToStaticMarkup(
 );
 assert(!htmlNoSonar.includes('声呐图'), 'E4: 未解锁声呐不应渲染声呐图面板');
 L('  解锁→面板/空态全黑 · 有记忆→blip+深度+残图 · 未解锁→无面板 ✓');
+
+// ============================================
+// E5. NodeSelectView · 多事件房间（声呐与房间 SPEC §6/§7 S1）：
+//   房间 features → 「凑近看」组；无 features → 不渲染该组（向后兼容）；声呐图把多 feature 房间画成 is-room 大轮廓 + feature blip
+// ============================================
+L('\n========== E5. NodeSelectView 多事件房间 (S1) ==========');
+const roomFeatures: FeatureChoice[] = [
+  { featureId: 'f0', eventId: 'ev.a', preview: '半埋的舱门', clarity: 'full' },
+  { featureId: 'f1', eventId: 'ev.b', preview: '一段断裂的缆', clarity: 'full' },
+];
+const htmlRoom = renderToStaticMarkup(
+  <NodeSelectView state={diveState()} choices={truthChoice} features={roomFeatures} onStateChange={noop} />,
+);
+assert(htmlRoom.includes('room-features'), 'E5: 有 features 应渲染「凑近看」组');
+assert(htmlRoom.includes('凑近看'), 'E5: 房间 feature 选项标签');
+assert(htmlRoom.includes('半埋的舱门') && htmlRoom.includes('一段断裂的缆'), 'E5: 各 feature 预览渲染');
+// 无 features → 不渲染「凑近看」组（单事件房间＝旧 UI，向后兼容）
+const htmlNoRoom = renderToStaticMarkup(
+  <NodeSelectView state={diveState()} choices={truthChoice} onStateChange={noop} />,
+);
+assert(!htmlNoRoom.includes('room-features'), 'E5: 无 features 不渲染「凑近看」组（向后兼容）');
+// 声呐图：多 feature 房间画成 is-room 大轮廓 + feature blip
+function roomSonarState(): GameState {
+  const base = createInitialGameState();
+  const r0 = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } });
+  const map: DiveMap = {
+    zoneId: 'zone.blue_caves',
+    generatedAt: 0,
+    startNodeId: 'n0',
+    nodes: {
+      n0: {
+        id: 'n0', layer: 0, depth: 120, zoneTag: 'cave', kind: 'event',
+        features: [
+          { id: 'f0', eventId: 'ev.a', preview: 'A' },
+          { id: 'f1', eventId: 'ev.b', preview: 'B' },
+          { id: 'f2', eventId: 'ev.c', preview: 'C' },
+        ],
+        connectsTo: ['n1'], preview: '',
+      },
+      n1: { id: 'n1', layer: 1, depth: 128, zoneTag: 'cave', kind: 'ascent_point', connectsTo: [], preview: '' },
+    },
+  };
+  const run = { ...r0, map, currentDepth: 120, currentNodeId: 'n0', turn: 0, scanMemory: { n0: 0, n1: 0 } };
+  return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
+}
+const htmlRoomSonar = renderToStaticMarkup(
+  <NodeSelectView state={roomSonarState()} choices={[]} onStateChange={noop} />,
+);
+assert(htmlRoomSonar.includes('is-room'), 'E5: 声呐图把多 feature 房间画成大轮廓 (is-room)');
+assert(htmlRoomSonar.includes('sonar-feature-dot'), 'E5: 房间轮廓里画 feature blip');
+L('  凑近看组 / 向后兼容无组 / 声呐房间轮廓+feature blip ✓');
 
 // ============================================
 // F. SeaChartView · 打捞行会 Lv.2 出海前选目标尸体
