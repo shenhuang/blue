@@ -845,6 +845,23 @@ html, body, #root {
 .sonar-feature-dot {
   fill: var(--cyan);
 }
+/* 不可信声呐（声呐与房间 S2）。要 subtle——别一眼看穿是假（§5）。 */
+/* spoof「无灯之光」假信标：画成上浮口（is-exit 绿），但「太干净了」——亮一点、加一道极淡的白环。 */
+.sonar-blip.is-spoof circle {
+  fill: #b6ffd9;
+  stroke: rgba(234, 255, 251, 0.5);
+  stroke-width: 0.6;
+}
+/* 读数乱码（低 san）：深度等仪表字损坏成不可读——暗、发灰、说不准。 */
+.sonar-blip-depth.is-garbled {
+  fill: #7c8a87;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
+}
+/* 伪接触：和真接触一模一样的幻影 blip（与真无异——同 cyan、同大小，不标记、不变形）。 */
+.sonar-phantom {
+  fill: var(--cyan);
+}
 .sonar-mini {
   position: absolute;
   right: 6px;

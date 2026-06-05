@@ -320,6 +320,44 @@ assert(htmlRoomSonar.includes('sonar-feature-dot'), 'E5: 房间轮廓里画 feat
 L('  凑近看组 / 向后兼容无组 / 声呐房间轮廓+feature blip ✓');
 
 // ============================================
+// E6. SonarScanPanel · 不可信扫描（声呐与房间 SPEC §5/§7 S2）：
+//   spoof→画成假信标(is-spoof + 上浮口↑) / evade→无回波(不画·深度缺) / 低 san→读数乱码(is-garbled)+伪接触(sonar-phantom)；
+//   高 san 控制组：低 san 腐蚀（乱码/伪接触）消失，但 spoof/evade 是节点固有、仍欺骗。
+// ============================================
+L('\n========== E6. SonarScanPanel 不可信扫描 (S2) ==========');
+function deceptionSonarState(sanity: number): GameState {
+  const base = createInitialGameState();
+  const r0 = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } });
+  const map: DiveMap = {
+    zoneId: 'zone.blue_caves', generatedAt: 0, startNodeId: 'n0',
+    nodes: {
+      n0: { id: 'n0', layer: 0, depth: 150, zoneTag: 'cave', kind: 'event', connectsTo: ['n1', 'n2', 'n3'], preview: '' },
+      n1: { id: 'n1', layer: 1, depth: 156, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '', spoofsSonar: '一道朝上的出口' },
+      n2: { id: 'n2', layer: 1, depth: 199, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '', evadesSonar: true },
+      n3: { id: 'n3', layer: 1, depth: 158, zoneTag: 'cave', kind: 'event', connectsTo: ['n4', 'n5'], preview: '' },
+      n4: { id: 'n4', layer: 2, depth: 160, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '' },
+      n5: { id: 'n5', layer: 2, depth: 170, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '' },
+    },
+  };
+  const run = {
+    ...r0, map, stats: { ...r0.stats, sanity }, sonarDeception: 0.32,
+    currentDepth: 150, currentNodeId: 'n0', turn: 0, scanMemory: { n0: 0, n1: 0, n2: 0, n3: 0, n4: 0, n5: 0 },
+  };
+  return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
+}
+const htmlDecLow = renderToStaticMarkup(<NodeSelectView state={deceptionSonarState(18)} choices={[]} onStateChange={noop} />);
+assert(htmlDecLow.includes('is-spoof'), 'E6: spoof 节点画成假信标 (is-spoof)');
+assert(htmlDecLow.includes('↑'), 'E6: spoof 假信标画成上浮口符号（图上无真出口·↑ 即假象＝节点版 mimic）');
+assert(!htmlDecLow.includes('199m'), 'E6: evade 节点无回波→声呐图不画（其深度 199m 缺席）');
+assert(htmlDecLow.includes('is-garbled'), 'E6: 低 san → 读数乱码 (is-garbled)');
+assert(htmlDecLow.includes('sonar-phantom'), 'E6: 低 san → 伪接触幻影 blip (sonar-phantom)');
+// 高 san 控制组：低 san 腐蚀消失，spoof/evade 固有仍在（是世界在骗你、不是你脑子崩）
+const htmlDecHigh = renderToStaticMarkup(<NodeSelectView state={deceptionSonarState(100)} choices={[]} onStateChange={noop} />);
+assert(!htmlDecHigh.includes('is-garbled') && !htmlDecHigh.includes('sonar-phantom'), 'E6: 高 san → 无乱码/伪接触（低 san 腐蚀消失·大致为真）');
+assert(htmlDecHigh.includes('is-spoof') && !htmlDecHigh.includes('199m'), 'E6: spoof/evade 是节点固有 → 高 san 仍欺骗');
+L('  spoof 假信标 / evade 无回波 / 低 san 乱码+伪接触 / 高 san 控制组 ✓');
+
+// ============================================
 // F. SeaChartView · 打捞行会 Lv.2 出海前选目标尸体
 // ============================================
 L('\n========== F. SeaChartView 选目标（Lv.2） ==========');

@@ -254,6 +254,42 @@ function main() {
     }
   }
 
+  // —— 不可信声呐失真（声呐与房间 S2）不变量：sonarDeception>0 时给部分内部节点挂 spoofs/evades ——
+  // 守则：只挂非地标/非起点/非尸体的内部节点 / 不同时 evade+spoof / spoof 是非空伪装串 / 门控缺省零改动 /
+  //       确定性（FNV·不耗 rng）/ 欺骗 pass 不破迷路结构不变量（只加派生字段、不动 connectsTo/depth/kind）。
+  console.log(`\n========== 不可信声呐失真不变量 (zone.blue_caves, 140–180m, sonarDeception=0.32, seeds 1–60) ==========`);
+  const decProblems: string[] = [];
+  let decTotal = 0, gatedTotal = 0;
+  const decFp = (m: DiveMap) =>
+    Object.keys(m.nodes).sort().map((id) => `${id}:${m.nodes[id].evadesSonar ? 'E' : ''}${m.nodes[id].spoofsSonar ?? ''}`).join('|');
+  for (let seed = 1; seed <= SWEEP; seed++) {
+    const zone = getZone('zone.blue_caves')!;
+    const base = { zone, profileFlags: FLAGS, deaths: [], depthRange: [140, 180] as [number, number], maxRoomFeatures: 3 };
+    const dirty = generateDiveMap({ ...base, rng: makeRng(seed), sonarDeception: 0.32 });
+    const clean = generateDiveMap({ ...base, rng: makeRng(seed), sonarDeception: 0 });
+    for (const n of Object.values(dirty.nodes)) {
+      if (n.evadesSonar || n.spoofsSonar) {
+        decTotal++;
+        if (['ascent_point', 'air_pocket', 'camp', 'corpse'].includes(n.kind)) decProblems.push(`seed=${seed} ${n.id}: 地标/尸体被欺骗(${n.kind})`);
+        if (n.id === dirty.startNodeId) decProblems.push(`seed=${seed} ${n.id}: 起点被欺骗`);
+        if (n.evadesSonar && n.spoofsSonar) decProblems.push(`seed=${seed} ${n.id}: 同时 evade+spoof`);
+        if (n.spoofsSonar !== undefined && (typeof n.spoofsSonar !== 'string' || n.spoofsSonar.length === 0)) decProblems.push(`seed=${seed} ${n.id}: spoof 串为空`);
+      }
+    }
+    for (const n of Object.values(clean.nodes)) if (n.evadesSonar || n.spoofsSonar) gatedTotal++;
+    // 欺骗 pass 不破迷路结构不变量（只加派生字段）
+    const a = analyzeMap(dirty);
+    if (!a.allReachable || !a.isUndirected || !a.hasCycle || !a.hasDeadEnd) decProblems.push(`seed=${seed}: 欺骗 pass 破坏迷路不变量`);
+    if (decFp(generateDiveMap({ ...base, rng: makeRng(seed), sonarDeception: 0.32 })) !== decFp(dirty)) decProblems.push(`seed=${seed}: 欺骗非确定性`);
+  }
+  if (decProblems.length === 0 && decTotal >= 20 && gatedTotal === 0) {
+    console.log(`  ✓ 60 seed 共 ${decTotal} 个欺骗节点·只挂内部节点·门控缺省零改动(${gatedTotal})·确定性·不破迷路不变量`);
+  } else {
+    if (decTotal < 20) { console.log(`  ✗ 欺骗节点太少（${decTotal}），机制疑似没触发`); fails.push(`S2 欺骗 60 seed 只生成 ${decTotal} 个`); }
+    if (gatedTotal !== 0) { console.log(`  ✗ 门控失效：sonarDeception=0 仍有 ${gatedTotal} 欺骗`); fails.push(`S2 门控失效（${gatedTotal}）`); }
+    for (const p of decProblems.slice(0, 10)) { console.log(`      ${p}`); fails.push(p); }
+  }
+
   console.log('');
   if (fails.length > 0) {
     console.log(`✗ 失败 ${fails.length} / 通过 ${okCount}`);

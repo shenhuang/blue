@@ -90,6 +90,7 @@ export function startDive(
     depthRange?: [number, number];
     bandTags?: ZoneTag[];
     maxRoomFeatures?: number;
+    sonarDeception?: number;
     targetCorpseId?: string;
   },
 ): GameState {
@@ -111,6 +112,7 @@ export function startDive(
     depthRange: opts?.depthRange,
     bandTags: opts?.bandTags,
     maxRoomFeatures: opts?.maxRoomFeatures,
+    sonarDeception: opts?.sonarDeception,
     targetCorpseId: opts?.targetCorpseId,
   });
 
@@ -311,6 +313,9 @@ export function startDiveFromOutpost(state: GameState, bandId: string): GameStat
     // 深水区 C：band 探测压力倍率落 run（缺省 undefined → alertDelta 视作 1）。越深 band 越凶，
     // 在深度因子饱和（ALERT_DEPTH_FULL）之上继续加压；摸黑/浅水消退不受倍率影响（逃生阀门不被买断）。
     bandAlertFactor: band.alertFactor,
+    // 声呐与房间 S2：band 不可信声呐失真强度落 run（缺省 undefined → effectiveFalseEchoSanity 视作 0＝声呐相对老实）。
+    // 深 band 越骗（throat/abyssal/hadal）、subhadal 回落（『把戏都停了』）；只抬低 san 失真阈值、不动其它。
+    sonarDeception: band.sonarDeception,
     turn: dist,
     stats: { ...run.stats, oxygen: Math.max(1, run.stats.oxygen - transitOxygen) },
   };
@@ -323,6 +328,8 @@ export function startDiveFromOutpost(state: GameState, bandId: string): GameStat
     depthRange: band.depthRange,
     bandTags: band.tags,
     maxRoomFeatures: band.maxRoomFeatures,
+    // band.sonarDeception（如有）让 mapgen 给部分内部节点挂 spoofs/evades（节点版 mimic / 无回波，S2）。
+    sonarDeception: band.sonarDeception,
   });
 
   s = appendLog(s, {

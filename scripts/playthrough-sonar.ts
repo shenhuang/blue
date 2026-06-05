@@ -26,7 +26,17 @@ import {
   ALERT_MAX,
   sonarPingAlertDelta,
   alertDepthFactor,
+  sonarReturn,
+  nodeSonarView,
+  sonarPhantoms,
+  effectiveFalseEchoSanity,
+  SONAR_FALSE_ECHO_SANITY,
+  SONAR_FALSE_ECHO_SANITY_BAND_MAX,
 } from '../src/engine/clarity';
+import { generateDiveMap } from '../src/engine/mapgen';
+import { getZone } from '../src/engine/zones';
+import { getBand } from '../src/engine/bands';
+import type { DiveNode } from '../src/types';
 import {
   revealSonarScan,
   sonarScanRange,
@@ -327,5 +337,84 @@ L('\n========== 10. 多事件房间（S1）==========');
   L('  房间菜单 / 连探付氧 / 已探过滤 / 进房路由 / 向后兼容 / 探完清空 ✓');
 }
 
+// ============================================================
+// 11. 不可信扫描（声呐与房间 S2）：spoof/evade 表象 + 深 band 失真阈值(封顶/回落) + 低 san 伪接触/读数乱码 + mapgen 欺骗 pass
+// ============================================================
+L('\n========== 11. 不可信扫描（S2）==========');
+{
+  const makeRng = (seed: number) => { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 0x100000000; }; };
+  // 纯 run（只喂 clarity 需要的字段：sanity / turn / sonarDeception）。
+  const run = (o?: { sanity?: number; turn?: number; dec?: number }): RunState =>
+    ({ stats: { sanity: o?.sanity ?? 100 }, turn: o?.turn ?? 0, sonarDeception: o?.dec } as unknown as RunState);
+  const node = (o: Partial<DiveNode>): DiveNode =>
+    ({ id: 'x', layer: 1, depth: 150, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '真相', ...o });
+
+  // (a) evadesSonar → 无回波：文本「吞了」、nodeSonarView.noEcho + deceptive（声呐图不画）
+  const ev = node({ id: 'ev', evadesSonar: true });
+  assert(sonarReturn(run({ sanity: 100 }), ev).includes('吞'), '11a: evade 文本＝无回波（脉冲被吞）');
+  const evv = nodeSonarView(run({}), ev);
+  assert(evv.noEcho && evv.deceptive, '11a: evade → noEcho + deceptive');
+
+  // (b) spoofsSonar → 假信标（节点版 mimic）：文本「像…」、displayKind 画成上浮口、deceptive、不 noEcho
+  const sp = node({ id: 'sp', spoofsSonar: '一道朝上的出口' });
+  assert(sonarReturn(run({}), sp).includes('一道朝上的出口'), '11b: spoof 文本＝伪装成假信标');
+  const spv = nodeSonarView(run({}), sp);
+  assert(spv.displayKind === 'ascent_point' && spv.deceptive && !spv.noEcho, '11b: spoof → 声呐图画成上浮口(假信标)、deceptive');
+
+  // (c) effectiveFalseEchoSanity：缺省＝基线（守 sensors 回归）/ 深 band 抬高（越深越易骗）/ subhadal 回落 / 封顶
+  assert(effectiveFalseEchoSanity(run({})) === SONAR_FALSE_ECHO_SANITY, '11c: 缺省 band → 恰好基线（零行为变化）');
+  const thrThroat = effectiveFalseEchoSanity(run({ dec: getBand('band.trench_throat')!.sonarDeception }));
+  const thrHadal = effectiveFalseEchoSanity(run({ dec: getBand('band.hadal')!.sonarDeception }));
+  const thrSub = effectiveFalseEchoSanity(run({ dec: getBand('band.subhadal')!.sonarDeception }));
+  assert(thrThroat > SONAR_FALSE_ECHO_SANITY && thrHadal > thrThroat, '11c: 越深越易骗（throat < hadal）');
+  assert(thrSub < thrThroat, '11c: subhadal 失真回落＝『把戏都停了』（< throat，越深越骗的梯度在最底反转）');
+  assert(effectiveFalseEchoSanity(run({ dec: 99 })) === SONAR_FALSE_ECHO_SANITY_BAND_MAX, '11c: 深 band 失真有封顶（高 san 仍留一线可信）');
+
+  // (d) 低 san 伪接触：低 san + 深 band → 幻影 blip；高 san → 无（大致为真）；锚在真实接触上
+  const mem: Record<string, number> = {}; for (let i = 0; i < 6; i++) mem['n' + i] = 0;
+  const ph = sonarPhantoms(run({ sanity: 18, dec: 0.32 }), mem);
+  assert(ph.length >= 1, '11d: 低 san + 深 band → 伪接触（幻影 blip）');
+  assert(ph.every((p) => mem[p.nearNodeId] !== undefined), '11d: 伪接触锚在真实接触附近（随其余像渐隐）');
+  assert(sonarPhantoms(run({ sanity: 100, dec: 0.32 }), mem).length === 0, '11d: 高 san → 无伪接触（大致为真）');
+
+  // (e) 读数乱码：低 san 时部分节点 garbled；高 san 不坏
+  const someGarbled = (sanity: number) =>
+    ['n0', 'n1', 'n2', 'n3', 'n4', 'n5'].some((id) => nodeSonarView(run({ sanity, dec: 0.32, turn: 0 }), node({ id })).garbled);
+  assert(someGarbled(18), '11e: 低 san → 部分读数乱码（garbled）');
+  assert(!someGarbled(100), '11e: 高 san → 读数不坏');
+
+  // (f) mapgen 欺骗 pass：深 band 给部分内部节点挂 spoofs/evades；门控缺省零改动；地标/起点/尸体豁免；确定性
+  const zone = getZone('zone.blue_caves')!;
+  const genHadal = (seed: number, dec: number) =>
+    generateDiveMap({ zone, profileFlags: new Set(['flag.tutorial_complete']), deaths: [], rng: makeRng(seed), depthRange: [140, 180], maxRoomFeatures: 3, sonarDeception: dec });
+  let totalDeceived = 0, totalBadExempt = 0, totalGated = 0;
+  for (let seed = 1; seed <= 12; seed++) {
+    const dirty = genHadal(seed, 0.32);
+    const clean = genHadal(seed, 0);
+    for (const n of Object.values(dirty.nodes)) {
+      if (n.evadesSonar || n.spoofsSonar) {
+        totalDeceived++;
+        if (['ascent_point', 'air_pocket', 'camp', 'corpse'].includes(n.kind) || n.id === dirty.startNodeId) totalBadExempt++;
+      }
+    }
+    for (const n of Object.values(clean.nodes)) if (n.evadesSonar || n.spoofsSonar) totalGated++;
+  }
+  assert(totalDeceived >= 6, `11f: 深 band 12 seed 累计有欺骗节点（实得 ${totalDeceived}）`);
+  assert(totalBadExempt === 0, '11f: 地标/起点/尸体永不被欺骗（结构性可感、守 #36）');
+  assert(totalGated === 0, '11f: 门控缺省（sonarDeception=0）→ 零欺骗字段＝旧图逐字节不变（向后兼容）');
+  const fp = (m: DiveMap) => Object.values(m.nodes).map((n) => `${n.id}:${n.evadesSonar ? 'E' : ''}${n.spoofsSonar ? 'S' : ''}`).sort().join('|');
+  assert(fp(genHadal(5, 0.32)) === fp(genHadal(5, 0.32)), '11f: 欺骗确定性（同 seed 两次一致·FNV 哈希不耗 rng）');
+
+  // (g) 数据守则：band.sonarDeception 非单调（throat→hadal 升、subhadal 回落）；浅 band 不设
+  assert(getBand('band.reef_deep')!.sonarDeception === undefined, '11g: reef_deep 不设欺骗（浅段相对老实）');
+  assert(getBand('band.trench_mouth')!.sonarDeception === undefined, '11g: trench_mouth 不设欺骗');
+  assert(
+    (getBand('band.subhadal')!.sonarDeception ?? 0) < (getBand('band.trench_throat')!.sonarDeception ?? 0),
+    '11g: subhadal 欺骗 < throat（越深越骗的梯度在渊外反转＝诱饵）',
+  );
+
+  L('  spoof/evade 表象 + 深 band 失真阈值(封顶/回落) + 低 san 伪接触/乱码 + mapgen 欺骗(门控/豁免/确定性) ✓');
+}
+
 console.log(log.join('\n'));
-console.log('\n✓ 声呐探索扫描回归通过（S0 + S1 多事件房间）');
+console.log('\n✓ 声呐探索扫描回归通过（S0 + S1 多事件房间 + S2 不可信扫描）');

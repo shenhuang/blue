@@ -11,7 +11,7 @@
 // 纯函数 + 防御性读取（run 字段可能因脚本构造的部分 run 而缺失 → 用默认兜底）。
 // 低 san 腐蚀走确定性哈希（不消耗 Math.random）——既不扰动 withSeededRandom 的场景回归，又让 playthrough-sensors 可稳定断言。
 
-import type { RunState, DiveNode, ClarityTier, SensorTuning } from '@/types';
+import type { RunState, DiveNode, ClarityTier, SensorTuning, NodeKind } from '@/types';
 
 // ============================================================
 // 可调参数（tunables，SPEC §8）
@@ -28,6 +28,17 @@ export const LIGHT_POWER_PER_TURN = 1;
 export const SONAR_FALSE_ECHO_SANITY = 60;
 /** 低 san 阈值：理智 < 此值 → 连灯（full 档）也产假预览（灯最稳、最后崩，比声呐低很多）。 */
 export const LAMP_HALLUCINATION_SANITY = 25;
+
+// ----- 深 band 失真（声呐与房间 S2）：band.sonarDeception（落 run）把假回波/伪接触阈值往上推 -----
+/** 失真标度：effectiveFalseEchoSanity = base + sonarDeception × 此值（封顶 BAND_MAX）。 */
+export const SONAR_BAND_DISTORTION_SCALE = 50;
+/** 深 band 失真后的假回波阈值上限——留一线可信：高 san 大致为真（§5），最深也买不穿全可信。 */
+export const SONAR_FALSE_ECHO_SANITY_BAND_MAX = 88;
+/** 一个真实接触「带出」伪接触的基础概率（× 低 san 程度 + band 失真，封顶 PHANTOM_RATE_MAX）。 */
+export const SONAR_PHANTOM_RATE_BASE = 0.1;
+export const SONAR_PHANTOM_RATE_MAX = 0.55;
+/** spoof 节点在声呐图上伪装成的 kind（节点版 mimic「无灯之光」＝把自己画成一道朝上的出口/信标）。 */
+export const SONAR_SPOOF_DISPLAY_KIND: NodeKind = 'ascent_point';
 
 /** signature（被探测度，0b 消费遭遇/伏击；0a 只派生）权重：灯高、声呐中、静默低。 */
 export const SIGNATURE_BASE = 1;
@@ -298,20 +309,103 @@ const LAMP_HALLUCINATION: string[] = [
 ];
 
 /**
+ * 本次下潜「假回波/伪接触/读数乱码」触发的有效 san 阈值（声呐与房间 S2，可信度曲线 §3.2 + #64）：
+ *   - 升级抗欺骗（sensorTuning.sonarFalseEchoSanity）把它**往下压**（更难骗，留地板＝永不全可信）；
+ *   - 深 band（run.sonarDeception，data 驱动·**非单调**——throat/abyssal/hadal 高、subhadal 回落）把它**往上推**
+ *     （深 band 更易骗）；封顶 BAND_MAX 留一线可信（高 san 大致为真）。
+ * run.sonarDeception 缺省（浅水 / POI / 旧档）→ 0 → **恰好回退升级基线＝零行为变化**（守 sensors 回归）。
+ */
+export function effectiveFalseEchoSanity(run: RunState): number {
+  const base = run.sensorTuning?.sonarFalseEchoSanity ?? SONAR_FALSE_ECHO_SANITY;
+  const band = run.sonarDeception ?? 0;
+  if (band <= 0) return base; // 浅水/缺省：逐字节回退基线（不引入任何 band 项）
+  return Math.min(SONAR_FALSE_ECHO_SANITY_BAND_MAX, base + band * SONAR_BAND_DISTORTION_SCALE);
+}
+
+/**
  * 声呐对一个节点的"返回"——不可信表象（≠ 真 preview）。改写来源（你分辨不了是哪个）：
- *   ① 生物躲开声呐（evadesSonar）→ 没回波；② 生物喂假回波（spoofsSonar，mimic/Phase 3）→ 显示成别的；
- *   ③ 低 san（< SONAR_FALSE_ECHO_SANITY）→ 注入假回波。否则给"真实但粗糙"的表象。
+ *   ① 生物躲开声呐（evadesSonar）→ 没回波；② 生物喂假回波（spoofsSonar，mimic/节点版）→ 显示成别的；
+ *   ③ 低 san（< effectiveFalseEchoSanity）→ 注入假回波。否则给"真实但粗糙"的表象。
  */
 export function sonarReturn(run: RunState, node: DiveNode): string {
   if (node.evadesSonar) return '声呐打过去，那片水把脉冲吞了——什么都没回来。';
   if (node.spoofsSonar) return `回波很干净，太干净了——像${node.spoofsSonar}。`;
-  // 升级轨：抗欺骗下调失真阈值（缺省回退基线常量），但 deriveSensorTuning 留地板＝声呐永不全可信。
-  const falseEchoSanity = run.sensorTuning?.sonarFalseEchoSanity ?? SONAR_FALSE_ECHO_SANITY;
-  if ((run.stats?.sanity ?? 100) < falseEchoSanity) {
+  if ((run.stats?.sanity ?? 100) < effectiveFalseEchoSanity(run)) {
     return pick(SONAR_FAKE, `fake:${node.id}:${Math.round(run.stats?.sanity ?? 100)}`);
   }
   const table = SONAR_PLAUSIBLE[node.kind] ?? SONAR_PLAUSIBLE.default;
   return pick(table, `son:${node.id}`);
+}
+
+/**
+ * 声呐图（SonarScanPanel）对一个已扫到节点的**结构化表象**（声呐与房间 S2）——把欺骗逻辑收在 clarity 一处、
+ * 面板纯渲染（别在面板加分支，§7/§10）。三种不可信改写（你分辨不了是哪个、也不该一眼看穿，§5「要 subtle」）：
+ *   - evadesSonar → `noEcho`：无回波，声呐图上**不画**这个 blip（留一处空缺＝捕食者躲过你的 ping）；
+ *   - spoofsSonar → `displayKind` 改成「朝上的出口/信标」：节点版 mimic「无灯之光」，图上画成一道像是上浮口的光，
+ *     你分不清哪个上浮口是真的（**不触发 d_reveal**，只由海图 mimic 兑现事件触发，#42/#69）；
+ *   - 低 san（< effectiveFalseEchoSanity）→ `garbled`：仪表读数（深度等）偶尔损坏成不可读字符（subtle·非每个都坏）。
+ * 确定性（FNV 哈希·不耗 RNG）→ SSR 安全、可回归断言；garble 按 run.turn 变＝你当下的脑子在崩（同一记忆每回合读出不同的坏值）。
+ */
+export interface NodeSonarView {
+  /** 声呐图上「看起来像」什么 kind（spoof→出口/信标的假象；否则＝真 kind 的粗略版）。 */
+  displayKind: NodeKind;
+  /** 无回波——声呐图不画（evadesSonar）。 */
+  noEcho: boolean;
+  /** 读数损坏（低 san：深度等仪表字渲染成不可读）。 */
+  garbled: boolean;
+  /** 是否欺骗表象（spoof/evade）——给测试/调试；UI **不**据此标红（要 subtle）。 */
+  deceptive: boolean;
+}
+
+export function nodeSonarView(run: RunState, node: DiveNode): NodeSonarView {
+  if (node.evadesSonar) {
+    return { displayKind: node.kind, noEcho: true, garbled: false, deceptive: true };
+  }
+  if (node.spoofsSonar) {
+    return { displayKind: SONAR_SPOOF_DISPLAY_KIND, noEcho: false, garbled: false, deceptive: true };
+  }
+  // 真节点：低 san 时仪表读数偶尔损坏（subtle·约三成·确定性·按 turn 变＝你的脑子在实时崩）。
+  const garbled =
+    (run.stats?.sanity ?? 100) < effectiveFalseEchoSanity(run) &&
+    hashStr(`garble:${node.id}:${run.turn ?? 0}`) % 10 < 3;
+  return { displayKind: node.kind, noEcho: false, garbled, deceptive: false };
+}
+
+/**
+ * 低 san「伪接触」（声呐与房间 S2·§5）：与真接触**一模一样**的幻影 blip，锚在已扫到的真实节点附近、
+ * 偶现偶灭（随该节点的余像一起渐隐、下一记 ping 换一批）。**与真无异**——不标记、不变形（要 subtle）。
+ * 数量随「低 san 程度 + 深 band 失真（run.sonarDeception）」走；subhadal 失真回落＝伪接触也少（『把戏都停了』）。
+ * san ≥ 有效阈值 → 无（高 san 大致为真）。确定性哈希·不耗 RNG·SSR 安全。
+ */
+export interface SonarPhantom {
+  /** 稳定 key（React key + 用锚点余像算亮度）。 */
+  id: string;
+  /** 锚定的真实节点 id（用其布局坐标 + 偏移摆位；随它的余像渐隐）。 */
+  nearNodeId: string;
+  /** 相对锚点的偏移（布局单位）。 */
+  dx: number;
+  dy: number;
+}
+
+export function sonarPhantoms(run: RunState, scanMemory: Record<string, number>): SonarPhantom[] {
+  const sanity = run.stats?.sanity ?? 100;
+  const threshold = effectiveFalseEchoSanity(run);
+  if (sanity >= threshold) return []; // 高 san：大致为真，无伪接触
+  const depthBelow = Math.min(1, (threshold - sanity) / Math.max(1, threshold)); // 0..1：低多少
+  const rate = Math.min(
+    SONAR_PHANTOM_RATE_MAX,
+    SONAR_PHANTOM_RATE_BASE + depthBelow * 0.3 + (run.sonarDeception ?? 0) * 0.4,
+  );
+  const out: SonarPhantom[] = [];
+  for (const id of Object.keys(scanMemory).sort()) {
+    const stamp = scanMemory[id];
+    const h = hashStr(`phantom:${id}:${stamp}:${Math.round(sanity / 5)}`);
+    if ((h % 1000) / 1000 >= rate) continue;
+    const ang = ((h >>> 10) % 360) * (Math.PI / 180);
+    const dist = 9 + ((h >>> 19) % 7);
+    out.push({ id: `ph.${id}.${stamp}`, nearNodeId: id, dx: Math.cos(ang) * dist, dy: Math.sin(ang) * dist });
+  }
+  return out;
 }
 
 /**

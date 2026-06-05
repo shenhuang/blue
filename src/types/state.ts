@@ -176,6 +176,13 @@ export interface RunState {
    * 不 bump SAVE_VERSION——createNewRun 种 {} + 反序列化 `?? {}` 兜底（同 shopStock/outpostState 套路）。
    */
   scanMemory?: Record<string, number>;
+  /**
+   * 本次蛙跳下潜所在 band 的不可信声呐失真强度（声呐与房间 SPEC §5/§7 S2）：startDiveFromOutpost 从
+   * band.sonarDeception 落到 run，clarity.ts::effectiveFalseEchoSanity 据此抬高低 san 假回波/伪接触/读数乱码阈值
+   * （深 band 更易骗，subhadal 回落＝『把戏都停了』）。可选 → POI 下潜 / 浅水 / 旧存档省略即 0（声呐相对老实）。
+   * 派生自 band，未发布不 bump SAVE_VERSION（JSON 自动 round-trip + 读取处 `?? 0` 兜底）。
+   */
+  sonarDeception?: number;
 }
 
 /** 装备配置 */

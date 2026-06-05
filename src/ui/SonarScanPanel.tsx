@@ -4,12 +4,14 @@
 // 真实节点为草图；图是**会过时的记忆**（按 turn 渐隐，重复 ping 不更亮）。默认放大只看身边一小片，
 // 角落一张残图小地图给方位感（你在更大洞里的大概位置 + 已 mapped 的那一小块）。
 //
-// 纯渲染：读 run.scanMemory（engine 写）+ deriveMapLayout（共享铺点）。不可信表象/低 san 撒谎是 S2，
-// 此处只画真图（欺骗将来在 enterNodeSelection / clarity.sonarReturn 侧改写，不在本面板加分支）。
+// 纯渲染：读 run.scanMemory（engine 写）+ deriveMapLayout（共享铺点）+ clarity.nodeSonarView/sonarPhantoms
+//（不可信表象的**单一来源**，声呐与房间 S2）。欺骗逻辑全在 clarity 一处、本面板不加判定分支（§7/§10）：
+//   spoof→画成假信标(is-spoof) / evade→无回波(不画) / 低 san→读数乱码(is-garbled) + 伪接触(sonar-phantom)。
 
 import type { RunState } from '@/types';
 import { deriveMapLayout } from './mapLayout';
 import { scanFreshness } from '@/engine/sonar';
+import { nodeSonarView, sonarPhantoms, type NodeSonarView } from '@/engine/clarity';
 
 /** 主图缩放窗口（布局坐标单位）：只显示当前节点周围一小片＝SPEC「默认放大、几乎看不到全貌」。 */
 const VIEW_W = 240;
@@ -71,9 +73,16 @@ export function SonarScanPanel({ run }: { run: RunState }) {
   const fresh: Record<string, number> = {};
   for (const id of scannedIds) fresh[id] = scanFreshness(turn - (memory[id] ?? turn));
 
-  const mainNodes = scannedIds.filter((id) => fresh[id] > 0);
+  // 不可信表象（声呐与房间 S2）：每个扫到的真实节点过 clarity.nodeSonarView 拿声呐表象
+  //（spoof→假信标 / evade→无回波 / 低 san→读数乱码）；低 san 伪接触另由 sonarPhantoms 派生（与真无异）。
+  const views: Record<string, NodeSonarView> = {};
+  for (const id of scannedIds) views[id] = nodeSonarView(run, map.nodes[id]);
+  const phantoms = sonarPhantoms(run, memory);
+
+  // evade（无回波）的节点不画——它在记忆里有拓扑、但声呐图上是一处空缺（捕食者躲过你的 ping）。
+  const mainNodes = scannedIds.filter((id) => fresh[id] > 0 && !views[id].noEcho);
   const mainEdges = layout.edges.filter(
-    (e) => fresh[e.a] > 0 && fresh[e.b] > 0,
+    (e) => fresh[e.a] > 0 && fresh[e.b] > 0 && !views[e.a]?.noEcho && !views[e.b]?.noEcho,
   );
 
   const vbX = here.x - VIEW_W / 2;
@@ -121,16 +130,17 @@ export function SonarScanPanel({ run }: { run: RunState }) {
             if (!p) return null;
             const node = map.nodes[id];
             const isCurrent = id === curId;
-            const glyph = kindGlyph(node.kind);
-            // 多事件房间（声呐与房间 S1）：声呐先扫出一个开阔「房间」的大轮廓 + 里头几颗 feature blip
-            //（S0 只读真图——房间结构是真的；各 feature 的真假留 S2 在 clarity.sonarReturn 侧改写）。
+            // 不可信表象（S2）：spoof 节点 displayKind 被画成「朝上的出口/信标」（节点版 mimic），低 san 读数乱码。
+            const view = views[id];
+            const glyph = kindGlyph(view.displayKind);
+            // 多事件房间（S1）：扫出开阔「房间」大轮廓 + feature blip；但 spoof 假象把房间藏成单个假信标 → 不画 room。
             const feats = node.features ?? [];
-            const isRoom = feats.length > 1;
+            const isRoom = feats.length > 1 && !view.deceptive;
             const baseR = isRoom ? 10 : isCurrent ? 7 : 5;
             return (
               <g
                 key={id}
-                className={`sonar-blip ${kindClass(node.kind, isCurrent)} ${isRoom ? 'is-room' : ''}`}
+                className={`sonar-blip ${kindClass(view.displayKind, isCurrent)} ${isRoom ? 'is-room' : ''} ${view.deceptive ? 'is-spoof' : ''}`}
                 style={{ opacity: isCurrent ? 1 : 0.35 + 0.6 * fresh[id] }}
               >
                 <circle cx={p.x} cy={p.y} r={baseR} />
@@ -152,10 +162,29 @@ export function SonarScanPanel({ run }: { run: RunState }) {
                     {glyph}
                   </text>
                 )}
-                <text className="sonar-blip-depth" x={p.x} y={p.y - 10}>
-                  {node.depth}m
+                <text
+                  className={`sonar-blip-depth ${view.garbled ? 'is-garbled' : ''}`}
+                  x={p.x}
+                  y={p.y - 10}
+                >
+                  {view.garbled ? '▓▓m' : `${node.depth}m`}
                 </text>
               </g>
+            );
+          })}
+          {/* 低 san 伪接触（S2·§5）：与真接触一模一样的幻影 blip，锚在真实接触附近、随其余像渐隐。要 subtle——不标记、不变形。 */}
+          {phantoms.map((ph) => {
+            const anchor = layout.pos[ph.nearNodeId];
+            if (!anchor || !(fresh[ph.nearNodeId] > 0)) return null;
+            return (
+              <circle
+                key={ph.id}
+                className="sonar-phantom"
+                cx={anchor.x + ph.dx}
+                cy={anchor.y + ph.dy}
+                r={5}
+                style={{ opacity: 0.3 + 0.55 * fresh[ph.nearNodeId] }}
+              />
             );
           })}
         </svg>
@@ -169,7 +198,7 @@ export function SonarScanPanel({ run }: { run: RunState }) {
           aria-label="残图小地图"
         >
           <rect className="sonar-mini-extent" x={1} y={1} width={MINI_W - 2} height={58} />
-          {scannedIds.map((id) => {
+          {scannedIds.filter((id) => !views[id].noEcho).map((id) => {
             const p = layout.pos[id];
             if (!p) return null;
             const isCurrent = id === curId;

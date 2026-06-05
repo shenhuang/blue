@@ -53,6 +53,17 @@ export interface DepthBand {
    * 配合声呐扫描「先看见一个开阔房间、再凑近逐个点亮」的探索质感。透传 startDiveFromOutpost → mapgen。
    */
   maxRoomFeatures?: number;
+  /**
+   * 不可信声呐失真强度（声呐与房间 SPEC §5/§7 S2）：0..1。data 驱动、**非单调**——
+   * 中深段（竖井喉/深渊/超渊）高、渊外 subhadal 回落（『那些骗你的把戏都停了』：越深越欺骗的梯度在最底反转，
+   * 它不再骗你、只给你下去的理由）。双重作用：
+   *   ① mapgen 据此给本 band 部分内部节点掷 spoofsSonar（声呐图上假装成朝上的出口/信标＝节点版 mimic）/
+   *      evadesSonar（无回波，捕食者躲过你的 ping）——**确定性哈希、不耗 rng**，仅 >0 才进＝缺省零改动（守旧图/快照）；
+   *   ② 落 run.sonarDeception，clarity.ts::effectiveFalseEchoSanity 据此抬高低 san 假回波/伪接触/读数乱码阈值
+   *      （深 band 更易骗）。
+   * 缺省（reef_deep / trench_mouth / 非 band 的 POI 下潜）→ 0 ＝声呐相对老实、零行为变化（守 sensors 回归）。
+   */
+  sonarDeception?: number;
 }
 
 export interface BandsFile {
