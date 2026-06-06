@@ -102,6 +102,14 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
           </p>
         )}
 
+        {/* 猎手 SPEC §2.3：你切断了信号（熄灯/停声·alert 已消退），但它没走——还在你最后惊动它的地方附近搜。
+            填补「灯只知道有东西在接近」在信号切断后的那段张力（再被它撞见又得重新躲；摸黑拉开够久它才跟丢）。 */}
+        {run.stalker?.state === 'searching' && alert < ALERT_WARN && (
+          <p className="alert-warning stalker-searching">
+            你熄了光、停了声，可那东西没走——它在你最后惊动它的地方附近，慢慢地摸。再被它撞上，又得从头躲起。
+          </p>
+        )}
+
         {/* 多事件房间（声呐与房间 S1）：当前这片水域里还能凑近看的几处 feature（每探付氧）。 */}
         {roomFeatures.length > 0 && (
           <div className="room-features">

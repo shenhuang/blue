@@ -12,6 +12,7 @@ import type { RunState } from '@/types';
 import { deriveMapLayout } from './mapLayout';
 import { scanFreshness } from '@/engine/sonar';
 import { nodeSonarView, sonarPhantoms, threatContact, type NodeSonarView } from '@/engine/clarity';
+import { stalkerSonarBlip } from '@/engine/stalker';
 
 /** 主图缩放窗口（布局坐标单位）：只显示当前节点周围一小片＝SPEC「默认放大、几乎看不到全貌」。 */
 const VIEW_W = 240;
@@ -88,6 +89,13 @@ export function SonarScanPanel({ run }: { run: RunState }) {
         y: here.y + Math.sin(threat.angle) * VIEW_H * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
       }
     : null;
+
+  // 猎手（猎手 SPEC §2.1「声呐＝知道它在哪」·§8.7 只在被扫到时更新）：ping 定位过 → 在它**上次被扫到**的节点画一处
+  // 精确 blip（深红·会过时·按余像渐隐）。这是声呐独有的保真度（灯只给上面 alert-warning 的「有东西在接近」模糊感）。
+  // 已精确定位则不再画上面那处模糊琥珀接触（避免对同一只猎手重复标记）。
+  const stalkerFix = stalkerSonarBlip(run);
+  const stalkerPos = stalkerFix ? layout.pos[stalkerFix.nodeId] : null;
+  const stalkerFresh = stalkerFix ? scanFreshness(stalkerFix.stale) : 0;
 
   // evade（无回波）的节点不画——它在记忆里有拓扑、但声呐图上是一处空缺（捕食者躲过你的 ping）。
   const mainNodes = scannedIds.filter((id) => fresh[id] > 0 && !views[id].noEcho);
@@ -197,12 +205,22 @@ export function SonarScanPanel({ run }: { run: RunState }) {
               />
             );
           })}
-          {/* 威胁接触（S3 廉价版）：琥珀 blip + 粗距标（远/中/近·低 san 读不出）。逼近（越过接近线）→ 偏红脉动。 */}
-          {threat && threatPos && (
+          {/* 威胁接触（S3 廉价版）：琥珀 blip + 粗距标（远/中/近·低 san 读不出）。逼近（越过接近线）→ 偏红脉动。
+              已被声呐精确定位（stalkerFix）→ 不再画这处模糊接触（同一只猎手不重复标记，猎手 SPEC §2.1）。 */}
+          {threat && threatPos && !stalkerFix && (
             <g className={`sonar-threat ${threat.imminent ? 'is-near' : ''}`}>
               <circle cx={threatPos.x} cy={threatPos.y} r={6} />
               <text className="sonar-threat-label" x={threatPos.x} y={threatPos.y - 9}>
                 {threat.garbled ? '?' : threat.range === 'near' ? '近' : threat.range === 'mid' ? '中' : '远'}
+              </text>
+            </g>
+          )}
+          {/* 猎手精确定位（猎手 SPEC §2.1 声呐＝位置·§8.7 只在被扫到时更新·会过时渐隐）：上次被 ping 扫到的节点处一处深红 blip。 */}
+          {stalkerFix && stalkerPos && (
+            <g className="sonar-stalker" style={{ opacity: 0.4 + 0.6 * stalkerFresh }}>
+              <circle cx={stalkerPos.x} cy={stalkerPos.y} r={6.5} />
+              <text className="sonar-stalker-mark" x={stalkerPos.x} y={stalkerPos.y + 3}>
+                ✕
               </text>
             </g>
           )}

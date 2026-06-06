@@ -130,6 +130,43 @@ export interface SensorTuning {
   sonarScanRange: number;
 }
 
+/**
+ * 猎手感官模态（猎手 SPEC §2.2）：它用什么感官锁定你 → 切断哪种信号源能甩它。
+ *  - light：你点灯它锁定（关灯=切断）；sound：你 ping/发声它锁定（停 ping/摸黑=切断）；both：光声任一都锁定。
+ */
+export type SenseModality = 'light' | 'sound' | 'both';
+/** 猎手状态（猎手 SPEC §2.3-2.4）：hunting=有你的信号在逼近 / searching=信号切断后按性格搜 / lost=跟丢（despawn）。 */
+export type StalkerState = 'hunting' | 'searching' | 'lost';
+/** 信号切断后的性格（猎手 SPEC §2.3）：hold=停原地几回合 / seek_last=移到上次有信号的地方。 */
+export type StalkerLostBehavior = 'hold' | 'seek_last';
+
+/**
+ * 一只在下潜内追猎你的「猎手」（猎手 SPEC Phase 1 spine）。把抽象的警觉（run.alert·#59）做成一个
+ * **有位置、会逼近、按你用哪种感官显示不同保真度**的实体（灯＝知道在接近 / 声呐＝知道位置+距离·同一只猎手）。
+ * **run 级·派生·不入 profile·不 bump SAVE_VERSION**（同 scanMemory/sonarDeception；纯对象，JSON 自动 round-trip）。
+ * 仅在 run.huntEnabled（DepthBand.hunts·深 band）时 engage；缺省 → 引擎走旧 alert→伏击瞬时路径（向后兼容）。
+ */
+export interface Stalker {
+  /** 真实当前位置节点 id（每回合朝你逼近·你未必看得到——声呐才定位、且会过时）。 */
+  nodeId: string;
+  /** 用什么感官找你（§2.2）。 */
+  sensesBy: SenseModality;
+  /** 信号切断后的性格（§2.3）。 */
+  onLostSignal: StalkerLostBehavior;
+  /** 当前状态（§2.3-2.4）。 */
+  state: StalkerState;
+  /** 接触时触发的伏击遭遇 id（复用该 zone 的 ambushEncounters·#59·不加新敌）。 */
+  encounterId: string;
+  /** 上次「有你的信号」时你所在节点（seek_last 往这里搜）。 */
+  lastSignalNodeId: string;
+  /** 信号切断已持续几回合（≥ STALKER_LOSE_TURNS → 跟丢 despawn）。 */
+  turnsSinceSignal: number;
+  /** 声呐上次扫到它的位置（§8.7「只在被扫到时更新」·渲染用这个＝会过时）；从没扫到 → undefined（你只「感觉」到它）。 */
+  seenNodeId?: string;
+  /** 上次被声呐扫到的 run.turn（余像渐隐用）。 */
+  seenTurn?: number;
+}
+
 /** 玩家在当次下潜中的资源、装备、背包 */
 export interface RunState {
   runId: string;
@@ -194,6 +231,17 @@ export interface RunState {
    * 派生自 band，未发布不 bump SAVE_VERSION（JSON 自动 round-trip + 读取处 `?? 0` 兜底）。
    */
   sonarDeception?: number;
+  /**
+   * 本次下潜是否启用「猎手」（猎手 SPEC Phase 1·§2.6 范围门控）：startDiveFromOutpost 从 DepthBand.hunts 落到 run。
+   * 真 → moveToNode 走有位置的逼近猎手（出现→逼近→接触触发现有伏击）；缺省/假（POI 下潜/浅水/旧档）→
+   * 走旧 alert→maybeApproachEncounter 瞬时伏击（逐字节不变·守 playthrough-stealth）。派生自 band，不 bump SAVE_VERSION。
+   */
+  huntEnabled?: boolean;
+  /**
+   * 当前追猎你的猎手（猎手 SPEC Phase 1）。run 级·派生·不入 profile·`?? undefined` 兜底·不 bump SAVE_VERSION。
+   * 仅 huntEnabled 时由 engine/stalker.ts 生成/推进；纯对象（无 Set）→ JSON 自动 round-trip。
+   */
+  stalker?: Stalker;
 }
 
 /** 装备配置 */

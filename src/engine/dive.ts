@@ -46,6 +46,7 @@ import {
   sonarPingAlertDelta,
 } from './clarity';
 import { revealSonarScan, sonarScanRange } from './sonar';
+import { maybeSpawnStalker, advanceStalker, scanStalker } from './stalker';
 
 /** 编译期穷尽性检查：将来新增 NodeKind 却忘了在 moveToNode 里处理时，这里会直接报类型错误。 */
 function assertNever(x: never): never {
@@ -316,6 +317,8 @@ export function startDiveFromOutpost(state: GameState, bandId: string): GameStat
     // 声呐与房间 S2：band 不可信声呐失真强度落 run（缺省 undefined → effectiveFalseEchoSanity 视作 0＝声呐相对老实）。
     // 深 band 越骗（throat/abyssal/hadal）、subhadal 回落（『把戏都停了』）；只抬低 san 失真阈值、不动其它。
     sonarDeception: band.sonarDeception,
+    // 猎手 SPEC Phase 1：本 band 是否启用「有位置的逼近猎手」（缺省 undefined → moveToNode 走旧 alert→伏击瞬时路径）。
+    huntEnabled: band.hunts,
     turn: dist,
     stats: { ...run.stats, oxygen: Math.max(1, run.stats.oxygen - transitOxygen) },
   };
@@ -471,9 +474,12 @@ export function pingSonar(state: GameState): GameState {
   }
   // ping 当场抬警觉（暴露双刃，SPEC §5）：浅水免压、深 band 更狠（sonarPingAlertDelta），clamp 上限。
   const alert = Math.min(ALERT_MAX, (run.alert ?? 0) + sonarPingAlertDelta(run));
+  // 猎手 SPEC §2.1/§8.7：这一记 ping 若扫到猎手（量程内 + 未躲过）→ 刷新它在声呐图上的位置（这是「声呐＝知道它在哪」，
+  // 且只在被扫到时更新＝你看到的可能是旧位置）；没扫到 / 被躲过 → 原样（位置不刷新）。无猎手 → undefined。
+  const stalker = run.stalker ? scanStalker(run, run.stalker) : undefined;
   let s: GameState = {
     ...state,
-    run: { ...run, power, alert, scanMemory, sensors: { ...run.sensors, sonar: 'ping' } },
+    run: { ...run, power, alert, scanMemory, stalker, sensors: { ...run.sensors, sonar: 'ping' } },
   };
   s = appendLog(s, {
     tone: 'uncanny',
@@ -566,6 +572,56 @@ function maybeApproachEncounter(state: GameState, target: DiveNode): GameState |
   return startCombat(s, combatId);
 }
 
+/**
+ * 猎手一步（猎手 SPEC Phase 1·仅 run.huntEnabled 的深 band 走这条）：把高警觉遭遇从「当场瞬时伏击」
+ * 升成「有位置的逼近猎手」。返回 { state, contact }——contact=true 时 state 已是伏击 combat 态（moveToNode 提前返回）；
+ * 否则 state 是更新了 run.stalker（现身 / 逼近 / 信号切断后搜 / 跟丢 despawn）+ 叙事的 dive 态，moveToNode 照常进节点。
+ *   - 已有猎手 → advanceStalker 推进一回合：接触到你 → 触发现有伏击遭遇（复用 ambushEncounters·不加新敌）。
+ *   - 无猎手 + 越线（predatorApproaches·同旧触发线）→ 在声呐量程外现身（不当场伏击·给读出来+反应的窗口）。
+ * 仅进入事件/尸体节点时（地标是落脚点·不伏击·留「摸黑奔向出口」的出路·同旧路径）。
+ */
+function stalkerStep(state: GameState, target: DiveNode): { state: GameState; contact: boolean } {
+  const run = state.run;
+  if (!run || !run.map) return { state, contact: false };
+  if (target.kind !== 'event' && target.kind !== 'corpse') return { state, contact: false };
+
+  if (run.stalker) {
+    const { stalker: next, contact } = advanceStalker(run, run.stalker);
+    if (contact && next) {
+      // 接触 → 触发现有伏击遭遇（复用 zone 的 ambushEncounters）；清猎手 + 警觉落缓冲（避免连环）。
+      let s: GameState = { ...state, run: { ...run, stalker: undefined, alert: ALERT_AFTER_TRIGGER } };
+      s = appendLog(s, { tone: 'uncanny', text: '黑里那个东西终于赶上了你——它一直循着你，没有半点犹豫。' });
+      return { state: startCombat(s, next.encounterId), contact: true };
+    }
+    let s: GameState = { ...state, run: { ...run, stalker: next ?? undefined } };
+    s = appendLog(
+      s,
+      next
+        ? {
+            tone: 'uncanny',
+            text:
+              next.state === 'searching'
+                ? '水里那东西没了你的信号，却没走——它在你最后惊动它的地方附近，慢慢摸。'
+                : '它又近了一点。你听得见自己心跳盖过回波。',
+          }
+        : { tone: 'realistic', text: '你屏住光和声，沉进黑里。过了一会儿——那股一直跟着你的注意，散了。' },
+    );
+    return { state: s, contact: false };
+  }
+
+  // 无猎手：越线才现身（同 predatorApproaches 触发线·但不当场伏击）。
+  if (!predatorApproaches(run)) return { state, contact: false };
+  const pool = getZone(run.zoneId)?.ambushEncounters ?? [];
+  const spawned = maybeSpawnStalker(run, pool);
+  if (!spawned) return { state, contact: false };
+  let s: GameState = { ...state, run: { ...run, stalker: spawned } };
+  s = appendLog(s, {
+    tone: 'uncanny',
+    text: '黑水深处，有什么离开了它待着的地方，朝你这边来了——还远，但它知道你在哪。',
+  });
+  return { state: s, contact: false };
+}
+
 /** 玩家点选了一个节点 → 进入该节点。过渡耗回合，再按节点 kind 决定下一步 */
 export function moveToNode(state: GameState, nodeId: string): GameState {
   const run = state.run;
@@ -588,9 +644,17 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
     return executeDeath(s, '理智崩溃，疯狂上浮');
   }
 
-  // 深水区 Phase 0b：高警觉 + 该 zone 有潜伏捕食者 → 接近并触发遭遇（先于节点 kind 分发；摸黑可避免）。
-  const approached = maybeApproachEncounter(s, target);
-  if (approached) return approached;
+  // 高警觉 + 该 zone 有潜伏捕食者 → 遭遇（先于节点 kind 分发；摸黑可避免）。两条路径：
+  //   - 深 band（run.huntEnabled·猎手 SPEC Phase 1）→ 有位置的逼近猎手（出现→逼近→接触才伏击·非接触则照常进节点）；
+  //   - 其它（浅水 / POI 下潜 / 旧路径）→ 旧 alert→伏击瞬时遭遇（逐字节不变·守 playthrough-stealth §4-§6）。
+  if (s.run!.huntEnabled) {
+    const hunted = stalkerStep(s, target);
+    if (hunted.contact) return hunted.state; // 接触→伏击 combat，提前返回
+    s = hunted.state; // 现身 / 逼近 / 跟丢：更新 s（含 run.stalker + 叙事），继续进节点
+  } else {
+    const approached = maybeApproachEncounter(s, target);
+    if (approached) return approached;
+  }
 
   // 根据节点 kind 决定下一步
   switch (target.kind) {

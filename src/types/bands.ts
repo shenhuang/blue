@@ -64,6 +64,14 @@ export interface DepthBand {
    * 缺省（reef_deep / trench_mouth / 非 band 的 POI 下潜）→ 0 ＝声呐相对老实、零行为变化（守 sensors 回归）。
    */
   sonarDeception?: number;
+  /**
+   * 是否启用「猎手」（猎手 SPEC Phase 1·§2.6 范围门控）：true → 本 band 的高警觉遭遇升级成**有位置的逼近猎手**
+   * （出现在你声呐量程外→逐回合沿图逼近→追到你才触发现有 ambushEncounters 伏击·复用现有捕食者不加新敌），
+   * 配合声呐「知道它在哪」/ 灯「只知道有东西在接近」的感知分层（§2.1）。落 run.huntEnabled（startDiveFromOutpost 透传）。
+   * 缺省 / false（reef_deep / 非 band 的 POI 下潜 / 浅水）→ 走旧 alert→伏击瞬时路径＝逐字节不变（向后兼容·守 playthrough-stealth）。
+   * Phase 1 范围＝深 band（trench+·越深越会 evadesSonar 躲扫描）；浅水小概率弱变体留 Phase 2（猎手 SPEC §7）。
+   */
+  hunts?: boolean;
 }
 
 export interface BandsFile {

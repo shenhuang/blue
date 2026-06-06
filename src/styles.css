@@ -890,6 +890,19 @@ html, body, #root {
     opacity: 1;
   }
 }
+/* 猎手精确定位（猎手 SPEC §2.1 声呐＝位置·§8.7 只在被扫到时更新·会过时渐隐）：深红 ✕ blip，
+   比模糊威胁接触(琥珀)更实——这是声呐独有的「它在哪」保真度（灯只给「有东西在接近」的模糊感）。 */
+.sonar-stalker circle {
+  fill: none;
+  stroke: var(--danger);
+  stroke-width: 1.6;
+}
+.sonar-stalker-mark {
+  fill: var(--danger);
+  font-size: 9px;
+  text-anchor: middle;
+  font-weight: 700;
+}
 .sonar-mini {
   position: absolute;
   right: 6px;
@@ -953,6 +966,11 @@ html, body, #root {
 .alert-warning.danger {
   border-left-color: var(--danger);
   color: var(--danger);
+}
+/* 猎手切信号后仍在搜（猎手 SPEC §2.3）：比预警淡一档——它没在逼近，但也没走。 */
+.alert-warning.stalker-searching {
+  border-left-color: var(--muted, #6a7a7d);
+  opacity: 0.85;
 }
 
 .node-hint {
