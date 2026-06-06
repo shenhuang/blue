@@ -141,6 +141,12 @@ export interface SensorTuning {
    */
   sonarScanRange: number;
   /**
+   * 定向 ping 各扇区「reach 各自升级」的额外焦距（声呐与房间 §5「各方向 reach 各自升级」·#86 续）。
+   * 逐向独立（deeper/lateral/back 各一档·缺省全 0），每向夹到 [0, SONAR_DIR_REACH_MAX]——你能专精某一向比基线焦距再多探几跳，
+   * 但守北极星「再聚焦也扫不穿整洞」（别向仍短）。sonar.ts::sonarDirReach(run,dir) 读它；缺省（旧档/部分 run）→ 全 0＝定向行为逐字节不变。
+   */
+  sonarDirReach: Record<SonarDir, number>;
+  /**
    * 大房间（多事件房间）出现率加成（声呐与房间 §6/§8.3 续）。默认 0，升级上调、有上限 ROOM_FEATURE_CHANCE_MAX。
    * mapgen.rollExtraFeatures 读它抬大房间概率；**band 的 maxRoomFeatures 仍是房间最大 feature 数的天花板**
    * （升级只让大房间更常出现、不突破深 band 的尺寸上限）。缺省（旧档/部分 run）→ 回退 0＝mapgen 输出逐字节不变。
@@ -195,6 +201,11 @@ export interface Stalker {
   seenNodeId?: string;
   /** 上次被声呐扫到的 run.turn（余像渐隐用）。 */
   seenTurn?: number;
+  /**
+   * 大型生物（声呐与房间 §5 later「接触带大小」）：比玩家还大的深渊猎手（abyssal the_rising / apex 类·≥ STALKER_LARGE_DEPTH）
+   * 在声呐图上读成**一大团**而非小点。spawn 时按深度派生·缺省（浅段猎手 / undefined）→ 普通小 blip（逐字节不变）。
+   */
+  large?: boolean;
 }
 
 /** 玩家在当次下潜中的资源、装备、背包 */

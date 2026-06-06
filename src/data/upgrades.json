@@ -176,6 +176,49 @@
           },
           "effects": [{ "kind": "sonarScanRangeBonus", "value": 1 }],
           "description": "相控阵换能器：扫描扇面再阔一圈，一记脉冲拼出的洞形最广——但整座洞、尤其最深那道陡降，声呐永远扫不穿。那儿只能自己摸黑下去。"
+        },
+        {
+          "id": "upgrade.sonar.lv6",
+          "level": 6,
+          "name": "声呐组件 Lv.6",
+          "cost": {
+            "materials": [
+              { "itemId": "item.eel_skin", "qty": 4 },
+              { "itemId": "item.cave_octopus_beak", "qty": 3 }
+            ],
+            "gold": 360
+          },
+          "effects": [{ "kind": "sonarDirReachBonus", "dir": "deeper", "value": 1 }],
+          "description": "向深处定向校准：把波束朝更深处聚焦时，它比寻常焦距再往下多探一跳——你想往下看得更远，就得舍掉两侧与来路。再聚焦也扫不穿整洞。"
+        },
+        {
+          "id": "upgrade.sonar.lv7",
+          "level": 7,
+          "name": "声呐组件 Lv.7",
+          "cost": {
+            "materials": [
+              { "itemId": "item.lantern_gland", "qty": 2 },
+              { "itemId": "item.cave_octopus_beak", "qty": 4 }
+            ],
+            "gold": 400
+          },
+          "effects": [{ "kind": "sonarDirReachBonus", "dir": "lateral", "value": 1 }],
+          "description": "侧向定向校准：朝同层两侧聚焦时波束多探一跳——绕回的环、旁支的岔口探得更远，代价仍是别向更短。"
+        },
+        {
+          "id": "upgrade.sonar.lv8",
+          "level": 8,
+          "name": "声呐组件 Lv.8",
+          "cost": {
+            "materials": [
+              { "itemId": "item.eel_skin", "qty": 4 },
+              { "itemId": "item.lantern_gland", "qty": 2 },
+              { "itemId": "item.cave_octopus_beak", "qty": 4 }
+            ],
+            "gold": 440
+          },
+          "effects": [{ "kind": "sonarDirReachBonus", "dir": "back", "value": 1 }],
+          "description": "向来路定向校准：回望走过的水路时波束多探一跳——确认身后有没有跟来的东西更远些。三向各自调好，可你一记 ping 仍只能聚焦一向。"
         }
       ]
     },

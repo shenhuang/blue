@@ -46,7 +46,7 @@ import {
   ALERT_MAX,
   sonarPingAlertDelta,
 } from './clarity';
-import { revealSonarScanDirectional, sonarScanRange } from './sonar';
+import { revealSonarScanDirectional, sonarScanRange, sonarDirReach } from './sonar';
 import { maybeSpawnStalker, advanceStalker, scanStalker } from './stalker';
 
 /** 编译期穷尽性检查：将来新增 NodeKind 却忘了在 moveToNode 里处理时，这里会直接报类型错误。 */
@@ -480,7 +480,13 @@ export function pingSonar(state: GameState, dir?: SonarDir): GameState {
   // 定向（dir）→ 聚焦扇区探更远、别处更短；全向（缺省）→ 旧的等程全向揭示。
   const scanMemory: Record<string, number> = { ...(run.scanMemory ?? {}) };
   if (run.map && run.currentNodeId) {
-    for (const id of revealSonarScanDirectional(run.map, run.currentNodeId, sonarScanRange(run), dir)) {
+    for (const id of revealSonarScanDirectional(
+      run.map,
+      run.currentNodeId,
+      sonarScanRange(run),
+      dir,
+      sonarDirReach(run, dir), // 各方向 reach 各自升级（§5）：聚焦那一向的专精焦距（全向/缺省 → 0 逐字节不变）
+    )) {
       scanMemory[id] = run.turn;
     }
   }

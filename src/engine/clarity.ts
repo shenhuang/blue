@@ -14,7 +14,7 @@
 import type { RunState, DiveNode, ClarityTier, SensorTuning, NodeKind, SonarDir } from '@/types';
 // 声呐扫描跳数的基线/上限住 sonar.ts（声呐扫描的家）；deriveSensorTuning 在此夹紧它。
 // 无环：sonar.ts 只 import 类型，不 import clarity（pingAimsAtSoundStalker 是纯函数·只读 run）。
-import { SONAR_SCAN_RANGE, SONAR_SCAN_RANGE_MAX, pingAimsAtSoundStalker } from './sonar';
+import { SONAR_SCAN_RANGE, SONAR_SCAN_RANGE_MAX, SONAR_DIR_REACH_MAX, pingAimsAtSoundStalker } from './sonar';
 
 // ============================================================
 // 可调参数（tunables，SPEC §8）
@@ -94,6 +94,7 @@ export interface SensorUpgradeBonus {
   lampRangeBonus?: number; // 灯 reach 加成（节点级 clarity·范围/分辨，sum，有上限）
   sonarRangeBonus?: number; // 声呐 reach 加成（节点级 clarity·深度差·sum，有上限）
   sonarScanRangeBonus?: number; // 声呐扫描跳数加成（声呐与房间 §8.1 主升级轴·sum，有上限 SONAR_SCAN_RANGE_MAX）
+  sonarDirReach?: Record<SonarDir, number>; // 定向 ping 各扇区 reach 各自升级（声呐与房间 §5·逐向 sum，每向夹 [0, SONAR_DIR_REACH_MAX]）
   roomFeatureChanceBonus?: number; // 大房间出现率加成（声呐与房间 §6/§8.3 续·sum，有上限 ROOM_FEATURE_CHANCE_MAX）
   soundAbsorbBonus?: number; // 猎手规避 T1 吸声（规避声感猎手·sum，有上限 STEALTH_BONUS_MAX）
   camoBonus?: number; // 猎手规避 T2 主动迷彩（规避光感猎手·sum，有上限 STEALTH_BONUS_MAX）
@@ -120,6 +121,12 @@ export function deriveSensorTuning(b: SensorUpgradeBonus = {}): SensorTuning {
     sonarDepthReach: Math.min(SONAR_DEPTH_REACH_MAX, SONAR_DEPTH_REACH + (b.sonarRangeBonus ?? 0)),
     // 声呐扫描跳数（声呐与房间 §8.1）：基线 + 加成，夹到上限＝再升也扫不穿整洞、扫不到最深（守北极星）。
     sonarScanRange: Math.min(SONAR_SCAN_RANGE_MAX, SONAR_SCAN_RANGE + (b.sonarScanRangeBonus ?? 0)),
+    // 定向 ping 各扇区 reach 各自升级（声呐与房间 §5）：逐向 0..SONAR_DIR_REACH_MAX，缺省全 0＝定向行为逐字节不变（revealSonarScanDirectional 焦距回退基线）。
+    sonarDirReach: {
+      deeper: Math.min(SONAR_DIR_REACH_MAX, Math.max(0, b.sonarDirReach?.deeper ?? 0)),
+      lateral: Math.min(SONAR_DIR_REACH_MAX, Math.max(0, b.sonarDirReach?.lateral ?? 0)),
+      back: Math.min(SONAR_DIR_REACH_MAX, Math.max(0, b.sonarDirReach?.back ?? 0)),
+    },
     // 大房间出现率加成（声呐与房间 §6/§8.3 续）：0..ROOM_FEATURE_CHANCE_MAX，缺省 0＝mapgen 输出逐字节不变。
     roomFeatureChanceBonus: Math.min(ROOM_FEATURE_CHANCE_MAX, Math.max(0, b.roomFeatureChanceBonus ?? 0)),
     // 猎手规避（猎手 SPEC §3）：0..STEALTH_BONUS_MAX，缺省 0＝无规避（stalker.ts::playerEvadesStalker 算 0 概率＝advanceStalker 逐字节不变·向后兼容）。

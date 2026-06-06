@@ -25,8 +25,10 @@ import {
   stalkerEvadesScan,
   playerEvadesStalker,
   spawnNodeFor,
+  maybeSpawnStalker,
   STALKER_WAIT_TURNS,
   STALKER_EVADE_DEPTH,
+  STALKER_LARGE_DEPTH,
 } from '../src/engine/stalker';
 
 const log: string[] = [];
@@ -123,6 +125,25 @@ L('========== 1-2. 出现（非瞬时）→ 逼近 → 接触触发现有伏击 
   assert(CAVE_POOL.includes(combatId), `2: 触发的是该 zone 的现有捕食者（复用 ambushEncounters），实际 ${combatId}`);
   assert(!s.run!.stalker, '2: 接触后猎手清空（避免连环）');
   L(`  接触 → 伏击 ${combatId}（复用现有捕食者·不加新敌）·猎手清空 ✓`);
+}
+
+// ============================================================
+// 2b. 大型生物（声呐与房间 §5 later「接触带大小」）：深渊（≥ STALKER_LARGE_DEPTH）猎手 large=true → 声呐图读成一大团；浅段普通小 blip。
+// ============================================================
+L('\n========== 2b. 大型生物（§5 接触带大小·深处 large）==========');
+{
+  // 浅段（< STALKER_LARGE_DEPTH）现身 → 普通小 blip（large 缺省 undefined）
+  const shallow = maybeSpawnStalker(huntState({ depth: STALKER_LARGE_DEPTH - 10 }).run!, CAVE_POOL);
+  assert(shallow && !shallow.large, '2b: 浅段猎手 large 缺省（普通小 blip）');
+  // 深渊（≥ STALKER_LARGE_DEPTH）现身 → large=true（一大团）
+  const deep = maybeSpawnStalker(huntState({ depth: STALKER_LARGE_DEPTH + 20 }).run!, CAVE_POOL);
+  assert(deep && deep.large === true, '2b: 深渊猎手 large=true（声呐读成一大团）');
+  // 声呐 blip 透传 large（被扫到后）：浅段 false / 深渊 true
+  const seen = (st: NonNullable<typeof deep>, depth: number) =>
+    stalkerSonarBlip({ ...huntState({ depth, sonarUnlocked: true }).run!, currentNodeId: 'n0', turn: 3, stalker: { ...st, seenNodeId: st.nodeId, seenTurn: 3 } });
+  assert(seen(deep!, STALKER_LARGE_DEPTH + 20)?.large === true, '2b: stalkerSonarBlip 透传 large=true（深渊）');
+  assert(seen(shallow!, STALKER_LARGE_DEPTH - 10)?.large === false, '2b: stalkerSonarBlip 透传 large=false（浅段）');
+  L('  浅段小 blip / 深渊一大团 · blip 透传 large ✓');
 }
 
 // ============================================================

@@ -3,6 +3,8 @@
 // 引擎在运行时把已购 upgrade.id 写进 profile.unlockedUpgrades，
 // 派生加成由 getUpgradeBonuses() 聚合。
 
+import type { SonarDir } from './state';
+
 /** 单条升级的副作用 —— 引擎按 kind 分发 */
 export type UpgradeEffect =
   | { kind: 'unlockZone'; zoneId: string }
@@ -26,6 +28,8 @@ export type UpgradeEffect =
   | { kind: 'sonarRangeBonus'; value: number } // 声呐 reach +value m（节点级 clarity·深度差，有上限）
   // 声呐与房间 §8.1：声呐探索扫描跳数 +value（一记 ping 照得更广），有上限 SONAR_SCAN_RANGE_MAX。
   | { kind: 'sonarScanRangeBonus'; value: number }
+  // 声呐与房间 §5「各方向 reach 各自升级」：把某个聚焦扇区（朝深处/侧向/来路）的波束焦距 +value 跳（逐向独立·有上限 SONAR_DIR_REACH_MAX）。
+  | { kind: 'sonarDirReachBonus'; dir: SonarDir; value: number }
   // 声呐与房间 §6/§8.3 续：大房间（多事件房间）出现率 +value（更会在大洞室里翻找·band maxRoomFeatures 仍是天花板），有上限。
   | { kind: 'roomFeatureChanceBonus'; value: number }
   // 猎手 SPEC §3 升级规避：玩家侧规避——压低你对某感官猎手的特征 → 它这一记丢锁（对称于它 evadesScan 躲你；有上限/深处仍找得到你）。
@@ -102,6 +106,8 @@ export interface UpgradeBonuses {
   sonarRangeBonus: number;
   /** 声呐扫描跳数加成（声呐与房间 §8.1 主升级轴；有上限 SONAR_SCAN_RANGE_MAX）。 */
   sonarScanRangeBonus: number;
+  /** 定向 ping 各扇区 reach 各自升级（声呐与房间 §5）：逐向（deeper/lateral/back）独立累加，缺省全 0；每向夹到 [0, SONAR_DIR_REACH_MAX] 在 deriveSensorTuning。 */
+  sonarDirReach: Record<SonarDir, number>;
   /** 大房间（多事件房间）出现率加成（声呐与房间 §6/§8.3 续；有上限 ROOM_FEATURE_CHANCE_MAX·band cap 仍是天花板）。 */
   roomFeatureChanceBonus: number;
   /** 猎手规避 T1 吸声（规避声感猎手·sum，有上限 STEALTH_BONUS_MAX）。 */

@@ -828,6 +828,15 @@ html, body, #root {
   opacity: 0.16;
   stroke-dasharray: 3 5;
 }
+/* 定向聚焦扇区（声呐与房间 §5 可视化）：朝聚焦方向的一道很淡的暖色楔形（略超量程环＝那一向探更远）。
+   暖色（warn）＝「主动朝这边打」，与冷色 cyan 真图一眼可分；够淡，不抢真接触的注意。 */
+.sonar-focus-wedge {
+  fill: var(--warn);
+  opacity: 0.08;
+  stroke: var(--warn);
+  stroke-width: 0.5;
+  stroke-opacity: 0.25;
+}
 .sonar-edge {
   stroke: var(--cyan);
   stroke-width: 1.4;
@@ -930,6 +939,18 @@ html, body, #root {
   font-size: 9px;
   text-anchor: middle;
   font-weight: 700;
+}
+/* 大型生物（声呐与房间 §5 later 接触带大小）：比玩家还大的深渊猎手读成「一大团」——
+   外圈一团弥散的质量（填充·无锐边）+ 更大的中心圈，区别于普通小点 blip。
+   选择器 .sonar-stalker circle.sonar-stalker-mass（0,2,1）压过通用的 .sonar-stalker circle（0,1,1·fill:none+描边），
+   否则弥散团会被画成空心环（CSS 特异性陷阱）。 */
+.sonar-stalker circle.sonar-stalker-mass {
+  fill: var(--danger);
+  stroke: none;
+  opacity: 0.18;
+}
+.sonar-stalker.is-large .sonar-stalker-mark {
+  font-size: 12px;
 }
 .sonar-mini {
   position: absolute;

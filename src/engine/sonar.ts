@@ -43,6 +43,12 @@ export const SONAR_DIR_FOCUS_BONUS = 1;
 export const SONAR_DIR_RANGE_MAX = SONAR_SCAN_RANGE_MAX + 1;
 /** 非聚焦方向缩短的跳数（「别处更短」）；近场仍保至少 1 跳（身边不至全黑）。 */
 export const SONAR_DIR_OFFAXIS_PENALTY = 1;
+/**
+ * 单个方向「reach 各自升级」的封顶（声呐与房间 §5·#86 续）：每个聚焦扇区可独立把波束推得更远，但单向升满也到此为止——
+ * 守北极星「再聚焦也扫不穿整洞、照不到最深」（只是你专精的那一向比基线焦距再多探几跳·别向仍短）。
+ * 缺省（无升级 / 旧档 / POI）每向 reach = 0 → revealSonarScanDirectional 逐字节回退既有定向行为。
+ */
+export const SONAR_DIR_REACH_MAX = 2;
 
 /**
  * 本次下潜的有效声呐扫描跳数：读 run.sensorTuning（升级派生·deriveSensorTuning 已夹紧到 [基线, 上限]）；
@@ -50,6 +56,16 @@ export const SONAR_DIR_OFFAXIS_PENALTY = 1;
  */
 export function sonarScanRange(run: RunState): number {
   return run.sensorTuning?.sonarScanRange ?? SONAR_SCAN_RANGE;
+}
+
+/**
+ * 这一记定向 ping 在某扇区的「各自升级」额外焦距（声呐与房间 §5「各方向 reach 各自升级」）：读 run.sensorTuning.sonarDirReach
+ * （升级派生·deriveSensorTuning 已逐向夹到 [0, SONAR_DIR_REACH_MAX]）。全向（dir 缺省）或缺省（旧档 / 未升级）→ 0
+ * ＝revealSonarScanDirectional 逐字节回退既有定向/全向行为。
+ */
+export function sonarDirReach(run: RunState, dir?: SonarDir): number {
+  if (!dir) return 0;
+  return run.sensorTuning?.sonarDirReach?.[dir] ?? 0;
 }
 
 // ============================================================
@@ -121,9 +137,11 @@ export function nodeSector(map: DiveMap, originId: string, targetId: string): So
 
 /**
  * 一记**定向** ping 揭示的节点 id（SPEC §5「朝一方向聚焦：那方向探更远、别处更短」）。
- *   - 近场＝全向 max(1, base − OFFAXIS_PENALTY) 跳（身边一小圈仍全向、不至全黑）；
- *   - 聚焦扇区＝波束沿该扇区继续扩到 min(SONAR_DIR_RANGE_MAX, base + FOCUS_BONUS) 跳
+ *   - 近场＝全向 max(1, base − OFFAXIS_PENALTY) 跳（身边一小圈仍全向、不至全黑·不随 dirReach 变＝「别向仍短」）；
+ *   - 聚焦扇区＝波束沿该扇区继续扩到 min(SONAR_DIR_RANGE_MAX + dirReach, base + FOCUS_BONUS + dirReach) 跳
  *     （超出近场后**只经过聚焦扇区的节点**扩散＝波束连贯、不会冒出孤立远 blip）。
+ * dirReach（「各方向 reach 各自升级」§5）＝该扇区专精升级的额外焦距，逐向独立、夹在 [0, SONAR_DIR_REACH_MAX]；
+ * 缺省 0 ＝逐字节回退既有定向行为（焦距 = base + FOCUS_BONUS·封顶 SONAR_DIR_RANGE_MAX）。
  * dir 缺省 → 退回全向 revealSonarScan（旧行为逐字节不变）。确定性、纯函数（复用无向邻接）。
  */
 export function revealSonarScanDirectional(
@@ -131,11 +149,13 @@ export function revealSonarScanDirectional(
   originId: string,
   baseRange: number,
   dir?: SonarDir,
+  dirReach: number = 0,
 ): string[] {
   if (!dir) return revealSonarScan(map, originId, baseRange);
   if (!map.nodes[originId]) return [];
+  const reach = Math.max(0, dirReach); // 防御：负值当 0（夹紧本在 deriveSensorTuning，这里再兜一层）
   const nearRange = Math.max(1, baseRange - SONAR_DIR_OFFAXIS_PENALTY);
-  const farRange = Math.min(SONAR_DIR_RANGE_MAX, baseRange + SONAR_DIR_FOCUS_BONUS);
+  const farRange = Math.min(SONAR_DIR_RANGE_MAX + reach, baseRange + SONAR_DIR_FOCUS_BONUS + reach);
   const adj = buildUndirectedAdjacency(map);
   const seen = new Set<string>([originId]);
   let frontier: string[] = [originId];

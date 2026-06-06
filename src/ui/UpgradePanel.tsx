@@ -212,6 +212,8 @@ function renderEffect(e: UpgradeEffect): string {
       return `声呐探得更深 +${e.value}m`;
     case 'sonarScanRangeBonus':
       return `声呐扫得更广 +${e.value} 跳（一记 ping 多照一圈洞）`;
+    case 'sonarDirReachBonus':
+      return `定向声呐校准：${e.dir === 'deeper' ? '朝深处' : e.dir === 'lateral' ? '侧向' : '来路'}聚焦探得更远 +${e.value} 跳（那一向更远·别向仍短·整洞仍扫不穿）`;
     case 'roomFeatureChanceBonus':
       return `更会翻找大洞室：开阔水域更常藏着多处可探（深处的「大房间」出现率 +${Math.round(e.value * 100)}%）`;
     // 猎手 SPEC §3 升级规避：玩家侧规避标签

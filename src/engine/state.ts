@@ -10,6 +10,7 @@ import type {
   InventoryItem,
   LogEntry,
   Lighthouse,
+  SonarDir,
 } from '@/types';
 import { POWER_MAX, deriveSensorTuning } from './clarity';
 
@@ -140,6 +141,7 @@ export function createNewRun(opts: {
     lampRangeBonus?: number;
     sonarRangeBonus?: number;
     sonarScanRangeBonus?: number;
+    sonarDirReach?: Record<SonarDir, number>;
     roomFeatureChanceBonus?: number;
     soundAbsorbBonus?: number;
     camoBonus?: number;
@@ -160,6 +162,7 @@ export function createNewRun(opts: {
     lampRangeBonus: opts.bonuses?.lampRangeBonus,
     sonarRangeBonus: opts.bonuses?.sonarRangeBonus,
     sonarScanRangeBonus: opts.bonuses?.sonarScanRangeBonus,
+    sonarDirReach: opts.bonuses?.sonarDirReach,
     roomFeatureChanceBonus: opts.bonuses?.roomFeatureChanceBonus,
     soundAbsorbBonus: opts.bonuses?.soundAbsorbBonus,
     camoBonus: opts.bonuses?.camoBonus,

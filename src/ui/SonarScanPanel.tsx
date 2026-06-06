@@ -13,6 +13,7 @@ import { deriveMapLayout } from './mapLayout';
 import { scanFreshness } from '@/engine/sonar';
 import { nodeSonarView, sonarPhantoms, threatContact, type NodeSonarView } from '@/engine/clarity';
 import { stalkerSonarBlip } from '@/engine/stalker';
+import { zoneAllowsBacktrack } from '@/engine/zones';
 
 /** 主图缩放窗口（布局坐标单位）：只显示当前节点周围一小片＝SPEC「默认放大、几乎看不到全貌」。 */
 const VIEW_W = 240;
@@ -20,6 +21,26 @@ const VIEW_H = 168;
 
 /** 定向 ping 聚焦方向的标注文案（声呐与房间 §5）。 */
 const SONAR_DIR_LABEL: Record<string, string> = { deeper: '朝深处', lateral: '侧向', back: '来路' };
+
+/**
+ * 定向聚焦扇区的楔形路径（声呐与房间 §5「聚焦扇区可视化」）：从你当前位置朝聚焦方向画一道半透明扇形——
+ * 与布局 x∝layer 一致：deeper＝朝右（深在右）/ back＝朝左（来路在左）/ lateral＝上下两瓣（同层沿 y 上下铺）。
+ * 半径略超量程环＝直观体现「那一向探更远」。纯几何、确定性（SSR 安全）。
+ */
+function focusWedgePath(cx: number, cy: number, r: number, dir: string): string {
+  const H = 0.85; // 半张角（rad·~49°）
+  const slice = (a0: number, a1: number) => {
+    const x0 = cx + r * Math.cos(a0);
+    const y0 = cy + r * Math.sin(a0);
+    const x1 = cx + r * Math.cos(a1);
+    const y1 = cy + r * Math.sin(a1);
+    return `M${cx.toFixed(1)} ${cy.toFixed(1)} L${x0.toFixed(1)} ${y0.toFixed(1)} A${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)} Z`;
+  };
+  if (dir === 'deeper') return slice(-H, H);
+  if (dir === 'back') return slice(Math.PI - H, Math.PI + H);
+  // lateral：上下两瓣（同层节点在布局里沿 y 上下铺开）
+  return `${slice(Math.PI / 2 - H, Math.PI / 2 + H)} ${slice(-Math.PI / 2 - H, -Math.PI / 2 + H)}`;
+}
 
 function kindClass(kind: string | undefined, isCurrent: boolean): string {
   if (isCurrent) return 'is-here';
@@ -74,6 +95,9 @@ export function SonarScanPanel({ run }: { run: RunState }) {
   const here = (curId && layout.pos[curId]) || { x: layout.width / 2, y: layout.height / 2 };
   // 定向 ping 聚焦标注（§5）：仅当这一记 ping 是定向的（sonar==='ping' 且 sonarDir 给出）。
   const focusDir = run.sensors?.sonar === 'ping' ? run.sensors?.sonarDir : undefined;
+  // 开放水域（§5 later「开放水域也能扫」）：层状 zone（开阔海域）没有洞壁可画——只显接触与读数，不画通道边。
+  // 迷路 zone（洞穴）仍画通道（墙）。zoneAllowsBacktrack(zoneId)=maze=有壁可循。
+  const isOpenWater = !zoneAllowsBacktrack(run.zoneId);
 
   // 每个记忆节点的余像亮度（当前 turn − 扫到时的 turn）。主图只画还没淡尽的；残图小地图留极淡残迹。
   const fresh: Record<string, number> = {};
@@ -116,11 +140,15 @@ export function SonarScanPanel({ run }: { run: RunState }) {
   const miniScale = Math.min(MINI_W / Math.max(1, layout.width), 56 / Math.max(1, layout.height));
 
   return (
-    <div className="sonar-panel">
+    <div className={`sonar-panel ${isOpenWater ? 'is-open-water' : ''}`}>
       <div className="sonar-panel-head">
         <span className="sonar-panel-title">声呐图</span>
         {focusDir && <span className="sonar-focus-tag">聚焦 · {SONAR_DIR_LABEL[focusDir]}</span>}
-        <span className="sonar-panel-sub">回波拼出的草图——会过时，信几分由你。</span>
+        <span className="sonar-panel-sub">
+          {isOpenWater
+            ? '开阔水域——没有洞壁可循，只有黑暗里的接触与读数。'
+            : '回波拼出的草图——会过时，信几分由你。'}
+        </span>
       </div>
       <div className="sonar-scan-wrap">
         <svg
@@ -132,7 +160,16 @@ export function SonarScanPanel({ run }: { run: RunState }) {
         >
           {/* 量程环：你当前位置的一圈很淡的环（SPEC §5「只看得见自己 + 一圈很淡的量程环」） */}
           <circle className="sonar-range-ring" cx={here.x} cy={here.y} r={VIEW_H * 0.42} />
-          {mainEdges.map((e, i) => {
+          {/* 定向聚焦扇区（§5 可视化）：定向 ping 进行中 → 朝聚焦方向画一道半透明楔形（略超量程环＝那一向探更远）。 */}
+          {focusDir && (
+            <path
+              className="sonar-focus-wedge"
+              data-dir={focusDir}
+              d={focusWedgePath(here.x, here.y, VIEW_H * 0.5, focusDir)}
+            />
+          )}
+          {/* 开放水域（§5 later）：没有洞壁可画 → 跳过通道边，只留接触与读数；迷路洞穴仍画通道。 */}
+          {!isOpenWater && mainEdges.map((e, i) => {
             const pa = layout.pos[e.a];
             const pb = layout.pos[e.b];
             if (!pa || !pb) return null;
@@ -221,11 +258,18 @@ export function SonarScanPanel({ run }: { run: RunState }) {
               </text>
             </g>
           )}
-          {/* 猎手精确定位（猎手 SPEC §2.1 声呐＝位置·§8.7 只在被扫到时更新·会过时渐隐）：上次被 ping 扫到的节点处一处深红 blip。 */}
+          {/* 猎手精确定位（猎手 SPEC §2.1 声呐＝位置·§8.7 只在被扫到时更新·会过时渐隐）：上次被 ping 扫到的节点处一处深红 blip。
+              大型生物（§5 later 接触带大小）→ 读成一大团（外圈弥散质量 + 更大的中心），不是小点。 */}
           {stalkerFix && stalkerPos && (
-            <g className="sonar-stalker" style={{ opacity: 0.4 + 0.6 * stalkerFresh }}>
-              <circle cx={stalkerPos.x} cy={stalkerPos.y} r={6.5} />
-              <text className="sonar-stalker-mark" x={stalkerPos.x} y={stalkerPos.y + 3}>
+            <g
+              className={`sonar-stalker ${stalkerFix.large ? 'is-large' : ''}`}
+              style={{ opacity: 0.4 + 0.6 * stalkerFresh }}
+            >
+              {stalkerFix.large && (
+                <circle className="sonar-stalker-mass" cx={stalkerPos.x} cy={stalkerPos.y} r={18} />
+              )}
+              <circle cx={stalkerPos.x} cy={stalkerPos.y} r={stalkerFix.large ? 12 : 6.5} />
+              <text className="sonar-stalker-mark" x={stalkerPos.x} y={stalkerPos.y + (stalkerFix.large ? 4 : 3)}>
                 ✕
               </text>
             </g>

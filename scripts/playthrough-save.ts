@@ -81,7 +81,7 @@ s = {
     // 深水区 Phase 0 升级轨：给非默认 bonuses，让 powerMax/sensorTuning 带可辨识值，验证它们也 round-trip。
     ...createNewRun({
       zoneId: 'zone.blue_caves',
-      bonuses: { powerMaxBonus: 20, sonarPingCostReduction: 2, lampEfficiency: 0.5, sonarRobustness: 20, lampRobustness: 10, signatureReduction: 3, lampRangeBonus: 4, sonarRangeBonus: 8, sonarScanRangeBonus: 1, roomFeatureChanceBonus: 0.18, soundAbsorbBonus: 0.5, camoBonus: 0.4 },
+      bonuses: { powerMaxBonus: 20, sonarPingCostReduction: 2, lampEfficiency: 0.5, sonarRobustness: 20, lampRobustness: 10, signatureReduction: 3, lampRangeBonus: 4, sonarRangeBonus: 8, sonarScanRangeBonus: 1, sonarDirReach: { deeper: 1, lateral: 0, back: 2 }, roomFeatureChanceBonus: 0.18, soundAbsorbBonus: 0.5, camoBonus: 0.4 },
     }),
     currentDepth: 30,
     activeFlags: new Set(['air_used:node.5', 'run.scratch']),
@@ -152,6 +152,9 @@ assert(
     back!.run?.sensorTuning?.lampDepthReach === LAMP_DEPTH_REACH + 4 &&
     back!.run?.sensorTuning?.sonarDepthReach === SONAR_DEPTH_REACH + 8 &&
     back!.run?.sensorTuning?.roomFeatureChanceBonus === 0.18 &&
+    back!.run?.sensorTuning?.sonarDirReach?.deeper === 1 &&
+    back!.run?.sensorTuning?.sonarDirReach?.lateral === 0 &&
+    back!.run?.sensorTuning?.sonarDirReach?.back === 2 &&
     back!.run?.sensorTuning?.soundAbsorbBonus === 0.5 &&
     back!.run?.sensorTuning?.camoBonus === 0.4,
   'run.sensors / power / powerMax / sensorTuning（深水区 Phase 0 升级轨 + Phase 1 续节点级 reach + 房间出现率轴 + 猎手规避轴）应 round-trip',

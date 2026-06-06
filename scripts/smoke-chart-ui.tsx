@@ -299,6 +299,7 @@ const focusState: GameState = {
 };
 const htmlFocus = renderToStaticMarkup(<NodeSelectView state={focusState} choices={[]} onStateChange={noop} />);
 assert(htmlFocus.includes('sonar-focus-tag') && htmlFocus.includes('聚焦'), 'E4b: 定向 ping 进行中→声呐图标聚焦');
+assert(htmlFocus.includes('sonar-focus-wedge'), 'E4b: 定向 ping 进行中→声呐图画聚焦扇区楔形（§5 可视化）');
 assert(!htmlFocus.includes('sonar-dir-controls'), 'E4b: 已 ping（脉冲未散）→ 定向控件隐藏（1 scan/turn）');
 // 看到的猎手在「朝深处」扇区（n1.layer 1 > n0.layer 0）→ 该按钮带 aims-threat 警示
 const warnState: GameState = {
@@ -315,6 +316,40 @@ const warnState: GameState = {
 const htmlWarn = renderToStaticMarkup(<NodeSelectView state={warnState} choices={[]} onStateChange={noop} />);
 assert(htmlWarn.includes('aims-threat'), 'E4b: 看到的猎手在某扇区 → 该向按钮带 aims-threat 警示');
 L('  三向控件 / omni 全向 / 进行中聚焦标 / 朝猎手向 aims-threat ✓');
+
+// ============================================
+// E4c. SonarScanPanel · 开放水域也能扫（声呐与房间 SPEC §5 later）：
+//   层状 zone（开阔海域·wreck）声呐图没有洞壁可画 → 不画通道边(sonar-edge)、只显接触与读数·标 is-open-water；
+//   迷路 zone（洞穴·blue_caves）仍画通道(sonar-edge)。
+// ============================================
+L('\n========== E4c. SonarScanPanel 开放水域也能扫 (§5 later) ==========');
+// 开放水域（wreck_graveyard·层状）：扫到两节点 → 无洞壁、有接触
+const htmlOpen = renderToStaticMarkup(
+  <NodeSelectView state={sonarState({ scanMemory: { n0: 0, n1: 0 } })} choices={[]} onStateChange={noop} />,
+);
+assert(htmlOpen.includes('is-open-water'), 'E4c: 开放水域声呐图标 is-open-water');
+assert(!htmlOpen.includes('sonar-edge'), 'E4c: 开放水域不画洞壁通道(sonar-edge)');
+assert(htmlOpen.includes('sonar-blip'), 'E4c: 开放水域仍显接触(blip)与读数');
+// 迷路洞穴对照（blue_caves·maze）：同样两节点 → 画通道(sonar-edge)、非 open-water
+const owMazeMap: DiveMap = {
+  zoneId: 'zone.blue_caves', generatedAt: 0, startNodeId: 'm0',
+  nodes: {
+    m0: { id: 'm0', layer: 0, depth: 50, zoneTag: 'cave', kind: 'event', connectsTo: ['m1'], preview: '' },
+    m1: { id: 'm1', layer: 1, depth: 56, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '' },
+  },
+};
+const owMazeRun = {
+  ...createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } }),
+  map: owMazeMap, currentDepth: 50, currentNodeId: 'm0', turn: 0, scanMemory: { m0: 0, m1: 0 },
+};
+const owMazeState: GameState = {
+  ...createInitialGameState(), run: owMazeRun,
+  phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } },
+};
+const htmlOwMaze = renderToStaticMarkup(<NodeSelectView state={owMazeState} choices={[]} onStateChange={noop} />);
+assert(!htmlOwMaze.includes('is-open-water'), 'E4c: 迷路洞穴非 open-water');
+assert(htmlOwMaze.includes('sonar-edge'), 'E4c: 迷路洞穴画通道(sonar-edge)');
+L('  开放水域无洞壁(只接触+读数) / 迷路洞穴画通道 ✓');
 
 // ============================================
 // E5. NodeSelectView · 多事件房间（声呐与房间 SPEC §6/§7 S1）：
@@ -463,7 +498,17 @@ const htmlStalkerVague = renderToStaticMarkup(
 );
 assert(!htmlStalkerVague.includes('sonar-stalker'), 'E8: 没定位过 → 无精确 blip');
 assert(htmlStalkerVague.includes('sonar-threat'), 'E8: 没定位过 → 回落模糊威胁接触（灯只知道有东西在接近）');
-L('  声呐定位→精确 blip+压住模糊接触 / 未定位→回落模糊接触 ✓');
+// 大型生物（声呐与房间 §5 later 接触带大小）：large 猎手 → 一大团（is-large + 弥散质量 sonar-stalker-mass）；普通猎手是小 blip（无 mass）。
+const stalkerLargeFix: GameState = {
+  ...stalkerLocated,
+  run: { ...stalkerLocated.run!, stalker: { ...stalkerLocated.run!.stalker!, large: true } },
+};
+const htmlStalkerLarge = renderToStaticMarkup(
+  <NodeSelectView state={stalkerLargeFix} choices={[]} onStateChange={noop} />,
+);
+assert(htmlStalkerLarge.includes('is-large') && htmlStalkerLarge.includes('sonar-stalker-mass'), 'E8: 大型生物猎手 → 一大团 (is-large + sonar-stalker-mass)');
+assert(!htmlStalkerFix.includes('sonar-stalker-mass'), 'E8: 普通猎手 → 无弥散质量（小 blip）');
+L('  声呐定位→精确 blip+压住模糊接触 / 未定位→回落模糊接触 / 大型生物→一大团 ✓');
 
 // ============================================
 // F. SeaChartView · 打捞行会 Lv.2 出海前选目标尸体
@@ -599,6 +644,9 @@ assert(htmlJ1.includes('更会翻找大洞室'), 'J7: 渲染 roomFeatureChanceBo
 assert(htmlJ1.includes('规避装备'), 'J8: 渲染新「规避装备」升级线');
 assert(htmlJ1.includes('吸声涂层') && htmlJ1.includes('甩脱声感猎手'), 'J8: 渲染 evasion_rig lv1 + soundAbsorbBonus 效果标签');
 assert(htmlJ1.includes('主动迷彩') && htmlJ1.includes('甩脱光感猎手'), 'J8: 渲染 evasion_rig lv2 + camoBonus 效果标签');
+// J9. 声呐与房间 §5：定向 ping 各方向 reach 各自升级（sonar lv6/7/8·新 sonarDirReachBonus 效果标签·带 dir 判别）
+assert(htmlJ1.includes('声呐组件 Lv.6') && htmlJ1.includes('声呐组件 Lv.8'), 'J9: 渲染 sonar lv6/lv8（定向 reach 各自升级轴）');
+assert(htmlJ1.includes('定向声呐校准'), 'J9: 渲染 sonarDirReachBonus 效果标签（定向声呐校准·带 dir）');
 // J2. 空仓 + 满金 → "材料不足" + 缺口"（有 0）"
 const J2 = upgradeState([], 9999);
 const htmlJ2 = renderToStaticMarkup(<UpgradePanel state={J2} onStateChange={noop} onClose={noop} />);

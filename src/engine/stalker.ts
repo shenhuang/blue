@@ -28,6 +28,11 @@ export const STALKER_SEEK_MAX_TURNS = 8;
 export const STALKER_SIGNAL_ALERT = ALERT_WARN;
 /** ≥ 此深度的声/双感猎手会躲声呐扫描（evadesSonar·越深越难缠 §2.6；abyssal 108m 起）。 */
 export const STALKER_EVADE_DEPTH = 108;
+/**
+ * ≥ 此深度的猎手＝「大型生物」（声呐与房间 §5 later「接触带大小」）：比玩家还大的深渊捕食者（abyssal the_rising / apex 类·abyssal 108m 起），
+ * 在声呐图上读成一大团而非小点。浅段（< 此线·trench 等）的猎手仍是普通小 blip。
+ */
+export const STALKER_LARGE_DEPTH = 108;
 /** 玩家规避（猎手 SPEC §3 升级规避）丢锁概率上限·守地板＝规避永不到 1（最深/最凶仍找得到你·对称 SIGNATURE_MIN_ACTIVE）。 */
 export const STALKER_PLAYER_EVADE_MAX = 0.6;
 /** 深 band（≥ STALKER_EVADE_DEPTH）玩家规避打折乘子：深处猎手更难甩（对称它在深处 evadesScan 躲你·§3 守地板）。 */
@@ -130,6 +135,8 @@ export function maybeSpawnStalker(run: RunState, pool: string[]): Stalker | null
   // 等多久按 waitTurns：浅段半数等一阵（STALKER_WAIT_TURNS）、半数等 0＝掉头就走；深段去到点再等一阵。
   const onLostSignal: StalkerLostBehavior = sensesBy === 'both' ? 'seek_last' : 'wait';
   const waitTurns = sensesBy === 'both' || idx % 2 === 0 ? STALKER_WAIT_TURNS : 0;
+  // 大型生物（§5 later「接触带大小」）：深渊（≥ STALKER_LARGE_DEPTH）的捕食者比玩家还大 → 声呐图读成一大团。浅段 → 普通小 blip（large 缺省 undefined·逐字节不变）。
+  const large = depth >= STALKER_LARGE_DEPTH ? true : undefined;
   return {
     nodeId: node,
     sensesBy,
@@ -140,6 +147,7 @@ export function maybeSpawnStalker(run: RunState, pool: string[]): Stalker | null
     lastSignalNodeId: run.currentNodeId,
     turnsSinceSignal: 0,
     waitedTurns: 0,
+    large,
   };
 }
 
@@ -227,11 +235,11 @@ export function scanStalker(run: RunState, stalker: Stalker): Stalker {
 }
 
 /**
- * 声呐图上猎手的（会过时的）位置（§2.1/§8.7·SonarScanPanel 纯渲染读这里）：上次被声呐扫到的节点 + 余像年龄；
- * 从没扫到（seenNodeId undefined）/ 节点已不在图 → null（你只「感觉」到它在、没定位）。
+ * 声呐图上猎手的（会过时的）位置（§2.1/§8.7·SonarScanPanel 纯渲染读这里）：上次被声呐扫到的节点 + 余像年龄 + 是否大型生物；
+ * 从没扫到（seenNodeId undefined）/ 节点已不在图 → null（你只「感觉」到它在、没定位）。large（§5 接触带大小）→ 面板画成一大团。
  */
-export function stalkerSonarBlip(run: RunState): { nodeId: string; stale: number } | null {
+export function stalkerSonarBlip(run: RunState): { nodeId: string; stale: number; large: boolean } | null {
   const s = run.stalker;
   if (!s || s.seenNodeId === undefined || !run.map?.nodes[s.seenNodeId]) return null;
-  return { nodeId: s.seenNodeId, stale: (run.turn ?? 0) - (s.seenTurn ?? run.turn ?? 0) };
+  return { nodeId: s.seenNodeId, stale: (run.turn ?? 0) - (s.seenTurn ?? run.turn ?? 0), large: s.large ?? false };
 }

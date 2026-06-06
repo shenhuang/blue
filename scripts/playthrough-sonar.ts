@@ -48,9 +48,11 @@ import {
   revealSonarScanDirectional,
   nodeSector,
   sonarScanRange,
+  sonarDirReach,
   scanFreshness,
   SONAR_SCAN_RANGE,
   SONAR_SCAN_RANGE_MAX,
+  SONAR_DIR_REACH_MAX,
   SCAN_FADE_TURNS,
 } from '../src/engine/sonar';
 
@@ -562,7 +564,25 @@ L('\n========== 13. 定向 ping（§5 方向扇区）==========');
   const moved = moveToNode(pinged, 'd3');
   assert(moved.run!.sensors.sonar === 'off' && moved.run!.sensors.sonarDir === undefined, '13h: 移动后 sonar off + 聚焦清掉');
 
-  L('  扇区分类 / omni 回退 / 聚焦更远·别处更短 / 三向各探一支 / 暴露按方向(安静·尖峰·光感豁免) / pingSonar 集成 / 移动清聚焦 ✓');
+  // (i) 各方向 reach 各自升级（§5）：dirReach 把聚焦那一向的焦距再推远一跳，别向/缺省不变。
+  //     base1·deeper 焦距 = min(5,1+1)=2 跳 → 够 d4 不够 d5；dirReach1 → min(6,1+1+1)=3 跳 → 够更深的 d5。
+  const dr0 = revealSonarScanDirectional(map, 'c', 1, 'deeper', 0);
+  const dr1 = revealSonarScanDirectional(map, 'c', 1, 'deeper', 1);
+  assert(dr0.includes('d4') && !dr0.includes('d5'), '13i: dirReach0 → 焦距基线（够 d4 不够 d5）');
+  assert(dr1.includes('d5'), '13i: dirReach1 → 聚焦焦距 +1 跳（够到更深的 d5）');
+  assert(sameSet(revealSonarScanDirectional(map, 'c', 1, 'deeper'), dr0), '13i: dirReach 缺省第 5 参 = 0（既有 4 参调用逐字节）');
+  assert(!dr1.includes('e0') && !dr1.includes('s2b'), '13i: deeper 的 reach 不延长别向支链（别向仍短·守北极星）');
+  assert(sameSet(revealSonarScanDirectional(map, 'c', 1, 'deeper', 1), dr1), '13i: 定向 reach 揭示确定性');
+
+  // (j) 桥：sensorTuning.sonarDirReach → sonarDirReach(run,dir)；全向/未升级 0；逐向夹到 SONAR_DIR_REACH_MAX。
+  const updReach = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true, sonarDirReach: { deeper: 1, lateral: 0, back: 0 } } });
+  assert(sonarDirReach(updReach, 'deeper') === 1 && sonarDirReach(updReach, 'lateral') === 0, '13j: sonarDirReach 逐向读 sensorTuning');
+  assert(sonarDirReach(updReach) === 0, '13j: 全向（dir 缺省）→ 0');
+  assert(sonarDirReach(createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } }), 'deeper') === 0, '13j: 未升级 → 各向 0（定向逐字节不变）');
+  const capReach = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true, sonarDirReach: { deeper: 99, lateral: 99, back: 99 } } });
+  assert(sonarDirReach(capReach, 'deeper') === SONAR_DIR_REACH_MAX, '13j: 升满逐向夹到 SONAR_DIR_REACH_MAX');
+
+  L('  扇区分类 / omni 回退 / 聚焦更远·别处更短 / 三向各探一支 / 暴露按方向(安静·尖峰·光感豁免) / pingSonar 集成 / 移动清聚焦 / 各方向 reach 各自升级(更远·别向不变·桥·夹上限) ✓');
 }
 
 console.log(log.join('\n'));

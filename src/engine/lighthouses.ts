@@ -21,6 +21,7 @@ import type {
   OutpostDef,
   OutpostStageDef,
   PlayerProfile,
+  SonarDir,
 } from '@/types';
 import lighthouseData from '@/data/lighthouse_upgrades.json';
 import { appendLog, removeFromInventory, HOME_LIGHTHOUSE_ID } from './state';
@@ -241,6 +242,8 @@ export interface RunStartBonuses {
   sonarRangeBonus: number;
   // 声呐与房间 §8.1：声呐扫描跳数加成（主升级轴）。
   sonarScanRangeBonus: number;
+  // 声呐与房间 §5：定向 ping 各扇区 reach 各自升级（逐向独立）。
+  sonarDirReach: Record<SonarDir, number>;
   // 声呐与房间 §6/§8.3 续：大房间出现率加成。
   roomFeatureChanceBonus: number;
   // 猎手 SPEC §3 升级规避：玩家侧规避（吸声 T1 / 迷彩 T2）。
@@ -271,6 +274,7 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
     lampRangeBonus: g.lampRangeBonus,
     sonarRangeBonus: g.sonarRangeBonus,
     sonarScanRangeBonus: g.sonarScanRangeBonus,
+    sonarDirReach: g.sonarDirReach,
     roomFeatureChanceBonus: g.roomFeatureChanceBonus,
     soundAbsorbBonus: g.soundAbsorbBonus,
     camoBonus: g.camoBonus,
