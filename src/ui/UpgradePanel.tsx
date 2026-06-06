@@ -214,6 +214,11 @@ function renderEffect(e: UpgradeEffect): string {
       return `声呐扫得更广 +${e.value} 跳（一记 ping 多照一圈洞）`;
     case 'roomFeatureChanceBonus':
       return `更会翻找大洞室：开阔水域更常藏着多处可探（深处的「大房间」出现率 +${Math.round(e.value * 100)}%）`;
+    // 猎手 SPEC §3 升级规避：玩家侧规避标签
+    case 'soundAbsorbBonus':
+      return `吸声涂层：更难被「循声」的猎手锁定（约 ${Math.round(e.value * 100)}% 概率甩脱声感猎手·最深处仍找得到你）`;
+    case 'camoBonus':
+      return `主动迷彩：更难被「循光」的猎手锁定（约 ${Math.round(e.value * 100)}% 概率甩脱光感猎手·最深处仍找得到你）`;
     case 'unlockShopItem':
       return `解锁商店：${itemLabel(e.itemId)}`;
   }

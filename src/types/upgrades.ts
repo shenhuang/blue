@@ -28,6 +28,9 @@ export type UpgradeEffect =
   | { kind: 'sonarScanRangeBonus'; value: number }
   // 声呐与房间 §6/§8.3 续：大房间（多事件房间）出现率 +value（更会在大洞室里翻找·band maxRoomFeatures 仍是天花板），有上限。
   | { kind: 'roomFeatureChanceBonus'; value: number }
+  // 猎手 SPEC §3 升级规避：玩家侧规避——压低你对某感官猎手的特征 → 它这一记丢锁（对称于它 evadesScan 躲你；有上限/深处仍找得到你）。
+  | { kind: 'soundAbsorbBonus'; value: number } // T1 吸声：规避声感猎手（0..STEALTH_BONUS_MAX）
+  | { kind: 'camoBonus'; value: number } // T2 主动迷彩：规避光感猎手（0..STEALTH_BONUS_MAX）
   | { kind: 'unlockShopItem'; itemId: string };
 
 /** 一条升级要求的某种材料及数量（qty 量级 ∈ [1,10]） */
@@ -101,6 +104,10 @@ export interface UpgradeBonuses {
   sonarScanRangeBonus: number;
   /** 大房间（多事件房间）出现率加成（声呐与房间 §6/§8.3 续；有上限 ROOM_FEATURE_CHANCE_MAX·band cap 仍是天花板）。 */
   roomFeatureChanceBonus: number;
+  /** 猎手规避 T1 吸声（规避声感猎手·sum，有上限 STEALTH_BONUS_MAX）。 */
+  soundAbsorbBonus: number;
+  /** 猎手规避 T2 主动迷彩（规避光感猎手·sum，有上限 STEALTH_BONUS_MAX）。 */
+  camoBonus: number;
   unlockedZones: Set<string>;
   unlockedShopItems: Set<string>;
 }

@@ -243,6 +243,9 @@ export interface RunStartBonuses {
   sonarScanRangeBonus: number;
   // 声呐与房间 §6/§8.3 续：大房间出现率加成。
   roomFeatureChanceBonus: number;
+  // 猎手 SPEC §3 升级规避：玩家侧规避（吸声 T1 / 迷彩 T2）。
+  soundAbsorbBonus: number;
+  camoBonus: number;
 }
 
 /**
@@ -269,6 +272,8 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
     sonarRangeBonus: g.sonarRangeBonus,
     sonarScanRangeBonus: g.sonarScanRangeBonus,
     roomFeatureChanceBonus: g.roomFeatureChanceBonus,
+    soundAbsorbBonus: g.soundAbsorbBonus,
+    camoBonus: g.camoBonus,
   };
 }
 

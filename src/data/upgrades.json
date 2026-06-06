@@ -247,6 +247,42 @@
           "description": "一组可调焦的远摄灯头：把光柱送进更深的陡坑，原先黑下去的地方现在能看清几米——但再深的坑，灯还是照不穿。"
         }
       ]
+    },
+    {
+      "id": "line.evasion_rig",
+      "name": "规避装备",
+      "description": "深处的猎手循着你的光、你的声找来。用最深处带回的料，做一身让它们丢掉你的装备——但再静、再隐，最深最凶的那些仍找得到你。",
+      "upgrades": [
+        {
+          "id": "upgrade.evasion_rig.lv1",
+          "level": 1,
+          "name": "吸声涂层",
+          "cost": {
+            "materials": [
+              { "itemId": "item.eel_skin", "qty": 3 },
+              { "itemId": "item.cave_octopus_beak", "qty": 2 }
+            ],
+            "gold": 180
+          },
+          "effects": [{ "kind": "soundAbsorbBonus", "value": 0.5 }],
+          "description": "给外壳镀一层吸声涂层：循声的猎手更难锁住你——你 ping、你出声时，约半数时候它丢掉你的信号、转去别处搜。深到一定程度它仍听得见你。"
+        },
+        {
+          "id": "upgrade.evasion_rig.lv2",
+          "level": 2,
+          "name": "主动迷彩",
+          "cost": {
+            "materials": [
+              { "itemId": "item.lantern_gland", "qty": 2 },
+              { "itemId": "item.eel_skin", "qty": 3 },
+              { "itemId": "item.cave_octopus_beak", "qty": 3 }
+            ],
+            "gold": 280
+          },
+          "effects": [{ "kind": "camoBonus", "value": 0.5 }],
+          "description": "一层会随环境变色的主动迷彩：循光的猎手更难锁住你。配上吸声涂层，连「光声都认」的双感猎手也甩得动了——但最深最凶的那些，照样找得到你。"
+        }
+      ]
     }
   ]
 }

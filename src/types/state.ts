@@ -146,6 +146,10 @@ export interface SensorTuning {
    * （升级只让大房间更常出现、不突破深 band 的尺寸上限）。缺省（旧档/部分 run）→ 回退 0＝mapgen 输出逐字节不变。
    */
   roomFeatureChanceBonus: number;
+  /** 猎手规避 T1 吸声（猎手 SPEC §3）：规避声感猎手的概率贡献（默认 0，升级上调、有上限 STEALTH_BONUS_MAX）。stalker.ts::playerEvadesStalker 读它；缺省 0＝无规避·advanceStalker 逐字节不变。 */
+  soundAbsorbBonus: number;
+  /** 猎手规避 T2 主动迷彩（猎手 SPEC §3）：规避光感猎手的概率贡献（默认 0，有上限 STEALTH_BONUS_MAX）。双感猎手要 min(吸声,迷彩) 两者都有才甩得动。 */
+  camoBonus: number;
 }
 
 /**

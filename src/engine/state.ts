@@ -141,6 +141,8 @@ export function createNewRun(opts: {
     sonarRangeBonus?: number;
     sonarScanRangeBonus?: number;
     roomFeatureChanceBonus?: number;
+    soundAbsorbBonus?: number;
+    camoBonus?: number;
   };
 }): RunState {
   const oxygenBonus = opts.bonuses?.oxygenMaxBonus ?? 0;
@@ -159,6 +161,8 @@ export function createNewRun(opts: {
     sonarRangeBonus: opts.bonuses?.sonarRangeBonus,
     sonarScanRangeBonus: opts.bonuses?.sonarScanRangeBonus,
     roomFeatureChanceBonus: opts.bonuses?.roomFeatureChanceBonus,
+    soundAbsorbBonus: opts.bonuses?.soundAbsorbBonus,
+    camoBonus: opts.bonuses?.camoBonus,
   });
 
   const staminaMax = 100 + staminaBonus;

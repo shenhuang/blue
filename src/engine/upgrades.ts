@@ -177,6 +177,8 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
     sonarRangeBonus: 0,
     sonarScanRangeBonus: 0,
     roomFeatureChanceBonus: 0,
+    soundAbsorbBonus: 0,
+    camoBonus: 0,
     unlockedZones: new Set(),
     unlockedShopItems: new Set(),
   };
@@ -244,6 +246,13 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
         // 声呐与房间 §6/§8.3 续：大房间出现率（sum 聚合，上限在 deriveSensorTuning）。
         case 'roomFeatureChanceBonus':
           bonuses.roomFeatureChanceBonus += e.value;
+          break;
+        // 猎手 SPEC §3 升级规避：玩家侧规避（sum 聚合·上限在 clarity.ts::deriveSensorTuning）。
+        case 'soundAbsorbBonus':
+          bonuses.soundAbsorbBonus += e.value;
+          break;
+        case 'camoBonus':
+          bonuses.camoBonus += e.value;
           break;
         case 'unlockZone':
           bonuses.unlockedZones.add(e.zoneId);

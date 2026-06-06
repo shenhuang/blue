@@ -28,6 +28,10 @@ export const STALKER_SEEK_MAX_TURNS = 8;
 export const STALKER_SIGNAL_ALERT = ALERT_WARN;
 /** ≥ 此深度的声/双感猎手会躲声呐扫描（evadesSonar·越深越难缠 §2.6；abyssal 108m 起）。 */
 export const STALKER_EVADE_DEPTH = 108;
+/** 玩家规避（猎手 SPEC §3 升级规避）丢锁概率上限·守地板＝规避永不到 1（最深/最凶仍找得到你·对称 SIGNATURE_MIN_ACTIVE）。 */
+export const STALKER_PLAYER_EVADE_MAX = 0.6;
+/** 深 band（≥ STALKER_EVADE_DEPTH）玩家规避打折乘子：深处猎手更难甩（对称它在深处 evadesScan 躲你·§3 守地板）。 */
+export const STALKER_PLAYER_EVADE_DEEP_MULT = 0.5;
 
 /** 确定性哈希（FNV-1a），不消耗 RNG（保 mapgen/场景确定性）。 */
 function hashStr(s: string): number {
@@ -141,7 +145,7 @@ export function maybeSpawnStalker(run: RunState, pool: string[]): Stalker | null
 
 /**
  * 推进猎手一回合（猎手 SPEC §2.3-2.4）。返回新猎手（**null ＝脱离 despawn**）+ 是否**接触**到你（接触＝触发伏击）。
- *   - 有你的信号（alert ≥ STALKER_SIGNAL_ALERT）→ hunting：朝你当前节点逼近一跳·刷新 lastSignal·清等待计时。
+ *   - 有你的信号（alert ≥ STALKER_SIGNAL_ALERT·且未被规避升级甩脱〔§3 吸声/迷彩〕）→ hunting：朝你当前节点逼近一跳·刷新 lastSignal·清等待计时。
  *   - 信号切断（你摸黑让 alert 消退）→ searching，按性格（§2.3）：
  *       · wait     ：原地等 waitTurns 回合再脱离（waitTurns=0 ＝丢信号就走「掉头就走」）；
  *       · seek_last：先走向上次有信号的位置，抵达后再等 waitTurns 回合徘徊找你、再脱离（够不到 → STALKER_SEEK_MAX_TURNS 放弃）。
@@ -154,7 +158,8 @@ export function advanceStalker(
   if (!run.map || !run.currentNodeId) return { stalker, contact: false };
   const here = run.currentNodeId;
   const s: Stalker = { ...stalker };
-  if ((run.alert ?? 0) >= STALKER_SIGNAL_ALERT) {
+  // 有你的信号 ＝ 你够「响」（alert 越线）且这一回合没被你的规避装备甩脱（§3·缺省无升级 → playerEvadesStalker 恒 false → 逐字节不变）。
+  if ((run.alert ?? 0) >= STALKER_SIGNAL_ALERT && !playerEvadesStalker(run, stalker)) {
     // 有你的信号 → 朝你逼近一跳·刷新 lastSignal·清等待计时。
     s.state = 'hunting';
     s.turnsSinceSignal = 0;
@@ -188,6 +193,26 @@ export function stalkerEvadesScan(run: RunState, stalker: Stalker): boolean {
   if (stalker.sensesBy === 'light') return false;
   if ((run.currentDepth ?? 0) < STALKER_EVADE_DEPTH) return false;
   return hashStr(`evade:${stalker.nodeId}:${run.turn}`) % 2 === 0;
+}
+
+/**
+ * 这一回合玩家是否甩脱了这只猎手的锁（猎手 SPEC §3 升级规避·**对称** stalkerEvadesScan）：
+ * 你升级了规避对应感官的装备（吸声 vs 声感 / 迷彩 vs 光感；双感「光声任一都锁你」→ 取 min＝两者都有才甩得动）
+ * → 它这一记丢了你的信号，即使你这回合很「响」（alert 高）也当作信号切断那一回合（advanceStalker 据此让它转 searching）。
+ * 守地板（§3）：单旋钮封顶 STALKER_PLAYER_EVADE_MAX（永不到 1）+ 深 band（≥STALKER_EVADE_DEPTH）打折 → 最深/最凶仍找得到你。
+ * 确定性（不耗 RNG·与 turn/节点绑定·前缀异于 stalkerEvadesScan＝两侧规避不相关）。缺省（无升级·tuning 缺/0）→ 0 概率＝从不规避＝向后兼容逐字节不变。
+ */
+export function playerEvadesStalker(run: RunState, stalker: Stalker): boolean {
+  const t = run.sensorTuning;
+  if (!t) return false;
+  const sound = t.soundAbsorbBonus ?? 0;
+  const camo = t.camoBonus ?? 0;
+  const bonus =
+    stalker.sensesBy === 'sound' ? sound : stalker.sensesBy === 'light' ? camo : Math.min(sound, camo);
+  if (bonus <= 0) return false;
+  let chance = Math.min(STALKER_PLAYER_EVADE_MAX, bonus);
+  if ((run.currentDepth ?? 0) >= STALKER_EVADE_DEPTH) chance *= STALKER_PLAYER_EVADE_DEEP_MULT;
+  return hashStr(`pevade:${stalker.nodeId}:${run.turn}`) % 1000 < chance * 1000;
 }
 
 /**

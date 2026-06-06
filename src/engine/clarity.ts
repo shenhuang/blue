@@ -81,6 +81,8 @@ export const LAMP_DEPTH_REACH_MAX = 14;
 export const SONAR_DEPTH_REACH_MAX = 26;
 /** 大房间（多事件房间）出现率加成上限（声呐与房间 §6/§8.3 续）：升满也到此为止——大房间仍稀有、band maxRoomFeatures 仍是天花板。 */
 export const ROOM_FEATURE_CHANCE_MAX = 0.3;
+/** 猎手规避上限（猎手 SPEC §3 守地板）：单条规避旋钮（吸声/迷彩）升满也到此为止——规避永不到 1，最深/最凶仍找得到你（对称 SIGNATURE_MIN_ACTIVE 的「永不全隐」铁律）。 */
+export const STEALTH_BONUS_MAX = 0.6;
 
 /** 升级派生的传感器加成（来自 getRunBonuses；各项可缺，缺＝0）。 */
 export interface SensorUpgradeBonus {
@@ -93,6 +95,8 @@ export interface SensorUpgradeBonus {
   sonarRangeBonus?: number; // 声呐 reach 加成（节点级 clarity·深度差·sum，有上限）
   sonarScanRangeBonus?: number; // 声呐扫描跳数加成（声呐与房间 §8.1 主升级轴·sum，有上限 SONAR_SCAN_RANGE_MAX）
   roomFeatureChanceBonus?: number; // 大房间出现率加成（声呐与房间 §6/§8.3 续·sum，有上限 ROOM_FEATURE_CHANCE_MAX）
+  soundAbsorbBonus?: number; // 猎手规避 T1 吸声（规避声感猎手·sum，有上限 STEALTH_BONUS_MAX）
+  camoBonus?: number; // 猎手规避 T2 主动迷彩（规避光感猎手·sum，有上限 STEALTH_BONUS_MAX）
 }
 
 /**
@@ -118,6 +122,9 @@ export function deriveSensorTuning(b: SensorUpgradeBonus = {}): SensorTuning {
     sonarScanRange: Math.min(SONAR_SCAN_RANGE_MAX, SONAR_SCAN_RANGE + (b.sonarScanRangeBonus ?? 0)),
     // 大房间出现率加成（声呐与房间 §6/§8.3 续）：0..ROOM_FEATURE_CHANCE_MAX，缺省 0＝mapgen 输出逐字节不变。
     roomFeatureChanceBonus: Math.min(ROOM_FEATURE_CHANCE_MAX, Math.max(0, b.roomFeatureChanceBonus ?? 0)),
+    // 猎手规避（猎手 SPEC §3）：0..STEALTH_BONUS_MAX，缺省 0＝无规避（stalker.ts::playerEvadesStalker 算 0 概率＝advanceStalker 逐字节不变·向后兼容）。
+    soundAbsorbBonus: Math.min(STEALTH_BONUS_MAX, Math.max(0, b.soundAbsorbBonus ?? 0)),
+    camoBonus: Math.min(STEALTH_BONUS_MAX, Math.max(0, b.camoBonus ?? 0)),
   };
 }
 

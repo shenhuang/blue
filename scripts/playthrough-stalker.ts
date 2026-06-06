@@ -9,7 +9,7 @@
 //
 // 跑法： npx tsx scripts/playthrough-stalker.ts
 
-import type { GameState, RunState, DiveMap, DiveNode, Stalker } from '../src/types';
+import type { GameState, RunState, DiveMap, DiveNode, Stalker, SenseModality, SensorTuning } from '../src/types';
 import {
   createInitialGameState,
   createNewRun,
@@ -23,8 +23,10 @@ import {
   scanStalker,
   stalkerSonarBlip,
   stalkerEvadesScan,
+  playerEvadesStalker,
   spawnNodeFor,
   STALKER_WAIT_TURNS,
+  STALKER_EVADE_DEPTH,
 } from '../src/engine/stalker';
 
 const log: string[] = [];
@@ -250,6 +252,62 @@ L('\n========== 7. spawnNodeFor 现身点 ==========');
   };
   assert(spawnNodeFor(small, 'a', 3) === 'b', '7: 小图够不到 3 跳 → 退回最远可达 b');
   L('  现身 3 跳 = n3 / 小图退回最远可达 ✓');
+}
+
+// ============================================================
+// 8. 玩家规避升级（猎手 SPEC §3·吸声 T1 / 迷彩 T2·对称 stalkerEvadesScan·守地板）
+//    升级让对应感官的猎手「这一记丢锁」：高 alert 也当切断 → 它转 searching（你甩得动它）；
+//    感官要匹配（吸声 vs 声感 / 迷彩 vs 光感·双感取短板 min）；深 band 打折＝最深仍找得到你；无升级 → 从不规避（逐字节不变）。
+// ============================================================
+L('\n========== 8. 玩家规避升级（§3·吸声/迷彩·对称 evadesScan·守地板）==========');
+{
+  const tSound = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { soundAbsorbBonus: 0.5 } }).sensorTuning!;
+  const tCamo = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { camoBonus: 0.5 } }).sensorTuning!;
+  const tBoth = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { soundAbsorbBonus: 0.5, camoBonus: 0.5 } }).sensorTuning!;
+
+  const mkRun = (depth: number, tuning?: SensorTuning): RunState => ({
+    ...huntState({ depth, alert: 90 }).run!, currentNodeId: 'n0', sensorTuning: tuning,
+  });
+  const mkStalker = (sensesBy: SenseModality): Stalker => ({
+    nodeId: 'n2', sensesBy, onLostSignal: 'wait', waitTurns: 0, state: 'hunting',
+    encounterId: CAVE_POOL[0], lastSignalNodeId: 'n0', turnsSinceSignal: 0, waitedTurns: 0,
+  });
+  const evadeCount = (run: RunState, st: Stalker, turns = 200): number => {
+    let n = 0;
+    for (let t = 0; t < turns; t++) if (playerEvadesStalker({ ...run, turn: t }, st)) n++;
+    return n;
+  };
+
+  // (a) 无升级（缺 tuning）→ 从不规避（向后兼容·advanceStalker 逐字节不变）
+  assert(evadeCount(mkRun(70, undefined), mkStalker('sound')) === 0, '8a: 无规避升级 → 从不规避（向后兼容）');
+
+  // (b) 吸声 vs 声感猎手：浅段部分回合甩脱（0<n<turns·非全隐＝守地板）
+  const sSound = evadeCount(mkRun(70, tSound), mkStalker('sound'));
+  assert(sSound > 0 && sSound < 200, `8b: 吸声 vs 声感·浅段部分回合甩脱（非全隐），实际 ${sSound}/200`);
+
+  // (c) 感官匹配：吸声对光感无效（要迷彩）；迷彩对声感无效
+  assert(evadeCount(mkRun(70, tSound), mkStalker('light')) === 0, '8c: 吸声对光感猎手无效（感官不匹配）');
+  assert(evadeCount(mkRun(70, tCamo), mkStalker('sound')) === 0, '8c: 迷彩对声感猎手无效');
+
+  // (d) 双感猎手：只有吸声 / 只有迷彩都甩不动（取短板 min）；两者都有才甩得动
+  assert(evadeCount(mkRun(70, tSound), mkStalker('both')) === 0, '8d: 双感·只有吸声甩不动（min 短板）');
+  assert(evadeCount(mkRun(70, tCamo), mkStalker('both')) === 0, '8d: 双感·只有迷彩甩不动');
+  assert(evadeCount(mkRun(70, tBoth), mkStalker('both')) > 0, '8d: 双感·吸声+迷彩才甩得动');
+
+  // (e) 守地板：深 band（≥108m）规避打折 → 严格少于浅段、且仍 >0（最深仍找得到你）
+  const sDeep = evadeCount(mkRun(STALKER_EVADE_DEPTH + 12, tSound), mkStalker('sound'));
+  assert(sDeep > 0 && sDeep < sSound, `8e: 深 band 规避打折（深 ${sDeep} < 浅 ${sSound}·仍 >0），守地板`);
+
+  // (f) 接线 advanceStalker：被规避的回合 → 当切断转 searching；无升级同回合照旧 hunting（逐字节不变）
+  const stF = (): Stalker => ({ ...mkStalker('sound'), waitTurns: 3 });
+  let evadedTurn = -1;
+  for (let t = 0; t < 50; t++) if (playerEvadesStalker({ ...mkRun(70, tSound), turn: t }, stF())) { evadedTurn = t; break; }
+  assert(evadedTurn >= 0, '8f: 存在一个被规避的回合');
+  const evadedAdv = advanceStalker({ ...mkRun(70, tSound), turn: evadedTurn }, stF());
+  assert(evadedAdv.stalker?.state === 'searching', '8f: 被规避回合·advanceStalker 当切断 → searching（高 alert 也算切断·§3）');
+  const baseAdv = advanceStalker({ ...mkRun(70, undefined), turn: evadedTurn }, stF());
+  assert(baseAdv.stalker?.state === 'hunting', '8f: 无升级·同回合 → 照旧 hunting（向后兼容逐字节不变）');
+  L(`  规避：感官匹配·双感取短板·深 band 打折守地板·被规避回合转 searching ✓（浅 ${sSound}/200·深 ${sDeep}/200）`);
 }
 
 console.log(log.join('\n'));
