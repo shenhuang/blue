@@ -41,3 +41,6 @@ yarn-error.log*
 
 # unattended deploy token (holds a GitHub PAT — never commit this)
 .deploy-token
+
+# local session-handoff prompt (regenerated each session — keep local, never publish)
+docs/NEXT_SESSION_PROMPT.md
