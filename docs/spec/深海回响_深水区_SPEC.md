@@ -211,6 +211,7 @@
 - 2026-06-05（**「A+C+D 全做·打磨到高完成度」session** · 作者选 A+C+D 全做、强调「打磨到高完成度」；A=声呐与房间 S1 多事件房间〔属 `docs/深海回响_声呐与房间_SPEC.md` §11 quirk #74〕、C=深段多 feature 房间内容、D=Phase 2b 真 reveal dimming）：本 SPEC 侧记 C/D。① **C·深段多 feature 房间内容（喂 A·S1 大房间·补料让深 band 大房间有多事件可抽）**——abyssal/hadal/subhadal 各 +2 事件（5→7 / 4→6 / 4→6），守各 band 欺骗母题、全 loot-free/无敌人/不触发 d_reveal/永不交底/单 band tag/每事件留关灯关声呐的盲退出口、3 选项（给入·理智 check·盲退）：abyssal `the_company`〈同行的下沉影子〉/`lower_still`〈虚空上的假底檐·『永远有比最深更深的』〉· hadal `the_fold`〈直线绕回原点更深·空间折叠〉/`the_return_path`〈自己的记号正确地把你往深领〉· subhadal `the_current`〈舒服的下降暖流〉/`the_quiet_yes`〈它不必骗你·你自己同意·『诱饵』收束最深一拍〉；新 `lore.{abyssal,hadal,subhadal}.*`；12 scenarios（`event-runner --out json` 实跑抄 #43·success+fail 各档）。内容事件 105→111、scenarios 119→131；敌人仍 7。② **D·Phase 2b 真 reveal dimming（§3.6·补 #67 明确 deferred 的「衰减不碰 reveal」缺口）**——`effectiveRevealRadius` 随衰减缩半径（见 §5 Phase 2b 记录）＝荒废前哨海图变暗、远海机会点重新隐没、闭合衰减↔海图回路；decay-0 逐字节不变。`playthrough-outpost`§11 + chart/lighthouse/smoke 全绿。详见 STATUS quirk #75/#76。C/D 未发布均不 bump SAVE_VERSION（事件/派生、不动形状）。**下一步＝声呐与房间 S2（不可信扫描·填 `spoofsSonar`/`evadesSonar`·与节点版 mimic 合流）/ S3 / §6.5、Phase 3「另一个世界」§3.7（作者逐拍）、Phase 2b 续（寄存丢失/平衡）。**
 - 2026-06-05（**声呐与房间 S2·不可信扫描**，作者方向 A「然后确保这次完成它」；详记在 `docs/深海回响_声呐与房间_SPEC.md` §11，本 SPEC 侧记其对北极星的兑现）：本 SPEC §3.2「不可信声呐（生物躲/骗·低 san 幻觉）」+ §3.5「mimic 的节点版（`spoofsSonar`/`evadesSonar` 节点钩子）」此前只有字段、未填行为——S2 落地：`clarity.ts::nodeSonarView`（spoof→声呐图画成假信标〔**节点版 mimic「无灯之光」**·与 §3.5 海图 mimic #69 合流·**不触发 d_reveal**只由 mimic 兑现事件触发 #42〕/ evade→无回波 / 低 san→读数乱码）+ `sonarPhantoms`（低 san 伪接触·与真无异）+ `effectiveFalseEchoSanity`（新 `DepthBand.sonarDeception` 抬高失真阈值·**非单调**：trench_throat→hadal 越深越骗、subhadal 回落＝兑现「越深越欺骗」的信任梯度〔§3.1〕在渊外反转成『诱饵』）。节点版 mimic 落点＝mapgen `applySonarDeception`（确定性 FNV·零 rng·gated·地标/起点/尸体豁免）。**至此 §3.2 三态感知里「声呐＝不可信回波」从概念变成图上看得见的谎言**；守 §9（回归全绿/软门控/d_reveal 只由 mimic 触发/叙述永不交底/敌人别太多——apex 仍是 EVENT 非战斗敌人）。详见 STATUS quirk #78。**节点版 mimic 与 #69 海图 mimic 的更深耦合（spoofsSonar 节点引向兑现事件）/ S3 威胁定位 / §6.5 宏观灯塔扫描 仍留后续。**
 - 2026-06-05（**「彻底完成 D」session** · 作者定向方向 D、要求三项全做「回归文化有 schedule 在跑·这次把 D 彻底完成」；无 AskUserQuestion 逐拍——SPEC §3.6 +「维护成持续压力」北极星已把寄存设施钉得够实，按 SPEC-faithful 默认落地·清晰记录供复核）：兑现 §3.6 此前只字未落的「材料中转/寄存」+「寄存材料丢失」，Phase 2b 衰减三齿（变暗 #67/阶段回退 #66/**寄存丢失** #79）全闭环。① **材料中转/寄存设施**＝深水前哨建 `lhtrack.depot`(outpostOnly·新 `LighthouseEffect.storageCapacity`·**不耗能源**＝被动库房恒在线·避免「能源不够→取不到存料」双罚) 后寄存材料；**维护就近付料则免 ferry 金费**（前哨上有料·不必雇船运下来＝把料前置到深处的回报·更是 home 金/料紧时仍维护得起的逃生阀门）＝§3.6「维护成 base 层持续压力」的正向回报面。② **寄存丢失**＝`effectiveStored`（raw − `depotDecayLevel`×`DEPOT_LOSS_PER_LEVEL` 锈蚀·**独立 `storedRun` 计时**与结构 `maintainedRun` 解耦：建造一阶只重置结构、存/取/维护才打理寄存·激流前哨锈得更快·满 4 级最多 4 单位·**非永久全损**可重存补回守 §3.6）·**derive-only**（同 `effectiveRevealRadius` 风格·提交只在玩家动作·烤入损耗不复活）。存档＝`outpostState` 条目扩 `{ maintainedRun, stored?, storedRun? }`(additive·JSON-native 无 Set·**不 bump SAVE_VERSION**)。**架构守单向依赖**（outposts.ts→lighthouses.ts 不可循环）：寄存逻辑全在 outposts.ts·`advanceOutpost` 只保留字段·无寄存活动前哨写 `{maintainedRun}` 既有 -outpost/-save 回归逐字节不变。③ **深渊前哨 `abyssal_deep`**(`band.abyssal`·静水·3 阶深料 110/180/290·#66/#73 模板·引擎零改) 补脊柱 home→reef_deep→trench_deep→**abyssal_deep**→hadal_deep（hadal 蛙跳 home 7→1 回合·也缩短 subhadal·不服务更浅 band）+ 建造事件 `lighthouse.outpost_abyssal_deep`(`zoneTags:[abyssal]`)。④ **平衡 pass**＝`outposts.ts` 顶加基准复核块（建造账单单调阶梯 reef Σ280<trench Σ480<abyssal Σ580<hadal Σ660·钉新值·复核既有衰减/能源/reveal-dimming/S2 失真/mapgen 均自洽**未改**——无实测不擅动作者已调值）。回归 `playthrough-outpost`§0/§12/§13 + `playthrough-save` round-trip + smoke M5/N1/N3/N4·全绿 25/25。详见 STATUS quirk #79。**Phase 2b 仍可续：寄存丢失更狠后果 / reef 第二前哨 / 维护账单随深度分级 / 平衡实测。Phase 3「另一个世界」§3.7 仍留作者逐拍。**
+- 2026-06-06（**声呐图垂直化＝真实深度·「位置即深度」系统不变量** · 作者已定定向任务·#92·见新 §13）：声呐图 / MapDevPanel 纵轴此前无深度含义（`deriveMapLayout` 把 depth 横排 x∝layer、y 只是同层 id 堆叠序）→ 改成 **y∝node.depth（上浅下深·真实米数·固定 px/米）**，x 改同深度分散（按 depth 分箱居中·纯避重叠·无方向语义），SonarScanPanel viewBox 转 portrait + `focusWedgePath` 重映（deeper↓/back↑/lateral←→·SVG y 朝下）。**关键耦合**：`engine/sonar.ts::nodeSector` 从 layer 差分改 **depth 差分**（新 `SECTOR_DEPTH_EPS` 容差），否则「朝深」楔形指下、定向 ping 却扩 layer-deeper（迷路图里可能 depth 更浅、渲染在上方）＝自相矛盾——`revealSonarScanDirectional`/`stalkerSector`/`seenStalkerSector`/`pingAimsAtSoundStalker` 全随之按真实深度。**做成系统不变量**（§13）：审计确认 mapgen 主下行 depth 早已单调-from-start（层状 `round(d0+step·L)`·迷路树距+jitter 起点钉 d0、最深钉 d1），P3 只加 `playthrough-mapgen-scenarios` 垂直性不变量兜（迷路 60+层状 30 seed·**不改生成·不破快照**）；以后放事件/房间/猎手 spawn 都按深度（『更深』母题落更深节点·浅段 fresh-wrongness 落浅节点）。视觉验证＝SSR→SVG 坐标核对（绿≠画对·quirk #91 教训）：上浅下深 monotonic / 楔形朝下 / min 间距≥blip 直径无重叠 / 回边 chord 可读。未发布不 bump SAVE_VERSION（布局纯渲染派生·EPS 是常量）。提交 feat `1829d14`。详见 §13 + STATUS quirk #93。**声呐图渲染层至此与下潜剧情一致；下一步＝内容（按深度母题继续铺）或 Phase 3「另一个世界」§3.7（作者逐拍）。**
 
 ---
 
@@ -308,3 +309,28 @@
 - [x] ~~**范围/分辨**：节点级 clarity~~ → **已实装（2026-06-04，quirk #62，见上）。**
 - [x] **真前哨蛙跳**：**已实装（2026-06-04 Phase 2a quirk #66）**——`startDiveFromOutpost` 从 `deepestOutpostLaunch`（半亮 ≥USABLE 且更浅的最深前哨）起跳、预耗氧按「目标顶−前哨底」；Phase 2b（#67）接能源/衰减、D（#73，2026-06-05）把脊柱延到 `band.hadal`（超渊前哨 hadal_deep 服务渊外 subhadal 蛙跳、9→1 回合）。
 - [x] **成本曲线细化**：band 级 alert 倍率 → **已实装（2026-06-04，quirk #64）**：`DepthBand.alertFactor?`（缺省 1）→ `run.bandAlertFactor` → `alertDelta` 只乘暴露增益（reef_deep 1/mouth 1.3/throat 1.6/深渊 2.0），在 `ALERT_DEPTH_FULL`(60) 深度因子饱和之上续「越深越凶」。注：深度因子本身仍在 60m 饱和（band 倍率承担更深的加压），「不饱和斜坡」仍可后续替换 band 倍率（若想要连续而非阶梯）。
+
+---
+
+## 13. 地图垂直性＝深度（位置即深度·剧情一致 + 内容生成约定）
+
+> 2026-06-06（#92）确立的**系统不变量**。声呐图（下潜内）/ MapDevPanel（调试器）纵轴＝真实深度，且 mapgen 与未来内容生成都按"位置即深度"对齐——往下潜＝往下看，符合潜水剧情。**改 / 加任何涉及地图布局、声呐扇区、深度放置的内容前先读本节。**
+
+**渲染（单一来源 `ui/mapLayout.ts::deriveMapLayout`，SonarScanPanel + MapDevPanel 共用）**
+- `y ∝ node.depth`：上＝浅（小 depth → 小 y）/ 下＝深，真实米数，**固定每米像素比例**（`pxPerMeter`，取 > 最大 blip 直径 → 相邻整数米节点纵向不重叠）。声呐取景窗只显玩家附近一小片＝固定可视深度跨度（深图更长无妨）；MapDevPanel viewBox=整张图＝自然尺寸纵向可滚。
+- `x` = 同深度并列分散（按 depth 分箱·箱内按 id 居中排开·`colW` > 直径避重叠）·**无方向语义**（深浅只由 y 表达）。
+- 边可上可下（朝浅＝朝上＝truthful·迷路回边天然朝上）；`chord`（跨层回边近似·`layer` 差 ≠1）由 consumer 差异化/淡化。
+- `SonarScanPanel`：viewBox portrait（窄×高）；聚焦楔形 `focusWedgePath` deeper↓〔+π/2〕/ back↑〔−π/2〕/ lateral←→〔0 & π〕（SVG y 朝下）；量程环/楔形/接触半径用 `min(VIEW_W,VIEW_H)`。
+
+**扇区（`engine/sonar.ts::nodeSector`，定向 ping / 猎手扇区）**
+- 按 `node.depth` 差分（**非 layer**）：deeper＝更深米（Δ > `SECTOR_DEPTH_EPS`）/ back＝更浅（Δ < −EPS）/ lateral＝|Δ| ≤ EPS。**必须与 y∝depth 一致**——否则「朝深」楔形指下、ping 却扩 layer-deeper（迷路图里那节点可能 depth 更浅、渲染在上方）＝自相矛盾。涟漪：`revealSonarScanDirectional`/`stalkerSector`/`seenStalkerSector`/`pingAimsAtSoundStalker` 全经 `nodeSector`（引擎不 import ui/mapLayout）。
+
+**生成（`engine/mapgen.ts`）——主下行 depth 单调-from-start**
+- 层状（开阔水域 reef/wreck）：`depth = round(d0 + step·L)`＝逐层严格非减·同层相等·起点 d0 最浅。
+- 迷路（蓝洞群 + 借它的深 band）：树距 + jitter·起点钉死 d0（全局最浅＝图顶）·最深点钉 d1；**分支/回边允许朝浅**（truthful·不查逐节点单调）。
+- 兜底＝`playthrough-mapgen-scenarios`「位置即深度」垂直性不变量（迷路 60 + 层状 30 seed：起点=图顶最浅·迷路深度随树距上升·最深点在下行·层状逐层严格非减+同层相等）。**改 depth 赋值会破 mapgen 逐字节快照·须重置基线**（#92 没改生成·属 additive；区别 #90 全 additive）。
+
+**内容放置约定（以后内容 / mapgen session 都遵守＝作者要的「系统」）**
+- 『更深』母题（the_rising / 假底 / 永远有比最深更深 / 诱饵下行）落**更深**节点；浅段 fresh-wrongness 落**更浅**节点（band `depthRange` 已天然成立）。
+- 猎手 spawn / 房间 feature / 事件抽取按深度——深度只藏「下面」（横/上行不降 clarity·#62）。
+- 守则同 §9：**绿 ≠ 画对**（quirk #91/#93）——碰布局/扇区/深度渲染补视觉验证（SSR→SVG 坐标核对或 dev server 肉眼）。
