@@ -114,6 +114,8 @@ export function startDive(
     depthRange: opts?.depthRange,
     bandTags: opts?.bandTags,
     maxRoomFeatures: opts?.maxRoomFeatures,
+    // 大房间出现率加成（声呐与房间 §6/§8.3 续·升级派生）：只在 maxRoomFeatures>1 的深 band 生效；缺省 0＝旧图不变。
+    roomFeatureChanceBonus: state.run.sensorTuning?.roomFeatureChanceBonus,
     sonarDeception: opts?.sonarDeception,
     targetCorpseId: opts?.targetCorpseId,
   });

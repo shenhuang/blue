@@ -212,6 +212,8 @@ function renderEffect(e: UpgradeEffect): string {
       return `声呐探得更深 +${e.value}m`;
     case 'sonarScanRangeBonus':
       return `声呐扫得更广 +${e.value} 跳（一记 ping 多照一圈洞）`;
+    case 'roomFeatureChanceBonus':
+      return `更会翻找大洞室：开阔水域更常藏着多处可探（深处的「大房间」出现率 +${Math.round(e.value * 100)}%）`;
     case 'unlockShopItem':
       return `解锁商店：${itemLabel(e.itemId)}`;
   }

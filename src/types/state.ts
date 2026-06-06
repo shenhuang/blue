@@ -140,6 +140,12 @@ export interface SensorTuning {
    * sonar.ts::sonarScanRange(run) 读它；缺省（旧档/部分 run）→ 回退基线常量。
    */
   sonarScanRange: number;
+  /**
+   * 大房间（多事件房间）出现率加成（声呐与房间 §6/§8.3 续）。默认 0，升级上调、有上限 ROOM_FEATURE_CHANCE_MAX。
+   * mapgen.rollExtraFeatures 读它抬大房间概率；**band 的 maxRoomFeatures 仍是房间最大 feature 数的天花板**
+   * （升级只让大房间更常出现、不突破深 band 的尺寸上限）。缺省（旧档/部分 run）→ 回退 0＝mapgen 输出逐字节不变。
+   */
+  roomFeatureChanceBonus: number;
 }
 
 /**

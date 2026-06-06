@@ -140,6 +140,7 @@ export function createNewRun(opts: {
     lampRangeBonus?: number;
     sonarRangeBonus?: number;
     sonarScanRangeBonus?: number;
+    roomFeatureChanceBonus?: number;
   };
 }): RunState {
   const oxygenBonus = opts.bonuses?.oxygenMaxBonus ?? 0;
@@ -157,6 +158,7 @@ export function createNewRun(opts: {
     lampRangeBonus: opts.bonuses?.lampRangeBonus,
     sonarRangeBonus: opts.bonuses?.sonarRangeBonus,
     sonarScanRangeBonus: opts.bonuses?.sonarScanRangeBonus,
+    roomFeatureChanceBonus: opts.bonuses?.roomFeatureChanceBonus,
   });
 
   const staminaMax = 100 + staminaBonus;

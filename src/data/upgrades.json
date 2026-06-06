@@ -57,6 +57,20 @@
             { "kind": "currentSweepImmune", "value": true }
           ],
           "description": "保鲜期 +10。海流不再随机冲走物品。"
+        },
+        {
+          "id": "upgrade.salvage_guild.lv4",
+          "level": 4,
+          "name": "打捞行会 Lv.4",
+          "cost": {
+            "materials": [
+              { "itemId": "item.eel_skin", "qty": 4 },
+              { "itemId": "item.lantern_gland", "qty": 2 }
+            ],
+            "gold": 220
+          },
+          "effects": [{ "kind": "roomFeatureChanceBonus", "value": 0.18 }],
+          "description": "深潜打捞队：你更会在开阔的大洞室里翻找——深处那些「大房间」更常被你摸出不止一处可探的东西（每片水域能装下几处，仍由它本身的大小定）。"
         }
       ]
     },

@@ -9,7 +9,7 @@
 // 跑法：npx tsx scripts/playthrough-upgrades.ts
 
 import { createInitialGameState, createNewRun, countInInventory, HOME_LIGHTHOUSE_ID } from '../src/engine/state';
-import { POWER_MAX, SONAR_PING_COST, LAMP_DEPTH_REACH, SONAR_DEPTH_REACH } from '../src/engine/clarity';
+import { POWER_MAX, SONAR_PING_COST, LAMP_DEPTH_REACH, SONAR_DEPTH_REACH, ROOM_FEATURE_CHANCE_MAX } from '../src/engine/clarity';
 import { SONAR_SCAN_RANGE_MAX } from '../src/engine/sonar';
 import {
   canPurchase,
@@ -282,6 +282,35 @@ assert(upRun.sensorTuning!.sonarDepthReach === SONAR_DEPTH_REACH + 8, '8: run.se
 // 声呐与房间 §8.1：扫描跳数烤进 run（2 基线 + 2 升级 = 4 = 上限·守「扫不穿整洞/最深」）
 assert(upRun.sensorTuning!.sonarScanRange === SONAR_SCAN_RANGE_MAX, '8: run.sensorTuning.sonarScanRange = 上限（sonar lv4+lv5 升满）');
 log.push('  dive_kit lv1-4 + sonar lv1-5 → bonuses 聚合 → getRunBonuses 透传 → createNewRun 烤进 run（含扫描范围轴）✓');
+
+// ============================================================
+// 9. 房间 feature 出现率升级（salvage_guild lv4·声呐与房间 §6/§8.3 续）
+//    新 roomFeatureChanceBonus 沿 #80 同款传感器桥：UpgradeEffect→getUpgradeBonuses→getRunBonuses→createNewRun→deriveSensorTuning。
+// ============================================================
+{
+  // 直接置 unlockedUpgrades 测 bonus 派生（lv4 续在 salvage_guild lv1-3 之后；purchase 流程已由前面节覆盖）
+  const prof9 = {
+    ...createInitialGameState().profile,
+    unlockedUpgrades: new Set([
+      'upgrade.salvage_guild.lv1', 'upgrade.salvage_guild.lv2',
+      'upgrade.salvage_guild.lv3', 'upgrade.salvage_guild.lv4',
+    ]),
+  };
+  const sb9 = getUpgradeBonuses(prof9);
+  assert(Math.abs(sb9.roomFeatureChanceBonus - 0.18) < 1e-9, '9: salvage_guild lv4 → roomFeatureChanceBonus 0.18');
+  // 桥：getRunBonuses 透传 → createNewRun 烤进 run.sensorTuning
+  const run9 = createNewRun({ zoneId: 'zone.old_lighthouse_reef', bonuses: getRunBonuses(prof9) });
+  assert(Math.abs(run9.sensorTuning!.roomFeatureChanceBonus - 0.18) < 1e-9, '9: 烤进 run.sensorTuning.roomFeatureChanceBonus');
+  // 缺省（未升级）→ 0（mapgen 逐字节不变的护栏）
+  const base9 = createNewRun({ zoneId: 'zone.old_lighthouse_reef' });
+  assert(base9.sensorTuning!.roomFeatureChanceBonus === 0, '9: 未升级 → 0（旧图不变）');
+  // 升满夹到上限（deriveSensorTuning clamp）
+  const cap9 = createNewRun({ zoneId: 'zone.old_lighthouse_reef', bonuses: { roomFeatureChanceBonus: 99 } });
+  assert(cap9.sensorTuning!.roomFeatureChanceBonus === ROOM_FEATURE_CHANCE_MAX, '9: 升满夹到上限 ROOM_FEATURE_CHANCE_MAX');
+  // 前置门控：lv4 需先买 lv3
+  assert(!canPurchase(createInitialGameState().profile, 'upgrade.salvage_guild.lv4').ok, '9: salvage_guild lv4 需先买 lv3');
+  log.push('  salvage_guild lv4 → roomFeatureChanceBonus 0.18 · 烤进 run · 缺省 0 · 夹上限 · 前置门控 ✓');
+}
 
 console.log(log.join('\n'));
 console.log('\n✓ 港口升级 playthrough 通过');

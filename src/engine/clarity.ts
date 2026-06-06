@@ -79,6 +79,8 @@ export const SONAR_DEPTH_REACH = 14;
 export const LAMP_DEPTH_REACH_MAX = 14;
 /** 声呐 reach 升满上限。 */
 export const SONAR_DEPTH_REACH_MAX = 26;
+/** 大房间（多事件房间）出现率加成上限（声呐与房间 §6/§8.3 续）：升满也到此为止——大房间仍稀有、band maxRoomFeatures 仍是天花板。 */
+export const ROOM_FEATURE_CHANCE_MAX = 0.3;
 
 /** 升级派生的传感器加成（来自 getRunBonuses；各项可缺，缺＝0）。 */
 export interface SensorUpgradeBonus {
@@ -90,6 +92,7 @@ export interface SensorUpgradeBonus {
   lampRangeBonus?: number; // 灯 reach 加成（节点级 clarity·范围/分辨，sum，有上限）
   sonarRangeBonus?: number; // 声呐 reach 加成（节点级 clarity·深度差·sum，有上限）
   sonarScanRangeBonus?: number; // 声呐扫描跳数加成（声呐与房间 §8.1 主升级轴·sum，有上限 SONAR_SCAN_RANGE_MAX）
+  roomFeatureChanceBonus?: number; // 大房间出现率加成（声呐与房间 §6/§8.3 续·sum，有上限 ROOM_FEATURE_CHANCE_MAX）
 }
 
 /**
@@ -113,6 +116,8 @@ export function deriveSensorTuning(b: SensorUpgradeBonus = {}): SensorTuning {
     sonarDepthReach: Math.min(SONAR_DEPTH_REACH_MAX, SONAR_DEPTH_REACH + (b.sonarRangeBonus ?? 0)),
     // 声呐扫描跳数（声呐与房间 §8.1）：基线 + 加成，夹到上限＝再升也扫不穿整洞、扫不到最深（守北极星）。
     sonarScanRange: Math.min(SONAR_SCAN_RANGE_MAX, SONAR_SCAN_RANGE + (b.sonarScanRangeBonus ?? 0)),
+    // 大房间出现率加成（声呐与房间 §6/§8.3 续）：0..ROOM_FEATURE_CHANCE_MAX，缺省 0＝mapgen 输出逐字节不变。
+    roomFeatureChanceBonus: Math.min(ROOM_FEATURE_CHANCE_MAX, Math.max(0, b.roomFeatureChanceBonus ?? 0)),
   };
 }
 

@@ -254,6 +254,35 @@ function main() {
     }
   }
 
+  // —— 房间 feature 出现率升级（声呐与房间 §6/§8.3 续·roomFeatureChanceBonus）不变量 ——
+  // 守则：bonus=0（缺省）逐字节复现旧图（rollExtraFeatures 阈值/rng 消耗不变）；bonus>0 抬大房间率（更多 roll 越线成多事件房）。
+  console.log(`\n========== 房间出现率升级不变量 (zone.blue_caves, maxRoomFeatures=3, seeds 1–60) ==========`);
+  {
+    const zone = getZone('zone.blue_caves')!;
+    const fpAll = (bonus: number | undefined) =>
+      Array.from({ length: SWEEP }, (_, i) =>
+        featFp(generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(i + 1), maxRoomFeatures: 3, roomFeatureChanceBonus: bonus })),
+      ).join('#');
+    const countRooms = (bonus: number) => {
+      let rooms = 0;
+      for (let seed = 1; seed <= SWEEP; seed++) {
+        const m = generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(seed), maxRoomFeatures: 3, roomFeatureChanceBonus: bonus });
+        for (const n of Object.values(m.nodes)) if ((n.features?.length ?? 0) > 1) rooms++;
+      }
+      return rooms;
+    };
+    // (a) bonus=0（显式）＝缺省（不传）＝逐字节（阈值不变·rng 流不变·向后兼容护栏）
+    if (fpAll(0) !== fpAll(undefined)) fails.push('房间升级：bonus=0 与缺省不一致（应逐字节相同）');
+    // (b) bonus>0 抬大房间率
+    const base = countRooms(0);
+    const up = countRooms(0.3);
+    if (!(up > base)) fails.push(`房间升级：bonus 未抬大房间率（${base}→${up}）`);
+    // (c) 确定性（同 seed + bonus 两次一致）
+    const one = (b: number) => featFp(generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(7), maxRoomFeatures: 3, roomFeatureChanceBonus: b }));
+    if (one(0.3) !== one(0.3)) fails.push('房间升级：bonus>0 非确定性');
+    console.log(`  ✓ bonus=0 逐字节 · bonus0.3 抬大房间率(${base}→${up}) · 确定性`);
+  }
+
   // —— 不可信声呐失真（声呐与房间 S2）不变量：sonarDeception>0 时给部分内部节点挂 spoofs/evades ——
   // 守则：只挂非地标/非起点/非尸体的内部节点 / 不同时 evade+spoof / spoof 是非空伪装串 / 门控缺省零改动 /
   //       确定性（FNV·不耗 rng）/ 欺骗 pass 不破迷路结构不变量（只加派生字段、不动 connectsTo/depth/kind）。

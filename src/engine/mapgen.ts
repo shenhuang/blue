@@ -46,6 +46,12 @@ interface GenOpts {
    */
   maxRoomFeatures?: number;
   /**
+   * 大房间出现率加成（声呐与房间 SPEC §6/§8.3 续·升级派生 run.sensorTuning.roomFeatureChanceBonus）：0..ROOM_FEATURE_CHANCE_MAX。
+   * 抬高 rollExtraFeatures 升级成多事件房间的概率（不突破 maxRoomFeatures 天花板）。缺省 0（POI/教学/未升级）→ 概率门槛不变
+   * ＝**rng() 仍只取一次、阈值不变＝逐字节复现旧图**（不破现有 mapgen 场景快照）。
+   */
+  roomFeatureChanceBonus?: number;
+  /**
    * 不可信声呐失真强度（声呐与房间 SPEC §5/§7 S2）：0..1。仅 >0（深 band 出潜传 band.sonarDeception）时，
    * 给部分**内部**节点钉 spoofsSonar（声呐图假装成朝上的出口/信标＝节点版 mimic）/evadesSonar（无回波）。
    * **确定性 FNV 哈希、零 rng**——绝不移动任何 seed 的生成顺序（旧图/深 band 快照 rng 流不变，只多挂派生字段）。
@@ -81,11 +87,15 @@ function clamp(x: number, lo: number, hi: number): number {
  * 约三成两 feature，三 feature「大房间」稀有（SPEC §6「大房间稀有」）。
  * **只有 maxFeatures>1 时才调用**——调用方先判，故缺省路径零额外 rng（逐字节复现旧图、不破场景快照）。
  */
-function rollExtraFeatures(maxFeatures: number, rng: () => number): number {
+function rollExtraFeatures(maxFeatures: number, rng: () => number, chanceBonus = 0): number {
   const r = rng();
-  if (r < 0.62) return 0; // 多数：单 feature（旧形状）
-  if (r < 0.88) return Math.min(1, maxFeatures - 1); // ~26%：两 feature
-  return Math.min(2, maxFeatures - 1); // ~12%：大房间（最多三 feature）
+  // 升级（chanceBonus·声呐与房间 §6/§8.3 续）把「单 feature」的门槛往下压＝大房间更常出现；2/3 feature 概率随之涨。
+  // chanceBonus=0（缺省）→ 0.62/0.88＝旧阈值＝逐字节不变；单 feature 门槛留 0.30 地板（大房间再升也不至于必出）。
+  const singleCut = Math.max(0.3, 0.62 - chanceBonus);
+  const doubleCut = Math.max(singleCut, 0.88 - chanceBonus * 0.5);
+  if (r < singleCut) return 0; // 单 feature（旧形状）
+  if (r < doubleCut) return Math.min(1, maxFeatures - 1); // 两 feature
+  return Math.min(2, maxFeatures - 1); // 大房间（最多三 feature）
 }
 
 interface MultiFeatureArgs {
@@ -96,6 +106,7 @@ interface MultiFeatureArgs {
   bandTags?: ZoneTag[];
   rng: () => number;
   maxFeatures: number;
+  chanceBonus?: number;
 }
 
 /**
@@ -109,7 +120,7 @@ function maybeMultiFeatureRoom(
   args: MultiFeatureArgs,
 ): NodeFeature[] | undefined {
   if (args.maxFeatures <= 1) return undefined;
-  const extra = rollExtraFeatures(args.maxFeatures, args.rng);
+  const extra = rollExtraFeatures(args.maxFeatures, args.rng, args.chanceBonus);
   if (extra <= 0) return undefined;
   const feats: NodeFeature[] = [{ id: 'f0', eventId: first.id, preview: first.title }];
   // 同房不放重复 feature：用 excludeIds 硬排除本房已用事件（≠ triggeredFakeIds 的 oncePerRun 软去重）。
@@ -342,7 +353,7 @@ function chooseLayeredNodeKind(
 }
 
 function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap {
-  const { zone, profileFlags, rng = Math.random, deaths = [], corpseChance = 0.6, targetCorpseId, maxRoomFeatures = 1 } = opts;
+  const { zone, profileFlags, rng = Math.random, deaths = [], corpseChance = 0.6, targetCorpseId, maxRoomFeatures = 1, roomFeatureChanceBonus = 0 } = opts;
 
   const totalLayers = zone.layerCount;
   const d0 = baseD0;
@@ -390,7 +401,7 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
         triggeredFakeIds.push(chosen.id); // 同 run 不再选
         // 多事件房间（S1）：偶尔升级成大房间（maxRoomFeatures>1 才进；缺省零额外 rng＝旧图不变）。
         const feats = maybeMultiFeatureRoom(chosen, {
-          zone, depth, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, rng, maxFeatures: maxRoomFeatures,
+          zone, depth, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, rng, maxFeatures: maxRoomFeatures, chanceBonus: roomFeatureChanceBonus,
         });
         if (feats) {
           features = feats;
@@ -482,7 +493,7 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
 //   7. connectsTo 双向：邻接表两边都写，玩家可回头/重访（重访不重播事件见 dive.ts::moveToNode）。
 
 function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap {
-  const { zone, profileFlags, rng = Math.random, deaths = [], corpseChance = 0.6, targetCorpseId, maxRoomFeatures = 1 } = opts;
+  const { zone, profileFlags, rng = Math.random, deaths = [], corpseChance = 0.6, targetCorpseId, maxRoomFeatures = 1, roomFeatureChanceBonus = 0 } = opts;
   const d0 = baseD0;
   const d1 = baseD1;
   const canFreeAscend = zone.canFreeAscend !== false;
@@ -664,7 +675,7 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
           triggeredFakeIds.push(chosen.id);
           // 多事件房间（S1）：洞里大房间偶尔含多个 feature（maxRoomFeatures>1 才进；缺省零额外 rng＝旧迷路图不变）。
           const feats = maybeMultiFeatureRoom(chosen, {
-            zone, depth: depthI, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, rng, maxFeatures: maxRoomFeatures,
+            zone, depth: depthI, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, rng, maxFeatures: maxRoomFeatures, chanceBonus: roomFeatureChanceBonus,
           });
           if (feats) {
             features = feats;

@@ -26,6 +26,8 @@ export type UpgradeEffect =
   | { kind: 'sonarRangeBonus'; value: number } // 声呐 reach +value m（节点级 clarity·深度差，有上限）
   // 声呐与房间 §8.1：声呐探索扫描跳数 +value（一记 ping 照得更广），有上限 SONAR_SCAN_RANGE_MAX。
   | { kind: 'sonarScanRangeBonus'; value: number }
+  // 声呐与房间 §6/§8.3 续：大房间（多事件房间）出现率 +value（更会在大洞室里翻找·band maxRoomFeatures 仍是天花板），有上限。
+  | { kind: 'roomFeatureChanceBonus'; value: number }
   | { kind: 'unlockShopItem'; itemId: string };
 
 /** 一条升级要求的某种材料及数量（qty 量级 ∈ [1,10]） */
@@ -97,6 +99,8 @@ export interface UpgradeBonuses {
   sonarRangeBonus: number;
   /** 声呐扫描跳数加成（声呐与房间 §8.1 主升级轴；有上限 SONAR_SCAN_RANGE_MAX）。 */
   sonarScanRangeBonus: number;
+  /** 大房间（多事件房间）出现率加成（声呐与房间 §6/§8.3 续；有上限 ROOM_FEATURE_CHANCE_MAX·band cap 仍是天花板）。 */
+  roomFeatureChanceBonus: number;
   unlockedZones: Set<string>;
   unlockedShopItems: Set<string>;
 }

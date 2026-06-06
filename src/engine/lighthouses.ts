@@ -241,6 +241,8 @@ export interface RunStartBonuses {
   sonarRangeBonus: number;
   // 声呐与房间 §8.1：声呐扫描跳数加成（主升级轴）。
   sonarScanRangeBonus: number;
+  // 声呐与房间 §6/§8.3 续：大房间出现率加成。
+  roomFeatureChanceBonus: number;
 }
 
 /**
@@ -266,6 +268,7 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
     lampRangeBonus: g.lampRangeBonus,
     sonarRangeBonus: g.sonarRangeBonus,
     sonarScanRangeBonus: g.sonarScanRangeBonus,
+    roomFeatureChanceBonus: g.roomFeatureChanceBonus,
   };
 }
 
