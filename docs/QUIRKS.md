@@ -96,6 +96,8 @@
 
 96. **定位用 `npm run handoff` 从 git ground truth 再生（别手抄『做了什么』·#94 立）**：`scripts/handoff.mjs`（纯只读·git 一律 `--no-optional-locks` 不留锁·守 [[sandbox-git-commit]]）打印 `git log -N` + `status -sb` + 最新 `docs/archive/nightly/REPORT-*` 头部 + `STATUS.md` 顶部 blockquote + `CHANGELOG.md` 末尾。**交接 prompt（`NEXT_SESSION_PROMPT.md`）只保留人写的方向/下一步**，「当前状态/做了什么」交给脚本——这是 churn 最狠的一层（上一轮亲见交接 prompt 写的 HEAD 落后真实 HEAD·「夜间漂移」）。**起手定位＝`npm run handoff`**（仍守轻起手：不在起手跑全量 regress·要便宜体检 `npm run regress:quick`）。
 
+97. **发布版故意带 dev 面板·URL `?dev` 门控（#97·2026-06-06·作者要求·别当泄漏「修掉」）**：`App.tsx` dev 面板（Shift+D 事件 / Shift+C 战斗 / Shift+M 地图调试器）门控从编译期 `import.meta.env.DEV` 改成**运行时** `DEV_TOOLS = import.meta.env.DEV || (typeof window!=='undefined' && new URLSearchParams(window.location.search).has('dev'))`。**故每个发布版都带 dev 能力**、但默认隐藏——本地 dev server 恒开；线上仅 `https://shenhuang.github.io/blue/?dev` 才启用（藏在 Shift 快捷键后·普通访客看不到）。**这是有意的（作者要求线上可测）·别改回 `import.meta.env.DEV`**——那会把发布版 dev 工具去掉、作者就没法在公开站调试（如 Shift+M 看竖版声呐图 #92）。**为何门控而非全开**：地图调试器揭示整张真图、破坏迷雾/声呐（#71/#92）的核心设计，不能让随手访客看到。**机制**：`DEV_TOOLS` 在 prod 不是编译期 false（含运行时 `?dev` 判定）→ Rollup 不再把三元 `DEV_TOOLS ? lazy(import(...)) : null` 当 dead code → 三 dev 面板进 bundle 作 **lazy chunk**（`assets/*DevPanel-*.js`），但**仅 `?dev` 打开某面板时才下载**（普通访客零额外负载·初始包只留 `import()` 引用 + `?dev` 判定串）。验证：`vite build --outDir /tmp/x` 后 `ls /tmp/x/assets | grep DevPanel` 应见 3 js + 3 css。SSR smoke 里 `window` undefined → DEV_TOOLS=false → 面板不渲染（既有 smoke 不受影响）。提交 `e6ce537`。
+
 > 已修复或被后续内容填平，留档备查。
 
 1. **沙箱权限**：在 Linux 沙箱里跑 `npm run build` 第二次会失败（删不掉旧 dist/），跑 `npm run dev` 同样问题（删不掉 .vite 缓存）。**用户本地 Mac 没问题**。
