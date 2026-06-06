@@ -95,7 +95,8 @@
   - **additive + gated 铁律**：`DepthBand.hunts` 缺省 off → `run.huntEnabled` undefined → 既有 `alert→maybeApproachEncounter` 瞬时伏击逐字节不变（守 `playthrough-stealth` §4-§6）。`run.stalker?`/`huntEnabled?` run 级·不入 profile·**不 bump SAVE_VERSION**（同 scanMemory/sonarDeception）。
 - **Phase 2+（deferred · 本 SPEC 已捕捉）**：
   - §2.2 完整感官模态分类落数据（per-encounter `sensesBy`）+ active 探测行为。
-  - §3 升级规避（T1 吸声 / T2 主动迷彩）·§4 decoy 道具（含战斗内逃跑）·§5 大型生物狭小空间避难·§6 执着等待者耗资源。
+  - **§3 升级规避（T1 吸声 / T2 主动迷彩）** ✅（#89·2026-06-06·`playerEvadesStalker` 对称 evadesScan·守地板·沿 #80/#87 升级桥·data `line.evasion_rig`）。
+  - §4 decoy 道具（含战斗内逃跑）·§5 大型生物狭小空间避难·§6 执着等待者耗资源（仍 deferred）。
   - Q3 **浅水小概率弱变体**（需浅水捕食者内容·不破 §7.5 浅水免压回归）。
   - stalker 多样性（patience / size / 速率分布）。
 
@@ -115,3 +116,4 @@
 ## 10. 决策日志
 - **2026-06-06（发起 + 三问拍板，作者方向 A「声呐与房间收尾」之 §8.7 stalker）**：声呐与房间 §8.7 此前留作者拍板的「定位 stalker」正式开题。三问定调——① **一猎手两保真度**：灯＝知道有东西接近、声呐＝知道位置+距离、同一只猎手（§2.1）；② **感官模态**(光/声/双) + **切信号行为**(停原地 / 移到上次信号点 / 后期主动探测·升级 T1 吸声 T2 主动迷彩) + **大型生物狭小空间避难** + **执着等待者耗资源** + **decoy 道具引开**(战斗中也能逃)（§2.2-2.6 / §3-6）；③ **全深度小概率·浅弱深难**（§2.6）。据此成文 v0.1，§7 分阶段：Phase 1 spine（感知分层 + 统一出现/逼近/接触 + 基础两行为 + 深 band 门控·additive/gated）本 session 实装，其余 deferred（已捕捉）。**实装详情见 STATUS.md 顶部滚动条目（quirk #84）。**
 - **2026-06-06（续·作者校正两点）**：① **感知不靠点灯（校正 §2.1）**：作者厘清「不点灯也能感受到接近」是**正确**的——关了灯也感觉得到，故玩家摸黑后能凭「感觉是否消退」判断猎手何时离开、何时安心再点灯；**例外：狡猾猎手 + 低 san**（此时「没感觉＝安全」不可信）＝Phase 2 留做（曾误把它做成「关灯就感觉不到」，已撤回·感知保持 alert/stalker 驱动·与灯无关）。② **切信号行为收成「两机制 × 一等待时长」（§2.3）**：作者「1 就是 2 等 0 回合」「linger 也是 wait」→ `onLostSignal` 从 `hold`/`seek_last` 改成 **`wait`**（原地等 `waitTurns` 回合·0＝掉头就走/N＝过一段时间再走）+ **`seek_last`**（先走到上次信号点·抵达后再等 `waitTurns` 徘徊找你·够不到则 `STALKER_SEEK_MAX_TURNS` 放弃）；新 `Stalker.waitTurns`/`waitedTurns`（run 级·不 bump SAVE_VERSION）。深/双感（狡猾）→ seek_last·浅段 → wait（半数 0 半数等一阵）。`playthrough-stalker` §3 覆盖三种观感（掉头就走/等一阵/去上次信号点徘徊）。全绿 26/26。
+- **2026-06-06（Phase 2 起步·§3 升级规避实装，作者方向 E 选「§3 Evasion upgrades T1/T2」·#89）**：Phase 1 spine（#84）之后首个 Phase 2 beat。玩家侧规避做成**猎手 `stalkerEvadesScan` 的镜像**——`engine/stalker.ts::playerEvadesStalker(run,stalker)`：按猎手 `sensesBy` 取对应旋钮（声→T1 `soundAbsorbBonus`/光→T2 `camoBonus`/**双感取 min**＝两者都有才甩得动·兑现 §2.2「双感要同时切断」），封顶 `STALKER_PLAYER_EVADE_MAX`(0.6)、深 band（≥`STALKER_EVADE_DEPTH`108m）`×STALKER_PLAYER_EVADE_DEEP_MULT`(0.5)＝守地板（§3「无完全隐形·最深仍找得到你」·对称 `SIGNATURE_MIN_ACTIVE`），确定性 FNV（前缀异于 evadesScan＝两侧规避不相关）。接线＝`advanceStalker` 把「alert 越线」条件改成「越线**且**未被规避」——被规避那一回合当作信号切断转 `searching`（你甩得动它）。两旋钮沿 #80/#87 传感器升级桥（7 触点·夹 `STEALTH_BONUS_MAX`0.6）·data `line.evasion_rig`（吸声涂层/主动迷彩·深料**软门控**·免硬 flag）+ UpgradePanel 标签。**缺省 0 → 恒 false → advanceStalker 逐字节不变**（additive/gated 守 playthrough-stealth）·不 bump SAVE_VERSION。回归 `playthrough-stalker` §8 + `-upgrades` §10 + `-save` + smoke J8·全绿 26/26·提交 `574ae4a`。**Phase 2 仍 deferred**：§4 decoy（含战斗内逃跑）/§5 大型生物狭小避难/§6 执着等待/§2.1 感知例外（cunning+低 san「没感觉≠安全」）/§2.2 per-encounter sensesBy + active 探测/Q3 浅水弱变体。
