@@ -11,7 +11,7 @@
 //     （固定亮度，freshness 上限 1）。要刷新就移动后再 ping（再耗电、再暴露）。
 //   - 扫描态全走 run 级、不入存档、不 bump SAVE_VERSION（SPEC §8.8）。
 
-import type { DiveMap, RunState } from '@/types';
+import type { DiveMap, RunState, SonarDir } from '@/types';
 
 // ============================================================
 // 可调参数（tunables，SPEC §9）
@@ -33,6 +33,16 @@ export const SONAR_SCAN_RANGE_MAX = 4;
 
 /** 余像完全淡出所需的回合数（age ≥ 此值 → 主图不再画该节点；残图小地图仍留极淡残迹）。 */
 export const SCAN_FADE_TURNS = 6;
+
+// ----- 定向 ping（声呐与房间 SPEC §5·作者 2026-06-06 拍板「方向扇区」） -----
+// 把声呐朝一个扇区（朝深处/侧向/朝来路）聚焦：那个扇区探更远、别处更短（近场仍全向一小圈、身边不至全黑）。
+// 全向（dir undefined）＝旧 revealSonarScan 路径，逐字节不变。
+/** 聚焦扇区比基线多探的跳数（「那方向探更远」）。 */
+export const SONAR_DIR_FOCUS_BONUS = 1;
+/** 聚焦扫描的硬上限跳数（基线上限 +1）——守北极星：再聚焦也扫不穿整洞、照不到最深处（只是单一窄扇区多探一跳）。 */
+export const SONAR_DIR_RANGE_MAX = SONAR_SCAN_RANGE_MAX + 1;
+/** 非聚焦方向缩短的跳数（「别处更短」）；近场仍保至少 1 跳（身边不至全黑）。 */
+export const SONAR_DIR_OFFAXIS_PENALTY = 1;
 
 /**
  * 本次下潜的有效声呐扫描跳数：读 run.sensorTuning（升级派生·deriveSensorTuning 已夹紧到 [基线, 上限]）；
@@ -90,6 +100,91 @@ export function revealSonarScan(map: DiveMap, originId: string, range: number): 
     if (frontier.length === 0) break;
   }
   return [...seen];
+}
+
+// ============================================================
+// 定向 ping（声呐与房间 SPEC §5）
+// ============================================================
+
+/**
+ * 目标节点相对原点的扇区（按 layer 差分，与布局 x∝layer 一致＝声呐图上 深处在右/来路在左/侧向同列）。
+ * 原点自身 / 缺节点 → null（总在近场、不参与扇区过滤）。
+ */
+export function nodeSector(map: DiveMap, originId: string, targetId: string): SonarDir | null {
+  const o = map.nodes[originId];
+  const t = map.nodes[targetId];
+  if (!o || !t || originId === targetId) return null;
+  if (t.layer > o.layer) return 'deeper';
+  if (t.layer < o.layer) return 'back';
+  return 'lateral';
+}
+
+/**
+ * 一记**定向** ping 揭示的节点 id（SPEC §5「朝一方向聚焦：那方向探更远、别处更短」）。
+ *   - 近场＝全向 max(1, base − OFFAXIS_PENALTY) 跳（身边一小圈仍全向、不至全黑）；
+ *   - 聚焦扇区＝波束沿该扇区继续扩到 min(SONAR_DIR_RANGE_MAX, base + FOCUS_BONUS) 跳
+ *     （超出近场后**只经过聚焦扇区的节点**扩散＝波束连贯、不会冒出孤立远 blip）。
+ * dir 缺省 → 退回全向 revealSonarScan（旧行为逐字节不变）。确定性、纯函数（复用无向邻接）。
+ */
+export function revealSonarScanDirectional(
+  map: DiveMap,
+  originId: string,
+  baseRange: number,
+  dir?: SonarDir,
+): string[] {
+  if (!dir) return revealSonarScan(map, originId, baseRange);
+  if (!map.nodes[originId]) return [];
+  const nearRange = Math.max(1, baseRange - SONAR_DIR_OFFAXIS_PENALTY);
+  const farRange = Math.min(SONAR_DIR_RANGE_MAX, baseRange + SONAR_DIR_FOCUS_BONUS);
+  const adj = buildUndirectedAdjacency(map);
+  const seen = new Set<string>([originId]);
+  let frontier: string[] = [originId];
+  for (let hop = 0; hop < farRange; hop++) {
+    const next: string[] = [];
+    for (const id of frontier) {
+      for (const nb of adj[id] ?? []) {
+        if (seen.has(nb)) continue;
+        // 近场全向；超出近场只让波束沿聚焦扇区的节点继续走（连贯·别处更短）。
+        const within = hop + 1 <= nearRange || nodeSector(map, originId, nb) === dir;
+        if (!within) continue;
+        seen.add(nb);
+        next.push(nb);
+      }
+    }
+    frontier = next;
+    if (frontier.length === 0) break;
+  }
+  return [...seen];
+}
+
+/**
+ * 猎手（真实当前位置）相对你的扇区——定向 ping「暴露按方向计」用。无猎手 / 无图 → null。
+ * 用真实位置（≠ 声呐上次看到的会过时位置）：你按过时的图瞄，后果却按它现在真在哪算（「图会过时」的张力）。
+ */
+export function stalkerSector(run: RunState): SonarDir | null {
+  const s = run.stalker;
+  if (!s || !run.map || !run.currentNodeId) return null;
+  return nodeSector(run.map, run.currentNodeId, s.nodeId);
+}
+
+/**
+ * 这一记定向 ping 是否正对「听得见声音的猎手」（声/双感）所在扇区（SPEC §5「别朝声感猎手方向 ping」）：
+ * 是 → 你把响亮的波束正对它、它听见你 → 暴露尖峰（clarity.sonarPingAlertDelta 据此放大）。纯光感的猎手听不见声呐 → 不算。
+ */
+export function pingAimsAtSoundStalker(run: RunState, dir: SonarDir): boolean {
+  const s = run.stalker;
+  if (!s || (s.sensesBy !== 'sound' && s.sensesBy !== 'both')) return false;
+  return stalkerSector(run) === dir;
+}
+
+/**
+ * 声呐上**看到的**（会过时的）猎手位置相对你的扇区——UI 给定向按钮的警示用（基于你已知的、不一定准：它可能已移开）。
+ * 从没被声呐扫到（无 seenNodeId）→ null（你只「感觉」到它、没法判断方向）。⚠ 与 stalkerSector（真实位置·算暴露）有意分开。
+ */
+export function seenStalkerSector(run: RunState): SonarDir | null {
+  const s = run.stalker;
+  if (!s || s.seenNodeId === undefined || !run.map || !run.currentNodeId) return null;
+  return nodeSector(run.map, run.currentNodeId, s.seenNodeId);
 }
 
 // ============================================================

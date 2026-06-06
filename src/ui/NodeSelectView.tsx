@@ -1,9 +1,17 @@
-import type { GameState, NodeChoice, FeatureChoice } from '@/types';
+import type { GameState, NodeChoice, FeatureChoice, SonarDir } from '@/types';
 import { moveToNode, setLight, pingSonar, exploreFeature } from '@/engine/dive';
 import { clarity, sonarPingCost, ALERT_WARN, ALERT_THRESHOLD } from '@/engine/clarity';
+import { seenStalkerSector } from '@/engine/sonar';
 import { zoneAllowsBacktrack } from '@/engine/zones';
 import { StatusBar } from './StatusBar';
 import { SonarScanPanel } from './SonarScanPanel';
+
+/** 定向 ping 的三向扇区（声呐与房间 §5·作者「方向扇区」）：朝深处 / 侧向 / 来路。 */
+const SONAR_DIRS: { dir: SonarDir; label: string }[] = [
+  { dir: 'deeper', label: '朝深处' },
+  { dir: 'lateral', label: '侧向' },
+  { dir: 'back', label: '来路' },
+];
 
 interface Props {
   state: GameState;
@@ -28,6 +36,8 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
   const alreadyPinged = (run.sensors?.sonar ?? 'off') === 'ping';
   // 深水区 Phase 0b：警觉预警——给玩家"读出 tell → 熄灯甩开"的窗口（越线则进下一节点会被接近）。
   const alert = run.alert ?? 0;
+  // 定向 ping（§5）：声呐上「看到的」（会过时）猎手所在扇区——给定向按钮一个「别朝它打」的软警示（基于已知·不一定准）。
+  const warnSector = seenStalkerSector(run);
 
   // 单向下潜预告：层状（开阔水域）zone 的下潜图只往下通、走过的节点不再是选项（迷路图可回头则不提示）。
   // 在选点前就讲清楚，免得玩家过了上浮口往深里走之后，才发现回不了头（设计是单向、不该是惊吓）。
@@ -85,11 +95,37 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
               {alreadyPinged
                 ? '已扫描 · 移动后再 ping'
                 : canPing
-                  ? `声呐 ping（−${pingCost} 电）`
+                  ? `声呐 ping · 全向（−${pingCost} 电）`
                   : '声呐（电量不足）'}
             </button>
           )}
         </div>
+
+        {/* 定向 ping（声呐与房间 SPEC §5·作者「方向扇区」）：把波束朝一个扇区聚焦——那方向探更远、别处更短，
+            且更隐蔽；但别朝威胁/猎手的方向打（会招它注意）。仅声呐解锁 + 可 ping + 这站还没扫过时出现。 */}
+        {sonarUnlocked && canPing && !alreadyPinged && (
+          <div className="sonar-dir-controls">
+            <span className="sonar-dir-hint">聚焦扫描（更远 / 更隐蔽）：</span>
+            {SONAR_DIRS.map((d) => {
+              const aims = warnSector === d.dir;
+              return (
+                <button
+                  key={d.dir}
+                  className={`btn sonar-dir-btn ${aims ? 'aims-threat' : ''}`}
+                  title={
+                    aims
+                      ? '这个方向正对你上次扫到的东西——朝它打会照亮它、招它注意'
+                      : '朝这个扇区探得更远、别处更短；窄波束更隐蔽'
+                  }
+                  onClick={() => onStateChange(pingSonar(state, d.dir))}
+                >
+                  {d.label}
+                  {aims ? ' ⚠' : ''}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* 声呐探索图（声呐与房间 SPEC §5/§7 S0）：解锁声呐后才有；起手全黑、随 ping 一块块点亮、渐隐余像 */}
         {sonarUnlocked && <SonarScanPanel run={run} />}

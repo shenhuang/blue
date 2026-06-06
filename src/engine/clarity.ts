@@ -11,10 +11,10 @@
 // 纯函数 + 防御性读取（run 字段可能因脚本构造的部分 run 而缺失 → 用默认兜底）。
 // 低 san 腐蚀走确定性哈希（不消耗 Math.random）——既不扰动 withSeededRandom 的场景回归，又让 playthrough-sensors 可稳定断言。
 
-import type { RunState, DiveNode, ClarityTier, SensorTuning, NodeKind } from '@/types';
+import type { RunState, DiveNode, ClarityTier, SensorTuning, NodeKind, SonarDir } from '@/types';
 // 声呐扫描跳数的基线/上限住 sonar.ts（声呐扫描的家）；deriveSensorTuning 在此夹紧它。
-// 无环：sonar.ts 只 import 类型，不 import clarity。
-import { SONAR_SCAN_RANGE, SONAR_SCAN_RANGE_MAX } from './sonar';
+// 无环：sonar.ts 只 import 类型，不 import clarity（pingAimsAtSoundStalker 是纯函数·只读 run）。
+import { SONAR_SCAN_RANGE, SONAR_SCAN_RANGE_MAX, pingAimsAtSoundStalker } from './sonar';
 
 // ============================================================
 // 可调参数（tunables，SPEC §8）
@@ -250,6 +250,11 @@ export const ALERT_AFTER_TRIGGER = 0;
  */
 export const SONAR_PING_ALERT = 8;
 
+/** 定向 ping 的暴露乘子（聚焦＝更窄的波束·整体更安静；SPEC §5「暴露按方向计·不再全向一律」）。<1。 */
+export const SONAR_PING_DIR_MULT = 0.55;
+/** 定向 ping 正对声/双感猎手扇区时的暴露乘子（你把响亮波束对准它＝它听见你＝尖峰，净 > 全向）。>1。 */
+export const SONAR_PING_TOWARD_MULT = 1.7;
+
 /** 深度因子：浅水 0（§7.5），ALERT_MIN_DEPTH 起线性爬升、60m 满（更深 band 的斜坡留 Phase 1）。 */
 export function alertDepthFactor(run: RunState): number {
   const d = run.currentDepth ?? 0;
@@ -275,9 +280,15 @@ export function predatorApproaches(run: RunState): boolean {
 /**
  * 一记 ping 当场抬升的警觉量（dive.ts::pingSonar 调用）：浅水免压（深度因子 0）、深 band 更狠（band 倍率）。
  * 与逐回合积累分开——ping 是离散的主动暴露事件，故在动作里直接结算、不依赖之后是否移动。
+ *
+ * 定向 ping（SPEC §5「暴露按方向计」）：dir 给出时整体更安静（窄波束 × DIR_MULT），但若正对听得见声音的
+ * 猎手扇区（pingAimsAtSoundStalker）则放大（× TOWARD_MULT·净 > 全向＝你照亮它了）。**全向（dir 缺省）逐字节不变**。
  */
-export function sonarPingAlertDelta(run: RunState): number {
-  return SONAR_PING_ALERT * alertDepthFactor(run) * (run.bandAlertFactor ?? 1);
+export function sonarPingAlertDelta(run: RunState, dir?: SonarDir): number {
+  const base = SONAR_PING_ALERT * alertDepthFactor(run) * (run.bandAlertFactor ?? 1);
+  if (!dir) return base;
+  const mult = pingAimsAtSoundStalker(run, dir) ? SONAR_PING_TOWARD_MULT : SONAR_PING_DIR_MULT;
+  return base * mult;
 }
 
 // ============================================================

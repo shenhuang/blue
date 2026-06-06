@@ -88,6 +88,13 @@ export interface DeathRecord {
 export type ClarityTier = 'full' | 'sonar' | 'none';
 
 /**
+ * 定向 ping 的聚焦方向（声呐与房间 SPEC §5「定向 ping」）：按节点 layer 差分的三向扇区——
+ * 朝深处（layer 更大·声呐图右侧）/ 朝来路（layer 更小·上浮口一侧）/ 侧向（同层旁支）。
+ * undefined ＝全向 ping（旧行为）。作者 2026-06-06 拍板「方向扇区」（其口述「朝深处/侧向/朝来路」即此三向）。
+ */
+export type SonarDir = 'deeper' | 'lateral' | 'back';
+
+/**
  * 微观双传感器状态（深水区 Phase 0a）。灯＝近距真相 + 解锁信息、暴露(signature)高；
  * 声呐＝远距不可信回波、暴露低、费电。关灯关声呐＝致盲但最隐蔽（主动感知是双向的）。
  * 声呐能力本身是后期解锁（sonarUnlocked，门控在深料升级 upgrade.sonar.lv1）——
@@ -100,6 +107,11 @@ export interface SensorState {
   sonar: 'off' | 'ping';
   /** 声呐能力是否已解锁（升级派生，后期才有）。未解锁则 ping 不可用、黑水保持盲航。 */
   sonarUnlocked: boolean;
+  /**
+   * 上一记 ping 的聚焦方向（定向 ping·SPEC §5）；undefined＝全向。仅供声呐图标注「这一记朝哪打」，
+   * 不影响存档形状（run 级·随 sonar 一道移动后清掉）。
+   */
+  sonarDir?: SonarDir;
 }
 
 /**

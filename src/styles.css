@@ -746,6 +746,34 @@ html, body, #root {
   color: var(--accent);
 }
 
+/* —— 定向 ping 控件（声呐与房间 §5·方向扇区）：把波束朝一个扇区聚焦——更远 / 更隐蔽；别朝威胁打 —— */
+.sonar-dir-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 0;
+}
+.sonar-dir-hint {
+  font-size: 0.74em;
+  color: var(--text-faint);
+}
+.sonar-dir-btn {
+  font-size: 0.78em;
+  padding: 4px 9px;
+}
+/* 这个扇区正对你上次扫到的东西——朝它打会照亮它（琥珀＝威胁色，与真节点的 cyan 一眼可分）。 */
+.sonar-dir-btn.aims-threat {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+/* 声呐图上「这一记朝哪打」的聚焦标注（定向 ping）。 */
+.sonar-focus-tag {
+  font-size: 0.72em;
+  letter-spacing: 0.06em;
+  color: var(--warn);
+}
+
 /* —— 声呐探索图（声呐与房间 SPEC §5/§7 S0）：冷色、接触式草图、随回合渐隐的余像 —— */
 .sonar-panel {
   margin: 12px 0 0;

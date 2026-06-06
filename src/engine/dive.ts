@@ -14,6 +14,7 @@ import type {
   PlayerProfile,
   ZoneTag,
   Lighthouse,
+  SonarDir,
 } from '@/types';
 import { tickTurns } from './events';
 import { generateDiveMap, getNextChoices } from './mapgen';
@@ -45,7 +46,7 @@ import {
   ALERT_MAX,
   sonarPingAlertDelta,
 } from './clarity';
-import { revealSonarScan, sonarScanRange } from './sonar';
+import { revealSonarScanDirectional, sonarScanRange } from './sonar';
 import { maybeSpawnStalker, advanceStalker, scanStalker } from './stalker';
 
 /** 编译期穷尽性检查：将来新增 NodeKind 却忘了在 moveToNode 里处理时，这里会直接报类型错误。 */
@@ -445,11 +446,19 @@ export function setLight(state: GameState, on: boolean): GameState {
   return refreshSelection(s);
 }
 
+/** 定向 ping 的方向叙述标签（声呐与房间 §5）。 */
+const SONAR_DIR_LABEL: Record<SonarDir, string> = { deeper: '更深处', lateral: '侧旁', back: '来路' };
+
 /**
  * 发一记声呐 ping（深水区 Phase 0a）：耗一大口电，本次选点改读"不可信的声呐返回"（≠ 真内容）。
  * 需已解锁声呐能力（后期深料升级）；电量不足则只叙事不消费。移动后 ping 自动消散（脉冲是瞬时的）。
+ *
+ * 定向 ping（声呐与房间 SPEC §5·作者 2026-06-06 拍板「方向扇区」）：dir 给出时把波束朝一个扇区聚焦——
+ * 那个扇区探更远、别处更短（revealSonarScanDirectional），且暴露按方向计（sonarPingAlertDelta(run,dir)：
+ * 整体更安静、但正对声感猎手则尖峰）。**dir 缺省＝全向，与旧行为逐字节一致**。猎手定位仍按基线量程（你
+ * 总听得到近场的它），只是「看到的洞」和「招来的注意」随方向变。
  */
-export function pingSonar(state: GameState): GameState {
+export function pingSonar(state: GameState, dir?: SonarDir): GameState {
   const run = state.run;
   if (!run) return state;
   if (!(run.sensors?.sonarUnlocked ?? false)) {
@@ -465,25 +474,35 @@ export function pingSonar(state: GameState): GameState {
     return appendLog(state, { tone: 'realistic', text: '电量不够再发一记声呐了。' });
   }
   const power = Math.max(0, (run.power ?? 0) - pingCost);
-  // 声呐图（S0）：从你当前位置揭示有限程内的真实节点为草图，stamp 当前 turn（余像随回合渐隐、重复 ping 不更亮）。
+  // 声呐图（S0/§5）：从你当前位置揭示有限程内的真实节点为草图，stamp 当前 turn（余像随回合渐隐、重复 ping 不更亮）。
+  // 定向（dir）→ 聚焦扇区探更远、别处更短；全向（缺省）→ 旧的等程全向揭示。
   const scanMemory: Record<string, number> = { ...(run.scanMemory ?? {}) };
   if (run.map && run.currentNodeId) {
-    for (const id of revealSonarScan(run.map, run.currentNodeId, sonarScanRange(run))) {
+    for (const id of revealSonarScanDirectional(run.map, run.currentNodeId, sonarScanRange(run), dir)) {
       scanMemory[id] = run.turn;
     }
   }
-  // ping 当场抬警觉（暴露双刃，SPEC §5）：浅水免压、深 band 更狠（sonarPingAlertDelta），clamp 上限。
-  const alert = Math.min(ALERT_MAX, (run.alert ?? 0) + sonarPingAlertDelta(run));
-  // 猎手 SPEC §2.1/§8.7：这一记 ping 若扫到猎手（量程内 + 未躲过）→ 刷新它在声呐图上的位置（这是「声呐＝知道它在哪」，
+  // ping 当场抬警觉（暴露双刃，SPEC §5）：浅水免压、深 band 更狠；定向时按方向计（更安静 / 正对声感猎手则尖峰）。
+  const alert = Math.min(ALERT_MAX, (run.alert ?? 0) + sonarPingAlertDelta(run, dir));
+  // 猎手 SPEC §2.1/§8.7：这一记 ping 若扫到猎手（基线量程内 + 未躲过）→ 刷新它在声呐图上的位置（这是「声呐＝知道它在哪」，
   // 且只在被扫到时更新＝你看到的可能是旧位置）；没扫到 / 被躲过 → 原样（位置不刷新）。无猎手 → undefined。
   const stalker = run.stalker ? scanStalker(run, run.stalker) : undefined;
   let s: GameState = {
     ...state,
-    run: { ...run, power, alert, scanMemory, stalker, sensors: { ...run.sensors, sonar: 'ping' } },
+    run: {
+      ...run,
+      power,
+      alert,
+      scanMemory,
+      stalker,
+      sensors: { ...run.sensors, sonar: 'ping', sonarDir: dir },
+    },
   };
   s = appendLog(s, {
     tone: 'uncanny',
-    text: '你发出一记脉冲。回波荡了回来——只是你说不准能不能信它。',
+    text: dir
+      ? `你把脉冲收窄，朝${SONAR_DIR_LABEL[dir]}打去——那个方向的回波探得更远，别处却暗了下来。`
+      : '你发出一记脉冲。回波荡了回来——只是你说不准能不能信它。',
   });
   return refreshSelection(s);
 }
@@ -514,8 +533,8 @@ function applyTransit(state: GameState, target: DiveNode): GameState {
     currentDepth: target.depth,
     currentNodeId: target.id,
     visitedNodeIds: [...ticked.visitedNodeIds, target.id],
-    // 声呐脉冲是瞬时的：移动后归 off，下个路口要重新 ping（深水区 Phase 0a）。
-    sensors: { ...ticked.sensors, sonar: 'off' },
+    // 声呐脉冲是瞬时的：移动后归 off，下个路口要重新 ping（深水区 Phase 0a）。定向聚焦也随之清掉（§5）。
+    sensors: { ...ticked.sensors, sonar: 'off', sonarDir: undefined },
   };
 
   // 洋流（海图 POI 修正）：每次移动额外耗体力 + 氧气（在死亡判定前应用，使洋流耗氧也能致死）

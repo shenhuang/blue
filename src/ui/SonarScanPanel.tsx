@@ -18,6 +18,9 @@ import { stalkerSonarBlip } from '@/engine/stalker';
 const VIEW_W = 240;
 const VIEW_H = 168;
 
+/** 定向 ping 聚焦方向的标注文案（声呐与房间 §5）。 */
+const SONAR_DIR_LABEL: Record<string, string> = { deeper: '朝深处', lateral: '侧向', back: '来路' };
+
 function kindClass(kind: string | undefined, isCurrent: boolean): string {
   if (isCurrent) return 'is-here';
   switch (kind) {
@@ -69,6 +72,8 @@ export function SonarScanPanel({ run }: { run: RunState }) {
   const turn = run.turn;
   const curId = run.currentNodeId;
   const here = (curId && layout.pos[curId]) || { x: layout.width / 2, y: layout.height / 2 };
+  // 定向 ping 聚焦标注（§5）：仅当这一记 ping 是定向的（sonar==='ping' 且 sonarDir 给出）。
+  const focusDir = run.sensors?.sonar === 'ping' ? run.sensors?.sonarDir : undefined;
 
   // 每个记忆节点的余像亮度（当前 turn − 扫到时的 turn）。主图只画还没淡尽的；残图小地图留极淡残迹。
   const fresh: Record<string, number> = {};
@@ -114,6 +119,7 @@ export function SonarScanPanel({ run }: { run: RunState }) {
     <div className="sonar-panel">
       <div className="sonar-panel-head">
         <span className="sonar-panel-title">声呐图</span>
+        {focusDir && <span className="sonar-focus-tag">聚焦 · {SONAR_DIR_LABEL[focusDir]}</span>}
         <span className="sonar-panel-sub">回波拼出的草图——会过时，信几分由你。</span>
       </div>
       <div className="sonar-scan-wrap">
