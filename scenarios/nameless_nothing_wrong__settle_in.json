@@ -1,0 +1,22 @@
+{
+  "_comment": "无名·应（band.nameless >230m·最深一层·oncePerRun）· 什么都没有不对——你习惯了这个该死的深度＝最坏的信号（cosmic·无 check·『界限没了』伏笔层中枢之一，接住那个下面的你）：loot-free、lore.nameless.nothing_wrong + sanity -9 + oxygenTurnCost 4。叙述永不交底（#54）、不触发 d_reveal（#42）。#43 实跑抄。",
+  "eventId": "nameless.nothing_wrong",
+  "depth": 250,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": [
+    "settle_in"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": [
+      "lore.nameless.nothing_wrong"
+    ],
+    "statsDelta": {
+      "oxygen": -4,
+      "sanity": -9
+    }
+  }
+}

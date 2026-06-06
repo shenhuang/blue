@@ -16,6 +16,7 @@ export type ZoneTag =
   | 'abyssal'
   | 'hadal'
   | 'subhadal'
+  | 'nameless'
   | 'ruins'
   | 'tutorial';
 

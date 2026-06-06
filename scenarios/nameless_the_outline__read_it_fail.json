@@ -1,0 +1,23 @@
+{
+  "_comment": "无名·应（band.nameless >230m·最深一层）· 转身上浮时影子不肯跟着转、仍朝下（cosmic 理智 vs 60）失败分支：sanity=22→clamp 0.05、seed 1 失败＝错读/没认住，被那个『下面的你』收得更深——sanity -15 + oxygenTurnCost 5、无 lore。永不交底、不触发 d_reveal。#43 实跑抄。",
+  "eventId": "nameless.the_outline",
+  "stats": {
+    "sanity": 22
+  },
+  "depth": 250,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": [
+    "read_it"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": {
+      "oxygen": -5,
+      "sanity": -15
+    }
+  }
+}

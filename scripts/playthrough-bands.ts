@@ -370,5 +370,59 @@ for (let seed = 1; seed <= 16; seed++) {
 assert(subLeakCave === 0 && subLeakHadal === 0, `12b: subhadal 事件不泄漏到 cave/hadal 池（cave ${subLeakCave} / hadal ${subLeakHadal}）`);
 L(`  渊外 >180m·dark·倍率 ${subhadal!.alertFactor} / 抽出 ${subSeen} subhadal 事件 / 泄漏 ${subLeakCave}+${subLeakHadal} ✓`);
 
+// ============================================================
+// 13. 无名渊 band（深水区内容·最深一层）：>230m 再递归更深 + nameless 专属事件池『过了诱饵，连你和它的界限也没了——往下的那个已经是你』
+//     越深越凶续到无名渊（alertFactor > 渊外）；nameless 事件不泄漏到 subhadal/cave 池、subhadal 也不漏进无名渊
+// ============================================================
+L('\n========== 13. 无名渊 band + nameless 内容 ==========');
+const nameless = getBand('band.nameless');
+assert(nameless, '13: 存在 band.nameless');
+assert(
+  nameless!.depthRange[0] >= 230,
+  `13: 无名渊 >230m（架构不硬编码地板、可续写更深，实际起 ${nameless!.depthRange[0]}m）`,
+);
+assert(nameless!.order > subhadal!.order, '13: 无名渊 order 在渊外之后（最深一级）');
+assert(nameless!.visibility === 'dark', '13: 无名渊 = 黑水');
+assert(nameless!.tags?.includes('nameless'), '13: 无名渊带 nameless 专属 tag（新增 ZoneTag、无穷尽-switch 破坏）');
+assert(
+  (nameless!.alertFactor ?? 1) > (subhadal!.alertFactor ?? 1),
+  '13: 无名渊探测压力倍率 > 渊外（越深越凶续到最深一层）',
+);
+
+// (a) band.tags 让无名渊蛙跳抽出 nameless 专属事件；subhadal 不漏进来
+const namelessZone = getZone(nameless!.zoneId)!;
+let nmSeen = 0,
+  nmEventNodes = 0,
+  subInNm = 0;
+for (let seed = 1; seed <= 16; seed++) {
+  const m = generateDiveMap({
+    zone: namelessZone,
+    profileFlags: new Set(),
+    rng: makeLcg(seed),
+    depthRange: nameless!.depthRange,
+    bandTags: nameless!.tags,
+  });
+  for (const n of Object.values(m.nodes)) {
+    if (!n.eventId) continue;
+    nmEventNodes++;
+    if (n.eventId.startsWith('nameless.')) nmSeen++;
+    if (n.eventId.startsWith('subhadal.')) subInNm++;
+  }
+}
+assert(nmEventNodes > 0 && nmSeen > 0, `13a: 无名渊蛙跳抽出专属 nameless 事件（实际 ${nmSeen}/${nmEventNodes}）`);
+assert(subInNm === 0, `13a: 渊外(subhadal)事件不漏进无名渊（深度+tag 双隔离，实际 ${subInNm}）`);
+
+// (b) nameless 事件不泄漏：普通 cave 池 → 0；渊外 band（subhadal tag）→ 0
+let nmLeakCave = 0,
+  nmLeakSub = 0;
+for (let seed = 1; seed <= 16; seed++) {
+  const mc = generateDiveMap({ zone: namelessZone, profileFlags: new Set(), rng: makeLcg(seed), depthRange: nameless!.depthRange });
+  for (const n of Object.values(mc.nodes)) if (n.eventId?.startsWith('nameless.')) nmLeakCave++;
+  const ms = generateDiveMap({ zone: subZone, profileFlags: new Set(), rng: makeLcg(seed), depthRange: subhadal!.depthRange, bandTags: subhadal!.tags });
+  for (const n of Object.values(ms.nodes)) if (n.eventId?.startsWith('nameless.')) nmLeakSub++;
+}
+assert(nmLeakCave === 0 && nmLeakSub === 0, `13b: nameless 事件不泄漏到 cave/subhadal 池（cave ${nmLeakCave} / subhadal ${nmLeakSub}）`);
+L(`  无名渊 >230m·dark·倍率 ${nameless!.alertFactor} / 抽出 ${nmSeen} nameless 事件 / 泄漏 ${nmLeakCave}+${nmLeakSub} ✓`);
+
 console.log(log.join('\n'));
 console.log('\n✓ 深度 band / 蛙跳下潜回归通过');

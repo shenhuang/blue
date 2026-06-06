@@ -11,6 +11,7 @@ import trenchEvents from '@/data/events/trench.json';
 import abyssalEvents from '@/data/events/abyssal.json';
 import hadalEvents from '@/data/events/hadal.json';
 import subhadalEvents from '@/data/events/subhadal.json';
+import namelessEvents from '@/data/events/nameless.json';
 import mimicEvents from '@/data/events/mimic.json';
 import zonesData from '@/data/zones.json';
 
@@ -29,6 +30,7 @@ for (const e of (trenchEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (abyssalEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (hadalEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (subhadalEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
+for (const e of (namelessEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (mimicEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 
 export function getZone(id: string): ZoneDef | undefined {

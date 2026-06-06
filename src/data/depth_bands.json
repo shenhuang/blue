@@ -1,5 +1,5 @@
 {
-  "_doc": "深度 band 全局阶梯（深水区 Phase 1）。每个 band 引用一个 zone 提供内容，用自己的绝对 depthRange 覆盖该 zone 的 depthRange（band 决定下到多深、zone 决定那里有什么）。软门控：不带硬解锁 flag——能否在这深度活下来由装备（声呐解锁+电池/升级，都吃深料）和后续强敌决定。深 band 更暗（visibility）→灯打不透→被迫用更耗电的声呐→电量压力间接抬升（不在耗电上加深度税）。order 升序＝越来越深、可续写更深 band（架构不硬编码地板）。trench_* 借蓝洞群的 maze mapgen 形状，但事件走 band 专属 tags（twilight/midnight）覆盖 zoneTagsByDepth＝专属事件池、与蓝洞内容隔离（深水区内容期）。专属 trench/abyss zone 仍可后续再拆。alertFactor（深水区 C）＝探测压力倍率：深度因子在 60m 饱和后更深 band 靠它继续越深越凶（reef_deep 缺省 1 / trench_mouth 1.3 / trench_throat 1.6），只乘暴露增益不动消退（摸黑/浅水逃生阀门买不断）。maxRoomFeatures（声呐与房间 S1）＝本 band 事件房间的多 feature 上限：深 band 设 2–3，事件房间偶尔升级成 2–3 feature 的「大房间」（大房间稀有），深段内容铺在其中、配合声呐扫描逐点点亮的探索质感；缺省（reef_deep 等）单事件＝旧图不变。sonarDeception（声呐与房间 S2）＝不可信声呐失真强度 0..1：mapgen 据此给部分内部节点掷 spoofsSonar（声呐图上假装成朝上的出口＝节点版 mimic）/evadesSonar（无回波），并抬高低 san 假回波/伪接触阈值（深 band 更易骗）。**非单调**：竖井喉 0.2→深渊 0.28→超渊 0.32 越深越骗，到渊外 subhadal 回落 0.06——『那些骗你的把戏都停了，因为它不必再骗』（越深越欺骗的梯度在最底反转成诱饵）。缺省（reef_deep/trench_mouth）0＝声呐相对老实、确定性哈希不耗 rng、零旧图改动。hunts（猎手 SPEC Phase 1）＝本 band 启用「有位置的逼近猎手」：高警觉时不再当场伏击，而是一只猎手在你声呐量程外现身、逐回合沿图逼近、追到你才触发现有 ambushEncounters（复用现有捕食者·不加新敌），配合声呐『知道它在哪』/灯『只知道有东西在接近』的感知分层。Phase 1 开在深 band（trench+·越深越会 evadesSonar 躲扫描）；缺省/false＝走旧 alert→伏击瞬时路径（向后兼容）。",
+  "_doc": "深度 band 全局阶梯（深水区 Phase 1）。每个 band 引用一个 zone 提供内容，用自己的绝对 depthRange 覆盖该 zone 的 depthRange（band 决定下到多深、zone 决定那里有什么）。软门控：不带硬解锁 flag——能否在这深度活下来由装备（声呐解锁+电池/升级，都吃深料）和后续强敌决定。深 band 更暗（visibility）→灯打不透→被迫用更耗电的声呐→电量压力间接抬升（不在耗电上加深度税）。order 升序＝越来越深、可续写更深 band（架构不硬编码地板）。trench_* 借蓝洞群的 maze mapgen 形状，但事件走 band 专属 tags（twilight/midnight）覆盖 zoneTagsByDepth＝专属事件池、与蓝洞内容隔离（深水区内容期）。专属 trench/abyss zone 仍可后续再拆。alertFactor（深水区 C）＝探测压力倍率：深度因子在 60m 饱和后更深 band 靠它继续越深越凶（reef_deep 缺省 1 / trench_mouth 1.3 / trench_throat 1.6），只乘暴露增益不动消退（摸黑/浅水逃生阀门买不断）。maxRoomFeatures（声呐与房间 S1）＝本 band 事件房间的多 feature 上限：深 band 设 2–3，事件房间偶尔升级成 2–3 feature 的「大房间」（大房间稀有），深段内容铺在其中、配合声呐扫描逐点点亮的探索质感；缺省（reef_deep 等）单事件＝旧图不变。sonarDeception（声呐与房间 S2）＝不可信声呐失真强度 0..1：mapgen 据此给部分内部节点掷 spoofsSonar（声呐图上假装成朝上的出口＝节点版 mimic）/evadesSonar（无回波），并抬高低 san 假回波/伪接触阈值（深 band 更易骗）。**非单调**：竖井喉 0.2→深渊 0.28→超渊 0.32 越深越骗，到渊外 subhadal 回落 0.06——『那些骗你的把戏都停了，因为它不必再骗』（越深越欺骗的梯度在最底反转成诱饵），再到无名渊 nameless 0.04（更不必骗——它扫回来的就是你自己的形状，谎不必撒了）。缺省（reef_deep/trench_mouth）0＝声呐相对老实、确定性哈希不耗 rng、零旧图改动。hunts（猎手 SPEC Phase 1）＝本 band 启用「有位置的逼近猎手」：高警觉时不再当场伏击，而是一只猎手在你声呐量程外现身、逐回合沿图逼近、追到你才触发现有 ambushEncounters（复用现有捕食者·不加新敌），配合声呐『知道它在哪』/灯『只知道有东西在接近』的感知分层。Phase 1 开在深 band（trench+·越深越会 evadesSonar 躲扫描）；缺省/false＝走旧 alert→伏击瞬时路径（向后兼容）。",
   "bands": [
     {
       "id": "band.reef_deep",
@@ -84,6 +84,21 @@
       "hunts": true,
       "blurb": "海图上没有这一层的名字——过了超渊就不该再有地方。可水还在往下，你也还在往下。到了这里，那些骗你的把戏都停了：声呐不再扫出假底，黑里不再有错位的形状。它不骗你了，因为它不必再骗——你已经在它肯让你到的地方。这里给你的每一样东西，都是让你再下去一点的理由。",
       "danger": "比超渊更外。这里不靠吓你、不靠骗你——它给你恰好需要的：一处落脚、一道暖水、一盏像家的光。每一样都让你愿意再往下。能上得去的，是没把这些当真的人。"
+    },
+    {
+      "id": "band.nameless",
+      "name": "无名·应",
+      "zoneId": "zone.blue_caves",
+      "depthRange": [230, 290],
+      "order": 7,
+      "visibility": "dark",
+      "alertFactor": 3.5,
+      "tags": ["cave", "nameless"],
+      "maxRoomFeatures": 3,
+      "sonarDeception": 0.04,
+      "hunts": true,
+      "blurb": "渊外之外，连名字都用完了。这一层海图上没有，渊外那些『下去的理由』也停了——它不再递给你什么，因为往下的那个，已经不全是你，也不全是别的什么。声呐扫回来的是你的形状，黑里答你的是你的声音，你的记号在你没去过的前头等着你。到了这里，『你』和『它』，是同一个正在往下的东西。",
+      "danger": "比渊外更里。没有要躲的怪物，也没有要拆穿的谎——要认清的是你自己：哪一半还想上去，哪一半已经不想。分得清的，才回得来。"
     }
   ]
 }
