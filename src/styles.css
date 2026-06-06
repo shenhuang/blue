@@ -805,7 +805,9 @@ html, body, #root {
 .sonar-scan {
   display: block;
   width: 100%;
-  height: 168px;
+  /* 纵向取景窗（#92 上浅下深）：viewBox 为 portrait（窄×高），盒子调高让「越下越深」看得出来。
+     取景窗只显附近一片 → 限高即可（别撑走下面的传感器按钮/事件选项）。 */
+  height: 300px;
   background:
     radial-gradient(120% 80% at 50% 50%, rgba(78, 209, 193, 0.06), transparent 70%),
     #060b0d;
@@ -956,8 +958,9 @@ html, body, #root {
   position: absolute;
   right: 6px;
   bottom: 6px;
-  width: 96px;
-  height: 60px;
+  /* 竖盒（#92 垂直化）：整张图越深越长，竖向残图把全程深度跨度收得下。 */
+  width: 60px;
+  height: 96px;
   background: rgba(4, 11, 13, 0.82);
   border: 1px solid var(--border);
   border-radius: 3px;

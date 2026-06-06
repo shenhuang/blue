@@ -49,6 +49,12 @@ export const SONAR_DIR_OFFAXIS_PENALTY = 1;
  * 缺省（无升级 / 旧档 / POI）每向 reach = 0 → revealSonarScanDirectional 逐字节回退既有定向行为。
  */
 export const SONAR_DIR_REACH_MAX = 2;
+/**
+ * 扇区按**真实深度**分（#92「位置即深度」·深水区 SPEC §13·与声呐图 y∝depth 一致）：deeper＝更深米 / back＝更浅 /
+ * lateral＝深度差在此容差带内（|Δdepth| ≤ 此值）。容差带因 float 米数极少精确相等而设；也让「同一深度层」的并列
+ * 节点（开阔水域同层 depth 完全相等→Δ=0）稳定判为 lateral。取 < 典型 depthStep 以免相邻层被并进 lateral。
+ */
+export const SECTOR_DEPTH_EPS = 1.5;
 
 /**
  * 本次下潜的有效声呐扫描跳数：读 run.sensorTuning（升级派生·deriveSensorTuning 已夹紧到 [基线, 上限]）；
@@ -123,15 +129,18 @@ export function revealSonarScan(map: DiveMap, originId: string, range: number): 
 // ============================================================
 
 /**
- * 目标节点相对原点的扇区（按 layer 差分，与布局 x∝layer 一致＝声呐图上 深处在右/来路在左/侧向同列）。
- * 原点自身 / 缺节点 → null（总在近场、不参与扇区过滤）。
+ * 目标节点相对原点的扇区（按**真实深度**差分·#92·与布局 y∝depth 一致＝声呐图上 更深在下/来路在上/侧向同深）。
+ * deeper＝目标更深（Δdepth > +EPS）/ back＝更浅（Δdepth < −EPS）/ lateral＝深度差在容差带内（|Δ| ≤ EPS）。
+ * ⚠ 改自旧「按 layer 差分」（#86）——垂直化后楔形「朝深处」指下、定向 ping 必须扩**真正更深**的节点，否则
+ *   迷路图里 layer-更深但 depth-更浅的节点会渲染在上方却被当 deeper＝自相矛盾。原点自身 / 缺节点 → null（总在近场）。
  */
 export function nodeSector(map: DiveMap, originId: string, targetId: string): SonarDir | null {
   const o = map.nodes[originId];
   const t = map.nodes[targetId];
   if (!o || !t || originId === targetId) return null;
-  if (t.layer > o.layer) return 'deeper';
-  if (t.layer < o.layer) return 'back';
+  const dd = t.depth - o.depth;
+  if (dd > SECTOR_DEPTH_EPS) return 'deeper';
+  if (dd < -SECTOR_DEPTH_EPS) return 'back';
   return 'lateral';
 }
 

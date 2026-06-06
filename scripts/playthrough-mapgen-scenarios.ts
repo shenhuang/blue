@@ -208,6 +208,58 @@ function main() {
   if (airSeeds === 0) fails.push('60 seed 内从未生成气穴节点');
   if (campSeeds === 0) fails.push('60 seed 内从未生成扎营点节点');
 
+  // —— 「位置即深度」垂直性不变量（#92·深水区 SPEC §13）——
+  // 声呐图 / MapDevPanel 纵轴 y∝真实深度（上浅下深）→ 要 mapgen 把「往下＝更深」做实：起点最浅(=图顶)、
+  // 主下行 depth 随树距(layer)上升。这是「系统不变量」（以后放事件/房间/猎手按深度都靠它），由本块兜住能兜的那半。
+  //   迷路：起点=全局最浅 + 深度随树距正相关（近半/远半均值）+ 最深点不在起点层；分支/回边允许朝浅（不查逐节点单调）。
+  //   层状(开阔水域)：更强——逐层 depth 严格非减（上层 max ≤ 下层 min）+ 同层 depth 相等（depth=round(d0+step·L)）。
+  console.log(`\n========== 「位置即深度」垂直性不变量 (#92·SPEC §13) ==========`);
+  {
+    const vfails: string[] = [];
+    const mean = (xs: number[]) => xs.reduce((s, x) => s + x, 0) / Math.max(1, xs.length);
+    // (a) 迷路：blue_caves seeds 1–60
+    for (let seed = 1; seed <= SWEEP; seed++) {
+      const map = genMap('zone.blue_caves', seed);
+      const ns = Object.values(map.nodes);
+      const depths = ns.map((n) => n.depth);
+      const minD = Math.min(...depths);
+      const maxD = Math.max(...depths);
+      if (entranceDepth(map) !== minD) vfails.push(`maze seed=${seed}: 起点非全局最浅(起点 ${entranceDepth(map)} vs min ${minD}·应在图顶)`);
+      if (ns.filter((n) => n.depth === maxD).every((n) => n.layer === 0)) vfails.push(`maze seed=${seed}: 最深点落在起点层(layer0)`);
+      const maxLayer = Math.max(...ns.map((n) => n.layer));
+      if (maxLayer >= 2) {
+        const near = ns.filter((n) => n.layer <= maxLayer / 2).map((n) => n.depth);
+        const far = ns.filter((n) => n.layer > maxLayer / 2).map((n) => n.depth);
+        if (near.length > 0 && far.length > 0 && !(mean(far) > mean(near)))
+          vfails.push(`maze seed=${seed}: 深度未随树距上升(近半均值 ${mean(near).toFixed(1)} ≥ 远半 ${mean(far).toFixed(1)})`);
+      }
+    }
+    // (b) 层状(开阔水域)：wreck_graveyard seeds 1–30·逐层严格非减 + 同层相等 + 起点最浅
+    for (let seed = 1; seed <= 30; seed++) {
+      const map = genMap('zone.wreck_graveyard', seed);
+      const ns = Object.values(map.nodes);
+      if (entranceDepth(map) !== Math.min(...ns.map((n) => n.depth))) vfails.push(`layered seed=${seed}: 起点非全局最浅`);
+      const byLayer = new Map<number, number[]>();
+      for (const n of ns) {
+        if (!byLayer.has(n.layer)) byLayer.set(n.layer, []);
+        byLayer.get(n.layer)!.push(n.depth);
+      }
+      const layers = [...byLayer.keys()].sort((a, b) => a - b);
+      for (let i = 0; i < layers.length; i++) {
+        const ds = byLayer.get(layers[i])!;
+        if (Math.max(...ds) !== Math.min(...ds)) vfails.push(`layered seed=${seed}: layer${layers[i]} 同层 depth 不等(${Math.min(...ds)}–${Math.max(...ds)})`);
+        if (i > 0 && Math.min(...ds) < Math.max(...byLayer.get(layers[i - 1])!))
+          vfails.push(`layered seed=${seed}: layer${layers[i]} 比上层更浅(破坏 y∝depth 单调)`);
+      }
+    }
+    if (vfails.length === 0) {
+      console.log(`  ✓ 迷路 60 + 层状 30 seed：起点=图顶最浅 · 迷路深度随树距上升·最深点在下行 · 层状逐层严格非减+同层相等`);
+    } else {
+      console.log(`  ✗ ${vfails.length} 处违反「位置即深度」：`);
+      for (const v of vfails.slice(0, 12)) { console.log(`      ${v}`); fails.push(v); }
+    }
+  }
+
   // —— 多事件房间（声呐与房间 S1）不变量：maxRoomFeatures>1 时偶尔生成 2–3 feature「大房间」——
   // 守则：features 只挂 event 节点 / 每房 2–3 feature（≥2 才叫大房间、≤maxRoomFeatures）/ 大房间不再带单 eventId /
   //       同图事件不重复（features + 单事件共用 triggeredFakeIds 去重）/ 同 seed 确定性。

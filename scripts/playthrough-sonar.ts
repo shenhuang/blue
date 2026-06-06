@@ -473,20 +473,22 @@ L('\n========== 12. 威胁定位（S3 廉价版）==========');
 // ============================================================
 // 13. 定向 ping（声呐与房间 SPEC §5·作者 2026-06-06 拍板「方向扇区」）
 // ============================================================
-// 定向测图：origin c(layer2) 三向各有支链——back: c─m1(1)─e0(0) / deeper: c─d3(3)─d4(4)─d5(5) / lateral: c─s2(2)─s2b(2)。
-// layer 字段即扇区依据（nodeSector 按 layer 差分·树距与 layer 无关·由 fixture 钉死）。
+// 定向测图：origin c(depth60) 三向各有支链——back: c─m1(50)─e0(40) / deeper: c─d3(70)─d4(80)─d5(90) / lateral: c─s2(60)─s2b(60)。
+// **depth 字段即扇区依据**（#92 起 nodeSector 按 depth 差分·深水区 SPEC §13）。layer 字段在此**故意与 depth 相反**
+// （deeper 支链 layer 反而小、back 支链 layer 反而大、lateral 支链 layer 各异）→ 真测 depth-based：
+// 旧 layer-based 实现会在 13a 当场三条全错（deeper↔back 颠倒、lateral 误判 deeper），守住「别退回按 layer 分」。
 function makeDirMap(): DiveMap {
   return {
     zoneId: 'zone.blue_caves', generatedAt: 0, startNodeId: 'e0',
     nodes: {
-      e0: { id: 'e0', layer: 0, depth: 40, zoneTag: 'cave', kind: 'event', connectsTo: ['m1'], preview: '' },
-      m1: { id: 'm1', layer: 1, depth: 50, zoneTag: 'cave', kind: 'event', connectsTo: ['c'], preview: '' },
+      e0: { id: 'e0', layer: 4, depth: 40, zoneTag: 'cave', kind: 'event', connectsTo: ['m1'], preview: '' },
+      m1: { id: 'm1', layer: 3, depth: 50, zoneTag: 'cave', kind: 'event', connectsTo: ['c'], preview: '' },
       c: { id: 'c', layer: 2, depth: 60, zoneTag: 'cave', kind: 'event', connectsTo: ['d3', 's2'], preview: '' },
-      d3: { id: 'd3', layer: 3, depth: 70, zoneTag: 'cave', kind: 'event', connectsTo: ['d4'], preview: '' },
-      d4: { id: 'd4', layer: 4, depth: 80, zoneTag: 'cave', kind: 'event', connectsTo: ['d5'], preview: '' },
-      d5: { id: 'd5', layer: 5, depth: 90, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '' },
-      s2: { id: 's2', layer: 2, depth: 60, zoneTag: 'cave', kind: 'event', connectsTo: ['s2b'], preview: '' },
-      s2b: { id: 's2b', layer: 2, depth: 60, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '' },
+      d3: { id: 'd3', layer: 1, depth: 70, zoneTag: 'cave', kind: 'event', connectsTo: ['d4'], preview: '' },
+      d4: { id: 'd4', layer: 1, depth: 80, zoneTag: 'cave', kind: 'event', connectsTo: ['d5'], preview: '' },
+      d5: { id: 'd5', layer: 0, depth: 90, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '' },
+      s2: { id: 's2', layer: 5, depth: 60, zoneTag: 'cave', kind: 'event', connectsTo: ['s2b'], preview: '' },
+      s2b: { id: 's2b', layer: 6, depth: 60, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '' },
     },
   };
 }
@@ -497,10 +499,11 @@ function mkDir(opts?: { depth?: number; stalker?: Stalker }): RunState {
 L('\n========== 13. 定向 ping（§5 方向扇区）==========');
 {
   const map = makeDirMap();
-  // (a) 扇区按 layer 差分（与布局 x∝layer 一致：深处在右/来路在左/侧向同列）
-  assert(nodeSector(map, 'c', 'd3') === 'deeper', '13a: 更深层 → deeper');
-  assert(nodeSector(map, 'c', 'm1') === 'back', '13a: 更浅层 → back');
-  assert(nodeSector(map, 'c', 's2') === 'lateral', '13a: 同层 → lateral');
+  // (a) 扇区按**真实深度**差分（#92·与布局 y∝depth 一致：更深在下/来路在上/侧向同深）。
+  //     fixture 里 layer 与 depth 故意相反 → 这三条同时验证「用 depth、不用 layer」（layer-based 实现会全错）。
+  assert(nodeSector(map, 'c', 'd3') === 'deeper', '13a: 更深(depth70>60) → deeper（尽管 d3 的 layer 反而更小）');
+  assert(nodeSector(map, 'c', 'm1') === 'back', '13a: 更浅(depth50<60) → back（尽管 m1 的 layer 反而更大）');
+  assert(nodeSector(map, 'c', 's2') === 'lateral', '13a: 同深(depth60·|Δ|≤EPS) → lateral（尽管 s2 的 layer 不同）');
   assert(nodeSector(map, 'c', 'c') === null, '13a: 自身 → null（总在近场）');
 
   // (b) omni（dir 缺省）＝旧 revealSonarScan 同集合（向后兼容·逐字节）

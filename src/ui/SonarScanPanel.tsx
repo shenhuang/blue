@@ -15,16 +15,20 @@ import { nodeSonarView, sonarPhantoms, threatContact, type NodeSonarView } from 
 import { stalkerSonarBlip } from '@/engine/stalker';
 import { zoneAllowsBacktrack } from '@/engine/zones';
 
-/** 主图缩放窗口（布局坐标单位）：只显示当前节点周围一小片＝SPEC「默认放大、几乎看不到全貌」。 */
-const VIEW_W = 240;
-const VIEW_H = 168;
+/** 主图缩放窗口（布局坐标单位）：只显示当前节点周围一小片＝SPEC「默认放大、几乎看不到全貌」。
+ *  纵向取景窗（窄×高·#92 上浅下深）：窗高 / mapLayout.pxPerMeter ＝固定可视深度跨度（深图更长无妨·只看一片）。 */
+const VIEW_W = 200;
+const VIEW_H = 300;
+/** 以玩家为圆心的量程/接触半径基准＝取景窗短边（现 = VIEW_W·portrait），保证圆环/楔形不被窄边裁掉。 */
+const VIEW_R = Math.min(VIEW_W, VIEW_H);
 
 /** 定向 ping 聚焦方向的标注文案（声呐与房间 §5）。 */
 const SONAR_DIR_LABEL: Record<string, string> = { deeper: '朝深处', lateral: '侧向', back: '来路' };
 
 /**
  * 定向聚焦扇区的楔形路径（声呐与房间 §5「聚焦扇区可视化」）：从你当前位置朝聚焦方向画一道半透明扇形——
- * 与布局 x∝layer 一致：deeper＝朝右（深在右）/ back＝朝左（来路在左）/ lateral＝上下两瓣（同层沿 y 上下铺）。
+ * 与布局 y∝depth 一致（#92 上浅下深·深水区 SPEC §13）：deeper＝朝下（深在下）/ back＝朝上（来路在上·更浅）/
+ * lateral＝左右两瓣（同深度沿 x 左右铺·比配上下更直觉）。SVG y 轴朝下：故 +π/2＝下、−π/2＝上、0＝右、π＝左。
  * 半径略超量程环＝直观体现「那一向探更远」。纯几何、确定性（SSR 安全）。
  */
 function focusWedgePath(cx: number, cy: number, r: number, dir: string): string {
@@ -36,10 +40,10 @@ function focusWedgePath(cx: number, cy: number, r: number, dir: string): string 
     const y1 = cy + r * Math.sin(a1);
     return `M${cx.toFixed(1)} ${cy.toFixed(1)} L${x0.toFixed(1)} ${y0.toFixed(1)} A${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)} Z`;
   };
-  if (dir === 'deeper') return slice(-H, H);
-  if (dir === 'back') return slice(Math.PI - H, Math.PI + H);
-  // lateral：上下两瓣（同层节点在布局里沿 y 上下铺开）
-  return `${slice(Math.PI / 2 - H, Math.PI / 2 + H)} ${slice(-Math.PI / 2 - H, -Math.PI / 2 + H)}`;
+  if (dir === 'deeper') return slice(Math.PI / 2 - H, Math.PI / 2 + H); // 朝下（更深）
+  if (dir === 'back') return slice(-Math.PI / 2 - H, -Math.PI / 2 + H); // 朝上（来路·更浅）
+  // lateral：左右两瓣（同深度节点在布局里沿 x 左右铺开）
+  return `${slice(-H, H)} ${slice(Math.PI - H, Math.PI + H)}`;
 }
 
 function kindClass(kind: string | undefined, isCurrent: boolean): string {
@@ -114,8 +118,8 @@ export function SonarScanPanel({ run }: { run: RunState }) {
   const threat = threatContact(run);
   const threatPos = threat
     ? {
-        x: here.x + Math.cos(threat.angle) * VIEW_H * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
-        y: here.y + Math.sin(threat.angle) * VIEW_H * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
+        x: here.x + Math.cos(threat.angle) * VIEW_R * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
+        y: here.y + Math.sin(threat.angle) * VIEW_R * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
       }
     : null;
 
@@ -136,8 +140,10 @@ export function SonarScanPanel({ run }: { run: RunState }) {
   const vbY = here.y - VIEW_H / 2;
 
   // 残图小地图：把整张图的外框 + 已 mapped 的那些点缩在角落，给「我在更大洞里哪儿」的方位感。
-  const MINI_W = 96;
-  const miniScale = Math.min(MINI_W / Math.max(1, layout.width), 56 / Math.max(1, layout.height));
+  // 竖盒（窄×高·#92）：整张图垂直化后更深更长，竖向小地图把全程深度跨度收得下。
+  const MINI_W = 60;
+  const MINI_H = 96;
+  const miniScale = Math.min(MINI_W / Math.max(1, layout.width), (MINI_H - 4) / Math.max(1, layout.height));
 
   return (
     <div className={`sonar-panel ${isOpenWater ? 'is-open-water' : ''}`}>
@@ -159,13 +165,13 @@ export function SonarScanPanel({ run }: { run: RunState }) {
           aria-label="声呐探索图"
         >
           {/* 量程环：你当前位置的一圈很淡的环（SPEC §5「只看得见自己 + 一圈很淡的量程环」） */}
-          <circle className="sonar-range-ring" cx={here.x} cy={here.y} r={VIEW_H * 0.42} />
+          <circle className="sonar-range-ring" cx={here.x} cy={here.y} r={VIEW_R * 0.42} />
           {/* 定向聚焦扇区（§5 可视化）：定向 ping 进行中 → 朝聚焦方向画一道半透明楔形（略超量程环＝那一向探更远）。 */}
           {focusDir && (
             <path
               className="sonar-focus-wedge"
               data-dir={focusDir}
-              d={focusWedgePath(here.x, here.y, VIEW_H * 0.5, focusDir)}
+              d={focusWedgePath(here.x, here.y, VIEW_R * 0.5, focusDir)}
             />
           )}
           {/* 开放水域（§5 later）：没有洞壁可画 → 跳过通道边，只留接触与读数；迷路洞穴仍画通道。 */}
@@ -279,12 +285,12 @@ export function SonarScanPanel({ run }: { run: RunState }) {
         {/* 残图小地图：外框 = 全洞范围，点 = 已 mapped 的那一小块，亮点 = 你 */}
         <svg
           className="sonar-mini"
-          viewBox={`0 0 ${MINI_W} 60`}
+          viewBox={`0 0 ${MINI_W} ${MINI_H}`}
           preserveAspectRatio="xMidYMid meet"
           role="img"
           aria-label="残图小地图"
         >
-          <rect className="sonar-mini-extent" x={1} y={1} width={MINI_W - 2} height={58} />
+          <rect className="sonar-mini-extent" x={1} y={1} width={MINI_W - 2} height={MINI_H - 2} />
           {scannedIds.filter((id) => !views[id].noEcho).map((id) => {
             const p = layout.pos[id];
             if (!p) return null;
