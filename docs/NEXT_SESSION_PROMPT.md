@@ -1,6 +1,6 @@
 你在接手「深海回响」(Deep Echo) —— 潜水题材文字冒险 Roguelike（Vite + React + TS），仓库在 `~/Desktop/Blue`。
 
-**当前主线**：深水区 vision 分阶段实装，`docs/深海回响_深水区_SPEC.md` + `docs/深海回响_声呐与房间_SPEC.md` + `docs/深海回响_猎手_SPEC.md` 是源真。深水区四个 Phase 的**核心已全部落地**：**Phase 0**（0a 感知 #58 / 0b 探测 #59 / 升级轨 #60）+ **Phase 1**（band 阶梯+蛙跳 #61 / 节点级 clarity #62 / band 级 alert 倍率 #64）+ **Phase 2**（2a 前哨+真蛙跳 #66 / 2b 能源/衰减/海图前哨 UI/多前哨链 #67 / 真 reveal dimming #76 / 2b 续 材料中转·寄存+寄存丢失+深渊前哨 #79）+ **Phase 3 mimic capstone 核心**（海图假 POI 引诱→入潜兑现→读穿 tell→d_reveal #69）+ **深段内容**（trench #63 / abyssal #65 / hadal #68 / subhadal #72 / 深段多 feature #75 / 周末 trench ping-欺骗 #77 / abyssal·hadal·subhadal 加密 #81 / 40-60m「灯的边缘」#82 / 浅中段≤44m 质感 #85）+ **声呐与房间（SPEC 核心+收尾全完成）**（S0 扫描 #71 / S1 多事件房间 #74 / S2 不可信扫描 #78 / S3 威胁定位廉价版 #80 / §6.5 宏观灯塔扫描+海况 #80 / 声呐范围升级轴 #80 / 即时新 POI 浮现 #83 / **定向 ping 方向扇区 #86 / 房间 feature 数升级 #87**）+ **猎手（声呐图上的捕食者）Phase 1 spine #84**。
+**当前主线**：深水区 vision 分阶段实装，`docs/spec/深海回响_深水区_SPEC.md` + `docs/spec/深海回响_声呐与房间_SPEC.md` + `docs/spec/深海回响_猎手_SPEC.md` 是源真。深水区四个 Phase 的**核心已全部落地**：**Phase 0**（0a 感知 #58 / 0b 探测 #59 / 升级轨 #60）+ **Phase 1**（band 阶梯+蛙跳 #61 / 节点级 clarity #62 / band 级 alert 倍率 #64）+ **Phase 2**（2a 前哨+真蛙跳 #66 / 2b 能源/衰减/海图前哨 UI/多前哨链 #67 / 真 reveal dimming #76 / 2b 续 材料中转·寄存+寄存丢失+深渊前哨 #79）+ **Phase 3 mimic capstone 核心**（海图假 POI 引诱→入潜兑现→读穿 tell→d_reveal #69）+ **深段内容**（trench #63 / abyssal #65 / hadal #68 / subhadal #72 / 深段多 feature #75 / 周末 trench ping-欺骗 #77 / abyssal·hadal·subhadal 加密 #81 / 40-60m「灯的边缘」#82 / 浅中段≤44m 质感 #85）+ **声呐与房间（SPEC 核心+收尾全完成）**（S0 扫描 #71 / S1 多事件房间 #74 / S2 不可信扫描 #78 / S3 威胁定位廉价版 #80 / §6.5 宏观灯塔扫描+海况 #80 / 声呐范围升级轴 #80 / 即时新 POI 浮现 #83 / **定向 ping 方向扇区 #86 / 房间 feature 数升级 #87**）+ **猎手（声呐图上的捕食者）Phase 1 spine #84**。
 
 **上一个 session**（方向 A「声呐与房间收尾·确保真的完成」，2026-06-06）做两件 + 起手提交周末攒下的内容：
 
@@ -8,9 +8,9 @@
 2. **房间 feature 数升级 · 大房间出现率轴（#87·收尾 #74 尾巴）**：新升级旋钮 `roomFeatureChanceBonus` 沿 #80 同款传感器升级桥（7 处全补·编译期护栏·夹 `ROOM_FEATURE_CHANCE_MAX`0.3）→ `startDive` 读 `run.sensorTuning` 透传 mapgen `rollExtraFeatures` 把『单 feature』门槛往下压＝深处大房间更常出现。**band `maxRoomFeatures` 仍是尺寸天花板**·缺省 0 → mapgen 输出逐字节复现旧图。data `salvage_guild` 续 lv4「深潜打捞队」effect 0.18。
 3. 起手提交周末无人值守 **#85** 内容（established 浅中段≤44m 质感·11 事件 blue_caves/reef/wreck_graveyard + 17 scenarios·此前 uncommitted）。全绿 **26/26** + prod build。提交 `82589c1`（#85）/ `6bfdc76`（#86）/ `953622a`（#87）+ docs 收尾。
 
-**声呐与房间 SPEC**（`docs/深海回响_声呐与房间_SPEC.md` v0.1）：**S0+S1+S2+S3 廉价版 + §6.5 宏观 + 声呐范围升级轴 + 即时新 POI + 定向 ping（#86）+ 房间 feature 数升级（#87）全部落地——核心 + 收尾完成**。§8.7 定位 stalker 已升级为「猎手」子系统、交 `docs/深海回响_猎手_SPEC.md` 接管。**SPEC 仅剩可选打磨**（均小/非必须）：定向 ping『各方向 reach 各自升级』细分（现 `sonarScanRange` 是统一范围轴）/ 声呐图聚焦扇区可视化（现仅文字标注）/ §5 later（接触带大小·开放水域扫描·见 §5 标 later 项）。
+**声呐与房间 SPEC**（`docs/spec/深海回响_声呐与房间_SPEC.md` v0.1）：**S0+S1+S2+S3 廉价版 + §6.5 宏观 + 声呐范围升级轴 + 即时新 POI + 定向 ping（#86）+ 房间 feature 数升级（#87）全部落地——核心 + 收尾完成**。§8.7 定位 stalker 已升级为「猎手」子系统、交 `docs/spec/深海回响_猎手_SPEC.md` 接管。**SPEC 仅剩可选打磨**（均小/非必须）：定向 ping『各方向 reach 各自升级』细分（现 `sonarScanRange` 是统一范围轴）/ 声呐图聚焦扇区可视化（现仅文字标注）/ §5 later（接触带大小·开放水域扫描·见 §5 标 later 项）。
 
-**猎手 SPEC**（`docs/深海回响_猎手_SPEC.md` v0.1，作者 2026-06-06 三问定调）：把抽象「警觉」(#59) 做成有位置、会逼近、按感官显示不同保真度的猎手。§7 分阶段：**✅ Phase 1 spine（#84）**＝感知分层（灯=接近 / 声呐=位置·**同一猎手**）+ 出现/逼近/接触（统一·复用 ambushEncounters）+ 丢信号性格（wait〔waitTurns=0 掉头就走 / N 等一阵再走〕/ seek_last 去上次信号点徘徊再走·#84 续校正）+ 摸黑/拉距/上浮脱离 + 深 band 门控（DepthBand.hunts·additive/gated）。**Phase 2+ deferred（已 SPEC 捕捉）**：升级规避 T1 吸声/T2 主动迷彩（§3）·decoy 道具〔战斗中也能逃〕（§4）·大型生物狭小空间避难（§5）·执着等待者耗资源（§6）·浅水小概率弱变体（Q3·§7）·完整感官模态分类落数据（per-encounter sensesBy·§2.2）·active 探测行为·感知例外（§2.1·见下方向 E）。
+**猎手 SPEC**（`docs/spec/深海回响_猎手_SPEC.md` v0.1，作者 2026-06-06 三问定调）：把抽象「警觉」(#59) 做成有位置、会逼近、按感官显示不同保真度的猎手。§7 分阶段：**✅ Phase 1 spine（#84）**＝感知分层（灯=接近 / 声呐=位置·**同一猎手**）+ 出现/逼近/接触（统一·复用 ambushEncounters）+ 丢信号性格（wait〔waitTurns=0 掉头就走 / N 等一阵再走〕/ seek_last 去上次信号点徘徊再走·#84 续校正）+ 摸黑/拉距/上浮脱离 + 深 band 门控（DepthBand.hunts·additive/gated）。**Phase 2+ deferred（已 SPEC 捕捉）**：升级规避 T1 吸声/T2 主动迷彩（§3）·decoy 道具〔战斗中也能逃〕（§4）·大型生物狭小空间避难（§5）·执着等待者耗资源（§6）·浅水小概率弱变体（Q3·§7）·完整感官模态分类落数据（per-encounter sensesBy·§2.2）·active 探测行为·感知例外（§2.1·见下方向 E）。
 
 **已就位的地基**（后续直接用、别另起炉灶）：
 
@@ -27,7 +27,7 @@
 
 **先 onboarding**（按顺序）
 
-1. 读 `docs/深海回响_猎手_SPEC.md`（若做方向 E 猎手 Phase 2+）——§2 核心模型 / §3-6 后期（升级规避·decoy·大型生物·执着等待）/ §7 分阶段（Phase 1 已勾·Phase 2+ deferred）/ §9 守则 / §10 决策日志。+ `docs/深海回响_声呐与房间_SPEC.md`（§5 声呐扫描含**定向 ping 已实装**·§6 多事件房间·§8 子决策·§11 决策日志末条＝#86/#87）+ `docs/深海回响_深水区_SPEC.md`（北极星·§3.1 两层 clarity·§3.2 不可信声呐·§3.7 另一个世界·§9 守则）。
+1. 读 `docs/spec/深海回响_猎手_SPEC.md`（若做方向 E 猎手 Phase 2+）——§2 核心模型 / §3-6 后期（升级规避·decoy·大型生物·执着等待）/ §7 分阶段（Phase 1 已勾·Phase 2+ deferred）/ §9 守则 / §10 决策日志。+ `docs/spec/深海回响_声呐与房间_SPEC.md`（§5 声呐扫描含**定向 ping 已实装**·§6 多事件房间·§8 子决策·§11 决策日志末条＝#86/#87）+ `docs/spec/深海回响_深水区_SPEC.md`（北极星·§3.1 两层 clarity·§3.2 不可信声呐·§3.7 另一个世界·§9 守则）。
 2. 读自动记忆 [[deep-game-vision]]（北极星 + 全 Phase + 声呐 S0-S3 + 定向 ping + 猎手 Phase 1）+ [[weekend-content-log]]（现 ~149 内容事件/7 敌人）+ [[basebuild-map-revamp]]（前哨/能源/寄存）+ [[sandbox-git-commit]]（提交法）。
 3. 读 `docs/STATUS.md` 顶部滚动条目 #87（房间升级）+ #86（定向 ping）+ #85（周末浅中段内容）+ #84/#83/#82/#81/#80/#79/#78/#76/#74/#69/#67/#66 + 复用项 #64/#63/#58/#52/#62/#43/#19。
 4. 跑 `npm run regress` 确认起点干净（§9·一条命令全绿 **26/26**·~7-8s）。**起手先 `git --no-optional-locks log --oneline -3` 核对真实 HEAD**（夜间/周末引擎可能在 session 间又提了 commit 或留 uncommitted 内容·见 [[sandbox-git-commit]] 末条教训）。
@@ -36,7 +36,7 @@
 
 > **声呐与房间 SPEC 核心+收尾已全完成（#86/#87）。** 下面剩的大方向多需作者在场逐拍（E/B）；C/D 可自走。
 
-**E · 猎手 Phase 2+**（需作者逐拍·风险中高·`docs/深海回响_猎手_SPEC.md` §3-6）——Phase 1 spine 已落地（#84），下面都是新机制、作者口述已捕捉但要逐拍敲。**定向 ping #86 刚把「别朝声感猎手方向 ping」做实、与 sensesBy 耦合上了，E 是它的天然延续**：
+**E · 猎手 Phase 2+**（需作者逐拍·风险中高·`docs/spec/深海回响_猎手_SPEC.md` §3-6）——Phase 1 spine 已落地（#84），下面都是新机制、作者口述已捕捉但要逐拍敲。**定向 ping #86 刚把「别朝声感猎手方向 ping」做实、与 sensesBy 耦合上了，E 是它的天然延续**：
 * **升级规避 T1 吸声 / T2 主动迷彩（§3）**：沿传感器升级桥（#60/#80·**同 #87 套路**）给玩家「躲过声感/光感猎手」的能力（对称于猎手 evade 你）·守地板（无完全隐形）。
 * **decoy 道具（§4）**：新 item 类型 + 下潜内投放引开猎手（按感官声诱/光诱）+ combat 内用于逃跑（接现有 flee）。
 * **大型生物 + 狭小空间避难（§5）** / **执着等待者耗资源（§6）** / **浅水小概率弱变体（Q3·需浅水捕食者内容·不破 §7.5 浅水免压回归）** / **完整感官模态分类落数据（per-encounter sensesBy）+ active 探测行为**。

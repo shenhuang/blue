@@ -12,9 +12,9 @@
 
 ## 设计文档
 
-- [`docs/深海回响_SPEC.md`](docs/深海回响_SPEC.md) — 主设计文档
-- [`docs/深海回响_战斗系统_SPEC.md`](docs/深海回响_战斗系统_SPEC.md) — 战斗系统专题
-- [`docs/深海回响_教学关剧本.md`](docs/深海回响_教学关剧本.md) — 教学剧本
+- [`docs/spec/深海回响_SPEC.md`](docs/spec/深海回响_SPEC.md) — 主设计文档
+- [`docs/spec/深海回响_战斗系统_SPEC.md`](docs/spec/深海回响_战斗系统_SPEC.md) — 战斗系统专题
+- [`docs/spec/深海回响_教学关剧本.md`](docs/spec/深海回响_教学关剧本.md) — 教学剧本
 - [`docs/STATUS.md`](docs/STATUS.md) — **当前实装状态 + 下次接手指南**
 - [`docs/legacy/`](docs/legacy/) — 早期草案
 
