@@ -309,6 +309,212 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "hadal.the_two_readings",
+      "depthRange": [140, 180],
+      "zoneTags": ["hadal"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "两块表",
+      "body": "你另一只手腕上还绑着一块备用表，就为这种时候。\n你看两块表。它们不一样。差的不是一米、十米——一块说你深，一块说你比那还深一半。你敲敲它们，数字各自稳着，各自笃定，各不相同。\n有一块在撒谎。你认不出是哪块，而你得挑一块，照着它往上爬。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "believe_the_kinder",
+          "label": "信那块好心的——它说你浅、离上面近，照它往上",
+          "outcome": {
+            "text": "你挑了那个好心的数，因为你想要它。你照着一个你想待的深度调呼吸、收手脚——不是照你真正待着的那个。\n你把命押给了那块更体贴的表，没问它体贴得有没有道理。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -7 },
+            "loreEntry": "lore.hadal.the_two_readings"
+          }
+        },
+        {
+          "id": "test_them",
+          "label": "拿身上的耳压、冷、下潜时间去对，信对得上的那块（理智 vs 58）",
+          "check": {
+            "stat": "sanity",
+            "dc": 58,
+            "onSuccess": {
+              "text": "你不信任何一块表，只信身上的：耳压多重，水多冷，下来多久。你拿这三样去对——哪块跟你的皮肤对得上，就信哪块，不是信那块让你舒服的。\n道理都对。你照着跟身体对得上的那块，稳住了上浮的节奏。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.hadal.the_two_readings"
+            },
+            "onFailure": {
+              "text": "你想分出哪块是真的，可越盯越觉得两块都没错——这儿有两个深度，你同时挂在两个上面，哪根针都不算撒谎。\n你挑不出来。最后随手照了一块，不知道自己把命押给了哪个深度。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -14 }
+            }
+          }
+        },
+        {
+          "id": "trust_neither",
+          "label": "哪块都不信——摁灭两块背光，只凭耳压、冷、呼吸往上",
+          "outcome": {
+            "text": "你把两块表的背光都摁灭，眼前没有一个数。\n冷、压、呼吸——只认身上这三样。它们不分两派，它们只说一件事：你很深，慢慢上。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "hadal.the_still_water",
+      "depthRange": [140, 180],
+      "zoneTags": ["hadal"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "不动的水",
+      "body": "你游进一处什么都不动的地方。\n没有漂浮物。没有往下落的海雪。一路上每一口水里都悬着的细屑——没了，或者被按住了。没有流，没有声，连你自己装具发出的那点响，好像都传不出去。\n水静得透彻，静得完整，像一口憋住的气。什么都不动，也就没有一样东西能告诉你哪边是哪边。上，下，前——在这里头，全不作数。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "rest_in_it",
+          "label": "在这片静里歇着，不再要方向",
+          "outcome": {
+            "text": "你停下来，让那片静接住你。不用找上，不用找下，连害怕都安静下来。\n你成了这口憋住的气的一部分，悬着，不动，也不再问自己是不是还在呼吸。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -8 },
+            "loreEntry": "lore.hadal.the_still_water"
+          }
+        },
+        {
+          "id": "make_a_reference",
+          "label": "松一颗气泡，盯它往哪去给自己定个上（理智 vs 58）",
+          "check": {
+            "stat": "sanity",
+            "dc": 58,
+            "onSuccess": {
+              "text": "你给自己造一个参照：松开一颗气泡，盯着它往哪去——那头就是上。再静的水，物理也还在。\n道理都对。你照着那颗气泡指的方向，慢慢挪出了这片静。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -6 },
+              "loreEntry": "lore.hadal.the_still_water"
+            },
+            "onFailure": {
+              "text": "你松开一颗气泡，想让它替你指上——可它在黑里散掉了，什么都没告诉你。\n你悬在那口憋住的气里，渐渐不确定，还在呼吸的那个，是不是你。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -14 }
+            }
+          }
+        },
+        {
+          "id": "push_back_out",
+          "label": "退出去，退到水重新动起来、有一道流可以较劲为止",
+          "outcome": {
+            "text": "你不待在这片静里。原路往回退，退到水里重新有了那点细屑的漂、重新有一股流推着你较劲。\n有东西动了，就有了上和下。你宁可跟一股流较劲，也不待在一处什么都不指给你看的静里。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "hadal.the_long_minute",
+      "depthRange": [140, 180],
+      "zoneTags": ["hadal"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "八分钟",
+      "body": "你的潜水表和你的气，对不上。\n表说你下来了八分钟。你的气压表却说你已经喘掉了将近一个钟头的量——一个在深处卖了很久力气的人，才会喘成这样。\n你算了两遍。合不拢。要么你下来才几分钟、却莫名其妙烧掉了一个钟头的气；要么你已经下来一个钟头、而表一直没走。\n在这里，连时间，都跟深度一样，对不上了。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "trust_the_watch",
+          "label": "信表——才八分钟，还早，接着待",
+          "outcome": {
+            "text": "你信表，因为它准你留下。才八分钟而已。\n你花着也许早就花掉的气，待在一段也许并不属于你的时间里。表替你把钟拨慢了，你乐得不去拆穿。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -8 },
+            "loreEntry": "lore.hadal.the_long_minute"
+          }
+        },
+        {
+          "id": "count_your_air",
+          "label": "扔掉表的数，照那块跟发酸的肺对得上的气压表往上（理智 vs 60）",
+          "check": {
+            "stat": "sanity",
+            "dc": 60,
+            "onSuccess": {
+              "text": "你不信表：这个冷、这个压，机芯会停会跳，常事。气不会假装自己被喘掉过——你把表的数扔了，照着那块跟你发酸的肺对得上的气压表，往上走。\n道理都对。你照真的那个数，认了该上的时候。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -7 },
+              "loreEntry": "lore.hadal.the_long_minute"
+            },
+            "onFailure": {
+              "text": "你怎么也凑不拢那两个数，那道差，渐渐像一间你待了很久、却想不起什么时候进来的屋子。\n你站在两个时间中间，越想越冷，越冷越不敢动——动一下，怕又花掉一个想不起来的钟头。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -15 }
+            }
+          }
+        },
+        {
+          "id": "up_on_the_breath",
+          "label": "不信任何钟了，照胸口里唯一老实的那个数往上",
+          "outcome": {
+            "text": "你不再看表，不再看任何会走或会停的钟。\n只剩一个数你还信：胸口里那个，一呼一吸地，老老实实地在减。你照它往上，趁它还肯替你数。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "hadal.the_shaking",
+      "depthRange": [140, 180],
+      "zoneTags": ["hadal"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "抖",
+      "body": "你的手开始抖。\n不是冷的那种慢颤——是快的、细的，一秒抖上八下十下，你按不住，从指尖往上爬。然后是下巴。然后大腿上一块肉自己一跳，狠狠踢了一下空。\n你的念头开始打滑：断了，接上，又断。\n非常确切地，操你这具身子的，不只你一个了。还有别的什么，把手搭在了操纵杆上，正一根根试着。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "let_it_drive",
+          "label": "不跟那抖较劲了，身子要怎么动就怎么动",
+          "outcome": {
+            "text": "跟那阵抖较劲，太累了；顺它，倒省事。你松了，由着那个搭着操纵杆的什么，一根根扳。\n你不再是唯一在动这具身子的人，而这件事，竟比你以为的，好接受。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -8 },
+            "loreEntry": "lore.hadal.the_shaking"
+          }
+        },
+        {
+          "id": "name_it",
+          "label": "逼自己说出它的名字，扶着这个名字稳住（理智 vs 60）",
+          "check": {
+            "stat": "sanity",
+            "dc": 60,
+            "onSuccess": {
+              "text": "你逼自己说出它的名字：高压神经综合征——抖，肌肉乱跳，念头打滑，手册上一条条写着，到了这个深度，每一条都该轮到你；而且，一上去就全好。是压在神经上，不是手搭在操纵杆上。\n道理都对。你扶着这个名字，等抖归抖、人还是你。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -7 },
+              "loreEntry": "lore.hadal.the_shaking"
+            },
+            "onFailure": {
+              "text": "你想喊出那个名字，念头却从那个词上滑开了。那阵抖一路爬上手臂，爬的样子不像在出毛病，倒像在被试穿、被一件件套上身，而你找不回那个能反驳它的念头。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -15 }
+            }
+          }
+        },
+        {
+          "id": "ascend_shaking",
+          "label": "不等弄懂它了——这一身毛病只有一个解，往上",
+          "outcome": {
+            "text": "你不等着弄懂它是什么。这一身的抖、跳、打滑，只有一味药：上去。\n趁那双抖着的手还肯听你一句，你抓住、蹬腿、往上。弄懂它要命，浮上去不要。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
     }
   ]
 }

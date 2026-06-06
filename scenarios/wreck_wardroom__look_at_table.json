@@ -1,0 +1,22 @@
+{
+  "_comment": "深段质感 · 军官餐厅（uncanny·44-56m·[wreck]）——四十年没散的一桌饭。不动手只看（理智 vs50）：满 sanity→0.95 seed 1 通过：lore.deep_water.the_table〔新〕+ oxygenTurnCost1 + sanity-4。叙述永不交底（#54：『只是没人收的桌子』与『空椅不是空的』并置），不触发 d_reveal。填 [wreck] 深段 uncanny。",
+  "eventId": "wreck.wardroom",
+  "depth": 50,
+  "seed": 1,
+  "choices": [
+    "look_at_table"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": [
+      "lore.deep_water.the_table"
+    ],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -4
+    }
+  }
+}

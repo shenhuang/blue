@@ -308,6 +308,212 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "subhadal.the_sound_of_home",
+      "depthRange": [180, 230],
+      "zoneTags": ["subhadal"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "底下的声音",
+      "body": "从下面，传来一个声音。\n你已经很久只剩自己的呼吸和那片死寂了，现在，很轻，从你脚底下：一记钟。海港的钟，慢慢的那种，给航道报点的。钟底下，也许还有海鸥。也许是一艘船，从头顶上方传来的、船体长长的那种闷响——可它不在头顶。它在下面。\n你想念的一切，一切意味着上面、家、空气的东西，正从更深的地方，朝你涌上来。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "go_toward_it",
+          "label": "朝那声音游下去——那是家、是港口，那就是上",
+          "outcome": {
+            "text": "你朝那声音去，往下。因为那是港口的钟，是家，深度表说什么都不算数。\n你把『上』交给了一记钟，一记从下面来的钟，没让自己多想一秒：上面的东西，怎么会在下面响。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -8 },
+            "loreEntry": "lore.subhadal.the_sound_of_home"
+          }
+        },
+        {
+          "id": "read_the_sound",
+          "label": "逼自己想清楚一记钟怎么会从下面来（理智 vs 60）",
+          "check": {
+            "stat": "sanity",
+            "dc": 60,
+            "onSuccess": {
+              "text": "你逼自己认：深海声道能把水面的声音送出几百里、再拐着弯送回来，一记钟从任何地方来，都可能听着像在下面；何况一个累垮的人，自己耳朵里的脉搏，就能凭空敲出钟来。到这儿，声音是最不能信的东西。\n道理都对。你没去追那记钟，认下『家在下面』这四个字，本身就是假的。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -7 },
+              "loreEntry": "lore.subhadal.the_sound_of_home"
+            },
+            "onFailure": {
+              "text": "那记钟，偏偏就是你自己港口那一记，分毫不差。你不再问它从哪儿来，开始朝它游——往下，朝家，而家，在下面。\n越游越清楚，那钟一声接一声，稳稳地，在你脚底下替你数着回程。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -15 }
+            }
+          }
+        },
+        {
+          "id": "dont_listen",
+          "label": "不听了——关声呐，认死『家不在下面』，背过那声音往上",
+          "outcome": {
+            "text": "你不去听。关了声呐，不再往这片黑里喂脉冲。\n你在心里把『家不在下面』按死，背过那记钟，凭冷和压往上。一个从下面叫你的声音，再像家，也不是回家的路。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "subhadal.the_warmth",
+      "depthRange": [180, 230],
+      "zoneTags": ["subhadal"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "暖",
+      "body": "冷，松开了。\n熬了这么久，你忽然暖了——不只是暖，是发烫，一股热从脖子往上涌进脸，像从雪里进了一间烧着炉子的屋。\n你的潜水服一下子紧得难受，多余，像一堵墙，隔在你和这片终于、不知怎么、变得善意起来的水之间。\n你身上每一处为了抗冷而绷了太久的地方，都想松开，想解开领口，把那点暖放进来。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "open_up",
+          "label": "松开领口，放那善意的暖水进来",
+          "outcome": {
+            "text": "你去解领口的扣，松装具的封，让那善意的暖水进来，别再把自己死死关在外头。\n这片深在这儿是暖的，你想，它要你进去。你信了那个暖，没去想：到这个深度，暖，是身子能给你的最后一个谎。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -9 },
+            "loreEntry": "lore.subhadal.the_warmth"
+          }
+        },
+        {
+          "id": "keep_sealed",
+          "label": "认出这股暖是冻死前的信号，把每一道封都关死（理智 vs 60）",
+          "check": {
+            "stat": "sanity",
+            "dc": 60,
+            "onSuccess": {
+              "text": "你认得这股热——它是最坏的那个信号。冷到了头，身子会把血一下子放到四肢，浇你一身像得救一样的暖，而那暖的意思是：你正在冻死。那些被人发现时脱光了衣服、躺在雪里的人，临了感到的，正是这一股。\n你把每一道封都关死，把这暖当成它真正是的那声警报，顶着一身假的热，一道封都没松。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -7 },
+              "loreEntry": "lore.subhadal.the_warmth"
+            },
+            "onFailure": {
+              "text": "那股热太逼真、太善意，你的手已经在领口上了，理智才追上来。\n而『这暖是这片深在接纳我』这个念头，比真相舒服得多——你留下了它，松开了第一道封。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -15 }
+            }
+          }
+        },
+        {
+          "id": "climb_for_real_warmth",
+          "label": "不信这个深度来的暖——真的暖在上面，朝那个爬",
+          "outcome": {
+            "text": "你不信一股在这种深度送上门的暖。真的暖在上面：在空气里，在太阳底下。\n你顶着这身骗人的热，认准那个真的，往上爬。宁可一路冷着回去，也不在这儿，把这片深给的暖，错当成家。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "subhadal.the_small_room",
+      "depthRange": [180, 230],
+      "zoneTags": ["subhadal"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "正好的龛",
+      "body": "你找到一个龛。\n这儿不知算什么的岩里，一个凹进去的口子，正好你的大小——像量过。\n而想钻进去的念头，大得惊人。蜷起来，膝盖抵着胸口，把自己塞进那个小小的黑里，停下。不是去死——你不去想那个字——只是想被搂住，被关起来，跟背后那片又长又开阔的黑，了结。\n这是你下水以来，觉得最安全的一刻。这片深给你做了一个房间，而它，已经等了很久。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "crawl_in",
+          "label": "钻进那个龛，蜷起来，让那小小的黑搂住你",
+          "outcome": {
+            "text": "你把自己折进那个龛，膝盖抵着胸口，正好。那个小小的黑把你搂住，严丝合缝。\n最安全的一刻。你不去想，一处正好你大小的岩，是从哪儿来的；也不去想，量你尺寸的，是什么。你只是终于，歇下了。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -8 },
+            "loreEntry": "lore.subhadal.the_small_room"
+          }
+        },
+        {
+          "id": "read_the_urge",
+          "label": "逼自己认出这股想钻进去的念头是什么（理智 vs 60）",
+          "check": {
+            "stat": "sanity",
+            "dc": 60,
+            "onSuccess": {
+              "text": "你逼自己认：人冻到了头，就会这样——往小地方钻，藏起来，停下，是脑子最深处一个很老的反射，一个快冻死的人最后会做的事。不是那个龛在叫你，是你正在死的身子，把它看成了庇护。\n道理都对。你认下那不是房间，是个征兆，没钻进去。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -7 },
+              "loreEntry": "lore.subhadal.the_small_room"
+            },
+            "onFailure": {
+              "text": "它正好你的大小，正好那么安全，你已经在转身往里塞了，才勉强抓住那个念头：这底下，没有哪块岩，是照着你的尺寸凿的。\n可那个念头太轻，没压住那股想被关起来的。你又往那口子里挪了挪。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -15 }
+            }
+          }
+        },
+        {
+          "id": "stay_in_the_open",
+          "label": "不要这个房间——背朝那片开阔的黑扛着，蹬开往上",
+          "outcome": {
+            "text": "你不要那个龛。背后那片开阔的黑再怕，你也扛着，不往里钻。\n一个正好你大小的东西，不会是为了你好。你认死这一句，蹬开那个口子，往上。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "subhadal.the_kept_air",
+      "depthRange": [180, 230],
+      "zoneTags": ["subhadal"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "不掉的气",
+      "body": "你的气压表不掉了。\n你盯着那根针。它不动。你喘气——一呼，一吸，实实在在的呼吸，你听得见——那根针却钉在原处，像这片深悄悄替你接过了账，像在它的地盘上，喘气是不要钱的。\n那个本来迟早要送你上去的数，停止了计数。\n现在，没有理由，再掉头了。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "breathe_easy",
+          "label": "信它——放开了喘，别再省，待下去、再往下",
+          "outcome": {
+            "text": "你信了。放开了喘，不再一口一口地省，不再盯那个停住的数。\n这片深替你免了单，你乐得往下再走。你没去想：一片肯替你免气钱的深，打算拿什么，跟你结账。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -9 },
+            "loreEntry": "lore.subhadal.the_kept_air"
+          }
+        },
+        {
+          "id": "doubt_the_needle",
+          "label": "认定针在撒谎、肺是老实的，照看不见的耗气往上（理智 vs 60）",
+          "check": {
+            "stat": "sanity",
+            "dc": 60,
+            "onSuccess": {
+              "text": "你逼自己认：表会冻、会卡、会钉死，这个冷里当然会。针后头那些气，一口一口，照样在少，不管那根针装出什么样。你认定针在撒谎、肺是老实的，照着你看不见的那点气，往上走。\n道理都对。你没敢信那根停住的针，照真实的耗气往回赶。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -7 },
+              "loreEntry": "lore.subhadal.the_kept_air"
+            },
+            "onFailure": {
+              "text": "那根停住的针太让人松一口气了，你由着自己信它，由着自己像个不会耗尽的人那样喘——\n把唯一拿不回来的东西，押在了这片深根本没法兑现的一句许诺上。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -15 }
+            }
+          }
+        },
+        {
+          "id": "up_while_it_lasts",
+          "label": "不收这片深的礼——把每口气都当成代价，掉头拿气换高度",
+          "outcome": {
+            "text": "你不收这片深的礼。每一口气，都还是它一直以来的那个代价。\n你掉头，拿气换高度，趁你还有那根针不肯承认、你正在用掉的气。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        }
+      ]
     }
   ]
 }

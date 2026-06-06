@@ -1,0 +1,22 @@
+{
+  "_comment": "底下的声音·go_toward_it（无 check 给入）。从下面传来港口的钟/海鸥/船响——no_answer 反面、家在下面——loot-free、lore.subhadal.the_sound_of_home + oxygenTurnCost 4/sanity -8。深段『越深越欺骗』伏笔层，叙述永不交底、不触发 d_reveal（#43 实跑抄）。",
+  "eventId": "subhadal.the_sound_of_home",
+  "depth": 200,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": [
+    "go_toward_it"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": [
+      "lore.subhadal.the_sound_of_home"
+    ],
+    "statsDelta": {
+      "oxygen": -4,
+      "sanity": -8
+    }
+  }
+}

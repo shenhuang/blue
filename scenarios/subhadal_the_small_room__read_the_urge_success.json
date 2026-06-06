@@ -1,0 +1,23 @@
+{
+  "_comment": "正好的龛·read_the_urge 成功分支（理智 check）。满 san→rate 0.95、seed 1 成功：读出平淡解释、没被领走——sanity -7 + oxygenTurnCost 3 + lore.subhadal.the_small_room。loot-free、不触发 d_reveal、永不交底。#43 实跑抄。",
+  "eventId": "subhadal.the_small_room",
+  "depth": 200,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": [
+    "read_the_urge"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": [
+      "lore.subhadal.the_small_room"
+    ],
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": -7
+    }
+  }
+}

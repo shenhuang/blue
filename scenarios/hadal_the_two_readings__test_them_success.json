@@ -1,0 +1,23 @@
+{
+  "_comment": "两块表·test_them 成功分支（理智 check）。满 san→rate 0.95、seed 1 成功：读出平淡解释、没被领走——sanity -6 + oxygenTurnCost 3 + lore.hadal.the_two_readings。loot-free、不触发 d_reveal、永不交底。#43 实跑抄。",
+  "eventId": "hadal.the_two_readings",
+  "depth": 160,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": [
+    "test_them"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": [
+      "lore.hadal.the_two_readings"
+    ],
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": -6
+    }
+  }
+}

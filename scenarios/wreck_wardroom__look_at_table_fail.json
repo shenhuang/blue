@@ -1,0 +1,22 @@
+{
+  "_comment": "深段质感 · 军官餐厅，看桌子的失败分支（uncanny 理智 vs50）。sanity=20（≤dc-30=20→rate0.05 clamp）seed 1 确定性失败：oxygenTurnCost3 + sanity-9（起步20→11 不触0底，quirk #43/#54）。失败＝错读把空椅看成有人坐，仍不触发 d_reveal。",
+  "eventId": "wreck.wardroom",
+  "stats": {
+    "sanity": 20
+  },
+  "depth": 50,
+  "seed": 1,
+  "choices": [
+    "look_at_table"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": -9
+    }
+  }
+}

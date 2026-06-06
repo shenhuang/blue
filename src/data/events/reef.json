@@ -1268,6 +1268,516 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "wreck.boiler_room",
+      "depthRange": [46, 60],
+      "zoneTags": ["wreck"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "锅炉舱",
+      "body": "一整排铁锅炉灌满了黑水，炉门大张着，里头是几十年没烧过的冷。\n炉前的操作台上还留着一圈黄铜的水位计、汽笛阀、压力表，玻璃面早碎光了，铜活却好端端的。脚边的煤舱塌了半边，煤渣里掺着顺铁梯滚下来的零碎。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "strip_brass",
+          "label": "把操作台上的铜活拆下来（体力 vs 14）",
+          "check": {
+            "stat": "stamina",
+            "dc": 14,
+            "onSuccess": {
+              "text": "你拿刀柄一件件磕、一点点拧，把汽笛阀和两只表座从锈死的管座上卸下来。冷铁在你手底下闷闷地呻吟，最后还是松了。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.brass_fitting", "qty": [1, 2] },
+                { "itemId": "item.canned_food", "qty": [1, 1], "chance": 0.4 }
+              ]
+            },
+            "onFailure": {
+              "text": "管座锈成了一坨，你较着劲拧，一根锅炉管闷响着塌进炉膛，搅起一团黑灰，糊了你半张面镜。你退出去，手是空的。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -7 }
+            }
+          }
+        },
+        {
+          "id": "dig_bunker",
+          "label": "在塌掉的煤舱里翻一把",
+          "outcome": {
+            "text": "你在煤渣堆里扒拉，指头碰到些硬的——半埋的黄铜接头，凉得硌手。煤灰在你身后慢慢合拢。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.5 }]
+          }
+        },
+        {
+          "id": "leave_boiler",
+          "label": "太呛，退回过道",
+          "outcome": {
+            "text": "你看了一眼那排灌满黑水的冷锅炉，退了出去。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "wreck.shaft_alley",
+      "depthRange": [48, 60],
+      "zoneTags": ["wreck"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "轴隧",
+      "body": "一条又长又低的铁隧道，顺着船身往船尾去。中间躺着那根推进轴——碗口粗的钢，从这头黑到那头，停在四十年前最后转过的那个角度上。\n隧道壁上一排注油的铜杯、铜阀，钻进去够得着；可这地方窄得只容你贴着轴侧身蹭过去。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "work_the_alley",
+          "label": "贴着轴蹭进去，够壁上的铜件（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你侧着身子，一寸一寸贴着冰冷的钢轴往里挪，把够得着的几只铜油杯逐个拧下来揣好，再倒着蹭出来。出来时后背的气瓶在隧道顶上刮出一路长响。",
+              "oxygenTurnCost": 2,
+              "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 2] }]
+            },
+            "onFailure": {
+              "text": "蹭到一半，气瓶卡在轴和隧道顶之间，进不得退不得。你硬扭了几下才脱出来，胸口擂鼓似的，铜件一只没够着。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -8 }
+            }
+          }
+        },
+        {
+          "id": "reach_near",
+          "label": "只够隧道口最近那一只",
+          "outcome": {
+            "text": "你不往里钻，只把隧道口边上一只松脱的铜阀拧下来就退。够用了。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.5 }]
+          }
+        },
+        {
+          "id": "skip_alley",
+          "label": "太窄，不进去",
+          "outcome": {
+            "text": "你量了量那条贴着钢轴的窄缝，掉头走了。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "wreck.trapped_air",
+      "depthRange": [44, 58],
+      "zoneTags": ["wreck"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "顶舱的气",
+      "body": "你顺着翻倒的舱壁往上摸，头忽然破开一层水面——\n舱顶扣着一兜气。船沉下来那天关在这里的气，几十年了，还在。一小片黑亮的水面在你面前晃，灯一照，满舱壁都是抖动的反光。\n这上面是干的。是空气。在五十米深的海底，扣着一间有顶、有水面、有空气的屋子。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "breathe_it",
+          "label": "摘下呼吸器，吸一口这舱里的气",
+          "outcome": {
+            "text": "你把二级头从嘴里拿开，对着那片黑水面上方吸了一口。\n气是凉的，陈的，带着铁和别的什么的味道——能吸。胸口松下来一点。\n可它进肺里的时候，你脑子里冒出个不该有的念头：这口气，先前有人吸过，吸了很久。你赶紧把呼吸器塞回嘴里。",
+            "oxygenTurnCost": 1,
+            "deltas": { "oxygen": 6, "sanity": -5 }
+          }
+        },
+        {
+          "id": "rest_dont_breathe",
+          "label": "不碰那口气，只在水面下停一停",
+          "outcome": {
+            "text": "你不信它。你把脸留在水里，呼吸器咬着，只借这间倒扣的屋子歇一歇。\n头顶的水面一动不动，平得像一块黑玻璃。你的气泡升上去，撞在那片旧空气的底面，散开，再没有下来。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 },
+            "loreEntry": "lore.deep_water.the_dome"
+          }
+        },
+        {
+          "id": "leave_dome",
+          "label": "退回水里，离开这间屋子",
+          "outcome": {
+            "text": "你沉回黑水里，离那片晃动的水面远了些。回头时，灯柱在它上面铺开一小块发亮的天花板，跟着你一起退。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "wreck.wardroom",
+      "depthRange": [44, 56],
+      "zoneTags": ["wreck"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "军官餐厅",
+      "body": "一张长餐桌还螺在地板上，桌沿的防浪木条把瓷盘一只只卡在原位。倒扣的银匙、半架在槽里的醒酒瓶、几把没飘远的椅子——一桌饭，摆好了，等开。\n海把这间屋子按在五十米下，按了四十年，连餐巾环都没挪一格。只有水，从每一只杯口、每一道缝里，慢慢地，住了进来。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "gather_silver",
+          "label": "把桌上的铜银餐具收一收",
+          "outcome": {
+            "text": "你伸手去拢那些卡在木条里的匙和盘。指头一碰，摆了四十年的阵就乱了，叮叮当当沉下去几件。你捡起能捡的，心里别扭——像在一桌没散的席上动手。",
+            "oxygenTurnCost": 2,
+            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 2] }],
+            "deltas": { "sanity": -2 }
+          }
+        },
+        {
+          "id": "look_at_table",
+          "label": "不动手，看一眼这张桌子（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你只是看。摆好的盘、空的椅、卡住的瓶——全是人活着时的样子，被一件不会有人来吃的事，死死定在这儿。\n你告诉自己：这只是没人收的桌子。沉船里多的是。你看够了，退出去。",
+              "oxygenTurnCost": 1,
+              "deltas": { "sanity": -4 },
+              "loreEntry": "lore.deep_water.the_table"
+            },
+            "onFailure": {
+              "text": "你看得太久。摆好的安静像是在等什么，等着每把椅子后面坐下点什么来。你数着空椅，越数越觉得它们不是空的，只是你看不见坐着的。等你回过神，灯歪了，氧气表在响。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -9 }
+            }
+          }
+        },
+        {
+          "id": "leave_wardroom",
+          "label": "别打扰，游开",
+          "outcome": {
+            "text": "你没碰那桌饭，绕开它出去。余光里，一桌瓷盘在灯影里安安静静地摆着。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "wreck.careened",
+      "depthRange": [46, 60],
+      "zoneTags": ["wreck"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "侧躺的船",
+      "body": "这一段船整个侧翻了，躺在海底。门朝着两边开，一道扶梯横在你面前像道栅栏，一把椅子从如今成了墙的地板上吊下来。\n你的气泡往一个方向升，你的身子却咬定那是侧面。在这儿，哪边是上，成了一件要想一想才知道的事。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "follow_bubbles",
+          "label": "信气泡，不信身子，照气泡指的方向出去",
+          "outcome": {
+            "text": "你盯着自己的气泡，逼着身子跟它走，不去理耳朵里那个一口咬定的上。横着的门框从你两侧滑过去，几下，你蹬回了开阔水里，头顶终于又是头顶。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.deep_water.the_list"
+          }
+        },
+        {
+          "id": "steady_yourself",
+          "label": "停下来，等脑子把上下转回来（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你抓住横梯，闭一下眼，让晕过去，再睁开，照气泡重新认一遍上下。船是歪的，不是你；你把这句话在心里说了两遍，才松开手。",
+              "oxygenTurnCost": 1,
+              "deltas": { "sanity": -3 }
+            },
+            "onFailure": {
+              "text": "你越想理清，上和下换得越勤。有那么几秒，你确信椅子是正着摆的、是整片海歪了，是你头朝下挂在一间正常的屋子里。那几秒里你忘了划水。回过神，氧气掉了一截。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -9 }
+            }
+          }
+        },
+        {
+          "id": "push_sideways",
+          "label": "不管上下，硬从横倒的过道里挤出去（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你不去想方向，只认准远处那点开阔，手脚并用从横倒的门框、吊着的椅子之间挤过去。出来时浑身发酸，可到底是出来了。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "你在横过来的过道里使错了劲，肩膀撞上吊着的椅子，一阵乱响。你扒着门框定住，喘了好一会儿。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -6 }
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "cave.silt_out",
+      "depthRange": [45, 60],
+      "zoneTags": ["cave"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "搅起来的黑",
+      "body": "一脚蹼踢低了，或者是头顶那层从没被惊动过的细泥自己落了下来——水先是变成牛奶，再变成什么都没有。\n你的灯成了贴在面镜前一寸的一堵白墙。你看不见自己的手。来路、去路、上、下，全在这一团白里没了。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "hold_contact",
+          "label": "停住别动，一只手贴着石壁，等它落",
+          "outcome": {
+            "text": "你停下所有动作，把一只手按在身侧的石头上——这是这团白里唯一还真的东西。你不划水，不乱找，就贴着石壁，凭手指头一点一点往回挪。泥落得很慢。你比它更慢。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -1 },
+            "loreEntry": "lore.deep_water.the_silt"
+          }
+        },
+        {
+          "id": "wait_in_it",
+          "label": "悬在原地，等视线回来（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你悬着不动，盯着那团白，等。泥一点点沉下去，洞壁的轮廓一点点回来。\n只是有一瞬，白里像有个影子，和你一样悬着、一样不动——是你自己搅起来的泥，你对自己说。等视线清了，那里什么都没有。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -4 }
+            },
+            "onFailure": {
+              "text": "你悬在那团白里，越等越觉得它在合拢，从四面贴上来。你分不清那是泥沉得慢，还是有什么借着这片你自己造的黑，一点点挪近。等水清的时候，你的手不知什么时候攥成了拳。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -9 }
+            }
+          }
+        },
+        {
+          "id": "swim_blind",
+          "label": "凭记忆，盲着蹬出去（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你赌自己记得来路，闷头往那个方向蹬。手指擦过几道熟悉的棱，白墙忽然薄了，亮了——你蹬对了，从泥云里钻了出来。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "你盲着蹬，撞进一片更稠的泥里，方向全乱了。等你停下，喘着气重新摸石壁，已经多耗了好些力气，也不知自己挪到了哪。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -6 }
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "cave.brine_pool",
+      "depthRange": [48, 60],
+      "zoneTags": ["cave"],
+      "weight": 3,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "洞底的湖",
+      "body": "洞厅的最底下，有一道岸。\n你这片水，和底下那片水，之间是一条清清楚楚的线，镜子一样亮，底下那片有自己的水面、自己缓缓晃动的小浪。一座湖，在海的底下。\n湖的近岸边，半沉在那片发亮的水里，躺着些游进去又躺下的东西——一只蟹，一条鱼，一截鳗。整整齐齐，没有烂，被托在那儿。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "understand_it",
+          "label": "停下来，逼自己弄明白那是什么（理智 vs 55）",
+          "check": {
+            "stat": "sanity",
+            "dc": 55,
+            "onSuccess": {
+              "text": "你停在岸上方，一样一样地认：是盐。咸到比海水重几倍的水，沉在洞底，和上面的水不肯混，所以有面、有浪、有岸；岸边那些东西是游错了地方，被这汪浓盐腌住了，没烂，就这么泡着。书上写过。\n道理都对。可你还是没敢把脚探过那条亮线，绕着洞壁走开了。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.deep_water.the_shore"
+            },
+            "onFailure": {
+              "text": "你看着那道岸，看着那片太平、太亮的水面，不知不觉飘到了岸边，一只蹼已经探进那片发亮的水里——是温的。是静的。它会像托住岸边那些东西一样，安安稳稳把你也托住。\n你猛地抽回腿，那一截皮肤火辣辣地烧。退开时你没敢回头看自己刚才差点躺下的地方。",
+              "oxygenTurnCost": 4,
+              "deltas": { "sanity": -13 }
+            }
+          }
+        },
+        {
+          "id": "skirt_shore",
+          "label": "离那道亮线远远的，贴洞壁绕过去",
+          "outcome": {
+            "text": "你把那座湖留在视野边上，贴着洞厅的石壁，远远地绕。那片水面一直在你眼角晃着小浪，平得不像深海里该有的东西，直到一道石棱把它挡掉。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        },
+        {
+          "id": "touch_surface",
+          "label": "伸一根手指，探一下那片水面",
+          "outcome": {
+            "text": "你忍不住，隔着手套伸一根指头，捅破那层亮面。\n水是温的，稠的，缠着指尖往下坠，像有点不舍得放。一道细细的刺痛顺着指缝钻进来。你把手抽回来，再没把它伸第二次。那点温度在指尖上赖了很久。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -6, "stamina": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "cave.restriction",
+      "depthRange": [46, 60],
+      "zoneTags": ["cave"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "卡口",
+      "body": "水道猛地收窄，缩成一道比你气瓶还窄的扁缝。\n要过去，只能把瓶子卸下来，先推过缝，人再贴着石头挤过去。缝那头，洞又开阔了，你的灯照见底上结着一层白花花的壳子。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "doff_tank",
+          "label": "卸下气瓶，推过缝去（体力 vs 14）",
+          "check": {
+            "stat": "stamina",
+            "dc": 14,
+            "onSuccess": {
+              "text": "你松开背带，一手攥着气瓶推在前头，一手贴着石头，半边脸蹭着冷壁挤过那道扁缝。过去重新背好，缝那头的洞底结着老厚一层壳，缝里还能抠出点活物。",
+              "oxygenTurnCost": 3,
+              "loot": [
+                { "itemId": "item.coral_shard", "qty": [1, 1] },
+                { "itemId": "item.lobster", "qty": [1, 1], "chance": 0.4 }
+              ]
+            },
+            "onFailure": {
+              "text": "你卡在缝里，气瓶在前头进不去，人在后头退不出，冷石贴着喉咙的那一下，心差点跳出来。你硬扭着退了回来，胳膊上蹭掉一片皮。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -8, "sanity": -2 }
+            }
+          }
+        },
+        {
+          "id": "reach_through",
+          "label": "不过缝，只把胳膊探过去够一把",
+          "outcome": {
+            "text": "你不冒那个险，只把一条胳膊探过扁缝，指尖在缝那头的壳堆上抠下一点带回来。够不深，但够安稳。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.5 }]
+          }
+        },
+        {
+          "id": "turn_back_slot",
+          "label": "缝太窄，掉头",
+          "outcome": {
+            "text": "你量了量那道扁缝，又量了量自己，掉头回去了。卸瓶过缝这种事，不值当拿命换。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "cave.the_arrows",
+      "depthRange": [45, 58],
+      "zoneTags": ["cave"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "线上的箭头",
+      "body": "石壁上有人留过一根永久导引绳，年头不短了。绳上每隔一段拴着一只小小的方向箭头，指着出去的路。你顺着它们走，心里踏实。\n直到一个结点上，同一根绳上的两只箭头，指着相反的方向。一只朝着有光的那头。一只朝着更深的黑。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "take_light_arrow",
+          "label": "信向光那只，往上走",
+          "outcome": {
+            "text": "你不去管那个朝下的箭头，认准指着光的那只，顺绳往上走。规矩就是规矩：向着亮的、向着浅的去。朝下那只在你身后留着，你没回头。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        },
+        {
+          "id": "read_arrows",
+          "label": "停下来，弄明白两只箭头为什么对不上（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你蹲在结点上想：绳是分几回、几拨人接起来的，两拨人从两头布线，在这儿撞上，箭头才会顶头。朝下那只，指的多半是另一拨人当年上来的那个口子，在更远的某处。\n讲得通。你顺着向光那只走，没再多想——也没去验那个更深的口子到底通哪。",
+              "oxygenTurnCost": 1,
+              "deltas": { "sanity": -4 },
+              "loreEntry": "lore.deep_water.the_markers"
+            },
+            "onFailure": {
+              "text": "你盯着朝下那只箭头看得太久。它的扎带比绳上别的都新，胶还亮着——有人，不久前，把往下的路标成了出去的路，标得很认真。你说不清是谁，也说不清是什么时候。等你回过神，你的灯正对着那个更深的黑。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -9 }
+            }
+          }
+        },
+        {
+          "id": "follow_down_arrow",
+          "label": "顺朝下那只箭头，往深处探一小段",
+          "outcome": {
+            "text": "你顺着朝下的箭头往黑里探。绳还在往下延，箭头一只接一只，全指着下，扎得整整齐齐、崭崭新新。你停住，没再往下，倒回那个对不上的结点，重新认准了向光那只。\n回头那一路，你一直觉得背后的绳上，还有别的箭头在慢慢转向。",
+            "oxygenTurnCost": 3,
+            "deltas": { "sanity": -6 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "cave.flowstone",
+      "depthRange": [45, 58],
+      "zoneTags": ["cave"],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "石幔厅",
+      "body": "一整间洞厅挂满了流石——钙顺着壁面淌下来，冻成一道道石头的帘子，滴和升在半路接上，立成一根根石柱。这些都是在空气里长成的，很久以前，这洞还是干的、在海面以上的时候。\n如今它在五十米的水下。柱子之间，结着一丛丛贝壳和珊瑚，一只龙虾倒退着挤进了石缝。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "work_clusters",
+          "label": "在石柱缝里够贝壳、够那只龙虾（体力 vs 12）",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你在冰凉的石柱间侧身穿行，把结实的贝壳珊瑚一丛丛掰下来，又趁那只龙虾退路被堵，一把按住。装好袋子，石幔在你身后静静地挂着。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.coral_shard", "qty": [1, 2] },
+                { "itemId": "item.lobster", "qty": [1, 1], "chance": 0.5 }
+              ]
+            },
+            "onFailure": {
+              "text": "龙虾一弹尾钻进了石缝深处，没影了；你够珊瑚时手背在粗钙面上磨掉一层皮。袋子没满，你也懒得再较劲。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -6 }
+            }
+          }
+        },
+        {
+          "id": "pick_loose",
+          "label": "只捡柱脚松落的那些",
+          "outcome": {
+            "text": "你不去惊动石缝里的，只把柱脚边掉下来的散贝壳捡了几只揣好。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.5 }]
+          }
+        },
+        {
+          "id": "move_through",
+          "label": "穿过石柱，往前走",
+          "outcome": {
+            "text": "你从一道道石头的帘子之间慢慢游过去，灯柱在钙面上拉出长长的影子。在空气里长了几千年、又被海漫上来淹掉的东西，安安静静地立着。你看了一会儿，往前去了。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
     }
   ]
 }

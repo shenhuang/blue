@@ -1,0 +1,22 @@
+{
+  "_comment": "正好的龛·crawl_in（无 check 给入）。失温终末钻穴：一个正好你大小的龛、想蜷进去歇下——它等了很久——loot-free、lore.subhadal.the_small_room + oxygenTurnCost 4/sanity -8。深段『越深越欺骗』伏笔层，叙述永不交底、不触发 d_reveal（#43 实跑抄）。",
+  "eventId": "subhadal.the_small_room",
+  "depth": 200,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": [
+    "crawl_in"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": [
+      "lore.subhadal.the_small_room"
+    ],
+    "statsDelta": {
+      "oxygen": -4,
+      "sanity": -8
+    }
+  }
+}

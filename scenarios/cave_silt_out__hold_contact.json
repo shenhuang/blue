@@ -1,0 +1,21 @@
+{
+  "_comment": "深段质感 · 搅起来的黑（uncanny·45-60m·[cave]）——灵感 cave-diving silt-out/percolation：能见度归零，停住、手贴石壁、凭触觉摸回（touch-contact 正确生还法）。no-check：lore.deep_water.the_silt〔新〕+ oxygenTurnCost2 + sanity-1。loot-free。叙述永不交底（#54：自己搅的泥/白里有个和你一样不动的影子）。填 [cave] 深段 uncanny。",
+  "eventId": "cave.silt_out",
+  "depth": 52,
+  "seed": 1,
+  "choices": [
+    "hold_contact"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": [
+      "lore.deep_water.the_silt"
+    ],
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -1
+    }
+  }
+}

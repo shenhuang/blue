@@ -1,0 +1,22 @@
+{
+  "_comment": "不动的水·rest_in_it（无 check 给入）。一处什么都不动的静水、无参照故上下前都不作数——loot-free、lore.hadal.the_still_water + oxygenTurnCost 4/sanity -8。深段『越深越欺骗』伏笔层，叙述永不交底、不触发 d_reveal（#43 实跑抄）。",
+  "eventId": "hadal.the_still_water",
+  "depth": 160,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": [
+    "rest_in_it"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": [
+      "lore.hadal.the_still_water"
+    ],
+    "statsDelta": {
+      "oxygen": -4,
+      "sanity": -8
+    }
+  }
+}

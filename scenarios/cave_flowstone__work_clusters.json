@@ -1,0 +1,18 @@
+{
+  "_comment": "深段质感 · 石幔厅（realistic·45-58m·[cave]）——干洞期长成、如今淹在 50m 下的流石柱厅，柱缝觅食。stamina vs12：满 stamina→0.95 seed1 通过（#49）。coral_shard+lobster 天然 loot（#44）。fail=龙虾钻缝 stamina-6。填 [cave] 深段 realistic（觅食 beat + 地质 uncanny 余味）。",
+  "eventId": "cave.flowstone",
+  "depth": 50,
+  "seed": 1,
+  "choices": [
+    "work_clusters"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -2
+    }
+  }
+}

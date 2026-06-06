@@ -1,0 +1,23 @@
+{
+  "_comment": "屋子·read_the_field 成功分支（理智 check）。满 san→rate 0.95、seed 1 成功：读出平淡解释、没被领走——sanity -6 + oxygenTurnCost 2 + lore.abyssal.the_houses。loot-free、不触发 d_reveal、永不交底。#43 实跑抄。",
+  "eventId": "abyssal.the_houses",
+  "depth": 120,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": [
+    "read_the_field"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": [
+      "lore.abyssal.the_houses"
+    ],
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -6
+    }
+  }
+}

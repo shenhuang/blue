@@ -1,0 +1,23 @@
+{
+  "_comment": "落下来的·read_the_fall 失败分支（理智 check）。sanity=22→rate 0.05 clamp、seed 1 失败：错读/被领走——sanity -15 + oxygenTurnCost 5、无 lore。永不交底、不触发 d_reveal。",
+  "eventId": "abyssal.the_fall",
+  "stats": {
+    "sanity": 22
+  },
+  "depth": 120,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": [
+    "read_the_fall"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": {
+      "oxygen": -5,
+      "sanity": -15
+    }
+  }
+}

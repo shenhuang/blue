@@ -1,0 +1,18 @@
+{
+  "_comment": "深段质感 · 锅炉舱（realistic·46-60m·[wreck] 跨 zone 共享到墓园深段+灯塔礁 25m+，quirk #47）。拆操作台铜活 stamina vs14：满 stamina→rate 0.95 seed 1 通过（quirk #49 只锁 success）。brass_fitting+canned 人造 loot（quirk #44/#47，不断言 loot）。fail=锅炉管塌 stamina-7，大 seed 手验不入 baseline。填 [wreck] 深段 realistic（轮机舱质感，与 chain_locker/silted_hold/galley 互补）。",
+  "eventId": "wreck.boiler_room",
+  "depth": 52,
+  "seed": 1,
+  "choices": [
+    "strip_brass"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -2
+    }
+  }
+}

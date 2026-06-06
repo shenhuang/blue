@@ -1,0 +1,22 @@
+{
+  "_comment": "不掉的气·breathe_easy（无 check 给入）。气压表针不掉了、像深处替你免单——拿掉唯一送你上去的限——loot-free、lore.subhadal.the_kept_air + oxygenTurnCost 4/sanity -9。深段『越深越欺骗』伏笔层，叙述永不交底、不触发 d_reveal（#43 实跑抄）。",
+  "eventId": "subhadal.the_kept_air",
+  "depth": 200,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": [
+    "breathe_easy"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": [
+      "lore.subhadal.the_kept_air"
+    ],
+    "statsDelta": {
+      "oxygen": -4,
+      "sanity": -9
+    }
+  }
+}

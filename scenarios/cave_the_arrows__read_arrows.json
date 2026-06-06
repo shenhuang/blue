@@ -1,0 +1,22 @@
+{
+  "_comment": "深段质感 · 线上的箭头（uncanny·45-58m·[cave]）——灵感 cave-diving 永久导引绳/方向箭头：同一根绳上两只箭头指相反方向。弄明白为何对不上（理智 vs50）：满 sanity→0.95 seed1 通过：lore.deep_water.the_markers〔新〕+ oxygenTurnCost1 + sanity-4。叙述永不交底（#54：几拨人接的线对头／往下那只扎带崭新）。loot-free，不触发 d_reveal。填 [cave] 深段 uncanny。",
+  "eventId": "cave.the_arrows",
+  "depth": 50,
+  "seed": 1,
+  "choices": [
+    "read_arrows"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": [
+      "lore.deep_water.the_markers"
+    ],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -4
+    }
+  }
+}

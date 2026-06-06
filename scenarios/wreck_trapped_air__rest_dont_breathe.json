@@ -1,0 +1,21 @@
+{
+  "_comment": "深段质感 · 顶舱的气（uncanny·44-58m·oncePerRun·[wreck]）——灵感 Harrison Okene 沉船气穴：翻倒舱顶扣着几十年前的空气，潜水员可在里头露头歇。不碰那口陈气、只在水面下歇（no-check）：lore.deep_water.the_dome〔新〕+ oxygenTurnCost1 + sanity-2。叙述永不交底（quirk #54：能吸/像有人吸过很久并置），不触发 d_reveal。statsDelta event-runner 实跑抄（#43）。",
+  "eventId": "wreck.trapped_air",
+  "depth": 50,
+  "seed": 1,
+  "choices": [
+    "rest_dont_breathe"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": [
+      "lore.deep_water.the_dome"
+    ],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -2
+    }
+  }
+}
