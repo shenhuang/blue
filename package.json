@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "regress": "node scripts/regress.mjs",
-    "regress:quick": "node scripts/regress.mjs --only typecheck"
+    "regress:quick": "node scripts/regress.mjs --only typecheck",
+    "handoff": "node scripts/handoff.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

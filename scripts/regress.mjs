@@ -68,6 +68,9 @@ tasks.push({ name: 'build', cmd: [vite, 'build', '--outDir', buildOut, '--logLev
 // 端到端教学验证（纯 node，不走 tsx）
 tasks.push({ name: 'verify-tutorial', cmd: ['node', join('scripts', 'verify-tutorial.mjs')] });
 
+// 架构边界：engine ↛ ui（纯 node，把解耦约定做成会红的门，见 scripts/check-boundaries.mjs）
+tasks.push({ name: 'check-boundaries', cmd: ['node', join('scripts', 'check-boundaries.mjs')] });
+
 // 海图 UI SSR smoke
 tasks.push({ name: 'smoke-chart-ui', cmd: [tsx, join('scripts', 'smoke-chart-ui.tsx')] });
 
