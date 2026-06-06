@@ -137,8 +137,12 @@ export interface SensorTuning {
 export type SenseModality = 'light' | 'sound' | 'both';
 /** 猎手状态（猎手 SPEC §2.3-2.4）：hunting=有你的信号在逼近 / searching=信号切断后按性格搜 / lost=跟丢（despawn）。 */
 export type StalkerState = 'hunting' | 'searching' | 'lost';
-/** 信号切断后的性格（猎手 SPEC §2.3）：hold=停原地几回合 / seek_last=移到上次有信号的地方。 */
-export type StalkerLostBehavior = 'hold' | 'seek_last';
+/**
+ * 信号切断后的性格（猎手 SPEC §2.3·两种机制 × lingerTurns 等待时长）：
+ *   - wait：原地等 lingerTurns 回合再脱离。lingerTurns=0 ＝「掉头就走」、>0 ＝「过一段时间再走」（作者：1 就是 2 等 0 回合）。
+ *   - seek_last：先去上次有信号的位置，到了再徘徊 lingerTurns 回合、试图找到你，再走。
+ */
+export type StalkerLostBehavior = 'wait' | 'seek_last';
 
 /**
  * 一只在下潜内追猎你的「猎手」（猎手 SPEC Phase 1 spine）。把抽象的警觉（run.alert·#59）做成一个
@@ -151,16 +155,20 @@ export interface Stalker {
   nodeId: string;
   /** 用什么感官找你（§2.2）。 */
   sensesBy: SenseModality;
-  /** 信号切断后的性格（§2.3）。 */
+  /** 信号切断后的性格（§2.3）：原地等 / 先去上次信号点再等。 */
   onLostSignal: StalkerLostBehavior;
+  /** 脱离前要等的回合数（原地 wait 或抵达上次信号点后皆同此一个「等」时长）；0 ＝丢信号就走（「掉头就走」＝等 0 回合）。 */
+  waitTurns: number;
   /** 当前状态（§2.3-2.4）。 */
   state: StalkerState;
   /** 接触时触发的伏击遭遇 id（复用该 zone 的 ambushEncounters·#59·不加新敌）。 */
   encounterId: string;
   /** 上次「有你的信号」时你所在节点（seek_last 往这里搜）。 */
   lastSignalNodeId: string;
-  /** 信号切断已持续几回合（≥ STALKER_LOSE_TURNS → 跟丢 despawn）。 */
+  /** 信号切断已持续几回合（'seek_last' 走向上次信号点的总搜索硬上限·防够不到时无限追）。 */
   turnsSinceSignal: number;
+  /** 已在「等候点」（原地 / 抵达的上次信号点）等了几回合；> waitTurns → 脱离。 */
+  waitedTurns: number;
   /** 声呐上次扫到它的位置（§8.7「只在被扫到时更新」·渲染用这个＝会过时）；从没扫到 → undefined（你只「感觉」到它）。 */
   seenNodeId?: string;
   /** 上次被声呐扫到的 run.turn（余像渐隐用）。 */

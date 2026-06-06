@@ -20,8 +20,10 @@ import { ALERT_WARN } from './clarity';
 
 /** 猎手现身时距你的跳数（声呐量程外·不是当场伏击·给你读出来 + 反应的窗口）。 */
 export const STALKER_SPAWN_HOPS = 3;
-/** 信号切断后跟丢所需回合（摸黑/拉开够久 → 它脱离·despawn＝逃生阀门兑现）。 */
-export const STALKER_LOSE_TURNS = 3;
+/** 非「掉头就走」的猎手丢信号后默认要等的回合数（原地 wait 或抵达上次信号点后皆此一个「等」时长·猎手 SPEC §2.3）。 */
+export const STALKER_WAIT_TURNS = 3;
+/** 'seek_last' 的总搜索硬上限（够不到 lastSignal / 一直找不到你 → 到点就放弃脱离，避免无限追）。 */
+export const STALKER_SEEK_MAX_TURNS = 8;
 /** ≥ 此 alert ＝它「有你的信号」（在追·刷新 lastSignal）；低于＝信号切断（你摸黑让它消退）→ 按性格搜。沿用预警线。 */
 export const STALKER_SIGNAL_ALERT = ALERT_WARN;
 /** ≥ 此深度的声/双感猎手会躲声呐扫描（evadesSonar·越深越难缠 §2.6；abyssal 108m 起）。 */
@@ -120,24 +122,30 @@ export function maybeSpawnStalker(run: RunState, pool: string[]): Stalker | null
   const depth = run.currentDepth ?? 0;
   // 越深越偏声/双感 + 越会躲（§2.2/§2.6）；浅段（< evade 线）偏光感。Phase 1 简单派生·完整模态分类留 Phase 2。
   const sensesBy: SenseModality = depth >= STALKER_EVADE_DEPTH ? 'both' : idx % 2 === 0 ? 'sound' : 'light';
-  const onLostSignal: StalkerLostBehavior = idx % 2 === 0 ? 'seek_last' : 'hold';
+  // 丢信号性格（§2.3）：深/双感（狡猾·难缠·最执着）→ 去上次信号点徘徊找你；浅段 → 原地等。
+  // 等多久按 waitTurns：浅段半数等一阵（STALKER_WAIT_TURNS）、半数等 0＝掉头就走；深段去到点再等一阵。
+  const onLostSignal: StalkerLostBehavior = sensesBy === 'both' ? 'seek_last' : 'wait';
+  const waitTurns = sensesBy === 'both' || idx % 2 === 0 ? STALKER_WAIT_TURNS : 0;
   return {
     nodeId: node,
     sensesBy,
     onLostSignal,
+    waitTurns,
     state: 'hunting',
     encounterId,
     lastSignalNodeId: run.currentNodeId,
     turnsSinceSignal: 0,
+    waitedTurns: 0,
   };
 }
 
 /**
- * 推进猎手一回合（猎手 SPEC §2.3-2.4）。返回新猎手（**null ＝跟丢 despawn**）+ 是否**接触**到你（接触＝触发伏击）。
- *   - 有你的信号（alert ≥ STALKER_SIGNAL_ALERT）→ hunting：朝你当前节点逼近一跳·刷新 lastSignal。
- *   - 信号切断（你摸黑让 alert 消退）→ searching：hold 原地等 / seek_last 往上次信号点搜；turnsSinceSignal++。
- *   - 切断够久（≥ STALKER_LOSE_TURNS）→ lost（跟丢·despawn＝「摸黑是逃生阀门」北极星）。
- * 接触＝逼近后落在你所在节点（含「已在你节点 + 仍有信号」的情形）。
+ * 推进猎手一回合（猎手 SPEC §2.3-2.4）。返回新猎手（**null ＝脱离 despawn**）+ 是否**接触**到你（接触＝触发伏击）。
+ *   - 有你的信号（alert ≥ STALKER_SIGNAL_ALERT）→ hunting：朝你当前节点逼近一跳·刷新 lastSignal·清等待计时。
+ *   - 信号切断（你摸黑让 alert 消退）→ searching，按性格（§2.3）：
+ *       · wait     ：原地等 waitTurns 回合再脱离（waitTurns=0 ＝丢信号就走「掉头就走」）；
+ *       · seek_last：先走向上次有信号的位置，抵达后再等 waitTurns 回合徘徊找你、再脱离（够不到 → STALKER_SEEK_MAX_TURNS 放弃）。
+ * 接触＝它落在你所在节点（逼近追上 / 搜索路过 / 你没离开上次信号点）。「等够 waitTurns 才走」＝摸黑后它不一定立刻消失（读出性格再安心点灯）。
  */
 export function advanceStalker(
   run: RunState,
@@ -145,23 +153,30 @@ export function advanceStalker(
 ): { stalker: Stalker | null; contact: boolean } {
   if (!run.map || !run.currentNodeId) return { stalker, contact: false };
   const here = run.currentNodeId;
-  const hasSignal = (run.alert ?? 0) >= STALKER_SIGNAL_ALERT;
   const s: Stalker = { ...stalker };
-  if (hasSignal) {
+  if ((run.alert ?? 0) >= STALKER_SIGNAL_ALERT) {
+    // 有你的信号 → 朝你逼近一跳·刷新 lastSignal·清等待计时。
     s.state = 'hunting';
     s.turnsSinceSignal = 0;
+    s.waitedTurns = 0;
     s.lastSignalNodeId = here;
     const hop = nextHopToward(run.map, s.nodeId, here);
     if (hop) s.nodeId = hop;
-  } else {
-    s.turnsSinceSignal += 1;
-    if (s.turnsSinceSignal >= STALKER_LOSE_TURNS) return { stalker: null, contact: false }; // 跟丢
-    s.state = 'searching';
-    if (s.onLostSignal === 'seek_last') {
-      const hop = nextHopToward(run.map, s.nodeId, s.lastSignalNodeId);
-      if (hop) s.nodeId = hop;
-    } // hold：原地不动
+    return { stalker: s, contact: s.nodeId === here };
   }
+  // 信号切断 → 按性格搜（§2.3）。
+  s.turnsSinceSignal += 1;
+  s.state = 'searching';
+  // seek_last 还没走到上次信号点 → 继续走（不计「等」；走太久够不到 → 放弃脱离）。
+  if (s.onLostSignal === 'seek_last' && s.nodeId !== s.lastSignalNodeId) {
+    if (s.turnsSinceSignal > STALKER_SEEK_MAX_TURNS) return { stalker: null, contact: false };
+    const hop = nextHopToward(run.map, s.nodeId, s.lastSignalNodeId);
+    if (hop) s.nodeId = hop;
+    return { stalker: s, contact: s.nodeId === here };
+  }
+  // 在等候点（原地 wait / 已抵达上次信号点）→ 等 waitTurns 回合（0 = 立刻走）。
+  s.waitedTurns += 1;
+  if (s.waitedTurns > s.waitTurns) return { stalker: null, contact: false };
   return { stalker: s, contact: s.nodeId === here };
 }
 

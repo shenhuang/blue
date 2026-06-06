@@ -396,8 +396,8 @@ const stalkerLocated: GameState = {
     ...threatBase.run!,
     alert: 60,
     stalker: {
-      nodeId: 'n1', sensesBy: 'sound', onLostSignal: 'hold', state: 'hunting',
-      encounterId: 'combat.blind_eel_solo', lastSignalNodeId: 'n0', turnsSinceSignal: 0,
+      nodeId: 'n1', sensesBy: 'sound', onLostSignal: 'wait', waitTurns: 0, state: 'hunting',
+      encounterId: 'combat.blind_eel_solo', lastSignalNodeId: 'n0', turnsSinceSignal: 0, waitedTurns: 0,
       seenNodeId: 'n1', seenTurn: 0,
     },
   },
@@ -413,8 +413,8 @@ const stalkerUnlocated: GameState = {
     ...threatBase.run!,
     alert: 60,
     stalker: {
-      nodeId: 'n1', sensesBy: 'sound', onLostSignal: 'hold', state: 'hunting',
-      encounterId: 'combat.blind_eel_solo', lastSignalNodeId: 'n0', turnsSinceSignal: 0,
+      nodeId: 'n1', sensesBy: 'sound', onLostSignal: 'wait', waitTurns: 0, state: 'hunting',
+      encounterId: 'combat.blind_eel_solo', lastSignalNodeId: 'n0', turnsSinceSignal: 0, waitedTurns: 0,
     },
   },
 };

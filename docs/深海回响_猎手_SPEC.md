@@ -35,11 +35,11 @@
 ### 2.3 切断信号后的行为（作者 Q2）
 > 「在切断信号源后，有些会停在原地几回合，有些会移到上次有信号的地方；后期会有能主动探测玩家的，需要升级装备。」
 
-切断它锁定的信号源后，按敌人性格分（`Stalker.onLostSignal`）：
-- **hold**：停在原地几回合——你绕开就行，但它还守在那片水里。
-- **seek_last**：移到「上次有信号的地方」(`lastSignalNodeId`)——往你最后暴露的位置去找你，你得拉开。
+切断它锁定的信号源后＝**两种位置性格**（`Stalker.onLostSignal`）× **一个等待时长** `waitTurns`（作者 2026-06-06 厘清：「掉头就走」就是「等一阵再走」等 0 回合；上次信号点的「徘徊」也就是同一个「等」）：
+- **wait**：原地等 `waitTurns` 回合再走。`waitTurns=0` ＝**掉头就走**（丢信号当场脱离）；`>0` ＝**过一段时间再走**（原地不动等几回合）。
+- **seek_last**：先去「上次有信号的地方」(`lastSignalNodeId`)，**抵达后再等** `waitTurns` 回合徘徊找你、再走（你已离开那点 → 它扑空走人＝甩掉；够不到 → `STALKER_SEEK_MAX_TURNS` 放弃）。
 - **active（后期 §3）**：主动探测——不靠你暴露、自己搜，需要升级装备才规避。
-- 信号持续切断够久 → 它**跟丢**（`lost`，脱离/下沉离开、despawn）。这是「摸黑＝逃生阀门」(北极星)的兑现。
+- 等够 / 找不到 → 它**脱离**（`lost`，下沉离开、despawn）。这是「摸黑＝逃生阀门」(北极星)的兑现；但「不一定立刻消失」(`waitTurns` 大的会守一阵) ＝你得读出它的性格、确认它真走了再点灯。
 
 ### 2.4 出现 · 逼近 · 接触（统一现有 alert→伏击 · 作者 Q1）
 - **出现（spawn）**：你的暴露（signature #58 / 警觉 #59）越过猎线 → 一只猎手在你声呐量程外的某节点现身——**不是当场伏击**，给你读出来 + 反应的窗口。
@@ -89,7 +89,7 @@
 - **Phase 1（本 session · spine）** ✅：
   - §2.1 **感知分层**（灯＝接近〔复用 threatContact〕 / 声呐＝位置·同一猎手）。
   - §2.4 **出现 / 逼近 / 接触**（统一·复用 `ambushEncounters`·接触触发现有伏击遭遇）。
-  - §2.3 **基础两行为**（`hold` / `seek_last`）+ §2.5 **摸黑/拉距/上浮脱离**（跟丢 despawn）。
+  - §2.3 **丢信号性格**（`wait`〔含 `waitTurns=0`＝掉头就走〕/ `seek_last` 去上次信号点徘徊找你再走）+ §2.5 **摸黑/拉距/上浮脱离**（脱离 despawn）。
   - §2.6 **范围＝深 band 门控**（`DepthBand.hunts` → `run.huntEnabled`·复用现有捕食者·越深越会 evade）。
   - 位置**只在被 ping 扫到时更新**（§8.7·`stalker.seenNodeId`/`seenTurn`）·`evadesSonar` 躲扫描（深 band 概率）。
   - **additive + gated 铁律**：`DepthBand.hunts` 缺省 off → `run.huntEnabled` undefined → 既有 `alert→maybeApproachEncounter` 瞬时伏击逐字节不变（守 `playthrough-stealth` §4-§6）。`run.stalker?`/`huntEnabled?` run 级·不入 profile·**不 bump SAVE_VERSION**（同 scanMemory/sonarDeception）。
@@ -102,7 +102,7 @@
 ---
 
 ## 8. 可调参数（tunables）
-出现猎线（沿 `ALERT_WARN`/`ALERT_THRESHOLD`）、逼近速率（跳/回合）、跟丢回合数、被扫到才更新（§8.7）、evade 概率（随深 band）、各 band `hunts` 开关、`sensesBy` 默认、行为分布（`hold`/`seek_last`）、生成距玩家跳数。住 `engine/stalker.ts` 顶。
+出现猎线（沿 `ALERT_WARN`/`ALERT_THRESHOLD`）、逼近速率（跳/回合）、**等待时长 `waitTurns`（`STALKER_WAIT_TURNS`·0＝掉头就走）**、`seek_last` 总搜索上限（`STALKER_SEEK_MAX_TURNS`）、被扫到才更新（§8.7）、evade 概率（随深 band）、各 band `hunts` 开关、`sensesBy` 默认、行为分布（`wait`/`seek_last`）、生成距玩家跳数。住 `engine/stalker.ts` 顶。
 
 ## 9. 守则承袭（建时一直守）
 - **回归文化（#22/#26）**：每阶段全绿（`npm run regress`）+ prod build；碰 UI 数据路径补 `smoke-chart-ui`。
@@ -114,3 +114,4 @@
 
 ## 10. 决策日志
 - **2026-06-06（发起 + 三问拍板，作者方向 A「声呐与房间收尾」之 §8.7 stalker）**：声呐与房间 §8.7 此前留作者拍板的「定位 stalker」正式开题。三问定调——① **一猎手两保真度**：灯＝知道有东西接近、声呐＝知道位置+距离、同一只猎手（§2.1）；② **感官模态**(光/声/双) + **切信号行为**(停原地 / 移到上次信号点 / 后期主动探测·升级 T1 吸声 T2 主动迷彩) + **大型生物狭小空间避难** + **执着等待者耗资源** + **decoy 道具引开**(战斗中也能逃)（§2.2-2.6 / §3-6）；③ **全深度小概率·浅弱深难**（§2.6）。据此成文 v0.1，§7 分阶段：Phase 1 spine（感知分层 + 统一出现/逼近/接触 + 基础两行为 + 深 band 门控·additive/gated）本 session 实装，其余 deferred（已捕捉）。**实装详情见 STATUS.md 顶部滚动条目（quirk #84）。**
+- **2026-06-06（续·作者校正两点）**：① **感知不靠点灯（校正 §2.1）**：作者厘清「不点灯也能感受到接近」是**正确**的——关了灯也感觉得到，故玩家摸黑后能凭「感觉是否消退」判断猎手何时离开、何时安心再点灯；**例外：狡猾猎手 + 低 san**（此时「没感觉＝安全」不可信）＝Phase 2 留做（曾误把它做成「关灯就感觉不到」，已撤回·感知保持 alert/stalker 驱动·与灯无关）。② **切信号行为收成「两机制 × 一等待时长」（§2.3）**：作者「1 就是 2 等 0 回合」「linger 也是 wait」→ `onLostSignal` 从 `hold`/`seek_last` 改成 **`wait`**（原地等 `waitTurns` 回合·0＝掉头就走/N＝过一段时间再走）+ **`seek_last`**（先走到上次信号点·抵达后再等 `waitTurns` 徘徊找你·够不到则 `STALKER_SEEK_MAX_TURNS` 放弃）；新 `Stalker.waitTurns`/`waitedTurns`（run 级·不 bump SAVE_VERSION）。深/双感（狡猾）→ seek_last·浅段 → wait（半数 0 半数等一阵）。`playthrough-stalker` §3 覆盖三种观感（掉头就走/等一阵/去上次信号点徘徊）。全绿 26/26。

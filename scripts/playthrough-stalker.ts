@@ -2,7 +2,7 @@
 // 覆盖：
 //   1. 出现（非瞬时）：huntEnabled + 越线 + 进事件节点 → 猎手在量程外现身（run.stalker 落位·phase 仍 dive，不当场伏击）。
 //   2. 逼近 + 接触：持续有信号 → 沿图逼近 → 追到你 → 触发现有 ambushEncounters 伏击（复用现有捕食者）。
-//   3. 切信号 → 搜 → 跟丢：alert 消退（你摸黑）→ searching（hold 原地 / seek_last 往上次信号点）→ LOSE_TURNS 后 despawn。
+//   3. 切信号后三种性格：alert 消退（你摸黑）→ searching；wait·waitTurns=0 掉头就走 / wait·waitTurns=N 原地等再走 / seek_last 去上次信号点徘徊再走。
 //   4. 感知分层：声呐 ping 扫到才更新位置（§8.7）+ 深 band 声/双感躲扫描（evadesSonar）；灯只给「有东西在接近」（既有 alert-warning）。
 //   5. additive 控制组：非 huntEnabled（浅水 / POI 下潜 / 旧路径）→ 走旧 alert→伏击瞬时遭遇（逐字节不变·守 playthrough-stealth）。
 //   6. 存档 round-trip：含 stalker 的 run 序列化 ↔ 反序列化保真（run 级·纯对象·不 bump SAVE_VERSION）。
@@ -24,7 +24,7 @@ import {
   stalkerSonarBlip,
   stalkerEvadesScan,
   spawnNodeFor,
-  STALKER_LOSE_TURNS,
+  STALKER_WAIT_TURNS,
 } from '../src/engine/stalker';
 
 const log: string[] = [];
@@ -97,7 +97,11 @@ L('========== 1-2. 出现（非瞬时）→ 逼近 → 接触触发现有伏击 
   assert(s.run!.stalker, '1: 现身后 run.stalker 落位');
   const spawnNode = s.run!.stalker!.nodeId;
   assert(spawnNode !== s.run!.currentNodeId, '1: 现身在你所在节点之外（给反应窗口）');
-  L(`  现身：猎手在 ${spawnNode}（你在 ${s.run!.currentNodeId}）·sensesBy=${s.run!.stalker!.sensesBy}·性格=${s.run!.stalker!.onLostSignal} ✓`);
+  assert(
+    s.run!.stalker!.waitTurns === 0 || s.run!.stalker!.waitTurns === STALKER_WAIT_TURNS,
+    '1: 现身的猎手有合法 waitTurns（0＝掉头就走 / STALKER_WAIT_TURNS＝等一阵）',
+  );
+  L(`  现身：猎手在 ${spawnNode}（你在 ${s.run!.currentNodeId}）·sensesBy=${s.run!.stalker!.sensesBy}·性格=${s.run!.stalker!.onLostSignal}/wait${s.run!.stalker!.waitTurns} ✓`);
 
   // 第二步：保持高信号 → 逼近一跳（未接触）
   s = setAlert(s, 90);
@@ -120,33 +124,50 @@ L('========== 1-2. 出现（非瞬时）→ 逼近 → 接触触发现有伏击 
 }
 
 // ============================================================
-// 3. 切信号 → 搜 → 跟丢（advanceStalker 单元·摸黑是逃生阀门）
+// 3. 切信号后三种性格（§2.3·摸黑是逃生阀门）：掉头就走(wait0) / 等一阵再走(waitN) / 去上次信号点徘徊再走(seek_last)
 // ============================================================
-L('\n========== 3. 切信号 → 搜 → 跟丢（逃生阀门）==========');
+L('\n========== 3. 切信号后三种性格（逃生阀门）==========');
 {
-  const seed: Stalker = {
-    nodeId: 'n3', sensesBy: 'sound', onLostSignal: 'seek_last', state: 'hunting',
-    encounterId: CAVE_POOL[0], lastSignalNodeId: 'n0', turnsSinceSignal: 0,
-  };
-  // 低 alert（你切断了信号）下连推进：先 searching，攒够 LOSE_TURNS 后跟丢（despawn）
-  const runLow: RunState = { ...huntState({ alert: 0, depth: 70 }).run!, currentNodeId: 'n0' };
-  let cur: Stalker | null = seed;
-  let sawSearching = false;
-  for (let i = 0; i < STALKER_LOSE_TURNS; i++) {
-    assert(cur, '3: 跟丢前每步都应仍有猎手');
-    const r = advanceStalker(runLow, cur);
-    if (r.stalker?.state === 'searching') sawSearching = true;
+  // 切了信号（alert 0）的低 run；currentNodeId 可变（默认 n4＝你已离开上次信号点 n0）
+  const lostRun = (currentNodeId = 'n4'): RunState => ({ ...huntState({ alert: 0, depth: 70 }).run!, currentNodeId });
+  const mk = (over: Partial<Stalker>): Stalker => ({
+    nodeId: 'n2', sensesBy: 'sound', onLostSignal: 'wait', waitTurns: 0, state: 'hunting',
+    encounterId: CAVE_POOL[0], lastSignalNodeId: 'n4', turnsSinceSignal: 0, waitedTurns: 0, ...over,
+  });
+
+  // (a) wait·waitTurns=0 → 掉头就走（丢信号当场脱离）
+  assert(advanceStalker(lostRun(), mk({ waitTurns: 0 })).stalker === null, '3a: wait·waitTurns=0 → 丢信号当场脱离（掉头就走）');
+  L('  (a) 掉头就走（wait 0）：丢信号立刻脱离 ✓');
+
+  // (b) wait·waitTurns=2 → 等一阵再走（原地 searching 2 回合再脱离·原地不动）
+  let cur: Stalker | null = mk({ waitTurns: 2 });
+  let stayed = 0;
+  while (cur && stayed <= 9) {
+    const r = advanceStalker(lostRun(), cur);
+    if (r.stalker?.state === 'searching') { stayed++; assert(r.stalker.nodeId === 'n2', '3b: wait 原地不动'); }
     cur = r.stalker;
   }
-  assert(sawSearching, '3: 切信号后应进入 searching（没了信号却没走）');
-  assert(cur === null, `3: 切信号满 ${STALKER_LOSE_TURNS} 回合 → 跟丢 despawn`);
-  L(`  切信号 → searching → 满 ${STALKER_LOSE_TURNS} 回合跟丢（摸黑/拉开够久就甩掉·北极星）✓`);
+  assert(stayed === 2 && cur === null, `3b: wait·waitTurns=2 → 原地等 2 回合再脱离，实际等 ${stayed}`);
+  L(`  (b) 等一阵再走（wait 2）：原地搜 ${stayed} 回合再脱离 ✓`);
 
-  // 对照：仍有信号（高 alert）→ hunting 不跟丢、朝你逼近
-  const runHi: RunState = { ...huntState({ alert: 90, depth: 70 }).run!, currentNodeId: 'n0' };
-  const hi = advanceStalker(runHi, seed);
-  assert(hi.stalker?.state === 'hunting' && hi.stalker.nodeId !== 'n3', '3: 有信号 → hunting + 朝你逼近一跳');
-  L('  对照：有信号 → hunting + 逼近 ✓');
+  // (c) seek_last → 先走到上次信号点 n0、抵达后徘徊再脱离（你已离开 n0 → 它去错地方扑空、走人＝甩掉）
+  let sk: Stalker | null = mk({ nodeId: 'n3', sensesBy: 'both', onLostSignal: 'seek_last', waitTurns: 2, lastSignalNodeId: 'n0' });
+  let reachedLast = false;
+  let steps = 0;
+  while (sk && steps < 20) {
+    const r = advanceStalker(lostRun('n4'), sk);
+    if (r.stalker?.nodeId === 'n0') reachedLast = true;
+    sk = r.stalker;
+    steps++;
+  }
+  assert(reachedLast, '3c: seek_last 先走到上次信号点 n0（试图找到你）');
+  assert(sk === null, '3c: 在 n0 徘徊够 waitTurns 后脱离（你已离开 → 甩掉）');
+  L('  (c) 去上次信号点徘徊再走（seek_last）：走到 n0→徘徊→脱离（你离开了就甩掉）✓');
+
+  // 对照：仍有信号（高 alert）→ hunting 不脱离、朝你逼近一跳
+  const hi = advanceStalker({ ...huntState({ alert: 90, depth: 70 }).run!, currentNodeId: 'n0' }, mk({ nodeId: 'n3', lastSignalNodeId: 'n0' }));
+  assert(hi.stalker?.state === 'hunting' && hi.stalker.nodeId !== 'n3', '3: 有信号 → hunting + 朝你逼近（不脱离）');
+  L('  对照：有信号 → hunting + 逼近（不脱离）✓');
 }
 
 // ============================================================
@@ -156,8 +177,8 @@ L('\n========== 4. 感知分层（声呐＝位置·只在被扫到时更新·深
 {
   // 浅段（< evade 线）声感猎手：在量程内 → scanStalker 更新 seenNodeId；stalkerSonarBlip 给出（会过时的）位置
   const near: Stalker = {
-    nodeId: 'n1', sensesBy: 'sound', onLostSignal: 'hold', state: 'hunting',
-    encounterId: CAVE_POOL[0], lastSignalNodeId: 'n0', turnsSinceSignal: 0,
+    nodeId: 'n1', sensesBy: 'sound', onLostSignal: 'wait', waitTurns: 0, state: 'hunting',
+    encounterId: CAVE_POOL[0], lastSignalNodeId: 'n0', turnsSinceSignal: 0, waitedTurns: 0,
   };
   const runScan: RunState = {
     ...huntState({ depth: 70, sonarUnlocked: true }).run!, currentNodeId: 'n0', turn: 5,
@@ -200,8 +221,8 @@ L('\n========== 5. additive 控制组（非 huntEnabled → 旧瞬时伏击）==
 L('\n========== 6. 存档 round-trip（run 级·纯对象·不 bump SAVE_VERSION）==========');
 {
   const st: Stalker = {
-    nodeId: 'n2', sensesBy: 'both', onLostSignal: 'seek_last', state: 'searching',
-    encounterId: CAVE_POOL[1], lastSignalNodeId: 'n1', turnsSinceSignal: 1, seenNodeId: 'n2', seenTurn: 4,
+    nodeId: 'n2', sensesBy: 'both', onLostSignal: 'seek_last', waitTurns: 2, state: 'searching',
+    encounterId: CAVE_POOL[1], lastSignalNodeId: 'n1', turnsSinceSignal: 1, waitedTurns: 1, seenNodeId: 'n2', seenTurn: 4,
   };
   const s = huntState({ stalker: st, huntEnabled: true });
   const round = deserializeGameState(serializeGameState(s));
