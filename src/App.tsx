@@ -163,7 +163,7 @@ export default function App() {
         <GameOverView state={state} onRestart={handleRestart} />
       )}
 
-      <footer className="app-footer">深海回响 · v0.0.1 · 垂直切片</footer>
+      <footer className="app-footer">深海回响 · v0.0.1 · 垂直切片 · build {__BUILD_TIME__} ({__BUILD_COMMIT__})</footer>
 
       {/* Dev 面板覆盖层 —— 仅 DEV 模式且面板打开时挂载；事件 / 战斗 / 地图 互斥 */}
       {import.meta.env.DEV && devPanel === 'event' && EventDevPanel && (
