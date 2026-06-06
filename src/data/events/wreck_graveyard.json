@@ -926,6 +926,149 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "wreck_graveyard.ghost_net",
+      "depthRange": [26, 42],
+      "zoneTags": ["wreck"],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "还在打渔的网",
+      "body": "一面流刺网挂在残骸的栏杆上，不知挂了多少年。\n网早没人收了，可它还在打渔——网衣里嵌着一层叠一层的东西：鱼骨、蟹壳、一只海龟干瘪的壳，越往里越旧。新缠上的还在挣，旧的早成了喂下一茬的饵。\n横流一鼓，整面网朝你这边软软地扑过来。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "cut_salvage",
+          "label": "贴着栏杆下刀，把还能用的一块网割下来（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你从底脚下刀，避开网衣兜兜转转的褶子，割下完好的一幅。抖落里头的陈年残骸时，掉出个锈死的罐头，跟着网一起卷走的。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.old_fishing_net", "qty": [1, 1] },
+                { "itemId": "item.canned_food", "qty": [1, 1], "chance": 0.5 }
+              ]
+            },
+            "onFailure": {
+              "text": "网比你想的活。下刀时一股流把网兜起来，松脱的网衣裹上你持刀的手腕，越挣越紧。你割了好一阵才脱身，那幅网也搅成了废的。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -7 }
+            }
+          }
+        },
+        {
+          "id": "pull_loose",
+          "label": "只从网外圈松垮处薅一把缠住的杂物（氧气 -1）",
+          "outcome": {
+            "text": "你不碰主网，只在外圈松垮处薅了一把。一段铜栏杆配件连着半截烂绳，被你拽了出来。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.5 }]
+          }
+        },
+        {
+          "id": "avoid_net",
+          "label": "绕到上方，离开这面网（氧气 -1）",
+          "outcome": {
+            "text": "你升高几米，从网够不着的地方绕过去。横流再鼓，那面网也只能朝着空水扑，扑给下一个路过的东西看。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "wreck_graveyard.the_cargo",
+      "depthRange": [24, 40],
+      "zoneTags": ["wreck"],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "没送到的货",
+      "body": "货舱顶塌了半边，灯落进去，照出一舱货。\n是一排摩托车——曾经是。几十年的锈把它们焊成一堆，车把、辐条、油箱化进彼此身上，分不出哪辆是哪辆。再过去是码成墙的板条箱，木头烂空了，只剩里头的东西维持着箱子的形状。\n这一舱货本来要运去某个地方。它没到。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "pick_crates",
+          "label": "撬开离得近的几只板条箱（体力 vs 12）",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "箱板一碰就化，露出里头码得整齐的货：油纸包着的罐头，还有一匣黄铜配件，锈得轻，是这舱里少数没烂透的东西。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.brass_fitting", "qty": [1, 2] },
+                { "itemId": "item.canned_food", "qty": [1, 2], "chance": 0.6 }
+              ]
+            },
+            "onFailure": {
+              "text": "你撬的那只是承重的箱子。它一塌，上头半垛跟着滑下来，扬起一舱锈泥。你抽身退出去，呛了一口红水，什么也没拿到。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -6 }
+            }
+          }
+        },
+        {
+          "id": "glean_bikes",
+          "label": "从那堆锈死的车上拧一个还囫囵的零件（氧气 -1）",
+          "outcome": {
+            "text": "你在那团焊死的铁里找了找，拧下一个还算囫囵的黄铜部件。其余的一碰就掉渣，红锈在灯柱里慢慢散开。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.6 }]
+          }
+        },
+        {
+          "id": "leave_hold",
+          "label": "不下舱，从塌口上方看一眼就走",
+          "outcome": {
+            "text": "你停在塌口上方往里照了照，没下去。那一舱没能送到的货，就让它继续在那儿，等送不到的人。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "wreck_graveyard.rusticles",
+      "depthRange": [30, 46],
+      "zoneTags": ["wreck"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "锈的冰锥",
+      "body": "残骸的钢壳上挂下来一片锈的冰锥。\n它们从铆钉、从裂缝里淌出来，一条条垂着，红褐色，表面结着瘤，像铁在融化，又像伤口在流。可它们不是死东西——是亿万张嘴在吃这艘船，把钢一口口嚼成锈，再吐成这副冰锥的样子。\n你呼出的泡撞上去，最近一条无声地碎了，化成一蓬红烟，慢慢落下去。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "touch_one",
+          "label": "伸手碰一碰那片锈锥",
+          "outcome": {
+            "text": "你指尖一搭，锈锥就塌了，软得没有一点抵抗，化成红粉裹住你的手套，温的。底下露出钢面——已经被吃得只剩薄薄一层，对着光，能看见那后头隐隐透亮。整艘船都这么薄了。它还立着，只是因为还没人去碰。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 },
+            "loreEntry": "lore.wreck_graveyard.rusticles"
+          }
+        },
+        {
+          "id": "pry_metal",
+          "label": "避开锈锥，从还硬实的地方撬个配件（氧气 -1）",
+          "outcome": {
+            "text": "你挑了块没被吃透的舱缘，撬下一个黄铜配件——铜不锈，是这片红锈里唯一啃不动的东西。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.6 }]
+          }
+        },
+        {
+          "id": "back_away",
+          "label": "不碰，从这片锈锥下退开（氧气 -1）",
+          "outcome": {
+            "text": "你慢慢退开，连水都尽量不搅。那一片红锥在身后轻轻淌着，无声地、一口一口地，把这艘船继续吃下去。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
     }
   ]
 }

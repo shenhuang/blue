@@ -1,0 +1,18 @@
+{
+  "_comment": "石头里的骨头 leave_them：移开灯绕走的诚实出口 → sanity-1（无 lore）。验证最低代价盲退档。",
+  "eventId": "bluecaves.dry_bones",
+  "depth": 38,
+  "seed": 1,
+  "choices": [
+    "leave_them"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -1
+    }
+  }
+}

@@ -919,6 +919,178 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "bluecaves.hells_bells",
+      "depthRange": [30, 44],
+      "zoneTags": ["cave"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "石钟",
+      "body": "过了盐线，灯柱里垂下来一片东西——不是钟乳石。是一只只空心的石钟，口朝下，大的有半人高，壁薄得透光。\n它们不是顶上滴出来的。是贴着这层盐线、从水里自己长出来的，一圈一圈，往下、往黑里长。\n最近一只就在脸侧。灯一晃，钟壁里那些叶片状的结晶跟着亮，像有什么在里头屏着气。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "reach_in",
+          "label": "把手探进最近那只钟口里",
+          "outcome": {
+            "text": "你的手伸进钟口。里面是另一种水——更凉、更稠、说不清的滑。指尖碰到钟壁内侧，一层软的、活的东西，不是石头。你抽回手，那只钟轻轻晃了晃，没出一点声音。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 },
+            "loreEntry": "lore.bluecaves.hells_bells"
+          }
+        },
+        {
+          "id": "tap_one",
+          "label": "伸指叩一下钟壁，听个响",
+          "outcome": {
+            "text": "指节碰上钟壁。没有响——这么薄的壳，本该清脆地响一声的。声音被这层水吃得干干净净，只剩指骨里一点闷震。你忽然很想离开这儿。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -4 }
+          }
+        },
+        {
+          "id": "pass_below",
+          "label": "压低姿态，从钟林下方贴着穿过去",
+          "outcome": {
+            "text": "你沉下身，从一只只石钟下面穿过去，谁也不碰。钟口在头顶一个接一个掠过，黑洞洞地朝下张着。过去了。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.sulfur_cloud",
+      "depthRange": [32, 46],
+      "zoneTags": ["cave"],
+      "weight": 4,
+      "cooldown": 6,
+      "title": "白雾的地面",
+      "body": "下到某个深度，底上铺着一层平平的白雾，从这头望不到那头。\n它太平、太实了——像一片地面，像你能落上去站住。雾里探出几根枯死的树枝，托着上面薄薄一层落叶。\n可这是海。这下面没有地。那是一层水，比上面的咸、比下面的轻，自己悬在这里，悬了几百年。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "sink_through",
+          "label": "认准一处，让自己沉进那层雾里",
+          "outcome": {
+            "text": "你排掉一点气，脚先沉进去。白雾合到头顶，世界没了上下——再睁眼，你悬在一片空荡荡的蓝里，那片『地面』成了头顶的天。你在它底下，像一件落进了别人天空的东西。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4, "nitrogen": 2 },
+            "loreEntry": "lore.bluecaves.sulfur_cloud"
+          }
+        },
+        {
+          "id": "hover_watch",
+          "label": "停在雾面上方，看那片『落叶』",
+          "outcome": {
+            "text": "你停下来看。落叶不动，枝桠不动，连你呼出的泡撞上雾面，都软软地散开、不肯钻进去。看得越久越觉得，那不是雾托着叶子，是叶子下头有什么，正托着这一整层雾。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        },
+        {
+          "id": "skirt_around",
+          "label": "不穿它，沿雾面横着另找下口（氧气 -2）",
+          "outcome": {
+            "text": "你贴着雾面横游，找别的路。那层白在身侧一直平平地铺着，枯枝从里头伸出来，托着不属于海的落叶。你没去看第二眼。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.gour_pools",
+      "depthRange": [26, 40],
+      "zoneTags": ["cave"],
+      "weight": 8,
+      "cooldown": 4,
+      "title": "水梯田",
+      "body": "一段干过又淹了的洞道，底上是一级级钙质的水梯田——石头自己围出来的浅塘，一塘比一塘高半拃。\n每个塘底躺着一堆滚圆的白珠子，是水绕着沙粒裹了千百年裹成的。最深一塘的石檐下，一对透明的须子动了动。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "work_pools",
+          "label": "顺塘檐摸到最深一塘，掏那檐下的东西（体力 vs 12）",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你扣着一级级钙檐挪过去，没踩塌一道塘壁。檐下那只白虾愣是没躲过你的手；顺手从塘底攥了一把圆石珠，凉滑硌手。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.lobster", "qty": [1, 1] },
+                { "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.5 }
+              ]
+            },
+            "onFailure": {
+              "text": "你脚下一道钙檐脆生生塌了，浊水腾起来糊住整段洞。等沉淀下来，那对须子早缩没了，手里只攥着两颗没用的石珠。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -5 }
+            }
+          }
+        },
+        {
+          "id": "skim_near",
+          "label": "只在近处一塘底捞一把圆石珠（氧气 -1）",
+          "outcome": {
+            "text": "你在脚边这塘底捞了一把白珠子。圆得不像真的，揣进兜里哗啦响。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.6 }]
+          }
+        },
+        {
+          "id": "step_over",
+          "label": "踩塘埂之间露头的干石头横过去，不碰水塘",
+          "outcome": {
+            "text": "你挑着塘埂上露头的硬石头走，一塘水都没惊动。身后那些梯田静静盛着各自的一塘黑水。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "bluecaves.dry_bones",
+      "depthRange": [30, 44],
+      "zoneTags": ["cave"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "石头里的骨头",
+      "body": "灯扫过一面侧壁，停住了。\n石头里嵌着骨头。不是鱼——是腿骨，是肋条，是一只张着的、带牙的大颌，半融进钙里，跟岩石长成了一块。\n这些东西活着的时候，这里是干的。是有空气、有地面、能站住脚的地方。海是后来才漫上来，把它们一道淹进了三十米深的石头里。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "look_closer",
+          "label": "贴近去看那只带牙的颌",
+          "outcome": {
+            "text": "你把灯凑到那只大颌前。牙是食肉的牙，比你手掌长。它朝着的方向，正是你进来的那条水路。你说不清它是被淹死在朝着出口的姿势，还是从那时起就一直这么等着。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 },
+            "loreEntry": "lore.bluecaves.dry_bones"
+          }
+        },
+        {
+          "id": "pry_piece",
+          "label": "从松动处敲一小块带骨的钙岩下来",
+          "outcome": {
+            "text": "你挑了块边角松动的钙岩，连着一截灰白的骨茬敲下来，揣好。石头握在手里，比周围的水还凉。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.7 }]
+          }
+        },
+        {
+          "id": "leave_them",
+          "label": "不碰，绕开这面墙走",
+          "outcome": {
+            "text": "你把灯从骨头上移开，绕着这面墙游过去。它们在黑里继续嵌着，朝着各自当年没跑成的方向。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
     }
   ]
 }

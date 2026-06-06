@@ -1778,6 +1778,185 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "reef.coral_spawn",
+      "depthRange": [28, 42],
+      "zoneTags": ["reef"],
+      "weight": 3,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "往上落的雪",
+      "body": "整片礁在同一刻松了手。\n珊瑚一齐吐出无数颗粉橙色的小珠，成亿地往上飘——是雪，是往上落的雪。水一下子稠得看不清三米外，全是缓缓上升的、发着微光的卵。\n海面上有月亮。它们都朝那点光去。一年里就这一夜，整片礁约好了似的，一起。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "drift_through",
+          "label": "停手，让那场上升的雪从身上漫过去",
+          "outcome": {
+            "text": "你不动了，由它漫过来。卵粒贴着面镜、钻进领口、从指缝里滑上去，温吞吞地痒。有那么一会儿，你分不清是它们在升，还是你在沉。等它们过去，水空了，礁也空了，像谁刚搬完家。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -2 },
+            "loreEntry": "lore.reef.coral_spawn"
+          }
+        },
+        {
+          "id": "scoop_shelter",
+          "label": "趁这片白茫茫谁也看不清，在礁背流处探一把",
+          "outcome": {
+            "text": "趁谁也看不清，你贴着礁脊背流的一面探手，掰下一小块珊瑚。它也在吐珠，断口上沾了一手温热的橙。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.5 }]
+          }
+        },
+        {
+          "id": "push_up",
+          "label": "拨开稠雾，往能看清的水里去（氧气 -2）",
+          "outcome": {
+            "text": "你拨着那片浓汤往边上去，找回看得清的水。回头看，整片礁还在往上冒，那场雪没有要停的意思。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.cleaning_station",
+      "depthRange": [22, 38],
+      "zoneTags": ["reef"],
+      "weight": 8,
+      "cooldown": 4,
+      "title": "清洁站",
+      "body": "一块孤零零的脑珊瑚上头排着队。\n一条大石斑鱼挂在水里一动不动，鳃盖大张、嘴也大张，由几尾小鱼钻进钻出地替它清牙缝、啄鳃里的虫。后头还排着两条，规规矩矩等着。\n谁也不理你。在这块石头上，今天不兴吃来吃去。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "wait_and_take",
+          "label": "也学它们沉住气，等队尾那条挪开再下手（体力 vs 12）",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你压住浮力，跟这队鱼一起悬着。等轮到队尾那条游开，你贴着脑珊瑚根下手——那儿石缝里正卡着一只趁乱来蹭清洁站的龙虾。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.lobster", "qty": [1, 1] },
+                { "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.4 }
+              ]
+            },
+            "onFailure": {
+              "text": "你沉不住气，浮力没压稳，一脚踢上脑珊瑚。整队鱼倏地散了，石斑鱼甩着尾沉进礁影里。站空了。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -4 }
+            }
+          }
+        },
+        {
+          "id": "watch_only",
+          "label": "不打扰，看一会儿就走（氧气 -1）",
+          "outcome": {
+            "text": "你停在外圈，看那条大鱼被伺候。它眼睛半阖着，一副把自己托付出去的安生样子。看够了，你绕开这块石头，没惊动谁。",
+            "oxygenTurnCost": 1
+          }
+        },
+        {
+          "id": "skirt_station",
+          "label": "绕过这块珊瑚继续走",
+          "outcome": {
+            "text": "你从清洁站外侧绕过去。那点小小的秩序在身后继续运转，与你无关。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.dusk_chorus",
+      "depthRange": [20, 36],
+      "zoneTags": ["reef"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "黄昏的合唱",
+      "body": "天光斜下来，礁开始响。\n几百万只枪虾在打钳，石缝里的鱼在低声咕哝、嗡鸣，密密匝匝铺成一片，吵得耳朵发胀。每天这个点，礁都这么闹一阵。\n然后——不是慢慢停的。是一刀切下来。所有声音在同一个瞬间没了，齐刷刷地，像谁拉了闸。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "hold_still",
+          "label": "停在原地，等下一声响",
+          "outcome": {
+            "text": "你悬着不动，等。一秒，两秒，十秒。该响的没响。整片礁屏着，连水流都像放轻了。你听见的只有呼吸器的咝咝、和自己的心跳——还有，好像，很远的地方，有一下，不属于这里的、低低的什么。然后正常的杂响又一齐回来了，仿佛刚才那截空白从没发生。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -3 },
+            "loreEntry": "lore.reef.dusk_chorus"
+          }
+        },
+        {
+          "id": "toward_fish",
+          "label": "趁鱼还懵着，往刚才最闹的礁缝里摸一把",
+          "outcome": {
+            "text": "你赶在杂响回笼前，往刚才叫得最凶的那道礁缝里探手。鱼还没回过神，你掰下一块好珊瑚，惊起两条没头苍蝇似的小鱼。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.5 }]
+          }
+        },
+        {
+          "id": "press_on",
+          "label": "不理它，趁这阵静往前赶路（氧气 -1）",
+          "outcome": {
+            "text": "你借着这片反常的安静往前游，省了和满礁噪声较劲。等闹声回来时，你已经过去一截了。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.sea_fan_thicket",
+      "depthRange": [24, 40],
+      "zoneTags": ["reef"],
+      "weight": 8,
+      "cooldown": 4,
+      "title": "海扇林",
+      "body": "礁壁迎流的一面立满了海扇——半人高的紫红色扇子，骨架硬、网眼密，全侧着身子梳那股横流，梳得整整齐齐朝一个方向。\n扇骨上缠着海蛇尾，一条条细腕子绞进网眼里滤食。流稳的时候，这片扇林像一墙不动的旗。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "work_current",
+          "label": "顶着横流钻进扇林，掰迎流面那几丛（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你侧着身子顺流挤进去，专挑迎流长得最旺的几丛下手。扇骨脆，啪啪断在手里；惊跑了一窝缠在根上的海蛇尾。",
+              "oxygenTurnCost": 2,
+              "loot": [{ "itemId": "item.coral_shard", "qty": [2, 3] }]
+            },
+            "onFailure": {
+              "text": "横流比看着急。你刚探进去，一股侧推把你拍在扇林上，护胸刮过密密的扇骨，断枝糊了一面镜。你顺流退出来，手是空的。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -6 }
+            }
+          }
+        },
+        {
+          "id": "edge_pick",
+          "label": "只在林子边上够一丛背流的（氧气 -1）",
+          "outcome": {
+            "text": "你不进林子，在背流的边角够着一丛小的，轻轻掰下。省事，可背流面的扇子瘦，没几个网眼。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.6 }]
+          }
+        },
+        {
+          "id": "read_current",
+          "label": "先不动手，看这片扇子梳流的方向（氧气 -1）",
+          "outcome": {
+            "text": "你停下看那一墙海扇齐齐朝一边偏。它们比任何仪表都老实——流往哪走，一目了然。记下这股流的脾气，你往下个去处去。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
     }
   ]
 }

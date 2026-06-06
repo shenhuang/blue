@@ -1,0 +1,18 @@
+{
+  "_comment": "沉船墓园（24-40m）· 没送到的货 pick_crates 成功（realistic·灵感 Thistlegorm 摩托/板条箱货舱锈成一团）。stamina vs12 满状态 seed1 通过 → checkPassed true·oxygen-2·loot brass_fitting+canned_food（人造·chance 不断言）。墓园中段 realistic 密度。",
+  "eventId": "wreck_graveyard.the_cargo",
+  "depth": 32,
+  "seed": 1,
+  "choices": [
+    "pick_crates"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -2
+    }
+  }
+}

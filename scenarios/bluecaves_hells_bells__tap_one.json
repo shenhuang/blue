@@ -1,0 +1,18 @@
+{
+  "_comment": "石钟 tap_one：叩薄壳却无声 → sanity-4（无 lore，最重 sanity 的诚实-恐惧分支）。验证 uncanny 非 lore 路径。",
+  "eventId": "bluecaves.hells_bells",
+  "depth": 38,
+  "seed": 1,
+  "choices": [
+    "tap_one"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -4
+    }
+  }
+}

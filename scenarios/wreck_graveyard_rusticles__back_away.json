@@ -1,0 +1,18 @@
+{
+  "_comment": "锈的冰锥 back_away：不搅水退开的诚实出口 → sanity-1（无 lore）。验证最低代价盲退档。",
+  "eventId": "wreck_graveyard.rusticles",
+  "depth": 38,
+  "seed": 1,
+  "choices": [
+    "back_away"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -1
+    }
+  }
+}

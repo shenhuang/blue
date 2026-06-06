@@ -1,0 +1,21 @@
+{
+  "_comment": "旧灯塔礁中段（28-42m·oncePerRun）· 往上落的雪 drift_through（uncanny·灵感同步珊瑚产卵/月夜「上升的雪」）。任卵雪漫过、分不清谁在升 → lore.reef.coral_spawn + sanity-2。loot-free。填 reef 26-44m uncanny（此前仅 1=lighthouse_lens）。",
+  "eventId": "reef.coral_spawn",
+  "depth": 34,
+  "seed": 1,
+  "choices": [
+    "drift_through"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -2
+    },
+    "loreAdded": [
+      "lore.reef.coral_spawn"
+    ]
+  }
+}

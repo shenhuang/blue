@@ -1,0 +1,21 @@
+{
+  "_comment": "沉船墓园（30-46m）· 锈的冰锥 touch_one（uncanny·灵感 Titanic rusticles/嗜铁菌 Halomonas titanicae 活体吃船）。一碰即塌、钢只剩薄薄透亮一层 → lore.wreck_graveyard.rusticles + sanity-3。loot-free（活物腐蚀·非采集）。填墓园 26-44m uncanny。",
+  "eventId": "wreck_graveyard.rusticles",
+  "depth": 38,
+  "seed": 1,
+  "choices": [
+    "touch_one"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -3
+    },
+    "loreAdded": [
+      "lore.wreck_graveyard.rusticles"
+    ]
+  }
+}
