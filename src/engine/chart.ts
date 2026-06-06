@@ -19,7 +19,6 @@ import {
   OUTPOST_USABLE_STAGE,
 } from './lighthouses';
 import { effectiveRevealRadius } from './outposts';
-import { makeLcg } from './rng';
 
 /**
  * 归一化海图距离 → "distance 档"的换算系数（reach，SPEC §4/§9 tunable）。
@@ -193,60 +192,49 @@ export function isPoiDepartable(profile: PlayerProfile, poi: ChartPoi): boolean 
   return isPoiVisible(profile, poi) && poiLockReason(profile, poi) === null;
 }
 
-/** 加权不放回抽 n 个 */
-function pickWithoutReplacement(
-  templates: RoamingTemplate[],
-  n: number,
-  rng: () => number,
-): RoamingTemplate[] {
-  const pool = [...templates];
-  const out: RoamingTemplate[] = [];
-  while (out.length < n && pool.length > 0) {
-    const total = pool.reduce((a, t) => a + (t.weight ?? 1), 0);
-    let r = rng() * total;
-    let idx = pool.length - 1;
-    for (let i = 0; i < pool.length; i++) {
-      r -= pool[i].weight ?? 1;
-      if (r <= 0) {
-        idx = i;
-        break;
-      }
-    }
-    out.push(pool[idx]);
-    pool.splice(idx, 1);
-  }
-  return out;
+/**
+ * roaming 选取键（声呐与房间 §6.5「即时新 POI 浮现」）——**pool-independent 确定性加权键**。
+ * 用 Efraimidis–Spirakis 加权水库采样（A-Res）：key = u^(1/weight)，u∈(0,1) 由 (runsCompleted, templateId)
+ * 确定性哈希；取 key 最大的 N 个 ＝ 等价于「加权不放回抽样」，但**每个模板的键不依赖池子里还有谁**。
+ *
+ * 这条「池无关」性质正是「即时新 POI 浮现」的关键（#80 留的尾巴）：玩家在港口中途点亮一座灯塔→
+ * 远端机会点进入可见池（池变大），旧算法（顺序加权抽，依赖池子组成）会把已显示的 roaming **整组重洗**；
+ * 改成 pool-independent 键后，同 runsCompleted 的已选 roaming **稳定不动**，至多被一个 key 更高的「新点亮」
+ * 模板挤掉一个（确定性、最小变化），不会无谓重排。锚点本就不受选取限制，重算即浮现。
+ */
+function roamingKey(runsCompleted: number, t: RoamingTemplate): number {
+  const u = (condHash(runsCompleted, `roam:${t.templateId}`) % 1_000_000) / 1_000_000; // (0,1)
+  const w = Math.max(1, t.weight ?? 1);
+  return Math.pow(Math.max(1e-9, u), 1 / w); // 越大优先级越高；高 weight → 平均 key 更大（保留加权语义）
 }
 
 /**
- * 生成当前海图。
+ * 生成当前海图。纯函数、确定性（种子＝profile.runsCompleted）——roaming 选取 pool-independent
+ * （roamingKey），故中途点亮灯塔重算时不重洗已显示的机会点（§6.5「即时新 POI 浮现」，#80 尾巴）。
  * @param opts.profile 玩家档案（门控 + 种子来源）
- * @param opts.rng     可选 RNG（测试可传确定性 rng）；默认按 runsCompleted 种子化
  */
-export function generateChart(opts: {
-  profile: PlayerProfile;
-  rng?: () => number;
-}): SeaChart {
+export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
   const { profile } = opts;
-  // +1 避免 runsCompleted=0 时种子为 0
-  const rng = opts.rng ?? makeLcg(profile.runsCompleted + 1);
   const conditions = chartConditions(profile);
 
   const pois: ChartPoi[] = [];
 
-  // anchor：所有"已发现"的都进（锚点是你的可靠网——海况/天气永不遮蔽它们，守进度安全）
+  // anchor：所有"已发现"的都进（锚点是你的可靠网——海况/天气永不遮蔽它们，守进度安全）。
+  // 中途点亮灯塔→新进范围的锚点这里立刻进（SeaChartView chart memo 已加灯塔签名重算）＝即时浮现。
   for (const a of FILE.anchors) {
     if (isPoiVisible(profile, a)) pois.push(a);
   }
 
-  // roaming：从"已发现 + 已点亮"的模板里加权不放回抽 ROAMING_COUNT 个
-  // （远端机会点不在 home 半径内 → 修复前哨灯塔点亮后才会进池）
+  // roaming：从"已发现 + 已点亮"的模板里取 roamingKey 最大的 ROAMING_COUNT 个（pool-independent 确定性·见 roamingKey）。
+  // （远端机会点不在 home 半径内 → 修复前哨灯塔点亮后才进可见池；池变大也不重洗已选，至多挤掉一个。）
   const visibleTemplates = FILE.roamingTemplates.filter(
     (t) => flagsSatisfied(profile, t.requiresFlags) && isLit(profile, t.mapX, t.mapY),
   );
-  const picked = pickWithoutReplacement(visibleTemplates, ROAMING_COUNT, rng);
-  let roaming: ChartPoi[] = picked.map((t, i) => ({
-    id: `poi.roam.${profile.runsCompleted}.${i}`,
+  const picked = [...visibleTemplates]
+    .sort((a, b) => roamingKey(profile.runsCompleted, b) - roamingKey(profile.runsCompleted, a))
+    .slice(0, ROAMING_COUNT);
+  let roaming: ChartPoi[] = picked.map((t) => ({
+    id: `poi.roam.${profile.runsCompleted}.${t.templateId}`,
     zoneId: t.zoneId,
     name: t.name,
     blurb: t.blurb,

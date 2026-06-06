@@ -34,7 +34,7 @@ function assert(cond: unknown, msg: string): asserts cond {
   }
 }
 
-/** 与 chart.ts 同算法的 LCG（确定性测试用） */
+/** 确定性 LCG（generateDiveMap 的 rng 注入用；chart.ts 的 roaming 现走 pool-independent 键、不再用 LCG） */
 function lcg(seed: number): () => number {
   let s = seed >>> 0;
   return () => {
@@ -77,7 +77,8 @@ assert(preChart.pois.length === 0, '教学前海图应为空（全部 anchor/tem
 L('  教学前：海图为空 ✓');
 
 const postNoUp = profileWith(['flag.tutorial_complete']);
-const c1 = generateChart({ profile: postNoUp, rng: lcg(1) });
+// roaming 现为 pool-independent 确定性选取（runsCompleted 种子），不再需要注入 rng（§6.5 即时新 POI 浮现）
+const c1 = generateChart({ profile: postNoUp });
 for (const z of ['zone.east_reef', 'zone.blue_caves', 'zone.wreck_graveyard', 'zone.old_lighthouse_reef']) {
   assert(c1.pois.some((p) => p.zoneId === z && p.persistent), `教学后应含 anchor: ${z}`);
 }
@@ -98,7 +99,7 @@ assert(isPoiDepartable(postNoUp, bc), '蓝洞群无升级门，应可出海');
 L('  蓝洞群：无升级门，可出海 ✓');
 
 const postUp = withHomeDockyard(profileWith(['flag.tutorial_complete']));
-const c2 = generateChart({ profile: postUp, rng: lcg(1) });
+const c2 = generateChart({ profile: postUp });
 const lh2 = c2.pois.find((p) => p.zoneId === 'zone.old_lighthouse_reef' && p.persistent)!;
 assert(poiLockReason(postUp, lh2) === null, '建了家灯塔船坞后旧灯塔礁应可出海');
 L('  建家灯塔船坞后旧灯塔礁：解锁 ✓');
@@ -305,6 +306,42 @@ assert(
 );
 assert(fogChart.conditions.weather === 'fog' && calmChart.conditions.weather !== 'fog', '7: SeaChart.conditions 落返回结构');
 L(`  海况确定性 + 随回合变 + 浓雾遮一处（run ${fogRun} 雾→${fogRoam} / run ${calmRun} ${calmChart.conditions.weather}→${calmRoam}）+ 锚点不受影响 ✓`);
+
+// ============================================
+// 8. 即时新 POI 浮现（§6.5·#80 尾巴）：中途点亮灯塔→新机会点即时进图 + roaming 选取 pool-independent
+// ============================================
+// 核心修复在 SeaChartView 的 chart memo（加灯塔签名→建灯当场重算，否则等下个 run）；引擎侧守两条不变量：
+//   (a) 远端 roaming 坐标 home 不点亮、加前哨即点亮（同 runsCompleted）＝新 POI 进可见池不必等下个 run；
+//   (b) roaming 选取确定性 + 模板键 id（pool-independent·见 chart.ts roamingKey）＝同 profile 重算稳定、
+//       中途点亮灯塔不把已显示的机会点整组重洗（旧顺序加权抽依赖池子组成、会重排）。
+L('\n========== 8. 即时新 POI 浮现（§6.5·#80 尾巴）==========');
+// 找一个非浓雾的 runsCompleted（2 个 roaming·避免遮蔽干扰断言）
+let clearRun = 0;
+while (chartConditions(profileWith([], [], clearRun)).weather === 'fog') clearRun++;
+const homeR = profileWith(['flag.tutorial_complete'], [], clearRun);
+// 远端 roaming 模板「塌口北缘」坐标(0.85,0.64)：home 不点亮、前哨点亮（同 §2b 的远端门）
+const farRoam: ChartPoi = { id: 't.farroam', zoneId: 'zone.wreck_graveyard', name: '', blurb: '', distance: 2, mapX: 0.85, mapY: 0.64, persistent: false };
+assert(!isPoiLit(homeR, farRoam), '8a: home-only 不点亮远端 roaming 坐标（前哨前）');
+const homeOutpost: PlayerProfile = {
+  ...homeR,
+  lighthouses: [
+    ...homeR.lighthouses,
+    { id: 'lighthouse.outpost_far', name: '远端前哨', mapX: 0.8, mapY: 0.6, level: 1, builtUpgrades: new Set() },
+  ],
+};
+// (a) 加前哨（同 runsCompleted）→ 远端坐标被点亮＝新机会点即时进可见池，不必等下个 run
+assert(isPoiLit(homeOutpost, farRoam), '8a: 加前哨后远端 roaming 坐标被点亮＝新 POI 即时进图（同 run）');
+// (b) roaming id 为模板键（poi.roam.<run>.<templateId>）+ 同 profile 重算确定一致
+const roamIds = (p: PlayerProfile) =>
+  generateChart({ profile: p }).pois.filter((x) => !x.persistent && !x.mimic).map((x) => x.id);
+const ids1 = roamIds(homeOutpost);
+const ids2 = roamIds(homeOutpost);
+assert(ids1.join('|') === ids2.join('|'), '8b: 同 profile 重算 roaming 一致（确定性·pool-independent）');
+assert(
+  ids1.every((id) => /^poi\.roam\.\d+\.[a-z_.]+$/.test(id)),
+  `8b: roaming id 应为模板键 poi.roam.<run>.<templateId>（稳定·不重洗），实际 ${ids1.join(',')}`,
+);
+L(`  远端 roaming 即时点亮(run ${clearRun}) + roaming 模板键 id 确定性(${ids1.length} 个) ✓`);
 
 console.log(log.join('\n'));
 console.log('\n✓ 海图 playthrough 完成');

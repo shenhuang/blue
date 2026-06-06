@@ -63,11 +63,25 @@ function conditionLine(c: { tide: 'flood' | 'ebb'; weather: 'clear' | 'mist' | '
 }
 
 export function SeaChartView({ state, onStateChange }: Props) {
-  // 海图派生自 profile；出海前 profile 不变，按 runsCompleted 记忆即可（roaming 的种子）
+  // 海图派生自 profile。除 runsCompleted（roaming 种子）外，还要在**中途点亮/升级灯塔**时重算——
+  // 否则新进入灯塔范围的 POI 要等下个 run 才浮现（§6.5「即时新 POI 浮现」，#80 尾巴）。
+  // 签名捕捉一切影响 reveal/可见性的 profile 态：灯塔（坐标 + 设施 + 衰减后有效半径）+ flags（requiresFlags / mimic 引诱门）。
+  // roaming 选取 pool-independent（chart.ts roamingKey）→ 重算不重洗已显示的机会点，只让新点亮的浮现。
+  const chartSig = useMemo(() => {
+    const p = state.profile;
+    const lh = p.lighthouses
+      .map(
+        (l) =>
+          `${l.id}@${l.mapX.toFixed(3)},${l.mapY.toFixed(3)}:${[...l.builtUpgrades].sort().join('+')}:${effectiveRevealRadius(p, l).toFixed(3)}`,
+      )
+      .sort()
+      .join('|');
+    return `${p.runsCompleted}#${lh}#${[...p.flags].sort().join(',')}`;
+  }, [state.profile]);
   const chart = useMemo(
     () => generateChart({ profile: state.profile }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.profile.runsCompleted],
+    [chartSig],
   );
 
   // 打捞行会 Lv.2：出海前可选定一具尸体作为本次目标（保证出现在图里）

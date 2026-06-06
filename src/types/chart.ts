@@ -33,7 +33,7 @@ export interface PoiModifier {
 
 /** 海图上的一个兴趣点 */
 export interface ChartPoi {
-  /** 运行时稳定 id（anchor 在数据里写死；roaming 形如 `poi.roam.<seed>.<i>`） */
+  /** 运行时稳定 id（anchor 在数据里写死；roaming 形如 `poi.roam.<runsCompleted>.<templateId>`，按模板键稳定·中途点亮灯塔不重洗） */
   id: string;
   /** 引用的 zone（ZoneDef.id） */
   zoneId: string;
