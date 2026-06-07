@@ -20,6 +20,18 @@ import { ALERT_WARN } from './clarity';
 
 /** 猎手现身时距你的跳数（声呐量程外·不是当场伏击·给你读出来 + 反应的窗口）。 */
 export const STALKER_SPAWN_HOPS = 3;
+/**
+ * 速度阀 HSPEED（猎手 SPEC §5·**核心平衡旋钮**）：每回合沿图推进的「一条边的分数」。
+ * ~1.0＝同速贴住（几乎一回合一节点·旧 node-bound 观感）；<1＝玩家纯移动能拉开一点（可甩·少数设计内）；>1＝死咬。
+ * 取 0.8＝「通常追得上」但留逃口：一跳之差时它当回合贴进 ≤CONTACT_DIST → 接触（见 contactWith）；长直水道纯逃则慢慢拉开。
+ * mid-edge 由此产生（非整数推进 → 它常处通道中段·渲染插值）。调它＝调追击松紧（单常量·作者可肉眼试后改）。
+ */
+export const STALKER_HSPEED = 0.8;
+/**
+ * 接触的「贴到你」阈值（边分数·猎手 SPEC §5「猎手位置贴到你<阈值=接触」）：猎手落在与你节点相邻的边上、
+ * 且离你的节点 ≤ 此值 → 接触（即使没正好压到节点）。0.5＝半条边内算贴上＝一跳之差也躲不掉、得靠切信号甩。
+ */
+export const STALKER_CONTACT_DIST = 0.5;
 /** 非「掉头就走」的猎手丢信号后默认要等的回合数（原地 wait 或抵达上次信号点后皆此一个「等」时长·猎手 SPEC §2.3）。 */
 export const STALKER_WAIT_TURNS = 3;
 /** 'seek_last' 的总搜索硬上限（够不到 lastSignal / 一直找不到你 → 到点就放弃脱离，避免无限追）。 */
@@ -115,6 +127,102 @@ export function spawnNodeFor(map: DiveMap, originId: string, hops: number): stri
 }
 
 // ============================================================
+// mid-edge 位置（猎手 SPEC §5）：位置＝锚节点 nodeId（+ 可选正前往的 edgeTo / 已走分数 edgeProg）。
+// 推进＝沿 BFS 最短路按 HSPEED 预算一段一段走，可停在通道中段；接触＝走进/贴近/对穿。全部确定性、不耗 RNG。
+// ============================================================
+
+/** 猎手的连续位置（锚节点 + 可选中段边）。edgeTo 空＝在 nodeId 节点上。 */
+interface StalkerPos {
+  nodeId: string;
+  edgeTo?: string;
+  edgeProg?: number;
+}
+
+const POS_EPS = 1e-9;
+
+/** 是否正处在 id 节点上（非中段）。 */
+function atNode(pos: StalkerPos, id: string): boolean {
+  return (pos.edgeTo === undefined || (pos.edgeProg ?? 0) <= POS_EPS) && pos.nodeId === id;
+}
+
+/** 把连续位置写回猎手对象（在节点则清掉 edge 字段＝JSON 自动省略·round-trip 干净）。 */
+function applyPos(s: Stalker, np: StalkerPos): void {
+  s.nodeId = np.nodeId;
+  s.edgeTo = np.edgeTo;
+  s.edgeProg = np.edgeTo === undefined ? undefined : np.edgeProg;
+}
+
+/**
+ * 从 pos 朝 targetId 用 budget（边分数）推进（猎手 SPEC §5）：沿无向 BFS 最短路一段段走，预算用尽则停在中段。
+ * 中段起步先朝「离目标更近的那一端」定向（可在边上掉头）；抵达 target 节点即停（不越过）。确定性（BFS 邻居按 id 排序）。
+ */
+function walkToward(map: DiveMap, pos: StalkerPos, targetId: string, budget: number): StalkerPos {
+  let nodeId = pos.nodeId;
+  let edgeTo = pos.edgeTo;
+  let prog = pos.edgeProg ?? 0;
+  // 归一：贴节点 / 已到对端
+  if (edgeTo === undefined || prog <= POS_EPS) {
+    edgeTo = undefined;
+    prog = 0;
+  } else if (prog >= 1 - POS_EPS) {
+    nodeId = edgeTo;
+    edgeTo = undefined;
+    prog = 0;
+  }
+  // 中段定向：朝离目标更近的一端（必要时在本边掉头）
+  if (edgeTo !== undefined) {
+    const dist = bfsDist(map, targetId); // 无向 → dist[X]＝X 到 target 的跳数
+    const dA = dist[nodeId] ?? Infinity;
+    const dB = dist[edgeTo] ?? Infinity;
+    if (dA < dB) {
+      const t = nodeId;
+      nodeId = edgeTo;
+      edgeTo = t;
+      prog = 1 - prog;
+    }
+  }
+  let left = budget;
+  while (left > POS_EPS) {
+    if (edgeTo === undefined) {
+      if (nodeId === targetId) break;
+      const hop = nextHopToward(map, nodeId, targetId);
+      if (!hop) break;
+      edgeTo = hop;
+      prog = 0;
+    }
+    const remain = 1 - prog;
+    if (left >= remain - POS_EPS) {
+      left -= remain;
+      nodeId = edgeTo;
+      edgeTo = undefined;
+      prog = 0;
+    } else {
+      prog += left;
+      left = 0;
+    }
+  }
+  return edgeTo === undefined ? { nodeId } : { nodeId, edgeTo, edgeProg: prog };
+}
+
+/** 接触判定（猎手 SPEC §5）：走进你的节点 / 贴到你节点 ≤ CONTACT_DIST（中段相邻边）。 */
+function contactWith(pos: StalkerPos, here: string): boolean {
+  if (pos.edgeTo === undefined) return pos.nodeId === here; // 在节点：压到你的节点＝接触
+  const prog = pos.edgeProg ?? 0;
+  if (pos.edgeTo === here) return 1 - prog <= STALKER_CONTACT_DIST; // 朝你的节点逼近、已贴近
+  if (pos.nodeId === here) return prog <= STALKER_CONTACT_DIST; // 刚离开你的节点但还贴着
+  return false;
+}
+
+/**
+ * 对穿接触（猎手 SPEC §5「同回合你 A→B、它 B→A 对穿同一条边＝接触·不能穿过它」）：
+ * 玩家这回合走过边 {a,b}；若猎手「推进前」正处在这条边的中段，则玩家穿过了它＝接触（贴节点情形由 contactWith 覆盖）。
+ */
+function stalkerCrossesEdge(pos: StalkerPos, a: string, b: string): boolean {
+  if (pos.edgeTo === undefined) return false;
+  return (pos.nodeId === a && pos.edgeTo === b) || (pos.nodeId === b && pos.edgeTo === a);
+}
+
+// ============================================================
 // 出现 / 逼近 / 接触（SPEC §2.4）+ 声呐感知（§2.1/§8.7）
 // ============================================================
 
@@ -162,35 +270,42 @@ export function maybeSpawnStalker(run: RunState, pool: string[]): Stalker | null
 export function advanceStalker(
   run: RunState,
   stalker: Stalker,
+  fromNodeId?: string,
 ): { stalker: Stalker | null; contact: boolean } {
   if (!run.map || !run.currentNodeId) return { stalker, contact: false };
+  const map = run.map;
   const here = run.currentNodeId;
+  const posBefore: StalkerPos = { nodeId: stalker.nodeId, edgeTo: stalker.edgeTo, edgeProg: stalker.edgeProg };
+
+  // 对穿接触（§5）：玩家这回合走过边 {fromNodeId, here}，若推进前猎手正卡在这条边中段 → 穿过它＝接触（优先·不论追/搜/等）。
+  if (fromNodeId !== undefined && stalkerCrossesEdge(posBefore, fromNodeId, here)) {
+    return { stalker: { ...stalker }, contact: true };
+  }
+
   const s: Stalker = { ...stalker };
   // 有你的信号 ＝ 你够「响」（alert 越线）且这一回合没被你的规避装备甩脱（§3·缺省无升级 → playerEvadesStalker 恒 false → 逐字节不变）。
   if ((run.alert ?? 0) >= STALKER_SIGNAL_ALERT && !playerEvadesStalker(run, stalker)) {
-    // 有你的信号 → 朝你逼近一跳·刷新 lastSignal·清等待计时。
+    // 有你的信号 → 朝你按 HSPEED 推进（可停中段）·刷新 lastSignal·清等待计时。
     s.state = 'hunting';
     s.turnsSinceSignal = 0;
     s.waitedTurns = 0;
     s.lastSignalNodeId = here;
-    const hop = nextHopToward(run.map, s.nodeId, here);
-    if (hop) s.nodeId = hop;
-    return { stalker: s, contact: s.nodeId === here };
+    applyPos(s, walkToward(map, posBefore, here, STALKER_HSPEED));
+    return { stalker: s, contact: contactWith(s, here) };
   }
   // 信号切断 → 按性格搜（§2.3）。
   s.turnsSinceSignal += 1;
   s.state = 'searching';
-  // seek_last 还没走到上次信号点 → 继续走（不计「等」；走太久够不到 → 放弃脱离）。
-  if (s.onLostSignal === 'seek_last' && s.nodeId !== s.lastSignalNodeId) {
+  // seek_last 还没抵达上次信号点 → 继续朝它推进（不计「等」；走太久够不到 → 放弃脱离）。
+  if (s.onLostSignal === 'seek_last' && !atNode(posBefore, s.lastSignalNodeId)) {
     if (s.turnsSinceSignal > STALKER_SEEK_MAX_TURNS) return { stalker: null, contact: false };
-    const hop = nextHopToward(run.map, s.nodeId, s.lastSignalNodeId);
-    if (hop) s.nodeId = hop;
-    return { stalker: s, contact: s.nodeId === here };
+    applyPos(s, walkToward(map, posBefore, s.lastSignalNodeId, STALKER_HSPEED));
+    return { stalker: s, contact: contactWith(s, here) }; // 搜索路过你的节点也算接触
   }
-  // 在等候点（原地 wait / 已抵达上次信号点）→ 等 waitTurns 回合（0 = 立刻走）。
+  // 在等候点（原地 wait / 已抵达上次信号点）→ 等 waitTurns 回合（0 = 立刻走）。不动；仍可能因你走进而接触。
   s.waitedTurns += 1;
   if (s.waitedTurns > s.waitTurns) return { stalker: null, contact: false };
-  return { stalker: s, contact: s.nodeId === here };
+  return { stalker: s, contact: contactWith(posBefore, here) };
 }
 
 /**
@@ -229,17 +344,36 @@ export function playerEvadesStalker(run: RunState, stalker: Stalker): boolean {
  */
 export function scanStalker(run: RunState, stalker: Stalker): Stalker {
   if (!run.map || !run.currentNodeId) return stalker;
-  const inRange = revealSonarScan(run.map, run.currentNodeId, sonarScanRange(run)).includes(stalker.nodeId);
+  const reached = revealSonarScan(run.map, run.currentNodeId, sonarScanRange(run));
+  // mid-edge：边的任一端进量程即「扫到」（波前够到这段通道）。
+  const inRange = reached.includes(stalker.nodeId) || (stalker.edgeTo !== undefined && reached.includes(stalker.edgeTo));
   if (!inRange || stalkerEvadesScan(run, stalker)) return stalker;
-  return { ...stalker, seenNodeId: stalker.nodeId, seenTurn: run.turn };
+  // 快照当前位置（含中段）→ 红点只在被扫到那刻刷新、之间冻结（§8.7）。
+  return {
+    ...stalker,
+    seenNodeId: stalker.nodeId,
+    seenEdgeTo: stalker.edgeTo,
+    seenEdgeProg: stalker.edgeTo === undefined ? undefined : stalker.edgeProg,
+    seenTurn: run.turn,
+  };
 }
 
 /**
  * 声呐图上猎手的（会过时的）位置（§2.1/§8.7·SonarScanPanel 纯渲染读这里）：上次被声呐扫到的节点 + 余像年龄 + 是否大型生物；
  * 从没扫到（seenNodeId undefined）/ 节点已不在图 → null（你只「感觉」到它在、没定位）。large（§5 接触带大小）→ 面板画成一大团。
  */
-export function stalkerSonarBlip(run: RunState): { nodeId: string; stale: number; large: boolean } | null {
+export function stalkerSonarBlip(
+  run: RunState,
+): { nodeId: string; edgeTo?: string; edgeProg?: number; stale: number; large: boolean } | null {
   const s = run.stalker;
   if (!s || s.seenNodeId === undefined || !run.map?.nodes[s.seenNodeId]) return null;
-  return { nodeId: s.seenNodeId, stale: (run.turn ?? 0) - (s.seenTurn ?? run.turn ?? 0), large: s.large ?? false };
+  // 中段快照仅在 to 端仍在图上才透传（否则退化为节点红点·渲染端 layout 也只认在图节点）。
+  const edgeTo = s.seenEdgeTo !== undefined && run.map?.nodes[s.seenEdgeTo] ? s.seenEdgeTo : undefined;
+  return {
+    nodeId: s.seenNodeId,
+    edgeTo,
+    edgeProg: edgeTo ? (s.seenEdgeProg ?? 0) : undefined,
+    stale: (run.turn ?? 0) - (s.seenTurn ?? run.turn ?? 0),
+    large: s.large ?? false,
+  };
 }

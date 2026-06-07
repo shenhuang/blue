@@ -1,5 +1,5 @@
 import type { GameState, NodeChoice, FeatureChoice, SonarDir } from '@/types';
-import { moveToNode, setLight, pingSonar, exploreFeature } from '@/engine/dive';
+import { moveToNode, setLight, pingSonar, exploreFeature, standAndFight } from '@/engine/dive';
 import { clarity, sonarPingCost, ALERT_WARN, ALERT_THRESHOLD } from '@/engine/clarity';
 import { seenStalkerSector } from '@/engine/sonar';
 import { zoneAllowsBacktrack } from '@/engine/zones';
@@ -144,6 +144,19 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
           <p className="alert-warning stalker-searching">
             你熄了光、停了声，可那东西没走——它在你最后惊动它的地方附近，慢慢地摸。再被它撞上，又得从头躲起。
           </p>
+        )}
+
+        {/* 停下·迎战（猎手 SPEC §5）：感觉到有猎手在追时，可主动转身开打——先手暴击，比被追上时措手不及划算。
+            run.stalker 存在即给（你「感觉」得到它在·§2.1）；接触后 stalker 清空、按钮自然消失。 */}
+        {run.stalker && (
+          <div className="stalker-engage">
+            <button className="btn stalker-engage-btn" onClick={() => onStateChange(standAndFight(state))}>
+              停下 · 迎战（先手）
+            </button>
+            <span className="dim stalker-engage-hint">
+              转身面对它、先发制人——总好过被它追上时背对着挨那一口。
+            </span>
+          </div>
         )}
 
         {/* 多事件房间（声呐与房间 S1）：当前这片水域里还能凑近看的几处 feature（每探付氧）。 */}

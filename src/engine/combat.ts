@@ -76,7 +76,11 @@ export function listAllEncounters(): CombatEncounterDef[] { return [...COMBAT_EN
 
 // ——— 战斗发起 ———
 
-export function startCombat(state: GameState, combatId: string): GameState {
+export function startCombat(
+  state: GameState,
+  combatId: string,
+  initialPlayerStatuses?: PlayerStatus[],
+): GameState {
   const enc = COMBAT_ENCOUNTERS.get(combatId);
   if (!enc || !state.run) return state;
 
@@ -99,7 +103,8 @@ export function startCombat(state: GameState, combatId: string): GameState {
     encounterId: enc.id,
     enemies,
     reinforcementPool: enc.reinforcementPool,
-    playerStatuses: [],
+    // 迎战先手（猎手 SPEC §5）：standAndFight 传入 ambushing → 你先发制人；缺省 []＝旧调用逐字节不变。
+    playerStatuses: initialPlayerStatuses ? [...initialPlayerStatuses] : [],
     turn: 0,
     log: [],
     victoryEventId: enc.victoryEventId,

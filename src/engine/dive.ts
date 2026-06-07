@@ -615,13 +615,18 @@ function maybeApproachEncounter(state: GameState, target: DiveNode): GameState |
  *   - 无猎手 + 越线（predatorApproaches·同旧触发线）→ 在声呐量程外现身（不当场伏击·给读出来+反应的窗口）。
  * 仅进入事件/尸体节点时（地标是落脚点·不伏击·留「摸黑奔向出口」的出路·同旧路径）。
  */
-function stalkerStep(state: GameState, target: DiveNode): { state: GameState; contact: boolean } {
+function stalkerStep(
+  state: GameState,
+  target: DiveNode,
+  fromNodeId?: string,
+): { state: GameState; contact: boolean } {
   const run = state.run;
   if (!run || !run.map) return { state, contact: false };
   if (target.kind !== 'event' && target.kind !== 'corpse') return { state, contact: false };
 
   if (run.stalker) {
-    const { stalker: next, contact } = advanceStalker(run, run.stalker);
+    // fromNodeId＝玩家这回合刚离开的节点（对穿接触判定·§5）。
+    const { stalker: next, contact } = advanceStalker(run, run.stalker, fromNodeId);
     if (contact && next) {
       // 接触 → 触发现有伏击遭遇（复用 zone 的 ambushEncounters）；清猎手 + 警觉落缓冲（避免连环）。
       let s: GameState = { ...state, run: { ...run, stalker: undefined, alert: ALERT_AFTER_TRIGGER } };
@@ -657,6 +662,25 @@ function stalkerStep(state: GameState, target: DiveNode): { state: GameState; co
   return { state: s, contact: false };
 }
 
+/** 迎战先手暴击倍率（猎手 SPEC §5「选择迎战给先手优势」·与 combat ambush 默认同档）。 */
+const STAND_FIGHT_MULT = 1.5;
+
+/**
+ * 停下·迎战（猎手 SPEC §5）：有猎手时玩家主动开打——在你的条件下接战，先手 ambushing 暴击（对比被追上时的被动伏击吃亏）。
+ * 复用该猎手的 encounterId（zone ambushEncounters·不加新敌）；清猎手 + 警觉落缓冲（同接触后处理·避免连环）。无猎手 → 原样。
+ */
+export function standAndFight(state: GameState): GameState {
+  const run = state.run;
+  if (!run || !run.stalker) return state;
+  const encounterId = run.stalker.encounterId;
+  let s: GameState = { ...state, run: { ...run, stalker: undefined, alert: ALERT_AFTER_TRIGGER } };
+  s = appendLog(s, {
+    tone: 'realistic',
+    text: '你不再退——稳住身体，把光对准黑暗里那东西，抢在它扑上来之前先发制人。',
+  });
+  return startCombat(s, encounterId, [{ kind: 'ambushing', remaining: 2, param: STAND_FIGHT_MULT }]);
+}
+
 /** 玩家点选了一个节点 → 进入该节点。过渡耗回合，再按节点 kind 决定下一步 */
 export function moveToNode(state: GameState, nodeId: string): GameState {
   const run = state.run;
@@ -683,7 +707,8 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
   //   - 深 band（run.huntEnabled·猎手 SPEC Phase 1）→ 有位置的逼近猎手（出现→逼近→接触才伏击·非接触则照常进节点）；
   //   - 其它（浅水 / POI 下潜 / 旧路径）→ 旧 alert→伏击瞬时遭遇（逐字节不变·守 playthrough-stealth §4-§6）。
   if (s.run!.huntEnabled) {
-    const hunted = stalkerStep(s, target);
+    // run.currentNodeId（applyTransit 前）＝你刚离开的节点 → 对穿接触判定（§5）。
+    const hunted = stalkerStep(s, target, run.currentNodeId ?? undefined);
     if (hunted.contact) return hunted.state; // 接触→伏击 combat，提前返回
     s = hunted.state; // 现身 / 逼近 / 跟丢：更新 s（含 run.stalker + 叙事），继续进节点
   } else {

@@ -179,8 +179,16 @@ export type StalkerLostBehavior = 'wait' | 'seek_last';
  * 仅在 run.huntEnabled（DepthBand.hunts·深 band）时 engage；缺省 → 引擎走旧 alert→伏击瞬时路径（向后兼容）。
  */
 export interface Stalker {
-  /** 真实当前位置节点 id（每回合朝你逼近·你未必看得到——声呐才定位、且会过时）。 */
+  /**
+   * 真实当前位置的**锚节点**（每回合朝你逼近·你未必看得到——声呐才定位、且会过时）。
+   * mid-edge（猎手 SPEC §5）：当 edgeTo 有值时 nodeId＝它正离开的「起点」节点，真实位置在 nodeId→edgeTo 边上的 edgeProg 处；
+   * edgeTo 为空＝正处在 nodeId 节点上（贴节点）。扇区/距离/哈希仍用 nodeId 锚（粗粒度足够）。
+   */
   nodeId: string;
+  /** 正前往的相邻节点（mid-edge·猎手 SPEC §5）；undefined＝在 nodeId 节点上（非中段）。additive·不 bump SAVE_VERSION。 */
+  edgeTo?: string;
+  /** 沿 nodeId→edgeTo 已走的边分数 0–1（mid-edge）；undefined/0＝在 nodeId。渲染对 nodeId→edgeTo 线性插值。 */
+  edgeProg?: number;
   /** 用什么感官找你（§2.2）。 */
   sensesBy: SenseModality;
   /** 信号切断后的性格（§2.3）：原地等 / 先去上次信号点再等。 */
@@ -199,6 +207,10 @@ export interface Stalker {
   waitedTurns: number;
   /** 声呐上次扫到它的位置（§8.7「只在被扫到时更新」·渲染用这个＝会过时）；从没扫到 → undefined（你只「感觉」到它）。 */
   seenNodeId?: string;
+  /** 上次被扫到时它所在边的 to 端（mid-edge 快照·§5/§8.7）；空＝那一刻它在 seenNodeId 节点上。渲染据此插值出「中段红点」。 */
+  seenEdgeTo?: string;
+  /** 上次被扫到时的 edgeProg（mid-edge 快照·配合 seenEdgeTo）。 */
+  seenEdgeProg?: number;
   /** 上次被声呐扫到的 run.turn（余像渐隐用）。 */
   seenTurn?: number;
   /**

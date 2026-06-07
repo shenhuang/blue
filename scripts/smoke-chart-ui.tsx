@@ -508,7 +508,11 @@ const htmlStalkerLarge = renderToStaticMarkup(
 );
 assert(htmlStalkerLarge.includes('is-large') && htmlStalkerLarge.includes('sonar-stalker-mass'), 'E8: 大型生物猎手 → 一大团 (is-large + sonar-stalker-mass)');
 assert(!htmlStalkerFix.includes('sonar-stalker-mass'), 'E8: 普通猎手 → 无弥散质量（小 blip）');
-L('  声呐定位→精确 blip+压住模糊接触 / 未定位→回落模糊接触 / 大型生物→一大团 ✓');
+// 停下·迎战（猎手 SPEC §5·mid-edge 追击重做）：有猎手 → 给迎战按钮（你「感觉」得到它在）；无猎手 → 不给。
+assert(htmlStalkerFix.includes('stalker-engage'), 'E8: 有猎手 → 给「停下·迎战」按钮 (stalker-engage)');
+const htmlNoStalker = renderToStaticMarkup(<NodeSelectView state={diveState()} choices={truthChoice} onStateChange={noop} />);
+assert(!htmlNoStalker.includes('stalker-engage'), 'E8: 无猎手 → 不给迎战按钮（不误导）');
+L('  声呐定位→精确 blip+压住模糊接触 / 未定位→回落模糊接触 / 大型生物→一大团 / 有猎手→迎战按钮 ✓');
 
 // ============================================
 // F. SeaChartView · 打捞行会 Lv.2 出海前选目标尸体
