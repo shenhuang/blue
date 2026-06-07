@@ -162,13 +162,26 @@ export function lampEffective(run: RunState): boolean {
   return lampOn(run) && run.diveModifier?.visibility !== 'dark';
 }
 
-/** 声呐是否在发挥作用：已解锁 + 本次选点设为 ping + 有电。 */
+/** 声呐是否在发挥作用：已解锁 + 本次选点设为 ping（本回合发射）+ 有电。 */
 export function sonarActive(run: RunState): boolean {
   return (
     (run.sensors?.sonarUnlocked ?? false) &&
     (run.sensors?.sonar ?? 'off') === 'ping' &&
     (run.power ?? 0) > 0
   );
+}
+
+/**
+ * 声呐**本回合**的持续开/关承诺（声呐渲染重做 SPEC §4·缺省开）。开＝到站自动扫 + 暴露照付；关＝只看保留旧图。
+ * 「本回合开/关是上回合定的」——这是 applyTransit 提交进来的 sonarOn（缺省 true）。
+ */
+export function sonarStandingOn(run: RunState): boolean {
+  return run.sensors?.sonarOn ?? true;
+}
+
+/** 声呐**下回合**的预承诺（SPEC §4 玩家控制点）。缺省 → 跟随本回合 sonarStandingOn。 */
+export function sonarStandingNext(run: RunState): boolean {
+  return run.sensors?.sonarNext ?? sonarStandingOn(run);
 }
 
 /**

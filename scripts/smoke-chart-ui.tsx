@@ -269,12 +269,16 @@ const htmlSonarMapped = renderToStaticMarkup(
 assert(htmlSonarMapped.includes('sonar-blip'), 'E4: 有扫描记忆应画出节点 blip');
 assert(htmlSonarMapped.includes('30m'), 'E4: 声呐图应标注扫到节点的深度');
 assert(htmlSonarMapped.includes('sonar-mini'), 'E4: 应渲染残图小地图（方位感）');
+// 声呐持续开/关切换（声呐渲染重做 §4·本 session 重做）：解锁声呐 → 给开/关切换按钮（预承诺下回合·缺省开）。
+assert(htmlSonarEmpty.includes('sonar-toggle'), 'E4: 解锁声呐 → 给开/关持续切换按钮 (sonar-toggle·§4)');
+assert(htmlSonarEmpty.includes('声呐：开'), 'E4: 缺省持续开 → 切换按钮显示「声呐：开」');
 // 未解锁声呐 → 无声呐图面板（软门控：声呐图随声呐解锁才有，SPEC §8.6）
 const htmlNoSonar = renderToStaticMarkup(
   <NodeSelectView state={sonarState({ scanMemory: { n0: 0 }, sonarUnlocked: false })} choices={[]} onStateChange={noop} />,
 );
 assert(!htmlNoSonar.includes('声呐图'), 'E4: 未解锁声呐不应渲染声呐图面板');
-L('  解锁→面板/空态全黑 · 有记忆→blip+深度+残图 · 未解锁→无面板 ✓');
+assert(!htmlNoSonar.includes('sonar-toggle'), 'E4: 未解锁声呐 → 无开/关切换按钮');
+L('  解锁→面板/空态全黑 · 有记忆→blip+深度+残图 · 开/关切换(§4) · 未解锁→无面板 ✓');
 
 // ============================================
 // E4b. NodeSelectView · 定向 ping 控件（声呐与房间 SPEC §5·作者「方向扇区」）：

@@ -112,6 +112,17 @@ export interface SensorState {
    * 不影响存档形状（run 级·随 sonar 一道移动后清掉）。
    */
   sonarDir?: SonarDir;
+  /**
+   * 声呐持续开/关——**本回合已承诺的状态**（声呐渲染重做 SPEC §4「开/关窗口规则」）。缺省（undefined）→ 视为开（缺省开）。
+   * 开＝本回合处于暴露/发射态（sonarActive 计暴露·到站自动扫一记 scan-on-open）；关＝不自动扫、只看保留的旧图。
+   * 「本回合开/关是上回合定的」：移动时由 sonarNext 提交进来（applyTransit）。**仅 sonarUnlocked 才落字段**＝未解锁逐字节不变。additive·不 bump SAVE_VERSION。
+   */
+  sonarOn?: boolean;
+  /**
+   * 声呐**下回合**的预承诺（SPEC §4「玩家的控制点＝决定下一回合是否关」）。缺省 → 跟随 sonarOn。
+   * 切换开关只改这里（本回合不变·预先承诺）；移动时 sonarNext→sonarOn 落定。本回合仍可主动扫一记反悔（pingSonar·扫了就算本回合开·付暴露）。
+   */
+  sonarNext?: boolean;
 }
 
 /**

@@ -1,6 +1,6 @@
 import type { GameState, NodeChoice, FeatureChoice, SonarDir } from '@/types';
-import { moveToNode, setLight, pingSonar, exploreFeature, standAndFight } from '@/engine/dive';
-import { clarity, sonarPingCost, ALERT_WARN, ALERT_THRESHOLD } from '@/engine/clarity';
+import { moveToNode, setLight, pingSonar, exploreFeature, standAndFight, setSonarNext } from '@/engine/dive';
+import { clarity, sonarPingCost, ALERT_WARN, ALERT_THRESHOLD, sonarStandingOn, sonarStandingNext } from '@/engine/clarity';
 import { seenStalkerSector } from '@/engine/sonar';
 import { zoneAllowsBacktrack } from '@/engine/zones';
 import { StatusBar } from './StatusBar';
@@ -32,8 +32,11 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
   const sonarUnlocked = run.sensors?.sonarUnlocked ?? false;
   const pingCost = sonarPingCost(run); // 升级派生（缺省 SONAR_PING_COST）
   const canPing = sonarUnlocked && (run.power ?? 0) >= pingCost;
-  // 1 scan / 停留（声呐与房间 §8）：这一站已 ping 过 → 等移动后才能再扫（脉冲移动后归 off）。
+  // 1 scan / 停留（声呐与房间 §8）：这一站已扫过（自动 scan-on-open 或手动）→ 等移动后才能再扫。
   const alreadyPinged = (run.sensors?.sonar ?? 'off') === 'ping';
+  // 声呐持续开/关（声呐渲染重做 §4）：本回合承诺 standingOn（缺省开）+ 下回合预承诺 standingNext（切换只改下回合）。
+  const standingOn = sonarStandingOn(run);
+  const standingNext = sonarStandingNext(run);
   // 深水区 Phase 0b：警觉预警——给玩家"读出 tell → 熄灯甩开"的窗口（越线则进下一节点会被接近）。
   const alert = run.alert ?? 0;
   // 定向 ping（§5）：声呐上「看到的」（会过时）猎手所在扇区——给定向按钮一个「别朝它打」的软警示（基于已知·不一定准）。
@@ -93,10 +96,23 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
               onClick={() => onStateChange(pingSonar(state))}
             >
               {alreadyPinged
-                ? '已扫描 · 移动后再 ping'
+                ? '已扫描 · 移动后再扫'
                 : canPing
-                  ? `声呐 ping · 全向（−${pingCost} 电）`
+                  ? standingOn
+                    ? `声呐 ping · 全向（−${pingCost} 电）`
+                    : `扫一记 · 暴露你（−${pingCost} 电）`
                   : '声呐（电量不足）'}
+            </button>
+          )}
+          {/* 声呐持续开/关（声呐渲染重做 §4）：开＝每站自动成图但暴露·关＝隐蔽但只看旧图。切换只在下一段路生效（预承诺·本回合可点上面『扫一记』反悔）。 */}
+          {sonarUnlocked && (
+            <button
+              className={`btn sensor-btn sonar-toggle ${standingOn ? 'on' : ''}`}
+              onClick={() => onStateChange(setSonarNext(state, !standingNext))}
+              title="声呐持续开＝每站自动成图、但一直暴露你；关＝隐蔽、只看保留的旧图。切换只在下一段路生效。"
+            >
+              {standingOn ? '声呐：开' : '声呐：关'}
+              {standingNext !== standingOn ? (standingNext ? ' → 下回合开' : ' → 下回合关') : ''}
             </button>
           )}
         </div>

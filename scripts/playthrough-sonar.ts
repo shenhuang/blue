@@ -18,7 +18,7 @@ import {
   serializeGameState,
   deserializeGameState,
 } from '../src/engine/state';
-import { pingSonar, moveToNode, enterNodeSelection, exploreFeature } from '../src/engine/dive';
+import { pingSonar, moveToNode, enterNodeSelection, exploreFeature, setSonarNext } from '../src/engine/dive';
 import {
   POWER_MAX,
   SONAR_PING_COST,
@@ -28,6 +28,9 @@ import {
   ALERT_THRESHOLD,
   THREAT_CONTACT_ALERT,
   sonarPingAlertDelta,
+  alertDelta,
+  sonarStandingOn,
+  sonarStandingNext,
   SONAR_PING_DIR_MULT,
   SONAR_PING_TOWARD_MULT,
   alertDepthFactor,
@@ -259,22 +262,21 @@ L('\n========== 6. ping 抬警觉 ==========');
 }
 
 // ============================================================
-// 7. 会过时的记忆：移动后归 off + turn 前进；再 ping 刷新，没扫到的留旧 stamp
+// 7. 会过时的记忆 + scan-on-open（声呐渲染重做 §4）：声呐持续开 → 到站自动扫一记（sonar 保持 ping）；
+//    量程外的旧记忆随你而留（保留到下次被扫到才刷新·staleness），量程内的刷新成新 turn。
 // ============================================================
-L('\n========== 7. 会过时的记忆（staleness）==========');
+L('\n========== 7. 会过时的记忆 + scan-on-open（§4·staleness）==========');
 {
   const first = pingSonar(mk({ depth: 50 })); // 在 n0，turn 0，stamp {n0,n1,n2,n3,n5}=0
   const t0 = first.run!.turn;
-  const moved = moveToNode(first, 'n1'); // 去 n1，turn 前进、sonar 归 off
-  assert(moved.run!.sensors.sonar === 'off', '7: 移动后 sonar 归 off（脉冲瞬时）');
+  const moved = moveToNode(first, 'n1'); // 去 n1：声呐持续开 → 到站自动扫一记（scan-on-open §4）·turn 前进
+  assert(moved.run!.sensors.sonar === 'ping', '7: 声呐持续开 → 到站自动扫（sonar 保持 ping·scan-on-open §4，不再「移动归 off」）');
   assert(moved.run!.turn > t0, '7: 移动后 turn 前进');
-  assert(moved.run!.scanMemory!['n5'] === t0, '7: 旧记忆（n5）随你而留——还带着旧 turn');
-  const reping = pingSonar(moved); // 在 n1 再 ping：range2 够不到 n5
-  const t1 = reping.run!.turn;
-  assert(reping.run!.scanMemory!['n0'] === t1, '7: 重新扫到的 n0 刷新成新 turn');
-  assert(reping.run!.scanMemory!['n5'] === t0, '7: 没被这记 ping 扫到的 n5 仍是旧 turn（过时的图）');
+  const t1 = moved.run!.turn;
+  assert(moved.run!.scanMemory!['n0'] === t1, '7: 到站自动扫刷新了量程内的 n0（新 turn）');
+  assert(moved.run!.scanMemory!['n5'] === t0, '7: 量程外的旧记忆（n5）随你而留——仍是旧 turn（保留到下次扫到才刷新·staleness）');
   assert(t1 > t0, '7: 新 stamp 比旧 stamp 新');
-  L('  移动后归 off + 旧记忆留存 + 再 ping 只刷新扫到的（staleness）✓');
+  L('  持续开→到站自动扫(scan-on-open) + 量程外旧记忆留存(staleness) ✓');
 }
 
 // ============================================================
@@ -563,9 +565,10 @@ L('\n========== 13. 定向 ping（§5 方向扇区）==========');
   assert(sameSet(sortedKeys(pingedOmni.run!.scanMemory ?? {}), revealSonarScan(makeDirMap(), 'c', range)), '13g: 全向 ping 写全向集合');
   assert(pingedOmni.run!.sensors.sonarDir === undefined, '13g: 全向 ping 不记 sonarDir');
 
-  // (h) 移动后聚焦清掉（applyTransit：sonar→off·sonarDir→undefined）
+  // (h) 移动后聚焦清掉（§5）：定向聚焦每步清成全向；声呐持续开 → 到站自动全向扫一记（§4·sonar 保持 ping·非 off）。
   const moved = moveToNode(pinged, 'd3');
-  assert(moved.run!.sensors.sonar === 'off' && moved.run!.sensors.sonarDir === undefined, '13h: 移动后 sonar off + 聚焦清掉');
+  assert(moved.run!.sensors.sonarDir === undefined, '13h: 移动后聚焦清掉（sonarDir→undefined·下一站重新全向）');
+  assert(moved.run!.sensors.sonar === 'ping', '13h: 声呐持续开 → 到站自动全向扫（scan-on-open §4）');
 
   // (i) 各方向 reach 各自升级（§5）：dirReach 把聚焦那一向的焦距再推远一跳，别向/缺省不变。
   //     base1·deeper 焦距 = min(5,1+1)=2 跳 → 够 d4 不够 d5；dirReach1 → min(6,1+1+1)=3 跳 → 够更深的 d5。
@@ -588,7 +591,46 @@ L('\n========== 13. 定向 ping（§5 方向扇区）==========');
   L('  扇区分类 / omni 回退 / 聚焦更远·别处更短 / 三向各探一支 / 暴露按方向(安静·尖峰·光感豁免) / pingSonar 集成 / 移动清聚焦 / 各方向 reach 各自升级(更远·别向不变·桥·夹上限) ✓');
 }
 
+// ============================================================
+// 14. 声呐开/关窗口规则（声呐渲染重做 §4·本 session 重做）：缺省开·预承诺下回合·暴露按状态·本回合反悔·旧图保留
+// ============================================================
+L('\n========== 14. 声呐开/关窗口（§4 重做）==========');
+{
+  // (a) 缺省开（sonarOn 缺字段 → 视为开）
+  const fresh = enterNodeSelection(mk({ depth: 50 }));
+  assert(sonarStandingOn(fresh.run!) === true, '14a: 缺省开（sonarOn 缺字段 → 视为开）');
+  assert(sonarStandingNext(fresh.run!) === true, '14a: 下回合缺省跟随＝开');
+
+  // (b) 预承诺（§4 控制点）：setSonarNext 只改下回合·本回合不变
+  const pre = setSonarNext(fresh, false);
+  assert(sonarStandingOn(pre.run!) === true, '14b: 切「关」只改下回合 → 本回合仍开（本回合是上回合定的）');
+  assert(sonarStandingNext(pre.run!) === false, '14b: 下回合预承诺=关');
+
+  // (c) 落定：移动把 sonarNext→sonarOn（关）·到站不自动扫（sonar=off·看保留旧图）
+  const movedOff = moveToNode(pre, 'n1');
+  assert(movedOff.run!.sensors.sonarOn === false, '14c: 移动落定本回合=关（sonarNext→sonarOn）');
+  assert(movedOff.run!.sensors.sonar === 'off', '14c: 关着到站不自动扫（sonar off·保留旧图）');
+
+  // (d) 暴露按状态付（§4）：同深同灯下，发射态(sonar=ping)每回合暴露 > 关态(off)——开＝暴露照付
+  const onAfter = moveToNode(enterNodeSelection(mk({ depth: 50 })), 'n1');
+  assert(onAfter.run!.sensors.sonar === 'ping', '14d: 持续开移动后处于发射态(sonar=ping·scan-on-open)');
+  const offLike = { ...onAfter, run: { ...onAfter.run!, sensors: { ...onAfter.run!.sensors, sonar: 'off' as const, sonarOn: false } } };
+  assert(alertDelta(onAfter.run!, 1) > alertDelta(offLike.run!, 1), '14d: 开着每回合暴露 > 关着（暴露按状态付·§4）');
+
+  // (e) 本回合反悔：即使是关态，pingSonar 仍可主动扫一记（扫了就算本回合开·付暴露）
+  const offState = { ...fresh, run: { ...fresh.run!, sensors: { ...fresh.run!.sensors, sonar: 'off' as const, sonarOn: false, sonarNext: false } } };
+  const revoked = pingSonar(offState);
+  assert(revoked.run!.sensors.sonar === 'ping', '14e: 关着仍可主动扫一记反悔（sonar→ping·§4）');
+  assert(revoked.run!.alert > offState.run!.alert, '14e: 反悔扫付了暴露尖峰（alert 抬升＝扫了就算本回合开）');
+
+  // (f) 存档 round-trip：sonarOn/sonarNext 普通布尔·保真·不 bump SAVE_VERSION
+  const rt = deserializeGameState(serializeGameState(movedOff));
+  assert(rt!.version === 4, '14f: SAVE_VERSION 仍 4（未 bump）');
+  assert(rt!.run!.sensors.sonarOn === false && rt!.run!.sensors.sonarNext === false, '14f: sonarOn/sonarNext round-trip 保真');
+  L('  缺省开 / 切换只改下回合 / 移动落定 / 暴露按状态(on>off) / 本回合反悔扫一记 / 存档 round-trip ✓');
+}
+
 console.log(log.join('\n'));
 console.log(
-  '\n✓ 声呐探索扫描回归通过（S0 + S1 多事件房间 + S2 不可信扫描 + S3 威胁定位 + 定向 ping §5）',
+  '\n✓ 声呐探索扫描回归通过（S0 + S1 多事件房间 + S2 不可信扫描 + S3 威胁定位 + 定向 ping §5 + 开/关窗口 §4）',
 );
