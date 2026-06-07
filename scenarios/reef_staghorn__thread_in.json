@@ -1,0 +1,13 @@
+{
+  "_comment": "旧灯塔礁浅段 · 鹿角林（reef shallow realistic·10-22m）。挪进林心：无 check，deltas stamina -3 + oxygenTurnCost 1 → statsDelta {stamina,oxygen}；coral+lobster chance loot（天然，不进 statsDelta）。对照 kelp_curtain push_through 套路。",
+  "eventId": "reef.staghorn",
+  "depth": 16,
+  "seed": 1,
+  "choices": ["thread_in"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "stamina": -3, "oxygen": -1 }
+  }
+}

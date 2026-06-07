@@ -1,0 +1,14 @@
+{
+  "_comment": "旧灯塔礁浅段 · 星砂（reef shallow uncanny·14-24m·有孔虫壳·脚下全是死的东西 伏笔）。看着脚下：无 check，oxygenTurnCost 1 + sanity -3 + lore.reef_shallows.the_star_sand；coral chance loot（不进 statsDelta）。",
+  "eventId": "reef.star_sand",
+  "depth": 18,
+  "seed": 1,
+  "choices": ["sift_sand"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.reef_shallows.the_star_sand"],
+    "statsDelta": { "oxygen": -1, "sanity": -3 }
+  }
+}

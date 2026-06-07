@@ -1,0 +1,15 @@
+{
+  "_comment": "沉船墓园浅段 · 一团齿轮 拨动那圈齿 sanity vs 48 成功（满 sanity seed 1）：lore.wreck_graveyard.the_count + sanity -5 + oxygenTurnCost 2，loot-free。success 平淡解释（旧式计算装置）但松手仍自己往大加·永不交底 #54·不说它数什么。",
+  "eventId": "wreck_graveyard.the_gear_lump",
+  "depth": 26,
+  "seed": 1,
+  "choices": ["turn_the_crank"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.wreck_graveyard.the_count"],
+    "statsDelta": { "oxygen": -2, "sanity": -5 }
+  }
+}

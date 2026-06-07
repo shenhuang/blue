@@ -1,0 +1,15 @@
+{
+  "_comment": "沉船墓园浅段 · 铺位（wreck shallow uncanny·20-28m·oncePerRun·太齐整的住舱·新鲜错位 ≠ corpse-wearer 线）。看清 sanity vs 48 成功（满 sanity seed 1）：lore.wreck_graveyard.the_kept_quarters + sanity -5 + oxygenTurnCost 2。success 给平淡解释（淤泥定住）·永不交底 #54。",
+  "eventId": "wreck_graveyard.the_quarters",
+  "depth": 24,
+  "seed": 1,
+  "choices": ["look_closer_quarters"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.wreck_graveyard.the_kept_quarters"],
+    "statsDelta": { "oxygen": -2, "sanity": -5 }
+  }
+}

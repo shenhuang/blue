@@ -1,0 +1,15 @@
+{
+  "_comment": "蓝洞群浅段 · 下面的蓝（cosmic·oncePerRun·18-26m·竖井暖蓝诱你下去·深处诱饵最浅一拍·承 no_bottom/subhadal 诱饵线）。sanity vs 50 满 sanity seed 1 通过=氮醉+光学平淡解释(永不交底 quirk #54)+lore。loot-free，不触发 d_reveal。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "bluecaves.deeper_blue",
+  "depth": 22,
+  "seed": 1,
+  "choices": ["look_down"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.bluecaves.the_deep_blue"],
+    "statsDelta": { "oxygen": -2, "sanity": -5 }
+  }
+}

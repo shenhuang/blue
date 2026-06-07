@@ -1,0 +1,16 @@
+{
+  "_comment": "深渊·冷沥青 成功分支（cosmic 理智 vs 60）。满 san→rate 0.95、seed 1 成功：认下是渗冷沥青的海底火山、油凝住不是留人——绕开、一步不站。sanity -7 + oxygenTurnCost 3 + lore.abyssal.the_tar。#43 实跑抄。",
+  "eventId": "abyssal.the_tar",
+  "depth": 120,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["read_the_flow"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.abyssal.the_tar"],
+    "statsDelta": { "oxygen": -3, "sanity": -7 }
+  }
+}

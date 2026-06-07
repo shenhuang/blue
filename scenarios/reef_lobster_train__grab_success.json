@@ -1,0 +1,18 @@
+{
+  "_comment": "旧灯塔礁中段 · 排队的虾（reef mid realistic·28-40m·龙虾单行迁徙·灵感 spiny lobster single-file migration）。体力 vs 13 满 stamina seed 1 通过=薅两只 item.lobster（天然 loot 守 #44）。stamina-check 只锁 success（#49）。",
+  "eventId": "reef.lobster_train",
+  "depth": 34,
+  "seed": 1,
+  "choices": [
+    "grab_from_line"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -2
+    }
+  }
+}

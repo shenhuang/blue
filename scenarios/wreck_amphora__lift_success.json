@@ -1,0 +1,14 @@
+{
+  "_comment": "沉船墓园浅段 · 更老的船（wreck shallow realistic·22-30m·钢船底下的古陶罐·深时 grounded）。起陶罐取铜封箍 stamina vs 13，满 stamina seed 1 通过：brass_fitting loot + oxygenTurnCost 2（无 deltas）。",
+  "eventId": "wreck_graveyard.amphora_hold",
+  "depth": 26,
+  "seed": 1,
+  "choices": ["lift_a_jar"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2 }
+  }
+}

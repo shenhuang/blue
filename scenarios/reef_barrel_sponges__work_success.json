@@ -1,0 +1,18 @@
+{
+  "_comment": "旧灯塔礁中段 · 桶状的海绵（reef mid realistic·26-40m·桶海绵深时 grounding『比灯塔老』·灵感 barrel sponge 长寿）。体力 vs 13 满 stamina seed 1 通过=coral_shard（+lobster chance·天然 loot #44）。",
+  "eventId": "reef.barrel_sponges",
+  "depth": 32,
+  "seed": 1,
+  "choices": [
+    "work_sponges"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -2
+    }
+  }
+}

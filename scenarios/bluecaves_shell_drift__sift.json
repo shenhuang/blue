@@ -1,0 +1,13 @@
+{
+  "_comment": "蓝洞群浅段 · 一滩空壳（realistic·16-25m·空壳堆觅食）· coral_shard chance 0.6 天然 loot 不断言（守 quirk #44）。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "bluecaves.shell_drift",
+  "depth": 20,
+  "seed": 1,
+  "choices": ["sift_shells"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -1 }
+  }
+}

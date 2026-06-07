@@ -1,0 +1,16 @@
+{
+  "_comment": "深渊·玻璃（玻璃海绵笼/偕老同穴 Venus flower basket）· 成功分支（uncanny 理智 vs 58）。满 san→rate 0.95、seed 1 成功：认下是玻璃海绵、笼里一对幼时钻进长大出不来的虾『至死不分』、出不来的安稳不是安稳——直起身、不多留。sanity -6 + oxygenTurnCost 2 + lore.abyssal.the_glass。#43 实跑抄。",
+  "eventId": "abyssal.the_glass",
+  "depth": 120,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["read_the_cage"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.abyssal.the_glass"],
+    "statsDelta": { "oxygen": -2, "sanity": -6 }
+  }
+}

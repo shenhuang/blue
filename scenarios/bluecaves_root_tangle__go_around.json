@@ -1,0 +1,13 @@
+{
+  "_comment": "蓝洞群浅段 · 垂下来的根 · 绕远无 check 出口。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "bluecaves.root_tangle",
+  "depth": 17,
+  "seed": 1,
+  "choices": ["go_around"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -2, "sanity": -1 }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "_comment": "旧灯塔礁中段 · 扫过来的（reef mid uncanny·28-42m·珊瑚夜里伸扫帚触手蜇邻居争地盘·灵感 coral sweeper tentacle warfare）。体力 vs 13 满 stamina seed 1 通过=挤过打架的珊瑚头够 coral_shard（天然 loot #44）。",
+  "eventId": "reef.the_sweepers",
+  "depth": 34,
+  "seed": 1,
+  "choices": [
+    "push_through_sweepers"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -2
+    }
+  }
+}

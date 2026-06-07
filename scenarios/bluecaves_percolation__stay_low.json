@@ -1,0 +1,13 @@
+{
+  "_comment": "蓝洞群浅段 · 顶上落下来的（realistic·14-24m·气泡拱落顶泥的能见度 hazard）· 压低慢过的安全 no-check 路径。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "bluecaves.percolation",
+  "depth": 18,
+  "seed": 1,
+  "choices": ["stay_low"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -2, "sanity": -1 }
+  }
+}

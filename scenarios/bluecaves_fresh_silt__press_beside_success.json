@@ -1,0 +1,15 @@
+{
+  "_comment": "蓝洞群浅段 · 灰里的印（uncanny·16-25m·细灰上朝里去的新鲜鳍沟/掌印·先来者 someone_below）。sanity vs 47 满 sanity seed 1 通过=静水存印平淡解释(永不交底 quirk #54)+lore。loot-free，不触发 d_reveal。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "bluecaves.fresh_silt",
+  "depth": 20,
+  "seed": 1,
+  "choices": ["press_beside"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.bluecaves.fresh_silt"],
+    "statsDelta": { "oxygen": -2, "sanity": -3 }
+  }
+}

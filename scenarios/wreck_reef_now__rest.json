@@ -1,0 +1,14 @@
+{
+  "_comment": "沉船墓园浅段 · 成了礁 缓一口。无 check：oxygenTurnCost 1 + sanity +1（墓园里少有的正 sanity delta；起步 sanity 50 防触顶 100 clamp 才能验出 +1）。",
+  "eventId": "wreck_graveyard.the_reef_now",
+  "stats": { "sanity": 50 },
+  "depth": 20,
+  "seed": 1,
+  "choices": ["rest_among_growth"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -1, "sanity": 1 }
+  }
+}

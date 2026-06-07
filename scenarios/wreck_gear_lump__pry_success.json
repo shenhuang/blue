@@ -1,0 +1,14 @@
+{
+  "_comment": "沉船墓园浅段 · 一团齿轮（wreck shallow uncanny·22-30m·Antikythera 式过精巧的铜·撬走=死废铜 grounded / 拨动=数不停 uncanny 拆两路）。撬铜 stamina vs 13，满 stamina seed 1 通过：brass_fitting loot + oxygenTurnCost 2（无 deltas·撬走即落地为废料）。",
+  "eventId": "wreck_graveyard.the_gear_lump",
+  "depth": 26,
+  "seed": 1,
+  "choices": ["pry_gears_free"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2 }
+  }
+}

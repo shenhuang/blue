@@ -1,0 +1,15 @@
+{
+  "_comment": "深渊·冷沥青（冷沥青火山 asphalt volcano）· 踩上那片会留人的黑壳、过去看定在半道的东西（无 check give-in）。loot-free、lore.abyssal.the_tar + sanity -9 + oxygenTurnCost 4。前所未见之物 #103、永不交底、不触发 d_reveal（#43 实跑抄）。",
+  "eventId": "abyssal.the_tar",
+  "depth": 120,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["step_onto_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.abyssal.the_tar"],
+    "statsDelta": { "oxygen": -4, "sanity": -9 }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "_comment": "旧灯塔礁深边 · 沙里的 · 失败分支。sanity=20→rate 0.05 clamp seed 1 失败(#43)。cosmic 惩罚 sanity -12 + oxygenTurnCost 5，无 lore，20→8 不触底，深度被悄悄拽深一截。",
+  "eventId": "reef.the_strike",
+  "stats": {
+    "sanity": 20
+  },
+  "depth": 38,
+  "seed": 1,
+  "choices": [
+    "cross_careful"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": {
+      "oxygen": -5,
+      "sanity": -12
+    }
+  }
+}

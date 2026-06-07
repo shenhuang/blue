@@ -13,6 +13,7 @@ import { AscentView } from '@/ui/AscentView';
 import { CombatView } from '@/ui/CombatView';
 import { CorpseView, FuneralView } from '@/ui/CorpseView';
 import { ResolutionView, GameOverView } from '@/ui/ResolutionView';
+import { ChangelogModal } from '@/ui/ChangelogModal';
 
 // Dev 工具门控（作者 2026-06-06·见 quirk）：本地 dev server 恒开；**发布版也带 dev**，但默认隐藏——
 // 仅当 URL 带 ?dev（如 https://shenhuang.github.io/blue/?dev）才启用，藏在 Shift+D/C/M 快捷键后，普通访客
@@ -48,6 +49,9 @@ export default function App() {
 
   // Dev 面板开关：本地 state，不进 GameState（避免污染存档版本号；quirk #23）
   const [devPanel, setDevPanel] = useState<DevPanelKind>(null);
+
+  // 更新日志弹窗开关：同样是本地 UI state，不进 GameState（quirk #23）
+  const [changelogOpen, setChangelogOpen] = useState(false);
 
   // Shift+D（事件）/ Shift+C（战斗）/ Shift+M（地图）切换 dev 面板；只在 dev 工具启用时（dev server 或 ?dev）注册监听
   // 互斥规则：当前打开任一面板时，按任一快捷键 = 关闭；关闭时按 D/C/M = 打开对应面板。
@@ -169,7 +173,20 @@ export default function App() {
         <GameOverView state={state} onRestart={handleRestart} />
       )}
 
-      <footer className="app-footer">深海回响 · v0.0.1 · 垂直切片 · build {__BUILD_TIME__} ({__BUILD_COMMIT__})</footer>
+      <footer className="app-footer">
+        深海回响 ·{' '}
+        <button
+          type="button"
+          className="changelog-trigger"
+          onClick={() => setChangelogOpen(true)}
+          title="查看更新日志"
+        >
+          v0.0.1 · 更新日志
+        </button>{' '}
+        · 垂直切片 · build {__BUILD_TIME__} ({__BUILD_COMMIT__})
+      </footer>
+
+      {changelogOpen && <ChangelogModal onClose={() => setChangelogOpen(false)} />}
 
       {/* Dev 面板覆盖层 —— 仅 dev 工具启用（dev server 或 ?dev）且面板打开时挂载；事件 / 战斗 / 地图 互斥 */}
       {DEV_TOOLS && devPanel === 'event' && EventDevPanel && (

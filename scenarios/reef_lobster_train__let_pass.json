@@ -1,0 +1,17 @@
+{
+  "_comment": "旧灯塔礁中段 · 排队的虾 · 无 check 让队伍过。oxygenTurnCost 1 → statsDelta 只 oxygen，loot-free。",
+  "eventId": "reef.lobster_train",
+  "depth": 34,
+  "seed": 1,
+  "choices": [
+    "let_pass"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1
+    }
+  }
+}

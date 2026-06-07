@@ -1,0 +1,15 @@
+{
+  "_comment": "沉船墓园浅段 · 扫过的甲板 失败分支。sanity=20→rate 0.05 seed 1 失败：cosmic 惩罚 sanity -12 + oxygenTurnCost 5，起步 20→8 不触底（quirk #43）。fail 落不交底（有人刚干过活还没走远·而你正站在那截干净上）。",
+  "eventId": "wreck_graveyard.swept",
+  "stats": { "sanity": 20 },
+  "depth": 26,
+  "seed": 1,
+  "choices": ["account_for_swept"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": { "oxygen": -5, "sanity": -12 }
+  }
+}

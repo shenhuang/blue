@@ -1,0 +1,15 @@
+{
+  "_comment": "深渊·朝上的脸（桶眼鱼透明头 barreleye）· 顺着它转下去的绿眼睛朝坡下看、朝坡下去（无 check give-in）。loot-free、lore.abyssal.the_upturned_face + sanity -8 + oxygenTurnCost 4。前所未见之物 #103、永不交底、不触发 d_reveal（#43 实跑抄）。",
+  "eventId": "abyssal.the_upturned_face",
+  "depth": 120,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["follow_its_gaze"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.abyssal.the_upturned_face"],
+    "statsDelta": { "oxygen": -4, "sanity": -8 }
+  }
+}

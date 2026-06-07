@@ -1,0 +1,15 @@
+{
+  "_comment": "蓝洞群浅段 · 走过的水道（cosmic·oncePerRun·16-25m·直走却被绕回原地·空间欺骗最浅一拍·承 hadal.the_fold）。sanity vs 50 满 sanity seed 1 通过=洞穴失向平淡解释(永不交底 quirk #54)+lore。loot-free，不触发 d_reveal。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "bluecaves.the_same_passage",
+  "depth": 20,
+  "seed": 1,
+  "choices": ["mark_and_go"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.bluecaves.the_same_passage"],
+    "statsDelta": { "oxygen": -2, "sanity": -5 }
+  }
+}

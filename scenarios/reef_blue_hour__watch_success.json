@@ -1,0 +1,22 @@
+{
+  "_comment": "旧灯塔礁深边 · 蓝的时辰（reef mid cosmic·oncePerRun·38-44m·介形虫黄昏齐拍发光·灵感 bioluminescent ostracod string-of-pearls display）。理智 vs 50 通过=平淡解释(求偶齐拍)+lore『书上没说它们应和的拍子从下面什么来』(永不交底·承 the_low_note)，loot-free，不触发 d_reveal。",
+  "eventId": "reef.blue_hour",
+  "depth": 40,
+  "seed": 1,
+  "choices": [
+    "watch_lights"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": [
+      "lore.reef_deep.blue_hour"
+    ],
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -5
+    }
+  }
+}

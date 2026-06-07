@@ -1,0 +1,14 @@
+{
+  "_comment": "沉船墓园浅段 · 煤舱（wreck shallow realistic·22-30m·煤还堆着、铲子摆齐）。扒煤够工具箱 stamina vs 13，满 stamina seed 1 通过：brass_fitting + canned_food loot + oxygenTurnCost 2（无 deltas）。",
+  "eventId": "wreck_graveyard.coal_bunker",
+  "depth": 26,
+  "seed": 1,
+  "choices": ["dig_through"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2 }
+  }
+}

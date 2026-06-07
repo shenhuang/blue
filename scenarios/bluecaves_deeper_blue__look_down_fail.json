@@ -1,0 +1,15 @@
+{
+  "_comment": "蓝洞群浅段 · 下面的蓝 · 失败分支。sanity=20→rate 0.05 clamp seed 1 失败（quirk #43）。cosmic 惩罚 sanity -12 + oxygenTurnCost 5（无 lore）。起步 20→8 不触底，statsDelta 严格 -12。",
+  "eventId": "bluecaves.deeper_blue",
+  "stats": { "sanity": 20 },
+  "depth": 22,
+  "seed": 1,
+  "choices": ["look_down"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": { "oxygen": -5, "sanity": -12 }
+  }
+}

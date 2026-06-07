@@ -1,0 +1,18 @@
+{
+  "_comment": "旧灯塔礁中段 · 看着的（reef mid uncanny·26-40m·虾蛄柄眼分头追+空蚀重拳·灵感 mantis shrimp）。体力 vs 13 满 stamina seed 1 通过=越过那对眼睛够 coral_shard（天然 loot #44）。",
+  "eventId": "reef.the_watcher",
+  "depth": 32,
+  "seed": 1,
+  "choices": [
+    "reach_by_burrow"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -2
+    }
+  }
+}

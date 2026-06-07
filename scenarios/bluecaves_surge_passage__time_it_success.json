@@ -1,0 +1,14 @@
+{
+  "_comment": "蓝洞群浅段 · 一推一推的水（realistic·12-22m·洞口涌浪借力）。stamina vs 13 满体力 seed 1 必过（只锁 success·quirk #49）。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "bluecaves.surge_passage",
+  "depth": 17,
+  "seed": 1,
+  "choices": ["time_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2 }
+  }
+}

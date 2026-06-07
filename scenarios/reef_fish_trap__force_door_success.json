@@ -1,0 +1,14 @@
+{
+  "_comment": "旧灯塔礁浅段 · 还在下的笼（reef shallow realistic·14-25m·变体密度补最薄的 12m 浅池）。徒手抠笼门 stamina vs 13，满 stamina→rate 0.95 clamp，seed 1 通过。验证 stamina-success + lobster loot（onSuccess oxygenTurnCost 1，无 deltas → statsDelta 只 oxygen）。",
+  "eventId": "reef.fish_trap",
+  "depth": 18,
+  "seed": 1,
+  "choices": ["force_door"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -1 }
+  }
+}

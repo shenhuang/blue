@@ -1,0 +1,14 @@
+{
+  "_comment": "蓝洞群浅段 · 吹出来的（uncanny·14-24m·小洞往外呼凉气『像底下有口气』）· give-in 贴脸感觉拍子 no-check + lore。loot-free，承 someone_below 暗线，不触发 d_reveal。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "bluecaves.the_draft",
+  "depth": 18,
+  "seed": 1,
+  "choices": ["feel_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.bluecaves.the_breath"],
+    "statsDelta": { "oxygen": -2, "sanity": -3 }
+  }
+}

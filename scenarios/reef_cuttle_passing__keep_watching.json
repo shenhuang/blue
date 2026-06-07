@@ -1,0 +1,14 @@
+{
+  "_comment": "旧灯塔礁浅段 · 走纹的乌贼（reef shallow uncanny·16-25m·passing cloud 催眠·lost time）。看下去：无 check，oxygenTurnCost 4（丢掉的时间）+ sanity -3 + lore.reef_shallows.the_passing，loot-free。",
+  "eventId": "reef.cuttle_passing",
+  "depth": 20,
+  "seed": 1,
+  "choices": ["keep_watching_cuttle"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.reef_shallows.the_passing"],
+    "statsDelta": { "oxygen": -4, "sanity": -3 }
+  }
+}

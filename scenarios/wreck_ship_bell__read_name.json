@@ -1,0 +1,14 @@
+{
+  "_comment": "沉船墓园浅段 · 船钟 不取只记名。无 check：oxygenTurnCost 1 + lore.wreck_graveyard.the_bell，loot-free（替无名船报名的温柔分支）。",
+  "eventId": "wreck_graveyard.ship_bell",
+  "depth": 24,
+  "seed": 1,
+  "choices": ["read_the_name"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.wreck_graveyard.the_bell"],
+    "statsDelta": { "oxygen": -1 }
+  }
+}

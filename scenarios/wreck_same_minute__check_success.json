@@ -1,0 +1,15 @@
+{
+  "_comment": "沉船墓园浅段 · 停摆的钟（wreck shallow uncanny·20-28m·全船钟停在同一分钟·水停钟的真实现象 + 时间冻结 dread·≠ pocket_watch_log/trench.the_long_minute）。找第三只钟 sanity vs 48 成功（满 sanity seed 1）：lore.wreck_graveyard.the_same_minute + sanity -5 + oxygenTurnCost 2，loot-free。success 平淡解释（一齐淹死停摆）但‘那一分钟没过去’留着·永不交底 #54。",
+  "eventId": "wreck_graveyard.the_same_minute",
+  "depth": 24,
+  "seed": 1,
+  "choices": ["check_third_clock"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.wreck_graveyard.the_same_minute"],
+    "statsDelta": { "oxygen": -2, "sanity": -5 }
+  }
+}

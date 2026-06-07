@@ -1,0 +1,15 @@
+{
+  "_comment": "旧灯塔礁浅段 · 花园鳗（reef shallow uncanny·12-24m·fresh-wrongness 伏笔层）。停住看 sanity vs 47，满 sanity seed 1 通过。验证 uncanny check-success：lore.reef_shallows.the_garden + sanity -3 + oxygenTurnCost 2，loot-free。不触发 d_reveal。",
+  "eventId": "reef.garden_eels",
+  "depth": 18,
+  "seed": 1,
+  "choices": ["hold_and_watch"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.reef_shallows.the_garden"],
+    "statsDelta": { "oxygen": -2, "sanity": -3 }
+  }
+}

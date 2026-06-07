@@ -1,0 +1,13 @@
+{
+  "_comment": "旧灯塔礁浅段 · 海草滩（reef shallow realistic·12-22m）。掏根垫：无 check，oxygenTurnCost 1 → statsDelta 只 oxygen；lobster+coral chance loot（天然）。",
+  "eventId": "reef.seagrass_flat",
+  "depth": 16,
+  "seed": 1,
+  "choices": ["rake_roots"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -1 }
+  }
+}

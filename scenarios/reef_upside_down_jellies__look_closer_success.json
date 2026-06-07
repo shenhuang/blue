@@ -1,0 +1,15 @@
+{
+  "_comment": "旧灯塔礁浅段 · 朝上的口（reef shallow uncanny·14-24m·倒立水母 Cassiopea·fresh-wrongness 伏笔层）。细看 sanity vs 47 通过：lore.reef_shallows.the_open_mouths + sanity -3 + oxygenTurnCost 2，loot-free。",
+  "eventId": "reef.upside_down_jellies",
+  "depth": 18,
+  "seed": 1,
+  "choices": ["look_closer_jellies"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.reef_shallows.the_open_mouths"],
+    "statsDelta": { "oxygen": -2, "sanity": -3 }
+  }
+}

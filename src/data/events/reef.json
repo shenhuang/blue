@@ -1957,6 +1957,905 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "reef.fish_trap",
+      "depthRange": [14, 25],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "还在下的笼",
+      "body": "礁脚卡着一只铁丝鱼笼，岸上人下的，绳早烂没了，笼还在干活。\n里头困着两三只龙虾，瘦得脱了形，一圈圈撞那扇开不了的活门。\n笼外一圈，是被诱进来、又出不去、烂在网线上的小鱼。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "force_door",
+          "label": "徒手抠开锈死的笼门（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你抠住活门那只锈搭扣，一点点掰开。两只龙虾夺路冲出去，没来得及跑的那只到了你手里。",
+              "oxygenTurnCost": 1,
+              "loot": [{ "itemId": "item.lobster", "qty": [1, 1] }]
+            },
+            "onFailure": {
+              "text": "铁丝崩开一截，划过你手背。门没开，龙虾还在里头撞，你松了手。",
+              "deltas": { "stamina": -6 }
+            }
+          }
+        },
+        {
+          "id": "cut_it",
+          "label": "用刀挑开笼顶，放了它们，割下能用的（潜水刀）",
+          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "outcome": {
+            "text": "你挑开笼顶的铁丝。龙虾愣了一下才反应过来，一只接一只往外冲。\n你把还成形的那截网线，连笼门上的黄铜搭扣，一并割下来收好。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.old_fishing_net", "qty": [1, 1] },
+              { "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.4 }
+            ]
+          }
+        },
+        {
+          "id": "leave_trap",
+          "label": "不碰，游开",
+          "outcome": {
+            "text": "你绕过那只笼。身后，活门又被撞了一下，一下。它会一直下去。",
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.mooring_block",
+      "depthRange": [16, 25],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "系泊的沉块",
+      "body": "白沙上蹲着一大块水泥沉块，当年灯塔补给船系泊用的。\n一截锈链从块里探出来，半埋进沙，链头那只黄铜卸扣还泛着暗光。\n铜不锈——这一整副沉具上，只剩它还值点东西。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "free_shackle",
+          "label": "刨开沙，拧下那只黄铜卸扣（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你刨开压着卸扣的沙，两手别住销子一点点拧。锈壳簌簌掉，扣松开时沉块闷闷一沉。卸扣到了手里，沉甸甸的好铜。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.brass_fitting", "qty": [1, 1] },
+                { "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.4 }
+              ]
+            },
+            "onFailure": {
+              "text": "销子锈死了。你较着劲，锈链忽然一滑，把你手指挤在卸扣和沉块之间。你抽回手，卸扣还在原处。",
+              "oxygenTurnCost": 1,
+              "deltas": { "stamina": -6 }
+            }
+          }
+        },
+        {
+          "id": "chip_growth",
+          "label": "只在沉块上凿一把结的珊瑚（氧气 -1）",
+          "outcome": {
+            "text": "你不动那链，只把沉块迎光面结的一层硬珊瑚凿下一块。块面被凿得发白，露出底下灰扑扑的水泥。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.6 }]
+          }
+        },
+        {
+          "id": "leave_block",
+          "label": "走开",
+          "outcome": { "text": "你蹬腿离开。那截锈链在你身后慢慢沉回沙里。" }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.staghorn",
+      "depthRange": [10, 22],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "鹿角林",
+      "body": "浅滩上长着一整片鹿角珊瑚，枝杈交错，密得像一座白生生的鹿角林。\n枝桠又脆又尖，蹭着就断、就割人。\n林心的阴影里，藏着没人够着过的东西。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "thread_in",
+          "label": "贴着枝缝挪进林心（体力 -3）",
+          "outcome": {
+            "text": "你顺着枝桠的缝一点点往里挪，由着脆枝在身侧啪啪地断。林心窝着一群龙虾，根下压着几块断得齐整的好珊瑚。",
+            "oxygenTurnCost": 1,
+            "deltas": { "stamina": -3 },
+            "loot": [
+              { "itemId": "item.coral_shard", "qty": [1, 2] },
+              { "itemId": "item.lobster", "qty": [1, 1], "chance": 0.4 }
+            ]
+          }
+        },
+        {
+          "id": "edge_snap",
+          "label": "只在林子边掰一截（氧气 -1）",
+          "outcome": {
+            "text": "你不进林子，在边上挑一根长得旺的鹿角，轻轻一掰。断口白生生的，还带着活珊瑚的黏液。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.6 }]
+          }
+        },
+        {
+          "id": "go_around_staghorn",
+          "label": "绕开，不进林子",
+          "outcome": {
+            "text": "你从鹿角林上方横过去。脆枝在身下铺成一片，断的、活的，分不大清。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.seagrass_flat",
+      "depthRange": [12, 22],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "海草滩",
+      "body": "礁背后摊着一大片海草滩，叶子齐根从沙里长出来，顺着涌一倒一倒。\n这片草比灯塔还老——一根连着一根，底下其实是同一棵，在沙下连了不知多少年。\n密实的根垫底下，藏着钻进来躲家的东西。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "rake_roots",
+          "label": "拨开草，掏根垫底下（氧气 -1）",
+          "outcome": {
+            "text": "你拨开叶子，手插进缠手的根垫里掏。根凉，沙松——指尖碰到硬壳，是只钻进来躲家的龙虾，旁边还埋着半块断珊瑚。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.lobster", "qty": [1, 1], "chance": 0.6 },
+              { "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.4 }
+            ]
+          }
+        },
+        {
+          "id": "drift_over",
+          "label": "贴着草尖滑过去，看它们倒的方向（氧气 -1）",
+          "outcome": {
+            "text": "你贴着草尖滑过去，让整片叶子在身下一齐倒向一边。它们比仪表老实，流往哪走、哪边是岸，一目了然。你记下，往下个去处去。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.garden_eels",
+      "depthRange": [12, 24],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "花园鳗",
+      "body": "一片开阔的白沙上，竖着几百根灰白的细管子，半截身子立在沙外，全顺着流，一齐轻轻摇。\n是花园鳗。你一近，整片唰地缩回沙里，干干净净，像谁拔掉了一片草。\n只有一处没缩——正中间那一小块，几根，一直立着，朝着你。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "hold_and_watch",
+          "label": "停住不动，看那几根（理智 vs 47）",
+          "check": {
+            "stat": "sanity",
+            "dc": 47,
+            "onSuccess": {
+              "text": "你停下。缩进去的那片，一根根又试探着探回沙外，重新顺了流。中间那几根这才跟着倒向水流的方向——原来只是慢了半拍。\n你呼出一口气，绕开那片沙。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -3 },
+              "loreEntry": "lore.reef_shallows.the_garden"
+            },
+            "onFailure": {
+              "text": "你盯着中间那几根太久。它们不顺流——它们顺着你。你往左，那几个头跟着往左；你往右，跟着往右。\n等你回过神，整片沙又空又静，只有你自己的影子落在上面。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -8 }
+            }
+          }
+        },
+        {
+          "id": "swim_clear_eels",
+          "label": "不看正中那几根，从沙滩边绕过去",
+          "outcome": {
+            "text": "你绕着这片沙的边游，眼睛不往中间放。几百根灰白的管子顺流摇着，规规矩矩——只除了你余光最边上那一处。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.upside_down_jellies",
+      "depthRange": [14, 24],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "朝上的口",
+      "body": "浅水的沙底铺了一地的水母，全翻了个个儿——伞朝下贴着沙，口朝上，几百张口，一开一合地对着头顶的太阳。\n它们不游，就躺着，一地等着上面掉下什么来的嘴。\n你还没碰到它们，皮肤先一阵针扎——水本身在蜇人。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "look_closer_jellies",
+          "label": "忍着那阵蜇，低头细看（理智 vs 47）",
+          "check": {
+            "stat": "sanity",
+            "dc": 47,
+            "onSuccess": {
+              "text": "你忍着蜇看清楚了：是倒立的水母，靠口面朝上养的藻过活，往水里吐带刺的黏液蜇浮游生物——蜇你只是顺带。一地朝上的口，等的是天上落下来的浮游生物，不是你。\n道理都对。你抬高身子，从它们上方退开。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -3 },
+              "loreEntry": "lore.reef_shallows.the_open_mouths"
+            },
+            "onFailure": {
+              "text": "你看得太久。几百张口一开一合的节奏慢慢齐了，齐成一个，像整片沙底在一下下地张合。\n你忽然很想知道：它们朝上等着接的、从上面掉下来的，会不会是你。等你回过神，你比刚才矮了半米，正贴着那片口。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -9 }
+            }
+          }
+        },
+        {
+          "id": "back_off_jellies",
+          "label": "抬高身子，从它们上方绕开",
+          "outcome": {
+            "text": "你认出那股蜇是它们吐进水里的黏液，赶紧抬高，从这片朝上的口上方绕过去。皮肤上几处红，火辣辣的。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.cuttle_passing",
+      "depthRange": [16, 25],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "走纹的乌贼",
+      "body": "一条乌贼停在礁石上，不躲。\n它身上忽然走起一道道暗纹，从头顶一路淌到尾鳍，一道接一道，往下，往下，没有头。\n你知道这是它捕猎的把戏——可你已经盯了它一会儿了，说不清是多会儿。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "look_away_cuttle",
+          "label": "硬把眼睛挪开",
+          "outcome": {
+            "text": "你硬把眼睛从那些往下淌的暗纹上拽开。一挪开，乌贼喷了团墨，没影了。\n气表比你记得的少了一格——刚才那一会儿，比你以为的长。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -1 }
+          }
+        },
+        {
+          "id": "keep_watching_cuttle",
+          "label": "由着那些纹路往下淌，看下去",
+          "outcome": {
+            "text": "你由着那一道道暗纹往下走。它们不快，可你跟着它们往下、往下，眼前只剩那移动的影，别的都空了。\n等乌贼一摆尾走掉，你才发觉自己跟着沉了一段，氧气表在响。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -3 },
+            "loreEntry": "lore.reef_shallows.the_passing"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.star_sand",
+      "depthRange": [14, 24],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "星砂",
+      "body": "浅滩这一段的沙白得发亮，细看不对——\n你抓起一把，每一粒都不是沙，是一只小东西的壳，带着尖角，星星似的。\n一把里有几千只。整片浅滩，脚下这一层一层的白，全是它们的壳，垒了不知多少年。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "sift_sand",
+          "label": "由着那把壳从指缝漏回去，看着脚下",
+          "outcome": {
+            "text": "那些小壳从你指缝漏下去，落在沙上没有声音。这片晒得透亮的浅滩，原来是几千万只小东西的骨头垫起来的。\n你站着的地方，往下一层一层，全是它们。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 },
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.3 }],
+            "loreEntry": "lore.reef_shallows.the_star_sand"
+          }
+        },
+        {
+          "id": "move_on_sand",
+          "label": "把那把壳撒回去，往前游",
+          "outcome": {
+            "text": "你把手里那把壳撒回沙上，不再细想脚下垫的是什么，往前游。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.your_shadow",
+      "depthRange": [12, 24],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 3,
+      "oncePerRun": true,
+      "title": "影子",
+      "body": "太阳把你的影子投在白沙上，一直跟着你，每一下蹬腿都跟着。\n这一下没跟。\n你停了，影子还在往前走——朝着礁盘的边、朝着深水那头，慢慢地走，又慢慢停下，等你。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "account_shadow",
+          "label": "停下来，逼自己想清楚（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你逼自己一样样地想：是水面在晃，把影子拖花了；是一片云的影，正好从你这片沙上过，你看错成了自己的。\n道理都对。你没再低头看沙，认准来路，往浅处游回去。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.reef_shallows.your_shadow"
+            },
+            "onFailure": {
+              "text": "你盯着它看。它不是被水拖花的——它比你的影子深，深得像沙上割开的一道缝，而且它在等你跟上。\n你不记得自己什么时候开始朝深水那头游的。等你回过神，脚下的沙没有了，是空的蓝，你的影子落在底下很远的地方，朝上看你。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -12 }
+            }
+          }
+        },
+        {
+          "id": "look_up_shadow",
+          "label": "不看沙，抬头朝太阳那边游",
+          "outcome": {
+            "text": "你不看脚下的影子，抬头朝亮处、朝太阳那边游回浅里。影子在底下落成什么样，你不去理。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.the_low_note",
+      "depthRange": [12, 25],
+      "zoneTags": ["shallow", "reef"],
+      "weight": 3,
+      "oncePerRun": true,
+      "title": "一下，一下",
+      "body": "阳光照得到的水里，一切都对——除了一下。\n一个很低的音，低到耳朵听不见，是牙根、是胸腔先觉出来的，匀匀的一下、一下，从你正脚底下、从沙底下面很深的地方上来。\n你停下找它，它就没了。你一往前游，它又来了，还是在你正下方，跟着你走。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "hold_for_note",
+          "label": "停住，按住胸口去数那一下（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你强迫自己停在原地，按住胸口去数。它停了——浅水里只剩你自己的脉搏，撞在耳膜上，也是匀匀的一下、一下。\n是你自己的心跳，水把它传回给你。道理都对。你呼匀了气，往浅处去，没再往脚底下想。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.reef_shallows.the_low_note"
+            },
+            "onFailure": {
+              "text": "你往前游想甩开它，它就跟着你，一下、一下，始终在你正下方，不快不慢，配着你的速度。你越游越快，它也越来越密——你忽然懂了：它不是从下面传上来的回声，是有个东西在底下，跟着你，替你数着拍子。\n等你回过神，深度表的数字大了一截，你不记得自己沉过。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -12 }
+            }
+          }
+        },
+        {
+          "id": "swim_up_note",
+          "label": "不管脚底下，抬头往浅里赶",
+          "outcome": {
+            "text": "你不去管脚底下那一下，抬头往亮处、往浅里赶。它跟了一段，始终在你正下方，然后被一道礁石隔在了后头。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.lobster_train",
+      "depthRange": [28, 40],
+      "zoneTags": ["reef"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "排队的虾",
+      "body": "礁沟里有一列龙虾，一只接一只，排成单行往深处走。\n后一只的触角搭在前一只的尾上，搭着、跟着，不散开。队伍从灯照不到的那头来，又往灯照不到的那头去，匀匀地爬，不为你停。\n秋里头一场大流要来时，它们就这样结队挪窝。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "grab_from_line",
+          "label": "趁队伍过，从中间薅两只下来（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你瞅准空档，伸手从队列中段一把扣住两只，硬掰下来。断了链的两头愣了一愣，触角搭回去，缺口合拢，队伍照旧往深处爬。",
+              "oxygenTurnCost": 2,
+              "loot": [{ "itemId": "item.lobster", "qty": [1, 2] }]
+            },
+            "onFailure": {
+              "text": "你一抓，整列倏地警觉，前后一收，几十条触角齐刷刷扫向你，拧成一团甲壳往沟底缩。你手忙脚乱，一只没捞着。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -5 }
+            }
+          }
+        },
+        {
+          "id": "read_heading",
+          "label": "不动手，记下它们走的方向（氧气 -1）",
+          "outcome": {
+            "text": "你由这队虾从脚边爬过去，看它们走得笔直，比你那只乱晃的罗盘还稳——它们知道往哪儿去。你记下这个方向，往下个去处去。",
+            "oxygenTurnCost": 1
+          }
+        },
+        {
+          "id": "let_pass",
+          "label": "让到一边，看这列虾走进黑里",
+          "outcome": {
+            "text": "你贴着沟壁让开，看这一长列龙虾匀匀爬过，搭着触角，一只跟一只，走进灯尽头的黑里，没有头，也看不到尾。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.barrel_sponges",
+      "depthRange": [26, 40],
+      "zoneTags": ["reef"],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "桶状的海绵",
+      "body": "礁坡上立着一丛桶海绵，一个个大得能塞进半个人，褐红、粗糙，桶口朝上张着。\n这种东西长得极慢，十年才厚一指——眼前最大的几个，比那座灯塔还老。海蛇尾和龙虾缩在它们的褶子里。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "work_sponges",
+          "label": "翻开大海绵的褶子，掏里头藏着的（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你探进几个老海绵的褶皱里掏摸，惊起一窝海蛇尾，抠出卡在根上的龙虾，又顺手掰了边上几丛硬珊瑚。海绵壁厚而脆，你尽量没把那几个老的弄塌。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.coral_shard", "qty": [1, 2] },
+                { "itemId": "item.lobster", "qty": [1, 1], "chance": 0.5 }
+              ]
+            },
+            "onFailure": {
+              "text": "你探得太深，一手按塌了一个老海绵的桶壁，褐红的碎絮糊了一脸一镜，呛得你直往后退。等絮散开，藏在里头的早跑没影了。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -5 }
+            }
+          }
+        },
+        {
+          "id": "edge_young",
+          "label": "只在边上够一个小的（氧气 -1）",
+          "outcome": {
+            "text": "你不碰那几个老的，在坡边够着一个巴掌大的新海绵，从根上抠下贴着的一小丛珊瑚。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.6 }]
+          }
+        },
+        {
+          "id": "just_look_sponge",
+          "label": "什么都不动，看一眼就走（氧气 -1）",
+          "outcome": {
+            "text": "你在那丛桶海绵前停了一会儿。它们在这儿立着的时候，还没有灯塔，没有沉船，没有你父亲。等这些都没了，它们多半还在，慢慢地厚下去。你绕开它们往下走。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.borrowed_tongue",
+      "depthRange": [28, 40],
+      "zoneTags": ["reef"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "舌头",
+      "body": "一条石斑鱼挂在清洁站上，大张着嘴等小鱼来收拾。\n你顺势往它嘴里看了一眼。\n它舌头该在的地方，是别的东西——白的，分着节，几条小腿撑在口腔底上，一对小黑眼睛朝上，正看着你。鱼合上嘴，又张开。那东西随着一开一合，上上下下，干着舌头的活。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "look_closer_tongue",
+          "label": "凑近些，逼自己看清那是什么（理智 vs 48）",
+          "check": {
+            "stat": "sanity",
+            "dc": 48,
+            "onSuccess": {
+              "text": "你逼自己看明白：是一只虫，一种甲壳的虫，钻进鱼嘴，把舌头的血吸干、让它烂掉、自己顶上去，从此替这条鱼当舌头使。书上有它的名字，说这是世上唯一一种会替宿主长一个零件的东西。\n道理都对。鱼用着它，活得好好的。你没再去看下一条鱼张开的嘴。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -4 },
+              "loreEntry": "lore.reef.borrowed_tongue"
+            },
+            "onFailure": {
+              "text": "那对小眼睛一直朝上看着你。你忽然发觉自己在用舌尖一遍遍顶上颚，确认它还是自己的、还连着。\n你顶得停不下来。等你回过神，那条鱼早游走了，你独自悬在空站上，舌头抵着上颚，数不清顶了多少回。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -10 }
+            }
+          }
+        },
+        {
+          "id": "hold_still_tongue",
+          "label": "别动，由那鱼张着嘴在你面前一开一合",
+          "outcome": {
+            "text": "你停着不动。鱼也不躲，就在你面镜前一张一合，像故意让你看那东西怎么随着上下。看够了，它甩尾沉进礁影，剩你和那一嘴的画面。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -3 }
+          }
+        },
+        {
+          "id": "leave_station_tongue",
+          "label": "收起自己的念头，绕开清洁站",
+          "outcome": {
+            "text": "你别过脸，从清洁站外侧绕开。这块石头上今天不兴吃来吃去——你只是不想再看谁张开嘴。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.false_cleaner",
+      "depthRange": [24, 38],
+      "zoneTags": ["reef"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "假的清洁工",
+      "body": "清洁站上，蓝条纹的小鱼钻进钻出，替大鱼收拾。\n里头有一条，纹路一样、那套招客的舞也跳得一样。可轮到它，它不收拾——一口咬下大鱼鳍上一弯半月形的肉，转身钻进石缝。\n被咬的甩了甩，过会儿又回到站上排队。它们分不出哪条是真的。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "watch_liar",
+          "label": "盯住那条假的，看它怎么混进去（理智 vs 48）",
+          "check": {
+            "stat": "sanity",
+            "dc": 48,
+            "onSuccess": {
+              "text": "你看清了：是另一种鱼，把清洁工的条纹、那套舞，一样样学了去，只为靠得够近，好咬一口就走。书上有这名堂。\n道理都对。叫人不舒服的是——连被它咬过的大鱼，也照旧回来排队，照旧把自己交给这一站，分不出、也不肯信里头藏着一张假脸。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -4 },
+              "loreEntry": "lore.reef.false_cleaner"
+            },
+            "onFailure": {
+              "text": "你想盯出哪条是假的，盯着盯着，每一条蓝纹看着都像在演。你数不清真的有几条、假的有几条，到后来连自己为什么停在这儿都记不清了。\n等你回神，氧气表低了一截，站上的鱼换了一拨，你一条也没认出来。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -9 }
+            }
+          }
+        },
+        {
+          "id": "let_them_clean",
+          "label": "也停下来，让这群清洁工收拾收拾你的装具",
+          "outcome": {
+            "text": "你也悬住，由小鱼们来啄你护目镜边的青苔、调节器上的渣。轻轻的，一下一下，挺受用——直到其中一下不轻，一点尖的刺，扎在手腕没护住的那块皮上。你缩回手。是哪一条干的，混在里头，你没看清。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -2 }
+          }
+        },
+        {
+          "id": "skirt_false",
+          "label": "不凑这个热闹，绕开",
+          "outcome": {
+            "text": "你从清洁站外侧绕过去，把那点真真假假的秩序留在身后。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.the_cocoon",
+      "depthRange": [26, 40],
+      "zoneTags": ["reef"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "睡袋",
+      "body": "礁缝深处，一条鹦嘴鱼睡着了，裹在一层自己吐出来的黏液里——一只透亮的囊，把它整个封在中间，严严实实。\n它吐这层黏，是为了夜里把自己的气味盖住，好叫摸黑找食的东西闻不着它。\n你的灯扫过去，它没醒。那只囊就在伸手够得着的地方。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "touch_cocoon",
+          "label": "伸一指，碰一碰那只囊",
+          "outcome": {
+            "text": "你伸一指按上去，那层黏像果冻一样陷下又弹回。囊里，鱼的鳃还在匀匀地动，睡得很沉。\n它给自己吐了一只袋子，钻进去，封好，好让死亡夜里闻不见它。每一夜都这样。你把手指收回来。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -3 },
+            "loreEntry": "lore.reef.the_cocoon"
+          }
+        },
+        {
+          "id": "take_coral_cocoon",
+          "label": "不碰它，够旁边礁缝上那丛珊瑚（氧气 -1）",
+          "outcome": {
+            "text": "你绕过那只囊，从缝口够下贴着的一丛珊瑚，没惊动里头睡着的。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.6 }]
+          }
+        },
+        {
+          "id": "leave_cocoon",
+          "label": "让它封在袋子里睡，走开",
+          "outcome": {
+            "text": "你把灯移开，让那条鱼裹在自己的袋子里接着睡。出了这条缝，你接着往下。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.the_watcher",
+      "depthRange": [26, 40],
+      "zoneTags": ["reef"],
+      "weight": 5,
+      "cooldown": 4,
+      "title": "看着的",
+      "body": "礁砾间有个洞，洞口蹲着一对眼睛——架在两根短柄上，各转各的，一只盯着你的手，一只盯着你的脸，分头跟着你；其余的身子全缩在洞里看不见。\n它看的颜色，是你这双眼睛生来就看不见的。\n你在这片礁上摸索多久，那两只眼睛就分头跟你多久。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "reach_by_burrow",
+          "label": "洞口边正好有一丛好珊瑚——越过那对眼睛去够（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你稳住手，越过那对眼睛，从洞口边掰下那丛珊瑚。两只眼珠一路跟着你的手转，转到底，没动别的。你收手退开。",
+              "oxygenTurnCost": 2,
+              "loot": [{ "itemId": "item.coral_shard", "qty": [1, 2] }]
+            },
+            "onFailure": {
+              "text": "你手刚探到洞口，洞里『啪』地一记，又脆又闷，那一下的劲顺着你手腕骨头窜上来，护腕都麻了。你猛地缩手，珊瑚没够着。那东西打出来的，比你想的快得多、狠得多。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -5 }
+            }
+          }
+        },
+        {
+          "id": "hold_its_gaze",
+          "label": "停下，跟那对分头转的眼睛对峙（理智 vs 48）",
+          "check": {
+            "stat": "sanity",
+            "dc": 48,
+            "onSuccess": {
+              "text": "你停下，由它两只眼分头打量你，你也看回去。它不过是只虾，藏在洞里，一拳能砸碎贝壳，一双眼睛看得见你看不见的光——书上画过它。\n道理都对。可你始终甩不掉那个念头：在它眼里，你是另一个颜色的东西，一个它早看穿、你却永远看不全的样子。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -4 },
+              "loreEntry": "lore.reef.the_watcher"
+            },
+            "onFailure": {
+              "text": "你越看那两只各转各的眼，越觉得它们不像在看你，像在量你——量你哪儿软、哪儿好下手。你想挪开视线，又怕一挪开它就出手。\n你僵在那儿耗了太久，等回过神，氧气表掉了一截，那对眼睛还在原处，不紧不慢地转。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -9 }
+            }
+          }
+        },
+        {
+          "id": "work_far_watcher",
+          "label": "离那个洞远点，在另一头够珊瑚（氧气 -1）",
+          "outcome": {
+            "text": "你绕开那对眼睛，到礁的另一头够了丛瘦些的珊瑚。东西少，可没人盯着你的手。",
+            "oxygenTurnCost": 1,
+            "loot": [{ "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.5 }]
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.the_sweepers",
+      "depthRange": [28, 42],
+      "zoneTags": ["reef"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "扫过来的",
+      "body": "天一黑，这片礁就开打。\n大的珊瑚头伸出一种特别长的触手，比平时吃食那种长出许多，搭到挨着的小珊瑚身上，蜇，把人家边上蜇死一条，自己好长进那块空地。整夜，每夜，礁都这样慢慢地自相残杀。\n有几条长触手，正慢慢飘向你的手。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "push_through_sweepers",
+          "label": "从这些打架的珊瑚头中间挤过去，够那边那丛（体力 vs 13）",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你看准触手扫动的空当，侧身从中间挤过去，掰下对面那丛没被占的珊瑚。几条长丝擦过护腕，没挂住。",
+              "oxygenTurnCost": 2,
+              "loot": [{ "itemId": "item.coral_shard", "qty": [1, 2] }]
+            },
+            "onFailure": {
+              "text": "你挤到一半，几条长触手齐齐搭上你的手腕，护腕没盖住的那道缝里，一串火辣的疹子顶起来。你缩着手退出来，空着。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -5 }
+            }
+          }
+        },
+        {
+          "id": "watch_the_war",
+          "label": "停下，看这片礁怎么连夜跟自己打",
+          "outcome": {
+            "text": "你停在外头看。一动不动的珊瑚，原来夜里都在动——伸长了胳膊往邻居身上搭，下手极慢，极有耐心，为的就是脚底下那一指宽的地方。书上说这叫争地盘，那些长丝是兵器，不是嘴。\n道理都对。你只是没想到，一座看着这么安静的花园，是踩着彼此的死往大里长的。你把手从那片慢慢扫过来的丝里收回来。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -3 },
+            "loreEntry": "lore.reef.the_sweepers"
+          }
+        },
+        {
+          "id": "go_around_sweepers",
+          "label": "不掺和，从上头绕过去（氧气 -1）",
+          "outcome": {
+            "text": "你抬高一截，从这片打架的珊瑚头上方绕过去，由它们在脚底下慢慢地厮杀。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.shadow_above",
+      "depthRange": [32, 44],
+      "zoneTags": ["reef"],
+      "weight": 4,
+      "cooldown": 5,
+      "title": "上头的影",
+      "body": "礁上的阳光灭了。\n一道影子从头顶滑过——平的，大的，慢的，大得不像话，把整片天光都盖住了。\n礁上每一条鱼，齐刷刷地一头扎进珊瑚里，僵住不动。你也僵住了，没经过自己同意。\n那影子过了很久才走完。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "hold_still_shadow",
+          "label": "跟礁上的鱼一起僵住，等它过去",
+          "outcome": {
+            "text": "你跟整片礁一起屏住，不动。那东西在头顶不紧不慢地移，过了很久，天光才一点点漏回来。鱼一条条从珊瑚里浮起来，像什么都没发生过。\n你始终没看清是什么投下那道影。这么浅的水里，什么东西能有那么大。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -3 },
+            "loreEntry": "lore.reef_deep.shadow_above"
+          }
+        },
+        {
+          "id": "work_through_shadow",
+          "label": "趁鱼都僵着，硬着头皮接着掰珊瑚（理智 vs 48）",
+          "check": {
+            "stat": "sanity",
+            "dc": 48,
+            "onSuccess": {
+              "text": "你逼自己别管头顶，趁鱼僵着、礁空着，接着掰下那几丛好珊瑚。多半是条大家伙路过——一只大魟，或者一头鲸，它们就这么过，不为难谁。\n道理都对。等天光回来，你才发觉自己掰珊瑚的手一直在抖。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -4 },
+              "loot": [{ "itemId": "item.coral_shard", "qty": [1, 2] }]
+            },
+            "onFailure": {
+              "text": "你想接着干活，可手不听使唤——你的眼睛一直往上瞟那道影，盯着它有没有停、有没有朝你下来。你僵在半路，珊瑚没掰下来，光阴白耗。\n等影子走、天光回来，你才喘上气，氧气表低了一截。",
+              "oxygenTurnCost": 4,
+              "deltas": { "sanity": -9 }
+            }
+          }
+        },
+        {
+          "id": "bolt_under_ledge",
+          "label": "不等了，钻到礁檐底下藏着（氧气 -2）",
+          "outcome": {
+            "text": "你不等它过，几下蹬到最近的礁檐底下，把自己塞进石头的阴影里，等那道更大的阴影走远。等光回来，你从檐下钻出来，心还在擂。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.the_strike",
+      "depthRange": [34, 44],
+      "zoneTags": ["reef"],
+      "weight": 3,
+      "oncePerRun": true,
+      "title": "沙里的",
+      "body": "前头这道沙沟不对劲。\n沟底铺着鱼——一截一截咬断的鱼，齐齐整整，啃得发白，太多了。沟当中，五根细丝从沙里直直竖着，不动。\n你看着，一条鱼游过那几根丝——沙猛地一裂——鱼没了，没有声音，就在一摆尾的工夫。那几根丝又慢慢沉回沙里。\n你得过这道沟。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "cross_careful",
+          "label": "稳住，贴着沟壁，离那几根丝远远地慢慢过（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你压住心跳，贴着沟壁，绕开沟心那几根丝，一寸一寸挪过去。\n是一条虫，书上画过，极大的一条，整个埋在沙里，就露那几根丝在外头探，谁碰着就拖下去。道理都对。你过了沟，没再回头看那几根丝竖起来没有。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.reef_deep.the_strike"
+            },
+            "onFailure": {
+              "text": "你的眼睛黏在那几根丝上，挪不开，人也不知不觉往沟心飘。沙在你脚底下动了一下——你猛地一蹬窜开，背后『咔』地一记轻响。\n你过了沟，浑身发抖，分不清是它没够着你，还是没看上你。你比下沟前更深了一截，不记得自己往下沉过。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -12 }
+            }
+          }
+        },
+        {
+          "id": "bait_and_cross",
+          "label": "先往那几根丝那头丢块东西，趁沙乱了赶紧过",
+          "outcome": {
+            "text": "你摸出一块拳头大的石头，往沟那头的丝旁一抛。石头还没落稳，沙就炸开，把它整个吞了下去，五根丝一阵猛抽。你趁这工夫从这头蹿过沟。\n你回头看了一眼那片合上的沙。它吞一块石头，和吞一条鱼，是一样的快。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        },
+        {
+          "id": "go_around_strike",
+          "label": "不过这道沟，退回去从礁上绕远路（氧气 -3）",
+          "outcome": {
+            "text": "你退出沙沟，宁可多耗些气，从旁边的礁脊上绕远路过去。脚底下踩的是实礁，不是会裂开的沙。那道铺满白骨的沟，你留在身后。",
+            "oxygenTurnCost": 3
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "reef.blue_hour",
+      "depthRange": [38, 44],
+      "zoneTags": ["reef"],
+      "weight": 3,
+      "oncePerRun": true,
+      "title": "蓝的时辰",
+      "body": "礁的深边上，最后一点光要没的时候，水开始打火星。\n一串串极小的蓝点从沙底升起来，齐着拍子——亮一下，停一下，亮一下——成千上万串，一波一波往上爬。一时间整片黑水成了一座慢慢呼吸的星图。\n那些拍子，应和着一种你感觉得到、却听不见的东西，很低，从你灯照不到的下面来。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "watch_lights",
+          "label": "停在边上，看那一片蓝点齐着拍子亮（理智 vs 50）",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你看着那片星图明灭。是些极小的活物，到了这个点就一齐打火，齐着拍子，为的是找彼此——书上把这叫黄昏的一串珠子。\n道理都对。书上只是没说，它们齐齐应和着的那个拍子，是从下面什么东西那儿来的。你没顺着那片光往下看第二眼。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 },
+              "loreEntry": "lore.reef_deep.blue_hour"
+            },
+            "onFailure": {
+              "text": "你想找出那个拍子是从哪儿来的——它在你灯照不到的下面，匀匀的，那么有耐心。你顺着那片往上爬的星点往下飘，越过礁边，飘进开阔的黑水里，跟着那座呼吸的星图一齐沉。\n等你回神，礁边在你头顶老高，深度表的数字大了一截。你慌忙往上爬。",
+              "oxygenTurnCost": 5,
+              "deltas": { "sanity": -12 }
+            }
+          }
+        },
+        {
+          "id": "douse_and_back",
+          "label": "把灯灭了，不当水里多出的那一盏，摸回礁壁",
+          "outcome": {
+            "text": "你关掉灯，省得自己也成了这片水里多出的一点光。借着那片明灭的微蓝，你摸回礁壁，扣住实在的硬枝。\n看不清下面，也就不必去应和下面。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        },
+        {
+          "id": "press_on_blue",
+          "label": "离开这道深边，回浅处接着干（氧气 -1）",
+          "outcome": {
+            "text": "你背过那片星图，蹬回礁盘的浅处。身后那座呼吸的灯火留在深边上，亮一下，停一下，与往浅里去的你无关了。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
     }
   ]
 }

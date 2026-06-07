@@ -1,0 +1,14 @@
+{
+  "_comment": "蓝洞群浅段 · 灰里的印 · 顺印往里走 no-check + lore。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "bluecaves.fresh_silt",
+  "depth": 20,
+  "seed": 1,
+  "choices": ["follow_them"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.bluecaves.fresh_silt"],
+    "statsDelta": { "oxygen": -2, "sanity": -3 }
+  }
+}

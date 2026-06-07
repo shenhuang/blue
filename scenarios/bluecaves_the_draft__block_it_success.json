@@ -1,0 +1,15 @@
+{
+  "_comment": "蓝洞群浅段 · 吹出来的 · 堵洞口看会不会停（sanity vs 47）。满 sanity seed 1 通过=潮汐挤压平淡解释(永不交底 quirk #54)+lore。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "bluecaves.the_draft",
+  "depth": 18,
+  "seed": 1,
+  "choices": ["block_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.bluecaves.the_breath"],
+    "statsDelta": { "oxygen": -2, "sanity": -2 }
+  }
+}
