@@ -1,13 +1,11 @@
 // 存档序列化回归：
 //   1. Set（profile.flags / unlockedUpgrades / loreEntries + run.activeFlags）+ deaths + 数值 round-trip
 //   2. 损坏 JSON → null（不崩）
-//   3. 更高 version → null（拒绝读比代码新的存档）
-//   4. 缺 version 的旧存档 → 补齐到当前 version
-//   5. 非浏览器环境 loadGame() → null（feature-detect）
-//   6. 旧档链式迁移到当前 SAVE_VERSION(4)：v1→v2 删 buildingPoints / v2→v3 种 home 灯塔 /
-//      v3→v4 dockyard 迁进 home 灯塔 builtUpgrades（基建地图 Phase A/B/C）
-//   注：深水区 Phase 0a 的 run.sensors/power 未发布故**不做迁移**（作者 2026-06-03），靠 createNewRun 种默认 +
-//      反序列化处 `?? 默认` 兜底，不 bump SAVE_VERSION；下方 round-trip 仍校验其序列化往返。
+//   3. 版本 ≠ 当前 SAVE_VERSION（更高 / 更低 / 缺失）→ null（未发布不迁移 · quirk #99 · 直接弃）
+//   4. 非浏览器环境 loadGame() → null（feature-detect）
+//   5. 启动清旧档：不兼容 / 损坏存档在 loadGame 时被删除（mock localStorage）
+//   注：未发布期不做存档迁移、不为兼容增加复杂度——改坏形状就 bump SAVE_VERSION，旧档启动自动清。
+//      纯加字段不必 bump：createNewRun 种默认 + 反序列化 `?? 默认` 兜底；下方 round-trip 仍校验序列化往返。
 //
 // 跑法： npx tsx scripts/playthrough-save.ts
 
@@ -165,80 +163,55 @@ L('  round-trip：三个 profile Set + run.activeFlags/sensors/power/sensorTunin
 assert(deserializeGameState('not json{') === null, '损坏 JSON 应返回 null');
 L('  损坏 JSON → null ✓');
 
-// 3. 更高 version → null
+// 3. 版本不等于当前 SAVE_VERSION（更高 / 更低 / 缺失）→ null（未发布不迁移 · quirk #99）
 const future = JSON.stringify({ ...JSON.parse(raw), version: 999 });
 assert(deserializeGameState(future) === null, '更高 version 应拒绝（返回 null）');
-L('  未来版本存档 → null（拒绝）✓');
-
-// 4. 缺 version → 补齐当前 version
+for (const oldV of [0, 1, 2, 3]) {
+  const oldObj = JSON.parse(raw);
+  oldObj.version = oldV;
+  assert(
+    deserializeGameState(JSON.stringify(oldObj)) === null,
+    `v${oldV} 旧档应视为不兼容（返回 null · 不迁移）`,
+  );
+}
 const noVer = JSON.parse(raw);
 delete noVer.version;
-const revived = deserializeGameState(JSON.stringify(noVer));
-assert(revived && typeof revived.version === 'number', '缺 version 应被补齐');
-L(`  缺 version → 补齐到 v${revived!.version} ✓`);
+assert(deserializeGameState(JSON.stringify(noVer)) === null, '缺 version 应视为不兼容（返回 null）');
+L('  版本不符（999 / v0-3 / 缺失）→ null（未发布不迁移 · 直接弃）✓');
 
-// 5. node 环境无 localStorage → loadGame() 返回 null（feature-detect 不崩）
+// 4. node 环境无 localStorage → loadGame() 返回 null（feature-detect 不崩）
 assert(loadGame() === null, '非浏览器环境 loadGame() 应返回 null');
 L('  非浏览器环境 loadGame() → null ✓');
 
-// 6. 旧档迁移（链式到当前 SAVE_VERSION）：
-//    Phase A(1→2) 删 buildingPoints + Phase B(2→3) 种 home 灯塔。
-//    模拟一个真·v1 旧档：有 buildingPoints、没有 lighthouses。
-const v1obj = JSON.parse(raw);
-v1obj.version = 1;
-v1obj.profile.buildingPoints = 42; // 旧档遗留的建设值字段（应被删）
-delete v1obj.profile.lighthouses; // 真 v1 档没有灯塔字段（应被种入 home）
-const migrated = deserializeGameState(JSON.stringify(v1obj));
-assert(migrated, 'v1 存档应能迁移（非 null）');
-assert(migrated!.version === 4, `迁移后 version 应为 4（当前 SAVE_VERSION），实际 ${migrated!.version}`);
-assert(
-  !('buildingPoints' in (migrated!.profile as Record<string, unknown>)),
-  'v1→v2：profile.buildingPoints 应被删除',
-);
-assert(
-  Array.isArray(migrated!.profile.lighthouses) &&
-    migrated!.profile.lighthouses.length === 1 &&
-    migrated!.profile.lighthouses[0].id === 'lighthouse.home' &&
-    migrated!.profile.lighthouses[0].builtUpgrades instanceof Set,
-  'v2→v3：应种入 home 灯塔（builtUpgrades 为真 Set）',
-);
-assert(
-  migrated!.profile.bankedGold === 7 &&
-    migrated!.profile.unlockedUpgrades instanceof Set &&
-    !migrated!.profile.unlockedUpgrades.has('upgrade.dockyard.lv1') &&
-    migrated!.profile.unlockedUpgrades.has('upgrade.salvage_guild.lv2'),
-  'v3→v4：dockyard 移出全局升级；bankedGold / 其它升级（salvage lv2）保留',
-);
-assert(
-  migrated!.profile.lighthouses[0].builtUpgrades.has('lighthouse.dockyard.lv1'),
-  'v3→v4：旧档已购 dockyard 迁进 home 灯塔 builtUpgrades',
-);
-L('  旧档迁移：v1→v2 删 buildingPoints + v2→v3 种 home + v3→v4 dockyard 迁灯塔 / version=4 ✓');
-
-// 6b. v2 档（Phase A 之后、Phase B 之前）→ v4：补灯塔 + dockyard 迁灯塔
-const v2obj = JSON.parse(raw);
-v2obj.version = 2;
-delete v2obj.profile.lighthouses;
-const m2 = deserializeGameState(JSON.stringify(v2obj));
-assert(m2 && m2.version === 4, 'v2 档应迁到 v4');
-assert(
-  m2!.profile.lighthouses.length === 1 &&
-    m2!.profile.lighthouses[0].id === 'lighthouse.home' &&
-    m2!.profile.lighthouses[0].builtUpgrades.has('lighthouse.dockyard.lv1'),
-  'v2→…→v4：补种 home 灯塔 + dockyard 迁入其 builtUpgrades',
-);
-L('  v2→v4 迁移：补种 home 灯塔 + dockyard 迁灯塔 ✓');
-
-// 6c. v3 档（Phase B 之后、Phase C 之前）→ v4：没买过 dockyard 的档不应被塞、原有 builtUpgrades 保留
-const v3NoDock = JSON.parse(raw);
-v3NoDock.version = 3;
-v3NoDock.profile.unlockedUpgrades = { __set: ['upgrade.salvage_guild.lv2'] }; // 模拟"没买过 dockyard"
-const m3 = deserializeGameState(JSON.stringify(v3NoDock));
-assert(m3 && m3.version === 4, 'v3 档应迁到 v4');
-const home3 = m3!.profile.lighthouses.find((l) => l.id === 'lighthouse.home')!;
-assert(!home3.builtUpgrades.has('lighthouse.dockyard.lv1'), 'v3→v4：没买过 dockyard 的档不应被塞船坞');
-assert(home3.builtUpgrades.has('lighthouse.beacon.lv1'), 'v3→v4：home 原有 builtUpgrades（beacon.lv1）应保留');
-L('  v3→v4 迁移：没 dockyard 的档不塞、原有 home builtUpgrades 保留 ✓');
+// 5. 启动清旧档：不兼容 / 损坏存档在 loadGame 时被删除（mock localStorage 验证）
+{
+  const store: Record<string, string> = {};
+  const SAVE_KEY = 'deepecho.save'; // 与 engine/state.ts::SAVE_KEY 对齐
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: (k: string) => (k in store ? store[k] : null),
+    setItem: (k: string, v: string) => {
+      store[k] = v;
+    },
+    removeItem: (k: string) => {
+      delete store[k];
+    },
+  };
+  // (a) 不兼容旧档（v1）→ loadGame 返回 null 且把旧档删掉（新版本启动清档）
+  store[SAVE_KEY] = JSON.stringify({ ...JSON.parse(raw), version: 1 });
+  assert(loadGame() === null, '不兼容存档 loadGame() 应返回 null');
+  assert(!(SAVE_KEY in store), '不兼容存档应在启动时被删除（clearSave）');
+  // (b) 损坏存档同样被清
+  store[SAVE_KEY] = 'not json{';
+  assert(loadGame() === null, '损坏存档 loadGame() 应返回 null');
+  assert(!(SAVE_KEY in store), '损坏存档应在启动时被删除');
+  // (c) 合法当前版本存档 → 正常读取、不删
+  store[SAVE_KEY] = raw;
+  const ok = loadGame();
+  assert(ok && ok.version === 4, '当前版本存档应正常读取');
+  assert(SAVE_KEY in store, '合法存档不应被删除');
+  delete (globalThis as { localStorage?: unknown }).localStorage;
+}
+L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取保留 ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 存档序列化回归通过');

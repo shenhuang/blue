@@ -16,7 +16,7 @@ import { POWER_MAX, deriveSensorTuning } from './clarity';
 
 const SAVE_VERSION = 4;
 
-/** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile + migrateSave 共用一个来源。 */
+/** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile 用。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
 
 /**
@@ -245,8 +245,8 @@ export function clampStats(stats: Stats, max: { stamina: number; oxygen: number 
 //
 // GameState 里有多个 Set（profile.flags / unlockedUpgrades / loreEntries、run.activeFlags），
 // 朴素 JSON.stringify 会把它们序列化成 `{}`。下面用 replacer/reviver 把 Set ↔ {__set:[...]}
-// 互转，整棵 state（含嵌套 Set）都能安全 round-trip。migrateSave 按 version 升级旧存档；
-// SAVE_VERSION 改动时在 migrateSave 的 while 里加迁移步骤。
+// 互转，整棵 state（含嵌套 Set）都能安全 round-trip。**未发布期不做存档迁移**（quirk #99）：
+// 版本 ≠ 当前 SAVE_VERSION（或损坏）一律视为不兼容、丢弃；改坏 run/profile 形状想废旧档就 bump SAVE_VERSION。
 
 const SAVE_KEY = 'deepecho.save';
 
@@ -270,69 +270,18 @@ export function serializeGameState(state: GameState): string {
 }
 
 /**
- * 把存档对象迁移到当前 SAVE_VERSION。
- *  - version > 当前：存档比代码新 → 拒绝（返回 null，避免读坏）。
- *  - version < 当前：在 while 的 switch 里逐步迁移（每个 case 把 v 推进一档）。
+ * 反序列化存档。**未发布期策略（作者 2026-06 · quirk #99）：不做存档迁移、不为兼容旧档增加任何复杂度。**
+ * 版本 ≠ 当前 SAVE_VERSION（更高 / 更低 / 缺失）或 JSON 损坏一律视为不兼容 → 返回 null，
+ * 调用方 clearSave 后从头开始。
+ *  - 纯加字段：不必 bump（版本仍相等 · 缺失字段由 createNewRun 种默认 + 读取处 `?? 默认` 兜底）。
+ *  - 改坏 run/profile 形状、想废旧档：直接 bump SAVE_VERSION，旧档下次启动自动被清——别写迁移代码。
  */
-function migrateSave(obj: unknown): GameState | null {
-  if (!obj || typeof obj !== 'object') return null;
-  const o = obj as Record<string, unknown>;
-  let v = typeof o.version === 'number' ? (o.version as number) : 0;
-  if (v > SAVE_VERSION) return null;
-  while (v < SAVE_VERSION) {
-    switch (v) {
-      case 0:
-      case 1: {
-        // 1→2（基建地图 Phase A · 材料经济）：移除建设值。旧点数直接丢弃，不折算成材料——
-        // 内容期还早、存档量极小（决策见 SPEC §6 / §10）。
-        const prof = o.profile as Record<string, unknown> | undefined;
-        if (prof) delete prof.buildingPoints;
-        v = 2;
-        break;
-      }
-      case 2: {
-        // 2→3（基建地图 Phase B · 灯塔数据模型）：给旧档种入 home 灯塔（缺 lighthouses 时）。
-        // 注意：migrateSave 在 JSON.parse(reviver) 之后跑，此处 Set 已是真 Set，故直接 new Set()。
-        const prof = o.profile as Record<string, unknown> | undefined;
-        if (prof && !Array.isArray(prof.lighthouses)) {
-          prof.lighthouses = [createHomeLighthouse()];
-        }
-        v = 3;
-        break;
-      }
-      case 3: {
-        // 3→4（基建地图 Phase C · dockyard 迁灯塔）：把已购的全局 dockyard 搬进 home 灯塔「船坞」设施
-        // （lighthouse.dockyard.lv1）。reveal/reach 不入存档（从 lighthouses 派生），故只需迁这一项。
-        const prof = o.profile as Record<string, unknown> | undefined;
-        if (prof) {
-          const unlocked = prof.unlockedUpgrades;
-          const hadDockyard = unlocked instanceof Set && unlocked.has('upgrade.dockyard.lv1');
-          if (unlocked instanceof Set) unlocked.delete('upgrade.dockyard.lv1');
-          if (hadDockyard && Array.isArray(prof.lighthouses)) {
-            const home = (prof.lighthouses as Array<Record<string, unknown>>).find(
-              (l) => l && l.id === HOME_LIGHTHOUSE_ID,
-            );
-            if (home) {
-              if (!(home.builtUpgrades instanceof Set)) home.builtUpgrades = new Set<string>();
-              (home.builtUpgrades as Set<string>).add('lighthouse.dockyard.lv1');
-            }
-          }
-        }
-        v = 4;
-        break;
-      }
-      default:
-        v = SAVE_VERSION; // 没有对应迁移步骤的旧版，直接对齐
-    }
-  }
-  o.version = SAVE_VERSION;
-  return o as unknown as GameState;
-}
-
-/** 反序列化 + 迁移；损坏 / 不兼容 → null */
 export function deserializeGameState(raw: string): GameState | null {
   try {
-    return migrateSave(JSON.parse(raw, saveReviver));
+    const obj = JSON.parse(raw, saveReviver) as { version?: unknown } | null;
+    if (!obj || typeof obj !== 'object') return null;
+    if (obj.version !== SAVE_VERSION) return null; // 不兼容：不迁移、直接弃
+    return obj as unknown as GameState;
   } catch {
     return null;
   }
@@ -348,12 +297,18 @@ export function saveGame(state: GameState): void {
   }
 }
 
-/** 读存档（无 / 损坏 / 版本不兼容 → null，调用方退回 createInitialGameState） */
+/**
+ * 读存档；无 → null。**存档存在但损坏 / 版本不兼容 → 启动即删除旧档**（未发布不迁移 · quirk #99），
+ * 再返回 null，调用方退回 createInitialGameState（从头开始）。
+ */
 export function loadGame(): GameState | null {
   if (typeof localStorage === 'undefined') return null;
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    return raw ? deserializeGameState(raw) : null;
+    if (!raw) return null;
+    const state = deserializeGameState(raw);
+    if (!state) clearSave(); // 不兼容 / 损坏：新版本启动即清掉旧档
+    return state;
   } catch {
     return null;
   }
