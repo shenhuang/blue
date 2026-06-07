@@ -94,6 +94,8 @@ export function startDive(
     maxRoomFeatures?: number;
     sonarDeception?: number;
     targetCorpseId?: string;
+    /** 洞穴一致性（声呐渲染重做 SPEC §6①·#98）：地点身份串（POI.id / band.id）→ 同地点同图。缺省回退随机。 */
+    seedKey?: string;
   },
 ): GameState {
   const zone = getZone(zoneId);
@@ -118,6 +120,8 @@ export function startDive(
     roomFeatureChanceBonus: state.run.sensorTuning?.roomFeatureChanceBonus,
     sonarDeception: opts?.sonarDeception,
     targetCorpseId: opts?.targetCorpseId,
+    // 洞穴一致性（SPEC §6①·#98）：透传地点身份串 → mapgen 据此派生确定性 rng（同地点同图）。
+    seedKey: opts?.seedKey,
   });
 
   const run: RunState = {
@@ -186,6 +190,8 @@ export function startDiveFromPoi(
   s = startDive(s, poi.zoneId, {
     depthOffset: poi.modifier?.depthOffset,
     targetCorpseId: opts?.targetCorpseId,
+    // 洞穴一致性（SPEC §6①·#98）：POI 身份＝种子 ⇒ 同一海图点再潜＝同一张洞穴图。
+    seedKey: poi.id,
   });
 
   if (dist > 0) {
@@ -336,6 +342,8 @@ export function startDiveFromOutpost(state: GameState, bandId: string): GameStat
     maxRoomFeatures: band.maxRoomFeatures,
     // band.sonarDeception（如有）让 mapgen 给部分内部节点挂 spoofs/evades（节点版 mimic / 无回波，S2）。
     sonarDeception: band.sonarDeception,
+    // 洞穴一致性（SPEC §6①·#98）：band 身份＝种子 ⇒ 同一 band 再蛙跳＝同一张洞穴图。
+    seedKey: bandId,
   });
 
   s = appendLog(s, {

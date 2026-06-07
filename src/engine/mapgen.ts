@@ -22,6 +22,13 @@ interface GenOpts {
   corpseChance?: number;
   rng?: () => number;
   /**
+   * 洞穴一致性（声呐渲染重做 SPEC §6①·#98）：**地点身份串**（POI.id / band.id）。
+   * 未显式传 `rng` 时，由 `hash(zone.id::seedKey::depthOffset)` 派生确定性 rng ⇒ **同一地点再潜＝同一张图**
+   *（代价：每地点变体单一·作者要一致世界感）。缺省（既无 rng 也无 seedKey）→ 回退 Math.random（每潜不同·旧行为）。
+   * mapgen-scenarios 各自显式传 `rng` 故**不受影响**（`opts.rng` 优先）。地图不入存档 ⇒ 此改**不 bump SAVE_VERSION**。
+   */
+  seedKey?: string;
+  /**
    * 来自海图 POI 的深度偏移（米）。平移整张图每层深度（+ 更深）。
    * 经 tickTurns / planAscent 自然换算成更高耗氧 / 更长减压。clamp 到 depth ≥ 0。
    */
@@ -156,6 +163,22 @@ function fnv(s: string): number {
     h = Math.imul(h, 16777619);
   }
   return h >>> 0;
+}
+
+/**
+ * mulberry32 确定性 PRNG（洞穴一致性·SPEC §6①·#98）：由「地点派生种子」生成稳定 rng。
+ * 仅在 generateDiveMap 收到 seedKey、且**未**收显式 rng 时启用 ⇒ 同一地点再潜同一张图。质量足够 mapgen 取点用。
+ * 与 mapgen 的 seeded rng 流是同一接口（() => [0,1)），故子生成器无需改动、destructure 即用。
+ */
+function makeSeededRng(zoneId: string, seedKey: string, depthOffset: number): () => number {
+  let a = fnv(`${zoneId}::${seedKey}::${depthOffset}`) >>> 0;
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 /** spoof 在 NodeSelectView 声呐预览里「像……」的伪装文案（节点版 mimic「无灯之光」＝假上浮口/家的光/空水）。 */
@@ -317,11 +340,17 @@ export function generateDiveMap(opts: GenOpts): DiveMap {
     };
   }
 
+  // 洞穴一致性（SPEC §6①·#98）：未显式传 rng 时，若有 seedKey 则用「地点派生」的确定性 rng（同地点同图）；
+  // 否则回退 Math.random（旧行为·每潜不同）。把解析后的 rng 注回 opts ⇒ 两个子生成器 destructure 即取到、无需各自再判。
+  const rng =
+    opts.rng ?? (opts.seedKey != null ? makeSeededRng(zone.id, opts.seedKey, depthOffset) : Math.random);
+  const genOpts: GenOpts = { ...opts, rng };
+
   // 随机图：按 mapShape 分流（缺省 = layered，保持现有 zone 行为不变）
   const map =
     zone.mapShape === 'maze'
-      ? generateMazeMap(opts, baseD0, baseD1)
-      : generateLayeredMap(opts, baseD0, baseD1);
+      ? generateMazeMap(genOpts, baseD0, baseD1)
+      : generateLayeredMap(genOpts, baseD0, baseD1);
   // 不可信声呐失真（声呐与房间 S2）：深 band 给部分内部节点挂 spoofs/evades（确定性·零 rng·gated）。
   // 放在分流之后＝两种拓扑共用一条欺骗 pass；chance=0（缺省）时 no-op、不耗 rng、逐字节复现旧图。
   applySonarDeception(map, opts.sonarDeception ?? 0);
