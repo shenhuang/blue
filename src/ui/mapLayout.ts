@@ -62,25 +62,29 @@ export function deriveMapLayout(map: DiveMap, opts?: MapLayoutOpts): MapLayout {
     dMax = 0;
   }
 
-  // 按**真实深度**分箱（同深度节点横向并列）；箱内按 id 稳定排序。
-  const byDepth = new Map<number, DiveNode[]>();
+  // 横向＝按**到入口的树距（node.layer）**分组并列——保留洞穴的分叉形状。
+  // （#98 修 #92：#92 按真实 depth 分箱铺 x，但迷路图各 depth 多为单节点 → 每箱 1 个 → 全塌成一条竖线、丢了洞穴形状。
+  //   改回按 layer 分组＝同一树距的并列通道横向铺开，恢复「大改前那张洞穴图」的分叉，唯一区别是纵轴换成真实深度＝垂直视角。
+  //   层状（开阔水域）图 depth 与 layer 一一对应 → byLayer ≡ byDepth、行为不变；只迷路图受益。）
+  const byLayer = new Map<number, DiveNode[]>();
   for (const n of nodes) {
-    if (!byDepth.has(n.depth)) byDepth.set(n.depth, []);
-    byDepth.get(n.depth)!.push(n);
+    if (!byLayer.has(n.layer)) byLayer.set(n.layer, []);
+    byLayer.get(n.layer)!.push(n);
   }
   let maxConcurrent = 1;
-  for (const bin of byDepth.values()) {
-    bin.sort((a, b) => a.id.localeCompare(b.id));
-    maxConcurrent = Math.max(maxConcurrent, bin.length);
+  for (const col of byLayer.values()) {
+    col.sort((a, b) => a.id.localeCompare(b.id));
+    maxConcurrent = Math.max(maxConcurrent, col.length);
   }
 
-  // 横向：所有深度箱共用一条中线、箱内对称排开 → x 纯避重叠、无方向语义（深浅只由 y 表达）。
+  // 横向：各 layer 组共用一条中线、组内对称排开 → 同树距的并列通道横向分散（保留分叉·x 无深度方向语义·深浅只由 y 表达）。
+  // 纵向：y ∝ 真实深度（上浅下深），与 x 的 layer 分组正交——同一 layer 的节点因 jitter 各在略不同深度，故是略错落的一排。
   const centerX = padX + ((maxConcurrent - 1) * colW) / 2;
   const pos: Record<string, { x: number; y: number }> = {};
-  for (const [depth, bin] of byDepth) {
-    bin.forEach((n, j) => {
-      const x = centerX + (j - (bin.length - 1) / 2) * colW;
-      const y = padY + (depth - dMin) * pxPerMeter; // 上＝浅（小 depth → 小 y）/ 下＝深
+  for (const col of byLayer.values()) {
+    col.forEach((n, j) => {
+      const x = centerX + (j - (col.length - 1) / 2) * colW;
+      const y = padY + (n.depth - dMin) * pxPerMeter; // 上＝浅（小 depth → 小 y）/ 下＝深
       pos[n.id] = { x, y };
     });
   }

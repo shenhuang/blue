@@ -1,38 +1,63 @@
-// 声呐探索图（下潜内）—— 声呐与房间 SPEC §5/§6.5 微观层、§7「S0」。
+// 声呐探索图（下潜内）—— 声呐渲染重做 SPEC（docs/spec/深海回响_声呐渲染重做_SPEC.md §2/§3/§4）。
 //
-// 起手全黑——只随声呐 ping 一块块点亮（接触式草图 + 渐隐余像）。一记 ping 从你当前位置揭示有限程内的
-// 真实节点为草图；图是**会过时的记忆**（按 turn 渐隐，重复 ping 不更亮）。默认放大只看身边一小片，
-// 角落一张残图小地图给方位感（你在更大洞里的大概位置 + 已 mapped 的那一小块）。
+// 重做：从「示意 node graph（圆点 + 连线）」改成**有机洞穴垂直剖面 + 雷达式扫描**（作者逐拍 demo 拍板·别再画连线）。
+//   - 背景＝洞穴剖面（canvas）：深色岩石里凿出蓝色水道（SDF：每条边＝capsule 隧道 + 每个节点＝blob 洞室·值噪声扰成不规则发光岩壁·半分辨率提速）。连通＝开阔水域·**无连线**。
+//   - 纵轴＝真实深度（#92 上浅下深·压短 pxPerMeter·作者要节点更近）；横向自由铺开（byLayer 分散·见 mapLayout.ts）。
+//   - 雷达式揭示（canvas）：一记扫描＝从你当前位置扩散的亮前缘 + 淡化拖尾·墙/点随波前到达才点亮；旧图**保留到下次扫描**才刷新（不逐回合淡出·§4）。
+//   - 节点显隐（防剧透 + 自由感·§2）：只对**可立即前往的相邻节点**（＝ NodeSelectView 的移动 choices）画**可点**标记（点击＝触发那条 move choice）；其余节点只显洞的几何、不标点。
+//   - 非洞穴场景（层状·沉船/礁）：先全黑只显节点占位（§2·留后续专属背景）。
 //
-// 纯渲染：读 run.scanMemory（engine 写）+ deriveMapLayout（共享铺点）+ clarity.nodeSonarView/sonarPhantoms
-//（不可信表象的**单一来源**，声呐与房间 S2）。欺骗逻辑全在 clarity 一处、本面板不加判定分支（§7/§10）：
-//   spoof→画成假信标(is-spoof) / evade→无回波(不画) / 低 san→读数乱码(is-garbled) + 伪接触(sonar-phantom)。
+// 纯渲染：canvas 在 useEffect 里画（SSR 不跑·只出空 canvas）；语义/可点标记走 SVG 覆盖层（SSR 可断言 + 可点 + 无障碍）。
+// 欺骗/威胁仍是 clarity 单一来源（nodeSonarView/sonarPhantoms/threatContact·面板不加判定分支·§7/§10）；猎手位置 stalkerSonarBlip（§8.7 会过时·mid-edge 插值）。
 
-import type { RunState } from '@/types';
+import { useEffect, useRef } from 'react';
+import type { GameState, NodeChoice, RunState, SonarDir } from '@/types';
 import { deriveMapLayout } from './mapLayout';
-import { scanFreshness } from '@/engine/sonar';
-import { nodeSonarView, sonarPhantoms, threatContact, type NodeSonarView } from '@/engine/clarity';
+import { moveToNode } from '@/engine/dive';
+import { nodeSonarView, sonarPhantoms, threatContact } from '@/engine/clarity';
 import { stalkerSonarBlip } from '@/engine/stalker';
 import { zoneAllowsBacktrack } from '@/engine/zones';
 
-/** 主图缩放窗口（布局坐标单位）：只显示当前节点周围一小片＝SPEC「默认放大、几乎看不到全貌」。
- *  纵向取景窗（窄×高·#92 上浅下深）：窗高 / mapLayout.pxPerMeter ＝固定可视深度跨度（深图更长无妨·只看一片）。 */
-const VIEW_W = 200;
+/** 纵向取景窗（窄×高·#92 上浅下深）：只显当前节点周围一片（SPEC「默认放大、几乎看不到全貌」）。 */
+const VIEW_W = 220;
 const VIEW_H = 300;
-/** 以玩家为圆心的量程/接触半径基准＝取景窗短边（现 = VIEW_W·portrait），保证圆环/楔形不被窄边裁掉。 */
 const VIEW_R = Math.min(VIEW_W, VIEW_H);
-
-/** 定向 ping 聚焦方向的标注文案（声呐与房间 §5）。 */
-const SONAR_DIR_LABEL: Record<string, string> = { deeper: '朝深处', lateral: '侧向', back: '来路' };
+/** canvas 内部超采样（清晰度）；洞穴 SDF 在其半分辨率算（§2 半分辨率提速）。 */
+const RENDER_SCALE = 2;
+/** 声呐取景的布局比例：压短纵向（pxPerMeter 小·节点更近·§2）+ 同深横向铺开（colW·byLayer 见 mapLayout）。 */
+const SONAR_PX_PER_M = 13;
+const SONAR_COL_W = 32;
+/** 水道几何（世界单位）：每条边＝半宽 CHANNEL_R 的隧道·每个节点＝半径 NODE_R 的洞室。 */
+const CHANNEL_R = 7;
+const NODE_R = 12;
+/** 雷达扫描扩散时长（ms·§3「慢一点 ~1.2s」）。 */
+const SWEEP_MS = 1200;
 
 /**
- * 定向聚焦扇区的楔形路径（声呐与房间 §5「聚焦扇区可视化」）：从你当前位置朝聚焦方向画一道半透明扇形——
- * 与布局 y∝depth 一致（#92 上浅下深·深水区 SPEC §13）：deeper＝朝下（深在下）/ back＝朝上（来路在上·更浅）/
- * lateral＝左右两瓣（同深度沿 x 左右铺·比配上下更直觉）。SVG y 轴朝下：故 +π/2＝下、−π/2＝上、0＝右、π＝左。
- * 半径略超量程环＝直观体现「那一向探更远」。纯几何、确定性（SSR 安全）。
+ * 面板自带的布局/动画 CSS（客户端注入 document.head·见 useEffect）。
+ * **不走 JSX <style>**——那样 class 名会进 SSR 文本、污染 smoke 的子串断言（`!includes('sonar-stalker')` 会误中）。
+ * 走 head 注入＝SSR 输出干净（只出结构），浏览器仍拿到样式。颜色用高特异性盖过 styles.css 通用 .sonar-stalker circle（quirk #91）。
  */
+const CAVE_STYLE = `
+@keyframes sonarBreath { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+.sonar-scan-stack { position: relative; }
+.sonar-cave-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; }
+.sonar-overlay { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sonar-pulse { animation: sonarBreath 2.2s ease-in-out infinite; }
+.sonar-node-marker { cursor: pointer; }
+.sonar-you circle.sonar-you-core { fill: #4ed1c1; stroke: none; }
+.sonar-you circle.sonar-you-ring { fill: none; stroke: #4ed1c1; stroke-width: 1.4; }
+.sonar-stalker circle.sonar-stalker-core { fill: #ff5a5a; stroke: none; }
+.sonar-stalker circle.sonar-stalker-ring { fill: none; stroke: #ff5a5a; stroke-width: 1.6; }
+.sonar-stalker circle.sonar-stalker-mass { fill: #ff5a5a; stroke: none; opacity: .18; }
+`;
+const CAVE_STYLE_ID = 'sonar-cave-style';
+
+const SONAR_DIR_LABEL: Record<string, string> = { deeper: '朝深处', lateral: '侧向', back: '来路' };
+
+/** 定向聚焦扇区楔形（§5 可视化·与 y∝depth 一致：deeper↓/back↑/lateral 左右）。SVG y 朝下。纯几何·SSR 安全。 */
 function focusWedgePath(cx: number, cy: number, r: number, dir: string): string {
-  const H = 0.85; // 半张角（rad·~49°）
+  const H = 0.85;
   const slice = (a0: number, a1: number) => {
     const x0 = cx + r * Math.cos(a0);
     const y0 = cy + r * Math.sin(a0);
@@ -40,14 +65,12 @@ function focusWedgePath(cx: number, cy: number, r: number, dir: string): string 
     const y1 = cy + r * Math.sin(a1);
     return `M${cx.toFixed(1)} ${cy.toFixed(1)} L${x0.toFixed(1)} ${y0.toFixed(1)} A${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)} Z`;
   };
-  if (dir === 'deeper') return slice(Math.PI / 2 - H, Math.PI / 2 + H); // 朝下（更深）
-  if (dir === 'back') return slice(-Math.PI / 2 - H, -Math.PI / 2 + H); // 朝上（来路·更浅）
-  // lateral：左右两瓣（同深度节点在布局里沿 x 左右铺开）
+  if (dir === 'deeper') return slice(Math.PI / 2 - H, Math.PI / 2 + H);
+  if (dir === 'back') return slice(-Math.PI / 2 - H, -Math.PI / 2 + H);
   return `${slice(-H, H)} ${slice(Math.PI - H, Math.PI + H)}`;
 }
 
-function kindClass(kind: string | undefined, isCurrent: boolean): string {
-  if (isCurrent) return 'is-here';
+function kindClass(kind: string | undefined): string {
   switch (kind) {
     case 'ascent_point':
       return 'is-exit';
@@ -59,7 +82,6 @@ function kindClass(kind: string | undefined, isCurrent: boolean): string {
       return '';
   }
 }
-
 function kindGlyph(kind: string | undefined): string | null {
   switch (kind) {
     case 'ascent_point':
@@ -73,18 +95,225 @@ function kindGlyph(kind: string | undefined): string | null {
   }
 }
 
-export function SonarScanPanel({ run }: { run: RunState }) {
-  const map = run.map;
-  if (!map) return null;
-  const memory = run.scanMemory ?? {};
-  const scannedIds = Object.keys(memory).filter((id) => map.nodes[id]);
+// ============================================================
+// 有机洞穴场（确定性纯函数·canvas 用·也便于单测）
+// ============================================================
 
+/** 确定性 hash → [0,1)（值噪声用·不碰 RNG）。 */
+function hash2(x: number, y: number): number {
+  let h = (Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263)) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+  return (h % 1000) / 1000;
+}
+/** 平滑值噪声（双线性 + smoothstep）。 */
+function vnoise(x: number, y: number): number {
+  const xi = Math.floor(x);
+  const yi = Math.floor(y);
+  const xf = x - xi;
+  const yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf);
+  const v = yf * yf * (3 - 2 * yf);
+  const a = hash2(xi, yi);
+  const b = hash2(xi + 1, yi);
+  const c = hash2(xi, yi + 1);
+  const d = hash2(xi + 1, yi + 1);
+  return a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v;
+}
+/** 分形叠加（不规则岩壁的有机感）。 */
+function fbm(x: number, y: number): number {
+  return 0.6 * vnoise(x, y) + 0.3 * vnoise(x * 2.1 + 11, y * 2.1 + 7) + 0.1 * vnoise(x * 4.3 + 3, y * 4.7 + 19);
+}
+/** 点到线段距离。 */
+function distSeg(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const l2 = dx * dx + dy * dy;
+  let t = l2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  const cx = ax + t * dx;
+  const cy = ay + t * dy;
+  return Math.hypot(px - cx, py - cy);
+}
+
+interface Seg {
+  ax: number;
+  ay: number;
+  bx: number;
+  by: number;
+}
+
+/**
+ * 洞穴有机剖面的「水/岩 SDF」：返回该世界点到最近水道中心的有符号距离（+ 值噪声扰动）。
+ * < 0 ＝水道内（蓝）；≈ 0 ＝岩壁（发光交界）；> 0 ＝岩石（暗）。确定性·纯函数。
+ */
+export function caveSdf(wx: number, wy: number, segs: Seg[], nodes: Array<{ x: number; y: number }>): number {
+  let d = Infinity;
+  for (const s of segs) d = Math.min(d, distSeg(wx, wy, s.ax, s.ay, s.bx, s.by) - CHANNEL_R);
+  for (const n of nodes) d = Math.min(d, Math.hypot(wx - n.x, wy - n.y) - NODE_R);
+  // 值噪声把规整的 capsule/blob 边界扰成不规则岩壁（有机回波轮廓）。
+  return d + (fbm(wx * 0.06, wy * 0.06) - 0.5) * 7;
+}
+
+interface Props {
+  state: GameState;
+  /** NodeSelectView 当前的移动 choices＝可立即前往的相邻节点（§2·只这些画可点标记·点击触发同一条 move）。 */
+  choices: NodeChoice[];
+  onStateChange: (s: GameState) => void;
+}
+
+export function SonarScanPanel({ state, choices, onStateChange }: Props) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  // 面板 CSS 客户端注入 head（一次·SSR 不跑＝输出干净·不污染 smoke 子串断言）。
+  useEffect(() => {
+    if (typeof document === 'undefined' || document.getElementById(CAVE_STYLE_ID)) return;
+    const el = document.createElement('style');
+    el.id = CAVE_STYLE_ID;
+    el.textContent = CAVE_STYLE;
+    document.head.appendChild(el);
+  }, []);
+  const run: RunState | undefined = state.run ?? undefined;
+  const map = run?.map ?? null;
+  const memory = run?.scanMemory ?? {};
+  const scannedIds = map ? Object.keys(memory).filter((id) => map.nodes[id]) : [];
+
+  // 布局（压短纵向 + byLayer 横向铺开·§2）。空图/无 run 兜底空布局（hooks 仍按序调用·见下早退）。
+  const layout = map ? deriveMapLayout(map, { pxPerMeter: SONAR_PX_PER_M, colW: SONAR_COL_W }) : null;
+  const curId = run?.currentNodeId ?? null;
+  const here = (layout && curId && layout.pos[curId]) || { x: (layout?.width ?? 0) / 2, y: (layout?.height ?? 0) / 2 };
+  const vbX = here.x - VIEW_W / 2;
+  const vbY = here.y - VIEW_H / 2;
+  const isOpenWater = run ? !zoneAllowsBacktrack(run.zoneId) : false;
+  // 最近一次扫描的 turn（任一节点被刷新的最大 stamp）→ 变化即重新雷达扫一遍（旧图保留到此刻·§4）。
+  let lastScanTurn = -1;
+  for (const id of scannedIds) lastScanTurn = Math.max(lastScanTurn, memory[id] ?? -1);
+
+  // 揭示几何（世界坐标·canvas 画洞穴用）：扫到的节点＝洞室·两端都扫到的边＝隧道。开放水域不画洞壁。
+  const caveNodes: Array<{ x: number; y: number }> = [];
+  const caveSegs: Seg[] = [];
+  if (layout && !isOpenWater) {
+    for (const id of scannedIds) {
+      const p = layout.pos[id];
+      if (p) caveNodes.push(p);
+    }
+    for (const e of layout.edges) {
+      if (memory[e.a] === undefined || memory[e.b] === undefined) continue;
+      const pa = layout.pos[e.a];
+      const pb = layout.pos[e.b];
+      if (pa && pb) caveSegs.push({ ax: pa.x, ay: pa.y, bx: pb.x, by: pb.y });
+    }
+  }
+
+  // canvas：有机洞穴剖面 + 雷达扫描（useEffect·SSR 不跑）。signature 变（新扫描/移动）→ 重画 + 重扫一遍。
+  const signature = `${vbX.toFixed(0)},${vbY.toFixed(0)}|${lastScanTurn}|${isOpenWater}|${scannedIds.sort().join(',')}`;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const W = VIEW_W * RENDER_SCALE;
+    const H = VIEW_H * RENDER_SCALE;
+    canvas.width = W;
+    canvas.height = H;
+
+    // 离屏半分辨率算洞穴 SDF（§2 半分辨率提速）→ 一次性烤成静态洞穴图（水/壁/岩 + 噪声），之后只做雷达揭示合成。
+    const ow = Math.max(1, Math.round((VIEW_W / 2)));
+    const oh = Math.max(1, Math.round((VIEW_H / 2)));
+    const off = document.createElement('canvas');
+    off.width = ow;
+    off.height = oh;
+    const octx = off.getContext('2d');
+    let haveCave = false;
+    if (octx && !isOpenWater && caveSegs.length + caveNodes.length > 0) {
+      const img = octx.createImageData(ow, oh);
+      const dat = img.data;
+      for (let gy = 0; gy < oh; gy++) {
+        for (let gx = 0; gx < ow; gx++) {
+          const wx = vbX + ((gx + 0.5) / ow) * VIEW_W;
+          const wy = vbY + ((gy + 0.5) / oh) * VIEW_H;
+          const d = caveSdf(wx, wy, caveSegs, caveNodes);
+          const i = (gy * ow + gx) * 4;
+          const tex = fbm(wx * 0.12, wy * 0.12); // 表面纹理
+          if (d < -2) {
+            // 水道内：蓝绿·越深越暗（wy 越大越深）
+            const deepK = Math.min(1, Math.max(0, (wy - vbY) / VIEW_H));
+            dat[i] = 14 + 16 * tex;
+            dat[i + 1] = 120 - 50 * deepK + 40 * tex;
+            dat[i + 2] = 140 - 30 * deepK + 30 * tex;
+            dat[i + 3] = 235;
+          } else if (d < 2) {
+            // 岩壁：发光青交界（回波轮廓）
+            dat[i] = 110 + 40 * tex;
+            dat[i + 1] = 230;
+            dat[i + 2] = 215;
+            dat[i + 3] = 255;
+          } else {
+            // 岩石：透明（露出面板暗底＝岩）
+            dat[i + 3] = 0;
+          }
+        }
+      }
+      octx.putImageData(img, 0, 0);
+      haveCave = true;
+    }
+
+    const hx = (VIEW_W / 2) * RENDER_SCALE; // here 居中
+    const hy = (VIEW_H / 2) * RENDER_SCALE;
+    const maxR = Math.hypot(W, H) / 2 + 8;
+
+    const compose = (revealR: number, animating: boolean) => {
+      ctx.clearRect(0, 0, W, H);
+      if (haveCave) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(hx, hy, revealR, 0, Math.PI * 2); // 雷达波前门控：只露已被波前扫到的那片
+        ctx.clip();
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(off, 0, 0, ow, oh, 0, 0, W, H);
+        ctx.restore();
+      }
+      if (animating) {
+        // 亮前缘 + 淡化拖尾（雷达余辉·径向渐变环带·§3）
+        const inner = Math.max(0, revealR - 26 * RENDER_SCALE);
+        const grd = ctx.createRadialGradient(hx, hy, inner, hx, hy, revealR);
+        grd.addColorStop(0, 'rgba(78,209,193,0)');
+        grd.addColorStop(0.7, 'rgba(110,235,215,0.10)');
+        grd.addColorStop(1, 'rgba(165,255,238,0.42)');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(hx, hy, revealR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(170,255,240,0.65)';
+        ctx.lineWidth = 1.5 * RENDER_SCALE;
+        ctx.beginPath();
+        ctx.arc(hx, hy, revealR, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    };
+
+    let raf = 0;
+    const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const frame = (t: number) => {
+      const k = Math.min(1, (t - t0) / SWEEP_MS);
+      const eased = 1 - Math.pow(1 - k, 2); // easeOutQuad
+      compose(maxR * eased, k < 1);
+      if (k < 1) raf = requestAnimationFrame(frame);
+    };
+    if (typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(frame);
+    else compose(maxR, false);
+    return () => {
+      if (raf && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(raf);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signature]);
+
+  // ---- 早退（hooks 已全部在上方按序调用）----
+  if (!run || !map || !layout) return null;
   if (scannedIds.length === 0) {
     return (
       <div className="sonar-panel">
         <div className="sonar-panel-head">
           <span className="sonar-panel-title">声呐图</span>
-          <span className="sonar-panel-sub">一片黑。发一记脉冲，听听四周。</span>
+          <span className="sonar-panel-sub">一片黑。开着声呐往前走，或扫一记，听听四周。</span>
         </div>
         <div className="sonar-scan sonar-scan-empty">
           <span className="sonar-empty-note">· · ·</span>
@@ -93,54 +322,41 @@ export function SonarScanPanel({ run }: { run: RunState }) {
     );
   }
 
-  const layout = deriveMapLayout(map);
-  const turn = run.turn;
-  const curId = run.currentNodeId;
-  const here = (curId && layout.pos[curId]) || { x: layout.width / 2, y: layout.height / 2 };
-  // 定向 ping 聚焦标注（§5）：仅当这一记 ping 是定向的（sonar==='ping' 且 sonarDir 给出）。
-  const focusDir = run.sensors?.sonar === 'ping' ? run.sensors?.sonarDir : undefined;
-  // 开放水域（§5 later「开放水域也能扫」）：层状 zone（开阔海域）没有洞壁可画——只显接触与读数，不画通道边。
-  // 迷路 zone（洞穴）仍画通道（墙）。zoneAllowsBacktrack(zoneId)=maze=有壁可循。
-  const isOpenWater = !zoneAllowsBacktrack(run.zoneId);
+  const focusDir: SonarDir | undefined = run.sensors?.sonar === 'ping' ? run.sensors?.sonarDir : undefined;
 
-  // 每个记忆节点的余像亮度（当前 turn − 扫到时的 turn）。主图只画还没淡尽的；残图小地图留极淡残迹。
-  const fresh: Record<string, number> = {};
-  for (const id of scannedIds) fresh[id] = scanFreshness(turn - (memory[id] ?? turn));
+  // 相邻可去节点（§2·只这些画可点标记）：用 NodeSelectView 同一份 choices＝点击声呐图＝触发同一条 move。
+  const adj = choices.filter((c) => layout.pos[c.nodeId]);
 
-  // 不可信表象（声呐与房间 S2）：每个扫到的真实节点过 clarity.nodeSonarView 拿声呐表象
-  //（spoof→假信标 / evade→无回波 / 低 san→读数乱码）；低 san 伪接触另由 sonarPhantoms 派生（与真无异）。
-  const views: Record<string, NodeSonarView> = {};
-  for (const id of scannedIds) views[id] = nodeSonarView(run, map.nodes[id]);
+  // 猎手（§8.7 会过时·mid-edge 插值）：上次被扫到的位置（可能在通道中段）→ 红呼吸点（不要 X）。
+  const stalkerFix = stalkerSonarBlip(run);
+  let stalkerPos: { x: number; y: number } | null = null;
+  if (stalkerFix) {
+    const a = layout.pos[stalkerFix.nodeId];
+    if (a) {
+      if (stalkerFix.edgeTo && layout.pos[stalkerFix.edgeTo] && stalkerFix.edgeProg !== undefined) {
+        const b = layout.pos[stalkerFix.edgeTo];
+        const t = stalkerFix.edgeProg;
+        stalkerPos = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+      } else {
+        stalkerPos = a;
+      }
+    }
+  }
+
+  // 威胁接触（S3 廉价版·alert 驱动）：没被声呐精确定位时画一处模糊琥珀接触（同一只猎手不重复标记）。
+  const threat = threatContact(run);
+  const threatPos =
+    threat && !stalkerFix
+      ? {
+          x: here.x + Math.cos(threat.angle) * VIEW_R * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
+          y: here.y + Math.sin(threat.angle) * VIEW_R * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
+        }
+      : null;
+
+  // 低 san 伪接触（S2·锚在扫到的节点附近·subtle）。
   const phantoms = sonarPhantoms(run, memory);
 
-  // 威胁接触（声呐与房间 S3 廉价版）：run.alert 高 → 一处近似接触（琥珀色），随逼近向你收拢。
-  // 廉价版不锚到节点——方位/距离都读不准（clarity.threatContact 单一来源；面板纯渲染）。
-  const threat = threatContact(run);
-  const threatPos = threat
-    ? {
-        x: here.x + Math.cos(threat.angle) * VIEW_R * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
-        y: here.y + Math.sin(threat.angle) * VIEW_R * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
-      }
-    : null;
-
-  // 猎手（猎手 SPEC §2.1「声呐＝知道它在哪」·§8.7 只在被扫到时更新）：ping 定位过 → 在它**上次被扫到**的节点画一处
-  // 精确 blip（深红·会过时·按余像渐隐）。这是声呐独有的保真度（灯只给上面 alert-warning 的「有东西在接近」模糊感）。
-  // 已精确定位则不再画上面那处模糊琥珀接触（避免对同一只猎手重复标记）。
-  const stalkerFix = stalkerSonarBlip(run);
-  const stalkerPos = stalkerFix ? layout.pos[stalkerFix.nodeId] : null;
-  const stalkerFresh = stalkerFix ? scanFreshness(stalkerFix.stale) : 0;
-
-  // evade（无回波）的节点不画——它在记忆里有拓扑、但声呐图上是一处空缺（捕食者躲过你的 ping）。
-  const mainNodes = scannedIds.filter((id) => fresh[id] > 0 && !views[id].noEcho);
-  const mainEdges = layout.edges.filter(
-    (e) => fresh[e.a] > 0 && fresh[e.b] > 0 && !views[e.a]?.noEcho && !views[e.b]?.noEcho,
-  );
-
-  const vbX = here.x - VIEW_W / 2;
-  const vbY = here.y - VIEW_H / 2;
-
-  // 残图小地图：把整张图的外框 + 已 mapped 的那些点缩在角落，给「我在更大洞里哪儿」的方位感。
-  // 竖盒（窄×高·#92）：整张图垂直化后更深更长，竖向小地图把全程深度跨度收得下。
+  // 残图小地图（方位感·保留·不逐回合淡出·§4）：全洞外框 + 已 mapped 的点 + 你。
   const MINI_W = 60;
   const MINI_H = 96;
   const miniScale = Math.min(MINI_W / Math.max(1, layout.width), (MINI_H - 4) / Math.max(1, layout.height));
@@ -153,136 +369,111 @@ export function SonarScanPanel({ run }: { run: RunState }) {
         <span className="sonar-panel-sub">
           {isOpenWater
             ? '开阔水域——没有洞壁可循，只有黑暗里的接触与读数。'
-            : '回波拼出的草图——会过时，信几分由你。'}
+            : '回波凿出的洞——蓝是水路，暗是岩。会过时，信几分由你。'}
         </span>
       </div>
       <div className="sonar-scan-wrap">
-        <svg
-          className="sonar-scan"
-          viewBox={`${vbX} ${vbY} ${VIEW_W} ${VIEW_H}`}
-          preserveAspectRatio="xMidYMid meet"
-          role="img"
-          aria-label="声呐探索图"
-        >
-          {/* 量程环：你当前位置的一圈很淡的环（SPEC §5「只看得见自己 + 一圈很淡的量程环」） */}
-          <circle className="sonar-range-ring" cx={here.x} cy={here.y} r={VIEW_R * 0.42} />
-          {/* 定向聚焦扇区（§5 可视化）：定向 ping 进行中 → 朝聚焦方向画一道半透明楔形（略超量程环＝那一向探更远）。 */}
-          {focusDir && (
-            <path
-              className="sonar-focus-wedge"
-              data-dir={focusDir}
-              d={focusWedgePath(here.x, here.y, VIEW_R * 0.5, focusDir)}
-            />
-          )}
-          {/* 开放水域（§5 later）：没有洞壁可画 → 跳过通道边，只留接触与读数；迷路洞穴仍画通道。 */}
-          {!isOpenWater && mainEdges.map((e, i) => {
-            const pa = layout.pos[e.a];
-            const pb = layout.pos[e.b];
-            if (!pa || !pb) return null;
-            const op = Math.min(fresh[e.a], fresh[e.b]);
-            return (
-              <line
-                key={i}
-                className={`sonar-edge ${e.chord ? 'is-chord' : ''}`}
-                x1={pa.x}
-                y1={pa.y}
-                x2={pb.x}
-                y2={pb.y}
-                style={{ opacity: 0.25 + 0.55 * op }}
+        <div className="sonar-scan sonar-scan-stack">
+          {/* 有机洞穴剖面 + 雷达扫描（canvas·SSR 出空 canvas·画对靠 dev-server 肉眼·quirk #91/#93） */}
+          <canvas ref={canvasRef} className="sonar-cave-canvas" aria-hidden="true" />
+          {/* 语义/可点覆盖层（SVG·SSR 可断言 + 可点） */}
+          <svg
+            className="sonar-overlay"
+            viewBox={`${vbX} ${vbY} ${VIEW_W} ${VIEW_H}`}
+            preserveAspectRatio="xMidYMid meet"
+            role="img"
+            aria-label="声呐探索图"
+          >
+            <circle className="sonar-range-ring" cx={here.x} cy={here.y} r={VIEW_R * 0.42} />
+            {focusDir && (
+              <path
+                className="sonar-focus-wedge"
+                data-dir={focusDir}
+                d={focusWedgePath(here.x, here.y, VIEW_R * 0.5, focusDir)}
               />
-            );
-          })}
-          {mainNodes.map((id) => {
-            const p = layout.pos[id];
-            if (!p) return null;
-            const node = map.nodes[id];
-            const isCurrent = id === curId;
-            // 不可信表象（S2）：spoof 节点 displayKind 被画成「朝上的出口/信标」（节点版 mimic），低 san 读数乱码。
-            const view = views[id];
-            const glyph = kindGlyph(view.displayKind);
-            // 多事件房间（S1）：扫出开阔「房间」大轮廓 + feature blip；但 spoof 假象把房间藏成单个假信标 → 不画 room。
-            const feats = node.features ?? [];
-            const isRoom = feats.length > 1 && !view.deceptive;
-            const baseR = isRoom ? 10 : isCurrent ? 7 : 5;
-            return (
-              <g
-                key={id}
-                className={`sonar-blip ${kindClass(view.displayKind, isCurrent)} ${isRoom ? 'is-room' : ''} ${view.deceptive ? 'is-spoof' : ''}`}
-                style={{ opacity: isCurrent ? 1 : 0.35 + 0.6 * fresh[id] }}
-              >
-                <circle cx={p.x} cy={p.y} r={baseR} />
-                {isRoom &&
-                  feats.map((_, fi) => {
-                    const ang = (fi / feats.length) * Math.PI * 2 - Math.PI / 2;
-                    return (
-                      <circle
-                        key={fi}
-                        className="sonar-feature-dot"
-                        cx={p.x + Math.cos(ang) * 5}
-                        cy={p.y + Math.sin(ang) * 5}
-                        r={1.6}
-                      />
-                    );
-                  })}
-                {glyph && (
-                  <text className="sonar-blip-glyph" x={p.x} y={p.y + 3}>
-                    {glyph}
-                  </text>
-                )}
-                <text
-                  className={`sonar-blip-depth ${view.garbled ? 'is-garbled' : ''}`}
-                  x={p.x}
-                  y={p.y - 10}
+            )}
+            {/* 低 san 伪接触（S2）：与真接触无异的幻影·subtle */}
+            {phantoms.map((ph) => {
+              const anchor = layout.pos[ph.nearNodeId];
+              if (!anchor) return null;
+              return (
+                <circle key={ph.id} className="sonar-phantom" cx={anchor.x + ph.dx} cy={anchor.y + ph.dy} r={5} />
+              );
+            })}
+            {/* 相邻可去节点（§2·只这些可点·点击＝触发那条 move choice·与 NodeSelectView 同步）。
+                欺骗仍走 clarity（nodeSonarView）：evade→无回波(不画)·spoof→假信标(is-spoof)·低 san→读数乱码(is-garbled)。 */}
+            {adj.map((c) => {
+              const p = layout.pos[c.nodeId];
+              if (!p) return null;
+              const node = map.nodes[c.nodeId];
+              const view = nodeSonarView(run, node);
+              if (view.noEcho) return null; // evade：无回波·这处空缺（捕食者躲过你的扫描）
+              const glyph = kindGlyph(view.displayKind);
+              const feats = node.features ?? [];
+              const isRoom = feats.length > 1 && !view.deceptive;
+              const baseR = isRoom ? 9 : 6;
+              return (
+                <g
+                  key={c.nodeId}
+                  className={`sonar-blip sonar-node-marker ${kindClass(view.displayKind)} ${isRoom ? 'is-room' : ''} ${view.deceptive ? 'is-spoof' : ''}`}
+                  onClick={() => onStateChange(moveToNode(state, c.nodeId))}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`前往 ${node.depth}m`}
                 >
-                  {view.garbled ? '▓▓m' : `${node.depth}m`}
+                  <circle cx={p.x} cy={p.y} r={baseR} />
+                  {isRoom &&
+                    feats.map((_, fi) => {
+                      const ang = (fi / feats.length) * Math.PI * 2 - Math.PI / 2;
+                      return (
+                        <circle
+                          key={fi}
+                          className="sonar-feature-dot"
+                          cx={p.x + Math.cos(ang) * 4.5}
+                          cy={p.y + Math.sin(ang) * 4.5}
+                          r={1.5}
+                        />
+                      );
+                    })}
+                  {glyph && (
+                    <text className="sonar-blip-glyph" x={p.x} y={p.y + 3}>
+                      {glyph}
+                    </text>
+                  )}
+                  <text className={`sonar-blip-depth ${view.garbled ? 'is-garbled' : ''}`} x={p.x} y={p.y - 10}>
+                    {view.garbled ? '▓▓m' : `${node.depth}m`}
+                  </text>
+                </g>
+              );
+            })}
+            {/* 威胁接触（S3 廉价版·琥珀·读不准方位/距离） */}
+            {threat && threatPos && (
+              <g className={`sonar-threat ${threat.imminent ? 'is-near' : ''}`}>
+                <circle cx={threatPos.x} cy={threatPos.y} r={6} />
+                <text className="sonar-threat-label" x={threatPos.x} y={threatPos.y - 9}>
+                  {threat.garbled ? '?' : threat.range === 'near' ? '近' : threat.range === 'mid' ? '中' : '远'}
                 </text>
               </g>
-            );
-          })}
-          {/* 低 san 伪接触（S2·§5）：与真接触一模一样的幻影 blip，锚在真实接触附近、随其余像渐隐。要 subtle——不标记、不变形。 */}
-          {phantoms.map((ph) => {
-            const anchor = layout.pos[ph.nearNodeId];
-            if (!anchor || !(fresh[ph.nearNodeId] > 0)) return null;
-            return (
-              <circle
-                key={ph.id}
-                className="sonar-phantom"
-                cx={anchor.x + ph.dx}
-                cy={anchor.y + ph.dy}
-                r={5}
-                style={{ opacity: 0.3 + 0.55 * fresh[ph.nearNodeId] }}
-              />
-            );
-          })}
-          {/* 威胁接触（S3 廉价版）：琥珀 blip + 粗距标（远/中/近·低 san 读不出）。逼近（越过接近线）→ 偏红脉动。
-              已被声呐精确定位（stalkerFix）→ 不再画这处模糊接触（同一只猎手不重复标记，猎手 SPEC §2.1）。 */}
-          {threat && threatPos && !stalkerFix && (
-            <g className={`sonar-threat ${threat.imminent ? 'is-near' : ''}`}>
-              <circle cx={threatPos.x} cy={threatPos.y} r={6} />
-              <text className="sonar-threat-label" x={threatPos.x} y={threatPos.y - 9}>
-                {threat.garbled ? '?' : threat.range === 'near' ? '近' : threat.range === 'mid' ? '中' : '远'}
-              </text>
+            )}
+            {/* 猎手（§5 观感·§8.7 会过时）：红呼吸点 + 外圈（不要 X）·mid-edge 插值·大型生物一大团。 */}
+            {stalkerFix && stalkerPos && (
+              <g className={`sonar-stalker sonar-pulse ${stalkerFix.large ? 'is-large' : ''}`}>
+                {stalkerFix.large && (
+                  <circle className="sonar-stalker-mass" cx={stalkerPos.x} cy={stalkerPos.y} r={18} />
+                )}
+                <circle className="sonar-stalker-ring" cx={stalkerPos.x} cy={stalkerPos.y} r={stalkerFix.large ? 13 : 8} />
+                <circle className="sonar-stalker-core" cx={stalkerPos.x} cy={stalkerPos.y} r={stalkerFix.large ? 5 : 3} />
+              </g>
+            )}
+            {/* 你（呼吸点 + 外圈·青·不要 X·§5 观感） */}
+            <g className="sonar-you sonar-pulse">
+              <circle className="sonar-you-ring" cx={here.x} cy={here.y} r={7} />
+              <circle className="sonar-you-core" cx={here.x} cy={here.y} r={3} />
             </g>
-          )}
-          {/* 猎手精确定位（猎手 SPEC §2.1 声呐＝位置·§8.7 只在被扫到时更新·会过时渐隐）：上次被 ping 扫到的节点处一处深红 blip。
-              大型生物（§5 later 接触带大小）→ 读成一大团（外圈弥散质量 + 更大的中心），不是小点。 */}
-          {stalkerFix && stalkerPos && (
-            <g
-              className={`sonar-stalker ${stalkerFix.large ? 'is-large' : ''}`}
-              style={{ opacity: 0.4 + 0.6 * stalkerFresh }}
-            >
-              {stalkerFix.large && (
-                <circle className="sonar-stalker-mass" cx={stalkerPos.x} cy={stalkerPos.y} r={18} />
-              )}
-              <circle cx={stalkerPos.x} cy={stalkerPos.y} r={stalkerFix.large ? 12 : 6.5} />
-              <text className="sonar-stalker-mark" x={stalkerPos.x} y={stalkerPos.y + (stalkerFix.large ? 4 : 3)}>
-                ✕
-              </text>
-            </g>
-          )}
-        </svg>
+          </svg>
+        </div>
 
-        {/* 残图小地图：外框 = 全洞范围，点 = 已 mapped 的那一小块，亮点 = 你 */}
+        {/* 残图小地图：外框 = 全洞范围·点 = 已 mapped·亮点 = 你（保留·不逐回合淡出·§4） */}
         <svg
           className="sonar-mini"
           viewBox={`0 0 ${MINI_W} ${MINI_H}`}
@@ -291,7 +482,7 @@ export function SonarScanPanel({ run }: { run: RunState }) {
           aria-label="残图小地图"
         >
           <rect className="sonar-mini-extent" x={1} y={1} width={MINI_W - 2} height={MINI_H - 2} />
-          {scannedIds.filter((id) => !views[id].noEcho).map((id) => {
+          {scannedIds.map((id) => {
             const p = layout.pos[id];
             if (!p) return null;
             const isCurrent = id === curId;
@@ -302,7 +493,6 @@ export function SonarScanPanel({ run }: { run: RunState }) {
                 cx={2 + p.x * miniScale}
                 cy={2 + p.y * miniScale}
                 r={isCurrent ? 2.6 : 1.6}
-                style={{ opacity: isCurrent ? 1 : Math.max(0.22, fresh[id]) }}
               />
             );
           })}

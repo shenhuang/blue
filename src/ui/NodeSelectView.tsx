@@ -143,8 +143,8 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
           </div>
         )}
 
-        {/* 声呐探索图（声呐与房间 SPEC §5/§7 S0）：解锁声呐后才有；起手全黑、随 ping 一块块点亮、渐隐余像 */}
-        {sonarUnlocked && <SonarScanPanel run={run} />}
+        {/* 声呐图（声呐渲染重做 §2/§3）：有机洞穴剖面 + 雷达扫描（canvas）·只对相邻可去节点画可点标记（点击＝move）。 */}
+        {sonarUnlocked && <SonarScanPanel state={state} choices={choices} onStateChange={onStateChange} />}
 
         {alert >= ALERT_WARN && (
           <p className={`alert-warning ${alert >= ALERT_THRESHOLD ? 'danger' : ''}`}>
