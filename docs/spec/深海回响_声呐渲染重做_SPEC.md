@@ -52,10 +52,10 @@
 
 引擎优先（sandbox 可回归验证）→ 渲染最后（需 dev-server 肉眼·绿≠画对·quirk #91/#93）：
 
-1. **洞穴一致性**（纯引擎·最安全先做）：`dive.ts::startDive` 给 `generateDiveMap` 传**位置派生的确定种子**（现在不传 rng→mapgen 默认 `Math.random`→每潜不同）。种子＝`hash(zoneId + seedKey + depthOffset)`·`seedKey` 由 `startDiveFromPoi`(poi.id) / `startDiveFromOutpost`(outpost/band id) 传入·教学/缺省回退稳定串。→ **同一地点再潜＝同一张图**。代价：每地点变体单一（作者接受·要一致世界感）。**注意**：mapgen-scenarios 用各自显式 seed·不受影响；但 dive 类 playthrough 的地图会变·跑全量确认结构断言仍过（多为通用不变量·应没事）。不 bump SAVE_VERSION（map 不入存档）。
-2. **猎手 mid-edge + 追击规则**（引擎·`stalker.ts`·`playthrough-stalker` 验）：位置模型 nodeId→{from,to,prog}·HSPEED·三态·对穿/走进接触·迎战动作。守猎手 SPEC §9（确定性·不耗 RNG·守地板·additive 不 bump）。`run.huntEnabled` 缺省 off 仍逐字节守 playthrough-stealth。
-3. **声呐窗口开/关规则**（state + dive.ts + UI）：on/off 状态·scan-on-open·暴露按状态·下回合默认 + 本回合反悔。接 `run.sensors` + `scanMemory`。
-4. **canvas 洞穴渲染**（UI·`SonarScanPanel` 改 canvas + `deriveMapLayout` 调 y 压缩/x 自由 + 节点显隐 + 雷达扫描）。**需 dev-server 肉眼验证**（SSR smoke 只断 class 串·画对与否靠看·或 ?dev→Shift+M / 实际下潜）。非洞穴场景＝黑+节点占位。
+1. ✅ **洞穴一致性**（纯引擎·最安全先做·`59ee10d`）：`dive.ts::startDive` 给 `generateDiveMap` 传**位置派生的确定种子**（现在不传 rng→mapgen 默认 `Math.random`→每潜不同）。种子＝`hash(zoneId + seedKey + depthOffset)`·`seedKey` 由 `startDiveFromPoi`(poi.id) / `startDiveFromOutpost`(outpost/band id) 传入·教学/缺省回退稳定串。→ **同一地点再潜＝同一张图**。代价：每地点变体单一（作者接受·要一致世界感）。**注意**：mapgen-scenarios 用各自显式 seed·不受影响；但 dive 类 playthrough 的地图会变·跑全量确认结构断言仍过（多为通用不变量·应没事）。不 bump SAVE_VERSION（map 不入存档）。
+2. ✅ **猎手 mid-edge + 追击规则**（引擎·`stalker.ts`·`playthrough-stalker` 验·`5eedc11`）：位置模型 nodeId→{from,to,prog}·HSPEED(0.8)·三态·对穿/贴近接触·迎战先手动作。守猎手 SPEC §9（确定性·不耗 RNG·守地板·additive 不 bump）。`run.huntEnabled` 缺省 off 仍逐字节守 playthrough-stealth。〔决策：HSPEED<1＝可甩·贴近阈值 CONTACT_DIST 0.5·1−HSPEED≤CONTACT_DIST 一跳之差必贴上·迎战复用 combat ambushing 先手。〕
+3. ✅ **声呐窗口开/关规则**（state + dive.ts + UI·`ccef8b0`）：on/off 持续状态（sonarOn/sonarNext·缺省开）·scan-on-open（到站自动扫·autoScanOnArrival）·暴露按状态（持续开则透传期计 signature）·下回合预承诺（setSonarNext）+ 本回合反悔（pingSonar）。接 `run.sensors` + `scanMemory`。**仅 sonarUnlocked 才落新字段＝未解锁逐字节不变。**〔决策：sonarActive 仍 keyed on sonar==='ping'·持续开靠 applyTransit 把 sonar 落 'ping' 跨站持续＝最小改动保住 locked/stealth。〕
+4. ✅ **canvas 洞穴渲染**（UI·`SonarScanPanel` SVG schematic→canvas·`3ce44e3`）：有机洞穴剖面（SDF capsule 隧道+blob 洞室+值噪声·半分辨率·导出 `caveSdf`）+ 雷达扫描（rAF ~1.2s·亮前缘+淡化拖尾+波前门控）+ 节点显隐（只相邻可去 choices 画可点标记·点击=move）+ mid-edge 红点（blip 插值·呼吸点+外圈·不要 X）+ 旧图保留（去渐隐）+ 非洞穴黑+占位。`deriveMapLayout` 传小 pxPerMeter(13)+byLayer x 铺开。CSS 走 head 注入（避脏 styles.css + 不污染 SSR 断言）。**canvas 画对仍需 dev-server 肉眼**（SSR smoke 只断 class 串·绿≠画对·quirk #91/#93·或 ?dev→Shift+M / 实际下潜）——**待作者视觉验收 + 调参**（HSPEED·pxPerMeter·噪声 amp·配色）。
 
 ## 7. 与现有代码的接点（别另起炉灶）
 
@@ -78,3 +78,4 @@
 ## 9. 决策日志
 
 - 2026-06-07（作者逐拍 demo 敲定·本 SPEC 成文）：经多版交互 demo（声呐揭示 → 猎手逼近 → 有机洞穴剖面 → 雷达扫描 → mid-edge 猎手 → 扫描门控红点 → 节点显隐）拍板全部观感与规则。两个 demo 期发现并修的要点已并入正文：① 红点须**扫描门控快照**（非连续滑动·别在波前扫到前就动）；② 只显示**可去的相邻节点**（防剧透 + 自由感）。视觉细节（偶发黑屏等）作者判「问题不大·未来调」。**下一步＝按 §6 顺序实装（引擎优先）。**
+- 2026-06-07（实装 session·②③④ 全落地·接 #98 `59ee10d` 洞穴一致性之上）：按 §6 顺序实装并分提——② `5eedc11`（猎手 mid-edge + 追击）、③ `ccef8b0`（声呐开/关窗口）、④ `3ce44e3`（canvas 洞穴渲染）。每步独立全绿（`npm run regress` 27/27）。关键实现决策见 §6 各项 〔…〕 注。**SPEC 引擎/逻辑面（②③ + ④ 结构）完成**；**剩余＝④ 的 canvas 视觉验收/调参（需作者 dev-server 肉眼·SSR 测不到画对·quirk #91/#93）**——若观感不对，旋钮集中：`stalker.ts::STALKER_HSPEED`/`STALKER_CONTACT_DIST`、`SonarScanPanel` 的 `SONAR_PX_PER_M`/`CHANNEL_R`/`NODE_R`/噪声 amp(7)/配色/`SWEEP_MS`。次要可深化（非阻塞）：S2 欺骗目前只落在相邻可去标记上（非相邻节点的洞几何不再单独标欺骗）·开放水域专属背景仍占位·focus 扇区仍 SVG 楔形（未移进 canvas）。
