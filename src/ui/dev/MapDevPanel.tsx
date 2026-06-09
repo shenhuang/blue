@@ -75,8 +75,6 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
   );
   const [seed, setSeed] = useState<number>(1);
   const [depthOffset, setDepthOffset] = useState<number>(0);
-  // 右栏视图：节点图（schematic·结构调试）↔ 声呐洞穴（cave·玩家有机洞穴·整图全揭）。
-  const [view, setView] = useState<'schematic' | 'cave'>('schematic');
 
   const zone = ZONES.get(zoneId);
 
@@ -113,10 +111,11 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
     for (const id of ids) mem[id] = 0; // 全揭示＝看整张洞（dev 概览·非玩家渐进揭示）
     return buildCaveGeometry(caveLayout, ids, mem);
   }, [map, caveLayout, isOpenWater]);
+  // 声呐洞穴**替换**节点图：有洞（maze / 可回头 zone）→ 画洞；开阔水域无洞 → 回退原节点图。
+  const showCave = !!caveGeom;
 
   const caveCanvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
-    if (view !== 'cave') return;
     const canvas = caveCanvasRef.current;
     if (!canvas || !caveLayout || !caveGeom) return;
     const ctx = canvas.getContext('2d');
@@ -136,7 +135,7 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
     const img = ctx.createImageData(ow, oh);
     img.data.set(rgba);
     ctx.putImageData(img, 0, 0);
-  }, [view, caveLayout, caveGeom]);
+  }, [caveLayout, caveGeom]);
 
   function check(label: string, ok: boolean, detail?: string) {
     return (
@@ -241,29 +240,15 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
 
         {/* 右：图 */}
         <div className="dev-col dev-map-canvas-col">
-          <h3 className="dev-col-title dev-map-canvas-title">
-            <span>
-              {view === 'schematic' ? '节点图' : '声呐洞穴'} · {map?.zoneId}{' '}
-              <span className="dev-faint">
-                {view === 'schematic' ? '（列 = 到入口的树距 layer）' : '（整图全揭·与游戏内同一渲染·确定性）'}
-              </span>
-            </span>
-            <span className="dev-view-toggle">
-              <button
-                className={`dev-btn dev-view-btn ${view === 'schematic' ? 'is-active' : ''}`}
-                onClick={() => setView('schematic')}
-              >
-                节点图
-              </button>
-              <button
-                className={`dev-btn dev-view-btn ${view === 'cave' ? 'is-active' : ''}`}
-                onClick={() => setView('cave')}
-              >
-                声呐洞穴
-              </button>
+          <h3 className="dev-col-title">
+            {showCave ? '声呐洞穴图' : '节点图'} · {map?.zoneId}{' '}
+            <span className="dev-faint">
+              {showCave
+                ? '（声呐有机洞穴·整图全揭·与游戏内同一渲染·确定性同图同洞）'
+                : '（开阔水域无洞壁·列 = 到入口的树距 layer）'}
             </span>
           </h3>
-          {view === 'schematic' ? (
+          {!showCave ? (
           <>
           <div className="dev-map-svg-wrap">
             {map && layout && (
