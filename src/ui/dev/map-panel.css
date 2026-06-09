@@ -115,3 +115,81 @@
 .dev-map-check .ok { color: var(--green, #5fb98e); }
 .dev-map-check .bad { color: var(--danger); font-weight: 600; }
 .dev-map-check-key { color: var(--text-muted); }
+
+/* —— 右栏视图切换（节点图 ↔ 声呐洞穴）—— */
+.dev-map-canvas-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dev-view-toggle {
+  display: inline-flex;
+  gap: 4px;
+  flex: none;
+}
+.dev-view-btn {
+  padding: 2px 10px;
+  font-size: 12px;
+  opacity: 0.6;
+}
+.dev-view-btn.is-active {
+  opacity: 1;
+  border-color: var(--accent, #4ed1c1);
+  color: var(--accent, #4ed1c1);
+}
+
+/* —— 声呐洞穴概览（canvas 剖面 + 节点覆盖层；与游戏内同一 bakeCaveRGBA）—— */
+.dev-map-cave-wrap {
+  /* 洞穴底色＝岩（rock 像素透明，露出此暗底）；居中放置整图 stack */
+  background: #0a0e12;
+  display: flex;
+  justify-content: center;
+}
+.dev-map-cave-stack {
+  position: relative;
+  flex: none;
+  margin: auto;
+}
+.dev-map-cave-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: auto;
+}
+.dev-map-cave-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.dev-cave-node-depth {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 7px;
+  fill: rgba(225, 255, 248, 0.92);
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.65);
+  stroke-width: 2px;
+}
+.dev-cave-node-glyph {
+  font-size: 8px;
+  fill: rgba(255, 255, 255, 0.95);
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.7);
+  stroke-width: 2px;
+}
+.dev-map-cave-empty {
+  margin: auto;
+  max-width: 320px;
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+.dev-map-cave-empty b { color: var(--text); }

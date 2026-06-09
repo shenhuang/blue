@@ -12,12 +12,13 @@
 //
 // 详见 docs/STATUS.md「真'迷路' mapgen」+「地图调试器 dev 面板」。
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import './map-panel.css';
 import { generateDiveMap, analyzeMap } from '@/engine/mapgen';
-import { ZONES } from '@/engine/zones';
+import { ZONES, zoneAllowsBacktrack } from '@/engine/zones';
 import { makeLcg } from '@/engine/rng';
 import { deriveMapLayout } from '../mapLayout';
+import { buildCaveGeometry, bakeCaveRGBA, SONAR_PX_PER_M, SONAR_COL_W } from '../SonarScanPanel';
 import type { DiveMap, DiveNode, ZoneDef } from '@/types';
 
 export interface MapDevPanelProps {
@@ -74,6 +75,8 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
   );
   const [seed, setSeed] = useState<number>(1);
   const [depthOffset, setDepthOffset] = useState<number>(0);
+  // 右栏视图：节点图（schematic·结构调试）↔ 声呐洞穴（cave·玩家有机洞穴·整图全揭）。
+  const [view, setView] = useState<'schematic' | 'cave'>('schematic');
 
   const zone = ZONES.get(zoneId);
 
@@ -95,6 +98,45 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
 
   const deepestSet = useMemo(() => new Set(analysis?.deepestNodeIds ?? []), [analysis]);
   const deadEndSet = useMemo(() => new Set(analysis?.deadEndIds ?? []), [analysis]);
+
+  // —— 声呐洞穴概览（把玩家「有机洞穴」铺满整图·全揭示·与游戏内同一 bakeCaveRGBA·单一来源）——
+  // 用与玩家取景窗同一套布局比例（SONAR_PX_PER_M/COL_W）＝洞看起来和游戏里一致（只是整图全揭、无雾无扫）。
+  const isOpenWater = zone ? !zoneAllowsBacktrack(zone.id) : false;
+  const caveLayout = useMemo(
+    () => (map ? deriveMapLayout(map, { pxPerMeter: SONAR_PX_PER_M, colW: SONAR_COL_W }) : null),
+    [map],
+  );
+  const caveGeom = useMemo(() => {
+    if (!map || !caveLayout || isOpenWater) return null;
+    const ids = Object.keys(map.nodes);
+    const mem: Record<string, number> = {};
+    for (const id of ids) mem[id] = 0; // 全揭示＝看整张洞（dev 概览·非玩家渐进揭示）
+    return buildCaveGeometry(caveLayout, ids, mem);
+  }, [map, caveLayout, isOpenWater]);
+
+  const caveCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    if (view !== 'cave') return;
+    const canvas = caveCanvasRef.current;
+    if (!canvas || !caveLayout || !caveGeom) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    // 内部分辨率（0.75×·长边封顶防深图卡顿）；CSS 再放大到布局尺寸＝与节点覆盖层对齐。
+    const SCALE = 0.75;
+    const CAP = 1200;
+    let ow = Math.max(1, Math.round(caveLayout.width * SCALE));
+    let oh = Math.max(1, Math.round(caveLayout.height * SCALE));
+    if (oh > CAP) {
+      ow = Math.max(1, Math.round((ow * CAP) / oh));
+      oh = CAP;
+    }
+    canvas.width = ow;
+    canvas.height = oh;
+    const rgba = bakeCaveRGBA(caveGeom, { x: 0, y: 0, w: caveLayout.width, h: caveLayout.height }, ow, oh);
+    const img = ctx.createImageData(ow, oh);
+    img.data.set(rgba);
+    ctx.putImageData(img, 0, 0);
+  }, [view, caveLayout, caveGeom]);
 
   function check(label: string, ok: boolean, detail?: string) {
     return (
@@ -199,10 +241,30 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
 
         {/* 右：图 */}
         <div className="dev-col dev-map-canvas-col">
-          <h3 className="dev-col-title">
-            节点图 · {map?.zoneId}{' '}
-            <span className="dev-faint">（列 = 到入口的树距 layer）</span>
+          <h3 className="dev-col-title dev-map-canvas-title">
+            <span>
+              {view === 'schematic' ? '节点图' : '声呐洞穴'} · {map?.zoneId}{' '}
+              <span className="dev-faint">
+                {view === 'schematic' ? '（列 = 到入口的树距 layer）' : '（整图全揭·与游戏内同一渲染·确定性）'}
+              </span>
+            </span>
+            <span className="dev-view-toggle">
+              <button
+                className={`dev-btn dev-view-btn ${view === 'schematic' ? 'is-active' : ''}`}
+                onClick={() => setView('schematic')}
+              >
+                节点图
+              </button>
+              <button
+                className={`dev-btn dev-view-btn ${view === 'cave' ? 'is-active' : ''}`}
+                onClick={() => setView('cave')}
+              >
+                声呐洞穴
+              </button>
+            </span>
           </h3>
+          {view === 'schematic' ? (
+          <>
           <div className="dev-map-svg-wrap">
             {map && layout && (
               <svg
@@ -260,6 +322,57 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
             <span><i className="dev-map-swatch" style={{ borderColor: 'var(--warn, #d6b25e)', borderWidth: 2 }} />最深点</span>
             <span>┄ 虚线圈 = 死路 · 蓝虚线 = 回边</span>
           </div>
+          </>
+          ) : (
+          <>
+          <div className="dev-map-svg-wrap dev-map-cave-wrap">
+            {isOpenWater ? (
+              <div className="dev-map-cave-empty">
+                这是<b>开阔水域</b>（层状·非洞穴）——声呐图里没有洞壁可循，只有黑暗里的接触。
+                选 mapShape = maze 的 zone（如蓝洞群「迷路」）看有机洞穴剖面。
+              </div>
+            ) : (
+              map &&
+              caveLayout &&
+              caveGeom && (
+                <div
+                  className="dev-map-cave-stack"
+                  style={{ width: caveLayout.width, height: caveLayout.height }}
+                >
+                  <canvas ref={caveCanvasRef} className="dev-map-cave-canvas" />
+                  <svg
+                    className="dev-map-cave-overlay"
+                    viewBox={`0 0 ${caveLayout.width} ${caveLayout.height}`}
+                    width={caveLayout.width}
+                    height={caveLayout.height}
+                  >
+                    {Object.values(map.nodes).map((n) => {
+                      const p = caveLayout.pos[n.id];
+                      if (!p) return null;
+                      return (
+                        <g key={n.id} className="dev-cave-node">
+                          <text className="dev-cave-node-depth" x={p.x} y={p.y - 3}>
+                            {n.depth}m
+                          </text>
+                          <text className="dev-cave-node-glyph" x={p.x} y={p.y + 7}>
+                            {kindGlyph(n, map.startNodeId)}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+              )
+            )}
+          </div>
+          <div className="dev-map-legend">
+            <span><i className="dev-map-swatch" style={{ background: '#1f8a8a' }} />水道(蓝绿)</span>
+            <span><i className="dev-map-swatch" style={{ background: '#6ee8d7' }} />岩壁(发光青)</span>
+            <span><i className="dev-map-swatch" style={{ background: '#0a0e12' }} />岩石(暗)</span>
+            <span className="dev-faint">越深越暗 · 字 = 节点深度/类型 · 确定性（同图同洞·revisit 不变）</span>
+          </div>
+          </>
+          )}
         </div>
       </div>
     </div>

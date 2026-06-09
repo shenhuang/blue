@@ -26,8 +26,8 @@ const VIEW_R = Math.min(VIEW_W, VIEW_H);
 /** canvas 内部超采样（清晰度）；洞穴 SDF 在其半分辨率算（§2 半分辨率提速）。 */
 const RENDER_SCALE = 2;
 /** 声呐取景的布局比例：压短纵向（pxPerMeter 小·节点更近·§2）+ 同深横向铺开（colW·byLayer 见 mapLayout）。 */
-const SONAR_PX_PER_M = 13;
-const SONAR_COL_W = 32;
+export const SONAR_PX_PER_M = 13;
+export const SONAR_COL_W = 32;
 /**
  * 有机洞穴几何旋钮（世界单位·声呐渲染重做 §2「真实侧剖洞穴」作者验收 v3）。
  * 隧道＝按边路由的弯折胶囊链（宽度 CH_BASE..CH_BASE+CH_VAR）；房间＝主 blob + 散瓣（半径 ROOM_BASE..+ROOM_VAR）。
@@ -285,6 +285,51 @@ export function voidTrack(wx: number, wy: number): { x: number; y: number } {
   return { x: wx - ox, y: wy - oy };
 }
 
+/** 世界取景矩形（烤洞穴像素用）：x/y＝左上角世界坐标，w/h＝世界尺寸。 */
+export interface CaveRect { x: number; y: number; w: number; h: number; }
+
+/**
+ * 把洞穴几何烤成 RGBA 像素（水道蓝绿·岩壁发光青·岩石透明，越深越暗）。
+ * **单一来源**：声呐取景窗（SonarScanPanel，rect＝220×300 窗）与地图调试器全图概览（MapDevPanel，rect＝整图）
+ * 共用同一像素外观，避免两处洞穴长得不一样（守洞穴一致性 #100·别 churn 成两套着色）。
+ * deepK 按 rect 纵向（上浅下深·与 y∝depth 一致）。纯函数·不碰 DOM·返回可直接喂 `ImageData.data.set(...)` 的数组。
+ */
+export function bakeCaveRGBA(
+  cave: { tuns: CaveTun[]; rooms: CaveRoom[] },
+  rect: CaveRect,
+  outW: number,
+  outH: number,
+): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(outW * outH * 4);
+  for (let gy = 0; gy < outH; gy++) {
+    for (let gx = 0; gx < outW; gx++) {
+      const wx = rect.x + ((gx + 0.5) / outW) * rect.w;
+      const wy = rect.y + ((gy + 0.5) / outH) * rect.h;
+      const d = caveSdf(wx, wy, cave.tuns, cave.rooms);
+      const i = (gy * outW + gx) * 4;
+      const tex = fbm(wx * 0.12, wy * 0.12); // 表面纹理
+      if (d < WALL_LO) {
+        // 水道内：蓝绿·越深越暗（wy 越靠 rect 底越深）
+        const deepK = Math.min(1, Math.max(0, (wy - rect.y) / rect.h));
+        out[i] = 14 + 16 * tex;
+        out[i + 1] = 120 - 50 * deepK + 40 * tex;
+        out[i + 2] = 140 - 30 * deepK + 30 * tex;
+        out[i + 3] = 235;
+      } else if (d < WALL_HI) {
+        // 岩壁：发光青交界（回波轮廓）
+        out[i] = 110 + 40 * tex;
+        out[i + 1] = 230;
+        out[i + 2] = 215;
+        out[i + 3] = 255;
+      } else {
+        // 岩石：透明（露出面板暗底＝岩）
+        out[i + 3] = 0;
+      }
+    }
+  }
+  return out;
+}
+
 interface Props {
   state: GameState;
   /** NodeSelectView 当前的移动 choices＝可立即前往的相邻节点（§2·只这些画可点标记·点击触发同一条 move）。 */
@@ -342,34 +387,9 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
     const octx = off.getContext('2d');
     let haveCave = false;
     if (octx && !isOpenWater && cave.tuns.length + cave.rooms.length > 0) {
+      // 取景窗与 MapDevPanel 全图概览共用同一像素外观（bakeCaveRGBA·单一来源·守洞穴一致性 #100）。
       const img = octx.createImageData(ow, oh);
-      const dat = img.data;
-      for (let gy = 0; gy < oh; gy++) {
-        for (let gx = 0; gx < ow; gx++) {
-          const wx = vbX + ((gx + 0.5) / ow) * VIEW_W;
-          const wy = vbY + ((gy + 0.5) / oh) * VIEW_H;
-          const d = caveSdf(wx, wy, cave.tuns, cave.rooms);
-          const i = (gy * ow + gx) * 4;
-          const tex = fbm(wx * 0.12, wy * 0.12); // 表面纹理
-          if (d < WALL_LO) {
-            // 水道内：蓝绿·越深越暗（wy 越大越深）
-            const deepK = Math.min(1, Math.max(0, (wy - vbY) / VIEW_H));
-            dat[i] = 14 + 16 * tex;
-            dat[i + 1] = 120 - 50 * deepK + 40 * tex;
-            dat[i + 2] = 140 - 30 * deepK + 30 * tex;
-            dat[i + 3] = 235;
-          } else if (d < WALL_HI) {
-            // 岩壁：发光青交界（回波轮廓）
-            dat[i] = 110 + 40 * tex;
-            dat[i + 1] = 230;
-            dat[i + 2] = 215;
-            dat[i + 3] = 255;
-          } else {
-            // 岩石：透明（露出面板暗底＝岩）
-            dat[i + 3] = 0;
-          }
-        }
-      }
+      img.data.set(bakeCaveRGBA(cave, { x: vbX, y: vbY, w: VIEW_W, h: VIEW_H }, ow, oh));
       octx.putImageData(img, 0, 0);
       haveCave = true;
     }
