@@ -1,10 +1,11 @@
 // 声呐探索图（下潜内）—— 声呐渲染重做 SPEC（docs/spec/深海回响_声呐渲染重做_SPEC.md §2/§3/§4）。
 //
 // 重做：从「示意 node graph（圆点 + 连线）」改成**有机洞穴垂直剖面 + 雷达式扫描**（作者逐拍 demo 拍板·别再画连线）。
-//   - 背景＝洞穴剖面（canvas）：深色岩石里凿出蓝色水道（SDF：每条边＝capsule 隧道 + 每个节点＝blob 洞室·值噪声扰成不规则发光岩壁·半分辨率提速）。连通＝开阔水域·**无连线**。
+//   - 背景＝**真实侧剖洞穴**（canvas·作者验收 v3）：深色岩石里凿出蓝色水道（SDF 并集：边→弯折路由隧道 + 节点→主 blob+散瓣房间·**域扭曲**把直胶囊弯成蜿蜒水道+不规则岩壁·**smin 平滑并集**把相邻房间熔成大洞〔多 POI 同室〕·半分辨率提速）。图是**隐藏骨架**(节点图)的有机皮·连通＝开阔水域·**无连线**。
 //   - 纵轴＝真实深度（#92 上浅下深·压短 pxPerMeter·作者要节点更近）；横向自由铺开（byLayer 分散·见 mapLayout.ts）。
 //   - 雷达式揭示（canvas）：一记扫描＝从你当前位置扩散的亮前缘 + 淡化拖尾·墙/点随波前到达才点亮；旧图**保留到下次扫描**才刷新（不逐回合淡出·§4）。
 //   - 节点显隐（防剧透 + 自由感·§2）：只对**可立即前往的相邻节点**（＝ NodeSelectView 的移动 choices）画**可点**标记（点击＝触发那条 move choice）；其余节点只显洞的几何、不标点。
+//     POI 标记**偏心**落在房间内（不必正中·可贴洞壁·作者要求）+ 落点按节点语义（kind）相关：出口/气袋偏顶、休整偏底、事件贴壁（poiOffset）；再 voidTrack 跟随扭曲后的洞、不浮在岩里。点击仍触发同一条 move（偏移纯视觉）。
 //   - 非洞穴场景（层状·沉船/礁）：先全黑只显节点占位（§2·留后续专属背景）。
 //
 // 纯渲染：canvas 在 useEffect 里画（SSR 不跑·只出空 canvas）；语义/可点标记走 SVG 覆盖层（SSR 可断言 + 可点 + 无障碍）。
@@ -12,7 +13,7 @@
 
 import { useEffect, useRef } from 'react';
 import type { GameState, NodeChoice, RunState, SonarDir } from '@/types';
-import { deriveMapLayout } from './mapLayout';
+import { deriveMapLayout, type MapLayout } from './mapLayout';
 import { moveToNode } from '@/engine/dive';
 import { nodeSonarView, sonarPhantoms, threatContact } from '@/engine/clarity';
 import { stalkerSonarBlip } from '@/engine/stalker';
@@ -27,9 +28,23 @@ const RENDER_SCALE = 2;
 /** 声呐取景的布局比例：压短纵向（pxPerMeter 小·节点更近·§2）+ 同深横向铺开（colW·byLayer 见 mapLayout）。 */
 const SONAR_PX_PER_M = 13;
 const SONAR_COL_W = 32;
-/** 水道几何（世界单位）：每条边＝半宽 CHANNEL_R 的隧道·每个节点＝半径 NODE_R 的洞室。 */
-const CHANNEL_R = 7;
-const NODE_R = 12;
+/**
+ * 有机洞穴几何旋钮（世界单位·声呐渲染重做 §2「真实侧剖洞穴」作者验收 v3）。
+ * 隧道＝按边路由的弯折胶囊链（宽度 CH_BASE..CH_BASE+CH_VAR）；房间＝主 blob + 散瓣（半径 ROOM_BASE..+ROOM_VAR）。
+ * 域扭曲（domain warp）把直胶囊弯成蜿蜒水道 + 不规则岩壁；smin 平滑并集把相邻房间熔成一间大洞（多 POI 同室）。
+ * 全部确定性纯函数（按 node/edge id 派生·同地点同洞·守洞穴一致性 quirk #100）；不入存档·不 bump SAVE_VERSION。
+ * 这些是作者验收/调参旋钮（绿≠画对·quirk #91/#93·线上 ?dev 肉眼）。
+ */
+const CH_BASE = 4; // 隧道基础半宽（窄·蜿蜒）
+const CH_VAR = 4; // 隧道半宽随边浮动
+const ROOM_BASE = 13; // 房间基础半径
+const ROOM_VAR = 20; // 房间半径随节点浮动（大小不一的洞室）
+const WARP_AMP = 14; // 域扭曲幅度（越大越蜿蜒/越不规则）
+const WARP_FREQ = 0.022; // 域扭曲频率
+const SMIN_K = 7; // 平滑并集半径（越大越熔成一团·越小房间越分明）
+const CTRL_OFF = 48; // 隧道弯折的最大垂向偏移
+const WALL_LO = -2; // SDF < WALL_LO ＝水道内（蓝）
+const WALL_HI = 2.2; // [WALL_LO, WALL_HI) ＝发光岩壁带（越大壁越厚）
 /** 雷达扫描扩散时长（ms·§3「慢一点 ~1.2s」）。 */
 const SWEEP_MS = 1200;
 
@@ -135,23 +150,139 @@ function distSeg(px: number, py: number, ax: number, ay: number, bx: number, by:
   return Math.hypot(px - cx, py - cy);
 }
 
-interface Seg {
-  ax: number;
-  ay: number;
-  bx: number;
-  by: number;
+/** 确定性字符串 hash → [0,1)（按 node/edge id 派生几何·不碰 RNG·守洞穴一致性 #100）。 */
+function hash01(s: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return (h % 100000) / 100000;
+}
+/** 平滑最小值（多项式 smin）：把相邻形状熔成连续有机表面（相邻房间并成一间大洞·非硬交线）。 */
+function smin(a: number, b: number, k: number): number {
+  const h = Math.max(0, Math.min(1, 0.5 + (0.5 * (b - a)) / k));
+  return a * h + b * (1 - h) - k * h * (1 - h);
+}
+/** 域扭曲向量（domain warp）：把直胶囊/圆房间弯成蜿蜒水道 + 不规则岩壁。确定性。 */
+export function caveWarp(x: number, y: number): [number, number] {
+  const wx = fbm(x * WARP_FREQ + 3.1, y * WARP_FREQ + 1.7) - 0.5;
+  const wy = fbm(x * WARP_FREQ + 9.2, y * WARP_FREQ + 5.3) - 0.5;
+  return [wx * WARP_AMP, wy * WARP_AMP];
+}
+
+/** 带半宽的隧道子段（弯折路由后的一节）。 */
+export interface CaveTun { ax: number; ay: number; bx: number; by: number; r: number; }
+/** 带半径的房间 blob（主 blob + 散瓣）。 */
+export interface CaveRoom { x: number; y: number; r: number; }
+
+/** 房间半径（按 node id 派生·大小不一）。buildCaveGeometry 与 poiOffset 共用＝标记落在房间内。 */
+function roomRadius(id: string): number {
+  return ROOM_BASE + ROOM_VAR * hash01('r' + id);
 }
 
 /**
- * 洞穴有机剖面的「水/岩 SDF」：返回该世界点到最近水道中心的有符号距离（+ 值噪声扰动）。
- * < 0 ＝水道内（蓝）；≈ 0 ＝岩壁（发光交界）；> 0 ＝岩石（暗）。确定性·纯函数。
+ * 有机洞穴剖面的「水/岩 SDF」：域扭曲后对隧道/房间取 smin 平滑并集 + 值噪声扰动。
+ * < WALL_LO ＝水道内（蓝）；[WALL_LO,WALL_HI) ＝岩壁（发光交界）；≥ ＝岩石（暗）。确定性·纯函数（便于单测）。
  */
-export function caveSdf(wx: number, wy: number, segs: Seg[], nodes: Array<{ x: number; y: number }>): number {
+export function caveSdf(wx: number, wy: number, tuns: CaveTun[], rooms: CaveRoom[]): number {
+  const [ox, oy] = caveWarp(wx, wy);
+  const px = wx + ox;
+  const py = wy + oy;
   let d = Infinity;
-  for (const s of segs) d = Math.min(d, distSeg(wx, wy, s.ax, s.ay, s.bx, s.by) - CHANNEL_R);
-  for (const n of nodes) d = Math.min(d, Math.hypot(wx - n.x, wy - n.y) - NODE_R);
-  // 值噪声把规整的 capsule/blob 边界扰成不规则岩壁（有机回波轮廓）。
-  return d + (fbm(wx * 0.06, wy * 0.06) - 0.5) * 7;
+  let first = true;
+  for (const t of tuns) {
+    const dd = distSeg(px, py, t.ax, t.ay, t.bx, t.by) - t.r;
+    d = first ? dd : smin(d, dd, SMIN_K);
+    first = false;
+  }
+  for (const rm of rooms) {
+    const dd = Math.hypot(px - rm.x, py - rm.y) - rm.r;
+    d = first ? dd : smin(d, dd, SMIN_K);
+    first = false;
+  }
+  return d + (fbm(px * 0.08, py * 0.08) - 0.5) * 3.5;
+}
+
+/**
+ * 由布局派生有机洞穴几何（确定性·按 node/edge id 派生·同地点同洞·守 #100）：
+ *  - 每条**两端都已揭示**的边 → 弯折路由的隧道（1-2 控制点垂向偏移）+ 随边浮动半宽；
+ *  - 每个**已揭示**的节点 → 主房间 blob + 1-2 散瓣（不规则形状）+ 偶发死路壁龛（alcove）。
+ * scannedIds/memory 决定哪些点/边已被声呐揭示（其余不画＝防剧透·渐进揭示·§2/§3）。
+ */
+export function buildCaveGeometry(
+  layout: MapLayout,
+  scannedIds: string[],
+  memory: Record<string, number>,
+): { tuns: CaveTun[]; rooms: CaveRoom[] } {
+  const tuns: CaveTun[] = [];
+  const rooms: CaveRoom[] = [];
+  for (const e of layout.edges) {
+    if (memory[e.a] === undefined || memory[e.b] === undefined) continue;
+    const pa = layout.pos[e.a];
+    const pb = layout.pos[e.b];
+    if (!pa || !pb) continue;
+    const key = e.a < e.b ? `${e.a}|${e.b}` : `${e.b}|${e.a}`;
+    const L = Math.hypot(pb.x - pa.x, pb.y - pa.y) || 1;
+    const nx = -(pb.y - pa.y) / L;
+    const ny = (pb.x - pa.x) / L;
+    const nc = L < 50 ? 1 : 2;
+    const pts: Array<{ x: number; y: number }> = [{ x: pa.x, y: pa.y }];
+    for (let i = 1; i <= nc; i++) {
+      const f = i / (nc + 1);
+      const offv = (hash01(`${key}:${i}`) - 0.5) * Math.min(L * 0.5, CTRL_OFF);
+      pts.push({ x: pa.x + (pb.x - pa.x) * f + nx * offv, y: pa.y + (pb.y - pa.y) * f + ny * offv });
+    }
+    pts.push({ x: pb.x, y: pb.y });
+    const r = CH_BASE + CH_VAR * hash01('w' + key);
+    for (let i = 0; i + 1 < pts.length; i++) {
+      tuns.push({ ax: pts[i].x, ay: pts[i].y, bx: pts[i + 1].x, by: pts[i + 1].y, r });
+    }
+  }
+  for (const id of scannedIds) {
+    const p = layout.pos[id];
+    if (!p) continue;
+    const R = roomRadius(id);
+    rooms.push({ x: p.x, y: p.y, r: R });
+    const nLobes = (hash01('lobes' + id) < 0.65 ? 1 : 0) + (hash01('lb2' + id) < 0.35 ? 1 : 0);
+    for (let i = 0; i < nLobes; i++) {
+      const a = hash01(`la${i}` + id) * Math.PI * 2;
+      const dist = (0.5 + 0.55 * hash01(`ld${i}` + id)) * R;
+      rooms.push({ x: p.x + Math.cos(a) * dist, y: p.y + Math.sin(a) * dist, r: (0.4 + 0.35 * hash01(`lr${i}` + id)) * R });
+    }
+    if (hash01('alcove' + id) < 0.4) {
+      const a = hash01('aa' + id) * Math.PI * 2;
+      const len = (0.9 + 0.9 * hash01('al' + id)) * R;
+      tuns.push({ ax: p.x, ay: p.y, bx: p.x + Math.cos(a) * len, by: p.y + Math.sin(a) * len, r: CH_BASE * 0.8 });
+    }
+  }
+  return { tuns, rooms };
+}
+
+/**
+ * POI 在房间内的「偏心」落点（相对节点中心的世界偏移·作者：点不必正中·可贴边·且与节点语义相关）：
+ *  - ascent_point / air_pocket → 偏房间顶部（出口/气往上）；
+ *  - camp / rest → 偏房间底部（在底歇脚）；
+ *  - 其余（event 等）→ 贴一面（hash 派生）洞壁。
+ * 确定性·纯函数。
+ */
+export function poiOffset(id: string, kind: string | undefined): { dx: number; dy: number } {
+  let ang: number;
+  if (kind === 'ascent_point' || kind === 'air_pocket') ang = -Math.PI / 2 + (hash01('aj' + id) - 0.5) * 0.9;
+  else if (kind === 'camp' || kind === 'rest') ang = Math.PI / 2 + (hash01('aj' + id) - 0.5) * 0.9;
+  else ang = hash01('ang' + id) * Math.PI * 2;
+  const mag = (0.42 + 0.4 * hash01('mag' + id)) * roomRadius(id);
+  return { dx: Math.cos(ang) * mag, dy: Math.sin(ang) * mag };
+}
+
+/**
+ * 把一个世界点搬到「域扭曲后的水道一侧」＝ p − warp(p)（一阶近似）：
+ * 渲染的水道在屏幕点 P 处可见 ⟺ caveSdf(P)=baseSdf(P+warp(P))<0，故骨架点 S 对应的水道点 ≈ S − warp(S)。
+ * 让 POI / 猎手标记跟随扭曲后的洞、不浮在岩里。
+ */
+export function voidTrack(wx: number, wy: number): { x: number; y: number } {
+  const [ox, oy] = caveWarp(wx, wy);
+  return { x: wx - ox, y: wy - oy };
 }
 
 interface Props {
@@ -187,21 +318,8 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
   let lastScanTurn = -1;
   for (const id of scannedIds) lastScanTurn = Math.max(lastScanTurn, memory[id] ?? -1);
 
-  // 揭示几何（世界坐标·canvas 画洞穴用）：扫到的节点＝洞室·两端都扫到的边＝隧道。开放水域不画洞壁。
-  const caveNodes: Array<{ x: number; y: number }> = [];
-  const caveSegs: Seg[] = [];
-  if (layout && !isOpenWater) {
-    for (const id of scannedIds) {
-      const p = layout.pos[id];
-      if (p) caveNodes.push(p);
-    }
-    for (const e of layout.edges) {
-      if (memory[e.a] === undefined || memory[e.b] === undefined) continue;
-      const pa = layout.pos[e.a];
-      const pb = layout.pos[e.b];
-      if (pa && pb) caveSegs.push({ ax: pa.x, ay: pa.y, bx: pb.x, by: pb.y });
-    }
-  }
+  // 揭示几何（世界坐标·canvas 画有机洞穴用·确定性 buildCaveGeometry）：扫到的点/两端都扫到的边才画＝渐进揭示防剧透。开放水域不画洞壁。
+  const cave = layout && !isOpenWater ? buildCaveGeometry(layout, scannedIds, memory) : { tuns: [], rooms: [] };
 
   // canvas：有机洞穴剖面 + 雷达扫描（useEffect·SSR 不跑）。signature 变（新扫描/移动）→ 重画 + 重扫一遍。
   const signature = `${vbX.toFixed(0)},${vbY.toFixed(0)}|${lastScanTurn}|${isOpenWater}|${scannedIds.sort().join(',')}`;
@@ -223,24 +341,24 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
     off.height = oh;
     const octx = off.getContext('2d');
     let haveCave = false;
-    if (octx && !isOpenWater && caveSegs.length + caveNodes.length > 0) {
+    if (octx && !isOpenWater && cave.tuns.length + cave.rooms.length > 0) {
       const img = octx.createImageData(ow, oh);
       const dat = img.data;
       for (let gy = 0; gy < oh; gy++) {
         for (let gx = 0; gx < ow; gx++) {
           const wx = vbX + ((gx + 0.5) / ow) * VIEW_W;
           const wy = vbY + ((gy + 0.5) / oh) * VIEW_H;
-          const d = caveSdf(wx, wy, caveSegs, caveNodes);
+          const d = caveSdf(wx, wy, cave.tuns, cave.rooms);
           const i = (gy * ow + gx) * 4;
           const tex = fbm(wx * 0.12, wy * 0.12); // 表面纹理
-          if (d < -2) {
+          if (d < WALL_LO) {
             // 水道内：蓝绿·越深越暗（wy 越大越深）
             const deepK = Math.min(1, Math.max(0, (wy - vbY) / VIEW_H));
             dat[i] = 14 + 16 * tex;
             dat[i + 1] = 120 - 50 * deepK + 40 * tex;
             dat[i + 2] = 140 - 30 * deepK + 30 * tex;
             dat[i + 3] = 235;
-          } else if (d < 2) {
+          } else if (d < WALL_HI) {
             // 岩壁：发光青交界（回波轮廓）
             dat[i] = 110 + 40 * tex;
             dat[i + 1] = 230;
@@ -336,9 +454,9 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
       if (stalkerFix.edgeTo && layout.pos[stalkerFix.edgeTo] && stalkerFix.edgeProg !== undefined) {
         const b = layout.pos[stalkerFix.edgeTo];
         const t = stalkerFix.edgeProg;
-        stalkerPos = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+        stalkerPos = voidTrack(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t); // 跟随扭曲后的隧道
       } else {
-        stalkerPos = a;
+        stalkerPos = voidTrack(a.x, a.y);
       }
     }
   }
@@ -355,6 +473,9 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
 
   // 低 san 伪接触（S2·锚在扫到的节点附近·subtle）。
   const phantoms = sonarPhantoms(run, memory);
+
+  // 你的呼吸点：voidTrack 跟随扭曲后的洞（不浮在岩里）；量程环/取景仍以房间中心 here 为准。
+  const youMark = voidTrack(here.x, here.y);
 
   // 残图小地图（方位感·保留·不逐回合淡出·§4）：全洞外框 + 已 mapped 的点 + 你。
   const MINI_W = 60;
@@ -408,6 +529,12 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
               const node = map.nodes[c.nodeId];
               const view = nodeSonarView(run, node);
               if (view.noEcho) return null; // evade：无回波·这处空缺（捕食者躲过你的扫描）
+              // POI 偏心落点（语义相关·可贴边）+ voidTrack 跟随扭曲后的洞（仅已揭示节点·未扫到的保持节点中心·防漂进岩里）。
+              let m = { x: p.x, y: p.y };
+              if (memory[c.nodeId] !== undefined) {
+                const o = poiOffset(c.nodeId, view.displayKind ?? node.kind);
+                m = voidTrack(p.x + o.dx, p.y + o.dy);
+              }
               const glyph = kindGlyph(view.displayKind);
               const feats = node.features ?? [];
               const isRoom = feats.length > 1 && !view.deceptive;
@@ -421,7 +548,7 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
                   tabIndex={0}
                   aria-label={`前往 ${node.depth}m`}
                 >
-                  <circle cx={p.x} cy={p.y} r={baseR} />
+                  <circle cx={m.x} cy={m.y} r={baseR} />
                   {isRoom &&
                     feats.map((_, fi) => {
                       const ang = (fi / feats.length) * Math.PI * 2 - Math.PI / 2;
@@ -429,18 +556,18 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
                         <circle
                           key={fi}
                           className="sonar-feature-dot"
-                          cx={p.x + Math.cos(ang) * 4.5}
-                          cy={p.y + Math.sin(ang) * 4.5}
+                          cx={m.x + Math.cos(ang) * 4.5}
+                          cy={m.y + Math.sin(ang) * 4.5}
                           r={1.5}
                         />
                       );
                     })}
                   {glyph && (
-                    <text className="sonar-blip-glyph" x={p.x} y={p.y + 3}>
+                    <text className="sonar-blip-glyph" x={m.x} y={m.y + 3}>
                       {glyph}
                     </text>
                   )}
-                  <text className={`sonar-blip-depth ${view.garbled ? 'is-garbled' : ''}`} x={p.x} y={p.y - 10}>
+                  <text className={`sonar-blip-depth ${view.garbled ? 'is-garbled' : ''}`} x={m.x} y={m.y - 10}>
                     {view.garbled ? '▓▓m' : `${node.depth}m`}
                   </text>
                 </g>
@@ -467,8 +594,8 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
             )}
             {/* 你（呼吸点 + 外圈·青·不要 X·§5 观感） */}
             <g className="sonar-you sonar-pulse">
-              <circle className="sonar-you-ring" cx={here.x} cy={here.y} r={7} />
-              <circle className="sonar-you-core" cx={here.x} cy={here.y} r={3} />
+              <circle className="sonar-you-ring" cx={youMark.x} cy={youMark.y} r={7} />
+              <circle className="sonar-you-core" cx={youMark.x} cy={youMark.y} r={3} />
             </g>
           </svg>
         </div>
