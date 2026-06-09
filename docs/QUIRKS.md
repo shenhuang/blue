@@ -110,6 +110,13 @@
     - **canvas 洞穴（④·`SonarScanPanel`）**：SVG schematic→canvas 有机剖面（导出纯函数 `caveSdf`：capsule 隧道 + blob 洞室 + 值噪声·半分辨率）+ 雷达扫描（rAF·波前 clip 揭示）+ 节点显隐（只相邻 `choices` 画可点标记·点击=move）+ mid-edge 红点插值 + 旧图保留（去渐隐）。**面板 CSS 走 `document.head` 客户端注入（CAVE_STYLE）·不走 JSX `<style>`**——否则 class 名进 SSR 文本、污染 smoke 的 `!includes('sonar-stalker')` 子串断言（误中）。猎手点颜色高特异性盖过 styles.css 通用 `.sonar-stalker circle`（同 #91）。
     - **绿≠画对（同 #91/#93）**：canvas 像素 SSR 测不到（smoke 只断 class 串·E6 直渲 `SonarScanPanel` 隔离 choice 列表）→ **canvas 视觉/调参必须 dev-server 肉眼**（旋钮见 SPEC §9 末）。`engine↛ui`（#95）：`stalker/sonar/clarity` 不 import ui；几何在 `ui/mapLayout.ts` 单一来源（SonarScanPanel 传小 `pxPerMeter`·MapDevPanel 用默认）。
 
+102. **声呐有机洞穴渲染＝隐藏骨架的渲染皮·标记必 voidTrack（#104·`82b4368`·port v3·接 #101 ④ 之上·作者验收）**——④ 的洞穴 SDF 从「每节点圆 blob + 每边直胶囊」（读作 node-link 图）重做成**真实侧剖有机洞穴**，但**节点图仍是隐藏骨架**（连通＝可游·`y`＝真实深度·gameplay 全不变·纯渲染）：
+    - **几何（`buildCaveGeometry`·`SonarScanPanel`）**：每边→弯折路由隧道（1-2 控制点垂偏 `CTRL_OFF`·随边浮动半宽 `CH_BASE/CH_VAR`）；每节点→主房间 blob + 1-2 散瓣 + 偶发死路壁龛（半径 `ROOM_BASE/ROOM_VAR`）。**确定性按 node/edge id 派生（`hash01`）＝同地点同洞**（守洞穴一致性 #100）·只画已揭示的点/两端都揭示的边（防剧透·渐进揭示）。
+    - **`caveSdf` 有机化**：先 `caveWarp` 域扭曲（把直胶囊弯成蜿蜒水道+不规则岩壁）再对隧道/房间取 **`smin` 平滑并集**（相邻房间熔成一间大洞＝**多 POI 同室**·`SMIN_K` 越小房间越分明、越大越熔成一团）。水/壁/岩阈值＝`WALL_LO`/`WALL_HI`。
+    - **POI 偏心 + 语义（`poiOffset`·作者「点不必正中可贴边·能关联剧情」）**：ascent_point/air_pocket 偏房间顶·camp/rest 偏底·event 贴一面壁；偏移幅度 ≤0.82·roomRadius。
+    - **标记必 `voidTrack(−warp)`（关键坑·别犯）**：域扭曲后骨架点 S 对应的水道点 ≈ S−warp(S)。POI/猎手/你 的标记都要过 `voidTrack` 才落在扭曲后的洞里——**直接画 `layout.pos` 会浮在岩里**。日后改标记定位务必保留 voidTrack（仅未扫到的相邻节点不偏移·保持中心防漂）。
+    - **纯导出便于验证**：`caveSdf/buildCaveGeometry/poiOffset/voidTrack/caveWarp` 无 react/DOM·可离屏渲染（本 port 用真导出函数比对作者验收的 v3 still·MAD 0.7/255）。调参旋钮集中在 `SonarScanPanel` 顶部。**canvas 画对仍线上 `?dev` 肉眼**（sweep 动画/点击/对齐·绿≠画对·#91/#93）。
+
 > 已修复或被后续内容填平，留档备查。
 
 1. **沙箱权限**：在 Linux 沙箱里跑 `npm run build` 第二次会失败（删不掉旧 dist/），跑 `npm run dev` 同样问题（删不掉 .vite 缓存）。**用户本地 Mac 没问题**。
