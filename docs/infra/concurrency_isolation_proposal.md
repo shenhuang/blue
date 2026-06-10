@@ -1,7 +1,7 @@
 # 提案：三写手并发隔离（周末 / 夜间 / 交互 → 分支 / worktree）
 
-> 状态：**仅设计·本 session（基建治理 #94）不实装**。触及两个定时任务 SKILL（周末内容引擎 + 夜间 verify/publish）+ 提交流程 → **必须作者确认后才动手**。本 session 只产出本 `docs/` 提案。
-> 关联：沙箱提交约束见自动记忆 `[[sandbox-git-commit]]`；GitHub Pages 发布见 `[[github-pages-deploy]]`；`dive.ts` 拆分把本提案列为前置（见 [`dive_ts_split_proposal.md`](dive_ts_split_proposal.md)）。
+> 状态：**方案 A 已实装（2026-06-10·作者批准·CHANGELOG #105·quirk #104）**——`auto/weekend` 分支已建；周末引擎 SKILL 改为 commit 到该分支（不碰 main·不 push）；夜间 SKILL 加 verify-绿后 ff 合并步。**实装与 §4 的两点偏差（沙箱 checkout 方向约束·见 quirk #104）**：① 夜间 ff 合并用 `git branch -f main auto/weekend` 移 ref 而非 checkout+merge（含新增文件的分支切回 main 需要 unlink·被挡；ref 移后 checkout main 是同 commit no-op）；② 周末档收尾**停在 auto/weekend**（同因），夜间合并后树自然回 main。方案 B（worktree）仍按 §3 缓议。
+> 关联：沙箱提交约束见自动记忆 `[[sandbox-git-commit]]`；GitHub Pages 发布见 `[[github-pages-deploy]]`；`dive.ts` 拆分把本提案列为前置（见 [`dive_ts_split_proposal.md`](dive_ts_split_proposal.md)）——**该前置现已满足**，拆分只待「作者在场的安全窗口」。
 
 ## 1. 现状与问题
 

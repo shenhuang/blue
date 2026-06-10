@@ -117,6 +117,10 @@
     - **标记必 `voidTrack(−warp)`（关键坑·别犯）**：域扭曲后骨架点 S 对应的水道点 ≈ S−warp(S)。POI/猎手/你 的标记都要过 `voidTrack` 才落在扭曲后的洞里——**直接画 `layout.pos` 会浮在岩里**。日后改标记定位务必保留 voidTrack（仅未扫到的相邻节点不偏移·保持中心防漂）。
     - **纯导出便于验证**：`caveSdf/buildCaveGeometry/poiOffset/voidTrack/caveWarp` 无 react/DOM·可离屏渲染（本 port 用真导出函数比对作者验收的 v3 still·MAD 0.7/255）。调参旋钮集中在 `SonarScanPanel` 顶部。**canvas 画对仍线上 `?dev` 肉眼**（sweep 动画/点击/对齐·绿≠画对·#91/#93）。
 
+103. **幻影 [ahead N]：显式 URL push 不更新 remote-tracking ref（#105 修·夜间 SKILL 已加 post-push fetch）**：`.deploy-token` 无人值守发布走 `git push https://x-access-token:…@github.com/shenhuang/blue.git HEAD:main`（显式 URL、非 remote 名）→ push 成功但 `refs/remotes/origin/main` 原地不动 → 此后每次 `npm run handoff` / `git status -sb` 都报 `[ahead N]`，看起来像有积压未推（2026-06-10 的交接 prompt 即被误导）。**别凭它催 push、也别据此重复推**——核实：`git -c http.proxy= -c https.proxy= fetch origin main`（公开仓库免凭据）后再看 status；或 GitHub API `repos/shenhuang/blue/commits/main` 比对 sha。夜间 SKILL 已在 push 确认后追加一次 fetch 刷新 tracking ref；交互 session 用 token push 后也照做。
+
+104. **三写手并发隔离方案 A 已实装 + 沙箱 checkout 只能加不能删（#105·2026-06-10·作者批准）**：周末内容引擎 commit 只落 **`auto/weekend`** 分支（不碰 main·不 push）；夜间任务 verify 绿后把分支 **ff 收进 main 再发布**；交互 session 在 main（`npm run handoff` 显示当前分支 + 待合并数）。**沙箱机制约束（关键）**：mount 不能 unlink → `git checkout` 只在「目标比当前**多**文件/改文件」方向可行（create/rename），**从含新增文件的分支切向缺这些文件的 main 会被挡**（要删文件）。推论：(a) 周末档收尾**停在 auto/weekend 是正常态**、别强行切回；(b) 夜间 ff 合并用 **`git branch -f main auto/weekend` 移 ref 不动树**（须先验 `git merge-base --is-ancestor main auto/weekend`＝只前进不后退），移完 `git checkout main` 是同 commit no-op；(c) 分支与 main 分叉且 rebase 冲突 → 沙箱别硬解，停分支报告、作者本机处理（Mac 无 unlink 限制随便切）；(d) 交互 session 发现树停在 auto/weekend 时**别把自己的改动 commit 进去**。回滚＝删分支+两个 SKILL 改回（提案 §5）。详见 `docs/infra/concurrency_isolation_proposal.md`（状态头已记实装偏差）。
+
 > 已修复或被后续内容填平，留档备查。
 
 1. **沙箱权限**：在 Linux 沙箱里跑 `npm run build` 第二次会失败（删不掉旧 dist/），跑 `npm run dev` 同样问题（删不掉 .vite 缓存）。**用户本地 Mac 没问题**。
