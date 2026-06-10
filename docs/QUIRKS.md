@@ -131,6 +131,10 @@
 
 109. **事件 label＝纯 fiction·check 徽章单一来源（①根治版·#109）**：选项判定的玩家可见形态**只有** EventView 从 `check.{stat,dc}` 渲染的 `.check-badge`——**label 里再写「（理智 vs N）」＝lint 红**（`check-event-dc` 已从「双写一致」翻成「禁标注回潮」·负路径实测红）。想对玩家**隐藏**判定（惊吓/直觉类）＝选项加 `"hideCheck": true`（仅限有 check 的选项·现 8 处·乱放也红）。写新事件：label 只写 fiction，DC retune 只动 `check.dc`（文案零跟改——这正是根治的意义）。新 stat 上徽章＝改 EventView `STAT_LABEL` 词表一处（缺词回退显示原文 stat·不会崩）。
 
+110. **dev 后门家族口径（#110）——引擎无门·门在 UI·零触碰真经济**：现有两个 dev 后门 `devGrantItem`（port.ts·0 元白拿道具）/ `devUnlockUpgrade`（upgrades.ts·0 成本解锁升级），**引擎侧都是无门纯函数**（脚本可直接调·便于断言），门只在 UI 的 `DEV_TOOLS`（`ui/devMode.ts`·`?dev` quirk #97）。再加 dev 后门照此三条：① 引擎纯函数不查不扣（真路径 purchaseUpgrade/buyFromMira 零触碰）；② UI 渲染包在 `DEV_TOOLS &&` 里；③ 不进 GameState/存档语义（无 dev 标记字段）。日志可带「测试/dev」字样（线上 ?dev 验收时作者能分清哪笔是白拿的）。
+
+111. **猎手 active 探测依赖 `WAIT_TURNS ≥ ACTIVE_PROBE_PERIOD`（#110·承重关系）**：active 猎手丢信号后要**活着熬到** `turnsSinceSignal % STALKER_ACTIVE_PROBE_PERIOD === 0` 那一拍才探测；它能熬几拍由 waitTurns 管。`maybeSpawnStalker` 已为 active 档案把 waitTurns 至少抬到 `STALKER_WAIT_TURNS`（否则奇数槽 waitTurns=0 → searching 第 1 回合 despawn → active 永不发火＝死字段；#110 前盲鳗恰在偶数槽躲过此坑）。**调 tunables 别把 STALKER_WAIT_TURNS 调到 < STALKER_ACTIVE_PROBE_PERIOD**（现 3=3 恰好一拍）——会让所有 active 猎手只探得出零次，playthrough-stalker §13a/§15 会红（机制门在）。seek_last（双感）不受此限（搜索期不吃 waitTurns 上限、吃 SEEK_MAX）。
+
 > 已修复或被后续内容填平，留档备查。
 
 1. **沙箱权限**：在 Linux 沙箱里跑 `npm run build` 第二次会失败（删不掉旧 dist/），跑 `npm run dev` 同样问题（删不掉 .vite 缓存）。**用户本地 Mac 没问题**。
