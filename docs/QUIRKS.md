@@ -123,6 +123,8 @@
 
 105. **dive.ts 已是 barrel——新 dive wiring 进对应 `dive-*.ts`、别从 barrel 回 import（#106·`264e02f`·纯搬移拆分）**：`engine/dive.ts` 降为纯 re-export barrel（外部 `'@/engine/dive'` 与 dialog.ts 的 `'./dive'` 路径全不变）；wiring 按子系统住 `dive-start`（开潜三入口）/ `dive-select`（选点与预览档位）/ `dive-sensors`（灯/声呐/scan-on-open/refreshSelection）/ `dive-move`（过渡与移动分发）/ `dive-stalker`（猎手与伏击）/ `dive-actions`（房内动作）。子模块依赖**单向**：start→select·sensors→select·move→sensors/stalker/select·actions→select——加新 wiring 时从兄弟文件直接 import、**别 import './dive'**（自引用环）；跨子系统共享的 helper 提 export、放语义归属的那个文件。拆分函数体逐字节搬运（diff 证明仅 4 处 helper 提 export·零行为变化）。
 
+106. **必填化 run/profile 字段已 hydrate 收口（#107）——fixture/spread 别写 `字段: 可能undefined`，显式 undefined 会盖掉种子**：`sensorTuning`/`scanMemory`/`bandAlertFactor`/`sonarDeception`/`huntEnabled` + `profile.shopStock`/`outpostState` 已类型必填：createNewRun/createInitialProfile 种 canonical 默认，同版本旧档由 `engine/state.ts::hydrateGameState` 在 deserialize **单点**补齐（playthrough-save §6 是它的门），引擎/UI 读点**直读、不再 `?? 默认`**。坑：`{ ...createNewRun(...), bandAlertFactor: opts?.factor }` 在 opts 缺省时把种子盖成 **undefined**——脚本走 tsx 不过 tsc、类型拦不住，下游直读算成 NaN/崩（#107 已修 playthrough-bands/sonar + smoke 四处）；写 `?? canonical` 或省略该键。真条件字段（`diveModifier`/`stalker`/`sensors.sonarOn`/`sonarNext`/`sonarDir`）保持可选＝缺席有语义，**别在 hydrate 补**。新增「有 canonical 默认」的纯加字段时三处同步：类型必填 + createNewRun 种 + hydrateGameState 补；band 派生数据（DepthBand 字段仍可选）的缺省在 startDiveFromOutpost 落点消化。
+
 > 已修复或被后续内容填平，留档备查。
 
 1. **沙箱权限**：在 Linux 沙箱里跑 `npm run build` 第二次会失败（删不掉旧 dist/），跑 `npm run dev` 同样问题（删不掉 .vite 缓存）。**用户本地 Mac 没问题**。
