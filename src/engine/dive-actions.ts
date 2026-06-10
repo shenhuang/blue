@@ -1,11 +1,14 @@
-// 节点动作（#106 拆分自 dive.ts·纯搬移）：exploreFeature（房内连探付氧）/ restAtNode / breatheAtAirPocket /
-// campAtNode。连探标记 featureDoneFlag 与 dive-select 共用。函数体与拆分前逐字相同。
+// 节点动作（#106 拆分自 dive.ts）：exploreFeature（房内连探付氧）/ restAtNode / breatheAtAirPocket / campAtNode。
+// 连探标记 featureDoneFlag 与 dive-select 共用。
+// 作者 06-10：rest/camp 改走 passTurnsWithStalker（猎手同拍推进·接触＝伏击中断不发收益）；
+// exploreFeature **保持**裸 tickTurns——「连探的代价延迟到下次移动兑现」是成文设计（见其注释），动它需作者另拍。
 
 import type { GameState } from '@/types';
 import { tickTurns } from './events';
 import { appendLog } from './state';
 import { executeDeath } from './death';
 import { featureDoneFlag } from './dive-select';
+import { passTurnsWithStalker } from './dive-stalker';
 
 /**
  * 多事件房间里「凑近探一处 feature」的回合开销（声呐与房间 SPEC §6/§8「连探付氧」）。
@@ -44,11 +47,18 @@ export function exploreFeature(state: GameState, featureId: string): GameState {
   return { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: feat.eventId } } };
 }
 
-/** 休息节点：消耗 N 回合换体力恢复 */
+/**
+ * 休息节点：消耗 N 回合换体力恢复。
+ * 作者 06-10：休息不再对猎手「免费」——passTurnsWithStalker 逐回合同拍推进（它逼近/扑诱饵/守口/放弃照常走）；
+ * 被它摸上来＝伏击开打、觉没睡完 → 不补体力不发「调整呼吸」叙事（interrupted 短路）。
+ */
 export function restAtNode(state: GameState, turns: number = 3): GameState {
   let s = state;
   if (!s.run) return s;
-  const run = tickTurns(s.run, turns);
+  const passed = passTurnsWithStalker(s, turns);
+  s = passed.state;
+  if (passed.interrupted || !s.run) return s;
+  const run = s.run;
   const stats = {
     ...run.stats,
     stamina: Math.min(run.staminaMax, run.stats.stamina + 15),
@@ -86,6 +96,7 @@ export function breatheAtAirPocket(state: GameState): GameState {
 /**
  * 扎营点休整：短 / 长两档，消耗回合换体力 + 理智（长档还排掉一点氮）。
  * 可重复——但 tick 的耗氧是自带代价（与普通 rest 同理，洞里氧气是硬上限）。
+ * 作者 06-10：同 restAtNode——猎手同拍推进，被摸上来＝开打且不发任何休整收益（觉没扎完）。
  */
 export function campAtNode(state: GameState, mode: 'short' | 'long'): GameState {
   let s = state;
@@ -94,7 +105,10 @@ export function campAtNode(state: GameState, mode: 'short' | 'long'): GameState 
   const staGain = mode === 'long' ? 30 : 15;
   const sanGain = mode === 'long' ? 10 : 5;
   const n2Drop = mode === 'long' ? 5 : 0;
-  const run = tickTurns(s.run, turns);
+  const passed = passTurnsWithStalker(s, turns);
+  s = passed.state;
+  if (passed.interrupted || !s.run) return s;
+  const run = s.run;
   const stats = {
     ...run.stats,
     stamina: Math.min(run.staminaMax, run.stats.stamina + staGain),
