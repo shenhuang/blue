@@ -22,7 +22,7 @@
 // 退出码：全过=0，任一失败=1。
 
 import { spawn } from 'node:child_process';
-import { readdirSync, mkdtempSync } from 'node:fs';
+import { readdirSync, mkdtempSync, existsSync, mkdirSync, renameSync } from 'node:fs';
 import { tmpdir, cpus } from 'node:os';
 import { dirname, join, resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -132,6 +132,29 @@ async function runTask(task) {
   return { name: task.name, ok, ms, attempt, out: result.out };
 }
 
+// vite 在沙箱里删不掉自己的 config 临时文件（mount 不能 unlink·quirk #1），每跑一次
+// build 就在仓库根漏一个 vite.config.js.timestamp-*.mjs（曾积到 38 个）。收尾把它们
+// mv 进 .git/.sandbox-junk/（rename 沙箱允许；Mac 上 vite 自己删得掉、这里通常扫不到）。
+// best-effort：清扫失败绝不影响回归退出码。
+function sweepViteTimestampJunk() {
+  try {
+    if (!existsSync(join(ROOT, '.git'))) return;
+    const junkDir = join(ROOT, '.git', '.sandbox-junk');
+    if (!existsSync(junkDir)) mkdirSync(junkDir);
+    for (const f of readdirSync(ROOT)) {
+      if (/^vite\.config\.js\.timestamp-.*\.mjs$/.test(f)) {
+        try {
+          renameSync(join(ROOT, f), join(junkDir, f));
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 async function main() {
   const wall = Date.now();
   console.log(
@@ -158,6 +181,8 @@ async function main() {
       (flaked.length ? ` · ${flaked.length} 个重试后过` : '') +
       ` · 墙钟 ${((Date.now() - wall) / 1000).toFixed(1)}s`,
   );
+
+  sweepViteTimestampJunk();
 
   if (failed.length) {
     for (const f of failed) {

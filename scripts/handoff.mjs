@@ -69,6 +69,36 @@ console.log(hr(`git log（最近 ${N}）+ status`));
 console.log(git(['log', '--oneline', '-' + N]));
 console.log('');
 console.log(git(['status', '-sb']));
+console.log(
+  '（注意：[ahead N] 可能是幻影——显式 URL push 不更新 tracking ref·quirk #103；' +
+    '拿不准就 fetch origin main 或查 GitHub API 后再说）',
+);
+
+// —— 1b. 并发隔离（方案 A·quirk #104）：当前分支 + auto/weekend 待合并状态 ——
+{
+  const branch = git(['rev-parse', '--abbrev-ref', 'HEAD']);
+  console.log(`\n当前分支：${branch}`);
+  const verify = git(['rev-parse', '--verify', '--quiet', 'auto/weekend']);
+  const weekendExists = verify && !verify.startsWith('(git');
+  if (weekendExists) {
+    const pending = git(['rev-list', '--count', 'main..auto/weekend']);
+    if (pending === '0') {
+      console.log('auto/weekend：无未合并 commit（已并平）。');
+    } else {
+      console.log(
+        `auto/weekend：领先 main ${pending} commit（周末引擎内容·待夜间 verify 绿后 ff 收进 main）。`,
+      );
+    }
+  } else {
+    console.log('auto/weekend：分支不存在（周末引擎首跑时自建）。');
+  }
+  if (branch === 'auto/weekend') {
+    console.log(
+      '（树停在 auto/weekend＝周末引擎停的位置——正常。交互要回 main：沙箱切不回去' +
+        '〔分支新增文件删不掉·quirk #104〕，等夜间合并自动回、或作者本机 git checkout main。）',
+    );
+  }
+}
 
 // —— 2. 最新 nightly REPORT 头部 ——
 console.log(hr('最新 nightly REPORT 头部'));
