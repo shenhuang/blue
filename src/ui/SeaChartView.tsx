@@ -7,6 +7,7 @@ import { useMemo, useState, useEffect } from 'react';
 import type { GameState, ChartPoi } from '@/types';
 import { generateChart, poiLockReason, isPoiDepartable, describeModifier } from '@/engine/chart';
 import { startDiveFromPoi, startDiveFromOutpost } from '@/engine/dive';
+import { toPort } from '@/engine/transitions';
 import {
   getHomeLighthouse,
   getLighthouse,
@@ -118,7 +119,7 @@ export function SeaChartView({ state, onStateChange }: Props) {
   }
 
   function handleLeave() {
-    onStateChange({ ...state, phase: { kind: 'port' } });
+    onStateChange(toPort(state));
   }
 
   // 深水区 Phase 1：从前哨「蛙跳」直接下到一个深度 band（本期最小版＝home 灯塔出潜）。

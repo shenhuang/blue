@@ -1,5 +1,6 @@
 import type { GameState } from '@/types';
 import { enterNodeSelection, restAtNode, breatheAtAirPocket, campAtNode } from '@/engine/dive';
+import { beginAscent } from '@/engine/transitions';
 import { StatusBar } from './StatusBar';
 
 interface Props {
@@ -20,7 +21,7 @@ export function RestView({ state, onStateChange }: Props) {
   }
 
   function handleAscendHere() {
-    onStateChange({ ...state, phase: { kind: 'ascent', targetDepth: 0 } });
+    onStateChange(beginAscent(state));
   }
 
   function handleBreathe() {

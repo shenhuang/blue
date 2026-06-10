@@ -6,6 +6,7 @@ import {
   getEnemyDef,
   triggerEmergencyAscent,
 } from '@/engine/combat';
+import { beginAscent } from '@/engine/transitions';
 import { StatusBar } from './StatusBar';
 
 interface Props {
@@ -34,7 +35,7 @@ export function CombatView({ state, onStateChange }: Props) {
   function handleEmergencyAscent() {
     if (!confirm('应急上浮会跳过减压，深处几乎必死。确定？')) return;
     let s = triggerEmergencyAscent(state);
-    s = { ...s, phase: { kind: 'ascent', targetDepth: 0 } };
+    s = beginAscent(s);
     onStateChange(s);
   }
 

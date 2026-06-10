@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { GameState, DialogNode, NpcDef } from '@/types';
 import { getDialogNode, getNpc, selectChoice } from '@/engine/dialog';
 import { evalCondition } from '@/engine/events';
+import { toShop, toChart } from '@/engine/transitions';
 import { UpgradePanel } from './UpgradePanel';
 
 interface Props {
@@ -35,12 +36,12 @@ export function PortView({ state, onStateChange }: Props) {
 
   function openMiraShop() {
     setOpenDialog(null);
-    onStateChange({ ...state, phase: { kind: 'shop', shopId: 'mira.bench' } });
+    onStateChange(toShop(state, 'mira.bench'));
   }
 
   function openChart() {
     setOpenDialog(null);
-    onStateChange({ ...state, phase: { kind: 'chart' } });
+    onStateChange(toChart(state));
   }
 
   // 教学完成后，海图成为主出海入口；教学前只能走 Aldo 的资格潜水。

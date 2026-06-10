@@ -5,6 +5,7 @@
 import type { EventOption, GameState } from '@/types';
 import { getEvent, isOptionEnabled, isOptionVisible, resolveOption } from '@/engine/events';
 import { eventDoneFlag } from '@/engine/portEvents';
+import { toPort } from '@/engine/transitions';
 
 interface Props {
   state: GameState;
@@ -20,12 +21,11 @@ export function PortEventView({ state, eventId, onStateChange }: Props) {
     // 写入"已播"标记，并清掉 run（如果还在），转回港口
     const flags = new Set(s.profile.flags);
     flags.add(eventDoneFlag(eventId));
-    return {
+    return toPort({
       ...s,
       profile: { ...s.profile, flags },
       run: null,
-      phase: { kind: 'port' as const },
-    };
+    });
   }
 
   function handleChoose(opt: EventOption) {

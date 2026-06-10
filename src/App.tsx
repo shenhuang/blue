@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import type { GameState } from '@/types';
 import { createInitialGameState, loadGame, saveGame, clearSave } from '@/engine/state';
 import { handleReturnToPort as handleReturnToPortFn } from '@/engine/port';
+import { toPort } from '@/engine/transitions';
 import { PortView } from '@/ui/PortView';
 import { PortEventView } from '@/ui/PortEventView';
 import { SeaChartView } from '@/ui/SeaChartView';
@@ -149,7 +150,7 @@ export default function App() {
         <FuneralView
           state={state}
           record={state.phase.record}
-          onReturn={() => setState((s) => ({ ...s, phase: { kind: 'port' } }))}
+          onReturn={() => setState((s) => toPort(s))}
         />
       )}
 

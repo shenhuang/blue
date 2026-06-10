@@ -2,6 +2,7 @@ import type { GameState, EventOption } from '@/types';
 import { getEvent, isOptionEnabled, isOptionVisible, resolveOption } from '@/engine/events';
 import { enterNodeSelection } from '@/engine/dive';
 import { startCombat } from '@/engine/combat';
+import { toDiveEvent, beginAscent, toGameOver } from '@/engine/transitions';
 import { StatusBar } from './StatusBar';
 
 interface Props {
@@ -24,25 +25,16 @@ export function EventView({ state, eventId, onStateChange }: Props) {
     // 处理 next 转移
     switch (result.next.kind) {
       case 'continueEvent':
-        next = {
-          ...next,
-          phase: { kind: 'dive', subPhase: { kind: 'event', eventId: result.next.eventId } },
-        };
+        next = toDiveEvent(next, result.next.eventId);
         break;
       case 'startCombat':
         next = startCombat(next, result.next.combatId);
         break;
       case 'forceAscend':
-        next = {
-          ...next,
-          phase: { kind: 'ascent', targetDepth: 0 },
-        };
+        next = beginAscent(next);
         break;
       case 'death':
-        next = {
-          ...next,
-          phase: { kind: 'gameOver', reason: '在深处死去' },
-        };
+        next = toGameOver(next, '在深处死去');
         break;
       case 'remainOnEvent':
         // 事件无显式后续：若处于随机图下潜，进入节点选择；否则停留

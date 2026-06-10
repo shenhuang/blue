@@ -12,6 +12,7 @@ import {
   sellItemToMira,
   isSellableToMira,
 } from '@/engine/port';
+import { toPort } from '@/engine/transitions';
 
 interface Props {
   state: GameState;
@@ -69,7 +70,7 @@ export function MiraShopView({ state, onStateChange }: Props) {
   }
 
   function handleLeave() {
-    onStateChange({ ...state, phase: { kind: 'port' } });
+    onStateChange(toPort(state));
   }
 
   // 回购侧：Mira 卖的低阶材料（T1/T2，带买价 + 剩余备货）

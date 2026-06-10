@@ -3,6 +3,7 @@ import { moveToNode, setLight, pingSonar, exploreFeature, standAndFight, setSona
 import { clarity, sonarPingCost, ALERT_WARN, ALERT_THRESHOLD, sonarStandingOn, sonarStandingNext } from '@/engine/clarity';
 import { seenStalkerSector } from '@/engine/sonar';
 import { zoneAllowsBacktrack } from '@/engine/zones';
+import { beginAscent } from '@/engine/transitions';
 import { StatusBar } from './StatusBar';
 import { SonarScanPanel } from './SonarScanPanel';
 
@@ -28,17 +29,17 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
   // 当前预览档（深水区 Phase 0a）：灯 full / 声呐 sonar / 摸黑 none。
   // 每个选项的预览文案已由引擎 enterNodeSelection 按档烤进 choice.preview；这里只渲染 + 按档配样式。
   const tier = clarity(run);
-  const lightOn = run.sensors?.light ?? true;
-  const sonarUnlocked = run.sensors?.sonarUnlocked ?? false;
+  const lightOn = run.sensors.light;
+  const sonarUnlocked = run.sensors.sonarUnlocked;
   const pingCost = sonarPingCost(run); // 升级派生（缺省 SONAR_PING_COST）
-  const canPing = sonarUnlocked && (run.power ?? 0) >= pingCost;
+  const canPing = sonarUnlocked && run.power >= pingCost;
   // 1 scan / 停留（声呐与房间 §8）：这一站已扫过（自动 scan-on-open 或手动）→ 等移动后才能再扫。
-  const alreadyPinged = (run.sensors?.sonar ?? 'off') === 'ping';
+  const alreadyPinged = run.sensors.sonar === 'ping';
   // 声呐持续开/关（声呐渲染重做 §4）：本回合承诺 standingOn（缺省开）+ 下回合预承诺 standingNext（切换只改下回合）。
   const standingOn = sonarStandingOn(run);
   const standingNext = sonarStandingNext(run);
   // 深水区 Phase 0b：警觉预警——给玩家"读出 tell → 熄灯甩开"的窗口（越线则进下一节点会被接近）。
-  const alert = run.alert ?? 0;
+  const alert = run.alert;
   // 定向 ping（§5）：声呐上「看到的」（会过时）猎手所在扇区——给定向按钮一个「别朝它打」的软警示（基于已知·不一定准）。
   const warnSector = seenStalkerSector(run);
 
@@ -60,7 +61,7 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
     onStateChange(exploreFeature(state, featureId));
   }
   function handleAscendNow() {
-    onStateChange({ ...state, phase: { kind: 'ascent', targetDepth: 0 } });
+    onStateChange(beginAscent(state));
   }
 
   // 多事件房间（S1）：当前房间里还没探的几处「事件点」。
