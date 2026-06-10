@@ -135,9 +135,9 @@ export function deriveSensorTuning(b: SensorUpgradeBonus = {}): SensorTuning {
   };
 }
 
-/** 本次下潜声呐 ping 的有效耗电（升级派生，缺省回退 SONAR_PING_COST）。dive.ts / NodeSelectView 共用。 */
+/** 本次下潜声呐 ping 的有效耗电（升级派生·sensorTuning 必有〔createNewRun 种/hydrate 补〕）。dive.ts / NodeSelectView 共用。 */
 export function sonarPingCost(run: RunState): number {
-  return run.sensorTuning?.pingCost ?? SONAR_PING_COST;
+  return run.sensorTuning.pingCost;
 }
 
 /** 'none' 档（摸黑 / 灯打不透）的盲航预览文案——沿用旧 visibility:dark 行为（quirk #27/#41）。 */
@@ -151,7 +151,7 @@ export const BLIND_VISITED_PREVIEW = '来过的方向，记得这片黑。';
 
 /** 灯是否亮着（在发光 / 耗电 / 抬 signature）——与"是否有效给出真相"(lampEffective)不同：黑水里灯亮着却打不透。 */
 export function lampOn(run: RunState): boolean {
-  return (run.sensors?.light ?? true) && (run.power ?? 0) > 0;
+  return run.sensors.light && run.power > 0;
 }
 
 /**
@@ -165,9 +165,9 @@ export function lampEffective(run: RunState): boolean {
 /** 声呐是否在发挥作用：已解锁 + 本次选点设为 ping（本回合发射）+ 有电。 */
 export function sonarActive(run: RunState): boolean {
   return (
-    (run.sensors?.sonarUnlocked ?? false) &&
-    (run.sensors?.sonar ?? 'off') === 'ping' &&
-    (run.power ?? 0) > 0
+    run.sensors.sonarUnlocked &&
+    run.sensors.sonar === 'ping' &&
+    run.power > 0
   );
 }
 
@@ -176,12 +176,12 @@ export function sonarActive(run: RunState): boolean {
  * 「本回合开/关是上回合定的」——这是 applyTransit 提交进来的 sonarOn（缺省 true）。
  */
 export function sonarStandingOn(run: RunState): boolean {
-  return run.sensors?.sonarOn ?? true;
+  return run.sensors.sonarOn ?? true; // sonarOn 真条件缺席（未解锁不落字段）·`?? true` 是语义不是防御
 }
 
 /** 声呐**下回合**的预承诺（SPEC §4 玩家控制点）。缺省 → 跟随本回合 sonarStandingOn。 */
 export function sonarStandingNext(run: RunState): boolean {
-  return run.sensors?.sonarNext ?? sonarStandingOn(run);
+  return run.sensors.sonarNext ?? sonarStandingOn(run);
 }
 
 /**
@@ -204,11 +204,11 @@ export function clarity(run: RunState): ClarityTier {
 export function clarityForNode(run: RunState, node: DiveNode): ClarityTier {
   const ceiling = clarity(run); // 灯 full / 声呐 sonar / 摸黑 none
   if (ceiling === 'none') return 'none';
-  const cur = run.currentDepth ?? 0;
+  const cur = run.currentDepth;
   if (cur <= CLARITY_FULL_DEPTH) return ceiling; // 浅水所见为真
   const dd = Math.max(0, (node.depth ?? cur) - cur); // 只有"比你深"的陡降才读不到
-  const lampReach = run.sensorTuning?.lampDepthReach ?? LAMP_DEPTH_REACH;
-  const sonarReach = run.sensorTuning?.sonarDepthReach ?? SONAR_DEPTH_REACH;
+  const lampReach = run.sensorTuning.lampDepthReach;
+  const sonarReach = run.sensorTuning.sonarDepthReach;
   if (ceiling === 'full') {
     if (dd <= lampReach) return 'full'; // 灯够得到：地面真相
     if (sonarActive(run) && dd <= sonarReach) return 'sonar'; // 灯够不到、声呐还够到：粗略回波
@@ -230,7 +230,7 @@ export function lightDrainFactor(run: RunState): number {
 export function lampPowerDrain(run: RunState, turns: number): number {
   if (turns <= 0 || !lampOn(run)) return 0;
   // 升级轨：lampDrainMult 缺省 1（未升级＝基线）；只压黑/浊水那段（清水因子本就 0）。
-  const mult = run.sensorTuning?.lampDrainMult ?? 1;
+  const mult = run.sensorTuning.lampDrainMult;
   return LIGHT_POWER_PER_TURN * lightDrainFactor(run) * mult * turns;
 }
 
@@ -239,7 +239,7 @@ export function signature(run: RunState): number {
   const raw = (lampOn(run) ? SIGNATURE_LIGHT : 0) + (sonarActive(run) ? SIGNATURE_SONAR : 0);
   if (raw <= 0) return SIGNATURE_BASE; // 摸黑：最低暴露（隐蔽升级不影响关灯静默）
   // 升级轨：隐蔽降 signature 超基线部分，但留 SIGNATURE_MIN_ACTIVE 地板（点灯/ping 永远暴露你，守"读真相必自曝"）。
-  const reduction = run.sensorTuning?.signatureReduction ?? 0;
+  const reduction = run.sensorTuning.signatureReduction;
   return SIGNATURE_BASE + Math.max(SIGNATURE_MIN_ACTIVE, raw - reduction);
 }
 
@@ -299,14 +299,14 @@ export function alertDelta(run: RunState, turns: number): number {
   if (turns <= 0) return 0;
   const exposure = Math.max(0, signature(run) - SIGNATURE_BASE); // 灯 +6 / 声呐 +3 / 摸黑 0
   // 深水区 C：band 探测压力倍率只乘暴露增益（不动消退）——更深 band 在深度因子饱和后仍「越深越凶」，
-  // 但摸黑/浅水的净消退不变＝逃生阀门倍率买不断。缺省（POI 下潜 / reef_deep）→ 1，逐字节复现旧行为。
-  const gain = exposure * alertDepthFactor(run) * ALERT_GAIN * (run.bandAlertFactor ?? 1);
+  // 但摸黑/浅水的净消退不变＝逃生阀门倍率买不断。POI 下潜 / reef_deep → 1（createNewRun 种），逐字节复现旧行为。
+  const gain = exposure * alertDepthFactor(run) * ALERT_GAIN * run.bandAlertFactor;
   return (gain - ALERT_DECAY) * turns;
 }
 
 /** 警觉是否已到「捕食者接近」线（moveToNode 据此触发遭遇）；需够深（§7.5）。 */
 export function predatorApproaches(run: RunState): boolean {
-  return (run.alert ?? 0) >= ALERT_THRESHOLD && (run.currentDepth ?? 0) >= ALERT_MIN_DEPTH;
+  return run.alert >= ALERT_THRESHOLD && run.currentDepth >= ALERT_MIN_DEPTH;
 }
 
 /**
@@ -317,7 +317,7 @@ export function predatorApproaches(run: RunState): boolean {
  * 猎手扇区（pingAimsAtSoundStalker）则放大（× TOWARD_MULT·净 > 全向＝你照亮它了）。**全向（dir 缺省）逐字节不变**。
  */
 export function sonarPingAlertDelta(run: RunState, dir?: SonarDir): number {
-  const base = SONAR_PING_ALERT * alertDepthFactor(run) * (run.bandAlertFactor ?? 1);
+  const base = SONAR_PING_ALERT * alertDepthFactor(run) * run.bandAlertFactor;
   if (!dir) return base;
   const mult = pingAimsAtSoundStalker(run, dir) ? SONAR_PING_TOWARD_MULT : SONAR_PING_DIR_MULT;
   return base * mult;
@@ -353,16 +353,16 @@ export interface ThreatContact {
  * 确定性哈希（不耗 RNG·SSR 安全）。stalker（图上占位、逐回合逼近、可 evadesSonar 躲扫描）是更大改动、§8.7 留作者拍板。
  */
 export function threatContact(run: RunState): ThreatContact | null {
-  const alert = run.alert ?? 0;
+  const alert = run.alert;
   if (alert < THREAT_CONTACT_ALERT) return null;
   const span = Math.max(1, ALERT_MAX - THREAT_CONTACT_ALERT);
   const proximity = Math.min(1, (alert - THREAT_CONTACT_ALERT) / span);
   const imminent = alert >= ALERT_THRESHOLD;
   const range: ThreatContact['range'] = imminent ? 'near' : proximity > 0.45 ? 'mid' : 'far';
-  const angle = (hashStr(`threat:${run.turn ?? 0}`) % 360) * (Math.PI / 180);
+  const angle = (hashStr(`threat:${run.turn}`) % 360) * (Math.PI / 180);
   const garbled =
-    (run.stats?.sanity ?? 100) < effectiveFalseEchoSanity(run) &&
-    hashStr(`threatgarble:${run.turn ?? 0}`) % 10 < 4;
+    run.stats.sanity < effectiveFalseEchoSanity(run) &&
+    hashStr(`threatgarble:${run.turn}`) % 10 < 4;
   return { angle, proximity, range, imminent, garbled };
 }
 
@@ -405,11 +405,11 @@ const LAMP_HALLUCINATION: string[] = [
  *   - 升级抗欺骗（sensorTuning.sonarFalseEchoSanity）把它**往下压**（更难骗，留地板＝永不全可信）；
  *   - 深 band（run.sonarDeception，data 驱动·**非单调**——throat/abyssal/hadal 高、subhadal 回落）把它**往上推**
  *     （深 band 更易骗）；封顶 BAND_MAX 留一线可信（高 san 大致为真）。
- * run.sonarDeception 缺省（浅水 / POI / 旧档）→ 0 → **恰好回退升级基线＝零行为变化**（守 sensors 回归）。
+ * run.sonarDeception 为 0（浅水 / POI·createNewRun 种）→ **恰好回退升级基线＝零行为变化**（守 sensors 回归）。
  */
 export function effectiveFalseEchoSanity(run: RunState): number {
-  const base = run.sensorTuning?.sonarFalseEchoSanity ?? SONAR_FALSE_ECHO_SANITY;
-  const band = run.sonarDeception ?? 0;
+  const base = run.sensorTuning.sonarFalseEchoSanity;
+  const band = run.sonarDeception;
   if (band <= 0) return base; // 浅水/缺省：逐字节回退基线（不引入任何 band 项）
   return Math.min(SONAR_FALSE_ECHO_SANITY_BAND_MAX, base + band * SONAR_BAND_DISTORTION_SCALE);
 }
@@ -422,8 +422,8 @@ export function effectiveFalseEchoSanity(run: RunState): number {
 export function sonarReturn(run: RunState, node: DiveNode): string {
   if (node.evadesSonar) return '声呐打过去，那片水把脉冲吞了——什么都没回来。';
   if (node.spoofsSonar) return `回波很干净，太干净了——像${node.spoofsSonar}。`;
-  if ((run.stats?.sanity ?? 100) < effectiveFalseEchoSanity(run)) {
-    return pick(SONAR_FAKE, `fake:${node.id}:${Math.round(run.stats?.sanity ?? 100)}`);
+  if (run.stats.sanity < effectiveFalseEchoSanity(run)) {
+    return pick(SONAR_FAKE, `fake:${node.id}:${Math.round(run.stats.sanity)}`);
   }
   const table = SONAR_PLAUSIBLE[node.kind] ?? SONAR_PLAUSIBLE.default;
   return pick(table, `son:${node.id}`);
@@ -458,8 +458,8 @@ export function nodeSonarView(run: RunState, node: DiveNode): NodeSonarView {
   }
   // 真节点：低 san 时仪表读数偶尔损坏（subtle·约三成·确定性·按 turn 变＝你的脑子在实时崩）。
   const garbled =
-    (run.stats?.sanity ?? 100) < effectiveFalseEchoSanity(run) &&
-    hashStr(`garble:${node.id}:${run.turn ?? 0}`) % 10 < 3;
+    run.stats.sanity < effectiveFalseEchoSanity(run) &&
+    hashStr(`garble:${node.id}:${run.turn}`) % 10 < 3;
   return { displayKind: node.kind, noEcho: false, garbled, deceptive: false };
 }
 
@@ -480,13 +480,13 @@ export interface SonarPhantom {
 }
 
 export function sonarPhantoms(run: RunState, scanMemory: Record<string, number>): SonarPhantom[] {
-  const sanity = run.stats?.sanity ?? 100;
+  const sanity = run.stats.sanity;
   const threshold = effectiveFalseEchoSanity(run);
   if (sanity >= threshold) return []; // 高 san：大致为真，无伪接触
   const depthBelow = Math.min(1, (threshold - sanity) / Math.max(1, threshold)); // 0..1：低多少
   const rate = Math.min(
     SONAR_PHANTOM_RATE_MAX,
-    SONAR_PHANTOM_RATE_BASE + depthBelow * 0.3 + (run.sonarDeception ?? 0) * 0.4,
+    SONAR_PHANTOM_RATE_BASE + depthBelow * 0.3 + run.sonarDeception * 0.4,
   );
   const out: SonarPhantom[] = [];
   for (const id of Object.keys(scanMemory).sort()) {
@@ -505,10 +505,10 @@ export function sonarPhantoms(run: RunState, scanMemory: Record<string, number>)
  * 连灯也产生假预览（无完全可信的传感器、灯最后崩）。
  */
 export function lampPreview(run: RunState, node: DiveNode): string {
-  // 升级轨：抗欺骗下调灯幻觉阈值（缺省回退基线），但留地板＝灯最后崩、仍会崩。
-  const halluSanity = run.sensorTuning?.lampHallucinationSanity ?? LAMP_HALLUCINATION_SANITY;
-  if ((run.stats?.sanity ?? 100) < halluSanity) {
-    return pick(LAMP_HALLUCINATION, `lamp:${node.id}:${Math.round(run.stats?.sanity ?? 100)}`);
+  // 升级轨：抗欺骗下调灯幻觉阈值（基线＝未升级 sensorTuning），但留地板＝灯最后崩、仍会崩。
+  const halluSanity = run.sensorTuning.lampHallucinationSanity;
+  if (run.stats.sanity < halluSanity) {
+    return pick(LAMP_HALLUCINATION, `lamp:${node.id}:${Math.round(run.stats.sanity)}`);
   }
   return node.preview;
 }

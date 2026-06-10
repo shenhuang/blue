@@ -29,7 +29,7 @@ function refreshSelection(state: GameState): GameState {
 export function setLight(state: GameState, on: boolean): GameState {
   const run = state.run;
   if (!run) return state;
-  if ((run.sensors?.light ?? true) === on) return state;
+  if (run.sensors.light === on) return state;
   let s: GameState = { ...state, run: { ...run, sensors: { ...run.sensors, light: on } } };
   s = appendLog(s, {
     tone: 'realistic',
@@ -57,7 +57,7 @@ const SONAR_DIR_LABEL: Record<SonarDir, string> = { deeper: '更深处', lateral
  * 纯揭示，**不动 power / alert / sensors**（由调用方决定暴露与开关态）。手动 ping 与 scan-on-open 共用。
  */
 function scanReveal(run: RunState, dir?: SonarDir): { scanMemory: Record<string, number>; stalker: Stalker | undefined } {
-  const scanMemory: Record<string, number> = { ...(run.scanMemory ?? {}) };
+  const scanMemory: Record<string, number> = { ...run.scanMemory };
   if (run.map && run.currentNodeId) {
     for (const id of revealSonarScanDirectional(
       run.map,
@@ -82,21 +82,21 @@ function scanReveal(run: RunState, dir?: SonarDir): { scanMemory: Record<string,
 export function pingSonar(state: GameState, dir?: SonarDir): GameState {
   const run = state.run;
   if (!run) return state;
-  if (!(run.sensors?.sonarUnlocked ?? false)) {
+  if (!run.sensors.sonarUnlocked) {
     return appendLog(state, { tone: 'system', text: '你还没有能用的声呐。' });
   }
   // 1 scan / 停留（声呐与房间 SPEC §8「1 scan/turn」）：这一站已扫过（自动 scan-on-open 或手动）→ 不重复耗电/暴露。
-  if ((run.sensors?.sonar ?? 'off') === 'ping') {
+  if (run.sensors.sonar === 'ping') {
     return appendLog(state, { tone: 'system', text: '脉冲还在水里荡，等它散了再扫一记。' });
   }
   const pingCost = sonarPingCost(run); // 升级派生（缺省 SONAR_PING_COST）
-  if ((run.power ?? 0) < pingCost) {
+  if (run.power < pingCost) {
     return appendLog(state, { tone: 'realistic', text: '电量不够再发一记声呐了。' });
   }
-  const power = Math.max(0, (run.power ?? 0) - pingCost);
+  const power = Math.max(0, run.power - pingCost);
   const { scanMemory, stalker } = scanReveal(run, dir);
   // ping 当场抬警觉尖峰（暴露双刃，SPEC §5）：浅水免压、深 band 更狠；定向时按方向计（更安静 / 正对声感猎手则尖峰）。
-  const alert = Math.min(ALERT_MAX, (run.alert ?? 0) + sonarPingAlertDelta(run, dir));
+  const alert = Math.min(ALERT_MAX, run.alert + sonarPingAlertDelta(run, dir));
   let s: GameState = {
     ...state,
     run: {
@@ -126,13 +126,13 @@ export function pingSonar(state: GameState, dir?: SonarDir): GameState {
 export function autoScanOnArrival(state: GameState): GameState {
   const run = state.run;
   if (!run) return state;
-  if ((run.sensors?.sonar ?? 'off') !== 'ping') return state; // standing 关 / 未解锁 → 不自动扫（看旧图）
+  if (run.sensors.sonar !== 'ping') return state; // standing 关 / 未解锁 → 不自动扫（看旧图）
   const cost = sonarPingCost(run);
-  if ((run.power ?? 0) < cost) {
+  if (run.power < cost) {
     // 电不够维持声呐 → 这一站哑火（落 off·旧图保留·暴露也随之停）。
     return { ...state, run: { ...run, sensors: { ...run.sensors, sonar: 'off' } } };
   }
-  const power = Math.max(0, (run.power ?? 0) - cost);
+  const power = Math.max(0, run.power - cost);
   const { scanMemory, stalker } = scanReveal(run); // 自动扫＝全向
   return { ...state, run: { ...run, power, scanMemory, stalker } };
 }
@@ -144,7 +144,7 @@ export function autoScanOnArrival(state: GameState): GameState {
  */
 export function setSonarNext(state: GameState, on: boolean): GameState {
   const run = state.run;
-  if (!run || !(run.sensors?.sonarUnlocked ?? false)) return state;
+  if (!run || !run.sensors.sonarUnlocked) return state;
   if (sonarStandingNext(run) === on) return state;
   let s: GameState = { ...state, run: { ...run, sensors: { ...run.sensors, sonarNext: on } } };
   s = appendLog(s, {

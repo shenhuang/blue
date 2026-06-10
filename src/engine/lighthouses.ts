@@ -468,9 +468,9 @@ export function advanceOutpost(state: GameState, outpostId: string): GameState {
   // 深水区 Phase 2b 续：**保留既有 stored/storedRun**（建造不动寄存——寄存损耗走独立 storedRun 计时、由存/取/维护打理）；
   // 既有 outpostState 缺 stored 的前哨仍写出 { maintainedRun } 单字段＝行为逐字节不变（守回归）。
   const outpostState = {
-    ...(state.profile.outpostState ?? {}),
+    ...state.profile.outpostState,
     [outpostId]: {
-      ...(state.profile.outpostState?.[outpostId] ?? {}),
+      ...(state.profile.outpostState[outpostId] ?? {}),
       maintainedRun: state.profile.runsCompleted,
     },
   };

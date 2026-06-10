@@ -35,10 +35,11 @@ export interface PlayerProfile {
   inventory: InventoryItem[];
   /**
    * Mira 店铺当前剩余备货（itemId → 剩余可买数量），仅低阶材料回购用（基建地图 SPEC §2.5）。
-   * 软性 per-run 限量：每次回港 handleReturnToPort 清空（= 视作全部补满，靠 getShopStock 的懒默认）。
-   * 可选 + 普通对象 → 旧存档缺它无妨（懒默认满货），JSON 原生 round-trip，无需额外迁移。
+   * 软性 per-run 限量：每次回港 handleReturnToPort 清空（= 视作全部补满，靠 getShopStock 的懒默认——
+   * 注意：条目缺失＝满货的懒默认语义保留在 getShopStock，与容器是否存在无关）。
+   * 容器必填：createInitialProfile 种 {}，旧存档缺它由 hydrateGameState 单点补 {}（CHANGELOG #107）。
    */
-  shopStock?: Record<string, number>;
+  shopStock: Record<string, number>;
   /**
    * 灯塔基地（基建地图 SPEC §3，Phase B）。家＝第一座（lighthouse.home）。
    * 现有岸边港口重构成 home 灯塔；其它是前哨（修复废弃灯塔获得，Phase C）。
@@ -51,11 +52,12 @@ export interface PlayerProfile {
    * - stored = 寄存在该前哨「材料中转站」里的材料（Phase 2b 续：深水前哨可寄存材料、维护就近取用并免 ferry 金费）。
    * - storedRun = 上次「打理寄存」（存/取/维护）时的 runsCompleted；寄存损耗 = (runsCompleted − storedRun) × 速率独立计
    *   （与 maintainedRun 解耦——建造一阶重置结构衰减但不一定补寄存；维护两者都重置）。
-   * 三者都可选 + 普通对象/数组 → 旧档/脚本缺它无妨（懒默认＝刚维护、空寄存、零损耗），JSON 原生 round-trip，
+   * 条目内字段可选（懒默认＝刚维护、空寄存、零损耗·语义留在 outposts.ts 读点），JSON 原生 round-trip，
    * 无需迁移、不 bump SAVE_VERSION（同 shopStock 套路；作者 2026-06-04 未发布不迁移）。
+   * 容器必填：createInitialProfile 种 {}，旧存档缺它由 hydrateGameState 单点补 {}（CHANGELOG #107）。
    * advanceOutpost / maintainOutpost / depositToDepot / withdrawFromDepot 写它。
    */
-  outpostState?: Record<string, { maintainedRun: number; stored?: MaterialCost[]; storedRun?: number }>;
+  outpostState: Record<string, { maintainedRun: number; stored?: MaterialCost[]; storedRun?: number }>;
 }
 
 /** 死亡记录，用于尸体回收 */
@@ -252,7 +254,8 @@ export interface RunState {
   triggeredEventIds: string[]; // 用于 oncePerRun / cooldown 判定
   /**
    * 微观双传感器状态（深水区 Phase 0a）。createNewRun 设默认（灯开 / 声呐 off / 声呐能力按升级派生）。
-   * 未发布故不做存档迁移（作者 2026-06-03）；反序列化读取处用 `?? 默认` 兜底，不 bump SAVE_VERSION。
+   * 未发布故不做存档迁移（作者 2026-06-03）；旧档缺字段由 hydrateGameState 反序列化单点补默认
+   * （CHANGELOG #107·读取处不再 `?? 默认` 兜底），不 bump SAVE_VERSION。
    */
   sensors: SensorState;
   /** 电池储备（类比 oxygen 的 run 级储备）：灯/声呐耗电；归零 → 强制摸黑（致盲不直接死）。 */
@@ -261,14 +264,14 @@ export interface RunState {
   powerMax: number;
   /**
    * 本次下潜的有效传感器参数（深水区 Phase 0 升级轨：耗电/抗欺骗/隐蔽随港口升级成长）。
-   * 由 createNewRun 从 getRunBonuses 一次性派生（deriveSensorTuning）；缺省（旧存档/部分 run）→ clarity.ts 回退基线常量。
-   * 未发布故不做迁移（同 sensors/power/alert）：JSON 自动 round-trip + 读取处 `?? 常量` 兜底，不 bump SAVE_VERSION。
+   * 由 createNewRun 从 getRunBonuses 一次性派生（deriveSensorTuning）；旧存档缺字段 → hydrateGameState
+   * 反序列化单点补基线（deriveSensorTuning({})＝未升级），读取处直读。未发布不迁移、不 bump SAVE_VERSION。
    */
-  sensorTuning?: SensorTuning;
+  sensorTuning: SensorTuning;
   /**
    * 被探测度 / 「警觉」（深水区 Phase 0b）：点灯/ping 在深水逐回合抬升、摸黑消退（见 clarity.ts::alertDelta）；
    * 越过 ALERT_THRESHOLD 时进节点 → 潜伏捕食者接近、触发遭遇（moveToNode）。浅水不积累（§7.5）。
-   * 未发布故不做迁移（同 sensors/power）：createNewRun 种 0 + 反序列化处 `?? 0` 兜底。
+   * 未发布故不做迁移（同 sensors/power）：createNewRun 种 0 + 旧档由 hydrateGameState 单点补 0。
    */
   alert: number;
   /**
@@ -279,28 +282,30 @@ export interface RunState {
   /**
    * 本次蛙跳下潜所在 band 的探测压力倍率（深水区 C）：startDiveFromOutpost 从 band.alertFactor 落到 run，
    * clarity.ts::alertDelta 乘进暴露增益＝更深 band 在深度因子饱和后仍「越深越凶」。
-   * 可选 → POI 下潜 / 旧存档省略即 1（无加压）。派生自 band，未发布不 bump SAVE_VERSION（JSON 自动 round-trip）。
+   * createNewRun 种 1（无加压）＝POI 下潜默认；旧档由 hydrateGameState 单点补 1。派生自 band，
+   * 未发布不 bump SAVE_VERSION（JSON 自动 round-trip）。
    */
-  bandAlertFactor?: number;
+  bandAlertFactor: number;
   /**
    * 声呐探索图记忆（声呐与房间 SPEC §5「会过时的记忆」）：nodeId → 上次被 ping 扫到时的 run.turn。
    * 累积（每次 ping 把扫到的节点 stamp 成当前 turn）；UI 据 (turn − stamp) 渐隐余像。run 级、不入存档、
-   * 不 bump SAVE_VERSION——createNewRun 种 {} + 反序列化 `?? {}` 兜底（同 shopStock/outpostState 套路）。
+   * 不 bump SAVE_VERSION——createNewRun 种 {} + 旧档由 hydrateGameState 单点补 {}（同 shopStock/outpostState）。
    */
-  scanMemory?: Record<string, number>;
+  scanMemory: Record<string, number>;
   /**
    * 本次蛙跳下潜所在 band 的不可信声呐失真强度（声呐与房间 SPEC §5/§7 S2）：startDiveFromOutpost 从
    * band.sonarDeception 落到 run，clarity.ts::effectiveFalseEchoSanity 据此抬高低 san 假回波/伪接触/读数乱码阈值
-   * （深 band 更易骗，subhadal 回落＝『把戏都停了』）。可选 → POI 下潜 / 浅水 / 旧存档省略即 0（声呐相对老实）。
-   * 派生自 band，未发布不 bump SAVE_VERSION（JSON 自动 round-trip + 读取处 `?? 0` 兜底）。
+   * （深 band 更易骗，subhadal 回落＝『把戏都停了』）。createNewRun 种 0（声呐相对老实）＝POI 下潜 / 浅水默认；
+   * 旧档由 hydrateGameState 单点补 0。派生自 band，未发布不 bump SAVE_VERSION（JSON 自动 round-trip）。
    */
-  sonarDeception?: number;
+  sonarDeception: number;
   /**
    * 本次下潜是否启用「猎手」（猎手 SPEC Phase 1·§2.6 范围门控）：startDiveFromOutpost 从 DepthBand.hunts 落到 run。
-   * 真 → moveToNode 走有位置的逼近猎手（出现→逼近→接触触发现有伏击）；缺省/假（POI 下潜/浅水/旧档）→
-   * 走旧 alert→maybeApproachEncounter 瞬时伏击（逐字节不变·守 playthrough-stealth）。派生自 band，不 bump SAVE_VERSION。
+   * 真 → moveToNode 走有位置的逼近猎手（出现→逼近→接触触发现有伏击）；假（createNewRun 种 false＝
+   * POI 下潜/浅水默认·旧档由 hydrateGameState 单点补 false）→ 走旧 alert→maybeApproachEncounter 瞬时
+   * 伏击（逐字节不变·守 playthrough-stealth）。派生自 band，不 bump SAVE_VERSION。
    */
-  huntEnabled?: boolean;
+  huntEnabled: boolean;
   /**
    * 当前追猎你的猎手（猎手 SPEC Phase 1）。run 级·派生·不入 profile·`?? undefined` 兜底·不 bump SAVE_VERSION。
    * 仅 huntEnabled 时由 engine/stalker.ts 生成/推进；纯对象（无 Set）→ JSON 自动 round-trip。

@@ -460,7 +460,7 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
     );
   }
 
-  const focusDir: SonarDir | undefined = run.sensors?.sonar === 'ping' ? run.sensors?.sonarDir : undefined;
+  const focusDir: SonarDir | undefined = run.sensors.sonar === 'ping' ? run.sensors.sonarDir : undefined;
 
   // 相邻可去节点（§2·只这些画可点标记）：用 NodeSelectView 同一份 choices＝点击声呐图＝触发同一条 move。
   const adj = choices.filter((c) => layout.pos[c.nodeId]);

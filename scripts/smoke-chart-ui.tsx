@@ -254,7 +254,7 @@ function sonarState(opts?: { scanMemory?: Record<string, number>; sonarUnlocked?
     zoneId: 'zone.wreck_graveyard',
     bonuses: { sonarUnlocked: opts?.sonarUnlocked ?? true },
   });
-  const run = { ...r0, map: sonarMap(), currentDepth: 30, currentNodeId: 'n0', turn: 0, scanMemory: opts?.scanMemory };
+  const run = { ...r0, map: sonarMap(), currentDepth: 30, currentNodeId: 'n0', turn: 0, scanMemory: opts?.scanMemory ?? {} };
   return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
 }
 // 相邻可去节点 choices（声呐渲染重做 §2·声呐图只对这些画可点标记·点击＝move）——从 map 邻接派生（同 enterNodeSelection 语义）。
@@ -702,7 +702,7 @@ L('  可买/材料不足/金币不足 三态 + 账单缺口高亮 ✓');
 L('\n========== K. MiraShopView 回购 ==========');
 function shopState(inv: InventoryItem[], gold: number, shopStock?: Record<string, number>): GameState {
   const base = createInitialGameState();
-  return { ...base, phase: { kind: 'shop', shopId: 'mira.bench' }, profile: { ...base.profile, inventory: inv, bankedGold: gold, shopStock } };
+  return { ...base, phase: { kind: 'shop', shopId: 'mira.bench' }, profile: { ...base.profile, inventory: inv, bankedGold: gold, shopStock: shopStock ?? {} } };
 }
 // K1. 有金 → 回购区列出 T1/T2 材料 + "买 1"，不含 T3/T4
 const K1 = shopState([{ itemId: 'item.shark_tooth', qty: 2 }], 1000);

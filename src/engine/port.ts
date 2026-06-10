@@ -155,9 +155,9 @@ export function maxShopStockFor(itemId: string): number {
   return SHOP_STOCK_BY_TIER[tier] ?? 0;
 }
 
-/** 当前剩余备货：profile.shopStock 缺该项 = 视作满货（懒默认，回港即如此）。 */
+/** 当前剩余备货：profile.shopStock 缺该项 = 视作满货（懒默认，回港即如此·条目级语义，容器必有）。 */
 export function getShopStock(profile: PlayerProfile, itemId: string): number {
-  const recorded = profile.shopStock?.[itemId];
+  const recorded = profile.shopStock[itemId];
   return recorded ?? maxShopStockFor(itemId);
 }
 
@@ -197,7 +197,7 @@ export function buyFromMira(state: GameState, itemId: string, qty: number): Game
   if (buyQty <= 0) return state;
 
   const newStock: Record<string, number> = {
-    ...(state.profile.shopStock ?? {}),
+    ...state.profile.shopStock,
     [itemId]: stock - buyQty,
   };
   return {

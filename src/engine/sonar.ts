@@ -57,21 +57,21 @@ export const SONAR_DIR_REACH_MAX = 2;
 export const SECTOR_DEPTH_EPS = 1.5;
 
 /**
- * 本次下潜的有效声呐扫描跳数：读 run.sensorTuning（升级派生·deriveSensorTuning 已夹紧到 [基线, 上限]）；
- * 缺省（旧档 / 脚本构造的部分 run / 未升级）→ 回退基线常量＝S0 行为逐字节不变。
+ * 本次下潜的有效声呐扫描跳数：读 run.sensorTuning（升级派生·deriveSensorTuning 已夹紧到 [基线, 上限]；
+ * 未升级＝基线常量·sensorTuning 必有〔createNewRun 种 / hydrate 补〕）。
  */
 export function sonarScanRange(run: RunState): number {
-  return run.sensorTuning?.sonarScanRange ?? SONAR_SCAN_RANGE;
+  return run.sensorTuning.sonarScanRange;
 }
 
 /**
  * 这一记定向 ping 在某扇区的「各自升级」额外焦距（声呐与房间 §5「各方向 reach 各自升级」）：读 run.sensorTuning.sonarDirReach
- * （升级派生·deriveSensorTuning 已逐向夹到 [0, SONAR_DIR_REACH_MAX]）。全向（dir 缺省）或缺省（旧档 / 未升级）→ 0
+ * （升级派生·deriveSensorTuning 已逐向夹到 [0, SONAR_DIR_REACH_MAX]）。全向（dir 缺省）或未升级 → 0
  * ＝revealSonarScanDirectional 逐字节回退既有定向/全向行为。
  */
 export function sonarDirReach(run: RunState, dir?: SonarDir): number {
   if (!dir) return 0;
-  return run.sensorTuning?.sonarDirReach?.[dir] ?? 0;
+  return run.sensorTuning.sonarDirReach[dir];
 }
 
 // ============================================================

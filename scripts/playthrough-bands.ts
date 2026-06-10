@@ -200,8 +200,8 @@ assert(sMouth.run!.bandAlertFactor === mouth.alertFactor, '9: 蛙跳 trench_mout
 assert(sThroat.run!.bandAlertFactor === throat.alertFactor, '9: 蛙跳 trench_throat 落 run.bandAlertFactor');
 
 // (c) alertDelta 真随倍率放大：同样点灯、同样满档深度（100m，深度因子饱和=1），throat 涨得比 mouth 快、都比无倍率快。
-const lit = (factor?: number) => ({ ...sMouth.run!, currentDepth: 100, alert: 0, bandAlertFactor: factor });
-const dNone = alertDelta(lit(undefined), 1); // 缺省（POI 下潜 / reef_deep 饱和段）= 旧行为
+const lit = (factor?: number) => ({ ...sMouth.run!, currentDepth: 100, alert: 0, bandAlertFactor: factor ?? 1 }); // 必填化（#107）：canonical 默认 1
+const dNone = alertDelta(lit(undefined), 1); // 无倍率（POI 下潜 / reef_deep 饱和段）= 旧行为
 const dMouth = alertDelta(lit(mouth.alertFactor), 1);
 const dThroat = alertDelta(lit(throat.alertFactor), 1);
 assert(
@@ -214,7 +214,7 @@ const dark = (factor?: number) => ({
   ...sMouth.run!,
   currentDepth: 100,
   alert: 50,
-  bandAlertFactor: factor,
+  bandAlertFactor: factor ?? 1, // 必填化（#107）：canonical 默认 1
   sensors: { ...sMouth.run!.sensors, light: false, sonar: 'off' as const },
 });
 const decayNone = alertDelta(dark(undefined), 1);

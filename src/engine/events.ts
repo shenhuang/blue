@@ -305,11 +305,10 @@ export function tickTurns(run: RunState, turns: number): RunState {
   }
 
   // 深水区 Phase 0a：灯耗电（清水因子 0 → 浅水近免费；黑水/微浊才耗；归零 → clarity 强制摸黑）。
-  const curPower = run.power ?? 0;
-  const power = Math.max(0, curPower - lampPowerDrain(run, turns));
+  const power = Math.max(0, run.power - lampPowerDrain(run, turns));
 
   // 深水区 Phase 0b：警觉积累（点灯/ping 在深水抬、摸黑/浅水降）；clamp 0–ALERT_MAX。
-  const alert = Math.max(0, Math.min(ALERT_MAX, (run.alert ?? 0) + alertDelta(run, turns)));
+  const alert = Math.max(0, Math.min(ALERT_MAX, run.alert + alertDelta(run, turns)));
 
   return { ...run, stats, power, alert, turn: run.turn + turns };
 }

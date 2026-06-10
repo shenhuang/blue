@@ -201,6 +201,11 @@ export function createNewRun(opts: {
     alert: 0,
     // 声呐与房间 S0：声呐图记忆起手为空（全黑，只随 ping 一块块点亮）。
     scanMemory: {},
+    // band 派生三旋钮的「无 band」默认（POI 下潜 / 浅水基线）；startDiveFromOutpost 按 band 覆写。
+    // 必填化（CHANGELOG #107）：默认值即旧读点 `?? 1 / ?? 0 / 缺省假` 的语义，行为不变。
+    bandAlertFactor: 1,
+    sonarDeception: 0,
+    huntEnabled: false,
   };
 }
 
@@ -247,6 +252,11 @@ export function clampStats(stats: Stats, max: { stamina: number; oxygen: number 
 // 朴素 JSON.stringify 会把它们序列化成 `{}`。下面用 replacer/reviver 把 Set ↔ {__set:[...]}
 // 互转，整棵 state（含嵌套 Set）都能安全 round-trip。**未发布期不做存档迁移**（quirk #99）：
 // 版本 ≠ 当前 SAVE_VERSION（或损坏）一律视为不兼容、丢弃；改坏 run/profile 形状想废旧档就 bump SAVE_VERSION。
+//
+// **纯加字段的缺省补齐收口在 hydrateGameState 单点**（CHANGELOG #107·品味评审候选③）：
+// 同版本旧档缺新字段（纯加字段不 bump 的代价）→ 反序列化后一次补齐 canonical 默认，
+// 引擎/UI 读点直读（不再散落 `?? 默认`）。真条件字段（diveModifier / stalker / sensors.sonarOn…）
+// 不在此列——缺席有语义（功能关 / 未触发），保持可选。
 
 const SAVE_KEY = 'deepecho.save';
 
@@ -270,10 +280,45 @@ export function serializeGameState(state: GameState): string {
 }
 
 /**
+ * 同版本旧档的缺省补齐——**单点 hydrate**（CHANGELOG #107）。
+ * 纯加字段不 bump SAVE_VERSION（quirk #99），代价是同版本旧档可能缺新字段；此前靠全引擎读点
+ * `?? 默认` 兜底（dive 拆分前一文件 27 处 `?.`），现收口到这里一次补齐，读点直读、类型必填。
+ * 默认值与 createNewRun / createInitialProfile 的种子一致（canonical 默认＝未升级/无 band 基线）。
+ * 真条件字段（diveModifier / stalker / sensors.sonarOn / sonarNext / sonarDir）不补——缺席即语义。
+ * 不是迁移链：无版本分支、无形状改写；改坏形状仍走 bump 弃档。
+ */
+export function hydrateGameState(state: GameState): GameState {
+  const profile: PlayerProfile = {
+    ...state.profile,
+    shopStock: state.profile.shopStock ?? {},
+    outpostState: state.profile.outpostState ?? {},
+  };
+  if (!state.run) return { ...state, profile };
+  const run = state.run;
+  const powerMax = run.powerMax ?? POWER_MAX;
+  return {
+    ...state,
+    profile,
+    run: {
+      ...run,
+      sensors: run.sensors ?? { light: true, sonar: 'off', sonarUnlocked: false },
+      power: run.power ?? powerMax,
+      powerMax,
+      alert: run.alert ?? 0,
+      sensorTuning: run.sensorTuning ?? deriveSensorTuning({}),
+      scanMemory: run.scanMemory ?? {},
+      bandAlertFactor: run.bandAlertFactor ?? 1,
+      sonarDeception: run.sonarDeception ?? 0,
+      huntEnabled: run.huntEnabled ?? false,
+    },
+  };
+}
+
+/**
  * 反序列化存档。**未发布期策略（作者 2026-06 · quirk #99）：不做存档迁移、不为兼容旧档增加任何复杂度。**
  * 版本 ≠ 当前 SAVE_VERSION（更高 / 更低 / 缺失）或 JSON 损坏一律视为不兼容 → 返回 null，
  * 调用方 clearSave 后从头开始。
- *  - 纯加字段：不必 bump（版本仍相等 · 缺失字段由 createNewRun 种默认 + 读取处 `?? 默认` 兜底）。
+ *  - 纯加字段：不必 bump（版本仍相等 · 缺失字段由 hydrateGameState 在此单点补默认）。
  *  - 改坏 run/profile 形状、想废旧档：直接 bump SAVE_VERSION，旧档下次启动自动被清——别写迁移代码。
  */
 export function deserializeGameState(raw: string): GameState | null {
@@ -281,7 +326,7 @@ export function deserializeGameState(raw: string): GameState | null {
     const obj = JSON.parse(raw, saveReviver) as { version?: unknown } | null;
     if (!obj || typeof obj !== 'object') return null;
     if (obj.version !== SAVE_VERSION) return null; // 不兼容：不迁移、直接弃
-    return obj as unknown as GameState;
+    return hydrateGameState(obj as unknown as GameState);
   } catch {
     return null;
   }

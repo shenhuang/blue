@@ -4,8 +4,10 @@
 //   3. 版本 ≠ 当前 SAVE_VERSION（更高 / 更低 / 缺失）→ null（未发布不迁移 · quirk #99 · 直接弃）
 //   4. 非浏览器环境 loadGame() → null（feature-detect）
 //   5. 启动清旧档：不兼容 / 损坏存档在 loadGame 时被删除（mock localStorage）
+//   6. hydrate 单点补默认（CHANGELOG #107）：同版本旧档缺纯加字段 → deserialize 一次补 canonical 默认
+//      （引擎读点直读、类型必填）；真条件字段（stalker / sensors.sonarOn…）不补；hydrate 幂等。
 //   注：未发布期不做存档迁移、不为兼容增加复杂度——改坏形状就 bump SAVE_VERSION，旧档启动自动清。
-//      纯加字段不必 bump：createNewRun 种默认 + 反序列化 `?? 默认` 兜底；下方 round-trip 仍校验序列化往返。
+//      纯加字段不必 bump：createNewRun 种默认 + deserialize 时 hydrateGameState 单点补齐（§6）。
 //
 // 跑法： npx tsx scripts/playthrough-save.ts
 
@@ -16,7 +18,7 @@ import {
   deserializeGameState,
   loadGame,
 } from '../src/engine/state';
-import { POWER_MAX, SONAR_PING_COST, LAMP_DEPTH_REACH, SONAR_DEPTH_REACH } from '../src/engine/clarity';
+import { POWER_MAX, SONAR_PING_COST, LAMP_DEPTH_REACH, SONAR_DEPTH_REACH, deriveSensorTuning } from '../src/engine/clarity';
 import type { GameState } from '../src/types';
 
 const log: string[] = [];
@@ -212,6 +214,68 @@ L('  非浏览器环境 loadGame() → null ✓');
   delete (globalThis as { localStorage?: unknown }).localStorage;
 }
 L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取保留 ✓');
+
+// 6. hydrate 单点补默认（CHANGELOG #107·品味评审候选③）：同版本旧档缺「纯加字段」→
+//    deserialize 后由 hydrateGameState 一次补 canonical 默认；读点直读（不再散落 `?? 默认`）。
+{
+  // 模拟「字段加入前序列化的同版本旧档」：从富 state 的 JSON 里删掉全部纯加字段。
+  const old = JSON.parse(raw);
+  for (const k of [
+    'sensors',
+    'power',
+    'powerMax',
+    'alert',
+    'sensorTuning',
+    'scanMemory',
+    'bandAlertFactor',
+    'sonarDeception',
+    'huntEnabled',
+    'stalker',
+  ]) {
+    delete old.run[k];
+  }
+  delete old.profile.shopStock;
+  delete old.profile.outpostState;
+  const h = deserializeGameState(JSON.stringify(old));
+  assert(h && h.run, '6: 同版本缺字段旧档应正常反序列化（hydrate 而非拒收）');
+  // run 级 canonical 默认（与 createNewRun 种子一致）
+  assert(
+    h.run.sensors.light === true && h.run.sensors.sonar === 'off' && h.run.sensors.sonarUnlocked === false,
+    '6: sensors 补默认（灯开 / 声呐 off / 未解锁）',
+  );
+  assert(h.run.powerMax === POWER_MAX && h.run.power === POWER_MAX, '6: power/powerMax 补默认（满电·基线总量）');
+  assert(h.run.alert === 0, '6: alert 补 0');
+  assert(
+    JSON.stringify(h.run.sensorTuning) === JSON.stringify(deriveSensorTuning({})),
+    '6: sensorTuning 补未升级基线（deriveSensorTuning({})）',
+  );
+  assert(
+    Object.keys(h.run.scanMemory).length === 0 && h.run.bandAlertFactor === 1 && h.run.sonarDeception === 0 && h.run.huntEnabled === false,
+    '6: scanMemory {} / bandAlertFactor 1 / sonarDeception 0 / huntEnabled false',
+  );
+  // 真条件字段不补（缺席即语义：无猎手 / 声呐持续开关未解锁不落）
+  assert(h.run.stalker === undefined, '6: stalker 缺席不补（真条件字段）');
+  assert(h.run.sensors.sonarOn === undefined && h.run.sensors.sonarNext === undefined, '6: sonarOn/sonarNext 缺席不补');
+  // profile 容器补 {}（条目级懒默认语义留在读点）
+  assert(
+    h.profile.shopStock && Object.keys(h.profile.shopStock).length === 0,
+    '6: profile.shopStock 补 {}',
+  );
+  assert(
+    h.profile.outpostState && Object.keys(h.profile.outpostState).length === 0,
+    '6: profile.outpostState 补 {}',
+  );
+  // 幂等：hydrate 后的档再走一遍 serialize→deserialize 不再变
+  const again = deserializeGameState(serializeGameState(h));
+  assert(again && JSON.stringify(again) === JSON.stringify(h), '6: hydrate 幂等（再 round-trip 逐字节稳定）');
+  // 部分缺失：只缺 power（powerMax 在）→ power 按已存 powerMax 补满，不被基线覆盖
+  const partial = JSON.parse(raw);
+  partial.run.powerMax = POWER_MAX + 3;
+  delete partial.run.power;
+  const hp = deserializeGameState(JSON.stringify(partial));
+  assert(hp && hp.run!.power === POWER_MAX + 3 && hp.run!.powerMax === POWER_MAX + 3, '6: 只缺 power → 按档内 powerMax 补满');
+}
+L('  hydrate：缺字段旧档单点补 canonical 默认 · 真条件字段不补 · 幂等 · 部分缺失按档内值 ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 存档序列化回归通过');

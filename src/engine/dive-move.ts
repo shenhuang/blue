@@ -39,11 +39,11 @@ function applyTransit(state: GameState, target: DiveNode): GameState {
   // 声呐开/关窗口（声呐渲染重做 §4）：移动＝回合推进＝把 sonarNext 落成下回合的 sonarOn（「本回合开/关是上回合定的」）。
   //   持续开 + 有电 → sonar='ping'（本站发射·到站 autoScanOnArrival 扫一记 scan-on-open）；关/无电 → 'off'（看保留的旧图）。定向聚焦每步清掉（§5）。
   //   **仅 sonarUnlocked 才落 sonarOn/sonarNext + 持续发射＝未解锁逐字节不变**（旧档/浅水/无声呐：仍是脉冲瞬时·移动归 off）。
-  const unlocked = ticked.sensors?.sonarUnlocked ?? false;
+  const unlocked = ticked.sensors.sonarUnlocked;
   let nextSensors: typeof ticked.sensors;
   if (unlocked) {
     const standing = sonarStandingNext(run); // 下回合预承诺 → 本次落定为本回合
-    const emitting = standing && (ticked.power ?? 0) > 0;
+    const emitting = standing && ticked.power > 0;
     nextSensors = {
       ...ticked.sensors,
       sonar: emitting ? 'ping' : 'off',

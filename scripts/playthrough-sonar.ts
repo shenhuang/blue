@@ -41,6 +41,7 @@ import {
   effectiveFalseEchoSanity,
   SONAR_FALSE_ECHO_SANITY,
   SONAR_FALSE_ECHO_SANITY_BAND_MAX,
+  deriveSensorTuning,
 } from '../src/engine/clarity';
 import { generateDiveMap } from '../src/engine/mapgen';
 import { getZone } from '../src/engine/zones';
@@ -109,7 +110,7 @@ function mk(opts?: {
     currentDepth: opts?.depth ?? 50,
     power: opts?.power ?? r0.power,
     alert: opts?.alert ?? 0,
-    bandAlertFactor: opts?.bandAlertFactor,
+    bandAlertFactor: opts?.bandAlertFactor ?? 1, // 必填化（#107）：显式 undefined 会盖掉 createNewRun 种子 → 给 canonical 默认
   };
   return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
 }
@@ -367,9 +368,9 @@ L('\n========== 10. 多事件房间（S1）==========');
 L('\n========== 11. 不可信扫描（S2）==========');
 {
   const makeRng = (seed: number) => { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 0x100000000; }; };
-  // 纯 run（只喂 clarity 需要的字段：sanity / turn / sonarDeception）。
+  // 纯 run（只喂 clarity 需要的字段；必填化〔#107〕后读点直读 → fixture 显式种 canonical 默认）。
   const run = (o?: { sanity?: number; turn?: number; dec?: number }): RunState =>
-    ({ stats: { sanity: o?.sanity ?? 100 }, turn: o?.turn ?? 0, sonarDeception: o?.dec } as unknown as RunState);
+    ({ stats: { sanity: o?.sanity ?? 100 }, turn: o?.turn ?? 0, sonarDeception: o?.dec ?? 0, sensorTuning: deriveSensorTuning({}) } as unknown as RunState);
   const node = (o: Partial<DiveNode>): DiveNode =>
     ({ id: 'x', layer: 1, depth: 150, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '真相', ...o });
 
@@ -446,7 +447,7 @@ L('\n========== 11. 不可信扫描（S2）==========');
 L('\n========== 12. 威胁定位（S3 廉价版）==========');
 {
   const tr = (o: { alert?: number; sanity?: number; turn?: number; dec?: number }): RunState =>
-    ({ alert: o.alert ?? 0, stats: { sanity: o.sanity ?? 100 }, turn: o.turn ?? 0, sonarDeception: o.dec } as unknown as RunState);
+    ({ alert: o.alert ?? 0, stats: { sanity: o.sanity ?? 100 }, turn: o.turn ?? 0, sonarDeception: o.dec ?? 0, sensorTuning: deriveSensorTuning({}) } as unknown as RunState);
 
   // (a) 预警线下 → 无接触（水里还算静）
   assert(threatContact(tr({ alert: THREAT_CONTACT_ALERT - 1 })) === null, '12a: 警觉未到预警线 → 无威胁接触');

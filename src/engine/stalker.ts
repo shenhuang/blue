@@ -284,7 +284,7 @@ export function advanceStalker(
 
   const s: Stalker = { ...stalker };
   // 有你的信号 ＝ 你够「响」（alert 越线）且这一回合没被你的规避装备甩脱（§3·缺省无升级 → playerEvadesStalker 恒 false → 逐字节不变）。
-  if ((run.alert ?? 0) >= STALKER_SIGNAL_ALERT && !playerEvadesStalker(run, stalker)) {
+  if (run.alert >= STALKER_SIGNAL_ALERT && !playerEvadesStalker(run, stalker)) {
     // 有你的信号 → 朝你按 HSPEED 推进（可停中段）·刷新 lastSignal·清等待计时。
     s.state = 'hunting';
     s.turnsSinceSignal = 0;

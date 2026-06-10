@@ -83,9 +83,9 @@ export function getOutpostForLighthouse(lighthouseId: string): OutpostDef | unde
   return getOutposts().find((o) => o.result.id === lighthouseId);
 }
 
-/** 该前哨上次维护时的 runsCompleted（懒默认＝当前 run＝零衰减；同 shopStock 套路，旧档/脚本缺它无妨）。 */
+/** 该前哨上次维护时的 runsCompleted（懒默认＝当前 run＝零衰减；条目级语义，容器必有）。 */
 function maintainedRun(profile: PlayerProfile, outpostId: string): number {
-  return profile.outpostState?.[outpostId]?.maintainedRun ?? profile.runsCompleted;
+  return profile.outpostState[outpostId]?.maintainedRun ?? profile.runsCompleted;
 }
 
 /**
@@ -218,7 +218,7 @@ export function storedUnits(stored: MaterialCost[] | undefined): number {
 
 /** 该前哨上次「打理寄存」时的 runsCompleted（懒默认＝当前 run＝零损耗；同 maintainedRun 套路、旧档缺它无妨）。 */
 function storedRun(profile: PlayerProfile, outpostId: string): number {
-  return profile.outpostState?.[outpostId]?.storedRun ?? profile.runsCompleted;
+  return profile.outpostState[outpostId]?.storedRun ?? profile.runsCompleted;
 }
 
 /**
@@ -258,7 +258,7 @@ function addStored(stored: MaterialCost[], itemId: string, qty: number): Materia
  * 损耗量 = depotDecayLevel × DEPOT_LOSS_PER_LEVEL 单位（封顶全部排空）。提交发生在存/取/维护时（见下）。
  */
 export function effectiveStored(profile: PlayerProfile, outpostId: string): MaterialCost[] {
-  const raw = profile.outpostState?.[outpostId]?.stored ?? [];
+  const raw = profile.outpostState[outpostId]?.stored ?? [];
   const loss = depotDecayLevel(profile, outpostId) * DEPOT_LOSS_PER_LEVEL;
   return loss <= 0 ? raw.map((m) => ({ ...m })) : drainUnits(raw, loss);
 }
@@ -287,8 +287,8 @@ function writeOutpostEntry(
   outpostId: string,
   patch: Partial<{ maintainedRun: number; stored: MaterialCost[]; storedRun: number }>,
 ): NonNullable<PlayerProfile['outpostState']> {
-  const prev = profile.outpostState?.[outpostId] ?? { maintainedRun: profile.runsCompleted };
-  return { ...(profile.outpostState ?? {}), [outpostId]: { ...prev, ...patch } };
+  const prev = profile.outpostState[outpostId] ?? { maintainedRun: profile.runsCompleted };
+  return { ...profile.outpostState, [outpostId]: { ...prev, ...patch } };
 }
 
 export type DepotAvailability =
@@ -449,7 +449,7 @@ export function maintainOutpost(state: GameState, outpostId: string): GameState 
   }
 
   // 无中转站活动（从没寄存过）→ 只写 maintainedRun＝既有行为不变；有寄存 → 顺手提交损耗 + 重置 storedRun。
-  const hadDepot = state.profile.outpostState?.[outpostId]?.stored !== undefined;
+  const hadDepot = state.profile.outpostState[outpostId]?.stored !== undefined;
   const patch = hadDepot
     ? { maintainedRun: state.profile.runsCompleted, stored, storedRun: state.profile.runsCompleted }
     : { maintainedRun: state.profile.runsCompleted };

@@ -63,7 +63,7 @@ export function startDive(
     bandTags: opts?.bandTags,
     maxRoomFeatures: opts?.maxRoomFeatures,
     // 大房间出现率加成（声呐与房间 §6/§8.3 续·升级派生）：只在 maxRoomFeatures>1 的深 band 生效；缺省 0＝旧图不变。
-    roomFeatureChanceBonus: state.run.sensorTuning?.roomFeatureChanceBonus,
+    roomFeatureChanceBonus: state.run.sensorTuning.roomFeatureChanceBonus,
     sonarDeception: opts?.sonarDeception,
     targetCorpseId: opts?.targetCorpseId,
     // 洞穴一致性（SPEC §6①·#98）：透传地点身份串 → mapgen 据此派生确定性 rng（同地点同图）。
@@ -266,14 +266,14 @@ export function startDiveFromOutpost(state: GameState, bandId: string): GameStat
   run = {
     ...run,
     diveModifier: m,
-    // 深水区 C：band 探测压力倍率落 run（缺省 undefined → alertDelta 视作 1）。越深 band 越凶，
-    // 在深度因子饱和（ALERT_DEPTH_FULL）之上继续加压；摸黑/浅水消退不受倍率影响（逃生阀门不被买断）。
-    bandAlertFactor: band.alertFactor,
-    // 声呐与房间 S2：band 不可信声呐失真强度落 run（缺省 undefined → effectiveFalseEchoSanity 视作 0＝声呐相对老实）。
+    // 深水区 C：band 探测压力倍率落 run（band 数据缺省 → 1＝无加压·在此落点消化，run 字段必填 #107）。
+    // 越深 band 越凶，在深度因子饱和（ALERT_DEPTH_FULL）之上继续加压；摸黑/浅水消退不受倍率影响（逃生阀门不被买断）。
+    bandAlertFactor: band.alertFactor ?? 1,
+    // 声呐与房间 S2：band 不可信声呐失真强度落 run（band 数据缺省 → 0＝声呐相对老实·同上在落点消化）。
     // 深 band 越骗（throat/abyssal/hadal）、subhadal 回落（『把戏都停了』）；只抬低 san 失真阈值、不动其它。
-    sonarDeception: band.sonarDeception,
-    // 猎手 SPEC Phase 1：本 band 是否启用「有位置的逼近猎手」（缺省 undefined → moveToNode 走旧 alert→伏击瞬时路径）。
-    huntEnabled: band.hunts,
+    sonarDeception: band.sonarDeception ?? 0,
+    // 猎手 SPEC Phase 1：本 band 是否启用「有位置的逼近猎手」（band 数据缺省 → false → moveToNode 走旧 alert→伏击瞬时路径）。
+    huntEnabled: band.hunts ?? false,
     turn: dist,
     stats: { ...run.stats, oxygen: Math.max(1, run.stats.oxygen - transitOxygen) },
   };
