@@ -68,8 +68,11 @@ tasks.push({ name: 'build', cmd: [vite, 'build', '--outDir', buildOut, '--logLev
 // 端到端教学验证（纯 node，不走 tsx）
 tasks.push({ name: 'verify-tutorial', cmd: ['node', join('scripts', 'verify-tutorial.mjs')] });
 
-// 架构边界：engine ↛ ui（纯 node，把解耦约定做成会红的门，见 scripts/check-boundaries.mjs）
+// 架构边界：engine ↛ ui + src/ui 禁 phase 字面量（纯 node，把解耦约定做成会红的门，见 scripts/check-boundaries.mjs）
 tasks.push({ name: 'check-boundaries', cmd: ['node', join('scripts', 'check-boundaries.mjs')] });
+
+// 事件选项 check 标注一致性（纯 node·label「（理智 vs N）」双写必须 == check.{stat,dc}，见 scripts/check-event-dc.mjs）
+tasks.push({ name: 'check-event-dc', cmd: ['node', join('scripts', 'check-event-dc.mjs')] });
 
 // 海图 UI SSR smoke
 tasks.push({ name: 'smoke-chart-ui', cmd: [tsx, join('scripts', 'smoke-chart-ui.tsx')] });
