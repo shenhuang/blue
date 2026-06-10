@@ -290,10 +290,22 @@ html, body, #root {
   font-variant-numeric: tabular-nums;
 }
 
+/* 头部紧凑返回钮——港口修缮已改走页底通栏返回，现仅 LighthouseBuildPanel 头部在用 */
 .upgrade-close {
   width: auto;
   padding: 6px 14px;
   font-size: 13px;
+}
+
+/* 修缮内容滚动栏（同 .changelog-body 口径）：升级线在中间滚，金币头与底部「返回」不随滚动跑远。
+   max-height 预算 = 视口 − （app 上下边距 + 港口页眉 + 面板头/底按钮/间距 ≈ 420px）；
+   矮屏兜底 260px——此时整页略滚但出口仍在手边。内容不足时不出滚动条，返回紧跟内容，与他页一致。 */
+.upgrade-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  max-height: max(calc(100vh - 420px), 260px);
 }
 
 .upgrade-line {
