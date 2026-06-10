@@ -9,10 +9,12 @@ import type {
   PlayerProfile,
   ZoneTag,
   Lighthouse,
+  InventoryItem,
 } from '@/types';
 import { generateDiveMap } from './mapgen';
 import { getZone } from './zones';
-import { appendLog, createNewRun } from './state';
+import { appendLog, createNewRun, countInInventory, removeFromInventory, addToInventory } from './state';
+import { getItemDef } from './items';
 import {
   getRunBonuses,
   getHomeLighthouse,
@@ -104,6 +106,41 @@ export function startDive(
 }
 
 /**
+ * 出发前选带（作者拍板 2026-06-10·#108）：把仓库里勾选的消耗品装进 run 背包随身带下水。
+ * 风险自担＝机制核心：死了随身物进尸体快照（现有 DeathRecord 回收闭环）、生还由 handleReturnToPort
+ * 自动并回仓库——本函数只搬，不新增任何闭环。规则：
+ *   - 只认 category === 'consumable'（材料/剧情物不随身——它们走仓库/账单面）；
+ *   - qty 夹到仓库现有量；占格按 slotsRequired（默认 1）累计、超 run.inventoryCapacity 的部分截断（先选先得）；
+ *   - 全空 / 没选 → profile/run 原样返回（向后兼容：所有既有调用不传 picks ＝ 行为逐字节不变）。
+ * 纯函数（不碰 GameState 其它部分）；UI 面在 SeaChartView 的「行前装包」。
+ */
+export function applyCarryItems(
+  profile: PlayerProfile,
+  run: RunState,
+  picks: InventoryItem[],
+): { profile: PlayerProfile; run: RunState } {
+  if (picks.length === 0) return { profile, run };
+  let profileInv = profile.inventory;
+  let runInv = run.inventory;
+  let slotsUsed = runInv.reduce((a, i) => a + (getItemDef(i.itemId)?.slotsRequired ?? 1) * i.qty, 0);
+  let moved = false;
+  for (const p of picks) {
+    const def = getItemDef(p.itemId);
+    if (!def || def.category !== 'consumable') continue;
+    const per = def.slotsRequired ?? 1;
+    let q = Math.min(p.qty, countInInventory(profileInv, p.itemId));
+    while (q > 0 && slotsUsed + per * q > run.inventoryCapacity) q--;
+    if (q <= 0) continue;
+    slotsUsed += per * q;
+    profileInv = removeFromInventory(profileInv, p.itemId, q);
+    runInv = addToInventory(runInv, p.itemId, q);
+    moved = true;
+  }
+  if (!moved) return { profile, run };
+  return { profile: { ...profile, inventory: profileInv }, run: { ...run, inventory: runInv } };
+}
+
+/**
  * 从海图 POI 出海。封装出海前的全部准备：
  *   - createNewRun（带港口升级派生加成，与 dialog 的 startDive effect 一致）
  *   - 距离：每档 2 回合的"路上预耗氧" + 记到 run.turn（"远 = 多耗氧 / 多 turn"接口的首个实装）
@@ -115,12 +152,16 @@ export function startDive(
 export function startDiveFromPoi(
   state: GameState,
   poi: ChartPoi,
-  opts?: { targetCorpseId?: string },
+  opts?: { targetCorpseId?: string; carryItems?: InventoryItem[] },
 ): GameState {
   // 随身加成 = 全局升级 ＋ 家灯塔「船坞」设施（dockyard 迁灯塔后由 getRunBonuses 并回，见 lighthouses.ts）
   // RunStartBonuses 字段全是 createNewRun bonuses 的超集，直接整个传（含深水区 Phase 0 升级轨，避免逐字段抄漏）。
   const bonuses = getRunBonuses(state.profile);
   let run = createNewRun({ zoneId: poi.zoneId, bonuses });
+
+  // 出发前选带（#108·作者拍板「不全带·死了就没」）：勾选的消耗品仓库 → run 背包。
+  const carry = applyCarryItems(state.profile, run, opts?.carryItems ?? []);
+  run = carry.run;
 
   // reach：距离按最近的已拥有灯塔算（出海预耗氧 + turn）；写死 distance 仍作 fallback（SPEC §3.4/§4）
   const dist = effectiveDistance(state.profile, poi);
@@ -132,7 +173,7 @@ export function startDiveFromPoi(
     stats: { ...run.stats, oxygen: Math.max(1, run.stats.oxygen - transitOxygen) },
   };
 
-  let s: GameState = { ...state, run };
+  let s: GameState = { ...state, profile: carry.profile, run };
   s = startDive(s, poi.zoneId, {
     depthOffset: poi.modifier?.depthOffset,
     targetCorpseId: opts?.targetCorpseId,
@@ -233,7 +274,11 @@ function deepestOutpostLaunch(
  *     深 band 的 visibility=dark → 灯打不透 → 被迫用更耗电的声呐（间接电量压力，不加深度耗电税；作者 2026-06-03）。
  *   - 随身加成走 getRunBonuses（含 Phase 0 升级轨的 sensorTuning/powerMax）——装备越强越下得去。
  */
-export function startDiveFromOutpost(state: GameState, bandId: string): GameState {
+export function startDiveFromOutpost(
+  state: GameState,
+  bandId: string,
+  opts?: { carryItems?: InventoryItem[] },
+): GameState {
   const band = getBand(bandId);
   if (!band) {
     console.warn(`Band ${bandId} not found`);
@@ -259,6 +304,10 @@ export function startDiveFromOutpost(state: GameState, bandId: string): GameStat
   }
   let run = createNewRun({ zoneId: band.zoneId, bonuses });
 
+  // 出发前选带（#108·与 startDiveFromPoi 同一套）：勾选的消耗品仓库 → run 背包。
+  const carry = applyCarryItems(state.profile, run, opts?.carryItems ?? []);
+  run = carry.run;
+
   // 蛙跳「航行预耗氧」：按**从出潜点到 band 顶端**的深度差粗估（前哨越深起跳越省），每 20m 约一档。
   const dist = Math.max(1, Math.round((band.depthRange[0] - launchDepth) / 20));
   const transitOxygen = dist * 2;
@@ -278,7 +327,7 @@ export function startDiveFromOutpost(state: GameState, bandId: string): GameStat
     stats: { ...run.stats, oxygen: Math.max(1, run.stats.oxygen - transitOxygen) },
   };
 
-  let s: GameState = { ...state, run };
+  let s: GameState = { ...state, profile: carry.profile, run };
   // band 用绝对 depthRange 覆盖 zone.depthRange（透传 mapgen GenOpts.depthRange）。
   // band.tags（如有）覆盖 zoneTagsByDepth＝trench 专属事件池（twilight/midnight），与借来的 zone 内容隔离。
   // band.maxRoomFeatures（如有）开多事件「大房间」（声呐与房间 S1）——深段内容（C）铺在这些大房间里。

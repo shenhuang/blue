@@ -22,7 +22,7 @@ import barracudaData from '@/data/enemies/reef_barracuda.json';
 import octopusData from '@/data/enemies/cave_octopus.json';
 import lanternData from '@/data/enemies/drowned_lantern.json';
 import grouperData from '@/data/enemies/reef_grouper.json';
-import { appendLog, addToInventory, clampStats } from './state';
+import { appendLog, addToInventory, removeFromInventory, clampStats } from './state';
 import { executeDeath } from './death';
 import { getItemDef } from './items';
 
@@ -192,6 +192,16 @@ export function applyPlayerAction(
     stamina: -action.costStamina,
     oxygen: -action.costOxygenTurns,
   });
+
+  // —— 1b. 物品消耗统一在此（任何 requiresItemId + consumesItem 的行动·#108）——
+  // 此前只有 use_item 在 applyUseItem 里自扣；decoy 是 flee 效果也带道具，消耗就近收口到行动入口，
+  // 效果分发各分支不再各管各的（availability 已在上面校验过持有）。
+  if (action.consumesItem && action.requiresItemId && s.run) {
+    s = {
+      ...s,
+      run: { ...s.run, inventory: removeFromInventory(s.run.inventory, action.requiresItemId, 1) },
+    };
+  }
 
   // —— 2. 应用效果 ——
   s = applyActionEffect(s, action, targetInstanceId);
@@ -374,6 +384,14 @@ function applyFlee(state: GameState, action: CombatAction): GameState {
   if (state.phase.kind !== 'combat') return state;
   if (action.effect.kind !== 'flee') return state;
   const combat = state.phase.combat;
+  // 必成脱战（猎手 SPEC §4 decoy·北极星「decoy 永远是出路」）：跳过掷骰——烧一枚消耗品＝代价本身。
+  // 注意文案必须含「脱战成功」：applyPlayerAction 第 5 步靠这个子串判定脱战（既有机制·勿改丢）。
+  if (action.effect.guaranteed) {
+    return pushCombatLog(state, {
+      actor: 'player',
+      text: `${action.name}：假信号在你身后炸开——那东西猛地调头扑过去。你贴着石壁滑出它的世界，脱战成功。`,
+    });
+  }
   // 成功率 = baseChance + 警戒度低的敌人加成
   const avgStance = combat.enemies.filter((e) => e.hp > 0).reduce(
     (a, e) => a + (e.stance === 'attacking' ? -0.1 : e.stance === 'alerted' ? 0 : 0.2),
@@ -413,14 +431,8 @@ function applyUseItem(state: GameState, action: CombatAction): GameState {
   const itemDef = getItemDef(action.requiresItemId);
   if (!itemDef?.consumable) return state;
 
-  // 消耗
-  let inv = state.run.inventory;
-  if (action.consumesItem) {
-    inv = inv.map((i) => (i.itemId === action.requiresItemId ? { ...i, qty: i.qty - 1 } : i)).filter((i) => i.qty > 0);
-  }
-
-  // 效果
-  let s: GameState = { ...state, run: { ...state.run, inventory: inv } };
+  // 消耗已在 applyPlayerAction 第 1b 步统一扣（#108·任何带道具行动同一处），这里只管效果。
+  let s: GameState = state;
   s = applyStatsDelta(s, itemDef.consumable.effectOnUse.deltas ?? {});
   if (itemDef.consumable.effectOnUse.text) {
     s = pushCombatLog(s, { actor: 'player', text: itemDef.consumable.effectOnUse.text });
@@ -602,7 +614,17 @@ export function triggerEmergencyAscent(state: GameState): GameState {
   return setCombat(state, (c) => ({ ...c, pendingEmergencyAscent: true }));
 }
 
-/** 暴露给 UI：当前可见的所有 actions */
+/**
+ * 暴露给 UI：当前可见的所有 actions。
+ * 带道具的行动（use_medkit / use_decoy_*）**没货就不上清单**（而非常驻灰按钮——道具行动会随内容增多，
+ * 全部摊开＝每场战斗一排「缺少物品」噪音）；有货但氧/体不足仍列出置灰给理由。applyPlayerAction 仍自校验。
+ */
 export function listAvailableActions(state: GameState): Array<{ action: CombatAction; availability: ActionAvailability }> {
-  return listActions().map((a: CombatAction) => ({ action: a, availability: checkActionAvailability(state, a) }));
+  return listActions()
+    .filter(
+      (a: CombatAction) =>
+        !a.requiresItemId ||
+        (state.run?.inventory.find((i) => i.itemId === a.requiresItemId)?.qty ?? 0) > 0,
+    )
+    .map((a: CombatAction) => ({ action: a, availability: checkActionAvailability(state, a) }));
 }

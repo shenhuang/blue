@@ -231,6 +231,41 @@
     },
 
     {
+      "id": "item.decoy_sound",
+      "name": "声诱标",
+      "category": "consumable",
+      "rarity": "uncommon",
+      "description": "拳头大的发声器，拧开后嗡嗡地学受伤东西扑腾。靠声音找你的，会扑向它——你最好已经在别处。",
+      "weight": 0.4,
+      "sellPrice": 30,
+      "decay": "consumable",
+      "decoy": { "kind": "sound" },
+      "consumable": {
+        "usableIn": ["dive", "combat"],
+        "effectOnUse": {
+          "text": "声标在水里低低地嗡起来。"
+        }
+      }
+    },
+    {
+      "id": "item.decoy_light",
+      "name": "光诱棒",
+      "category": "consumable",
+      "rarity": "uncommon",
+      "description": "折一下就亮的冷光棒，在黑水里一跳一跳地晃。靠光找你的，会追着它去——别站在光圈里。",
+      "weight": 0.3,
+      "sellPrice": 30,
+      "decay": "consumable",
+      "decoy": { "kind": "light" },
+      "consumable": {
+        "usableIn": ["dive", "combat"],
+        "effectOnUse": {
+          "text": "冷光在水里炸开一小片惨白。"
+        }
+      }
+    },
+
+    {
       "id": "item.barracuda_jaw",
       "name": "梭鱼颌",
       "category": "material",

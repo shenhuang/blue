@@ -26,6 +26,13 @@ export type DecayTier =
  */
 export type MaterialTier = 1 | 2 | 3 | 4;
 
+/**
+ * Decoy 类型（猎手 SPEC §4）：投放后骗哪种感官——声诱（骗声感）/ 光诱（骗光感）。
+ * 双感猎手「光声任一都锁定」（§2.2）→ 任一种都上钩（难甩〔§3 取 min〕但易诱＝同一语义的两面）。
+ * 定义放本文件（item 维度）避免 types/state ↔ types/items 循环（state.ts 已 import 本文件）。
+ */
+export type DecoyKind = 'sound' | 'light';
+
 /** 物品定义 */
 export interface ItemDef {
   id: string;
@@ -43,6 +50,12 @@ export interface ItemDef {
   decay?: DecayTier;
   /** 材料深度分档（仅 material 物品有；引擎按它做升级稀有度门控 + Mira 回购门控） */
   tier?: MaterialTier;
+
+  /**
+   * decoy 道具才有（猎手 SPEC §4）：投放后骗哪种感官。dive-stalker.ts::deployDecoy /
+   * combat 的 use_decoy 行动按它接线；缺省＝不是 decoy。
+   */
+  decoy?: { kind: DecoyKind };
 
   /** 装备物品才有 */
   equipment?: EquipmentMeta;

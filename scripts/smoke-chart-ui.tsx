@@ -712,6 +712,8 @@ assert(htmlK1.includes('珊瑚碎片'), 'K1: 回购区应列 T1 珊瑚碎片');
 assert(htmlK1.includes('买 1'), 'K1: 买得起应有"买 1"按钮');
 assert(!htmlK1.includes('冷光腺'), 'K1: T4 冷光腺不应出现在回购区');
 assert(htmlK1.includes('鲨鱼牙'), 'K1: 收购区应列出玩家可卖的鲨鱼牙');
+// K1b. 消耗品货架（猎手 SPEC §4 data 面·#108）：decoy 两种应上回购区（同一套限量/加价机制）
+assert(htmlK1.includes('声诱标') && htmlK1.includes('光诱棒'), 'K1b: 回购区应列出声诱标/光诱棒（消耗品货架）');
 // K2. 没钱 → 回购按钮"钱不够"
 const K2 = shopState([], 0);
 const htmlK2 = renderToStaticMarkup(<MiraShopView state={K2} onStateChange={noop} />);
@@ -853,6 +855,48 @@ const htmlO3 = renderToStaticMarkup(
 );
 assert(htmlO3.includes('不是你点的光'), 'O3: 选中 mimic → 渲染宏观 tell（交叉比对：不是你点的光）');
 L('  无灯之光 注入 / 软门控 / 选中显宏观 tell ✓');
+
+// ============================================
+// P. 行前装包 + 投放诱饵（猎手 SPEC §4·#108）：
+//   P1 SeaChartView：仓库有消耗品 → 「行前装包」面板 + ± 步进；没有 → 不渲染（零噪音）。
+//   P2 NodeSelectView：huntEnabled + 背包有 decoy → 「投放」按钮；水里有有效诱饵 → 状态行；
+//      非 huntEnabled（浅水旧路径）→ 不渲染按钮（诱饵只对有位置的猎手起效）。
+// ============================================
+L('\n========== P. 行前装包 + 投放诱饵 (§4) ==========');
+// P1：仓库有 decoy → 行前装包面板列出（带库存数 + ± 步进）；空仓库 → 无此面板
+const P1 = {
+  ...stateWith(['flag.tutorial_complete'], []),
+};
+P1.profile = { ...P1.profile, inventory: [{ itemId: 'item.decoy_sound', qty: 2 }] };
+const htmlP1 = renderToStaticMarkup(<SeaChartView state={P1} onStateChange={noop} />);
+assert(htmlP1.includes('行前装包'), 'P1: 仓库有消耗品 → 渲染「行前装包」面板');
+assert(htmlP1.includes('声诱标') && htmlP1.includes('库存 2'), 'P1: 面板列出消耗品名 + 库存数');
+assert(htmlP1.includes('chart-carry-stepper'), 'P1: 有 ± 步进控件');
+const htmlP1b = renderToStaticMarkup(
+  <SeaChartView state={stateWith(['flag.tutorial_complete'], [])} onStateChange={noop} />,
+);
+assert(!htmlP1b.includes('行前装包'), 'P1: 仓库无消耗品 → 不渲染装包面板（零噪音）');
+// P2：dive 中（huntEnabled）背包有 decoy → 投放按钮；放出的诱饵还有效 → 状态行
+const pBase = sonarState({ scanMemory: {} });
+const P2: GameState = {
+  ...pBase,
+  run: { ...pBase.run!, huntEnabled: true, inventory: [{ itemId: 'item.decoy_light', qty: 1 }] },
+};
+const htmlP2 = renderToStaticMarkup(<NodeSelectView state={P2} choices={[]} onStateChange={noop} />);
+assert(htmlP2.includes('decoy-deploy') && htmlP2.includes('投放光诱棒'), 'P2: huntEnabled+有 decoy → 投放按钮');
+const P2live: GameState = {
+  ...pBase,
+  run: { ...pBase.run!, huntEnabled: true, decoy: { nodeId: 'n0', kind: 'sound', expiresTurn: 6 } },
+};
+const htmlP2live = renderToStaticMarkup(<NodeSelectView state={P2live} choices={[]} onStateChange={noop} />);
+assert(htmlP2live.includes('decoy-live') && htmlP2live.includes('还在响'), 'P2: 水里有有效诱饵 → 状态行（还在响）');
+const P2off: GameState = {
+  ...pBase,
+  run: { ...pBase.run!, huntEnabled: false, inventory: [{ itemId: 'item.decoy_light', qty: 1 }] },
+};
+const htmlP2off = renderToStaticMarkup(<NodeSelectView state={P2off} choices={[]} onStateChange={noop} />);
+assert(!htmlP2off.includes('decoy-deploy'), 'P2: 非 huntEnabled（浅水旧路径）→ 不渲染投放按钮');
+L('  装包面板有/无 · 投放按钮（huntEnabled 门控）· 诱饵状态行 ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 海图 UI 冒烟测试通过');

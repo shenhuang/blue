@@ -8,7 +8,7 @@
 //   dive-select   节点选择与预览档位（enterNodeSelection / featureDoneFlag）
 //   dive-sensors  灯 / 声呐（setLight / pingSonar / setSonarNext / scan-on-open / refreshSelection）
 //   dive-move     过渡与移动（currentMoveCost / applyTransit / moveToNode）
-//   dive-stalker  猎手与伏击 wiring（stalkerStep / maybeApproachEncounter / standAndFight）
+//   dive-stalker  猎手与伏击 wiring（stalkerStep / maybeApproachEncounter / standAndFight / deployDecoy）
 //   dive-actions  节点动作（exploreFeature / restAtNode / breatheAtAirPocket / campAtNode）
 // 子模块依赖单向（start→select；sensors→select；move→sensors/stalker/select；actions→select），
 // 别从本 barrel 回 import（自引用环）。
@@ -17,6 +17,6 @@ export { startDive, startDiveFromPoi, startDiveFromOutpost } from './dive-start'
 export { enterNodeSelection } from './dive-select';
 export { setLight, pingSonar, setSonarNext } from './dive-sensors';
 export { currentMoveCost, moveToNode } from './dive-move';
-export { standAndFight } from './dive-stalker';
+export { standAndFight, deployDecoy } from './dive-stalker';
 export { exploreFeature, restAtNode, breatheAtAirPocket, campAtNode } from './dive-actions';
 export type { DiveNode, DiveMap } from '@/types';

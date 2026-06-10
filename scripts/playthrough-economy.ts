@@ -5,10 +5,13 @@
 //   4. eternal / 0 售价物品不被收购，留在仓库
 //   5. Mira 回购（基建地图 Phase A）：T1/T2 可买(买价>卖价)、T3/T4 不可买；
 //      shopStock 限量 + 回港补货；金币买不了升级
+//   6. 消耗品货架 + 出发前选带（猎手 SPEC §4·#108）：decoy 上架（同一套限量/加价）·
+//      applyCarryItems 只认消耗品/夹库存/容量截断/不选原样·生还自动归库
 //
 // 跑法： npx tsx scripts/playthrough-economy.ts
 
 import { createInitialGameState, createNewRun, countInInventory } from '../src/engine/state';
+import { applyCarryItems } from '../src/engine/dive-start';
 import {
   handleReturnToPort,
   listMiraSellables,
@@ -290,6 +293,66 @@ state = { ...state, profile: { ...state.profile, bankedGold: 100000, inventory: 
 const upAvail = canPurchase(state.profile, 'upgrade.tankhouse.lv1');
 L(`  满金空仓 canPurchase(tankhouse.lv1) = ${JSON.stringify(upAvail)}`);
 assert(!upAvail.ok && upAvail.reason === 'notEnoughMaterials', '只有金币买不了升级（应 notEnoughMaterials）');
+
+// ============================================
+// Phase 6: 消耗品货架（猎手 SPEC §4·#108）+ 出发前选带闭环
+// ============================================
+L('\n========== Mira 消耗品货架（decoy）·买价/限量 ==========');
+// decoy 上架：买价 = floor(30×0.8)×2 = 48、备货 2；med_kit 不在货架（只 decoy 上架·材料门控不破）
+assert(isBuyableFromMira('item.decoy_sound') && isBuyableFromMira('item.decoy_light'), 'decoy 两种应可购');
+assert(!isBuyableFromMira('item.med_kit'), 'med_kit 不上货架（货架是显式白名单·非全部消耗品）');
+assert(miraBuyPriceFor('item.decoy_sound') === Math.floor(30 * 0.8) * MIRA_BUY_MARKUP, 'decoy 买价沿同一套 offer×markup');
+assert(maxShopStockFor('item.decoy_sound') === 2, 'decoy 备货上限 2（保命开销·不是无限弹药）');
+const shelfList = listMiraBuyables(state.profile);
+assert(
+  shelfList.some((b) => b.itemId === 'item.decoy_sound') && shelfList.some((b) => b.itemId === 'item.decoy_light'),
+  'listMiraBuyables 应列出 decoy 货架',
+);
+state = buyFromMira(state, 'item.decoy_sound', 2);
+assert(countInInventory(state.profile.inventory, 'item.decoy_sound') === 2, '买 2 枚声诱标进仓库');
+assert(getShopStock(state.profile, 'item.decoy_sound') === 0, '货架剩 0（限量生效）');
+L(`  decoy 买价 ${miraBuyPriceFor('item.decoy_light')} 金/枚 · 限量 2 · 买空 ✓`);
+
+L('\n========== 出发前选带（applyCarryItems·作者拍板「不全带·死了就没」） ==========');
+{
+  // 仓库：2 声诱标 + 1 急救包 + 5 珊瑚（材料·不可随身）
+  let s6 = state;
+  s6 = {
+    ...s6,
+    profile: {
+      ...s6.profile,
+      inventory: [
+        { itemId: 'item.decoy_sound', qty: 2 },
+        { itemId: 'item.med_kit', qty: 1 },
+        { itemId: 'item.coral_shard', qty: 5 },
+      ],
+    },
+  };
+  const r0 = createNewRun({ zoneId: 'zone.east_reef' });
+  // 勾 1 声诱标 + 1 急救包 + 妄图带材料/超量 → 只有消耗品进 run、qty 夹库存
+  const c1 = applyCarryItems(s6.profile, r0, [
+    { itemId: 'item.decoy_sound', qty: 1 },
+    { itemId: 'item.med_kit', qty: 99 },
+    { itemId: 'item.coral_shard', qty: 5 },
+  ]);
+  assert(findQty(c1.run.inventory, 'item.decoy_sound') === 1, '选带 1 枚声诱标进 run');
+  assert(findQty(c1.run.inventory, 'item.med_kit') === 1, '急救包 qty 夹到库存（99→1）');
+  assert(findQty(c1.run.inventory, 'item.coral_shard') === 0, '材料不可随身（只认 consumable）');
+  assert(findQty(c1.profile.inventory, 'item.decoy_sound') === 1, '仓库对应扣减（2→1）');
+  assert(findQty(c1.profile.inventory, 'item.coral_shard') === 5, '仓库材料原样');
+  // 没选 → 原对象原样（既有调用零变化）
+  const c0 = applyCarryItems(s6.profile, r0, []);
+  assert(c0.profile === s6.profile && c0.run === r0, '不选带 → profile/run 原对象（向后兼容）');
+  // 容量截断：背包 8 格 → 勾超过 8 件只装 8
+  let bigProfile = { ...s6.profile, inventory: [{ itemId: 'item.med_kit', qty: 20 }] };
+  const cCap = applyCarryItems(bigProfile, r0, [{ itemId: 'item.med_kit', qty: 20 }]);
+  assert(findQty(cCap.run.inventory, 'item.med_kit') === r0.inventoryCapacity, `超容量截断（只装 ${r0.inventoryCapacity}）`);
+  // 生还闭环：随身没用完的 decoy 回港自动并回仓库（现有 handleReturnToPort 合并·零新代码）
+  let s6back: GameState = { ...s6, profile: c1.profile, run: c1.run };
+  s6back = handleReturnToPort(s6back).state;
+  assert(findQty(s6back.profile.inventory, 'item.decoy_sound') === 2, '生还 → 没用的诱饵自动归库（1+1=2）');
+  L('  只认消耗品 · qty 夹库存 · 容量截断 · 不选=原样 · 生还自动归库 ✓');
+}
 
 console.log(log.join('\n'));
 console.log('\n✓ economy playthrough 完成');

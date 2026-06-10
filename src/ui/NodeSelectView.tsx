@@ -1,7 +1,9 @@
 import type { GameState, NodeChoice, FeatureChoice, SonarDir } from '@/types';
-import { moveToNode, setLight, pingSonar, exploreFeature, standAndFight, setSonarNext } from '@/engine/dive';
+import { moveToNode, setLight, pingSonar, exploreFeature, standAndFight, deployDecoy, setSonarNext } from '@/engine/dive';
 import { clarity, sonarPingCost, ALERT_WARN, ALERT_THRESHOLD, sonarStandingOn, sonarStandingNext } from '@/engine/clarity';
 import { seenStalkerSector } from '@/engine/sonar';
+import { activeDecoy } from '@/engine/stalker';
+import { getItemDef } from '@/engine/items';
 import { zoneAllowsBacktrack } from '@/engine/zones';
 import { beginAscent } from '@/engine/transitions';
 import { StatusBar } from './StatusBar';
@@ -46,6 +48,13 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
   // 单向下潜预告：层状（开阔水域）zone 的下潜图只往下通、走过的节点不再是选项（迷路图可回头则不提示）。
   // 在选点前就讲清楚，免得玩家过了上浮口往深里走之后，才发现回不了头（设计是单向、不该是惊吓）。
   const oneWay = !zoneAllowsBacktrack(run.zoneId);
+
+  // 诱饵（猎手 SPEC §4·#108）：背包里的 decoy 道具（行前装包带下来的）+ 水里现存那枚的剩余回合。
+  // 仅 huntEnabled 的深 band 显示按钮（诱饵只对「有位置的猎手」起效——浅水旧瞬时路径用不上，藏掉省噪音）。
+  const decoyItems = run.inventory
+    .map((i) => ({ ...i, def: getItemDef(i.itemId) }))
+    .filter((i) => i.qty > 0 && i.def?.decoy);
+  const liveDecoy = activeDecoy(run);
 
   const headerText =
     tier === 'full'
@@ -174,6 +183,31 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
               转身面对它、先发制人——总好过被它追上时背对着挨那一口。
             </span>
           </div>
+        )}
+
+        {/* 投放诱饵（猎手 SPEC §4·#108）：行前装包带下来的 decoy——放在脚下替你发声/发光几回合，
+            感官对路的猎手会扑向它（对不对路你未必知道·§2.1 的赌注）。不耗回合；水里一次一枚（再投覆盖）。 */}
+        {run.huntEnabled && decoyItems.length > 0 && (
+          <div className="decoy-deploy">
+            {decoyItems.map((i) => (
+              <button
+                key={i.itemId}
+                className="btn small decoy-deploy-btn"
+                title={i.def!.description}
+                onClick={() => onStateChange(deployDecoy(state, i.itemId))}
+              >
+                投放{i.def!.name}（剩 {i.qty}）
+              </button>
+            ))}
+            <span className="dim decoy-deploy-hint">
+              放在这儿、替你出声/发光几回合——然后朝反方向走。
+            </span>
+          </div>
+        )}
+        {liveDecoy && (
+          <p className="dim decoy-live">
+            你放出的诱饵还在{liveDecoy.kind === 'sound' ? '响' : '亮'}着（约剩 {Math.max(0, liveDecoy.expiresTurn - run.turn)} 回合）。
+          </p>
         )}
 
         {/* 多事件房间（声呐与房间 S1）：当前这片水域里还能凑近看的几处 feature（每探付氧）。 */}

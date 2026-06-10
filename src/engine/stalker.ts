@@ -10,7 +10,7 @@
 // 渲染表象住 ui/SonarScanPanel（纯渲染），引擎接线住 dive.ts（仅 run.huntEnabled 时 engage·缺省走旧瞬时伏击）。
 // run 级·派生·不入 profile·不 bump SAVE_VERSION（Stalker 纯对象·JSON 自动 round-trip·`?? undefined` 兜底）。
 
-import type { RunState, DiveMap, Stalker, SenseModality, StalkerLostBehavior } from '@/types';
+import type { RunState, DiveMap, Stalker, SenseModality, StalkerLostBehavior, DiveDecoy, DecoyKind } from '@/types';
 import { buildUndirectedAdjacency, revealSonarScan, sonarScanRange } from './sonar';
 import { ALERT_WARN } from './clarity';
 
@@ -49,6 +49,11 @@ export const STALKER_LARGE_DEPTH = 108;
 export const STALKER_PLAYER_EVADE_MAX = 0.6;
 /** 深 band（≥ STALKER_EVADE_DEPTH）玩家规避打折乘子：深处猎手更难甩（对称它在深处 evadesScan 躲你·§3 守地板）。 */
 export const STALKER_PLAYER_EVADE_DEEP_MULT = 0.5;
+/**
+ * 诱饵的有效回合数（猎手 SPEC §4/§8）：投放后替你发声/发光这么多回合（expiresTurn = 投放时 turn + 此值）。
+ * 取 6 ≈ 现身距离 3 跳 ÷ HSPEED 0.8（够它横穿半张图扑到诱饵）+ 一两回合驻足——足够你反向拉开、摸黑脱钩。
+ */
+export const DECOY_TURNS = 6;
 
 /** 确定性哈希（FNV-1a），不消耗 RNG（保 mapgen/场景确定性）。 */
 function hashStr(s: string): number {
@@ -223,6 +228,31 @@ function stalkerCrossesEdge(pos: StalkerPos, a: string, b: string): boolean {
 }
 
 // ============================================================
+// 诱饵（SPEC §4）：水里的假信号源——感官匹配的猎手追它不追你
+// ============================================================
+
+/**
+ * 这种诱饵骗得动这只猎手吗（§4 按感官：声诱 ↔ 声感 / 光诱 ↔ 光感）？
+ * 双感「光声任一都锁定」（§2.2）→ 任一种都上钩——双感难甩（§3 取 min）但易诱，同一语义的两面。
+ * 感官不合 → 不上钩（道具照烧——你未必知道它靠什么找你·§2.1 的赌注延续到道具上）。纯函数。
+ */
+export function decoyLures(stalker: Stalker, kind: DecoyKind): boolean {
+  return stalker.sensesBy === 'both' || stalker.sensesBy === kind;
+}
+
+/**
+ * 水里现在有效的诱饵（没投 / 已过期 / 节点已不在图 → null）。过期判定纯靠 run.turn vs expiresTurn
+ * ＝无需逐回合 tick 字段（确定性、JSON 干净）；字段本体的顺手清扫在 dive-stalker.ts::stalkerStep。
+ */
+export function activeDecoy(run: RunState): DiveDecoy | null {
+  const d = run.decoy;
+  if (!d) return null;
+  if ((run.turn ?? 0) >= d.expiresTurn) return null;
+  if (!run.map?.nodes[d.nodeId]) return null;
+  return d;
+}
+
+// ============================================================
 // 出现 / 逼近 / 接触（SPEC §2.4）+ 声呐感知（§2.1/§8.7）
 // ============================================================
 
@@ -266,12 +296,17 @@ export function maybeSpawnStalker(run: RunState, pool: string[]): Stalker | null
  *       · wait     ：原地等 waitTurns 回合再脱离（waitTurns=0 ＝丢信号就走「掉头就走」）；
  *       · seek_last：先走向上次有信号的位置，抵达后再等 waitTurns 回合徘徊找你、再脱离（够不到 → STALKER_SEEK_MAX_TURNS 放弃）。
  * 接触＝它落在你所在节点（逼近追上 / 搜索路过 / 你没离开上次信号点）。「等够 waitTurns 才走」＝摸黑后它不一定立刻消失（读出性格再安心点灯）。
+ *
+ * 诱饵（§4）：水里有**感官匹配**的有效诱饵 → 这一回合它追的是诱饵不是你（lured=true·优先于「有你的信号」——
+ * 你再响也被更扎眼的假信号盖过；烧一枚消耗品＝代价本身，故全效，区别 §3 升级规避的守地板）。
+ * lastSignal 刷成诱饵点 ⇒ 诱饵失效后你若已摸黑，它按性格在诱饵点附近搜/等、再脱离（你借这几回合反向拉开）。
+ * 感官不合 / 没诱饵 / 已过期 → 本分支不触发＝行为逐字节不变（additive/gated）。
  */
 export function advanceStalker(
   run: RunState,
   stalker: Stalker,
   fromNodeId?: string,
-): { stalker: Stalker | null; contact: boolean } {
+): { stalker: Stalker | null; contact: boolean; lured?: boolean } {
   if (!run.map || !run.currentNodeId) return { stalker, contact: false };
   const map = run.map;
   const here = run.currentNodeId;
@@ -283,6 +318,17 @@ export function advanceStalker(
   }
 
   const s: Stalker = { ...stalker };
+  // 诱饵优先（§4）：朝诱饵点推进、刷新 lastSignal 到诱饵点、清等待计时（它「有信号」——只是信号是假的）。
+  // 接触判定仍对你做（它扑向诱饵的路上路过你＝照样撞上·诚实；你把诱饵丢在脚下不走＝它就是冲你来）。
+  const decoy = activeDecoy(run);
+  if (decoy && decoyLures(stalker, decoy.kind)) {
+    s.state = 'hunting';
+    s.turnsSinceSignal = 0;
+    s.waitedTurns = 0;
+    s.lastSignalNodeId = decoy.nodeId;
+    applyPos(s, walkToward(map, posBefore, decoy.nodeId, STALKER_HSPEED));
+    return { stalker: s, contact: contactWith(s, here), lured: true };
+  }
   // 有你的信号 ＝ 你够「响」（alert 越线）且这一回合没被你的规避装备甩脱（§3·缺省无升级 → playerEvadesStalker 恒 false → 逐字节不变）。
   if (run.alert >= STALKER_SIGNAL_ALERT && !playerEvadesStalker(run, stalker)) {
     // 有你的信号 → 朝你按 HSPEED 推进（可停中段）·刷新 lastSignal·清等待计时。

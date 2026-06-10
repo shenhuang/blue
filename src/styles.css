@@ -1641,3 +1641,68 @@ html, body, #root {
   outline: none;
   border-color: var(--accent);
 }
+
+/* 行前装包（猎手 SPEC §4 data 面·#108）：海图上勾选随身消耗品 */
+.chart-carry {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.chart-carry-title {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+}
+
+.chart-carry-hint {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+}
+
+.chart-carry-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chart-carry-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+
+.chart-carry-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-carry-qty {
+  min-width: 1.6em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 投放诱饵（猎手 SPEC §4·#108）：选点界面的 decoy 按钮 + 水里那枚的状态行 */
+.decoy-deploy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+}
+
+.decoy-deploy-hint {
+  font-size: 0.78rem;
+}
+
+.decoy-live {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+}

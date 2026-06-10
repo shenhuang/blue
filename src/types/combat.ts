@@ -73,6 +73,11 @@ export interface FleeEffect {
   baseChance: number;
   /** 失败时被敌人攻击的次数 */
   failExposure: number;
+  /**
+   * 必定成功（猎手 SPEC §4「decoy 战斗内脱战」·北极星「decoy 永远是出路」）：跳过掷骰直接脱战。
+   * 烧一枚消耗品＝代价本身，故可全效（区别 §3 升级规避的守地板）。缺省 false＝旧 flee 掷骰不变。
+   */
+  guaranteed?: boolean;
 }
 
 export interface CrowdControlEffect {

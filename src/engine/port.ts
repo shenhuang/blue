@@ -112,10 +112,11 @@ export function sellItemToMira(
 }
 
 // ============================================================
-// Mira 出售侧（回购）—— 低阶材料花金币补货（基建地图 SPEC §2.5）
+// Mira 出售侧（回购）—— 低阶材料花金币补货（基建地图 SPEC §2.5）+ 消耗品货架（猎手 SPEC §4·#108）
 // ============================================================
 //
 // - 仅 T1/T2 材料可回购；T3/T4 只卖不买（保住"深度 = 进度"门控）。
+// - 另有少量「装备性消耗品」（decoy·SHOP_STOCK_CONSUMABLES）：同一套限量/加价机制走货。
 // - 买价 = 卖价（miraOfferFor）× markup，恒 > 卖价（markup>1），给金币一个去处又不破材料门控。
 // - 店铺限量：每种可买材料按 tier 有 shopStock 上限，购买递减、每次回港补满（handleReturnToPort 清空）。
 //   都是 tunable（见 SPEC §9），集中在下面三个常量。
@@ -129,6 +130,17 @@ const SHOP_STOCK_BY_TIER: Partial<Record<MaterialTier, number>> = {
   2: 4,
 };
 
+/**
+ * Mira 柜台的「装备性消耗品」货架（猎手 SPEC §4 data 面·#108）：itemId → 每次回港备货上限。
+ * 材料回购之外的第二类货——花金币买、出发前选带下水（dive-start.ts carryItems）。买价沿
+ * miraOfferFor × MIRA_BUY_MARKUP 同一套（恒 > 卖价）；限量同 shopStock 机制（回港补满）。
+ * 备货故意少（2）＝decoy 是「带一两枚保命」的开销，不是无限弹药（守可生存但代价巨大）。
+ */
+const SHOP_STOCK_CONSUMABLES: Record<string, number> = {
+  'item.decoy_sound': 2,
+  'item.decoy_light': 2,
+};
+
 /** 取某材料的 tier（非 material / 无 tier → undefined）。 */
 function tierOf(itemId: string): MaterialTier | undefined {
   const def = getItemDef(itemId);
@@ -136,8 +148,9 @@ function tierOf(itemId: string): MaterialTier | undefined {
   return def.tier;
 }
 
-/** Mira 是否回购此物品：material 且 tier 在 SHOP_STOCK_BY_TIER 表里（T1/T2）。 */
+/** Mira 是否出售此物品：material 且 tier 在 SHOP_STOCK_BY_TIER 表里（T1/T2），或消耗品货架上的（decoy 等）。 */
 export function isBuyableFromMira(itemId: string): boolean {
+  if (SHOP_STOCK_CONSUMABLES[itemId] !== undefined) return true;
   const tier = tierOf(itemId);
   return tier !== undefined && SHOP_STOCK_BY_TIER[tier] !== undefined;
 }
@@ -148,8 +161,10 @@ export function miraBuyPriceFor(itemId: string): number {
   return miraOfferFor(itemId) * MIRA_BUY_MARKUP;
 }
 
-/** 某材料每次回港的备货上限（不可买 → 0）。 */
+/** 某物品每次回港的备货上限（不可买 → 0）。消耗品货架查自己的表；材料按 tier。 */
 export function maxShopStockFor(itemId: string): number {
+  const fromShelf = SHOP_STOCK_CONSUMABLES[itemId];
+  if (fromShelf !== undefined) return fromShelf;
   const tier = tierOf(itemId);
   if (tier === undefined) return 0;
   return SHOP_STOCK_BY_TIER[tier] ?? 0;

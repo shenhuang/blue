@@ -1,7 +1,7 @@
 // 游戏全局状态
 // 与主 SPEC §3 四属性、§7 死亡与元进度对齐
 
-import type { EquipmentSlot } from './items';
+import type { EquipmentSlot, DecoyKind } from './items';
 import type { DiveMap, NodeKind } from './dive';
 import type { CombatState } from './combat';
 import type { PoiModifier } from './chart';
@@ -233,6 +233,21 @@ export interface Stalker {
   large?: boolean;
 }
 
+/**
+ * 水里现存的一枚诱饵（猎手 SPEC §4）：投放在 nodeId、替你发声/发光到 expiresTurn（run.turn ≥ 此值＝失效）。
+ * 一次至多一枚（再投覆盖）。感官匹配的猎手会被它引开（engine/stalker.ts::advanceStalker 的 decoy 分支）。
+ * **真条件字段**（quirk #106）：缺席＝水里没有诱饵即语义——createNewRun 不种、hydrateGameState 不补；
+ * 纯对象 JSON 自动 round-trip、不 bump SAVE_VERSION（同 run.stalker）。
+ */
+export interface DiveDecoy {
+  /** 投放节点（投放那一刻你所在的节点）。 */
+  nodeId: string;
+  /** 声诱 / 光诱（骗哪种感官·按 ItemDef.decoy.kind 落）。 */
+  kind: DecoyKind;
+  /** 失效回合：投放时 run.turn + DECOY_TURNS；run.turn ≥ 此值＝哑了/熄了。 */
+  expiresTurn: number;
+}
+
 /** 玩家在当次下潜中的资源、装备、背包 */
 export interface RunState {
   runId: string;
@@ -311,6 +326,11 @@ export interface RunState {
    * 仅 huntEnabled 时由 engine/stalker.ts 生成/推进；纯对象（无 Set）→ JSON 自动 round-trip。
    */
   stalker?: Stalker;
+  /**
+   * 水里现存的诱饵（猎手 SPEC §4·deployDecoy 写、advanceStalker 读、过期由 stalkerStep 顺手清）。
+   * 真条件字段：缺席＝没有诱饵（quirk #106·不种不补·不 bump SAVE_VERSION）。
+   */
+  decoy?: DiveDecoy;
 }
 
 /** 装备配置 */

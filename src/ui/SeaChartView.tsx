@@ -4,7 +4,7 @@
 // 实际出海走 engine/dive.ts::startDiveFromPoi。坐标来自 ChartPoi.mapX/mapY（缺省按 distance 兜底）。
 
 import { useMemo, useState, useEffect } from 'react';
-import type { GameState, ChartPoi } from '@/types';
+import type { GameState, ChartPoi, InventoryItem } from '@/types';
 import { generateChart, poiLockReason, isPoiDepartable, describeModifier } from '@/engine/chart';
 import { startDiveFromPoi, startDiveFromOutpost } from '@/engine/dive';
 import { toPort } from '@/engine/transitions';
@@ -101,6 +101,18 @@ export function SeaChartView({ state, onStateChange }: Props) {
   const [target, setTarget] = useState<string>('');
   useEffect(() => setTarget(''), [selected?.id]);
 
+  // 行前装包（猎手 SPEC §4 data 面·作者拍板「出发前选带·死了就没」·#108）：itemId → 勾选数量。
+  // 仓库里的消耗品（decoy / 急救包等）勾了才随身下水；POI 出海与蛙跳共用同一份勾选。
+  const [carry, setCarry] = useState<Record<string, number>>({});
+  const carryables = state.profile.inventory.filter(
+    (i) => i.qty > 0 && getItemDef(i.itemId)?.category === 'consumable',
+  );
+  const carryPicks: InventoryItem[] = Object.entries(carry)
+    .filter(([, q]) => q > 0)
+    .map(([itemId, qty]) => ({ itemId, qty }));
+  const stepCarry = (itemId: string, delta: number, max: number) =>
+    setCarry((c) => ({ ...c, [itemId]: Math.max(0, Math.min(max, (c[itemId] ?? 0) + delta)) }));
+
   // 灯塔设施建造面板（灯塔在海图上可见，建造也在海图上）
   const [showBuild, setShowBuild] = useState(false);
   if (showBuild) {
@@ -115,7 +127,7 @@ export function SeaChartView({ state, onStateChange }: Props) {
 
   function handleDepart(poi: ChartPoi, targetCorpseId?: string) {
     if (poiLockReason(state.profile, poi)) return;
-    onStateChange(startDiveFromPoi(state, poi, { targetCorpseId }));
+    onStateChange(startDiveFromPoi(state, poi, { targetCorpseId, carryItems: carryPicks }));
   }
 
   function handleLeave() {
@@ -126,7 +138,7 @@ export function SeaChartView({ state, onStateChange }: Props) {
   // 软门控：band 不锁，列出全部——越深越黑，能不能活由装备（声呐/电量/升级）决定，不是开关。
   const home = getHomeLighthouse(state.profile);
   function handleOutpostDive(bandId: string) {
-    onStateChange(startDiveFromOutpost(state, bandId));
+    onStateChange(startDiveFromOutpost(state, bandId, { carryItems: carryPicks }));
   }
 
   return (
@@ -228,6 +240,50 @@ export function SeaChartView({ state, onStateChange }: Props) {
             <span><i className="chart-swatch roam" />机会点（潮位常变）</span>
             <span><i className="chart-swatch locked" />未解锁</span>
           </div>
+
+          {/* 行前装包（猎手 SPEC §4 data 面·#108）：仓库消耗品勾了才随身（POI 出海与蛙跳同用）。
+              默认全不带——带下去的东西死了进尸体（可回收），生还自动回仓库。 */}
+          {carryables.length > 0 && (
+            <div className="chart-carry">
+              <h3 className="chart-carry-title">行前装包</h3>
+              <p className="dim chart-carry-hint">
+                仓库里的随身物，勾了才带。带下去的，死了就留在尸体上；活着回来自动归库。
+              </p>
+              <ul className="chart-carry-list">
+                {carryables.map((it) => {
+                  const def = getItemDef(it.itemId);
+                  const picked = carry[it.itemId] ?? 0;
+                  return (
+                    <li key={it.itemId} className="chart-carry-item">
+                      <span className="chart-carry-name" title={def?.description}>
+                        {def?.name ?? it.itemId}
+                        <span className="dim">（库存 {it.qty}）</span>
+                      </span>
+                      <span className="chart-carry-stepper">
+                        <button
+                          className="btn small"
+                          aria-label={`少带一个${def?.name ?? ''}`}
+                          disabled={picked <= 0}
+                          onClick={() => stepCarry(it.itemId, -1, it.qty)}
+                        >
+                          −
+                        </button>
+                        <span className="chart-carry-qty">{picked}</span>
+                        <button
+                          className="btn small"
+                          aria-label={`多带一个${def?.name ?? ''}`}
+                          disabled={picked >= it.qty}
+                          onClick={() => stepCarry(it.itemId, +1, it.qty)}
+                        >
+                          ＋
+                        </button>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
 
           {selected && (
             <ChartInfo

@@ -107,6 +107,28 @@
       "consumesItem": true,
       "targeting": "self",
       "effect": { "kind": "use_item" }
+    },
+    {
+      "id": "action.use_decoy_sound",
+      "name": "抛出声诱标",
+      "description": "拧响声标抛向一侧——它扑向假动静的那一瞬，你脱身。必定成功。",
+      "costStamina": 0,
+      "costOxygenTurns": 1,
+      "requiresItemId": "item.decoy_sound",
+      "consumesItem": true,
+      "targeting": "self",
+      "effect": { "kind": "flee", "baseChance": 1, "failExposure": 0, "guaranteed": true }
+    },
+    {
+      "id": "action.use_decoy_light",
+      "name": "抛出光诱棒",
+      "description": "折亮的冷光在水里翻滚下沉——它追着光去，你退进黑暗。必定成功。",
+      "costStamina": 0,
+      "costOxygenTurns": 1,
+      "requiresItemId": "item.decoy_light",
+      "consumesItem": true,
+      "targeting": "self",
+      "effect": { "kind": "flee", "baseChance": 1, "failExposure": 0, "guaranteed": true }
     }
   ]
 }

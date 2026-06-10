@@ -86,6 +86,8 @@ s = {
     currentDepth: 30,
     activeFlags: new Set(['air_used:node.5', 'run.scratch']),
     triggeredEventIds: ['bluecaves.color_shift'],
+    // 猎手 SPEC §4 decoy（#108）：真条件字段（纯对象）——验证它随 JSON 原生 round-trip。
+    decoy: { nodeId: 'node.3', kind: 'sound' as const, expiresTurn: 9 },
   },
 };
 
@@ -159,6 +161,10 @@ assert(
     back!.run?.sensorTuning?.camoBonus === 0.4,
   'run.sensors / power / powerMax / sensorTuning（深水区 Phase 0 升级轨 + Phase 1 续节点级 reach + 房间出现率轴 + 猎手规避轴）应 round-trip',
 );
+assert(
+  back!.run?.decoy?.nodeId === 'node.3' && back!.run?.decoy?.kind === 'sound' && back!.run?.decoy?.expiresTurn === 9,
+  'run.decoy（猎手 §4·真条件字段·纯对象）应 round-trip',
+);
 L('  round-trip：三个 profile Set + run.activeFlags/sensors/power/sensorTuning + deaths + shopStock + lighthouses(Set) + 数值 全部还原 ✓');
 
 // 2. 损坏 JSON → null
@@ -231,6 +237,7 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
     'sonarDeception',
     'huntEnabled',
     'stalker',
+    'decoy',
   ]) {
     delete old.run[k];
   }
@@ -253,8 +260,9 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
     Object.keys(h.run.scanMemory).length === 0 && h.run.bandAlertFactor === 1 && h.run.sonarDeception === 0 && h.run.huntEnabled === false,
     '6: scanMemory {} / bandAlertFactor 1 / sonarDeception 0 / huntEnabled false',
   );
-  // 真条件字段不补（缺席即语义：无猎手 / 声呐持续开关未解锁不落）
+  // 真条件字段不补（缺席即语义：无猎手 / 无诱饵 / 声呐持续开关未解锁不落）
   assert(h.run.stalker === undefined, '6: stalker 缺席不补（真条件字段）');
+  assert(h.run.decoy === undefined, '6: decoy 缺席不补（真条件字段·猎手 §4）');
   assert(h.run.sensors.sonarOn === undefined && h.run.sensors.sonarNext === undefined, '6: sonarOn/sonarNext 缺席不补');
   // profile 容器补 {}（条目级懒默认语义留在读点）
   assert(
