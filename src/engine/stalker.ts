@@ -11,8 +11,9 @@
 // run 级·派生·不入 profile·不 bump SAVE_VERSION（Stalker 纯对象·JSON 自动 round-trip·`?? undefined` 兜底）。
 
 import type { RunState, DiveMap, Stalker, SenseModality, StalkerLostBehavior, DiveDecoy, DecoyKind } from '@/types';
-import { buildUndirectedAdjacency, revealSonarScan, sonarScanRange } from './sonar';
+import { buildUndirectedAdjacency, revealSonarScan, sonarScanRange, nodeIsNarrow } from './sonar';
 import { ALERT_WARN } from './clarity';
+import { getEncounter } from './combat';
 
 // ============================================================
 // 可调参数（tunables，SPEC §8）
@@ -54,6 +55,19 @@ export const STALKER_PLAYER_EVADE_DEEP_MULT = 0.5;
  * 取 6 ≈ 现身距离 3 跳 ÷ HSPEED 0.8（够它横穿半张图扑到诱饵）+ 一两回合驻足——足够你反向拉开、摸黑脱钩。
  */
 export const DECOY_TURNS = 6;
+/**
+ * 默认守口预算（猎手 SPEC §6）：你躲进它钻不进的窄缝（§5）而它**有你的信号**时，它最多守在口外这么多回合，
+ * 等够 → 放弃离开。执着等待者（per-encounter `patience` 标签）给更大值＝你想避战就得多耗几回合的氧/电（§6 资源博弈）。
+ */
+export const STALKER_PATIENCE = 4;
+/** active 主动探测的周期（猎手 SPEC §2.2/§2.3 后期型）：searching 态每隔这么多回合自己发一记探测。 */
+export const STALKER_ACTIVE_PROBE_PERIOD = 3;
+/** active 主动探测的量程（跳·BFS）：超出够不到＝拉开距离仍是出路（可生存铁律·§2.5）。 */
+export const STALKER_ACTIVE_PROBE_HOPS = 3;
+/** Q3 浅水弱变体的速率（§2.6「小且弱」）：比基线慢＝纯逃跑也甩得开（弱变体的「可生存」垫底）。 */
+export const STALKER_WEAK_HSPEED = 0.55;
+/** Q3 浅水弱变体出现率分母：进入事件/尸体节点时 1/此值 概率现身（确定性哈希·按 run+节点·不耗 RNG）。 */
+export const WEAK_HUNT_DENOM = 10;
 
 /** 确定性哈希（FNV-1a），不消耗 RNG（保 mapgen/场景确定性）。 */
 function hashStr(s: string): number {
@@ -69,8 +83,14 @@ function hashStr(s: string): number {
 // 图上的逼近（节点绑定·复用声呐的无向邻接）
 // ============================================================
 
-/** BFS 距离场：origin 到每个可达节点的跳数（无向·与声呐量程同款邻接）。确定性。 */
-function bfsDist(map: DiveMap, originId: string): Record<string, number> {
+/**
+ * 不可通行判定（猎手 SPEC §5）：blocked(id)=true 的节点不被进入/展开（大型猎手对窄缝）。
+ * 所有图函数的可选末参；缺省 undefined ＝行为与旧版逐字节相同（小型/常规猎手零变化）。
+ */
+type BlockedFn = (id: string) => boolean;
+
+/** BFS 距离场：origin 到每个可达节点的跳数（无向·与声呐量程同款邻接）。blocked 节点不进不穿（origin 豁免）。确定性。 */
+function bfsDist(map: DiveMap, originId: string, blocked?: BlockedFn): Record<string, number> {
   const adj = buildUndirectedAdjacency(map);
   const dist: Record<string, number> = { [originId]: 0 };
   let frontier = [originId];
@@ -79,7 +99,7 @@ function bfsDist(map: DiveMap, originId: string): Record<string, number> {
     const next: string[] = [];
     for (const id of frontier)
       for (const nb of adj[id] ?? []) {
-        if (dist[nb] === undefined) {
+        if (dist[nb] === undefined && !(blocked && blocked(nb))) {
           dist[nb] = d + 1;
           next.push(nb);
         }
@@ -90,8 +110,8 @@ function bfsDist(map: DiveMap, originId: string): Record<string, number> {
   return dist;
 }
 
-/** from→to 的下一跳（BFS 最短路·无向·邻居按 id 排序＝确定性）。无路 / 已在 to → null。 */
-export function nextHopToward(map: DiveMap, fromId: string, toId: string): string | null {
+/** from→to 的下一跳（BFS 最短路·无向·邻居按 id 排序＝确定性）。blocked 节点不进不穿。无路 / 已在 to → null。 */
+export function nextHopToward(map: DiveMap, fromId: string, toId: string, blocked?: BlockedFn): string | null {
   if (fromId === toId) return null;
   if (!map.nodes[fromId] || !map.nodes[toId]) return null;
   const adj = buildUndirectedAdjacency(map);
@@ -101,7 +121,7 @@ export function nextHopToward(map: DiveMap, fromId: string, toId: string): strin
     const next: string[] = [];
     for (const id of frontier) {
       for (const nb of (adj[id] ?? []).slice().sort()) {
-        if (parent[nb] === undefined) {
+        if (parent[nb] === undefined && !(blocked && blocked(nb))) {
           parent[nb] = id;
           if (nb === toId) {
             let cur = nb; // 回溯到 from 的第一跳
@@ -120,15 +140,38 @@ export function nextHopToward(map: DiveMap, fromId: string, toId: string): strin
 /**
  * 现身点（距 origin 约 hops 跳·声呐量程外·给反应窗口）：取距离==hops 的节点；
  * 没有正好那么远的（小图）→ 取最远可达。确定性（按 id 排序）。无其它节点 → null。
+ * exclude（§5 大型猎手）：**容不下它的点不当现身点**（占位过滤·距离仍按全图算——它从图外来，
+ * 不需要「从你这里非窄可达」；现身后被窄缝隔开＝它在它那侧巡，诚实的洞穴物理）。全被排除 → null。
  */
-export function spawnNodeFor(map: DiveMap, originId: string, hops: number): string | null {
+export function spawnNodeFor(map: DiveMap, originId: string, hops: number, exclude?: BlockedFn): string | null {
   const dist = bfsDist(map, originId);
-  const reachable = Object.keys(dist).filter((id) => id !== originId);
+  const reachable = Object.keys(dist).filter((id) => id !== originId && !(exclude && exclude(id)));
   if (reachable.length === 0) return null;
   const atHops = reachable.filter((id) => dist[id] === hops).sort();
   if (atHops.length) return atHops[0];
   const maxD = Math.max(...reachable.map((id) => dist[id]));
   return reachable.filter((id) => dist[id] === maxD).sort()[0];
+}
+
+/**
+ * 大型猎手对「窄目标」的实际去处（猎手 SPEC §5/§6「守在出口」）：它走得到的非窄节点里、
+ * 按**全图跳数**离目标最近的那个＝窄缝的「口外」。确定性（距离 → id 升序）。它哪儿都去不了 → null（原地堵着）。
+ */
+function largeGoalFor(map: DiveMap, fromId: string, targetId: string): string | null {
+  const reach = bfsDist(map, fromId, nodeIsNarrow); // 它够得着的（绕开窄缝·含自身锚点）
+  const toTarget = bfsDist(map, targetId); // 全图视角的物理贴近度（可以穿窄缝＝真实距离）
+  let best: string | null = null;
+  let bestD = Infinity;
+  for (const id of Object.keys(reach).sort()) {
+    if (nodeIsNarrow(id)) continue; // 锚点本身若窄（不应发生）也不选
+    const d = toTarget[id];
+    if (d === undefined) continue;
+    if (d < bestD) {
+      bestD = d;
+      best = id;
+    }
+  }
+  return best;
 }
 
 // ============================================================
@@ -161,7 +204,7 @@ function applyPos(s: Stalker, np: StalkerPos): void {
  * 从 pos 朝 targetId 用 budget（边分数）推进（猎手 SPEC §5）：沿无向 BFS 最短路一段段走，预算用尽则停在中段。
  * 中段起步先朝「离目标更近的那一端」定向（可在边上掉头）；抵达 target 节点即停（不越过）。确定性（BFS 邻居按 id 排序）。
  */
-function walkToward(map: DiveMap, pos: StalkerPos, targetId: string, budget: number): StalkerPos {
+function walkToward(map: DiveMap, pos: StalkerPos, targetId: string, budget: number, blocked?: BlockedFn): StalkerPos {
   let nodeId = pos.nodeId;
   let edgeTo = pos.edgeTo;
   let prog = pos.edgeProg ?? 0;
@@ -176,7 +219,7 @@ function walkToward(map: DiveMap, pos: StalkerPos, targetId: string, budget: num
   }
   // 中段定向：朝离目标更近的一端（必要时在本边掉头）
   if (edgeTo !== undefined) {
-    const dist = bfsDist(map, targetId); // 无向 → dist[X]＝X 到 target 的跳数
+    const dist = bfsDist(map, targetId, blocked); // 无向 → dist[X]＝X 到 target 的跳数（避障一致）
     const dA = dist[nodeId] ?? Infinity;
     const dB = dist[edgeTo] ?? Infinity;
     if (dA < dB) {
@@ -190,7 +233,7 @@ function walkToward(map: DiveMap, pos: StalkerPos, targetId: string, budget: num
   while (left > POS_EPS) {
     if (edgeTo === undefined) {
       if (nodeId === targetId) break;
-      const hop = nextHopToward(map, nodeId, targetId);
+      const hop = nextHopToward(map, nodeId, targetId, blocked);
       if (!hop) break;
       edgeTo = hop;
       prog = 0;
@@ -259,22 +302,33 @@ export function activeDecoy(run: RunState): DiveDecoy | null {
 /**
  * 建一只猎手（猎手 SPEC §2.4「出现」）——在距你 STALKER_SPAWN_HOPS 跳处现身（不是当场伏击）。
  * 由 dive.ts 在「越线（predatorApproaches）+ 当前无猎手」时调。pool 空（无伏击池）/ 无可达节点 → null。确定性（不耗 RNG）。
+ *
+ * per-encounter 档案（§2.2「给现有敌打标签」）：被选中遭遇的 CombatEncounterDef.stalker 覆盖
+ * 感官/active/patience/速率/体型；缺省字段沿用深度派生（未打标签的遭遇 → 行为与 Phase 1 逐字节相同）。
+ * §5：大型生物的现身点避开窄缝（它得待在容得下它的地方）；全图都窄（小图）→ 退化成小型（别把它卡死在进不去的洞里）。
  */
 export function maybeSpawnStalker(run: RunState, pool: string[]): Stalker | null {
   if (!run.map || !run.currentNodeId || pool.length === 0) return null;
-  const node = spawnNodeFor(run.map, run.currentNodeId, STALKER_SPAWN_HOPS);
-  if (!node) return null;
   const idx = run.visitedNodeIds.length; // 同 maybeApproachEncounter 的确定性索引（不耗 Math.random）
   const encounterId = pool[idx % pool.length];
+  const prof = getEncounter(encounterId)?.stalker;
   const depth = run.currentDepth ?? 0;
-  // 越深越偏声/双感 + 越会躲（§2.2/§2.6）；浅段（< evade 线）偏光感。Phase 1 简单派生·完整模态分类留 Phase 2。
-  const sensesBy: SenseModality = depth >= STALKER_EVADE_DEPTH ? 'both' : idx % 2 === 0 ? 'sound' : 'light';
+  // 越深越偏声/双感 + 越会躲（§2.2/§2.6）；浅段（< evade 线）偏光感。per-encounter 标签优先、缺省按深度派生。
+  const sensesBy: SenseModality = prof?.sensesBy ?? (depth >= STALKER_EVADE_DEPTH ? 'both' : idx % 2 === 0 ? 'sound' : 'light');
   // 丢信号性格（§2.3）：深/双感（狡猾·难缠·最执着）→ 去上次信号点徘徊找你；浅段 → 原地等。
   // 等多久按 waitTurns：浅段半数等一阵（STALKER_WAIT_TURNS）、半数等 0＝掉头就走；深段去到点再等一阵。
   const onLostSignal: StalkerLostBehavior = sensesBy === 'both' ? 'seek_last' : 'wait';
   const waitTurns = sensesBy === 'both' || idx % 2 === 0 ? STALKER_WAIT_TURNS : 0;
-  // 大型生物（§5 later「接触带大小」）：深渊（≥ STALKER_LARGE_DEPTH）的捕食者比玩家还大 → 声呐图读成一大团。浅段 → 普通小 blip（large 缺省 undefined·逐字节不变）。
-  const large = depth >= STALKER_LARGE_DEPTH ? true : undefined;
+  // 大型生物（§5）：深渊（≥ STALKER_LARGE_DEPTH）的捕食者比玩家还大 → 声呐图读成一大团 + 钻不进窄缝；
+  // per-encounter size 标签可钉死大/小。浅段缺省 → 普通小 blip（large 缺省 undefined·逐字节不变）。
+  let large: true | undefined = (prof?.size ? prof.size === 'large' : depth >= STALKER_LARGE_DEPTH) ? true : undefined;
+  let node = spawnNodeFor(run.map, run.currentNodeId, STALKER_SPAWN_HOPS, large ? nodeIsNarrow : undefined);
+  if (!node && large) {
+    // 它够得着的地方全是窄缝（小图）→ 这洞容不下大家伙：来的就是小一号的（仍可生存·确定性）。
+    large = undefined;
+    node = spawnNodeFor(run.map, run.currentNodeId, STALKER_SPAWN_HOPS);
+  }
+  if (!node) return null;
   return {
     nodeId: node,
     sensesBy,
@@ -286,7 +340,53 @@ export function maybeSpawnStalker(run: RunState, pool: string[]): Stalker | null
     turnsSinceSignal: 0,
     waitedTurns: 0,
     large,
+    active: prof?.active ? true : undefined,
+    patience: prof?.patience,
+    hspeed: prof?.hspeed,
   };
+}
+
+/**
+ * Q3 浅水弱变体的现身判定（猎手 SPEC §2.6「浅水小且弱·小概率」）：进入事件/尸体节点时按
+ * `run.runId + 节点` 确定性哈希掷 1/WEAK_HUNT_DENOM——同一 run 同一节点结果恒定（不耗 RNG·回归可断言）。
+ * 弱变体硬性（「小且弱」不可被数据推翻）：慢速（STALKER_WEAK_HSPEED）、wait 性格、永不 large/active；
+ * 感官单感为主（per-encounter 标签可改）。浅水无警觉可循（§7.5 alert 不积累）→ 它直读你的灯/声呐开关
+ * （weakStalkerHasSignal）＝浅水版的「切断信号源」教学。门（zone.weakHunts + 浅水线）在 dive-stalker.ts。
+ */
+export function maybeSpawnWeakStalker(run: RunState, pool: string[]): Stalker | null {
+  if (!run.map || !run.currentNodeId || pool.length === 0) return null;
+  if (hashStr(`weak:${run.runId}:${run.currentNodeId}`) % WEAK_HUNT_DENOM !== 0) return null;
+  const idx = run.visitedNodeIds.length;
+  const encounterId = pool[idx % pool.length];
+  const prof = getEncounter(encounterId)?.stalker;
+  const sensesBy: SenseModality = prof?.sensesBy ?? (idx % 2 === 0 ? 'sound' : 'light');
+  const node = spawnNodeFor(run.map, run.currentNodeId, STALKER_SPAWN_HOPS);
+  if (!node) return null;
+  return {
+    nodeId: node,
+    sensesBy,
+    onLostSignal: 'wait',
+    waitTurns: idx % 2 === 0 ? STALKER_WAIT_TURNS : 0,
+    state: 'hunting',
+    encounterId,
+    lastSignalNodeId: run.currentNodeId,
+    turnsSinceSignal: 0,
+    waitedTurns: 0,
+    hspeed: STALKER_WEAK_HSPEED,
+    weak: true,
+  };
+}
+
+/**
+ * 弱变体的「有你的信号」（§2.6/Q3）：浅水警觉不积累（§7.5 铁律不动）→ 它直读你当下的信号源——
+ * 光感＝你的灯开着；声感＝你这回合在 ping / 声呐持续开着；双感＝任一。关掉对应开关＝当场切断（教学版阀门）。
+ */
+export function weakStalkerHasSignal(run: RunState, stalker: Stalker): boolean {
+  const lamp = run.sensors.light;
+  const sounding = run.sensors.sonar === 'ping' || (run.sensors.sonarUnlocked && (run.sensors.sonarOn ?? true));
+  if (stalker.sensesBy === 'light') return lamp;
+  if (stalker.sensesBy === 'sound') return sounding;
+  return lamp || sounding;
 }
 
 /**
@@ -302,11 +402,20 @@ export function maybeSpawnStalker(run: RunState, pool: string[]): Stalker | null
  * lastSignal 刷成诱饵点 ⇒ 诱饵失效后你若已摸黑，它按性格在诱饵点附近搜/等、再脱离（你借这几回合反向拉开）。
  * 感官不合 / 没诱饵 / 已过期 → 本分支不触发＝行为逐字节不变（additive/gated）。
  */
-export function advanceStalker(
-  run: RunState,
-  stalker: Stalker,
-  fromNodeId?: string,
-): { stalker: Stalker | null; contact: boolean; lured?: boolean } {
+export interface StalkerAdvance {
+  stalker: Stalker | null;
+  contact: boolean;
+  /** §4：这一回合它在追诱饵不是你（叙事「注意挪开了」）。 */
+  lured?: boolean;
+  /** §5/§6：它被你的窄缝挡在口外、正守着（叙事「守在外面」·它的 patience 在烧）。 */
+  guarding?: boolean;
+  /** §6：守口等够 patience 放弃离开（stalker=null 时与普通「跟丢」区分·叙事「它等够了」）。 */
+  gaveUp?: boolean;
+  /** §2.2：active 主动探测这一回合重新咬上你（叙事 tell「它自己在找」·摸黑对它不万灵）。 */
+  reacquired?: boolean;
+}
+
+export function advanceStalker(run: RunState, stalker: Stalker, fromNodeId?: string): StalkerAdvance {
   if (!run.map || !run.currentNodeId) return { stalker, contact: false };
   const map = run.map;
   const here = run.currentNodeId;
@@ -318,37 +427,75 @@ export function advanceStalker(
   }
 
   const s: Stalker = { ...stalker };
+  const speed = stalker.hspeed ?? STALKER_HSPEED; // §7 速率分布（弱变体慢·缺省＝旧常量）
+  const blocked = stalker.large ? nodeIsNarrow : undefined; // §5 大型生物的避障
+
+  /** 追逐一步：真目标 targetId；大型猎手对窄目标改奔「口外」（largeGoalFor）。返回是否「被挡且已到口外」。 */
+  const pursue = (targetId: string): boolean => {
+    let goal: string | null = targetId;
+    if (blocked && nodeIsNarrow(targetId)) goal = largeGoalFor(map, posBefore.nodeId, targetId);
+    if (goal === null) {
+      applyPos(s, posBefore); // 无处可去＝原地堵着（也算「守」）
+      return true;
+    }
+    applyPos(s, walkToward(map, posBefore, goal, speed, blocked));
+    return goal !== targetId && atNode({ nodeId: s.nodeId, edgeTo: s.edgeTo, edgeProg: s.edgeProg }, goal);
+  };
+
+  /** 有信号时的统一处理（真信号 / 诱饵 / active 重新咬上共用）：刷计时 → 追 → §5/§6 守口结算。 */
+  const chase = (targetId: string, flags: { lured?: boolean; reacquired?: boolean }): StalkerAdvance => {
+    s.state = 'hunting';
+    s.turnsSinceSignal = 0;
+    s.waitedTurns = 0;
+    s.lastSignalNodeId = targetId;
+    const atMouth = pursue(targetId);
+    if (atMouth) {
+      // §5 钻不进 + §6 执着围守：有信号却被窄缝挡在口外 → 烧它的 patience；等够 → 放弃离开。
+      // 你在里面每回合照常烧氧/电（资源博弈·§6）；想立刻了断可以出去迎战（standAndFight）或走另一个口。
+      s.guardedTurns = (stalker.guardedTurns ?? 0) + 1;
+      if (s.guardedTurns > (stalker.patience ?? STALKER_PATIENCE)) {
+        return { stalker: null, contact: false, gaveUp: true, ...flags };
+      }
+      return { stalker: s, contact: false, guarding: true, ...flags };
+    }
+    s.guardedTurns = undefined; // 没被挡＝围守计数清掉（JSON 干净·下次围守重新数）
+    return { stalker: s, contact: contactWith({ nodeId: s.nodeId, edgeTo: s.edgeTo, edgeProg: s.edgeProg }, here), ...flags };
+  };
+
   // 诱饵优先（§4）：朝诱饵点推进、刷新 lastSignal 到诱饵点、清等待计时（它「有信号」——只是信号是假的）。
   // 接触判定仍对你做（它扑向诱饵的路上路过你＝照样撞上·诚实；你把诱饵丢在脚下不走＝它就是冲你来）。
   const decoy = activeDecoy(run);
-  if (decoy && decoyLures(stalker, decoy.kind)) {
-    s.state = 'hunting';
-    s.turnsSinceSignal = 0;
-    s.waitedTurns = 0;
-    s.lastSignalNodeId = decoy.nodeId;
-    applyPos(s, walkToward(map, posBefore, decoy.nodeId, STALKER_HSPEED));
-    return { stalker: s, contact: contactWith(s, here), lured: true };
-  }
-  // 有你的信号 ＝ 你够「响」（alert 越线）且这一回合没被你的规避装备甩脱（§3·缺省无升级 → playerEvadesStalker 恒 false → 逐字节不变）。
-  if (run.alert >= STALKER_SIGNAL_ALERT && !playerEvadesStalker(run, stalker)) {
-    // 有你的信号 → 朝你按 HSPEED 推进（可停中段）·刷新 lastSignal·清等待计时。
-    s.state = 'hunting';
-    s.turnsSinceSignal = 0;
-    s.waitedTurns = 0;
-    s.lastSignalNodeId = here;
-    applyPos(s, walkToward(map, posBefore, here, STALKER_HSPEED));
-    return { stalker: s, contact: contactWith(s, here) };
-  }
+  if (decoy && decoyLures(stalker, decoy.kind)) return chase(decoy.nodeId, { lured: true });
+
+  // 有你的信号 ＝ 常规：你够「响」（alert 越线）；弱变体（Q3 浅水·alert 不积累）：直读灯/声呐开关。
+  // 且这一回合没被你的规避装备甩脱（§3·缺省无升级 → playerEvadesStalker 恒 false → 逐字节不变）。
+  const hasSignal = stalker.weak ? weakStalkerHasSignal(run, stalker) : run.alert >= STALKER_SIGNAL_ALERT;
+  if (hasSignal && !playerEvadesStalker(run, stalker)) return chase(here, {});
+
   // 信号切断 → 按性格搜（§2.3）。
   s.turnsSinceSignal += 1;
   s.state = 'searching';
-  // seek_last 还没抵达上次信号点 → 继续朝它推进（不计「等」；走太久够不到 → 放弃脱离）。
-  if (s.onLostSignal === 'seek_last' && !atNode(posBefore, s.lastSignalNodeId)) {
-    if (s.turnsSinceSignal > STALKER_SEEK_MAX_TURNS) return { stalker: null, contact: false };
-    applyPos(s, walkToward(map, posBefore, s.lastSignalNodeId, STALKER_HSPEED));
-    return { stalker: s, contact: contactWith(s, here) }; // 搜索路过你的节点也算接触
+
+  // §2.2 active 主动探测（后期型·per-encounter 标签）：它不只被动等——每 PROBE_PERIOD 回合自己发一记，
+  // 你在量程内（PROBE_HOPS 跳）且没被 T2 主动迷彩甩掉（§3·playerEvadesProbe）→ 重新咬上（摸黑不再万灵）。
+  // 量程外＝够不到（拉开距离仍是出路·§2.5 可生存铁律）。
+  if (stalker.active && s.turnsSinceSignal % STALKER_ACTIVE_PROBE_PERIOD === 0) {
+    const hops = bfsDist(map, here)[stalker.nodeId];
+    if (hops !== undefined && hops <= STALKER_ACTIVE_PROBE_HOPS && !playerEvadesProbe(run, stalker)) {
+      return chase(here, { reacquired: true });
+    }
   }
-  // 在等候点（原地 wait / 已抵达上次信号点）→ 等 waitTurns 回合（0 = 立刻走）。不动；仍可能因你走进而接触。
+
+  // seek_last 还没抵达上次信号点 → 继续朝它推进（不计「等」；走太久够不到 → 放弃脱离）。
+  // 大型猎手对窄的 lastSignal（你在窄缝里惊动过它）改奔口外＝「守在出口」的搜索版。
+  let seekGoal = s.lastSignalNodeId;
+  if (blocked && nodeIsNarrow(seekGoal)) seekGoal = largeGoalFor(map, posBefore.nodeId, seekGoal) ?? posBefore.nodeId;
+  if (s.onLostSignal === 'seek_last' && !atNode(posBefore, seekGoal)) {
+    if (s.turnsSinceSignal > STALKER_SEEK_MAX_TURNS) return { stalker: null, contact: false };
+    applyPos(s, walkToward(map, posBefore, seekGoal, speed, blocked));
+    return { stalker: s, contact: contactWith({ nodeId: s.nodeId, edgeTo: s.edgeTo, edgeProg: s.edgeProg }, here) }; // 搜索路过你的节点也算接触
+  }
+  // 在等候点（原地 wait / 已抵达上次信号点或其口外）→ 等 waitTurns 回合（0 = 立刻走）。不动；仍可能因你走进而接触。
   s.waitedTurns += 1;
   if (s.waitedTurns > s.waitTurns) return { stalker: null, contact: false };
   return { stalker: s, contact: contactWith(posBefore, here) };
@@ -382,6 +529,20 @@ export function playerEvadesStalker(run: RunState, stalker: Stalker): boolean {
   let chance = Math.min(STALKER_PLAYER_EVADE_MAX, bonus);
   if ((run.currentDepth ?? 0) >= STALKER_EVADE_DEPTH) chance *= STALKER_PLAYER_EVADE_DEEP_MULT;
   return hashStr(`pevade:${stalker.nodeId}:${run.turn}`) % 1000 < chance * 1000;
+}
+
+/**
+ * 这一记 active 主动探测是否被你甩掉（猎手 SPEC §2.2/§3「主动探测要靠装备规避」）：
+ * 专吃 **T2 主动迷彩**（camoBonus·§3「T2 规避光感/主动探测」——它不是循你的光声、是自己来找，吸声帮不上）。
+ * 守地板同 playerEvadesStalker（封顶 + 深 band 打折＝最深最凶仍找得到你）；确定性（前缀 'probe:' 与两侧规避不相关）。
+ * 缺省（无 T2）→ 0 概率＝从不规避——没升级就别指望摸黑躲过会自己找你的东西（SPEC「需要升级装备」）。
+ */
+export function playerEvadesProbe(run: RunState, stalker: Stalker): boolean {
+  const camo = run.sensorTuning?.camoBonus ?? 0;
+  if (camo <= 0) return false;
+  let chance = Math.min(STALKER_PLAYER_EVADE_MAX, camo);
+  if ((run.currentDepth ?? 0) >= STALKER_EVADE_DEPTH) chance *= STALKER_PLAYER_EVADE_DEEP_MULT;
+  return hashStr(`probe:${stalker.nodeId}:${run.turn}`) % 1000 < chance * 1000;
 }
 
 /**

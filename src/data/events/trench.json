@@ -24,7 +24,7 @@
         },
         {
           "id": "read_the_gap",
-          "label": "用灯照着，逼自己读清回波和灯之间那道差（理智 vs 55）",
+          "label": "用灯照着，逼自己读清回波和灯之间那道差",
           "check": {
             "stat": "sanity",
             "dc": 55,
@@ -75,7 +75,7 @@
         },
         {
           "id": "hold_the_beam",
-          "label": "把灯钉在回波说的那个点上，照住别动（理智 vs 50）",
+          "label": "把灯钉在回波说的那个点上，照住别动",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -116,7 +116,7 @@
       "options": [
         {
           "id": "follow_near_echo",
-          "label": "信那声近的回波，往左边窄道挤（体力 vs 12）",
+          "label": "信那声近的回波，往左边窄道挤",
           "check": {
             "stat": "stamina",
             "dc": 12,
@@ -167,7 +167,7 @@
       "options": [
         {
           "id": "swim_through",
-          "label": "信灯，从声呐说有墙的地方游进去（理智 vs 55）",
+          "label": "信灯，从声呐说有墙的地方游进去",
           "check": {
             "stat": "sanity",
             "dc": 55,
@@ -219,7 +219,7 @@
       "options": [
         {
           "id": "answer_it",
-          "label": "再打一记，逼自己听清那回声（理智 vs 55）",
+          "label": "再打一记，逼自己听清那回声",
           "check": {
             "stat": "sanity",
             "dc": 55,
@@ -280,7 +280,7 @@
         },
         {
           "id": "climb_the_sides",
-          "label": "不往吞声音的正中去，贴侧壁一段段 ping 着下（体力 vs 13）",
+          "label": "不往吞声音的正中去，贴侧壁一段段 ping 着下",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -331,7 +331,7 @@
         },
         {
           "id": "name_it",
-          "label": "举灯照着，逼自己看清那到底是什么（理智 vs 55）",
+          "label": "举灯照着，逼自己看清那到底是什么",
           "check": {
             "stat": "sanity",
             "dc": 55,
@@ -382,7 +382,7 @@
         },
         {
           "id": "reason_it_out",
-          "label": "逼自己把这桩怪事想通（理智 vs 50）",
+          "label": "逼自己把这桩怪事想通",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -434,7 +434,7 @@
         },
         {
           "id": "void_the_map",
-          "label": "把那张图作废，只认灯照得到、手摸得着的（理智 vs 55）",
+          "label": "把那张图作废，只认灯照得到、手摸得着的",
           "check": {
             "stat": "sanity",
             "dc": 55,
@@ -485,7 +485,7 @@
         },
         {
           "id": "trust_the_lamp",
-          "label": "信灯不信声呐，沿石壁自己找真有的路（理智 vs 50）",
+          "label": "信灯不信声呐，沿石壁自己找真有的路",
           "check": {
             "stat": "sanity",
             "dc": 50,

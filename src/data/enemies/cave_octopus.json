@@ -61,7 +61,8 @@
       "party": {
         "members": [{ "defId": "enemy.cave_octopus" }]
       },
-      "introText": "壳堆后面那团软的东西不再装石头了——它把自己撑开，比那个洞口大得多。"
+      "introText": "壳堆后面那团软的东西不再装石头了——它把自己撑开，比那个洞口大得多。",
+      "stalker": { "sensesBy": "both", "patience": 10 }
     }
   ]
 }

@@ -17,6 +17,7 @@ import { deriveMapLayout, type MapLayout } from './mapLayout';
 import { moveToNode } from '@/engine/dive';
 import { nodeSonarView, sonarPhantoms, threatContact } from '@/engine/clarity';
 import { stalkerSonarBlip } from '@/engine/stalker';
+import { hash01, roomScale01 } from '@/engine/sonar';
 import { zoneAllowsBacktrack } from '@/engine/zones';
 
 /** 纵向取景窗（窄×高·#92 上浅下深）：只显当前节点周围一片（SPEC「默认放大、几乎看不到全貌」）。 */
@@ -150,15 +151,7 @@ function distSeg(px: number, py: number, ax: number, ay: number, bx: number, by:
   return Math.hypot(px - cx, py - cy);
 }
 
-/** 确定性字符串 hash → [0,1)（按 node/edge id 派生几何·不碰 RNG·守洞穴一致性 #100）。 */
-function hash01(s: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619) >>> 0;
-  }
-  return (h % 100000) / 100000;
-}
+// hash01 迁居 engine/sonar.ts（猎手 §5「容得下多大」与渲染同源·顶部 import）——输出逐字相同。
 /** 平滑最小值（多项式 smin）：把相邻形状熔成连续有机表面（相邻房间并成一间大洞·非硬交线）。 */
 function smin(a: number, b: number, k: number): number {
   const h = Math.max(0, Math.min(1, 0.5 + (0.5 * (b - a)) / k));
@@ -176,9 +169,13 @@ export interface CaveTun { ax: number; ay: number; bx: number; by: number; r: nu
 /** 带半径的房间 blob（主 blob + 散瓣）。 */
 export interface CaveRoom { x: number; y: number; r: number; }
 
-/** 房间半径（按 node id 派生·大小不一）。buildCaveGeometry 与 poiOffset 共用＝标记落在房间内。 */
+/**
+ * 房间半径（按 node id 派生·大小不一）。buildCaveGeometry 与 poiOffset 共用＝标记落在房间内。
+ * 标度来自 engine/sonar.ts::roomScale01（猎手 §5：游戏性「容得下多大」与画出来的房间大小**同一来源**——
+ * 你看到的最小那挡房间＝大型猎手钻不进的窄缝）。
+ */
 function roomRadius(id: string): number {
-  return ROOM_BASE + ROOM_VAR * hash01('r' + id);
+  return ROOM_BASE + ROOM_VAR * roomScale01(id);
 }
 
 /**

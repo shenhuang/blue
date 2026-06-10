@@ -3,9 +3,10 @@
 
 import { useState } from 'react';
 import type { GameState, InventoryItem } from '@/types';
-import { getItemDef } from '@/engine/items';
+import { getItemDef, allItems } from '@/engine/items';
 import {
   buyFromMira,
+  devGrantItem,
   listMiraBuyables,
   listMiraSellables,
   miraOfferFor,
@@ -13,6 +14,7 @@ import {
   isSellableToMira,
 } from '@/engine/port';
 import { toPort } from '@/engine/transitions';
+import { DEV_TOOLS } from './devMode';
 
 interface Props {
   state: GameState;
@@ -21,8 +23,18 @@ interface Props {
 
 export function MiraShopView({ state, onStateChange }: Props) {
   const [flash, setFlash] = useState<string | null>(null);
+  // Dev 测试货架开合（#109）：默认收起——?dev 下也别让长长的全道具清单顶开正常柜台。
+  const [devShelfOpen, setDevShelfOpen] = useState(false);
   const sellables = listMiraSellables(state.profile.inventory);
   const total = sellables.reduce((a, b) => a + b.total, 0);
+
+  function handleDevGrant(itemId: string, qty: number) {
+    const next = devGrantItem(state, itemId, qty);
+    if (next !== state) {
+      setFlash(`[dev] 白拿 ${getItemDef(itemId)?.name ?? itemId} ×${qty}（0 金）`);
+      onStateChange(next);
+    }
+  }
 
   function handleSellOne(itemId: string) {
     const next = sellItemToMira(state, itemId, 1);
@@ -145,6 +157,45 @@ export function MiraShopView({ state, onStateChange }: Props) {
               <KeeperRow key={item.itemId} item={item} />
             ))}
           </ul>
+        </section>
+      )}
+
+      {/* Dev 测试货架（#109·作者要求）：?dev 门后（quirk #97 同款门）·0 元白拿全部道具进仓库——
+          验收/测试用（如猎手 decoy 流不用先攒 48 金）。真经济零触碰（devGrantItem 不动金币/备货）；
+          普通访客 DEV_TOOLS=false 整段不渲染。 */}
+      {DEV_TOOLS && (
+        <section className="mira-section mira-dev-shelf">
+          <h3>测试货架（dev）</h3>
+          {devShelfOpen ? (
+            <>
+              <p className="dim">0 元、全道具、直接进仓库。仅 ?dev 可见——别在这儿找游戏平衡。</p>
+              <ul className="mira-items">
+                {allItems().map((def) => (
+                  <li key={def.id} className="mira-item">
+                    <div className="mira-item-info">
+                      <span className="mira-item-name">{def.name}</span>
+                      <span className="dim">{def.id}</span>
+                    </div>
+                    <div className="mira-item-actions">
+                      <button className="btn small" onClick={() => handleDevGrant(def.id, 1)}>
+                        拿 1（0 金）
+                      </button>
+                      <button className="btn small" onClick={() => handleDevGrant(def.id, 5)}>
+                        拿 5
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <button className="btn small" onClick={() => setDevShelfOpen(false)}>
+                收起测试货架
+              </button>
+            </>
+          ) : (
+            <button className="btn small" onClick={() => setDevShelfOpen(true)}>
+              打开测试货架（0 元全道具）
+            </button>
+          )}
         </section>
       )}
 

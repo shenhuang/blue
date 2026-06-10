@@ -153,4 +153,26 @@ export interface CombatEncounterDef {
   /** 胜利后跳转的事件 id */
   victoryEventId?: string;
   reinforcementPool?: EnemyParty['joinRules'];
+  /**
+   * 猎手档案（猎手 SPEC §2.2 per-encounter「给现有敌打标签、不是加敌」）：该遭遇被选为猎手
+   * （zone ambushEncounters → maybeSpawnStalker）时的个体差异。缺省/缺字段 → 沿用深度派生默认（逐字节不变）。
+   */
+  stalker?: StalkerProfile;
+}
+
+/**
+ * per-encounter 猎手档案（猎手 SPEC §2.2/§5/§6/§7 多样性）。全部可选——只写差异、其余按深度派生。
+ * 数据住各 enemies/*.json 的 combatEncounters；engine/stalker.ts::maybeSpawnStalker 合并。
+ */
+export interface StalkerProfile {
+  /** 它靠什么感官锁定你（§2.2）：light / sound / both。缺省 → 深度派生（深=both·浅=sound/light 交替）。 */
+  sensesBy?: 'light' | 'sound' | 'both';
+  /** 主动探测（§2.2/§2.3 后期型）：searching 态会自己发探测重新咬上（T2 迷彩可规避·§3）。 */
+  active?: boolean;
+  /** 执着度（§6）：守窄缝口外的回合预算。执着等待者给大值（缺省 STALKER_PATIENCE）。 */
+  patience?: number;
+  /** 个体速率（§7 速率分布·边分数/回合）。缺省 STALKER_HSPEED。 */
+  hspeed?: number;
+  /** 体型覆盖（§5）：'large' 钉死大型（钻不进窄缝）/ 'small' 钉死小型（无视深度派生）。缺省 → 按深度。 */
+  size?: 'small' | 'large';
 }

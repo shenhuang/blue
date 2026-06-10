@@ -500,6 +500,21 @@ html, body, #root {
   font-style: italic;
 }
 
+/* check 徽章（①根治版·#109）：从 check.{stat,dc} 渲染的判定标记——窄边小胶囊·弱化、不抢 fiction。 */
+.check-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  font-size: 0.78em;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
 .event-option.ascend {
   background: var(--bg-elev-2);
   border-color: var(--accent);

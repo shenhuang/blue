@@ -11,6 +11,9 @@ interface Props {
   onStateChange: (s: GameState) => void;
 }
 
+/** check.stat → 徽章用词（①根治版·#109：徽章从数据渲染·label 纯 fiction·词表与旧 lint 一致 + 氮预留）。 */
+const STAT_LABEL: Record<string, string> = { sanity: '理智', stamina: '体力', oxygen: '氧气', nitrogen: '氮' };
+
 export function EventView({ state, eventId, onStateChange }: Props) {
   const event = getEvent(eventId);
   if (!event || !state.run) {
@@ -72,6 +75,13 @@ export function EventView({ state, eventId, onStateChange }: Props) {
                     disabled={!enabled}
                   >
                     {opt.label}
+                    {/* check 徽章（①根治版·#109）：从 check.{stat,dc} 渲染＝永不与数据失真（label 不再双写）；
+                        hideCheck＝隐藏判定的设计权（惊吓/直觉类不剧透）。 */}
+                    {opt.check && !opt.hideCheck && (
+                      <span className="check-badge">
+                        {STAT_LABEL[opt.check.stat] ?? opt.check.stat} {opt.check.dc}
+                      </span>
+                    )}
                   </button>
                 </li>
               );

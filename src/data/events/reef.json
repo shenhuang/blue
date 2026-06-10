@@ -12,7 +12,7 @@
       "options": [
         {
           "id": "work_groove",
-          "label": "顶着来回的涌，摸到沟底那丛珊瑚（体力 vs 12）",
+          "label": "顶着来回的涌，摸到沟底那丛珊瑚",
           "check": {
             "stat": "stamina",
             "dc": 12,
@@ -95,6 +95,7 @@
         {
           "id": "grab",
           "label": "伸手去抓",
+          "hideCheck": true,
           "check": {
             "stat": "stamina",
             "dc": 12,
@@ -237,6 +238,7 @@
         {
           "id": "squeeze",
           "label": "侧身挤过去",
+          "hideCheck": true,
           "check": {
             "stat": "stamina",
             "dc": 14,
@@ -304,6 +306,7 @@
         {
           "id": "approach",
           "label": "靠近看清楚",
+          "hideCheck": true,
           "check": {
             "stat": "sanity",
             "dc": 60,
@@ -341,7 +344,7 @@
       "options": [
         {
           "id": "pry_grate",
-          "label": "撬开格栅（体力 vs 12）",
+          "label": "撬开格栅",
           "check": {
             "stat": "stamina",
             "dc": 12,
@@ -452,7 +455,7 @@
       "options": [
         {
           "id": "still_it",
-          "label": "按住钟，让它停（体力 vs 13）",
+          "label": "按住钟，让它停",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -501,7 +504,7 @@
       "options": [
         {
           "id": "go_toward",
-          "label": "朝光游过去（理智 vs 50）",
+          "label": "朝光游过去",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -542,7 +545,7 @@
       "options": [
         {
           "id": "pry_hoops",
-          "label": "撬桶上的铜箍（体力 vs 14）",
+          "label": "撬桶上的铜箍",
           "check": {
             "stat": "stamina",
             "dc": 14,
@@ -596,7 +599,7 @@
       "options": [
         {
           "id": "feel_wall_down",
-          "label": "贴着岩壁慢慢下（体力 vs 13）",
+          "label": "贴着岩壁慢慢下",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -647,7 +650,7 @@
       "options": [
         {
           "id": "look_through",
-          "label": "把脸贴上玻璃看（理智 vs 55）",
+          "label": "把脸贴上玻璃看",
           "check": {
             "stat": "sanity",
             "dc": 55,
@@ -698,7 +701,7 @@
       "options": [
         {
           "id": "account_for_it",
-          "label": "停下来，逼自己想清楚那是什么（理智 vs 55）",
+          "label": "停下来，逼自己想清楚那是什么",
           "check": {
             "stat": "sanity",
             "dc": 55,
@@ -749,7 +752,7 @@
       "options": [
         {
           "id": "dig_for_source",
-          "label": "扒开沙，看蓝从哪来（理智 vs 50）",
+          "label": "扒开沙，看蓝从哪来",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -808,7 +811,7 @@
         },
         {
           "id": "go_still",
-          "label": "压低灯，收住所有动作（体力 vs 13）",
+          "label": "压低灯，收住所有动作",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -862,7 +865,7 @@
         },
         {
           "id": "sight_along",
-          "label": "顺着那道亮线看到底（理智 vs 48）",
+          "label": "顺着那道亮线看到底",
           "check": {
             "stat": "sanity",
             "dc": 48,
@@ -903,7 +906,7 @@
       "options": [
         {
           "id": "descend_wall",
-          "label": "贴着断面往下，够那片珊瑚（体力 vs 12）",
+          "label": "贴着断面往下，够那片珊瑚",
           "check": {
             "stat": "stamina",
             "dc": 12,
@@ -985,7 +988,7 @@
         },
         {
           "id": "hold_still",
-          "label": "停下，让它们也停（理智 vs 46）",
+          "label": "停下，让它们也停",
           "check": {
             "stat": "sanity",
             "dc": 46,
@@ -1026,7 +1029,7 @@
       "options": [
         {
           "id": "stare",
-          "label": "盯着那块不动的光看（理智 vs 50）",
+          "label": "盯着那块不动的光看",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -1109,7 +1112,7 @@
         },
         {
           "id": "sneak_larder",
-          "label": "贴沙摸到它转不开身的死角，掏洞底（体力 vs 13）",
+          "label": "贴沙摸到它转不开身的死角，掏洞底",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -1151,7 +1154,7 @@
       "options": [
         {
           "id": "dive_sump",
-          "label": "屏息潜过回水潭（体力 vs 14）",
+          "label": "屏息潜过回水潭",
           "check": {
             "stat": "stamina",
             "dc": 14,
@@ -1190,7 +1193,7 @@
       "options": [
         {
           "id": "dig_chain",
-          "label": "扒开锚链，掏缝里的东西（体力 vs 14）",
+          "label": "扒开锚链，掏缝里的东西",
           "check": {
             "stat": "stamina",
             "dc": 14,
@@ -1241,7 +1244,7 @@
       "options": [
         {
           "id": "look_down",
-          "label": "停在边上，往那片空蓝里看下去（理智 vs 50）",
+          "label": "停在边上，往那片空蓝里看下去",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -1282,7 +1285,7 @@
       "options": [
         {
           "id": "strip_brass",
-          "label": "把操作台上的铜活拆下来（体力 vs 14）",
+          "label": "把操作台上的铜活拆下来",
           "check": {
             "stat": "stamina",
             "dc": 14,
@@ -1333,7 +1336,7 @@
       "options": [
         {
           "id": "work_the_alley",
-          "label": "贴着轴蹭进去，够壁上的铜件（体力 vs 13）",
+          "label": "贴着轴蹭进去，够壁上的铜件",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -1433,7 +1436,7 @@
         },
         {
           "id": "look_at_table",
-          "label": "不动手，看一眼这张桌子（理智 vs 50）",
+          "label": "不动手，看一眼这张桌子",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -1483,7 +1486,7 @@
         },
         {
           "id": "steady_yourself",
-          "label": "停下来，等脑子把上下转回来（理智 vs 50）",
+          "label": "停下来，等脑子把上下转回来",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -1501,7 +1504,7 @@
         },
         {
           "id": "push_sideways",
-          "label": "不管上下，硬从横倒的过道里挤出去（体力 vs 13）",
+          "label": "不管上下，硬从横倒的过道里挤出去",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -1541,7 +1544,7 @@
         },
         {
           "id": "wait_in_it",
-          "label": "悬在原地，等视线回来（理智 vs 50）",
+          "label": "悬在原地，等视线回来",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -1559,7 +1562,7 @@
         },
         {
           "id": "swim_blind",
-          "label": "凭记忆，盲着蹬出去（体力 vs 13）",
+          "label": "凭记忆，盲着蹬出去",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -1590,7 +1593,7 @@
       "options": [
         {
           "id": "understand_it",
-          "label": "停下来，逼自己弄明白那是什么（理智 vs 55）",
+          "label": "停下来，逼自己弄明白那是什么",
           "check": {
             "stat": "sanity",
             "dc": 55,
@@ -1640,7 +1643,7 @@
       "options": [
         {
           "id": "doff_tank",
-          "label": "卸下气瓶，推过缝去（体力 vs 14）",
+          "label": "卸下气瓶，推过缝去",
           "check": {
             "stat": "stamina",
             "dc": 14,
@@ -1700,7 +1703,7 @@
         },
         {
           "id": "read_arrows",
-          "label": "停下来，弄明白两只箭头为什么对不上（理智 vs 50）",
+          "label": "停下来，弄明白两只箭头为什么对不上",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -1741,7 +1744,7 @@
       "options": [
         {
           "id": "work_clusters",
-          "label": "在石柱缝里够贝壳、够那只龙虾（体力 vs 12）",
+          "label": "在石柱缝里够贝壳、够那只龙虾",
           "check": {
             "stat": "stamina",
             "dc": 12,
@@ -1833,7 +1836,7 @@
       "options": [
         {
           "id": "wait_and_take",
-          "label": "也学它们沉住气，等队尾那条挪开再下手（体力 vs 12）",
+          "label": "也学它们沉住气，等队尾那条挪开再下手",
           "check": {
             "stat": "stamina",
             "dc": 12,
@@ -1923,7 +1926,7 @@
       "options": [
         {
           "id": "work_current",
-          "label": "顶着横流钻进扇林，掰迎流面那几丛（体力 vs 13）",
+          "label": "顶着横流钻进扇林，掰迎流面那几丛",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -1971,7 +1974,7 @@
       "options": [
         {
           "id": "force_door",
-          "label": "徒手抠开锈死的笼门（体力 vs 13）",
+          "label": "徒手抠开锈死的笼门",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -2022,7 +2025,7 @@
       "options": [
         {
           "id": "free_shackle",
-          "label": "刨开沙，拧下那只黄铜卸扣（体力 vs 13）",
+          "label": "刨开沙，拧下那只黄铜卸扣",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -2146,7 +2149,7 @@
       "options": [
         {
           "id": "hold_and_watch",
-          "label": "停住不动，看那几根（理智 vs 47）",
+          "label": "停住不动，看那几根",
           "check": {
             "stat": "sanity",
             "dc": 47,
@@ -2187,7 +2190,7 @@
       "options": [
         {
           "id": "look_closer_jellies",
-          "label": "忍着那阵蜇，低头细看（理智 vs 47）",
+          "label": "忍着那阵蜇，低头细看",
           "check": {
             "stat": "sanity",
             "dc": 47,
@@ -2293,7 +2296,7 @@
       "options": [
         {
           "id": "account_shadow",
-          "label": "停下来，逼自己想清楚（理智 vs 50）",
+          "label": "停下来，逼自己想清楚",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -2334,7 +2337,7 @@
       "options": [
         {
           "id": "hold_for_note",
-          "label": "停住，按住胸口去数那一下（理智 vs 50）",
+          "label": "停住，按住胸口去数那一下",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -2375,7 +2378,7 @@
       "options": [
         {
           "id": "grab_from_line",
-          "label": "趁队伍过，从中间薅两只下来（体力 vs 13）",
+          "label": "趁队伍过，从中间薅两只下来",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -2422,7 +2425,7 @@
       "options": [
         {
           "id": "work_sponges",
-          "label": "翻开大海绵的褶子，掏里头藏着的（体力 vs 13）",
+          "label": "翻开大海绵的褶子，掏里头藏着的",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -2473,7 +2476,7 @@
       "options": [
         {
           "id": "look_closer_tongue",
-          "label": "凑近些，逼自己看清那是什么（理智 vs 48）",
+          "label": "凑近些，逼自己看清那是什么",
           "check": {
             "stat": "sanity",
             "dc": 48,
@@ -2523,7 +2526,7 @@
       "options": [
         {
           "id": "watch_liar",
-          "label": "盯住那条假的，看它怎么混进去（理智 vs 48）",
+          "label": "盯住那条假的，看它怎么混进去",
           "check": {
             "stat": "sanity",
             "dc": 48,
@@ -2612,7 +2615,7 @@
       "options": [
         {
           "id": "reach_by_burrow",
-          "label": "洞口边正好有一丛好珊瑚——越过那对眼睛去够（体力 vs 13）",
+          "label": "洞口边正好有一丛好珊瑚——越过那对眼睛去够",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -2630,7 +2633,7 @@
         },
         {
           "id": "hold_its_gaze",
-          "label": "停下，跟那对分头转的眼睛对峙（理智 vs 48）",
+          "label": "停下，跟那对分头转的眼睛对峙",
           "check": {
             "stat": "sanity",
             "dc": 48,
@@ -2671,7 +2674,7 @@
       "options": [
         {
           "id": "push_through_sweepers",
-          "label": "从这些打架的珊瑚头中间挤过去，够那边那丛（体力 vs 13）",
+          "label": "从这些打架的珊瑚头中间挤过去，够那边那丛",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -2730,7 +2733,7 @@
         },
         {
           "id": "work_through_shadow",
-          "label": "趁鱼都僵着，硬着头皮接着掰珊瑚（理智 vs 48）",
+          "label": "趁鱼都僵着，硬着头皮接着掰珊瑚",
           "check": {
             "stat": "sanity",
             "dc": 48,
@@ -2771,7 +2774,7 @@
       "options": [
         {
           "id": "cross_careful",
-          "label": "稳住，贴着沟壁，离那几根丝远远地慢慢过（理智 vs 50）",
+          "label": "稳住，贴着沟壁，离那几根丝远远地慢慢过",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -2820,7 +2823,7 @@
       "options": [
         {
           "id": "watch_lights",
-          "label": "停在边上，看那一片蓝点齐着拍子亮（理智 vs 50）",
+          "label": "停在边上，看那一片蓝点齐着拍子亮",
           "check": {
             "stat": "sanity",
             "dc": 50,

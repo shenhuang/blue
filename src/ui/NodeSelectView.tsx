@@ -186,8 +186,9 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
         )}
 
         {/* 投放诱饵（猎手 SPEC §4·#108）：行前装包带下来的 decoy——放在脚下替你发声/发光几回合，
-            感官对路的猎手会扑向它（对不对路你未必知道·§2.1 的赌注）。不耗回合；水里一次一枚（再投覆盖）。 */}
-        {run.huntEnabled && decoyItems.length > 0 && (
+            感官对路的猎手会扑向它（对不对路你未必知道·§2.1 的赌注）。不耗回合；水里一次一枚（再投覆盖）。
+            门控（#109 Q3）：深 band（huntEnabled·可先手预防）或场上已有猎手（含浅水弱变体）——别在不闹猎手的海域摆白烧钱的按钮。 */}
+        {(run.huntEnabled || run.stalker) && decoyItems.length > 0 && (
           <div className="decoy-deploy">
             {decoyItems.map((i) => (
               <button

@@ -8,7 +8,7 @@ import { executeDeath } from './death';
 import { sonarStandingNext } from './clarity';
 import { enterNodeSelection } from './dive-select';
 import { autoScanOnArrival } from './dive-sensors';
-import { stalkerStep, maybeApproachEncounter } from './dive-stalker';
+import { stalkerStep, weakStalkerStep, maybeApproachEncounter } from './dive-stalker';
 
 /** 编译期穷尽性检查：将来新增 NodeKind 却忘了在 moveToNode 里处理时，这里会直接报类型错误。 */
 function assertNever(x: never): never {
@@ -115,17 +115,25 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
     return executeDeath(s, '理智崩溃，疯狂上浮');
   }
 
-  // 高警觉 + 该 zone 有潜伏捕食者 → 遭遇（先于节点 kind 分发；摸黑可避免）。两条路径：
+  // 高警觉 + 该 zone 有潜伏捕食者 → 遭遇（先于节点 kind 分发；摸黑可避免）。三条路径：
   //   - 深 band（run.huntEnabled·猎手 SPEC Phase 1）→ 有位置的逼近猎手（出现→逼近→接触才伏击·非接触则照常进节点）；
-  //   - 其它（浅水 / POI 下潜 / 旧路径）→ 旧 alert→伏击瞬时遭遇（逐字节不变·守 playthrough-stealth §4-§6）。
+  //   - 浅水弱变体（猎手 Q3·zone.weakHunts 数据 opt-in·浅水线下小概率）→ 同款逼近猎手的弱版（weakStalkerStep
+  //     返回 null＝没 opt-in/没现身 → fall through 旧路径＝逐字节不变）；
+  //   - 其它（POI 下潜 / 旧路径）→ 旧 alert→伏击瞬时遭遇（逐字节不变·守 playthrough-stealth §4-§6）。
   if (s.run!.huntEnabled) {
     // run.currentNodeId（applyTransit 前）＝你刚离开的节点 → 对穿接触判定（§5）。
     const hunted = stalkerStep(s, target, run.currentNodeId ?? undefined);
     if (hunted.contact) return hunted.state; // 接触→伏击 combat，提前返回
     s = hunted.state; // 现身 / 逼近 / 跟丢：更新 s（含 run.stalker + 叙事），继续进节点
   } else {
-    const approached = maybeApproachEncounter(s, target);
-    if (approached) return approached;
+    const weak = weakStalkerStep(s, target, run.currentNodeId ?? undefined);
+    if (weak) {
+      if (weak.contact) return weak.state; // 弱变体追上 → 伏击 combat（复用浅水池＝小且弱）
+      s = weak.state; // 现身 / 逼近 / 跟丢（有它在时旧瞬时伏击让位——捕食者已在场）
+    } else {
+      const approached = maybeApproachEncounter(s, target);
+      if (approached) return approached;
+    }
   }
 
   // scan-on-open（声呐渲染重做 §4）：到站时若声呐持续开 → 自动扫一记刷新成新图（关则保留旧图·不重扫）。

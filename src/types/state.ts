@@ -229,8 +229,32 @@ export interface Stalker {
   /**
    * 大型生物（声呐与房间 §5 later「接触带大小」）：比玩家还大的深渊猎手（abyssal the_rising / apex 类·≥ STALKER_LARGE_DEPTH）
    * 在声呐图上读成**一大团**而非小点。spawn 时按深度派生·缺省（浅段猎手 / undefined）→ 普通小 blip（逐字节不变）。
+   * **猎手 SPEC §5（钻狭缝）**：large 猎手钻不进「窄」节点（engine/sonar.ts::nodeIsNarrow·与声呐图房间大小同源）——
+   * 寻路绕开窄节点、你躲进窄缝时它只能守在口外（见 patience/guardedTurns）。
    */
   large?: boolean;
+  /**
+   * 主动探测（猎手 SPEC §2.2/§2.3「后期会有能主动探测玩家的」）：信号切断后它不只被动等/搜——
+   * searching 态每 STALKER_ACTIVE_PROBE_PERIOD 回合自己发一记探测，量程内（STALKER_ACTIVE_PROBE_HOPS 跳）
+   * 且未被你的 T2 主动迷彩规避（§3）→ 重新咬上（摸黑对它不再万灵·要升级装备）。
+   * per-encounter 数据标签（CombatEncounterDef.stalker.active）；缺省 undefined＝不会主动探测（逐字节不变）。
+   */
+  active?: boolean;
+  /**
+   * 执着度（猎手 SPEC §6「执着的等待者」）：你躲进它钻不进的窄缝（§5）而它**有你的信号**时，
+   * 它守在口外最多这么多回合（guardedTurns 累计）；等够 → 放弃离开。缺省 → STALKER_PATIENCE。
+   * per-encounter 标签（执着等待者给大值）。只管「有信号围守」；丢信号仍走 §2.3 wait/seek 计时。
+   */
+  patience?: number;
+  /** 已在窄缝口外守了几回合（§6·配合 patience）；脱困/重新追起来即清零。缺省 0。 */
+  guardedTurns?: number;
+  /**
+   * 个体速率（猎手 SPEC §7「速率分布」·边分数/回合）：缺省 → STALKER_HSPEED（0.8）。
+   * Q3 浅水弱变体给更慢（纯逃跑甩得开＝「小且弱」）；per-encounter 标签可调快/慢。
+   */
+  hspeed?: number;
+  /** Q3 浅水弱变体标记（§2.6「浅水小且弱」）：叙事/观感用（小东西）；缺省 undefined＝常规猎手。 */
+  weak?: boolean;
 }
 
 /**

@@ -62,6 +62,12 @@ export interface EventOption {
   /** 是否需要属性检定 */
   check?: SkillCheck;
 
+  /**
+   * 隐藏判定（①根治版·#109）：true → EventView 不渲染 check 徽章（玩家看不出这是检定——惊吓/直觉类事件的设计权）。
+   * 缺省 → 有 check 就显示「属性 DC」徽章（单一来源＝check.{stat,dc}·label 回归纯 fiction·check-event-dc lint 禁 label 标注回潮）。
+   */
+  hideCheck?: boolean;
+
   /** 无检定时直接结算 */
   outcome?: Outcome;
 }

@@ -51,7 +51,8 @@
       "party": {
         "members": [{ "defId": "enemy.reef_barracuda" }]
       },
-      "introText": "它一直停在那儿看你。你一动，它就成了一道银线。"
+      "introText": "它一直停在那儿看你。你一动，它就成了一道银线。",
+      "stalker": { "sensesBy": "light" }
     }
   ]
 }

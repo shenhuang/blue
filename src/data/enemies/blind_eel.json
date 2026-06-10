@@ -64,7 +64,8 @@
       "party": {
         "members": [{ "defId": "enemy.blind_eel" }]
       },
-      "introText": "它已经在你周围游了——你看到的只是一段，但它比你想得长。"
+      "introText": "它已经在你周围游了——你看到的只是一段，但它比你想得长。",
+      "stalker": { "sensesBy": "sound", "active": true }
     }
   ]
 }

@@ -99,6 +99,39 @@ export function buildUndirectedAdjacency(map: DiveMap): Record<string, string[]>
   return out;
 }
 
+// ============================================================
+// 节点「房间大小」（声呐与房间 §5「房间/隧道粗细」·猎手 SPEC §5「容得下多大」）
+// 与 ui/SonarScanPanel 有机洞穴渲染的房间半径**同一来源**（同 hash 同前缀）——
+// 玩家在声呐图上看到的房间大小就是游戏性上的「容得下多大」：最小的那挡＝窄缝，大型猎手钻不进。
+// 纯派生（按 node id 哈希）·不入存档·不改 mapgen 输出（快照零变化）。
+// ============================================================
+
+/** 确定性字符串 hash → [0,1)。**与 SonarScanPanel.hash01 逐字相同**（单一来源迁居于此·面板反向 import）。 */
+export function hash01(s: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return (h % 100000) / 100000;
+}
+
+/**
+ * 节点房间大小标度 [0,1)（0=最窄）。渲染半径＝ROOM_BASE + ROOM_VAR × 此值（SonarScanPanel.roomRadius）；
+ * 游戏性「容得下多大」读同一标度（nodeIsNarrow）＝看图可读、不另设暗值（洞穴一致性 #100 延伸）。
+ */
+export function roomScale01(nodeId: string): number {
+  return hash01('r' + nodeId);
+}
+
+/** 窄缝判定线：房间标度 < 此值＝「窄」（约最小的 28% 房间）。猎手 SPEC §5 tunable。 */
+export const NARROW_ROOM_SCALE = 0.28;
+
+/** 该节点是不是大型生物钻不进的「窄缝/小室」（猎手 SPEC §5）。与声呐图上画出的最小房间一致。 */
+export function nodeIsNarrow(nodeId: string): boolean {
+  return roomScale01(nodeId) < NARROW_ROOM_SCALE;
+}
+
 /**
  * 一记 ping 从 originId 揭示的节点 id（含 origin 自己），无向 BFS 到 range 跳为止。
  * S0 读真图（不读 evadesSonar/spoofsSonar——那是 S2 的不可信层）。确定性、纯函数。

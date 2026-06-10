@@ -8,6 +8,14 @@
 //   6. 存档 round-trip：含 stalker 的 run 序列化 ↔ 反序列化保真（run 级·纯对象·不 bump SAVE_VERSION）。
 //  10. Decoy（§4·#108）：感官匹配（声↔声/光↔光/双感任一）·引开（lastSignal=诱饵点）·不合/过期＝逐字节不变·
 //      deployDecoy 消耗与落位·moveToNode 接线叙事·战斗内必成脱战（guaranteed·有货才上清单）。
+//  11. 窄缝避难（§5·#109）：大型猎手钻不进窄节点（nodeIsNarrow·与声呐图房间大小同源）→ 守在口外（guarding）·
+//      贴邻也不接触（vs 小型对照组照常接触）·守满 patience 放弃（gaveUp）。
+//  12. per-encounter 档案（§2.2/§6·#109）：CombatEncounterDef.stalker 标签合并进 spawn（盲鳗=声感+active·
+//      章鱼=双感+patience10）；guard 时长按 patience。
+//  13. active 主动探测（§2.2·#109）：searching 态每 PROBE_PERIOD 回合一记·量程内重新咬上（reacquired）·
+//      量程外够不到（拉距仍是出路）·T2 迷彩可规避（守地板）·非 active 永不（additive）。
+//  14. Q3 浅水弱变体（§2.6·#109）：weakHunts 数据 opt-in + 浅水线下确定性小概率现身；信号＝直读灯/声呐开关
+//      （alert 不积累照样追·关灯/停声呐＝当场切断）；硬性「小且弱」（慢速 wait 性格·不 large/active）。
 //
 // 跑法： npx tsx scripts/playthrough-stalker.ts
 
@@ -19,16 +27,21 @@ import {
   deserializeGameState,
 } from '../src/engine/state';
 import { moveToNode, standAndFight, deployDecoy } from '../src/engine/dive';
+import { weakStalkerStep } from '../src/engine/dive-stalker';
 import { applyPlayerAction, listAvailableActions } from '../src/engine/combat';
 import { ALERT_THRESHOLD } from '../src/engine/clarity';
+import { nodeIsNarrow } from '../src/engine/sonar';
 import {
   advanceStalker,
   scanStalker,
   stalkerSonarBlip,
   stalkerEvadesScan,
   playerEvadesStalker,
+  playerEvadesProbe,
   spawnNodeFor,
   maybeSpawnStalker,
+  maybeSpawnWeakStalker,
+  weakStalkerHasSignal,
   decoyLures,
   activeDecoy,
   DECOY_TURNS,
@@ -37,6 +50,10 @@ import {
   STALKER_LARGE_DEPTH,
   STALKER_HSPEED,
   STALKER_CONTACT_DIST,
+  STALKER_PATIENCE,
+  STALKER_ACTIVE_PROBE_PERIOD,
+  STALKER_ACTIVE_PROBE_HOPS,
+  STALKER_WEAK_HSPEED,
 } from '../src/engine/stalker';
 
 const log: string[] = [];
@@ -503,5 +520,224 @@ L('\n========== 10. Decoy（§4）：声诱/光诱·引开·战斗内脱战 ====
   L('  (h) 战斗内：有货才上清单 · 必成脱战 · 烧一枚 ✓');
 }
 
+// ============================================================
+// 11. 窄缝避难（§5·#109）：大型猎手钻不进窄节点 → 守在口外·守满 patience 放弃
+//     fixture 事实（roomScale01 哈希派生·与声呐图房间大小同源）：n1/n4 窄·n0/n2/n3 非窄。
+// ============================================================
+L('\n========== 11. 窄缝避难（§5·大型生物 vs 窄节点）==========');
+{
+  assert(nodeIsNarrow('n4') && nodeIsNarrow('n1'), '11: fixture 事实——n4/n1 是窄节点（哈希派生）');
+  assert(!nodeIsNarrow('n3') && !nodeIsNarrow('n0') && !nodeIsNarrow('n2'), '11: fixture 事实——n0/n2/n3 非窄');
+
+  const mk11 = (over: Partial<Stalker>): Stalker => ({
+    nodeId: 'n3', sensesBy: 'sound', onLostSignal: 'wait', waitTurns: STALKER_WAIT_TURNS, state: 'hunting',
+    encounterId: CAVE_POOL[0], lastSignalNodeId: 'n4', turnsSinceSignal: 0, waitedTurns: 0, ...over,
+  });
+  /** 你躲在窄节点 n4、很「响」（alert 90）。 */
+  const refugeRun = (): RunState => ({ ...huntState({ alert: 90, depth: 70 }).run!, currentNodeId: 'n4' });
+
+  // (a) 小型对照组：n3 与 n4 一跳之差·有信号 → 照常贴近接触（同 9b）
+  assert(advanceStalker(refugeRun(), mk11({})).contact, '11a: 小型猎手照常一跳贴近接触（窄缝不挡它）');
+
+  // (b) 大型：钻不进 n4 → 不接触、守在口外（n3＝离你最近的非窄节点）·guarding 落旗
+  const g1 = advanceStalker(refugeRun(), mk11({ large: true }));
+  assert(!g1.contact, '11b: 大型猎手贴邻也不接触（挤不进窄缝）');
+  assert(g1.guarding === true, '11b: guarding=true（守在口外·叙事钩子）');
+  assert(g1.stalker?.nodeId === 'n3' && g1.stalker.edgeTo === undefined, '11b: 守在 n3（口外）不动');
+  assert(g1.stalker?.guardedTurns === 1, '11b: guardedTurns 开始累计');
+
+  // (c) 守满 patience（缺省 STALKER_PATIENCE）→ 放弃离开（gaveUp·与「跟丢」区分）
+  let cur: Stalker | null = mk11({ large: true });
+  let guards = 0;
+  let gaveUp = false;
+  for (let i = 0; i < 20 && cur; i++) {
+    const r = advanceStalker(refugeRun(), cur);
+    if (r.guarding) guards++;
+    if (r.gaveUp) gaveUp = true;
+    cur = r.stalker;
+  }
+  assert(guards === STALKER_PATIENCE && gaveUp && cur === null, `11c: 守 ${STALKER_PATIENCE} 回合（patience 缺省）后放弃（gaveUp），实际守 ${guards}`);
+
+  // (d) 你出窄缝（在非窄节点）→ 大型照常追/接触（窄缝外保护失效）+ 围守计数清掉
+  const open = advanceStalker({ ...refugeRun(), currentNodeId: 'n2' }, mk11({ large: true, guardedTurns: 2 }));
+  assert(open.contact, '11d: 你在开阔节点（n2）→ 大型照常一跳贴近接触');
+  // (e) 大型现身点占位过滤：不落在窄节点上（chainMap 距 n0 三跳＝n3 非窄·恰同旧行为）
+  const sp = maybeSpawnStalker({ ...huntState({ depth: STALKER_LARGE_DEPTH + 20 }).run! }, CAVE_POOL);
+  assert(sp && sp.large === true && !nodeIsNarrow(sp.nodeId), '11e: 大型现身点非窄（容得下它）');
+  L(`  小型照常接触 / 大型守口外 n3·guarding·${STALKER_PATIENCE} 回合放弃 / 出缝即失保护 / 现身点非窄 ✓`);
+}
+
+// ============================================================
+// 12. per-encounter 档案（§2.2「给现有敌打标签」+ §6 执着等待者·#109）
+// ============================================================
+L('\n========== 12. per-encounter 档案（数据标签 → spawn 合并·patience 守口）==========');
+{
+  // visitedNodeIds=['n0'] → idx=1 → CAVE_POOL[1]=cave_octopus_solo（双感·patience 10 执着等待者）
+  const octo = maybeSpawnStalker(huntState({ depth: 70 }).run!, CAVE_POOL);
+  assert(octo?.encounterId === 'combat.cave_octopus_solo', '12: idx=1 → 章鱼遭遇');
+  assert(octo!.sensesBy === 'both' && octo!.patience === 10 && octo!.active === undefined, '12: 章鱼档案合并（both·patience10·非 active）');
+  // 反转池序 → idx=1 → blind_eel_solo（声感·active 主动探测）
+  const eel = maybeSpawnStalker(huntState({ depth: 70 }).run!, [...CAVE_POOL].reverse());
+  assert(eel?.encounterId === 'combat.blind_eel_solo', '12: 反转池 → 盲鳗遭遇');
+  assert(eel!.sensesBy === 'sound' && eel!.active === true && eel!.patience === undefined, '12: 盲鳗档案合并（sound·active·patience 缺省）');
+  // 档案 sensesBy 驱动性格派生：both → seek_last（狡猾）·sound → wait
+  assert(octo!.onLostSignal === 'seek_last' && eel!.onLostSignal === 'wait', '12: 性格派生跟着档案感官走');
+
+  // patience 驱动守口时长：patience=2 的大型守 2 回合就走（对比 §11c 缺省 4）
+  const mk12 = (patience?: number): Stalker => ({
+    nodeId: 'n3', sensesBy: 'sound', onLostSignal: 'wait', waitTurns: 0, state: 'hunting', large: true, patience,
+    encounterId: CAVE_POOL[1], lastSignalNodeId: 'n4', turnsSinceSignal: 0, waitedTurns: 0,
+  });
+  const refugeRun = (): RunState => ({ ...huntState({ alert: 90, depth: 70 }).run!, currentNodeId: 'n4' });
+  let cur: Stalker | null = mk12(2);
+  let guards = 0;
+  for (let i = 0; i < 20 && cur; i++) {
+    const r = advanceStalker(refugeRun(), cur);
+    if (r.guarding) guards++;
+    cur = r.stalker;
+  }
+  assert(guards === 2 && cur === null, `12: patience=2 → 守 2 回合放弃（执着度数据可调），实际 ${guards}`);
+  L('  章鱼=both/patience10/seek_last · 盲鳗=sound/active/wait · patience 驱动守口时长 ✓');
+}
+
+// ============================================================
+// 13. active 主动探测（§2.2·#109）：searching 每 PROBE_PERIOD 回合一记·量程内重新咬上·迷彩可规避·非 active 永不
+// ============================================================
+L('\n========== 13. active 主动探测（摸黑不再万灵·要装备/拉距）==========');
+{
+  const mk13 = (over: Partial<Stalker>): Stalker => ({
+    nodeId: 'n2', sensesBy: 'sound', onLostSignal: 'wait', waitTurns: 10, state: 'hunting', active: true,
+    encounterId: CAVE_POOL[0], lastSignalNodeId: 'n0', turnsSinceSignal: 0, waitedTurns: 0, ...over,
+  });
+  /** 你摸黑（alert 0）在 n0；它在 n2（2 跳 ≤ PROBE_HOPS）。 */
+  const darkRun = (turn = 0): RunState => ({ ...huntState({ alert: 0, depth: 70 }).run!, currentNodeId: 'n0', turn });
+
+  // (a) 前 PERIOD−1 个搜索回合不探（按 turnsSinceSignal 计）；第 PERIOD 个 → 量程内重新咬上（reacquired·转 hunting 朝你）
+  let cur: Stalker | null = mk13({});
+  let reacquiredAt = -1;
+  for (let i = 1; i <= STALKER_ACTIVE_PROBE_PERIOD + 1 && cur; i++) {
+    const r = advanceStalker(darkRun(i), cur);
+    if (r.reacquired) { reacquiredAt = i; assert(r.stalker?.state === 'hunting', '13a: 重新咬上 → hunting'); break; }
+    assert(r.stalker?.state === 'searching', '13a: 探测周期未到 → 仍 searching');
+    cur = r.stalker;
+  }
+  assert(reacquiredAt === STALKER_ACTIVE_PROBE_PERIOD, `13a: 第 ${STALKER_ACTIVE_PROBE_PERIOD} 个搜索回合重新咬上，实际 ${reacquiredAt}`);
+
+  // (b) 量程外（n4 距 n0 四跳 > PROBE_HOPS）→ 探不到＝拉开距离仍是出路
+  let far: Stalker | null = mk13({ nodeId: 'n4', lastSignalNodeId: 'n4' });
+  for (let i = 1; i <= STALKER_ACTIVE_PROBE_PERIOD * 2 && far; i++) {
+    const r = advanceStalker(darkRun(i), far);
+    assert(!r.reacquired, '13b: 量程外 → 永不重新咬上');
+    far = r.stalker;
+  }
+
+  // (c) T2 主动迷彩规避（§3·playerEvadesProbe·守地板：部分回合甩掉、非全隐）
+  const tCamo = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { camoBonus: 0.5 } }).sensorTuning!;
+  let probeEvaded = 0;
+  for (let t = 0; t < 200; t++) if (playerEvadesProbe({ ...darkRun(t), sensorTuning: tCamo }, mk13({}))) probeEvaded++;
+  assert(probeEvaded > 0 && probeEvaded < 200, `13c: 迷彩可规避主动探测（部分回合·守地板），实际 ${probeEvaded}/200`);
+  let noCamoEvaded = 0;
+  for (let t = 0; t < 200; t++) if (playerEvadesProbe(darkRun(t), mk13({}))) noCamoEvaded++;
+  assert(noCamoEvaded === 0, '13c: 无 T2 → 从不规避（摸黑躲不过会自己找你的东西）');
+  // 接线：被规避的探测回合 → 仍 searching；未被规避 → reacquired（同一回合对照）
+  let evadedTurn = -1;
+  let hitTurn = -1;
+  for (let t = STALKER_ACTIVE_PROBE_PERIOD; t < 300; t += 1) {
+    const st = mk13({ turnsSinceSignal: STALKER_ACTIVE_PROBE_PERIOD - 1 }); // 本次推进恰逢探测周期
+    const ev = playerEvadesProbe({ ...darkRun(t), sensorTuning: tCamo }, st);
+    if (ev && evadedTurn < 0) evadedTurn = t;
+    if (!ev && hitTurn < 0) hitTurn = t;
+    if (evadedTurn >= 0 && hitTurn >= 0) break;
+  }
+  assert(evadedTurn >= 0 && hitTurn >= 0, '13c: 两种回合都存在（确定性哈希分布）');
+  const stEv = mk13({ turnsSinceSignal: STALKER_ACTIVE_PROBE_PERIOD - 1 });
+  assert(
+    advanceStalker({ ...darkRun(evadedTurn), sensorTuning: tCamo }, stEv).reacquired === undefined,
+    '13c: 被迷彩甩掉的那记探测 → 不重新咬上',
+  );
+  assert(
+    advanceStalker({ ...darkRun(hitTurn), sensorTuning: tCamo }, stEv).reacquired === true,
+    '13c: 没甩掉的那记 → 重新咬上',
+  );
+
+  // (d) additive：非 active（缺省）→ 同 fixture 永不 reacquired（旧行为逐字节不变）
+  let plain: Stalker | null = mk13({ active: undefined });
+  for (let i = 1; i <= STALKER_ACTIVE_PROBE_PERIOD * 2 && plain; i++) {
+    const r = advanceStalker(darkRun(i), plain);
+    assert(!r.reacquired, '13d: 非 active 永不主动探测（additive）');
+    plain = r.stalker;
+  }
+  L(`  第 ${STALKER_ACTIVE_PROBE_PERIOD} 搜索回合咬上 / 量程外够不到 / 迷彩规避 ${probeEvaded}/200（无 T2＝0）/ 非 active 不变 ✓`);
+}
+
+// ============================================================
+// 14. Q3 浅水弱变体（§2.6·#109）：数据 opt-in + 浅水线下小概率·信号＝直读灯/声呐·硬性「小且弱」
+// ============================================================
+L('\n========== 14. Q3 浅水弱变体（weakHunts·浅水小且弱）==========');
+{
+  /** 浅水（18m < ALERT_MIN_DEPTH）蓝洞 run·alert 0·huntEnabled false（POI 下潜）。 */
+  const shallowState = (runId: string, over: Partial<RunState> = {}): GameState => {
+    const base = huntState({ alert: 0, depth: 18, huntEnabled: false });
+    return { ...base, run: { ...base.run!, runId, ...over } };
+  };
+
+  // (a) 确定性概率门：扫 runId 空间找「中」与「不中」各一（哈希按 runId+节点·同输入恒同果）
+  let hitId = '';
+  let missId = '';
+  for (let i = 0; i < 200 && (!hitId || !missId); i++) {
+    const r = shallowState(`wr${i}`).run!;
+    const sp = maybeSpawnWeakStalker(r, CAVE_POOL);
+    if (sp && !hitId) hitId = `wr${i}`;
+    if (!sp && !missId) missId = `wr${i}`;
+  }
+  assert(hitId && missId, '14a: 概率门两侧都存在（确定性哈希）');
+  assert(
+    JSON.stringify(maybeSpawnWeakStalker(shallowState(hitId).run!, CAVE_POOL)) ===
+      JSON.stringify(maybeSpawnWeakStalker(shallowState(hitId).run!, CAVE_POOL)),
+    '14a: 同 run 同节点 → 结果恒定（可回归）',
+  );
+
+  // (b) 硬性「小且弱」：慢速·wait 性格·不 large/active·weak 标记
+  const weakSt = maybeSpawnWeakStalker(shallowState(hitId).run!, CAVE_POOL)!;
+  assert(weakSt.weak === true && weakSt.hspeed === STALKER_WEAK_HSPEED, '14b: weak 标记 + 慢速（甩得开）');
+  assert(weakSt.onLostSignal === 'wait' && !weakSt.large && !weakSt.active, '14b: wait 性格·不 large·不 active');
+
+  // (c) 信号＝直读灯/声呐开关（浅水 alert 不积累·§7.5 不破）：光感看灯·声感听 ping/常开·双感任一
+  const sensorsOf = (light: boolean, ping = false): RunState['sensors'] =>
+    ({ ...shallowState('x').run!.sensors, light, sonar: ping ? 'ping' : 'off', sonarUnlocked: false });
+  const mkWeak = (sensesBy: SenseModality): Stalker => ({ ...weakSt, sensesBy });
+  const rOn = { ...shallowState('x').run!, sensors: sensorsOf(true) };
+  const rOff = { ...shallowState('x').run!, sensors: sensorsOf(false) };
+  const rPing = { ...shallowState('x').run!, sensors: sensorsOf(false, true) };
+  assert(weakStalkerHasSignal(rOn, mkWeak('light')) && !weakStalkerHasSignal(rOff, mkWeak('light')), '14c: 光感＝看你的灯');
+  assert(weakStalkerHasSignal(rPing, mkWeak('sound')) && !weakStalkerHasSignal(rOff, mkWeak('sound')), '14c: 声感＝听你的 ping');
+  assert(weakStalkerHasSignal(rOn, mkWeak('both')) && !weakStalkerHasSignal(rOff, mkWeak('both')), '14c: 双感任一');
+  // alert 0 + 灯开 → 它照样追（hunting）；关灯 → 当场切断（searching）
+  const chaseOn = advanceStalker({ ...rOn, currentNodeId: 'n0' }, { ...mkWeak('light'), nodeId: 'n3' });
+  assert(chaseOn.stalker?.state === 'hunting', '14c: alert=0 但灯开 → 弱变体照样追（直读开关）');
+  const chaseOff = advanceStalker({ ...rOff, currentNodeId: 'n0' }, { ...mkWeak('light'), nodeId: 'n3' });
+  assert(chaseOff.stalker === null || chaseOff.stalker.state === 'searching', '14c: 关灯 → 当场切断（searching/掉头走）');
+
+  // (d) 接线 weakStalkerStep：深度门（≥ALERT_MIN_DEPTH → null）·zone 门（weakHunts 数据 opt-in）·现身叙事
+  const deepGate = weakStalkerStep(shallowState(hitId, { currentDepth: 30 }), shallowState(hitId).run!.map!.nodes['n1']);
+  assert(deepGate === null, '14d: ≥ 浅水线 → null（旧瞬时伏击路径让位·逐字节不变）');
+  const wreckGate = weakStalkerStep(shallowState(hitId, { zoneId: 'zone.wreck_graveyard' }), shallowState(hitId).run!.map!.nodes['n1']);
+  assert(wreckGate === null, '14d: zone 没 opt-in（wreck_graveyard 无 weakHunts）→ null');
+  // 真接线（moveToNode）：找一个「移动到 n1 时中奖」的 runId（哈希按到站节点 n1 算）
+  let spawnedVia = '';
+  for (let i = 0; i < 300 && !spawnedVia; i++) {
+    const r = { ...shallowState(`mv${i}`).run!, currentNodeId: 'n1', visitedNodeIds: ['n0', 'n1'] };
+    if (maybeSpawnWeakStalker(r, CAVE_POOL)) spawnedVia = `mv${i}`;
+  }
+  assert(spawnedVia, '14d: 存在移动中奖的 runId');
+  let ms = shallowState(spawnedVia);
+  ms = moveToNode(ms, 'n1');
+  assert(ms.phase.kind === 'dive' && ms.run!.stalker?.weak === true, '14d: moveToNode → 弱猎手现身（phase 仍 dive）');
+  assert(ms.log.some((l) => l.text.includes('小东西')), '14d: 弱变体现身叙事（小东西）');
+  // (e) §7.5 铁律不破：现身不靠警觉——alert 仍是 0
+  assert((ms.run!.alert ?? 0) === 0, '14e: 现身不靠警觉（alert 仍 0·浅水免压不破）');
+  L(`  概率门确定性 / 小且弱硬性 / 直读灯声呐（关灯当场切断）/ 深度+zone 双门 / moveToNode 接线（${spawnedVia}）✓`);
+}
+
 console.log(log.join('\n'));
-console.log('\n✓ 猎手（Stalker mid-edge 追击重做 + §4 decoy）playthrough 完成');
+console.log('\n✓ 猎手（Stalker mid-edge 追击重做 + §4 decoy + §5/§6/§2.2/Q3 Phase 2 收尾）playthrough 完成');

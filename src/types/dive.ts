@@ -45,6 +45,13 @@ export interface ZoneDef {
    * §7.5「浅水免探测压力」天然成立。
    */
   ambushEncounters?: string[];
+  /**
+   * Q3 浅水弱变体（猎手 SPEC §2.6「浅水小且弱」）：true → 本 zone 的**浅水段**（< ALERT_MIN_DEPTH·
+   * 警觉积累不到的那段）有小概率出一只**弱猎手**（慢、单感、不躲声呐、不主动探测·复用 ambushEncounters）。
+   * 与警觉/predatorApproaches 无关（§7.5 浅水免压不破：alert 仍不积累·瞬时伏击路径不变）；
+   * 缺省/false ＝浅水照旧绝对安全（逐字节不变）。数据 opt-in（dive-stalker.ts::weakStalkerStep）。
+   */
+  weakHunts?: boolean;
 }
 
 /** 下潜地图（运行时生成） */

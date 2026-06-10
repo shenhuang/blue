@@ -65,6 +65,7 @@
         {
           "id": "scare",
           "label": "用刀柄敲击金属吓走它",
+          "hideCheck": true,
           "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
           "check": {
             "stat": "stamina",
@@ -113,6 +114,7 @@
         {
           "id": "stealth_grab",
           "label": "屏住呼吸，慢慢取浮标（氧气 -3）",
+          "hideCheck": true,
           "check": {
             "stat": "oxygen",
             "dc": 30,
@@ -187,6 +189,7 @@
         {
           "id": "look_closer",
           "label": "看清楚那个影子",
+          "hideCheck": true,
           "check": {
             "stat": "sanity",
             "dc": 80,

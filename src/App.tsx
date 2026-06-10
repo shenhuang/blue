@@ -16,14 +16,9 @@ import { CorpseView, FuneralView } from '@/ui/CorpseView';
 import { ResolutionView, GameOverView } from '@/ui/ResolutionView';
 import { ChangelogModal } from '@/ui/ChangelogModal';
 
-// Dev 工具门控（作者 2026-06-06·见 quirk）：本地 dev server 恒开；**发布版也带 dev**，但默认隐藏——
-// 仅当 URL 带 ?dev（如 https://shenhuang.github.io/blue/?dev）才启用，藏在 Shift+D/C/M 快捷键后，普通访客
-// 看不到（地图调试器会揭示整张图，破坏迷雾/声呐设计，故必须门控）。每个发布版都带此能力（作者要求）。
-// DEV_TOOLS 是**运行时**值（prod 里不是编译期 false）→ Rollup 不再 dead-code 消除三元，dev 面板进 bundle 作
-// lazy chunk，但仅在 ?dev 打开某面板时才下载（普通访客零额外负载·初始 bundle 不含面板代码）。
-const DEV_TOOLS =
-  import.meta.env.DEV ||
-  (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('dev'));
+// Dev 工具门控（作者 2026-06-06·quirk #97）：定义迁至 ui/devMode.ts（#109·Mira 测试货架也要读）——
+// 语义零变化：?dev 运行时门 + lazy chunk；地图调试器会揭示整张图（破坏迷雾/声呐设计）故必须门控。
+import { DEV_TOOLS } from '@/ui/devMode';
 
 const EventDevPanel = DEV_TOOLS
   ? lazy(() =>

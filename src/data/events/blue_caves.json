@@ -12,7 +12,7 @@
       "options": [
         {
           "id": "reach_in",
-          "label": "探进横缝，连虾带珊瑚一起够（体力 vs 13）",
+          "label": "探进横缝，连虾带珊瑚一起够",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -212,7 +212,7 @@
       "options": [
         {
           "id": "read_current",
-          "label": "用手感受水流方向（理智 vs 14）",
+          "label": "用手感受水流方向",
           "check": {
             "stat": "sanity",
             "dc": 14,
@@ -328,7 +328,7 @@
       "options": [
         {
           "id": "push_through",
-          "label": "推开穿过去（理智 vs 55）",
+          "label": "推开穿过去",
           "check": {
             "stat": "sanity",
             "dc": 55,
@@ -379,6 +379,7 @@
         {
           "id": "freeze",
           "label": "屏住呼吸不动",
+          "hideCheck": true,
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -419,6 +420,7 @@
         {
           "id": "stay_a_moment",
           "label": "停留观察",
+          "hideCheck": true,
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -464,7 +466,7 @@
       "options": [
         {
           "id": "push_through",
-          "label": "侧身硬挤过去（体力 vs 12）",
+          "label": "侧身硬挤过去",
           "check": {
             "stat": "stamina",
             "dc": 12,
@@ -566,7 +568,7 @@
         },
         {
           "id": "wait_still",
-          "label": "压住灯，一点一点退开（体力 vs 13）",
+          "label": "压住灯，一点一点退开",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -605,7 +607,7 @@
       "options": [
         {
           "id": "watch_it",
-          "label": "再做一个动作，看准那半拍（理智 vs 50）",
+          "label": "再做一个动作，看准那半拍",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -646,7 +648,7 @@
       "options": [
         {
           "id": "haul_up",
-          "label": "把绳收上来，看末端是什么（体力 vs 13）",
+          "label": "把绳收上来，看末端是什么",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -720,7 +722,7 @@
       "options": [
         {
           "id": "follow_up",
-          "label": "跟着它升的方向走一段，看尽头（理智 vs 50）",
+          "label": "跟着它升的方向走一段，看尽头",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -804,7 +806,7 @@
         },
         {
           "id": "mark_the_rim",
-          "label": "在洞口边的岩上刻一道，记住它的大小（理智 vs 50）",
+          "label": "在洞口边的岩上刻一道，记住它的大小",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -893,7 +895,7 @@
         },
         {
           "id": "douse_lamp",
-          "label": "关掉自己的灯，看那点光的真样子（理智 vs 48）",
+          "label": "关掉自己的灯，看那点光的真样子",
           "check": {
             "stat": "sanity",
             "dc": 48,
@@ -1013,7 +1015,7 @@
       "options": [
         {
           "id": "work_pools",
-          "label": "顺塘檐摸到最深一塘，掏那檐下的东西（体力 vs 12）",
+          "label": "顺塘檐摸到最深一塘，掏那檐下的东西",
           "check": {
             "stat": "stamina",
             "dc": 12,
@@ -1104,7 +1106,7 @@
       "options": [
         {
           "id": "thread_through",
-          "label": "理开根须，贴着底慢慢钻过去（体力 vs 13）",
+          "label": "理开根须，贴着底慢慢钻过去",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -1203,7 +1205,7 @@
       "options": [
         {
           "id": "time_it",
-          "label": "数着涌的拍子，借往里推的那一下蹬过去（体力 vs 13）",
+          "label": "数着涌的拍子，借往里推的那一下蹬过去",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -1241,7 +1243,7 @@
       "options": [
         {
           "id": "hold_still",
-          "label": "停下不动，看那些须要够到哪里（理智 vs 47）",
+          "label": "停下不动，看那些须要够到哪里",
           "check": {
             "stat": "sanity",
             "dc": 47,
@@ -1281,7 +1283,7 @@
       "options": [
         {
           "id": "touch_it",
-          "label": "伸手探那层平面（理智 vs 47）",
+          "label": "伸手探那层平面",
           "check": {
             "stat": "sanity",
             "dc": 47,
@@ -1331,7 +1333,7 @@
         },
         {
           "id": "block_it",
-          "label": "用手堵住洞口，看那股气会不会停（理智 vs 47）",
+          "label": "用手堵住洞口，看那股气会不会停",
           "check": {
             "stat": "sanity",
             "dc": 47,
@@ -1381,7 +1383,7 @@
         },
         {
           "id": "press_beside",
-          "label": "在旁边按一个自己的掌印，比一比（理智 vs 47）",
+          "label": "在旁边按一个自己的掌印，比一比",
           "check": {
             "stat": "sanity",
             "dc": 47,
@@ -1422,7 +1424,7 @@
       "options": [
         {
           "id": "look_down",
-          "label": "停在井口，把那片蓝看到底（理智 vs 50）",
+          "label": "停在井口，把那片蓝看到底",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -1463,7 +1465,7 @@
       "options": [
         {
           "id": "mark_and_go",
-          "label": "在断钟乳石上刻个记号，往前走，看还会不会回来（理智 vs 50）",
+          "label": "在断钟乳石上刻个记号，往前走，看还会不会回来",
           "check": {
             "stat": "sanity",
             "dc": 50,

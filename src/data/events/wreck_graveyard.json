@@ -13,7 +13,7 @@
       "options": [
         {
           "id": "read_him",
-          "label": "不过去，停住，把哪里不对一样样看清（理智 vs 55）",
+          "label": "不过去，停住，把哪里不对一样样看清",
           "check": {
             "stat": "sanity",
             "dc": 55,
@@ -62,7 +62,7 @@
       "options": [
         {
           "id": "cut_lashings",
-          "label": "割开烂绳，撬开一只木箱（体力 vs 13）",
+          "label": "割开烂绳，撬开一只木箱",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -148,7 +148,7 @@
       "options": [
         {
           "id": "squeeze_through",
-          "label": "硬挤过去（体力 vs 13）",
+          "label": "硬挤过去",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -191,7 +191,7 @@
       "options": [
         {
           "id": "rip_free",
-          "label": "用力撕开（体力 vs 14）",
+          "label": "用力撕开",
           "check": {
             "stat": "stamina",
             "dc": 14,
@@ -209,7 +209,7 @@
         },
         {
           "id": "hold_breath_slip",
-          "label": "屏住呼吸慢慢绕开（氧气 vs 30）",
+          "label": "屏住呼吸慢慢绕开",
           "check": {
             "stat": "oxygen",
             "dc": 30,
@@ -295,7 +295,7 @@
         },
         {
           "id": "shake_compass_first",
-          "label": "先敲一下罗盘看会不会动（理智 vs 50）",
+          "label": "先敲一下罗盘看会不会动",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -336,7 +336,7 @@
       "options": [
         {
           "id": "approach_boiler",
-          "label": "靠近锅炉听一会儿（理智 vs 55）",
+          "label": "靠近锅炉听一会儿",
           "check": {
             "stat": "sanity",
             "dc": 55,
@@ -462,7 +462,7 @@
       "options": [
         {
           "id": "force_hatch",
-          "label": "撬开铁门搜罐头（体力 vs 13）",
+          "label": "撬开铁门搜罐头",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -508,7 +508,7 @@
       "options": [
         {
           "id": "look_closer",
-          "label": "把灯贴上去看清（理智 vs 48）",
+          "label": "把灯贴上去看清",
           "check": {
             "stat": "sanity",
             "dc": 48,
@@ -551,7 +551,7 @@
       "options": [
         {
           "id": "listen",
-          "label": "贴着门听一会儿（理智 vs 55）",
+          "label": "贴着门听一会儿",
           "check": {
             "stat": "sanity",
             "dc": 55,
@@ -603,7 +603,7 @@
       "options": [
         {
           "id": "look_in",
-          "label": "扶着门框往里看（理智 vs 55）",
+          "label": "扶着门框往里看",
           "check": {
             "stat": "sanity",
             "dc": 55,
@@ -654,7 +654,7 @@
         },
         {
           "id": "hold_still",
-          "label": "关灯，悬住不动，看它会不会漂开（理智 vs 50）",
+          "label": "关灯，悬住不动，看它会不会漂开",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -695,7 +695,7 @@
       "options": [
         {
           "id": "force_locker",
-          "label": "撬开存粮柜（体力 vs 13）",
+          "label": "撬开存粮柜",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -746,7 +746,7 @@
       "options": [
         {
           "id": "signal_light",
-          "label": "打灯光信号，看他回不回（理智 vs 48）",
+          "label": "打灯光信号，看他回不回",
           "check": {
             "stat": "sanity",
             "dc": 48,
@@ -796,7 +796,7 @@
       "options": [
         {
           "id": "fix_bearing",
-          "label": "停在上方，把这个方向看准（理智 vs 50）",
+          "label": "停在上方，把这个方向看准",
           "check": {
             "stat": "sanity",
             "dc": 50,
@@ -837,7 +837,7 @@
       "options": [
         {
           "id": "cut_upper",
-          "label": "从上半截还好的网上割一段（体力 vs 13）",
+          "label": "从上半截还好的网上割一段",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -890,7 +890,7 @@
       "options": [
         {
           "id": "watch",
-          "label": "停住，看够久，看他到底在不在动（理智 vs 48）",
+          "label": "停住，看够久，看他到底在不在动",
           "check": {
             "stat": "sanity",
             "dc": 48,
@@ -940,7 +940,7 @@
       "options": [
         {
           "id": "cut_salvage",
-          "label": "贴着栏杆下刀，把还能用的一块网割下来（体力 vs 13）",
+          "label": "贴着栏杆下刀，把还能用的一块网割下来",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -991,7 +991,7 @@
       "options": [
         {
           "id": "pick_crates",
-          "label": "撬开离得近的几只板条箱（体力 vs 12）",
+          "label": "撬开离得近的几只板条箱",
           "check": {
             "stat": "stamina",
             "dc": 12,
@@ -1083,7 +1083,7 @@
       "options": [
         {
           "id": "free_the_bell",
-          "label": "撬开锈死的吊环，把钟取下来（体力 vs 13）",
+          "label": "撬开锈死的吊环，把钟取下来",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -1132,7 +1132,7 @@
       "options": [
         {
           "id": "reach_past",
-          "label": "手放慢，从它身边够到后头那卷渔具（体力 vs 13）",
+          "label": "手放慢，从它身边够到后头那卷渔具",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -1182,7 +1182,7 @@
       "options": [
         {
           "id": "dig_through",
-          "label": "扒开浮煤，够到后头那只工具箱（体力 vs 13）",
+          "label": "扒开浮煤，够到后头那只工具箱",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -1233,7 +1233,7 @@
       "options": [
         {
           "id": "forage_reef",
-          "label": "在长满的舱缘里翻一翻能用的（体力 vs 13）",
+          "label": "在长满的舱缘里翻一翻能用的",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -1284,7 +1284,7 @@
       "options": [
         {
           "id": "lift_a_jar",
-          "label": "起出一只封口的陶罐看看（体力 vs 13）",
+          "label": "起出一只封口的陶罐看看",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -1333,7 +1333,7 @@
       "options": [
         {
           "id": "look_closer_quarters",
-          "label": "停下，把这份‘太齐整’一样样看清楚（理智 vs 48）",
+          "label": "停下，把这份‘太齐整’一样样看清楚",
           "check": {
             "stat": "sanity",
             "dc": 48,
@@ -1384,7 +1384,7 @@
       "options": [
         {
           "id": "pry_gears_free",
-          "label": "把这团铜从淤泥里撬出来带走（体力 vs 13）",
+          "label": "把这团铜从淤泥里撬出来带走",
           "check": {
             "stat": "stamina",
             "dc": 13,
@@ -1402,7 +1402,7 @@
         },
         {
           "id": "turn_the_crank",
-          "label": "拨一拨崩口里那圈齿轮，看它数什么（理智 vs 48）",
+          "label": "拨一拨崩口里那圈齿轮，看它数什么",
           "check": {
             "stat": "sanity",
             "dc": 48,
@@ -1442,7 +1442,7 @@
       "options": [
         {
           "id": "hold_still_fish",
-          "label": "停住，看它们到底在等什么（理智 vs 47）",
+          "label": "停住，看它们到底在等什么",
           "check": {
             "stat": "sanity",
             "dc": 47,
@@ -1493,7 +1493,7 @@
       "options": [
         {
           "id": "check_third_clock",
-          "label": "去找第三只钟，看是不是真指着同一刻（理智 vs 48）",
+          "label": "去找第三只钟，看是不是真指着同一刻",
           "check": {
             "stat": "sanity",
             "dc": 48,
@@ -1545,7 +1545,7 @@
       "options": [
         {
           "id": "account_for_swept",
-          "label": "停住，逼自己把这截干净讲通（理智 vs 50）",
+          "label": "停住，逼自己把这截干净讲通",
           "check": {
             "stat": "sanity",
             "dc": 50,

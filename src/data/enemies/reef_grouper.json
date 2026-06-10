@@ -51,7 +51,8 @@
       "party": {
         "members": [{ "defId": "enemy.reef_grouper" }]
       },
-      "introText": "它从礁檐下整个压出来，比你还长。一只眼睛钉着你，鳃盖一张一合。这片水是它的。"
+      "introText": "它从礁檐下整个压出来，比你还长。一只眼睛钉着你，鳃盖一张一合。这片水是它的。",
+      "stalker": { "sensesBy": "sound", "hspeed": 0.6 }
     }
   ]
 }

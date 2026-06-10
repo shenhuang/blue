@@ -225,3 +225,20 @@ export function buyFromMira(state: GameState, itemId: string, qty: number): Game
     },
   };
 }
+
+/**
+ * Dev 测试货架（#109·作者要求「dev 模式 Mira 0 元卖所有道具」）：把任意道具**白送**进仓库——
+ * 不动金币、不动 shopStock、不走加价/限量（真经济代码零触碰＝playthrough-economy 不受影响）。
+ * 仅 dev UI（MiraShopView 的测试货架·DEV_TOOLS 门后）调用；引擎侧无门（纯函数·便于脚本断言），
+ * 门在 UI——同 MapDevPanel 口径（dev 入口不进 GameState/存档语义）。
+ */
+export function devGrantItem(state: GameState, itemId: string, qty = 1): GameState {
+  if (qty <= 0 || !getItemDef(itemId)) return state;
+  return {
+    ...state,
+    profile: {
+      ...state.profile,
+      inventory: mergeIntoInventory(state.profile.inventory, [{ itemId, qty }]),
+    },
+  };
+}

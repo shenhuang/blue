@@ -12,7 +12,7 @@
       "options": [
         {
           "id": "read_the_tell",
-          "label": "强迫自己读它——那光到底落在什么上（理智 vs 62）",
+          "label": "强迫自己读它——那光到底落在什么上",
           "check": {
             "stat": "sanity",
             "dc": 62,
@@ -68,7 +68,7 @@
       "options": [
         {
           "id": "read_him",
-          "label": "别动，读他——哪儿不对（理智 vs 60）",
+          "label": "别动，读他——哪儿不对",
           "check": {
             "stat": "sanity",
             "dc": 60,
