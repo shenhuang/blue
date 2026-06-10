@@ -125,6 +125,8 @@
 
 106. **必填化 run/profile 字段已 hydrate 收口（#107）——fixture/spread 别写 `字段: 可能undefined`，显式 undefined 会盖掉种子**：`sensorTuning`/`scanMemory`/`bandAlertFactor`/`sonarDeception`/`huntEnabled` + `profile.shopStock`/`outpostState` 已类型必填：createNewRun/createInitialProfile 种 canonical 默认，同版本旧档由 `engine/state.ts::hydrateGameState` 在 deserialize **单点**补齐（playthrough-save §6 是它的门），引擎/UI 读点**直读、不再 `?? 默认`**。坑：`{ ...createNewRun(...), bandAlertFactor: opts?.factor }` 在 opts 缺省时把种子盖成 **undefined**——脚本走 tsx 不过 tsc、类型拦不住，下游直读算成 NaN/崩（#107 已修 playthrough-bands/sonar + smoke 四处）；写 `?? canonical` 或省略该键。真条件字段（`diveModifier`/`stalker`/`sensors.sonarOn`/`sonarNext`/`sonarDir`）保持可选＝缺席有语义，**别在 hydrate 补**。新增「有 canonical 默认」的纯加字段时三处同步：类型必填 + createNewRun 种 + hydrateGameState 补；band 派生数据（DepthBand 字段仍可选）的缺省在 startDiveFromOutpost 落点消化。
 
+107. **消耗品进 run 只有一条路＝出发前选带（#108·作者拍板「不全带·死了就没」）+ combat flee 靠「脱战成功」子串判定**：`run.inventory` 起手恒空——仓库（profile.inventory）买的 decoy/急救包**不会自动随身**，唯一入口是海图「行前装包」→ `dive-start.ts::applyCarryItems`（只认 `category==='consumable'`·qty 夹库存·占格超 `inventoryCapacity` 截断·不选＝原对象原样）。日后加任何「潜内可用消耗品」内容：光放进 items.json/商店没用，**得确认它能走选带或潜内 loot 进 run**（med_kit 在 #108 前就是个进不了 run 的死道具）；死亡掉落（尸体快照）与生还归库（handleReturnToPort 合并）都是既有闭环、别另写。另一坑：`combat.ts::applyPlayerAction` 第 5 步靠**最后一条战斗日志含「脱战成功」子串**判定 flee 成败（pendingFleeResult 注释是历史遗留·实现一直是子串）——改 flee/decoy 文案**必须保留这四个字**，否则脱战静默失效（§10h 会红兜着）。decoy 本体约定：`run.decoy` 真条件字段（缺席即语义·hydrate 不补·同 stalker）、过期判定纯 `run.turn ≥ expiresTurn`（零 tick）、`ItemDef.decoy.kind` data-driven（加新 decoy 类型＝改 items.json + decoyLures 映射，别硬编码 id 表）。
+
 > 已修复或被后续内容填平，留档备查。
 
 1. **沙箱权限**：在 Linux 沙箱里跑 `npm run build` 第二次会失败（删不掉旧 dist/），跑 `npm run dev` 同样问题（删不掉 .vite 缓存）。**用户本地 Mac 没问题**。

@@ -69,10 +69,11 @@
 - **T2 主动迷彩（active camo）**：规避**光感 / 主动探测**猎手。
 - **守地板**（北极星·无完全隐形）：规避有上限·最深/最凶仍能找到你（同 `SIGNATURE_MIN_ACTIVE` / 抗欺骗地板的铁律）。
 
-## 4. Decoy 道具（后期 · 作者 Q2）
+## 4. Decoy 道具（后期 · 作者 Q2）✅ #108
 - 不同 decoy 类型的道具：投放 → 把猎手引向别处（按它的感官：声诱 / 光诱）。
 - **战斗中也能用 decoy 脱战逃跑**（接现有 combat 的 flee 路径）。
 - 工程：新 item 类型 + 下潜内投放动作 + combat 内使用钩子。
+- **实装注记（2026-06-10·#108）**：双感「任一锁定」（§2.2）⇒ 任一种诱饵都上钩（难甩〔§3 取 min〕但易诱·同一语义两面）；感官不合 → 不上钩、道具照烧（§2.1 的赌注延续到道具）；decoy 分支优先于真信号（烧消耗品＝代价本身故全效·区别 §3 守地板）；战斗内必成（北极星「decoy 永远是出路」）；获取面＝Mira 消耗品货架 + **出发前选带**（作者：「不然全带着下去死了就全没了」——风险自担·死亡进尸体快照可回收）。常量 `DECOY_TURNS` 等住 `engine/stalker.ts` 顶（§8）。
 
 ## 5. 大型生物 + 狭小空间避难（后期 · 作者 Q2）
 - 特别大的猎手：钻进狭小节点（窄缝 / 小室）它进不来 → 逃走或暂避。
@@ -96,7 +97,8 @@
 - **Phase 2+（deferred · 本 SPEC 已捕捉）**：
   - §2.2 完整感官模态分类落数据（per-encounter `sensesBy`）+ active 探测行为。
   - **§3 升级规避（T1 吸声 / T2 主动迷彩）** ✅（#89·2026-06-06·`playerEvadesStalker` 对称 evadesScan·守地板·沿 #80/#87 升级桥·data `line.evasion_rig`）。
-  - §4 decoy 道具（含战斗内逃跑）·§5 大型生物狭小空间避难·§6 执着等待者耗资源（仍 deferred）。
+  - **§4 decoy 道具（含战斗内逃跑）** ✅（#108·2026-06-10·声诱标/光诱棒 `ItemDef.decoy.kind`·`deployDecoy` 投放 + `advanceStalker` decoy 分支〔优先于真信号·感官匹配·双感任一上钩·确定性〕·战斗 `FleeEffect.guaranteed` 必成脱战·Mira 消耗品货架 + **出发前选带**〔作者拍板「不全带·死了就没」·`applyCarryItems`〕·quirk #107）。
+  - §5 大型生物狭小空间避难·§6 执着等待者耗资源（仍 deferred）。
   - Q3 **浅水小概率弱变体**（需浅水捕食者内容·不破 §7.5 浅水免压回归）。
   - stalker 多样性（patience / size / 速率分布）。
 
@@ -116,4 +118,5 @@
 ## 10. 决策日志
 - **2026-06-06（发起 + 三问拍板，作者方向 A「声呐与房间收尾」之 §8.7 stalker）**：声呐与房间 §8.7 此前留作者拍板的「定位 stalker」正式开题。三问定调——① **一猎手两保真度**：灯＝知道有东西接近、声呐＝知道位置+距离、同一只猎手（§2.1）；② **感官模态**(光/声/双) + **切信号行为**(停原地 / 移到上次信号点 / 后期主动探测·升级 T1 吸声 T2 主动迷彩) + **大型生物狭小空间避难** + **执着等待者耗资源** + **decoy 道具引开**(战斗中也能逃)（§2.2-2.6 / §3-6）；③ **全深度小概率·浅弱深难**（§2.6）。据此成文 v0.1，§7 分阶段：Phase 1 spine（感知分层 + 统一出现/逼近/接触 + 基础两行为 + 深 band 门控·additive/gated）本 session 实装，其余 deferred（已捕捉）。**实装详情见 STATUS.md 顶部滚动条目（quirk #84）。**
 - **2026-06-06（续·作者校正两点）**：① **感知不靠点灯（校正 §2.1）**：作者厘清「不点灯也能感受到接近」是**正确**的——关了灯也感觉得到，故玩家摸黑后能凭「感觉是否消退」判断猎手何时离开、何时安心再点灯；**例外：狡猾猎手 + 低 san**（此时「没感觉＝安全」不可信）＝Phase 2 留做（曾误把它做成「关灯就感觉不到」，已撤回·感知保持 alert/stalker 驱动·与灯无关）。② **切信号行为收成「两机制 × 一等待时长」（§2.3）**：作者「1 就是 2 等 0 回合」「linger 也是 wait」→ `onLostSignal` 从 `hold`/`seek_last` 改成 **`wait`**（原地等 `waitTurns` 回合·0＝掉头就走/N＝过一段时间再走）+ **`seek_last`**（先走到上次信号点·抵达后再等 `waitTurns` 徘徊找你·够不到则 `STALKER_SEEK_MAX_TURNS` 放弃）；新 `Stalker.waitTurns`/`waitedTurns`（run 级·不 bump SAVE_VERSION）。深/双感（狡猾）→ seek_last·浅段 → wait（半数 0 半数等一阵）。`playthrough-stalker` §3 覆盖三种观感（掉头就走/等一阵/去上次信号点徘徊）。全绿 26/26。
+- **2026-06-10（Phase 2 续·§4 decoy 实装·#108·作者拍主方向）**：声诱标/光诱棒落地（`ItemDef.decoy.kind` data-driven）。机制定调——①**双感任一上钩**（§2.2「任一锁定」推论·与 §3 双感取 min 成对）；②**decoy 分支优先于真信号**且不掷骰（消耗品全效·代价＝道具本身·区别升级守地板）；③ lastSignal 刷成诱饵点 ⇒ 失效后猎手按既有 §2.3 性格在诱饵点收尾（零新状态机）；④接触判定仍对玩家做（扑诱饵路过你照样撞上·站诱饵上不走＝冲你来）；⑤战斗内 `FleeEffect.guaranteed` 必成脱战（北极星）。获取面：Mira 消耗品货架（×2/回港·同套加价限量）+ **出发前选带**（作者拍板「不全带，不然死了就全没了」→ `applyCarryItems` 只认 consumable·死亡尸体快照/生还归库走既有闭环）。`run.decoy` 真条件字段（quirk #106 口径）·不 bump SAVE_VERSION。回归 `playthrough-stalker` §10 + `-save` + `-economy` Phase 6 + smoke K1b/P·28/28。quirk #107（消耗品入 run 唯一入口 + flee 子串）。
 - **2026-06-06（Phase 2 起步·§3 升级规避实装，作者方向 E 选「§3 Evasion upgrades T1/T2」·#89）**：Phase 1 spine（#84）之后首个 Phase 2 beat。玩家侧规避做成**猎手 `stalkerEvadesScan` 的镜像**——`engine/stalker.ts::playerEvadesStalker(run,stalker)`：按猎手 `sensesBy` 取对应旋钮（声→T1 `soundAbsorbBonus`/光→T2 `camoBonus`/**双感取 min**＝两者都有才甩得动·兑现 §2.2「双感要同时切断」），封顶 `STALKER_PLAYER_EVADE_MAX`(0.6)、深 band（≥`STALKER_EVADE_DEPTH`108m）`×STALKER_PLAYER_EVADE_DEEP_MULT`(0.5)＝守地板（§3「无完全隐形·最深仍找得到你」·对称 `SIGNATURE_MIN_ACTIVE`），确定性 FNV（前缀异于 evadesScan＝两侧规避不相关）。接线＝`advanceStalker` 把「alert 越线」条件改成「越线**且**未被规避」——被规避那一回合当作信号切断转 `searching`（你甩得动它）。两旋钮沿 #80/#87 传感器升级桥（7 触点·夹 `STEALTH_BONUS_MAX`0.6）·data `line.evasion_rig`（吸声涂层/主动迷彩·深料**软门控**·免硬 flag）+ UpgradePanel 标签。**缺省 0 → 恒 false → advanceStalker 逐字节不变**（additive/gated 守 playthrough-stealth）·不 bump SAVE_VERSION。回归 `playthrough-stalker` §8 + `-upgrades` §10 + `-save` + smoke J8·全绿 26/26·提交 `574ae4a`。**Phase 2 仍 deferred**：§4 decoy（含战斗内逃跑）/§5 大型生物狭小避难/§6 执着等待/§2.1 感知例外（cunning+低 san「没感觉≠安全」）/§2.2 per-encounter sensesBy + active 探测/Q3 浅水弱变体。
