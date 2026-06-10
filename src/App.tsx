@@ -44,12 +44,24 @@ const MapDevPanel = DEV_TOOLS
 /** 当前打开的 dev 面板（事件 / 战斗 / 地图 / 无）。各面板互斥，一次只显示一个。 */
 type DevPanelKind = 'event' | 'combat' | 'map' | null;
 
+/**
+ * URL 直开 dev 面板：`?dev&panel=map|event|combat`（#107 续·作者手机验收用）。
+ * 手机没有 Shift 键、Shift+D/C/M 够不着面板——URL 参数是触屏唯一入口；仍在 ?dev 门后
+ * （DEV_TOOLS false 时恒 null·普通访客零变化）。桌面快捷键照常可再切换/关闭；
+ * 手机上关面板＝去掉 panel 参数刷新。
+ */
+function initialDevPanel(): DevPanelKind {
+  if (!DEV_TOOLS || typeof window === 'undefined') return null;
+  const p = new URLSearchParams(window.location.search).get('panel');
+  return p === 'map' || p === 'event' || p === 'combat' ? p : null;
+}
+
 export default function App() {
   // 启动时尝试读存档；无 / 损坏 / 版本不兼容则开新档
   const [state, setState] = useState<GameState>(() => loadGame() ?? createInitialGameState());
 
-  // Dev 面板开关：本地 state，不进 GameState（避免污染存档版本号；quirk #23）
-  const [devPanel, setDevPanel] = useState<DevPanelKind>(null);
+  // Dev 面板开关：本地 state，不进 GameState（避免污染存档版本号；quirk #23）；?dev&panel=… 可 URL 直开（见上）
+  const [devPanel, setDevPanel] = useState<DevPanelKind>(initialDevPanel);
 
   // 更新日志弹窗开关：同样是本地 UI state，不进 GameState（quirk #23）
   const [changelogOpen, setChangelogOpen] = useState(false);
