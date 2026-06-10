@@ -704,25 +704,29 @@ function shopState(inv: InventoryItem[], gold: number, shopStock?: Record<string
   const base = createInitialGameState();
   return { ...base, phase: { kind: 'shop', shopId: 'mira.bench' }, profile: { ...base.profile, inventory: inv, bankedGold: gold, shopStock: shopStock ?? {} } };
 }
-// K1. 有金 → 回购区列出 T1/T2 材料 + "买 1"，不含 T3/T4
+// K1. 有金 → 回购货架（格子陈列·2026-06-10 作者改拍）列出 T1/T2 材料货格，不含 T3/T4
 const K1 = shopState([{ itemId: 'item.shark_tooth', qty: 2 }], 1000);
 const htmlK1 = renderToStaticMarkup(<MiraShopView state={K1} onStateChange={noop} />);
 assert(htmlK1.includes('她也匀给你（回购）'), 'K1: 应有回购区标题');
 assert(htmlK1.includes('珊瑚碎片'), 'K1: 回购区应列 T1 珊瑚碎片');
-assert(htmlK1.includes('买 1'), 'K1: 买得起应有"买 1"按钮');
+assert(htmlK1.includes('点击买 1'), 'K1: 买得起的货格 title 应是「点击买 1」');
+assert(htmlK1.includes('item-cell'), 'K1: 货架应是格子陈列（ItemCell）');
 assert(!htmlK1.includes('冷光腺'), 'K1: T4 冷光腺不应出现在回购区');
 assert(htmlK1.includes('鲨鱼牙'), 'K1: 收购区应列出玩家可卖的鲨鱼牙');
 // K1b. 消耗品货架（猎手 SPEC §4 data 面·#108）：decoy 两种应上回购区（同一套限量/加价机制）
 assert(htmlK1.includes('声诱标') && htmlK1.includes('光诱棒'), 'K1b: 回购区应列出声诱标/光诱棒（消耗品货架）');
-// K2. 没钱 → 回购按钮"钱不够"
+// K1c. 储物柜一览（购买反馈的落点）：仓库物品应陈列、银行金币应在回购区可见
+assert(htmlK1.includes('你的储物柜'), 'K1c: 应有「你的储物柜」一览区');
+assert(htmlK1.includes('gold-figure'), 'K1c: 回购区应显示银行金币（gold-figure）');
+// K2. 没钱 → 货格红显差额钩子（short 样式·点击时给「还差 X 金」红字——SSR 静态层验 variant）
 const K2 = shopState([], 0);
 const htmlK2 = renderToStaticMarkup(<MiraShopView state={K2} onStateChange={noop} />);
-assert(htmlK2.includes('钱不够'), 'K2: 金币不足时回购按钮应显示"钱不够"');
+assert(htmlK2.includes('item-cell short'), 'K2: 金币不足时货格应带 short 红显样式');
 // K3. 备货耗尽 → "售罄"
 const K3 = shopState([], 1000, { 'item.coral_shard': 0 });
 const htmlK3 = renderToStaticMarkup(<MiraShopView state={K3} onStateChange={noop} />);
 assert(htmlK3.includes('售罄'), 'K3: 备货 0 时应显示"售罄"');
-L('  回购区列 T1/T2(不含 T3/T4) + 买/钱不够/售罄 三态 ✓');
+L('  回购货架格子陈列 + 储物柜一览 + 买/钱不够(short)/售罄 三态 ✓');
 
 // ============================================
 // L. SeaChartView · 渲染灯塔节点 + 点亮范围 + 建造入口
@@ -857,21 +861,22 @@ assert(htmlO3.includes('不是你点的光'), 'O3: 选中 mimic → 渲染宏观
 L('  无灯之光 注入 / 软门控 / 选中显宏观 tell ✓');
 
 // ============================================
-// P. 行前装包 + 投放诱饵（猎手 SPEC §4·#108）：
-//   P1 SeaChartView：仓库有消耗品 → 「行前装包」面板 + ± 步进；没有 → 不渲染（零噪音）。
+// P. 行前装包 + 投放诱饵（猎手 SPEC §4·#108；2026-06-10 作者改拍「格子化」）：
+//   P1 SeaChartView：仓库有消耗品 → 「行前装包」背包格（上限可见·空格占位）+ 储物柜格；没有 → 不渲染（零噪音）。
 //   P2 NodeSelectView：huntEnabled + 背包有 decoy → 「投放」按钮；水里有有效诱饵 → 状态行；
 //      非 huntEnabled（浅水旧路径）→ 不渲染按钮（诱饵只对有位置的猎手起效）。
 // ============================================
 L('\n========== P. 行前装包 + 投放诱饵 (§4) ==========');
-// P1：仓库有 decoy → 行前装包面板列出（带库存数 + ± 步进）；空仓库 → 无此面板
+// P1：仓库有 decoy → 装包面板＝背包格（0/8 起·8 个空格）+ 储物柜格（声诱标 ×2）；空仓库 → 无此面板
 const P1 = {
   ...stateWith(['flag.tutorial_complete'], []),
 };
 P1.profile = { ...P1.profile, inventory: [{ itemId: 'item.decoy_sound', qty: 2 }] };
 const htmlP1 = renderToStaticMarkup(<SeaChartView state={P1} onStateChange={noop} />);
 assert(htmlP1.includes('行前装包'), 'P1: 仓库有消耗品 → 渲染「行前装包」面板');
-assert(htmlP1.includes('声诱标') && htmlP1.includes('库存 2'), 'P1: 面板列出消耗品名 + 库存数');
-assert(htmlP1.includes('chart-carry-stepper'), 'P1: 有 ± 步进控件');
+assert(htmlP1.includes('声诱标') && htmlP1.includes('×2'), 'P1: 储物柜格列出消耗品名 + 数量角标');
+assert(htmlP1.includes('0/8 格') && htmlP1.includes('item-cell empty'), 'P1: 背包上限可见（0/8 格）+ 空格占位');
+assert(htmlP1.includes('点击放进背包'), 'P1: 储物柜格可点（title 提示放进背包）');
 const htmlP1b = renderToStaticMarkup(
   <SeaChartView state={stateWith(['flag.tutorial_complete'], [])} onStateChange={noop} />,
 );

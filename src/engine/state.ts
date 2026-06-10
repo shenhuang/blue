@@ -98,6 +98,12 @@ export function createInitialGameState(): GameState {
   };
 }
 
+/**
+ * run 背包基础格数（升级 extraConsumableSlot 在此之上加）。抽成常量＝单一来源：
+ * createNewRun 与行前装包 UI（carryCapacityFor·dive-start.ts）共用，别在 UI 里手抄 8。
+ */
+export const RUN_INVENTORY_CAPACITY = 8;
+
 /** 默认起始装备配置（继承父亲的装备） */
 export function createStarterLoadout(): EquipmentLoadout {
   return {
@@ -183,7 +189,7 @@ export function createNewRun(opts: {
     oxygenMax,
     equipment: createStarterLoadout(),
     inventory: [],
-    inventoryCapacity: (opts.inventoryCapacity ?? 8) + slotBonus,
+    inventoryCapacity: (opts.inventoryCapacity ?? RUN_INVENTORY_CAPACITY) + slotBonus,
     gold: 0,
     currentDepth: 0,
     currentNodeId: null,

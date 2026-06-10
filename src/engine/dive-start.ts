@@ -13,7 +13,14 @@ import type {
 } from '@/types';
 import { generateDiveMap } from './mapgen';
 import { getZone } from './zones';
-import { appendLog, createNewRun, countInInventory, removeFromInventory, addToInventory } from './state';
+import {
+  appendLog,
+  createNewRun,
+  countInInventory,
+  removeFromInventory,
+  addToInventory,
+  RUN_INVENTORY_CAPACITY,
+} from './state';
 import { getItemDef } from './items';
 import {
   getRunBonuses,
@@ -114,6 +121,15 @@ export function startDive(
  *   - 全空 / 没选 → profile/run 原样返回（向后兼容：所有既有调用不传 picks ＝ 行为逐字节不变）。
  * 纯函数（不碰 GameState 其它部分）；UI 面在 SeaChartView 的「行前装包」。
  */
+/**
+ * 出发前的背包容量（行前装包 UI 用·作者 2026-06-10「背包格子有上限、出发前可见」）：
+ * 与 createNewRun 同一来源（RUN_INVENTORY_CAPACITY + extraConsumableSlot），保证 UI 画的格数
+ * ＝ 实际 run.inventoryCapacity（applyCarryItems 的截断线）。纯函数。
+ */
+export function carryCapacityFor(profile: PlayerProfile): number {
+  return RUN_INVENTORY_CAPACITY + (getRunBonuses(profile).extraConsumableSlot ?? 0);
+}
+
 export function applyCarryItems(
   profile: PlayerProfile,
   run: RunState,

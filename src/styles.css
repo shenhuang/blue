@@ -1683,33 +1683,98 @@ html, body, #root {
   font-size: 0.78rem;
 }
 
-.chart-carry-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.chart-carry-subtitle {
+  margin: 10px 0 4px;
+  font-size: 0.8rem;
+  font-weight: normal;
+}
+
+/* ===== 物品格子系统（ItemCell.tsx·作者 2026-06-10「格子化 + 图标陈列」）=====
+   通用：行前装包（背包/储物柜）+ Mira 柜台（货架/储物柜）共用一份长相。
+   图标先空着（作者拍板「以后生成」）——.item-cell-icon 是占位框，留 data-cat 钩子将来按类上图。 */
+.item-grid {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
-.chart-carry-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 0.85rem;
-}
-
-.chart-carry-stepper {
+.item-cell {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  width: 72px;
+  padding: 6px 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  position: relative;
+  text-align: center;
 }
 
-.chart-carry-qty {
-  min-width: 1.6em;
-  text-align: center;
+.item-cell.clickable { cursor: pointer; }
+.item-cell.clickable:hover { border-color: var(--accent); }
+.item-cell:disabled { opacity: 0.45; cursor: default; }
+
+.item-cell.empty {
+  border-style: dashed;
+  opacity: 0.35;
+}
+
+.item-cell-icon {
+  width: 34px;
+  height: 34px;
+  border: 1px dashed var(--border);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.item-cell-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-cell-qty {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.item-cell-note {
+  font-size: 0.66rem;
+  opacity: 0.7;
+}
+
+.item-cell.short .item-cell-note { color: var(--danger); opacity: 1; }
+
+/* 购买/入包反馈：cellKey 随数量变化重挂载 → 重放入场动画（「东西确实进来了」的可见跳动） */
+@keyframes item-pop {
+  0% { transform: scale(0.85); border-color: var(--accent); }
+  60% { transform: scale(1.06); border-color: var(--accent); }
+  100% { transform: scale(1); }
+}
+.item-grid.live .item-cell { animation: item-pop 0.35s ease-out; }
+
+/* Mira 买入反馈（作者 2026-06-10「点了毫无反应」根治）：金币数字跳动 + 钱不够红字差额 */
+.mira-gold { font-size: 0.8rem; font-weight: normal; }
+.gold-figure {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  animation: item-pop 0.35s ease-out;
+}
+.mira-short-notice {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--danger);
 }
 
 /* 投放诱饵（猎手 SPEC §4·#108）：选点界面的 decoy 按钮 + 水里那枚的状态行 */

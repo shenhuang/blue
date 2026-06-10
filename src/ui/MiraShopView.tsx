@@ -15,6 +15,7 @@ import {
 } from '@/engine/port';
 import { toPort } from '@/engine/transitions';
 import { DEV_TOOLS } from './devMode';
+import { ItemCell } from './ItemCell';
 
 interface Props {
   state: GameState;
@@ -23,6 +24,9 @@ interface Props {
 
 export function MiraShopView({ state, onStateChange }: Props) {
   const [flash, setFlash] = useState<string | null>(null);
+  // 买入侧反馈（作者 2026-06-10「点了毫无反应」）：成功＝flash + 储物柜对应格跳动；钱不够＝红字差额。
+  const [buyFlash, setBuyFlash] = useState<string | null>(null);
+  const [goldShort, setGoldShort] = useState<{ itemId: string; lack: number } | null>(null);
   // Dev 测试货架开合（#109）：默认收起——?dev 下也别让长长的全道具清单顶开正常柜台。
   const [devShelfOpen, setDevShelfOpen] = useState(false);
   const sellables = listMiraSellables(state.profile.inventory);
@@ -72,11 +76,18 @@ export function MiraShopView({ state, onStateChange }: Props) {
     }
   }
 
-  function handleBuyOne(itemId: string) {
+  function handleBuyOne(itemId: string, unitPrice: number) {
+    // 钱不够（作者要求可见提示·别再静默 no-op）：红字报差额，不动状态。
+    if (state.profile.bankedGold < unitPrice) {
+      setGoldShort({ itemId, lack: unitPrice - state.profile.bankedGold });
+      setBuyFlash(null);
+      return;
+    }
     const next = buyFromMira(state, itemId, 1);
     if (next !== state) {
       const def = getItemDef(itemId);
-      setFlash(`买入 ${def?.name ?? itemId} ×1`);
+      setBuyFlash(`买入 ${def?.name ?? itemId} ×1（−${unitPrice} 金）`);
+      setGoldShort(null);
       onStateChange(next);
     }
   }
@@ -132,21 +143,69 @@ export function MiraShopView({ state, onStateChange }: Props) {
         {flash && <div className="mira-flash dim">{flash}</div>}
       </section>
 
+      {/* 回购侧（作者 2026-06-10 改拍「图标陈列 + 可见反馈」）：货架格子点击即买；
+          钱不够＝点击给红字差额（不再静默）；成功＝flash + 下方储物柜对应格跳动 + 金币跳动。 */}
       <section className="mira-section">
-        <h3>她也匀给你（回购）</h3>
-        <p className="dim mira-buy-note">浅水的常见材料，她手头有些存货。深处的东西只能自己下去拿。</p>
-        <ul className="mira-items">
-          {buyables.map((b) => (
-            <MiraBuyRow
-              key={b.itemId}
-              itemId={b.itemId}
-              unitPrice={b.unitPrice}
-              stock={b.stock}
-              canAfford={state.profile.bankedGold >= b.unitPrice}
-              onBuyOne={() => handleBuyOne(b.itemId)}
-            />
-          ))}
-        </ul>
+        <h3>
+          她也匀给你（回购）
+          <span className="mira-gold dim">
+            　银行 <span className="gold-figure" key={state.profile.bankedGold}>{state.profile.bankedGold}</span> 金
+          </span>
+        </h3>
+        <p className="dim mira-buy-note">浅水的常见材料，她手头有些存货。深处的东西只能自己下去拿。点货格买一件。</p>
+        <div className="item-grid">
+          {buyables.map((b) => {
+            const def = getItemDef(b.itemId);
+            const soldOut = b.stock <= 0;
+            const short = state.profile.bankedGold < b.unitPrice;
+            return (
+              <ItemCell
+                key={b.itemId}
+                def={def}
+                itemId={b.itemId}
+                note={soldOut ? '售罄' : `${b.unitPrice} 金 · 余 ${b.stock}`}
+                disabled={soldOut}
+                variant={short && !soldOut ? 'short' : undefined}
+                title={
+                  soldOut
+                    ? `${def?.name ?? b.itemId}——她这批卖完了，下次回港再看`
+                    : `${def?.name ?? b.itemId}——点击买 1（${b.unitPrice} 金）`
+                }
+                onClick={() => handleBuyOne(b.itemId, b.unitPrice)}
+              />
+            );
+          })}
+        </div>
+        {goldShort && (
+          <div className="mira-short-notice">
+            钱不够买{getItemDef(goldShort.itemId)?.name ?? goldShort.itemId}：还差 {goldShort.lack} 金
+            （银行 {state.profile.bankedGold} 金）。
+          </div>
+        )}
+        {buyFlash && <div className="mira-flash dim">{buyFlash}</div>}
+      </section>
+
+      {/* 储物柜一览（作者 2026-06-10「储物柜也陈列、因购买增加对应物品」）：纯陈列；
+          cellKey 带数量 → 买入后对应格重挂载跳一下（item-pop）＝「东西确实进来了」。 */}
+      <section className="mira-section">
+        <h3>你的储物柜</h3>
+        {state.profile.inventory.filter((i) => i.qty > 0).length === 0 ? (
+          <div className="dim">空的。海里什么都还没带回来。</div>
+        ) : (
+          <div className="item-grid live">
+            {state.profile.inventory
+              .filter((i) => i.qty > 0)
+              .map((i) => (
+                <ItemCell
+                  key={i.itemId}
+                  cellKey={`${i.itemId}:${i.qty}`}
+                  def={getItemDef(i.itemId)}
+                  itemId={i.itemId}
+                  qty={i.qty}
+                />
+              ))}
+          </div>
+        )}
       </section>
 
       {keepers.length > 0 && (
@@ -236,40 +295,6 @@ function MiraSellRow({
             卖完（×{item.qty}）
           </button>
         )}
-      </div>
-    </li>
-  );
-}
-
-function MiraBuyRow({
-  itemId,
-  unitPrice,
-  stock,
-  canAfford,
-  onBuyOne,
-}: {
-  itemId: string;
-  unitPrice: number;
-  stock: number;
-  canAfford: boolean;
-  onBuyOne: () => void;
-}) {
-  const def = getItemDef(itemId);
-  const soldOut = stock <= 0;
-  return (
-    <li className={`mira-item ${soldOut ? 'dim' : ''}`}>
-      <div className="mira-item-info">
-        <span className="mira-item-name">{def?.name ?? itemId}</span>
-        <span className="dim">@ {unitPrice} 金 · 余 {stock}</span>
-      </div>
-      <div className="mira-item-actions">
-        <button
-          className="btn small"
-          onClick={onBuyOne}
-          disabled={soldOut || !canAfford}
-        >
-          {soldOut ? '售罄' : !canAfford ? '钱不够' : '买 1'}
-        </button>
       </div>
     </li>
   );

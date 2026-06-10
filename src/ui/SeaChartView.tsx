@@ -6,7 +6,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import type { GameState, ChartPoi, InventoryItem } from '@/types';
 import { generateChart, poiLockReason, isPoiDepartable, describeModifier } from '@/engine/chart';
-import { startDiveFromPoi, startDiveFromOutpost } from '@/engine/dive';
+import { startDiveFromPoi, startDiveFromOutpost, carryCapacityFor } from '@/engine/dive';
 import { toPort } from '@/engine/transitions';
 import {
   getHomeLighthouse,
@@ -41,6 +41,7 @@ import { getUpgradeBonuses } from '@/engine/upgrades';
 import { getItemDef } from '@/engine/items';
 import { listRecoverableCorpses } from '@/engine/death';
 import { LighthouseBuildPanel } from './LighthouseBuildPanel';
+import { ItemCell, EmptyCell } from './ItemCell';
 
 interface Props {
   state: GameState;
@@ -101,7 +102,8 @@ export function SeaChartView({ state, onStateChange }: Props) {
   const [target, setTarget] = useState<string>('');
   useEffect(() => setTarget(''), [selected?.id]);
 
-  // 行前装包（猎手 SPEC §4 data 面·作者拍板「出发前选带·死了就没」·#108）：itemId → 勾选数量。
+  // 行前装包（猎手 SPEC §4 data 面·作者拍板「出发前选带·死了就没」·#108；2026-06-10 作者改拍
+  // 「格子化」：背包格上限可见 + 储物柜格点击互转）：itemId → 勾选数量。
   // 仓库里的消耗品（decoy / 急救包等）勾了才随身下水；POI 出海与蛙跳共用同一份勾选。
   const [carry, setCarry] = useState<Record<string, number>>({});
   const carryables = state.profile.inventory.filter(
@@ -110,6 +112,12 @@ export function SeaChartView({ state, onStateChange }: Props) {
   const carryPicks: InventoryItem[] = Object.entries(carry)
     .filter(([, q]) => q > 0)
     .map(([itemId, qty]) => ({ itemId, qty }));
+  // 容量与占格：与 createNewRun/applyCarryItems 同源（carryCapacityFor·slotsRequired），UI 画的格数＝真截断线。
+  const carryCapacity = carryCapacityFor(state.profile);
+  const slotsUsed = carryPicks.reduce(
+    (a, p) => a + (getItemDef(p.itemId)?.slotsRequired ?? 1) * p.qty,
+    0,
+  );
   const stepCarry = (itemId: string, delta: number, max: number) =>
     setCarry((c) => ({ ...c, [itemId]: Math.max(0, Math.min(max, (c[itemId] ?? 0) + delta)) }));
 
@@ -241,47 +249,59 @@ export function SeaChartView({ state, onStateChange }: Props) {
             <span><i className="chart-swatch locked" />未解锁</span>
           </div>
 
-          {/* 行前装包（猎手 SPEC §4 data 面·#108）：仓库消耗品勾了才随身（POI 出海与蛙跳同用）。
-              默认全不带——带下去的东西死了进尸体（可回收），生还自动回仓库。 */}
+          {/* 行前装包（猎手 SPEC §4 data 面·#108；2026-06-10 作者改拍「格子化」）：
+              背包格＝出发后的 run 背包（上限可见·与 applyCarryItems 截断线同源）；储物柜格＝仓库消耗品。
+              点储物柜格放进背包一件、点背包格放回——默认全不带；死了进尸体（可回收）、生还自动归库。 */}
           {carryables.length > 0 && (
             <div className="chart-carry">
-              <h3 className="chart-carry-title">行前装包</h3>
+              <h3 className="chart-carry-title">
+                行前装包 <span className="dim">背包 {slotsUsed}/{carryCapacity} 格</span>
+              </h3>
               <p className="dim chart-carry-hint">
-                仓库里的随身物，勾了才带。带下去的，死了就留在尸体上；活着回来自动归库。
+                点储物柜里的东西放进背包，点背包里的放回。带下去的，死了就留在尸体上；活着回来自动归库。
               </p>
-              <ul className="chart-carry-list">
+              <div className="item-grid chart-carry-bag">
+                {carryPicks.flatMap((p) =>
+                  Array.from({ length: p.qty }, (_, i) => (
+                    <ItemCell
+                      key={`${p.itemId}-${i}`}
+                      def={getItemDef(p.itemId)}
+                      itemId={p.itemId}
+                      title={`${getItemDef(p.itemId)?.name ?? p.itemId}——点击放回储物柜`}
+                      onClick={() => stepCarry(p.itemId, -1, Infinity)}
+                    />
+                  )),
+                )}
+                {Array.from({ length: Math.max(0, carryCapacity - slotsUsed) }, (_, i) => (
+                  <EmptyCell key={`empty-${i}`} />
+                ))}
+              </div>
+              <h4 className="chart-carry-subtitle dim">储物柜（消耗品）</h4>
+              <div className="item-grid chart-carry-locker">
                 {carryables.map((it) => {
                   const def = getItemDef(it.itemId);
                   const picked = carry[it.itemId] ?? 0;
+                  const remaining = it.qty - picked;
+                  const per = def?.slotsRequired ?? 1;
+                  const bagFull = slotsUsed + per > carryCapacity;
+                  if (remaining <= 0) return null;
                   return (
-                    <li key={it.itemId} className="chart-carry-item">
-                      <span className="chart-carry-name" title={def?.description}>
-                        {def?.name ?? it.itemId}
-                        <span className="dim">（库存 {it.qty}）</span>
-                      </span>
-                      <span className="chart-carry-stepper">
-                        <button
-                          className="btn small"
-                          aria-label={`少带一个${def?.name ?? ''}`}
-                          disabled={picked <= 0}
-                          onClick={() => stepCarry(it.itemId, -1, it.qty)}
-                        >
-                          −
-                        </button>
-                        <span className="chart-carry-qty">{picked}</span>
-                        <button
-                          className="btn small"
-                          aria-label={`多带一个${def?.name ?? ''}`}
-                          disabled={picked >= it.qty}
-                          onClick={() => stepCarry(it.itemId, +1, it.qty)}
-                        >
-                          ＋
-                        </button>
-                      </span>
-                    </li>
+                    <ItemCell
+                      key={it.itemId}
+                      def={def}
+                      itemId={it.itemId}
+                      qty={remaining}
+                      disabled={bagFull}
+                      title={
+                        bagFull
+                          ? '背包满了——先点背包里的东西放回来'
+                          : `${def?.name ?? it.itemId}——点击放进背包`
+                      }
+                      onClick={() => stepCarry(it.itemId, +1, it.qty)}
+                    />
                   );
                 })}
-              </ul>
+              </div>
             </div>
           )}
 
