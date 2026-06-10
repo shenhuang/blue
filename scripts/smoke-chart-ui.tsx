@@ -12,7 +12,8 @@ import { createInitialGameState, createNewRun } from '../src/engine/state';
 import { SeaChartView } from '../src/ui/SeaChartView';
 import { PortView } from '../src/ui/PortView';
 import { NodeSelectView } from '../src/ui/NodeSelectView';
-import { SonarScanPanel } from '../src/ui/SonarScanPanel';
+import { SonarScanPanel, buildCaveGeometry } from '../src/ui/SonarScanPanel';
+import type { MapLayout } from '../src/ui/mapLayout';
 import { EventView } from '../src/ui/EventView';
 import { FuneralView } from '../src/ui/CorpseView';
 import { UpgradePanel } from '../src/ui/UpgradePanel';
@@ -909,6 +910,52 @@ const P2off: GameState = {
 const htmlP2off = renderToStaticMarkup(<NodeSelectView state={P2off} choices={[]} onStateChange={noop} />);
 assert(!htmlP2off.includes('decoy-deploy'), 'P2: 非 huntEnabled（浅水旧路径）→ 不渲染投放按钮');
 L('  装包面板有/无 · 投放按钮（huntEnabled 门控）· 诱饵状态行 ✓');
+
+// ============================================================
+// Q. 声呐图 06-10 三修（作者实测反馈·#1/#5 的 SSR/纯函数面）：
+//   Q1 你脚下那间永远可见——洞穴（maze）+ 空扫描记忆 ≠ 空态（渲染侧并入当前节点·不写 scanMemory）；
+//   Q2 两段点击 SSR 默认干净——选中高亮/回正按钮是纯客户端交互态，SSR 初始输出不该有；
+//   Q3 半揭示残段（buildCaveGeometry 纯函数直测）——单端揭示给残段、无揭示给空、残段总长 < 双端整隧道。
+//   （#3 扫描波重放与 #2 缩放/平移是 canvas/交互行为，绿≠画对——线上 ?dev 肉眼·quirk #91/#93。）
+// ============================================================
+L('\n========== Q. 声呐图 06-10 三修（#1 脚下可见+残段 / #5 SSR 默认干净） ==========');
+// Q1: 洞穴 + 空记忆 → 非空态：canvas 在、你的呼吸点在（站着的房间看得见）
+const qRun = {
+  ...createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } }),
+  map: owMazeMap, currentDepth: 50, currentNodeId: 'm0', turn: 0, scanMemory: {},
+};
+const qState: GameState = {
+  ...createInitialGameState(), run: qRun,
+  phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } },
+};
+const htmlQ = renderToStaticMarkup(
+  <NodeSelectView state={qState} choices={choicesFor(owMazeMap, 'm0')} onStateChange={noop} />,
+);
+assert(!htmlQ.includes('sonar-scan-empty'), 'Q1: 洞穴图空记忆不再是空态（你脚下那间可见·#1）');
+assert(htmlQ.includes('sonar-cave-canvas') && htmlQ.includes('sonar-you'), 'Q1: canvas + 你的呼吸点照常渲染');
+// 开阔水域空记忆仍是空态（脚下房间是洞穴的事·开阔水域没洞壁可看）
+const htmlQOpen = renderToStaticMarkup(
+  <NodeSelectView state={sonarState({ scanMemory: {} })} choices={sonarAdj} onStateChange={noop} />,
+);
+assert(htmlQOpen.includes('sonar-scan-empty'), 'Q1: 开阔水域空记忆仍空态（不受 #1 影响）');
+// Q2: SSR 默认无选中/无回正（纯客户端交互态·见 SonarScanPanel/NodeSelectView 两段点击）
+assert(!htmlQ.includes('is-pending') && !htmlQ.includes('sonar-pending-ring'), 'Q2: SSR 初始无选中高亮');
+assert(!htmlQ.includes('sonar-recenter') && !htmlQ.includes('sonar-pending-hint'), 'Q2: SSR 初始无回正按钮/选中提示');
+// Q3: 残段纯函数基线（确定性 hash·跨运行稳定）
+const qLayout: MapLayout = {
+  pos: { a: { x: 0, y: 0 }, b: { x: 80, y: 60 } },
+  edges: [{ a: 'a', b: 'b' }],
+  width: 100, height: 100,
+};
+const qFull = buildCaveGeometry(qLayout, ['a', 'b'], { a: 0, b: 0 });
+const qStub = buildCaveGeometry(qLayout, ['a'], { a: 0 });
+const qNone = buildCaveGeometry(qLayout, [], {});
+const tunLen = (g: { tuns: Array<{ ax: number; ay: number; bx: number; by: number }> }) =>
+  g.tuns.reduce((s, t) => s + Math.hypot(t.bx - t.ax, t.by - t.ay), 0);
+assert(qNone.tuns.length === 0 && qNone.rooms.length === 0, 'Q3: 无揭示 → 不画任何几何（防剧透不破）');
+assert(qStub.rooms.length >= 1 && qStub.tuns.length >= 1, 'Q3: 单端揭示 → 有房间 + 残段隧道口（#1）');
+assert(tunLen(qStub) < tunLen(qFull), 'Q3: 残段总长 < 双端整隧道（只露口、不剧透走向）');
+L('  洞穴空记忆非空态(开阔仍空态) · SSR 无交互态残留 · 残段存在且短于整隧道 ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 海图 UI 冒烟测试通过');

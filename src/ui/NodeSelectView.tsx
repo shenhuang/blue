@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type { GameState, NodeChoice, FeatureChoice, SonarDir } from '@/types';
 import { moveToNode, setLight, pingSonar, exploreFeature, standAndFight, deployDecoy, setSonarNext } from '@/engine/dive';
 import { clarity, sonarPingCost, ALERT_WARN, ALERT_THRESHOLD, sonarStandingOn, sonarStandingNext } from '@/engine/clarity';
@@ -25,6 +26,13 @@ interface Props {
 }
 
 export function NodeSelectView({ state, choices, features, onStateChange }: Props) {
+  // 两段点击（#5·作者 06-10）：声呐图第一击只「选中」——图上 POI 与下方列表项同款高亮边，
+  // 第二击（图上同点）或点列表项才真正前往。状态放这层＝图与列表联动的单一来源；换节点自动清。hooks 在早退前（规则）。
+  const [pendingNodeId, setPendingNodeId] = useState<string | null>(null);
+  const curNodeId = state.run?.currentNodeId ?? null;
+  useEffect(() => {
+    setPendingNodeId(null);
+  }, [curNodeId]);
   if (!state.run) return null;
   const run = state.run;
 
@@ -48,6 +56,9 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
   // 单向下潜预告：层状（开阔水域）zone 的下潜图只往下通、走过的节点不再是选项（迷路图可回头则不提示）。
   // 在选点前就讲清楚，免得玩家过了上浮口往深里走之后，才发现回不了头（设计是单向、不该是惊吓）。
   const oneWay = !zoneAllowsBacktrack(run.zoneId);
+
+  // 两段点击（#5）：选中态对不上当前 choices（移动后残留/欺骗变化）→ 视为无选中。
+  const pending = pendingNodeId && choices.some((c) => c.nodeId === pendingNodeId) ? pendingNodeId : null;
 
   // 诱饵（猎手 SPEC §4·#108）：背包里的 decoy 道具（行前装包带下来的）+ 水里现存那枚的剩余回合。
   // 仅 huntEnabled 的深 band 显示按钮（诱饵只对「有位置的猎手」起效——浅水旧瞬时路径用不上，藏掉省噪音）。
@@ -153,8 +164,17 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
           </div>
         )}
 
-        {/* 声呐图（声呐渲染重做 §2/§3）：有机洞穴剖面 + 雷达扫描（canvas）·只对相邻可去节点画可点标记（点击＝move）。 */}
-        {sonarUnlocked && <SonarScanPanel state={state} choices={choices} onStateChange={onStateChange} />}
+        {/* 声呐图（声呐渲染重做 §2/§3）：有机洞穴剖面 + 雷达扫描（canvas）·只对相邻可去节点画可点标记。
+            两段点击（#5）：第一击选中（pending·图/列表同款高亮），再击同点或点列表项才 move。 */}
+        {sonarUnlocked && (
+          <SonarScanPanel
+            state={state}
+            choices={choices}
+            onStateChange={onStateChange}
+            pendingNodeId={pending}
+            onPendingChange={setPendingNodeId}
+          />
+        )}
 
         {alert >= ALERT_WARN && (
           <p className={`alert-warning ${alert >= ALERT_THRESHOLD ? 'danger' : ''}`}>
@@ -235,6 +255,11 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
 
         {roomFeatures.length > 0 && <p className="dim">或者，离开这片水域：</p>}
 
+        {pending && (
+          <p className="dim sonar-pending-hint">
+            已在声呐图上选中一处——下方亮边的就是它；再点图上那个点，或直接点列表项，才会真的过去。
+          </p>
+        )}
         <ul className="event-options">
           {choices.map((c) => {
             const isAscent = c.isAscentPoint;
@@ -252,7 +277,7 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
             return (
               <li key={c.nodeId}>
                 <button
-                  className={`btn event-option ${c.hasCorpseHint ? 'corpse' : ''} ${isAir || isCamp ? 'landmark' : ''} ${c.visited ? 'visited' : ''}`}
+                  className={`btn event-option ${c.hasCorpseHint ? 'corpse' : ''} ${isAir || isCamp ? 'landmark' : ''} ${c.visited ? 'visited' : ''} ${pending === c.nodeId ? 'is-pending' : ''}`}
                   onClick={() => handlePick(c.nodeId)}
                 >
                   <div className="node-row">

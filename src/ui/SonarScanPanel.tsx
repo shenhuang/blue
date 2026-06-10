@@ -11,7 +11,8 @@
 // 纯渲染：canvas 在 useEffect 里画（SSR 不跑·只出空 canvas）；语义/可点标记走 SVG 覆盖层（SSR 可断言 + 可点 + 无障碍）。
 // 欺骗/威胁仍是 clarity 单一来源（nodeSonarView/sonarPhantoms/threatContact·面板不加判定分支·§7/§10）；猎手位置 stalkerSonarBlip（§8.7 会过时·mid-edge 插值）。
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import type { GameState, NodeChoice, RunState, SonarDir } from '@/types';
 import { deriveMapLayout, type MapLayout } from './mapLayout';
 import { moveToNode } from '@/engine/dive';
@@ -24,6 +25,10 @@ import { zoneAllowsBacktrack } from '@/engine/zones';
 const VIEW_W = 220;
 const VIEW_H = 300;
 const VIEW_R = Math.min(VIEW_W, VIEW_H);
+/** 缩放/平移（#2·作者 06-10）：z＝缩放（1=默认取景），dx/dy＝视野中心相对你的世界偏移。纯视图态·不入存档。 */
+const ZOOM_MIN = 0.6;
+const ZOOM_MAX = 2.5;
+const PAN_MARGIN = 60; // 平移可越出布局边界的余量（世界单位·防飞出找不回·配「回正」按钮）
 /** canvas 内部超采样（清晰度）；洞穴 SDF 在其半分辨率算（§2 半分辨率提速）。 */
 const RENDER_SCALE = 2;
 /** 声呐取景的布局比例：压短纵向（pxPerMeter 小·节点更近·§2）+ 同深横向铺开（colW·byLayer 见 mapLayout）。 */
@@ -46,8 +51,14 @@ const SMIN_K = 7; // 平滑并集半径（越大越熔成一团·越小房间越
 const CTRL_OFF = 48; // 隧道弯折的最大垂向偏移
 const WALL_LO = -2; // SDF < WALL_LO ＝水道内（蓝）
 const WALL_HI = 2.2; // [WALL_LO, WALL_HI) ＝发光岩壁带（越大壁越厚）
-/** 雷达扫描扩散时长（ms·§3「慢一点 ~1.2s」）。 */
-const SWEEP_MS = 1200;
+/**
+ * 雷达扫描扩散时长（ms）。作者 06-10 实测：1.2s + easeOut 前 0.3s 就掠过大半屏＝「根本没看到波」——
+ * 放慢 + **线性前缘**（frame 里 eased=k·恒速）：SVG 标记「波到才亮」的延迟（dist/maxR×SWEEP_MS）可与波前精确同步。
+ */
+const SWEEP_MS = 2600;
+/** 半揭示残段（#1「平时全黑」修正）：边只有一端被扫过 → 从已知端画一小截变窄的隧道口（房间的出口看得见、通向哪看不见·防剧透轴不破）。 */
+const STUB_FRAC = 0.38; // 残段占该边路由总长的比例
+const STUB_R_K = 0.72; // 残段半宽缩窄系数
 
 /**
  * 面板自带的布局/动画 CSS（客户端注入 document.head·见 useEffect）。
@@ -56,11 +67,19 @@ const SWEEP_MS = 1200;
  */
 const CAVE_STYLE = `
 @keyframes sonarBreath { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
-.sonar-scan-stack { position: relative; }
+@keyframes sonarWaveIn { from { opacity: 0; } to { opacity: 1; } }
+.sonar-scan-stack { position: relative; touch-action: none; }
 .sonar-cave-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; }
 .sonar-overlay { position: absolute; inset: 0; width: 100%; height: 100%; }
 .sonar-pulse { animation: sonarBreath 2.2s ease-in-out infinite; }
 .sonar-node-marker { cursor: pointer; }
+/* 「波到才亮」（#3·§3）：标记随扫描波前到达时刻淡入（delay 内联·与线性波前同步）。CSS 客户端注入＝SSR 输出元素照常在（smoke 断言不受影响）。 */
+.sonar-wave-in { opacity: 0; animation: sonarWaveIn .4s ease-out forwards; }
+/* 两段点击（#5）：图上选中高亮＝下方事件列表项 .event-option.is-pending 同款光边（规则同住此处＝单一来源·列表 DOM 在 NodeSelectView）。 */
+.sonar-node-marker.is-pending circle { stroke: #eafffa; stroke-width: 2.2; filter: drop-shadow(0 0 5px rgba(140,255,235,.95)); }
+.sonar-pending-ring { fill: none; stroke: #eafffa; stroke-width: 1.6; stroke-dasharray: 4 3; animation: sonarBreath 1.6s ease-in-out infinite; }
+.event-option.is-pending { border-color: #7defdc; box-shadow: 0 0 0 1px #7defdc, 0 0 10px rgba(125, 239, 220, .45); }
+.sonar-recenter { margin-left: auto; flex-shrink: 0; }
 .sonar-you circle.sonar-you-core { fill: #4ed1c1; stroke: none; }
 .sonar-you circle.sonar-you-ring { fill: none; stroke: #4ed1c1; stroke-width: 1.4; }
 .sonar-stalker circle.sonar-stalker-core { fill: #ff5a5a; stroke: none; }
@@ -215,7 +234,9 @@ export function buildCaveGeometry(
   const tuns: CaveTun[] = [];
   const rooms: CaveRoom[] = [];
   for (const e of layout.edges) {
-    if (memory[e.a] === undefined || memory[e.b] === undefined) continue;
+    const haveA = memory[e.a] !== undefined;
+    const haveB = memory[e.b] !== undefined;
+    if (!haveA && !haveB) continue;
     const pa = layout.pos[e.a];
     const pb = layout.pos[e.b];
     if (!pa || !pb) continue;
@@ -232,8 +253,30 @@ export function buildCaveGeometry(
     }
     pts.push({ x: pb.x, y: pb.y });
     const r = CH_BASE + CH_VAR * hash01('w' + key);
-    for (let i = 0; i + 1 < pts.length; i++) {
-      tuns.push({ ax: pts[i].x, ay: pts[i].y, bx: pts[i + 1].x, by: pts[i + 1].y, r });
+    if (haveA && haveB) {
+      for (let i = 0; i + 1 < pts.length; i++) {
+        tuns.push({ ax: pts[i].x, ay: pts[i].y, bx: pts[i + 1].x, by: pts[i + 1].y, r });
+      }
+      continue;
+    }
+    // 半揭示残段（#1·作者 06-10「平时全黑」修正）：只有一端被扫过 → 沿同一条确定性路由，从已知端截取
+    // STUB_FRAC 画一截变窄的「隧道口」。房间的出口因此看得见（墙不再只在双端齐时凭空出现），通向哪仍是黑的
+    // （防剧透/欺骗轴不动）；两端都扫到后自然换成整条隧道（同一路由几何·不跳变）。
+    const walk = haveA ? pts : [...pts].reverse();
+    let total = 0;
+    for (let i = 0; i + 1 < walk.length; i++) total += Math.hypot(walk[i + 1].x - walk[i].x, walk[i + 1].y - walk[i].y);
+    let budget = total * STUB_FRAC;
+    for (let i = 0; i + 1 < walk.length && budget > 0; i++) {
+      const segL = Math.hypot(walk[i + 1].x - walk[i].x, walk[i + 1].y - walk[i].y) || 1;
+      const t = Math.min(1, budget / segL);
+      tuns.push({
+        ax: walk[i].x,
+        ay: walk[i].y,
+        bx: walk[i].x + (walk[i + 1].x - walk[i].x) * t,
+        by: walk[i].y + (walk[i + 1].y - walk[i].y) * t,
+        r: r * STUB_R_K,
+      });
+      budget -= segL;
     }
   }
   for (const id of scannedIds) {
@@ -332,10 +375,29 @@ interface Props {
   /** NodeSelectView 当前的移动 choices＝可立即前往的相邻节点（§2·只这些画可点标记·点击触发同一条 move）。 */
   choices: NodeChoice[];
   onStateChange: (s: GameState) => void;
+  /** 两段点击（#5·作者 06-10）：当前「选中待确认」的节点——图上高亮 + 列表项同款高亮（状态由 NodeSelectView 持有＝联动单一来源）。 */
+  pendingNodeId?: string | null;
+  /** 第一击选中 / 点空处清除；不传＝保持旧「一击即走」（既有调用方零迁移）。 */
+  onPendingChange?: (nodeId: string | null) => void;
 }
 
-export function SonarScanPanel({ state, choices, onStateChange }: Props) {
+export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, onPendingChange }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const stackRef = useRef<HTMLDivElement | null>(null);
+  // 缩放/平移（#2）：纯视图态（不入存档）。pointers＝活跃触点（1 指拖动平移·2 指捏合缩放）；
+  // pan/pinch 经 rAF 合并再 setCam（每帧至多重烤一次洞穴）；movedRef＝按下以来累计位移（>阈值＝拖拽·吞掉随后的 click）。
+  const [cam, setCam] = useState<{ dx: number; dy: number; z: number }>({ dx: 0, dy: 0, z: 1 });
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const movedRef = useRef(0);
+  const camAccRef = useRef<{ dx: number; dy: number; zk: number }>({ dx: 0, dy: 0, zk: 1 });
+  const camRafRef = useRef(0);
+  // 滚轮缩放走原生 listener（passive:false 才能 preventDefault 页面滚动）；handler 每渲染重指（闭包取最新取景）。
+  const wheelRef = useRef<((e: WheelEvent) => void) | null>(null);
+  const wheelCleanupRef = useRef<(() => void) | null>(null);
+  // 旧图持续（§4「旧图保留到下次扫描」）：上一次烤好的洞穴位图 + 其世界矩形——新扫描的波前外侧仍显示旧图（不再黑屏等波）。
+  const prevBakeRef = useRef<{ canvas: HTMLCanvasElement; rect: CaveRect } | null>(null);
+  // 扫描波只在「真有新扫描」时重播（lastScanTurn 变化/面板重挂载）；纯平移/缩放只重烤不重播（别放假波）。
+  const lastSweepRef = useRef<string | null>(null);
   // 面板 CSS 客户端注入 head（一次·SSR 不跑＝输出干净·不污染 smoke 子串断言）。
   useEffect(() => {
     if (typeof document === 'undefined' || document.getElementById(CAVE_STYLE_ID)) return;
@@ -349,22 +411,41 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
   const memory = run?.scanMemory ?? {};
   const scannedIds = map ? Object.keys(memory).filter((id) => map.nodes[id]) : [];
 
+  // 换节点＝视角跟人走：清平移偏移（保留缩放档·玩家调好的倍率是偏好）。hooks 在早退前。
+  const curIdDep = run?.currentNodeId ?? null;
+  useEffect(() => {
+    setCam((c) => (c.dx !== 0 || c.dy !== 0 ? { ...c, dx: 0, dy: 0 } : c));
+  }, [curIdDep]);
+
   // 布局（压短纵向 + byLayer 横向铺开·§2）。空图/无 run 兜底空布局（hooks 仍按序调用·见下早退）。
   const layout = map ? deriveMapLayout(map, { pxPerMeter: SONAR_PX_PER_M, colW: SONAR_COL_W }) : null;
   const curId = run?.currentNodeId ?? null;
   const here = (layout && curId && layout.pos[curId]) || { x: (layout?.width ?? 0) / 2, y: (layout?.height ?? 0) / 2 };
-  const vbX = here.x - VIEW_W / 2;
-  const vbY = here.y - VIEW_H / 2;
   const isOpenWater = run ? !zoneAllowsBacktrack(run.zoneId) : false;
+  // 你脚下那间永远可见（#1·纯渲染侧）：人都站在这儿了，眼前这间洞不该是黑的——
+  // 不写 scanMemory（存档/引擎零变化·揭示与欺骗语义仍归 clarity/sonar），只在渲染时并进当前节点。
+  const renderIds =
+    !isOpenWater && curId && map?.nodes[curId] && memory[curId] === undefined ? [...scannedIds, curId] : scannedIds;
+  const renderMemory: Record<string, number> = renderIds === scannedIds ? memory : { ...memory, [curId as string]: -1 };
   // 最近一次扫描的 turn（任一节点被刷新的最大 stamp）→ 变化即重新雷达扫一遍（旧图保留到此刻·§4）。
   let lastScanTurn = -1;
   for (const id of scannedIds) lastScanTurn = Math.max(lastScanTurn, memory[id] ?? -1);
 
-  // 揭示几何（世界坐标·canvas 画有机洞穴用·确定性 buildCaveGeometry）：扫到的点/两端都扫到的边才画＝渐进揭示防剧透。开放水域不画洞壁。
-  const cave = layout && !isOpenWater ? buildCaveGeometry(layout, scannedIds, memory) : { tuns: [], rooms: [] };
+  // 取景窗（#2 缩放/平移）：z 缩放视野尺寸，dx/dy 平移视野中心（世界单位·相对你）。
+  const vw = VIEW_W / cam.z;
+  const vh = VIEW_H / cam.z;
+  const vbX = here.x + cam.dx - vw / 2;
+  const vbY = here.y + cam.dy - vh / 2;
 
-  // canvas：有机洞穴剖面 + 雷达扫描（useEffect·SSR 不跑）。signature 变（新扫描/移动）→ 重画 + 重扫一遍。
-  const signature = `${vbX.toFixed(0)},${vbY.toFixed(0)}|${lastScanTurn}|${isOpenWater}|${scannedIds.sort().join(',')}`;
+  // 揭示几何（世界坐标·canvas 画有机洞穴用·确定性 buildCaveGeometry）：扫到的点/两端都扫到的边才画＝渐进揭示防剧透；
+  // 半揭示边给残段隧道口（#1）。开放水域不画洞壁。
+  const cave = layout && !isOpenWater ? buildCaveGeometry(layout, renderIds, renderMemory) : { tuns: [], rooms: [] };
+
+  // canvas：有机洞穴剖面 + 雷达扫描（useEffect·SSR 不跑）。signature 变（新扫描/移动/缩放/平移）→ 重画；是否重播扫描波由 lastSweepRef 决定。
+  const signature = `${vbX.toFixed(1)},${vbY.toFixed(1)},${vw.toFixed(1)}|${lastScanTurn}|${isOpenWater}|${renderIds
+    .slice()
+    .sort()
+    .join(',')}`;
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -374,10 +455,11 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
     const H = VIEW_H * RENDER_SCALE;
     canvas.width = W;
     canvas.height = H;
+    const rect: CaveRect = { x: vbX, y: vbY, w: vw, h: vh };
 
     // 离屏半分辨率算洞穴 SDF（§2 半分辨率提速）→ 一次性烤成静态洞穴图（水/壁/岩 + 噪声），之后只做雷达揭示合成。
-    const ow = Math.max(1, Math.round((VIEW_W / 2)));
-    const oh = Math.max(1, Math.round((VIEW_H / 2)));
+    const ow = Math.max(1, Math.round(VIEW_W / 2));
+    const oh = Math.max(1, Math.round(VIEW_H / 2));
     const off = document.createElement('canvas');
     off.width = ow;
     off.height = oh;
@@ -386,55 +468,73 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
     if (octx && !isOpenWater && cave.tuns.length + cave.rooms.length > 0) {
       // 取景窗与 MapDevPanel 全图概览共用同一像素外观（bakeCaveRGBA·单一来源·守洞穴一致性 #100）。
       const img = octx.createImageData(ow, oh);
-      img.data.set(bakeCaveRGBA(cave, { x: vbX, y: vbY, w: VIEW_W, h: VIEW_H }, ow, oh));
+      img.data.set(bakeCaveRGBA(cave, rect, ow, oh));
       octx.putImageData(img, 0, 0);
       haveCave = true;
     }
 
-    const hx = (VIEW_W / 2) * RENDER_SCALE; // here 居中
-    const hy = (VIEW_H / 2) * RENDER_SCALE;
-    const maxR = Math.hypot(W, H) / 2 + 8;
+    // 世界 → 本 canvas 像素（缩放/平移后 here 不一定在正中）。
+    const hx = ((here.x - rect.x) / rect.w) * W;
+    const hy = ((here.y - rect.y) / rect.h) * H;
+    const maxR = Math.hypot(Math.max(hx, W - hx), Math.max(hy, H - hy)) + 8;
+    // 旧图（上一次烤好的位图·可能对应另一个取景矩形）按世界坐标贴到当前取景——波前外侧保旧图（§4），不再黑屏等波扫完。
+    const drawBakeAt = (b: { canvas: HTMLCanvasElement; rect: CaveRect }) => {
+      const dx = ((b.rect.x - rect.x) / rect.w) * W;
+      const dy = ((b.rect.y - rect.y) / rect.h) * H;
+      ctx.drawImage(b.canvas, dx, dy, (b.rect.w / rect.w) * W, (b.rect.h / rect.h) * H);
+    };
 
     const compose = (revealR: number, animating: boolean) => {
       ctx.clearRect(0, 0, W, H);
+      ctx.imageSmoothingEnabled = true;
+      const prev = prevBakeRef.current;
+      if (animating && prev) drawBakeAt(prev); // 波前外侧：旧图打底
       if (haveCave) {
         ctx.save();
         ctx.beginPath();
-        ctx.arc(hx, hy, revealR, 0, Math.PI * 2); // 雷达波前门控：只露已被波前扫到的那片
+        ctx.arc(hx, hy, revealR, 0, Math.PI * 2); // 雷达波前门控：新图只露已被波前扫到的那片
         ctx.clip();
-        ctx.imageSmoothingEnabled = true;
+        if (animating && prev) ctx.clearRect(0, 0, W, H); // 波前内侧先清旧图（岩区透明·别让旧水道残留）
         ctx.drawImage(off, 0, 0, ow, oh, 0, 0, W, H);
         ctx.restore();
       }
       if (animating) {
-        // 亮前缘 + 淡化拖尾（雷达余辉·径向渐变环带·§3）
-        const inner = Math.max(0, revealR - 26 * RENDER_SCALE);
+        // 亮前缘 + 淡化拖尾（雷达余辉·径向渐变环带·§3·06-10 调亮调宽——波要「很明显」）
+        const inner = Math.max(0, revealR - 34 * RENDER_SCALE);
         const grd = ctx.createRadialGradient(hx, hy, inner, hx, hy, revealR);
         grd.addColorStop(0, 'rgba(78,209,193,0)');
-        grd.addColorStop(0.7, 'rgba(110,235,215,0.10)');
-        grd.addColorStop(1, 'rgba(165,255,238,0.42)');
+        grd.addColorStop(0.7, 'rgba(110,235,215,0.16)');
+        grd.addColorStop(1, 'rgba(165,255,238,0.55)');
         ctx.fillStyle = grd;
         ctx.beginPath();
         ctx.arc(hx, hy, revealR, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(170,255,240,0.65)';
-        ctx.lineWidth = 1.5 * RENDER_SCALE;
+        ctx.strokeStyle = 'rgba(170,255,240,0.8)';
+        ctx.lineWidth = 2 * RENDER_SCALE;
         ctx.beginPath();
         ctx.arc(hx, hy, revealR, 0, Math.PI * 2);
         ctx.stroke();
       }
     };
 
+    // 扫描波只在真有新扫描时重播（到站自动扫/手动 ping → lastScanTurn 变；面板重挂载〔事件回来〕重播上一记）；
+    // 纯缩放/平移＝重烤直出，不放假波。
+    const replay = lastSweepRef.current !== `${lastScanTurn}`;
     let raf = 0;
-    const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
-    const frame = (t: number) => {
-      const k = Math.min(1, (t - t0) / SWEEP_MS);
-      const eased = 1 - Math.pow(1 - k, 2); // easeOutQuad
-      compose(maxR * eased, k < 1);
-      if (k < 1) raf = requestAnimationFrame(frame);
-    };
-    if (typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(frame);
-    else compose(maxR, false);
+    if (replay && typeof requestAnimationFrame === 'function') {
+      lastSweepRef.current = `${lastScanTurn}`;
+      const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const frame = (t: number) => {
+        const k = Math.min(1, (t - t0) / SWEEP_MS);
+        compose(maxR * k, k < 1); // 线性前缘（恒速·与 SVG 标记「波到才亮」延迟同步）
+        if (k < 1) raf = requestAnimationFrame(frame);
+        else prevBakeRef.current = { canvas: off, rect };
+      };
+      raf = requestAnimationFrame(frame);
+    } else {
+      compose(maxR, false);
+      prevBakeRef.current = { canvas: off, rect };
+    }
     return () => {
       if (raf && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(raf);
     };
@@ -443,7 +543,8 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
 
   // ---- 早退（hooks 已全部在上方按序调用）----
   if (!run || !map || !layout) return null;
-  if (scannedIds.length === 0) {
+  // 洞穴图里 renderIds 至少含你脚下那间（#1）＝空态只剩「开阔水域 + 没扫过」。
+  if (renderIds.length === 0) {
     return (
       <div className="sonar-panel">
         <div className="sonar-panel-head">
@@ -494,6 +595,114 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
   // 你的呼吸点：voidTrack 跟随扭曲后的洞（不浮在岩里）；量程环/取景仍以房间中心 here 为准。
   const youMark = voidTrack(here.x, here.y);
 
+  // —— 「波到才亮」（#3）：标记按波前到达时刻延迟淡入（线性波前 → delay = dist/maxR × SWEEP_MS·与 canvas 同一比例）。
+  // 外层 <g key=lastScanTurn>＝只有真扫描会重挂载重播；纯平移/缩放不重弹。 ——
+  const hereVx = here.x - vbX;
+  const hereVy = here.y - vbY;
+  const maxRWorld =
+    Math.hypot(Math.max(hereVx, vw - hereVx), Math.max(hereVy, vh - hereVy)) + (8 * vw) / (VIEW_W * RENDER_SCALE);
+  const waveDelay = (x: number, y: number): CSSProperties => ({
+    animationDelay: `${Math.round(Math.min(1, Math.hypot(x - here.x, y - here.y) / Math.max(1, maxRWorld)) * SWEEP_MS)}ms`,
+  });
+
+  // —— 缩放/平移交互（#2）：1 指拖动平移 / 2 指捏合缩放 / 滚轮缩放（光标为锚）。rAF 合并＝每帧至多一次重烤。 ——
+  const clampCam = (c: { dx: number; dy: number; z: number }) => {
+    const z = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, c.z));
+    const cx = Math.min(layout.width + PAN_MARGIN, Math.max(-PAN_MARGIN, here.x + c.dx));
+    const cy = Math.min(layout.height + PAN_MARGIN, Math.max(-PAN_MARGIN, here.y + c.dy));
+    return { dx: cx - here.x, dy: cy - here.y, z };
+  };
+  const flushCamAcc = () => {
+    camRafRef.current = 0;
+    const a = camAccRef.current;
+    camAccRef.current = { dx: 0, dy: 0, zk: 1 };
+    if (a.dx === 0 && a.dy === 0 && a.zk === 1) return;
+    setCam((c) => clampCam({ dx: c.dx + a.dx, dy: c.dy + a.dy, z: c.z * a.zk }));
+  };
+  const queueCam = (ddx: number, ddy: number, zk: number) => {
+    const a = camAccRef.current;
+    a.dx += ddx;
+    a.dy += ddy;
+    a.zk *= zk;
+    if (!camRafRef.current && typeof requestAnimationFrame === 'function') {
+      camRafRef.current = requestAnimationFrame(flushCamAcc);
+    }
+  };
+  /** CSS px → 世界单位（canvas object-fit:contain 与 SVG meet 同一等比适配＝同一换算）。 */
+  const cssToWorld = (): number => {
+    const el = stackRef.current;
+    if (!el) return vw / VIEW_W;
+    const r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return vw / VIEW_W;
+    const fitW = Math.min(r.width, r.height * (VIEW_W / VIEW_H));
+    return vw / fitW;
+  };
+  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointersRef.current.size === 1) movedRef.current = 0;
+    // 注意：不在 down 时 setPointerCapture——立即捕获会把后续 click 重定向到容器、吞掉 POI 标记的点击；
+    // 拖过阈值（确认是拖拽）才捕获（防拖出边界丢跟踪），此时 click 本就该被 movedRef 闸掉。
+  };
+  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const pts = pointersRef.current;
+    const prev = pts.get(e.pointerId);
+    if (!prev) return;
+    const cur = { x: e.clientX, y: e.clientY };
+    if (pts.size === 1) {
+      const s = cssToWorld();
+      movedRef.current += Math.hypot(cur.x - prev.x, cur.y - prev.y);
+      if (movedRef.current > 6) e.currentTarget.setPointerCapture?.(e.pointerId);
+      queueCam(-(cur.x - prev.x) * s, -(cur.y - prev.y) * s, 1); // 拖右＝看左边的世界
+    } else if (pts.size === 2) {
+      const entries = [...pts.entries()];
+      const other = entries[0][0] === e.pointerId ? entries[1][1] : entries[0][1];
+      const d0 = Math.hypot(prev.x - other.x, prev.y - other.y) || 1;
+      const d1 = Math.hypot(cur.x - other.x, cur.y - other.y) || 1;
+      movedRef.current += Math.abs(d1 - d0);
+      queueCam(0, 0, d1 / d0);
+    }
+    pts.set(e.pointerId, cur);
+  };
+  const onPointerEnd = (e: ReactPointerEvent<HTMLDivElement>) => {
+    pointersRef.current.delete(e.pointerId);
+  };
+  // 滚轮缩放（光标锚定：保持光标下的世界点不动）。handler 每渲染重指＝闭包总拿最新取景。
+  wheelRef.current = (e: WheelEvent) => {
+    e.preventDefault();
+    const el = stackRef.current;
+    if (!el) return;
+    const zk = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+    const r = el.getBoundingClientRect();
+    const fitW = Math.min(r.width, r.height * (VIEW_W / VIEW_H));
+    const fitH = fitW * (VIEW_H / VIEW_W);
+    const bx = r.left + (r.width - fitW) / 2;
+    const by = r.top + (r.height - fitH) / 2;
+    const fx = Math.min(1, Math.max(0, (e.clientX - bx) / fitW));
+    const fy = Math.min(1, Math.max(0, (e.clientY - by) / fitH));
+    const wxp = vbX + fx * vw;
+    const wyp = vbY + fy * vh;
+    setCam((c) => {
+      const z = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, c.z * zk));
+      const nvw = VIEW_W / z;
+      const nvh = VIEW_H / z;
+      return clampCam({ dx: wxp - fx * nvw + nvw / 2 - here.x, dy: wyp - fy * nvh + nvh / 2 - here.y, z });
+    });
+  };
+  // callback ref：stack 可能晚于 mount 出现（先空态后成图），用它挂/卸 wheel listener（passive:false）。
+  const stackCb = (el: HTMLDivElement | null) => {
+    stackRef.current = el;
+    if (wheelCleanupRef.current) {
+      wheelCleanupRef.current();
+      wheelCleanupRef.current = null;
+    }
+    if (el) {
+      const h = (e: WheelEvent) => wheelRef.current?.(e);
+      el.addEventListener('wheel', h, { passive: false });
+      wheelCleanupRef.current = () => el.removeEventListener('wheel', h);
+    }
+  };
+  const camMoved = cam.z !== 1 || cam.dx !== 0 || cam.dy !== 0;
+
   // 残图小地图（方位感·保留·不逐回合淡出·§4）：全洞外框 + 已 mapped 的点 + 你。
   const MINI_W = 60;
   const MINI_H = 96;
@@ -509,18 +718,35 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
             ? '开阔水域——没有洞壁可循，只有黑暗里的接触与读数。'
             : '回波凿出的洞——蓝是水路，暗是岩。会过时，信几分由你。'}
         </span>
+        {/* 回正（#2）：缩放/平移过才出现（SSR 默认视角＝不渲染·smoke 零影响）。 */}
+        {camMoved && (
+          <button className="btn small sonar-recenter" onClick={() => setCam({ dx: 0, dy: 0, z: 1 })}>
+            回正
+          </button>
+        )}
       </div>
       <div className="sonar-scan-wrap">
-        <div className="sonar-scan sonar-scan-stack">
+        <div
+          className="sonar-scan sonar-scan-stack"
+          ref={stackCb}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerEnd}
+          onPointerCancel={onPointerEnd}
+        >
           {/* 有机洞穴剖面 + 雷达扫描（canvas·SSR 出空 canvas·画对靠 dev-server 肉眼·quirk #91/#93） */}
           <canvas ref={canvasRef} className="sonar-cave-canvas" aria-hidden="true" />
           {/* 语义/可点覆盖层（SVG·SSR 可断言 + 可点） */}
           <svg
             className="sonar-overlay"
-            viewBox={`${vbX} ${vbY} ${VIEW_W} ${VIEW_H}`}
+            viewBox={`${vbX} ${vbY} ${vw} ${vh}`}
             preserveAspectRatio="xMidYMid meet"
             role="img"
             aria-label="声呐探索图"
+            onClick={() => {
+              // 点空处＝取消选中（两段点击 #5）；拖拽（>6px）不算点。标记 onClick 已 stopPropagation。
+              if (movedRef.current <= 6) onPendingChange?.(null);
+            }}
           >
             <circle className="sonar-range-ring" cx={here.x} cy={here.y} r={VIEW_R * 0.42} />
             {focusDir && (
@@ -530,12 +756,21 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
                 d={focusWedgePath(here.x, here.y, VIEW_R * 0.5, focusDir)}
               />
             )}
+            {/* 「波到才亮」组（#3）：key=lastScanTurn＝真扫描重挂载重播淡入；平移/缩放不重弹。 */}
+            <g key={`wave-${lastScanTurn}`}>
             {/* 低 san 伪接触（S2）：与真接触无异的幻影·subtle */}
             {phantoms.map((ph) => {
               const anchor = layout.pos[ph.nearNodeId];
               if (!anchor) return null;
               return (
-                <circle key={ph.id} className="sonar-phantom" cx={anchor.x + ph.dx} cy={anchor.y + ph.dy} r={5} />
+                <circle
+                  key={ph.id}
+                  className="sonar-phantom sonar-wave-in"
+                  style={waveDelay(anchor.x + ph.dx, anchor.y + ph.dy)}
+                  cx={anchor.x + ph.dx}
+                  cy={anchor.y + ph.dy}
+                  r={5}
+                />
               );
             })}
             {/* 相邻可去节点（§2·只这些可点·点击＝触发那条 move choice·与 NodeSelectView 同步）。
@@ -556,15 +791,25 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
               const feats = node.features ?? [];
               const isRoom = feats.length > 1 && !view.deceptive;
               const baseR = isRoom ? 9 : 6;
+              const isPending = pendingNodeId === c.nodeId;
               return (
                 <g
                   key={c.nodeId}
-                  className={`sonar-blip sonar-node-marker ${kindClass(view.displayKind)} ${isRoom ? 'is-room' : ''} ${view.deceptive ? 'is-spoof' : ''}`}
-                  onClick={() => onStateChange(moveToNode(state, c.nodeId))}
+                  className={`sonar-blip sonar-node-marker sonar-wave-in ${kindClass(view.displayKind)} ${isRoom ? 'is-room' : ''} ${view.deceptive ? 'is-spoof' : ''} ${isPending ? 'is-pending' : ''}`}
+                  style={waveDelay(m.x, m.y)}
+                  onClick={(ev) => {
+                    // 两段点击（#5·作者 06-10）：第一击选中（图上高亮 + 列表项同款高亮·状态在 NodeSelectView），
+                    // 再击同一点＝确认前往。拖拽（>6px）不算点；未接 onPendingChange 的调用方保持旧「一击即走」。
+                    ev.stopPropagation();
+                    if (movedRef.current > 6) return;
+                    if (!onPendingChange || isPending) onStateChange(moveToNode(state, c.nodeId));
+                    else onPendingChange(c.nodeId);
+                  }}
                   role="button"
                   tabIndex={0}
-                  aria-label={`前往 ${node.depth}m`}
+                  aria-label={isPending ? `再点一次前往 ${node.depth}m` : `选定 ${node.depth}m`}
                 >
+                  {isPending && <circle className="sonar-pending-ring" cx={m.x} cy={m.y} r={baseR + 5} />}
                   <circle cx={m.x} cy={m.y} r={baseR} />
                   {isRoom &&
                     feats.map((_, fi) => {
@@ -592,23 +837,30 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
             })}
             {/* 威胁接触（S3 廉价版·琥珀·读不准方位/距离） */}
             {threat && threatPos && (
-              <g className={`sonar-threat ${threat.imminent ? 'is-near' : ''}`}>
+              <g
+                className={`sonar-threat sonar-wave-in ${threat.imminent ? 'is-near' : ''}`}
+                style={waveDelay(threatPos.x, threatPos.y)}
+              >
                 <circle cx={threatPos.x} cy={threatPos.y} r={6} />
                 <text className="sonar-threat-label" x={threatPos.x} y={threatPos.y - 9}>
                   {threat.garbled ? '?' : threat.range === 'near' ? '近' : threat.range === 'mid' ? '中' : '远'}
                 </text>
               </g>
             )}
-            {/* 猎手（§5 观感·§8.7 会过时）：红呼吸点 + 外圈（不要 X）·mid-edge 插值·大型生物一大团。 */}
+            {/* 猎手（§5 观感·§8.7 会过时）：红呼吸点 + 外圈（不要 X）·mid-edge 插值·大型生物一大团。
+                wave-in 包外层（与 sonar-pulse 的 animation 互斥·同元素会互盖）。 */}
             {stalkerFix && stalkerPos && (
-              <g className={`sonar-stalker sonar-pulse ${stalkerFix.large ? 'is-large' : ''}`}>
-                {stalkerFix.large && (
-                  <circle className="sonar-stalker-mass" cx={stalkerPos.x} cy={stalkerPos.y} r={18} />
-                )}
-                <circle className="sonar-stalker-ring" cx={stalkerPos.x} cy={stalkerPos.y} r={stalkerFix.large ? 13 : 8} />
-                <circle className="sonar-stalker-core" cx={stalkerPos.x} cy={stalkerPos.y} r={stalkerFix.large ? 5 : 3} />
+              <g className="sonar-wave-in" style={waveDelay(stalkerPos.x, stalkerPos.y)}>
+                <g className={`sonar-stalker sonar-pulse ${stalkerFix.large ? 'is-large' : ''}`}>
+                  {stalkerFix.large && (
+                    <circle className="sonar-stalker-mass" cx={stalkerPos.x} cy={stalkerPos.y} r={18} />
+                  )}
+                  <circle className="sonar-stalker-ring" cx={stalkerPos.x} cy={stalkerPos.y} r={stalkerFix.large ? 13 : 8} />
+                  <circle className="sonar-stalker-core" cx={stalkerPos.x} cy={stalkerPos.y} r={stalkerFix.large ? 5 : 3} />
+                </g>
               </g>
             )}
+            </g>
             {/* 你（呼吸点 + 外圈·青·不要 X·§5 观感） */}
             <g className="sonar-you sonar-pulse">
               <circle className="sonar-you-ring" cx={youMark.x} cy={youMark.y} r={7} />
@@ -626,7 +878,7 @@ export function SonarScanPanel({ state, choices, onStateChange }: Props) {
           aria-label="残图小地图"
         >
           <rect className="sonar-mini-extent" x={1} y={1} width={MINI_W - 2} height={MINI_H - 2} />
-          {scannedIds.map((id) => {
+          {renderIds.map((id) => {
             const p = layout.pos[id];
             if (!p) return null;
             const isCurrent = id === curId;
