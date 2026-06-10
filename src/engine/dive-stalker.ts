@@ -158,10 +158,11 @@ export function weakStalkerStep(
   }
 
   // 现身门：浅水线下（警觉积累不到的那段才归弱变体管）+ zone 数据 opt-in + 有池子 + 确定性小概率。
+  // 池子优先专属「更小敌」（weakHuntEncounters·作者 2026-06-10 拍·幼体遭遇）；缺省回落 ambushEncounters（旧行为）。
   if ((run.currentDepth ?? 0) >= ALERT_MIN_DEPTH) return null;
   const zone = getZone(run.zoneId);
   if (!zone?.weakHunts) return null;
-  const spawned = maybeSpawnWeakStalker(run, zone.ambushEncounters ?? []);
+  const spawned = maybeSpawnWeakStalker(run, zone.weakHuntEncounters ?? zone.ambushEncounters ?? []);
   if (!spawned) return null;
   let s: GameState = { ...state, run: { ...run, stalker: spawned } };
   s = appendLog(s, {

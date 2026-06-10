@@ -28,7 +28,7 @@ import {
 } from '../src/engine/state';
 import { moveToNode, standAndFight, deployDecoy } from '../src/engine/dive';
 import { weakStalkerStep } from '../src/engine/dive-stalker';
-import { applyPlayerAction, listAvailableActions } from '../src/engine/combat';
+import { applyPlayerAction, listAvailableActions, getEncounter } from '../src/engine/combat';
 import { ALERT_THRESHOLD } from '../src/engine/clarity';
 import { getZone } from '../src/engine/zones';
 import { nodeIsNarrow } from '../src/engine/sonar';
@@ -802,5 +802,51 @@ L('\n========== 15. wreck 双敌档案（蛛蟹 large 守口·沉灯 light+activ
   L('  蛛蟹=sound/0.5/large钉死/patience8 · 沉灯=light/active/0.45·奇数槽 active 例外·摸黑亮灯咬回 · 池序守门 ✓');
 }
 
+// ============================================================
+// 16. 弱变体专属「更小敌」（#110·作者拍「可以做更小敌」）：weakHuntEncounters 优先池——
+//     蓝洞群弱猎手＝盲鳗幼体遭遇、旧灯塔礁＝梭鱼幼体；池选择在 weakStalkerStep
+//     （weakHuntEncounters ?? ambushEncounters 回落＝没配池的 zone 行为不变）。
+//     幼体档案 sensesBy 同亲代（弱变体读开关的感官与亲代教学一致）。
+// ============================================================
+L('\n========== 16. 弱变体专属更小敌（weakHuntEncounters·幼体遭遇）==========');
+{
+  // 数据守门：两个 weakHunts zone 都配了专属幼体池
+  assert(
+    getZone('zone.blue_caves')?.weakHuntEncounters?.[0] === 'combat.blind_eel_juv_solo',
+    '16: 蓝洞群 weakHuntEncounters＝盲鳗幼体',
+  );
+  assert(
+    getZone('zone.old_lighthouse_reef')?.weakHuntEncounters?.[0] === 'combat.reef_barracuda_juv_solo',
+    '16: 旧灯塔礁 weakHuntEncounters＝梭鱼幼体',
+  );
+
+  // 接线（weakStalkerStep via moveToNode·同 §14d 路数）：蓝洞浅水中奖 → 弱猎手的遭遇是幼体不是成年体
+  const shallow16 = (runId: string): GameState => {
+    const base = huntState({ alert: 0, depth: 18, huntEnabled: false });
+    return { ...base, run: { ...base.run!, runId } };
+  };
+  const JUV_POOL = getZone('zone.blue_caves')!.weakHuntEncounters!;
+  let hit16 = '';
+  for (let i = 0; i < 300 && !hit16; i++) {
+    const r = { ...shallow16(`jv${i}`).run!, currentNodeId: 'n1', visitedNodeIds: ['n0', 'n1'] };
+    if (maybeSpawnWeakStalker(r, JUV_POOL)) hit16 = `jv${i}`;
+  }
+  assert(hit16, '16: 存在移动中奖的 runId');
+  let ms16 = shallow16(hit16);
+  ms16 = moveToNode(ms16, 'n1');
+  assert(
+    ms16.run!.stalker?.weak === true && ms16.run!.stalker.encounterId === 'combat.blind_eel_juv_solo',
+    '16: 弱猎手遭遇＝盲鳗幼体（weakHuntEncounters 优先于 ambushEncounters）',
+  );
+  // 幼体档案：sensesBy 同亲代（sound）·弱变体硬性仍在（慢速 wait·不 large/active——档案不可推翻硬性）
+  const sp16 = ms16.run!.stalker!;
+  assert(sp16.sensesBy === 'sound', '16: 幼体档案 sensesBy=sound（同亲代·读声呐开关）');
+  assert(sp16.hspeed === STALKER_WEAK_HSPEED && !sp16.large && !sp16.active, '16: 「小且弱」硬性不被档案推翻');
+  // 遭遇本体存在且是幼体单体（防 id 改错/敌人漏注册）
+  const enc16 = getEncounter('combat.blind_eel_juv_solo');
+  assert(enc16?.party.members[0]?.defId === 'enemy.blind_eel_juv', '16: 幼体遭遇注册且指向 enemy.blind_eel_juv');
+  L(`  两 zone 幼体池守门 / moveToNode 接幼体遭遇（${hit16}）/ 硬性不被档案推翻 / 注册指向幼体 ✓`);
+}
+
 console.log(log.join('\n'));
-console.log('\n✓ 猎手（Stalker mid-edge 追击重做 + §4 decoy + §5/§6/§2.2/Q3 Phase 2 收尾 + wreck 档案）playthrough 完成');
+console.log('\n✓ 猎手（Stalker mid-edge 追击重做 + §4 decoy + §5/§6/§2.2/Q3 Phase 2 收尾 + wreck/幼体档案）playthrough 完成');

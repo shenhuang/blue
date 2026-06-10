@@ -1,0 +1,18 @@
+{
+  "_comment": "梭鱼幼体 baseline（浅水弱变体专属「更小敌」·作者 2026-06-10 拍·#110）· knife_slash × 2（2nd 在 turn 1 胜利后未用），seed 1。weakHuntEncounters[旧灯塔礁] 接触遭遇：hp 7 / threat 2 / damage [1,4]（亲代 hp16 dmg[3,9] 的教学缩水版）/ territorial（挨打会撤＝小东西不恋战）/ 光感（亲代同感官·弱变体读灯开关的战斗端）。knife_slash(8-14) 必一刀杀＝「小且弱」可生存铁律的战斗兑现；seed 1 = 1 turn / stamina -6（先挨一记试探撕咬）/ oxygen -1。loot 无保底（rollCount 1 珊瑚碎片看脸·seed 1 空手）——幼体不是 farm 点。对照亲代梭鱼(hp16 glass cannon predatory)。",
+  "combatId": "combat.reef_barracuda_juv_solo",
+  "seed": 1,
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 1,
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": {},
+    "enemiesAlive": 0,
+    "statsDelta": { "stamina": -6, "oxygen": -1 }
+  }
+}

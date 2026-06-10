@@ -28,7 +28,8 @@
       "requiresFlags": ["flag.tutorial_complete"],
       "generation": "random",
       "ambushEncounters": ["combat.reef_barracuda_solo", "combat.reef_grouper_solo"],
-      "weakHunts": true
+      "weakHunts": true,
+      "weakHuntEncounters": ["combat.reef_barracuda_juv_solo"]
     },
     {
       "id": "zone.blue_caves",
@@ -45,7 +46,8 @@
       "mapShape": "maze",
       "canFreeAscend": false,
       "ambushEncounters": ["combat.blind_eel_solo", "combat.cave_octopus_solo"],
-      "weakHunts": true
+      "weakHunts": true,
+      "weakHuntEncounters": ["combat.blind_eel_juv_solo"]
     },
     {
       "id": "zone.wreck_graveyard",

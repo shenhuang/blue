@@ -1,0 +1,18 @@
+{
+  "_comment": "盲鳗幼体 baseline（浅水弱变体专属「更小敌」·作者 2026-06-10 拍·#110）· knife_slash × 2（2nd 在 turn 1 胜利后未用），seed 1。weakHuntEncounters[蓝洞群] 接触遭遇：hp 6 / threat 2 / 物理 [0,3] + 贴附 sanity [1,3]（亲代低频共振 4-8 的缩水版·uncanny 血统的「小的也会这一手」）/ territorial（挨打会撤）/ 声感（亲代同感官·弱变体读声呐开关的战斗端）。knife_slash(8-14) 必一刀杀；seed 1 = 1 turn / stamina -6（先挨一记滑咬）/ oxygen -1。掉 eel_skin×1 保底（鳗皮是鳗皮·声呐组件材料的浅水小额来源）。对照亲代盲鳗(hp18 sanity 双轨 predatory flanker)。",
+  "combatId": "combat.blind_eel_juv_solo",
+  "seed": 1,
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 1,
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": { "item.eel_skin": 1 },
+    "enemiesAlive": 0,
+    "statsDelta": { "stamina": -6, "oxygen": -1 }
+  }
+}
