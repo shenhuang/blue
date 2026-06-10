@@ -54,7 +54,8 @@
       "party": {
         "members": [{ "defId": "enemy.drowned_lantern" }]
       },
-      "introText": "它不是游过来的。是漂过来的——一盏沉在水里的灯，慢慢地，朝你这边偏。"
+      "introText": "它不是游过来的。是漂过来的——一盏沉在水里的灯，慢慢地，朝你这边偏。",
+      "stalker": { "sensesBy": "light", "active": true, "hspeed": 0.45 }
     }
   ]
 }

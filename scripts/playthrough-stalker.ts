@@ -30,6 +30,7 @@ import { moveToNode, standAndFight, deployDecoy } from '../src/engine/dive';
 import { weakStalkerStep } from '../src/engine/dive-stalker';
 import { applyPlayerAction, listAvailableActions } from '../src/engine/combat';
 import { ALERT_THRESHOLD } from '../src/engine/clarity';
+import { getZone } from '../src/engine/zones';
 import { nodeIsNarrow } from '../src/engine/sonar';
 import {
   advanceStalker,
@@ -739,5 +740,67 @@ L('\n========== 14. Q3 浅水弱变体（weakHunts·浅水小且弱）==========
   L(`  概率门确定性 / 小且弱硬性 / 直读灯声呐（关灯当场切断）/ 深度+zone 双门 / moveToNode 接线（${spawnedVia}）✓`);
 }
 
+// ============================================================
+// 15. wreck 双敌档案（#110·待办 2a「蜘蛛蟹/沉灯笼打 per-encounter 档案」）：
+//     沉船蛛蟹＝sound+慢爬 0.5+size:'large' 钉死（浅段 18-50m 也是大家伙＝窄缝避难首次在浅 zone 可学）+patience 8；
+//     沉灯水母＝light+active（searching 自己亮一记）+漂移 0.45——靠 #110 active 例外拿到 WAIT_TURNS（奇数槽不再掉头就走）。
+//     数据守门：zones.json 池序 + 档案字段别被改崩。
+// ============================================================
+L('\n========== 15. wreck 双敌档案（蛛蟹 large 守口·沉灯 light+active）==========');
+{
+  const WRECK_POOL = getZone('zone.wreck_graveyard')?.ambushEncounters ?? [];
+  assert(
+    WRECK_POOL[0] === 'combat.wreck_spider_crab_solo' && WRECK_POOL[1] === 'combat.drowned_lantern_solo',
+    '15: zones.json wreck 池序（蛛蟹/沉灯）',
+  );
+  // wreck 浅段（30m << STALKER_LARGE_DEPTH）：深度派生会给 small——large/active 等差异即档案生效的证据。
+  const run30 = () => huntState({ depth: 30 }).run!;
+
+  // idx=1（visited ['n0']）→ 沉灯（奇数槽·光感·active）
+  const lantern = maybeSpawnStalker(run30(), WRECK_POOL);
+  assert(lantern?.encounterId === 'combat.drowned_lantern_solo', '15: idx=1 → 沉灯遭遇');
+  assert(
+    lantern!.sensesBy === 'light' && lantern!.active === true && lantern!.hspeed === 0.45,
+    '15: 沉灯档案（light·active·漂移 0.45）',
+  );
+  assert(lantern!.large === undefined && lantern!.patience === undefined, '15: 沉灯小型（浅段派生）·patience 缺省');
+  assert(
+    lantern!.onLostSignal === 'wait' && lantern!.waitTurns === STALKER_WAIT_TURNS,
+    '15: active 例外——奇数槽也等满探测周期（不然 active 是死字段）',
+  );
+
+  // 反转池序 → idx=1 → 蛛蟹
+  const crab = maybeSpawnStalker(run30(), [...WRECK_POOL].reverse());
+  assert(crab?.encounterId === 'combat.wreck_spider_crab_solo', '15: 反转池 → 蛛蟹遭遇');
+  assert(
+    crab!.sensesBy === 'sound' && crab!.hspeed === 0.5 && crab!.patience === 8 && crab!.active === undefined,
+    '15: 蛛蟹档案（sound·0.5 慢爬·patience 8·非 active）',
+  );
+  assert(
+    crab!.large === true,
+    '15: 蛛蟹 size:"large" 钉死——浅段（30m < LARGE_DEPTH）也是大家伙（守口外/拖刮声在 wreck 浅段可学）',
+  );
+  assert(!nodeIsNarrow(crab!.nodeId), '15: 大型现身点非窄（容得下它）');
+
+  // 沉灯 active 真发火：摸黑（alert 0）丢信号 → 第 PROBE_PERIOD 个搜索回合自己亮一记重新咬上（量程内）。
+  let lit: Stalker | null = { ...lantern!, nodeId: 'n2', lastSignalNodeId: 'n0', state: 'hunting' };
+  const darkRun = (turn: number): RunState => ({
+    ...huntState({ alert: 0, depth: 30 }).run!,
+    currentNodeId: 'n0',
+    turn,
+  });
+  let reacq = -1;
+  for (let i = 1; i <= STALKER_ACTIVE_PROBE_PERIOD + 1 && lit; i++) {
+    const r = advanceStalker(darkRun(i), lit);
+    if (r.reacquired) {
+      reacq = i;
+      break;
+    }
+    lit = r.stalker;
+  }
+  assert(reacq === STALKER_ACTIVE_PROBE_PERIOD, `15: 沉灯摸黑后第 ${STALKER_ACTIVE_PROBE_PERIOD} 回合自己亮一记咬回，实际 ${reacq}`);
+  L('  蛛蟹=sound/0.5/large钉死/patience8 · 沉灯=light/active/0.45·奇数槽 active 例外·摸黑亮灯咬回 · 池序守门 ✓');
+}
+
 console.log(log.join('\n'));
-console.log('\n✓ 猎手（Stalker mid-edge 追击重做 + §4 decoy + §5/§6/§2.2/Q3 Phase 2 收尾）playthrough 完成');
+console.log('\n✓ 猎手（Stalker mid-edge 追击重做 + §4 decoy + §5/§6/§2.2/Q3 Phase 2 收尾 + wreck 档案）playthrough 完成');

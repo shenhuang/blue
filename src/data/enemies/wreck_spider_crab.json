@@ -51,7 +51,8 @@
       "party": {
         "members": [{ "defId": "enemy.wreck_spider_crab" }]
       },
-      "introText": "它从渔网里钻出来——比你想象的大。八条腿在锈铁皮上发出刮擦的声音。"
+      "introText": "它从渔网里钻出来——比你想象的大。八条腿在锈铁皮上发出刮擦的声音。",
+      "stalker": { "sensesBy": "sound", "hspeed": 0.5, "size": "large", "patience": 8 }
     },
     {
       "id": "combat.wreck_spider_crabs_pair",

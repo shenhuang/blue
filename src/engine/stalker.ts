@@ -317,8 +317,12 @@ export function maybeSpawnStalker(run: RunState, pool: string[]): Stalker | null
   const sensesBy: SenseModality = prof?.sensesBy ?? (depth >= STALKER_EVADE_DEPTH ? 'both' : idx % 2 === 0 ? 'sound' : 'light');
   // 丢信号性格（§2.3）：深/双感（狡猾·难缠·最执着）→ 去上次信号点徘徊找你；浅段 → 原地等。
   // 等多久按 waitTurns：浅段半数等一阵（STALKER_WAIT_TURNS）、半数等 0＝掉头就走；深段去到点再等一阵。
+  // active 例外（#110）：会自己探的家伙丢信号不「掉头就走」——至少等满一个探测周期（否则奇数槽的
+  // per-encounter active 标签成死字段：searching 第 1 回合就 despawn、PROBE_PERIOD 永远到不了）。
+  // 对既有数据零变化：盲鳗（active）恒在偶数槽本就 WAIT_TURNS；章鱼 both 同；reef 双敌非 active。
   const onLostSignal: StalkerLostBehavior = sensesBy === 'both' ? 'seek_last' : 'wait';
-  const waitTurns = sensesBy === 'both' || idx % 2 === 0 ? STALKER_WAIT_TURNS : 0;
+  const waitTurns =
+    sensesBy === 'both' || idx % 2 === 0 || prof?.active ? STALKER_WAIT_TURNS : 0;
   // 大型生物（§5）：深渊（≥ STALKER_LARGE_DEPTH）的捕食者比玩家还大 → 声呐图读成一大团 + 钻不进窄缝；
   // per-encounter size 标签可钉死大/小。浅段缺省 → 普通小 blip（large 缺省 undefined·逐字节不变）。
   let large: true | undefined = (prof?.size ? prof.size === 'large' : depth >= STALKER_LARGE_DEPTH) ? true : undefined;
