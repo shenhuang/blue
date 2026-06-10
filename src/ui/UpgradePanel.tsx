@@ -11,12 +11,14 @@ import type {
 } from '@/types';
 import {
   canPurchase,
+  devUnlockUpgrade,
   getUpgradeLines,
   getUnlockedLevelInLine,
   purchaseUpgrade,
 } from '@/engine/upgrades';
 import { countInInventory } from '@/engine/state';
 import { getItemDef } from '@/engine/items';
+import { DEV_TOOLS } from './devMode';
 
 interface Props {
   state: GameState;
@@ -29,6 +31,12 @@ export function UpgradePanel({ state, onStateChange, onClose }: Props) {
 
   function handleBuy(id: string) {
     onStateChange(purchaseUpgrade(state, id));
+  }
+
+  // Dev 测试解锁（?dev 门后·quirk #97 同款门）：0 成本直接解锁——同 Mira 测试货架口径，
+  // 真购买路径（purchaseUpgrade/canPurchase）零触碰；普通访客 DEV_TOOLS=false 不渲染按钮。
+  function handleDevUnlock(id: string) {
+    onStateChange(devUnlockUpgrade(state, id));
   }
 
   return (
@@ -49,6 +57,7 @@ export function UpgradePanel({ state, onStateChange, onClose }: Props) {
           line={line}
           state={state}
           onBuy={handleBuy}
+          onDevUnlock={handleDevUnlock}
         />
       ))}
     </div>
@@ -59,10 +68,12 @@ function UpgradeLineCard({
   line,
   state,
   onBuy,
+  onDevUnlock,
 }: {
   line: UpgradeLine;
   state: GameState;
   onBuy: (id: string) => void;
+  onDevUnlock: (id: string) => void;
 }) {
   const haveLevel = getUnlockedLevelInLine(state.profile, line);
 
@@ -77,7 +88,7 @@ function UpgradeLineCard({
       <div className="upgrade-line-desc">{line.description}</div>
       <div className="upgrade-line-rows">
         {line.upgrades.map((u) => (
-          <UpgradeRow key={u.id} def={u} state={state} onBuy={onBuy} />
+          <UpgradeRow key={u.id} def={u} state={state} onBuy={onBuy} onDevUnlock={onDevUnlock} />
         ))}
       </div>
     </div>
@@ -88,10 +99,12 @@ function UpgradeRow({
   def,
   state,
   onBuy,
+  onDevUnlock,
 }: {
   def: UpgradeDef;
   state: GameState;
   onBuy: (id: string) => void;
+  onDevUnlock: (id: string) => void;
 }) {
   const owned = state.profile.unlockedUpgrades.has(def.id);
   const avail = canPurchase(state.profile, def.id);
@@ -139,7 +152,16 @@ function UpgradeRow({
         </div>
         {!owned && <CostLine cost={def.cost} profile={state.profile} />}
       </div>
-      <div className="upgrade-row-side">{statusEl}</div>
+      <div className="upgrade-row-side">
+        {statusEl}
+        {/* Dev 测试解锁（?dev 门后·作者要求「不需要材料直接解锁任何港口升级」）：跳过材料/金币/前置，
+            同 Mira 测试货架口径——真购买按钮照常在上面，这颗只给测试者。 */}
+        {DEV_TOOLS && !owned && (
+          <button className="btn small upgrade-dev-unlock" onClick={() => onDevUnlock(def.id)}>
+            测试解锁（0 成本）
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -156,6 +156,28 @@ export function purchaseUpgrade(state: GameState, upgradeId: string): GameState 
   return next;
 }
 
+/**
+ * Dev 测试解锁（作者要求「测试模式不需要材料直接解锁任何港口升级」·同 port.ts::devGrantItem 口径）：
+ * 把任意升级**白给**进 unlockedUpgrades——不查材料/金币/前置、不扣任何资源（真经济代码零触碰）。
+ * 仅 dev UI（UpgradePanel 的测试解锁钮·DEV_TOOLS 门后）调用；引擎侧无门（纯函数·便于脚本断言），
+ * 门在 UI——同 devGrantItem/MapDevPanel 口径（dev 入口不进 GameState/存档语义）。已购/未知 id → 原样 no-op。
+ */
+export function devUnlockUpgrade(state: GameState, upgradeId: string): GameState {
+  const entry = UPGRADE_INDEX.get(upgradeId);
+  if (!entry || state.profile.unlockedUpgrades.has(upgradeId)) return state;
+  const unlockedUpgrades = new Set(state.profile.unlockedUpgrades);
+  unlockedUpgrades.add(entry.def.id);
+  let next: GameState = {
+    ...state,
+    profile: { ...state.profile, unlockedUpgrades },
+  };
+  next = appendLog(next, {
+    tone: 'system',
+    text: `测试解锁：${entry.def.name}（dev·未扣材料与金币）。`,
+  });
+  return next;
+}
+
 /** 聚合所有已购升级的派生加成，供 startDive / 检定 / 数据图过滤使用 */
 export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
   const bonuses: UpgradeBonuses = {

@@ -402,6 +402,14 @@ html, body, #root {
   align-items: center;
   min-width: 132px;
   justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Dev 测试解锁钮（?dev 门后·UpgradePanel）：弱化呈现——它不是游戏的一部分，别和真「修缮」抢眼。 */
+.upgrade-dev-unlock {
+  font-size: 11px;
+  opacity: 0.75;
 }
 
 .upgrade-status {
