@@ -121,6 +121,8 @@
 
 104. **三写手并发隔离方案 A 已实装 + 沙箱 checkout 只能加不能删（#105·2026-06-10·作者批准）**：周末内容引擎 commit 只落 **`auto/weekend`** 分支（不碰 main·不 push）；夜间任务 verify 绿后把分支 **ff 收进 main 再发布**；交互 session 在 main（`npm run handoff` 显示当前分支 + 待合并数）。**沙箱机制约束（关键）**：mount 不能 unlink → `git checkout` 只在「目标比当前**多**文件/改文件」方向可行（create/rename），**从含新增文件的分支切向缺这些文件的 main 会被挡**（要删文件）。推论：(a) 周末档收尾**停在 auto/weekend 是正常态**、别强行切回；(b) 夜间 ff 合并用 **`git branch -f main auto/weekend` 移 ref 不动树**（须先验 `git merge-base --is-ancestor main auto/weekend`＝只前进不后退），移完 `git checkout main` 是同 commit no-op；(c) 分支与 main 分叉且 rebase 冲突 → 沙箱别硬解，停分支报告、作者本机处理（Mac 无 unlink 限制随便切）；(d) 交互 session 发现树停在 auto/weekend 时**别把自己的改动 commit 进去**。回滚＝删分支+两个 SKILL 改回（提案 §5）。详见 `docs/infra/concurrency_isolation_proposal.md`（状态头已记实装偏差）。
 
+105. **dive.ts 已是 barrel——新 dive wiring 进对应 `dive-*.ts`、别从 barrel 回 import（#106·`264e02f`·纯搬移拆分）**：`engine/dive.ts` 降为纯 re-export barrel（外部 `'@/engine/dive'` 与 dialog.ts 的 `'./dive'` 路径全不变）；wiring 按子系统住 `dive-start`（开潜三入口）/ `dive-select`（选点与预览档位）/ `dive-sensors`（灯/声呐/scan-on-open/refreshSelection）/ `dive-move`（过渡与移动分发）/ `dive-stalker`（猎手与伏击）/ `dive-actions`（房内动作）。子模块依赖**单向**：start→select·sensors→select·move→sensors/stalker/select·actions→select——加新 wiring 时从兄弟文件直接 import、**别 import './dive'**（自引用环）；跨子系统共享的 helper 提 export、放语义归属的那个文件。拆分函数体逐字节搬运（diff 证明仅 4 处 helper 提 export·零行为变化）。
+
 > 已修复或被后续内容填平，留档备查。
 
 1. **沙箱权限**：在 Linux 沙箱里跑 `npm run build` 第二次会失败（删不掉旧 dist/），跑 `npm run dev` 同样问题（删不掉 .vite 缓存）。**用户本地 Mac 没问题**。

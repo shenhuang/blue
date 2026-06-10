@@ -1,6 +1,6 @@
-# 提案：`engine/dive.ts` 纯搬移式拆分（规划·未实装）
+# 提案：`engine/dive.ts` 纯搬移式拆分（**已实装 2026-06-10·`264e02f`·#106**）
 
-> 状态：**仅方案·本 session（基建治理 #94）不实装**。实装前置条件见末尾「实装门」。
+> 状态：**已实装**（2026-06-10 交互 session #106·commit `264e02f`·§6 实装门全满足：隔离 A 在位 + 定时任务全停＝零并发窗口·27/27 全绿·diff 证明纯搬移）。**实装偏差三处**（皆按 §4「真实调用图核准」修正）：refreshSelection 唯一调用方在 sensors → 随 `dive-sensors` 保持 private（提案表原「随 select·export」）；FEATURE_EXPLORE_TURNS 唯一使用方 exploreFeature → 随 `dive-actions`（原「随 select」）；assertNever 单用户 moveToNode → `dive-move` 私有、**未设 dive-internal.ts**。其余按 §3/§5 原样落地（barrel 保留·4 helper 提 export·函数体逐字节）。持久约定见 QUIRKS #105。
 > 性质：纯搬移（pure move）重构——零行为变化、不碰游戏逻辑、不动 `SAVE_VERSION`。
 > 关联：并发隔离见 [`concurrency_isolation_proposal.md`](concurrency_isolation_proposal.md)；边界机制见 QUIRKS #95。
 
