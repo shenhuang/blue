@@ -493,11 +493,25 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   const curId = run?.currentNodeId ?? null;
   const here = (layout && curId && layout.pos[curId]) || { x: (layout?.width ?? 0) / 2, y: (layout?.height ?? 0) / 2 };
   const isOpenWater = run ? !zoneAllowsBacktrack(run.zoneId) : false;
-  // 你脚下那间永远可见（#1·纯渲染侧）：人都站在这儿了，眼前这间洞不该是黑的——
-  // 不写 scanMemory（存档/引擎零变化·揭示与欺骗语义仍归 clarity/sonar），只在渲染时并进当前节点。
-  const renderIds =
-    !isOpenWater && curId && map?.nodes[curId] && memory[curId] === undefined ? [...scannedIds, curId] : scannedIds;
-  const renderMemory: Record<string, number> = renderIds === scannedIds ? memory : { ...memory, [curId as string]: -1 };
+  // 渲染侧并入（不写 scanMemory·存档/引擎零变化·揭示与欺骗语义仍归 clarity/sonar）：
+  //  ① 你脚下那间永远可见（#1）：人都站在这儿了，眼前这间洞不该是黑的；
+  //  ② 猎手 fix 锚点那间也画出来（06-11 二修「红点仍刷在墙外」·quirk #116 补全）：声呐既然回了
+  //     它的位置，「那里有水」已被回波证实——只画它所在的房间（及随之自然出现的残段口），通向哪
+  //     仍不画（边照旧双端齐才整条·防剧透轴不破）。红点从此永远站在画出来的水里。
+  const fixForRender = run && !isOpenWater ? stalkerSonarBlip(run) : null;
+  const mergeIds: string[] = [];
+  if (!isOpenWater && curId && map?.nodes[curId] && memory[curId] === undefined) mergeIds.push(curId);
+  if (
+    fixForRender &&
+    map?.nodes[fixForRender.nodeId] &&
+    memory[fixForRender.nodeId] === undefined &&
+    !mergeIds.includes(fixForRender.nodeId)
+  ) {
+    mergeIds.push(fixForRender.nodeId);
+  }
+  const renderIds = mergeIds.length > 0 ? [...scannedIds, ...mergeIds] : scannedIds;
+  const renderMemory: Record<string, number> =
+    mergeIds.length > 0 ? { ...memory, ...Object.fromEntries(mergeIds.map((id) => [id, -1])) } : memory;
   // 最近一次扫描的 turn（任一节点被刷新的最大 stamp）→ 变化即重新雷达扫一遍（旧图保留到此刻·§4）。
   let lastScanTurn = -1;
   for (const id of scannedIds) lastScanTurn = Math.max(lastScanTurn, memory[id] ?? -1);
@@ -641,7 +655,7 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   // 猎手（§8.7 会过时·mid-edge 插值）：上次被扫到的位置（可能在通道中段）→ 红呼吸点（不要 X）。
   // 落点沿**渲染同源路由**（stalkerRoutePoint·作者 06-11「红点出墙」修复）：隧道是弯折折线，
   // 房心直线插值会把通道中段的点画进岩里；远端未扫时再截进半揭示残段口内。开阔水域无洞壁仍走直线。
-  const stalkerFix = stalkerSonarBlip(run);
+  const stalkerFix = !isOpenWater ? fixForRender : stalkerSonarBlip(run);
   let stalkerPos: { x: number; y: number } | null = null;
   if (stalkerFix) {
     const a = layout.pos[stalkerFix.nodeId];

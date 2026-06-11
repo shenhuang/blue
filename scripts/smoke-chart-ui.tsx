@@ -1015,7 +1015,36 @@ const rpStubB = stalkerRoutePoint(qLayout, 'a', 'b', 0.1, { b: 0 })!;
 assert(arcOf(rpStubB, rAB) >= rTotal * (1 - 0.38 * 0.92) - 1e-6, 'R4b: 只认得对面端 → 推进对面残段口内');
 // ⑤ 双端都没扫 → null（调用方回退旧直线）
 assert(stalkerRoutePoint(qLayout, 'a', 'b', 0.5, {}) === null, 'R5: 双端未扫 → null 回退');
-L('  方向无关 · 端点=房心 · blip 永在路由上 · 残段双向截断 · 无知态回退 ✓');
+// ⑥ 猎手 fix 锚点渲染侧并入（06-11 二修「红点仍刷在墙外」）：
+//    纯函数侧——锚点以 -1 哨兵并入 memory 后，buildCaveGeometry 必画出它那间房（红点有水可站）；
+//    组件侧——猎手定位在 scanMemory 完全没有的节点 → blip 与洞穴 canvas 仍同时在（几何随 fix 锚点出现）。
+const qMerge = buildCaveGeometry(qLayout, ['b', 'a'], { b: 0, a: -1 });
+assert(
+  qMerge.rooms.some((r) => Math.hypot(r.x - 0, r.y - 0) <= r.r + 1),
+  'R6: fix 锚点并入后画出它那间房（blip 永远站在水里）',
+);
+const rStalkerUnscanned: GameState = {
+  ...createInitialGameState(),
+  run: {
+    ...owMazeRun,
+    scanMemory: { m0: 0 }, // m1 从没扫进测绘——但猎手上次被扫到在 m1
+    alert: 60,
+    stalker: {
+      nodeId: 'm1', sensesBy: 'sound', onLostSignal: 'wait', waitTurns: 0, state: 'hunting',
+      encounterId: 'combat.blind_eel_solo', lastSignalNodeId: 'm0', turnsSinceSignal: 0, waitedTurns: 0,
+      seenNodeId: 'm1', seenTurn: 0,
+    },
+  },
+  phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } },
+};
+const htmlR6 = renderToStaticMarkup(
+  <NodeSelectView state={rStalkerUnscanned} choices={choicesFor(owMazeMap, 'm0')} onStateChange={noop} />,
+);
+assert(
+  htmlR6.includes('sonar-stalker') && htmlR6.includes('sonar-cave-canvas'),
+  'R6: 未扫节点上的猎手 → 红 blip 与洞穴 canvas 同在（锚点房间渲染侧并入）',
+);
+L('  方向无关 · 端点=房心 · blip 永在路由上 · 残段双向截断 · 无知态回退 · fix 锚点并入有水可站 ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 海图 UI 冒烟测试通过');
