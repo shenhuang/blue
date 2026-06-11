@@ -493,8 +493,10 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   const wheelCleanupRef = useRef<(() => void) | null>(null);
   // 旧图持续（§4「旧图保留到下次扫描」）：上一次烤好的洞穴位图 + 其世界矩形——新扫描的波前外侧仍显示旧图（不再黑屏等波）。
   const prevBakeRef = useRef<{ canvas: HTMLCanvasElement; rect: CaveRect } | null>(null);
-  // 扫描波只在「真有新扫描」时重播（lastScanTurn 变化/面板重挂载）；纯平移/缩放只重烤不重播（别放假波）。
-  const lastSweepRef = useRef<string | null>(null);
+  /** 扫描波播放进度（06-11 五修）：key=这班扫描（lastScanTurn）·t0=起播时刻——effect 重跑**续播**、
+   *  不重置不跳过（旧 lastSweepRef「起播即消费」会被同挂载的 signature 连环变化吞掉整班波）。
+   *  纯平移/缩放落在波放完之后＝照旧重烤直出（不放假波）。 */
+  const sweepRef = useRef<{ key: string; t0: number } | null>(null);
   // 面板 CSS 客户端注入 head（一次·SSR 不跑＝输出干净·不污染 smoke 子串断言）。
   useEffect(() => {
     if (typeof document === 'undefined' || document.getElementById(CAVE_STYLE_ID)) return;
@@ -552,7 +554,7 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   // 半揭示边给残段隧道口（#1）。开放水域不画洞壁。
   const cave = layout && !isOpenWater ? buildCaveGeometry(layout, renderIds, renderMemory) : { tuns: [], rooms: [] };
 
-  // canvas：有机洞穴剖面 + 雷达扫描（useEffect·SSR 不跑）。signature 变（新扫描/移动/缩放/平移）→ 重画；是否重播扫描波由 lastSweepRef 决定。
+  // canvas：有机洞穴剖面 + 雷达扫描（useEffect·SSR 不跑）。signature 变（新扫描/移动/缩放/平移）→ 重画；扫描波按 sweepRef 续播（见上）。
   const signature = `${vbX.toFixed(1)},${vbY.toFixed(1)},${vw.toFixed(1)}|${lastScanTurn}|${isOpenWater}|${renderIds
     .slice()
     .sort()
@@ -634,17 +636,25 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
       }
     };
 
-    // 扫描波只在真有新扫描时重播（到站自动扫/手动 ping → lastScanTurn 变；面板重挂载〔事件回来〕重播上一记）；
-    // 纯缩放/平移＝重烤直出，不放假波。
-    const replay = lastSweepRef.current !== `${lastScanTurn}`;
-    let raf = 0;
-    if (replay && typeof requestAnimationFrame === 'function') {
-      // 重挂载（过完事件回来/重开面板）旧图 ref 是空的——已扫区域是**测绘记忆**，不该回到全黑再被波
-      // 重新点亮（作者 06-11「每次扫描都从黑开始」反馈）：拿本帧烤图当「旧图」打底，重播的波只剩动画职责；
-      // 同一挂载内的真·新扫描仍是「旧图打底 + 波前内换新图」（§4 语义不变）。
+    // 扫描波播放进度持久化（06-11 五修·作者「有时第一班波也看不见·只见节点淡入」根治）：
+    // 旧实现把 rAF 班次挂在 effect 一次执行里，且「这班放过了」标记在**起播时**就消费——同一挂载内
+    // signature 再变一次（到站自动扫 → 视角跟人走 → 重渲染，或扫描把 renderIds 加厚），cleanup 砍掉
+    // 进行中的 rAF、重跑读到「已放过」→ 直接静态成图＝波被吞。SVG 节点「波到才亮」是独立 CSS 动画
+    // 不受影响——这正是作者看到「节点缓慢出现、波没了」的组合。
+    // 现在：波 = { key: 这班扫描, t0: 起播时刻 }，effect 重跑**续播**（按真实流逝时间接着画）而不是跳过；
+    // 纯缩放/平移落在波放完之后＝照旧重烤直出不放假波。
+    const keyNow = `${lastScanTurn}`;
+    const nowTs = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (!sweepRef.current || sweepRef.current.key !== keyNow) {
+      // 新扫描（或重挂载重播上一记）→ 开一班新波。
+      // 重挂载时旧图 ref 是空的——已扫区域是**测绘记忆**，不回全黑：拿本帧烤图当「旧图」打底（压暗等波）。
       if (!prevBakeRef.current && haveCave) prevBakeRef.current = { canvas: off, rect };
-      lastSweepRef.current = `${lastScanTurn}`;
-      const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      sweepRef.current = { key: keyNow, t0: nowTs };
+    }
+    let raf = 0;
+    const elapsed = nowTs - sweepRef.current.t0;
+    if (elapsed < SWEEP_MS && typeof requestAnimationFrame === 'function') {
+      const t0 = sweepRef.current.t0;
       const frame = (t: number) => {
         const k = Math.min(1, (t - t0) / SWEEP_MS);
         compose(maxR * k, k < 1); // 线性前缘（恒速·与 SVG 标记「波到才亮」延迟同步）
