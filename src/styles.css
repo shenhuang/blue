@@ -932,6 +932,8 @@ html, body, #root {
 }
 .sonar-panel-head {
   display: flex;
+  /* 06-11：聚焦 tag + 回正按钮挤进来时，描述句曾被压成 1 字宽的「竖条」——允许换行 + 描述句保底宽度。 */
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 8px;
   padding: 6px 10px;
@@ -941,11 +943,14 @@ html, body, #root {
   font-size: 0.8em;
   letter-spacing: 0.12em;
   color: var(--cyan);
+  flex-shrink: 0;
 }
 .sonar-panel-sub {
   font-size: 0.74em;
   color: var(--text-faint);
   font-style: italic;
+  flex: 1 1 14em; /* 保底 14em：挤不下就整句换到下一行横排，永不竖排成柱 */
+  min-width: 0;
 }
 .sonar-scan-wrap {
   position: relative;

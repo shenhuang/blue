@@ -12,7 +12,15 @@ import { createInitialGameState, createNewRun } from '../src/engine/state';
 import { SeaChartView } from '../src/ui/SeaChartView';
 import { PortView } from '../src/ui/PortView';
 import { NodeSelectView } from '../src/ui/NodeSelectView';
-import { SonarScanPanel, buildCaveGeometry, edgeRoutePts, stalkerRoutePoint } from '../src/ui/SonarScanPanel';
+import {
+  SonarScanPanel,
+  buildCaveGeometry,
+  edgeRoutePts,
+  stalkerRoutePoint,
+  projectIntoWater,
+  caveSdf,
+  WALL_LO,
+} from '../src/ui/SonarScanPanel';
 import type { MapLayout } from '../src/ui/mapLayout';
 import { EventView } from '../src/ui/EventView';
 import { FuneralView } from '../src/ui/CorpseView';
@@ -1044,7 +1052,14 @@ assert(
   htmlR6.includes('sonar-stalker') && htmlR6.includes('sonar-cave-canvas'),
   'R6: 未扫节点上的猎手 → 红 blip 与洞穴 canvas 同在（锚点房间渲染侧并入）',
 );
-L('  方向无关 · 端点=房心 · blip 永在路由上 · 残段双向截断 · 无知态回退 · fix 锚点并入有水可站 ✓');
+// ⑦ 出墙最后一道闸 projectIntoWater（06-11 三修）：岩里的点投影后必在水里（caveSdf ≤ WALL_LO−1.2）；
+//    本来就在水里的点原样返回（零扰动）。
+const rMid = { x: (0 + 80) / 2 + 28, y: (0 + 60) / 2 - 28 }; // 路由中段法向偏出 ~40px——大概率在岩里
+const rProj = projectIntoWater(rMid, qFull);
+assert(caveSdf(rProj.x, rProj.y, qFull.tuns, qFull.rooms) <= WALL_LO - 1.2 + 1e-6, 'R7: 投影后必落在水里（SDF 当裁判）');
+const rInWater = projectIntoWater({ x: 0, y: 0 }, qFull); // 房心=水
+assert(rInWater.x === 0 && rInWater.y === 0, 'R7: 已在水里的点零扰动');
+L('  方向无关 · 端点=房心 · blip 永在路由上 · 残段双向截断 · 无知态回退 · fix 锚点并入有水可站 · SDF 投影闸 ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 海图 UI 冒烟测试通过');

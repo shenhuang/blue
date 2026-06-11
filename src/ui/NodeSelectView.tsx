@@ -165,7 +165,8 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
         )}
 
         {/* 声呐图（声呐渲染重做 §2/§3）：有机洞穴剖面 + 雷达扫描（canvas）·只对相邻可去节点画可点标记。
-            两段点击（#5）：第一击选中（pending·图/列表同款高亮），再击同点或点列表项才 move。 */}
+            图上点击只做选中（06-11 作者拍板·替代 06-10「再击同点＝前往」）：pending 图/列表同款高亮，
+            move 只走下方列表项——图是纯定位层，配合拖拽手势不再误触发移动/事件。 */}
         {sonarUnlocked && (
           <SonarScanPanel
             state={state}
@@ -257,7 +258,7 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
 
         {pending && (
           <p className="dim sonar-pending-hint">
-            已在声呐图上选中一处——下方亮边的就是它；再点图上那个点，或直接点列表项，才会真的过去。
+            已在声呐图上选中一处——下方亮边的就是它。图上点击只负责选中；要出发，点下方那条亮边的选项。
           </p>
         )}
         <ul className="event-options">

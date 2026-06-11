@@ -49,7 +49,7 @@ const WARP_AMP = 14; // 域扭曲幅度（越大越蜿蜒/越不规则）
 const WARP_FREQ = 0.022; // 域扭曲频率
 const SMIN_K = 7; // 平滑并集半径（越大越熔成一团·越小房间越分明）
 const CTRL_OFF = 48; // 隧道弯折的最大垂向偏移
-const WALL_LO = -2; // SDF < WALL_LO ＝水道内（蓝）
+export const WALL_LO = -2; // SDF < WALL_LO ＝水道内（蓝）·导出给 smoke 断言投影闸
 const WALL_HI = 2.2; // [WALL_LO, WALL_HI) ＝发光岩壁带（越大壁越厚）
 /**
  * 雷达扫描扩散时长（ms）。作者 06-10 实测：1.2s + easeOut 前 0.3s 就掠过大半屏＝「根本没看到波」——
@@ -68,7 +68,10 @@ const STUB_R_K = 0.72; // 残段半宽缩窄系数
 const CAVE_STYLE = `
 @keyframes sonarBreath { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
 @keyframes sonarWaveIn { from { opacity: 0; } to { opacity: 1; } }
-.sonar-scan-stack { position: relative; touch-action: none; }
+/* 拖动手势独占（06-11·作者「拖动偶尔把图里元素拖走」）：禁文本选中与原生 drag ghost——
+   拖图必须永远是平移，不能偶尔变成「拖走一段文字/图形的半透明残影」。 */
+.sonar-scan-stack { position: relative; touch-action: none; user-select: none; -webkit-user-select: none; }
+.sonar-scan-stack * { -webkit-user-drag: none; }
 .sonar-cave-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; }
 .sonar-overlay { position: absolute; inset: 0; width: 100%; height: 100%; }
 .sonar-pulse { animation: sonarBreath 2.2s ease-in-out infinite; }
@@ -396,6 +399,29 @@ export function voidTrack(wx: number, wy: number): { x: number; y: number } {
   return { x: wx - ox, y: wy - oy };
 }
 
+/**
+ * 标记点投影回最近的「水」里（06-11 三修·红点/接触出墙的**最后一道闸**）：
+ * 不管上游怎么错位（路由近似 / voidTrack 一阶误差 / 极坐标接触不看墙），渲染前用**画面同一块 SDF**
+ * 裁决——图就是 caveSdf 烤的，caveSdf 说在岩里就螺旋采样找最近水点（确定性·≤42px·找不到原样返回）。
+ * 目标取 WALL_LO 再进 1.2＝点落在明显的水里、不贴发光壁。
+ */
+export function projectIntoWater(
+  p: { x: number; y: number },
+  cave: { tuns: CaveTun[]; rooms: CaveRoom[] },
+): { x: number; y: number } {
+  const TARGET = WALL_LO - 1.2;
+  if (caveSdf(p.x, p.y, cave.tuns, cave.rooms) <= TARGET) return p;
+  for (let r = 3; r <= 42; r += 3) {
+    for (let k = 0; k < 14; k++) {
+      const ang = (k / 14) * Math.PI * 2 + r * 0.37; // 每圈相位旋开，别全卡同一方向
+      const qx = p.x + Math.cos(ang) * r;
+      const qy = p.y + Math.sin(ang) * r;
+      if (caveSdf(qx, qy, cave.tuns, cave.rooms) <= TARGET) return { x: qx, y: qy };
+    }
+  }
+  return p; // 周围全是岩（不该发生·锚点房已渲染侧并入）——原样返回总比不画好
+}
+
 /** 世界取景矩形（烤洞穴像素用）：x/y＝左上角世界坐标，w/h＝世界尺寸。 */
 export interface CaveRect { x: number; y: number; w: number; h: number; }
 
@@ -677,13 +703,19 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
 
   // 威胁接触（S3 廉价版·alert 驱动）：没被声呐精确定位时画一处模糊琥珀接触（同一只猎手不重复标记）。
   const threat = threatContact(run);
-  const threatPos =
+  let threatPos =
     threat && !stalkerFix
       ? {
           x: here.x + Math.cos(threat.angle) * VIEW_R * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
           y: here.y + Math.sin(threat.angle) * VIEW_R * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
         }
       : null;
+
+  // 出墙最后一道闸（06-11 三修）：红点与琥珀接触在渲染前都过 projectIntoWater——极坐标接触本就不看墙、
+  // 路由/voidTrack 也只是近似，最终裁决交给画面同一块 SDF（在岩里就挪到最近的水里）。
+  const haveCaveGeom = !isOpenWater && (cave.tuns.length > 0 || cave.rooms.length > 0);
+  if (stalkerPos && haveCaveGeom) stalkerPos = projectIntoWater(stalkerPos, cave);
+  if (threatPos && haveCaveGeom) threatPos = projectIntoWater(threatPos, cave);
 
   // 低 san 伪接触（S2·锚在扫到的节点附近·subtle）。
   const phantoms = sonarPhantoms(run, memory);
@@ -829,6 +861,8 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
           onPointerMove={onPointerMove}
           onPointerUp={onPointerEnd}
           onPointerCancel={onPointerEnd}
+          // 原生 dragstart 在 pointer 阈值捕获之前就会开火（选中文本/图形被「拖走」的残影来源）——一律掐掉。
+          onDragStart={(e) => e.preventDefault()}
         >
           {/* 有机洞穴剖面 + 雷达扫描（canvas·SSR 出空 canvas·画对靠 dev-server 肉眼·quirk #91/#93） */}
           <canvas ref={canvasRef} className="sonar-cave-canvas" aria-hidden="true" />
@@ -894,16 +928,17 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
                   className={`sonar-blip sonar-node-marker sonar-wave-in ${kindClass(view.displayKind)} ${isRoom ? 'is-room' : ''} ${view.deceptive ? 'is-spoof' : ''} ${isPending ? 'is-pending' : ''}`}
                   style={waveDelay(m.x, m.y)}
                   onClick={(ev) => {
-                    // 两段点击（#5·作者 06-10）：第一击选中（图上高亮 + 列表项同款高亮·状态在 NodeSelectView），
-                    // 再击同一点＝确认前往。拖拽（>6px）不算点；未接 onPendingChange 的调用方保持旧「一击即走」。
+                    // 图上点击**只做选中/切换选中**（作者 06-11 拍板·替代 06-10 的「再击同点＝前往」）：
+                    // 出发永远走下方列表项——图是纯定位层，配合拖拽手势后不会误触发移动/事件。
+                    // 拖拽（>6px）不算点；未接 onPendingChange 的调用方（无两段态）保持旧「一击即走」。
                     ev.stopPropagation();
                     if (movedRef.current > 6) return;
-                    if (!onPendingChange || isPending) onStateChange(moveToNode(state, c.nodeId));
+                    if (!onPendingChange) onStateChange(moveToNode(state, c.nodeId));
                     else onPendingChange(c.nodeId);
                   }}
                   role="button"
                   tabIndex={0}
-                  aria-label={isPending ? `再点一次前往 ${node.depth}m` : `选定 ${node.depth}m`}
+                  aria-label={isPending ? `已选定 ${node.depth}m——出发请点下方选项` : `选定 ${node.depth}m`}
                 >
                   {isPending && <circle className="sonar-pending-ring" cx={m.x} cy={m.y} r={baseR + 5} />}
                   <circle cx={m.x} cy={m.y} r={baseR} />
