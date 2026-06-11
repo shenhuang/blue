@@ -19,6 +19,7 @@ import {
 import { countInInventory } from '@/engine/state';
 import { getItemDef } from '@/engine/items';
 import { DEV_TOOLS } from './devMode';
+import { PanelShell } from './PanelShell';
 
 interface Props {
   state: GameState;
@@ -39,34 +40,28 @@ export function UpgradePanel({ state, onStateChange, onClose }: Props) {
     onStateChange(devUnlockUpgrade(state, id));
   }
 
-  // 布局：金币头固定在上、升级线在中间滚动栏里滚（.upgrade-lines·同 changelog-body 口径）、
-  // 返回钉在底部通栏——与其他页面的跳转操作（Mira「离开柜台」等页底 .btn）对齐，
-  // 这样列表再长，余额和出口都不会被滚远。
+  // 内容型界面统一壳（quirk #112）：金币头固定、升级线在中间滚、返回钉底通栏。
   return (
-    <div className="upgrade-panel">
-      <div className="upgrade-head">
-        <div>
-          <div className="upgrade-title">港口修缮</div>
-          <div className="upgrade-sub">银行 {state.profile.bankedGold} 金币 · 用带回的材料修缮</div>
-        </div>
-      </div>
-
-      <div className="upgrade-lines">
-        {lines.map((line) => (
-          <UpgradeLineCard
-            key={line.id}
-            line={line}
-            state={state}
-            onBuy={handleBuy}
-            onDevUnlock={handleDevUnlock}
-          />
-        ))}
-      </div>
-
-      <button className="btn" onClick={onClose}>
-        返回
-      </button>
-    </div>
+    <PanelShell
+      className="under-port-header"
+      title="港口修缮"
+      sub={<>银行 {state.profile.bankedGold} 金币 · 用带回的材料修缮</>}
+      foot={
+        <button className="btn" onClick={onClose}>
+          返回
+        </button>
+      }
+    >
+      {lines.map((line) => (
+        <UpgradeLineCard
+          key={line.id}
+          line={line}
+          state={state}
+          onBuy={handleBuy}
+          onDevUnlock={handleDevUnlock}
+        />
+      ))}
+    </PanelShell>
   );
 }
 

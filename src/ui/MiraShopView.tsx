@@ -16,6 +16,7 @@ import {
 import { toPort } from '@/engine/transitions';
 import { DEV_TOOLS } from './devMode';
 import { ItemCell } from './ItemCell';
+import { PanelShell } from './PanelShell';
 
 interface Props {
   state: GameState;
@@ -90,27 +91,39 @@ export function MiraShopView({ state, onStateChange }: Props) {
   // 她的货架：Mira 卖的低阶材料 + 消耗品（T1/T2，带买价 + 剩余备货）
   const buyables = listMiraBuyables(state.profile);
 
+  // 内容型界面统一壳（quirk #112）：银行金币（带跳动动画）固定在壳头、货架格子在中间滚、
+  // 「离开柜台」钉底通栏——格子再多，余额和出口都不会被滚远。
   return (
     <div className="port mira-shop">
       <header className="port-header">
         <h1>Mira 的柜台</h1>
         <p className="port-sub">围裙永远沾着鳞片。盘秤就在手边。</p>
-        <div className="port-meta">
-          银行 {state.profile.bankedGold} 金币 ・ 仓库 {state.profile.inventory.length} 项
-        </div>
       </header>
 
+      <PanelShell
+        className="under-port-header"
+        title="交易"
+        sub={
+          <>
+            银行{' '}
+            <span className="gold-figure" key={state.profile.bankedGold}>
+              {state.profile.bankedGold}
+            </span>{' '}
+            金 ・ 仓库 {state.profile.inventory.length} 项
+          </>
+        }
+        foot={
+          <button className="btn" onClick={handleLeave}>
+            离开柜台
+          </button>
+        }
+      >
       {/* 交易系统（作者 2026-06-10 续拍「上=她的货点击买·下=我的柜点击卖」）：
           两块同构格子＋中间一条反馈（买/卖 flash + 钱不够红字差额）。
           买：货格点击买 1（售罄禁点·钱不够红显+点击报差额）；卖：柜格可卖品点击卖 1
           （格上标收价·她不收的惰性陈列带原因）；金币数字与柜格随交易跳动（key 重挂载）。 */}
       <section className="mira-section">
-        <h3>
-          她的货（点击买）
-          <span className="mira-gold dim">
-            　银行 <span className="gold-figure" key={state.profile.bankedGold}>{state.profile.bankedGold}</span> 金
-          </span>
-        </h3>
+        <h3>她的货（点击买）</h3>
         <p className="dim mira-buy-note">浅水的常见材料，她手头有些存货。深处的东西只能自己下去拿。</p>
         <div className="item-grid">
           {buyables.map((b) => {
@@ -243,9 +256,7 @@ export function MiraShopView({ state, onStateChange }: Props) {
         </section>
       )}
 
-      <button className="btn" onClick={handleLeave}>
-        离开柜台
-      </button>
+      </PanelShell>
     </div>
   );
 }

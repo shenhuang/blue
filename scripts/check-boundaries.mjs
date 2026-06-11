@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 架构边界检查（两条规则，命中任一即打印 file:line 并退出 1）：
+// 架构边界检查（三条规则，命中任一即打印 file:line 并退出 1）：
 //
 // 规则一：engine ↛ ui —— 引擎层不得依赖 UI 层 / React。
 //   扫 src/engine/**/*.ts(x) 的模块说明符：
@@ -11,6 +11,10 @@
 //   构造）即违例。UI 切 phase 一律走 engine/transitions.ts 的具名转移（toPort /
 //   beginAscent / toShop / toChart / toDiveEvent / toGameOver …）或别的引擎 reducer。
 //   读 phase（state.phase.kind 等）不受限——只禁构造。
+//
+// 规则三：styles.css 滚动容器白名单 —— 内容滚动统一走 PanelShell（quirk #112）。
+//   `overflow(-y): auto|scroll` 只许出现在 .panel-shell-body / .changelog-body；
+//   内容型视图要内部滚动＝用 ui/PanelShell 包，别自己开滚动容器。
 //
 // 把此前靠散文（CLAUDE.md / 评审记忆）维持的解耦约定做成会在 `npm run regress`
 // 里失败的门。现状 0 违例 → 直接绿；以后谁越界，这个门会红——不再靠下一个
@@ -92,6 +96,35 @@ for (const file of uiFiles) {
   }
 }
 
+// ── 规则三：滚动容器白名单 —— 内容滚动统一走 PanelShell（quirk #112）──
+// src/styles.css 里 `overflow(-y): auto|scroll` 只允许出现在白名单类上：
+//   .panel-shell-body（内容型界面统一壳的滚动体·ui/PanelShell.tsx）
+//   .changelog-body （更新日志弹窗·壳之前的既有先例）
+// 其余选择器一律违例——内容型视图要内部滚动＝用 PanelShell 包（头部状态固定/内容滚/
+// 底部出口三段），别自己开滚动容器；散开自写迟早回到「金币和返回被滚走」。
+// 范围只限 src/styles.css（玩家界面）；src/ui/dev/*.css 是 dev 工具自留地，不管。
+// 解析假设：styles.css 是扁平 CSS——声明上方最近的 `selector {` 行即其归属；
+// @media 块内仍有选择器行，不会把声明算到 @media 头上。注释行（行内含 `*`）跳过。
+const SCROLL_WHITELIST = ['.panel-shell-body', '.changelog-body'];
+const SCROLL_DECL_RE = /\boverflow(?:-y)?\s*:\s*(?:auto|scroll)\b/;
+const cssPath = resolve(ROOT, 'src/styles.css');
+const scrollViolations = [];
+{
+  const lines = readFileSync(cssPath, 'utf-8').split('\n');
+  let selector = '(顶层)';
+  for (let i = 0; i < lines.length; i++) {
+    const open = lines[i].match(/^\s*([^{}]+?)\s*\{\s*$/);
+    if (open && !open[1].trim().startsWith('@')) selector = open[1].trim();
+    if (
+      SCROLL_DECL_RE.test(lines[i]) &&
+      !lines[i].includes('*') &&
+      !SCROLL_WHITELIST.some((w) => selector.includes(w))
+    ) {
+      scrollViolations.push({ line: i + 1, selector });
+    }
+  }
+}
+
 let failed = false;
 
 if (importViolations.length) {
@@ -119,10 +152,24 @@ if (phaseViolations.length) {
   );
 }
 
+if (scrollViolations.length) {
+  failed = true;
+  console.error('✘ styles.css 滚动容器白名单违例：内容滚动统一走 PanelShell（quirk #112）\n');
+  for (const v of scrollViolations) {
+    console.error(`  src/styles.css:${v.line}  「${v.selector}」声明了 overflow(-y): auto|scroll`);
+  }
+  console.error(
+    `\n共 ${scrollViolations.length} 处。内容型视图要内部滚动＝用 ui/PanelShell 包` +
+      `\n（头部状态固定 / 内容滚 / 底部出口通栏），别自己开滚动容器；` +
+      `\n确属新的正当滚动体，再把类名加进 check-boundaries.mjs 的 SCROLL_WHITELIST。\n`,
+  );
+}
+
 if (failed) process.exit(1);
 
 console.log(
   `✓ 边界干净：engine ↛ ui（src/engine ${engineFiles.length} 文件·0 违例）` +
-    `；src/ui 无 phase 字面量（src/ui+App ${uiFiles.length} 文件·0 违例）`,
+    `；src/ui 无 phase 字面量（src/ui+App ${uiFiles.length} 文件·0 违例）` +
+    `；styles.css 滚动容器全在白名单（${SCROLL_WHITELIST.join(' / ')}）`,
 );
 process.exit(0);

@@ -21,6 +21,7 @@ import {
 import { getOutpostForLighthouse } from '@/engine/outposts';
 import { countInInventory, HOME_LIGHTHOUSE_ID } from '@/engine/state';
 import { getItemDef } from '@/engine/items';
+import { PanelShell } from './PanelShell';
 
 interface Props {
   state: GameState;
@@ -35,20 +36,19 @@ export function LighthouseBuildPanel({ state, onStateChange, onClose }: Props) {
     onStateChange(buildAtLighthouse(state, lighthouseId, upgradeId));
   }
 
+  // 内容型界面统一壳（quirk #112）：金币头固定、设施轨在中间滚、返回钉底通栏（从右上挪下来，
+  // 与各页跳转操作对齐）。整页替换 SeaChartView 渲染（无页眉在上）→ 用默认预算、不加修饰类。
   return (
-    <div className="upgrade-panel lighthouse-build">
-      <div className="upgrade-head">
-        <div>
-          <div className="upgrade-title">灯塔设施</div>
-          <div className="upgrade-sub">
-            银行 {state.profile.bankedGold} 金币 · 点亮的海更大、出海更近
-          </div>
-        </div>
-        <button className="btn upgrade-close" onClick={onClose}>
+    <PanelShell
+      className="lighthouse-build"
+      title="灯塔设施"
+      sub={<>银行 {state.profile.bankedGold} 金币 · 点亮的海更大、出海更近</>}
+      foot={
+        <button className="btn" onClick={onClose}>
           返回
         </button>
-      </div>
-
+      }
+    >
       {state.profile.lighthouses.map((lh) => {
         // 深水区 Phase 2b：能源设施（充电/制氧/水力）只在 OutpostDef 支撑的深水前哨可建；水力再限水流前哨。
         const outpost = getOutpostForLighthouse(lh.id);
@@ -80,7 +80,7 @@ export function LighthouseBuildPanel({ state, onStateChange, onClose }: Props) {
         </div>
         );
       })}
-    </div>
+    </PanelShell>
   );
 }
 

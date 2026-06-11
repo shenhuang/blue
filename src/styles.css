@@ -259,7 +259,11 @@ html, body, #root {
   border-style: solid;
 }
 
-.upgrade-panel {
+/* ——— 内容型界面统一壳（PanelShell·quirk #112） ———
+   结构：头（状态固定）/ 体（内容滚动）/ 脚（出口通栏）。约定与动机见 ui/PanelShell.tsx 顶注。
+   本文件 overflow-y 只允许出现在白名单类上（check-boundaries 规则三强制）。 */
+
+.panel-shell {
   background: var(--bg-elev);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -267,45 +271,49 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  /* 壳外 chrome 预算（app 上下边距等）；嵌在页眉下的场景用修饰类覆盖 */
+  --shell-outside: 150px;
+  max-height: calc(100vh - var(--shell-outside));
+  max-height: calc(100dvh - var(--shell-outside)); /* 手机地址栏伸缩安全 */
 }
 
-.upgrade-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* 嵌在 .port-header 页眉下的壳（港口修缮、Mira 柜台）：多留页眉的份 */
+.panel-shell.under-port-header {
+  --shell-outside: 290px;
+}
+
+.panel-shell-head {
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border);
 }
 
-.upgrade-title {
+.panel-shell-title {
   font-size: 18px;
   font-weight: 500;
   letter-spacing: 0.04em;
 }
 
-.upgrade-sub {
+.panel-shell-sub {
   font-size: 13px;
   color: var(--accent);
   margin-top: 2px;
   font-variant-numeric: tabular-nums;
 }
 
-/* 头部紧凑返回钮——港口修缮已改走页底通栏返回，现仅 LighthouseBuildPanel 头部在用 */
-.upgrade-close {
-  width: auto;
-  padding: 6px 14px;
-  font-size: 13px;
-}
-
-/* 修缮内容滚动栏（同 .changelog-body 口径）：升级线在中间滚，金币头与底部「返回」不随滚动跑远。
-   max-height 预算 = 视口 − （app 上下边距 + 港口页眉 + 面板头/底按钮/间距 ≈ 420px）；
-   矮屏兜底 260px——此时整页略滚但出口仍在手边。内容不足时不出滚动条，返回紧跟内容，与他页一致。 */
-.upgrade-lines {
+.panel-shell-body {
+  flex: 1 1 auto;
+  min-height: 0; /* 关键：允许 flex 子项收缩出内部滚动 */
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  overflow-y: auto;
-  max-height: max(calc(100vh - 420px), 260px);
+}
+
+@media (max-width: 480px) {
+  .panel-shell {
+    padding: 14px 14px;
+  }
 }
 
 .upgrade-line {
@@ -1198,11 +1206,17 @@ html, body, #root {
 
 /* ——— Status Bar ——— */
 
+/* 钉顶（quirk #112 同批·一条 sticky 让全部潜水视图受益）：内容再长，
+   氧气/电量/理智也不随滚动跑远。z-index 压过海图层(0/1)、让出弹窗(1000)。 */
 .status-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   background: var(--bg-elev);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
 }
 
 .status-row {
@@ -1268,6 +1282,23 @@ html, body, #root {
   color: var(--danger);
 }
 
+/* 手机：两列死宽（标签 60 + 数值 80）把条轨挤到只剩几像素——收窄为单列，
+   条轨拿回整行宽度；标签/数值列同步收紧。 */
+@media (max-width: 480px) {
+  .status-stats {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .stat-pill {
+    grid-template-columns: 52px 1fr 64px;
+  }
+
+  .stat-value {
+    font-size: 11px;
+  }
+}
+
 /* ——— 结算 / 结束 ——— */
 
 .resolution {
@@ -1327,11 +1358,16 @@ html, body, #root {
   margin-bottom: 16px;
 }
 
+/* 正方形（椭圆 bug 根治·quirk #112 同批）：灯塔范围/测绘 sweep 用归一化坐标的
+   百分比定尺寸（width 按容器宽解析、height 按容器高），而引擎 reveal/reach 是
+   归一化空间的各向同性 hypot（lighthouses.ts::distanceBetween）——容器必须 1:1，
+   屏幕像素才与判定度量同构，圆才是圆。别改回定高、也别只把圈画圆（会谎报纵向触达）。 */
 .chart-map {
   position: relative;
   flex: 1 1 300px;
   min-width: 0;
-  height: 260px;
+  aspect-ratio: 1 / 1;
+  max-width: 460px; /* PC 防过高；手机全宽自适应 */
   background: #0b1116;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -1776,8 +1812,8 @@ html, body, #root {
 }
 .item-grid.live .item-cell { animation: item-pop 0.35s ease-out; }
 
-/* Mira 买入反馈（作者 2026-06-10「点了毫无反应」根治）：金币数字跳动 + 钱不够红字差额 */
-.mira-gold { font-size: 0.8rem; font-weight: normal; }
+/* Mira 买入反馈（作者 2026-06-10「点了毫无反应」根治）：金币数字跳动 + 钱不够红字差额。
+   金币数字现住 PanelShell 头部 sub（quirk #112），跳动动画类不变。 */
 .gold-figure {
   display: inline-block;
   font-variant-numeric: tabular-nums;
