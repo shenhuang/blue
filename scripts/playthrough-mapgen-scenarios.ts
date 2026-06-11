@@ -64,13 +64,26 @@ interface MapgenScenario {
   depthOffset?: number;
   /** 剖面曲线指数 k（洞型谱·显式覆盖·见 GenOpts.depthCurve）；缺省 → 无 seedKey 路径 k=1 */
   depthCurve?: number;
+  /** 深度窗口覆盖（POI/band 平廊三件套·#114 续）：直通 GenOpts.depthRange */
+  depthRange?: [number, number];
+  /** 图规模覆盖（平廊拉长图）：直通 GenOpts.layerCount */
+  layerCount?: number;
   expect?: MapgenExpect;
 }
 
-function genMap(zoneId: string, seed: number, depthOffset = 0, depthCurve?: number): DiveMap {
+function genMap(
+  zoneId: string,
+  seed: number,
+  depthOffset = 0,
+  depthCurve?: number,
+  depthRange?: [number, number],
+  layerCount?: number,
+): DiveMap {
   const zone = getZone(zoneId);
   if (!zone) throw new Error(`zone ${zoneId} 不存在`);
-  return generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(seed), depthOffset, depthCurve });
+  return generateDiveMap({
+    zone, profileFlags: FLAGS, deaths: [], rng: makeRng(seed), depthOffset, depthCurve, depthRange, layerCount,
+  });
 }
 
 function entranceDepth(map: DiveMap): number {
@@ -153,12 +166,12 @@ function main() {
       const sc = JSON.parse(readFileSync(resolve(SCENARIO_DIR, f), 'utf8')) as MapgenScenario;
       const zone = getZone(sc.zoneId);
       const shape = zone?.mapShape ?? 'layered';
-      const map = genMap(sc.zoneId, sc.seed, sc.depthOffset ?? 0, sc.depthCurve);
+      const map = genMap(sc.zoneId, sc.seed, sc.depthOffset ?? 0, sc.depthCurve, sc.depthRange, sc.layerCount);
       const a = analyzeMap(map);
       assertExpect(f, map, a, shape, sc.expect);
 
       // 确定性：同 seed 再生成一次，指纹必须一致
-      const map2 = genMap(sc.zoneId, sc.seed, sc.depthOffset ?? 0, sc.depthCurve);
+      const map2 = genMap(sc.zoneId, sc.seed, sc.depthOffset ?? 0, sc.depthCurve, sc.depthRange, sc.layerCount);
       if (fingerprint(map) !== fingerprint(map2)) {
         fails.push(`[${f}] 非确定性：同 seed 两次生成结构不一致`);
       }

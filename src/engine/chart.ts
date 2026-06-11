@@ -8,6 +8,8 @@
 import type { ChartPoi, PoiModifier, PlayerProfile, SeaChart, ChartConditions } from '@/types';
 import chartData from '@/data/chart_pois.json';
 import { getUpgradeDef } from './upgrades';
+import { caveDepthCurveForPlace, caveShapeBucket } from './mapgen';
+import { getZone } from './zones';
 import {
   distanceBetween,
   nearestLighthouse,
@@ -282,6 +284,27 @@ export function describeModifier(mod?: PoiModifier): string[] {
     tags.push(mod.visibility === 'dark' ? '黑暗' : '浑浊');
   }
   return tags;
+}
+
+/**
+ * 洞型情报标签（#114·喂「灯塔=信息基建」轴）：maze zone 的 POI 给一条**真话**剖面话术——
+ * 与 mapgen 同一来源（caveDepthCurveForPlace(zone, poi.id, modifier.depthCurve)）⇒ 图上写的＝潜下去的。
+ * 海图是诚实轴（quirk #113 同理），欺骗留给深 band 的声呐侧（S2），不在这撒谎；
+ * 未来要做「情报模糊/被误标的洞」＝在**这里**加可选参数分流话术，别另开第二个 k 来源。
+ * 非 maze zone（开阔海域）→ null（不出标签）。
+ */
+export function describeCaveShape(poi: ChartPoi): string | null {
+  const zone = getZone(poi.zoneId);
+  if (!zone || zone.mapShape !== 'maze') return null;
+  const k = caveDepthCurveForPlace(zone, poi.id, poi.modifier?.depthCurve);
+  switch (caveShapeBucket(k)) {
+    case 'shaft':
+      return '洞型·往下掉';
+    case 'gallery':
+      return '洞型·往里钻';
+    default:
+      return '洞型·斜着下';
+  }
 }
 
 /** CLI / 日志用的一行描述 */

@@ -1,0 +1,25 @@
+{
+  "_comment": "平廊三件套 baseline（#114 续·横岩廊 POI 同款配置）：窄 span [16,30]（横向洞）+ layerCount 10 拉长图（N≥20＝「进来太远」回程预算轴）+ 剖面 k=2.4（行程贴浅、尽头掉坑）。seed 11 实测 N21/E23/mdf 0.357/死路 9——窄 span 下死路多＝迷路感主导，正是平廊要的。",
+  "zoneId": "zone.blue_caves",
+  "seed": 11,
+  "depthCurve": 2.4,
+  "depthRange": [16, 30],
+  "layerCount": 10,
+  "expect": {
+    "shape": "maze",
+    "nodeCount": 21,
+    "edgeCount": 23,
+    "maxDepth": 30,
+    "entranceDepth": 16,
+    "allReachable": true,
+    "isUndirected": true,
+    "hasCycle": true,
+    "hasDeadEnd": true,
+    "minDeadEnds": 5,
+    "minDeepestPoints": 2,
+    "minAscentPoints": 2,
+    "allAscentReachable": true,
+    "entranceIsAscent": true,
+    "meanDepthFracMax": 0.45
+  }
+}

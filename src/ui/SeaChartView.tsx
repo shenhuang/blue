@@ -5,7 +5,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import type { GameState, ChartPoi, InventoryItem } from '@/types';
-import { generateChart, poiLockReason, isPoiDepartable, describeModifier } from '@/engine/chart';
+import { generateChart, poiLockReason, isPoiDepartable, describeModifier, describeCaveShape } from '@/engine/chart';
 import { startDiveFromPoi, startDiveFromOutpost, carryCapacityFor } from '@/engine/dive';
 import { toPort } from '@/engine/transitions';
 import {
@@ -371,6 +371,8 @@ function ChartInfo({
   const zone = getZone(poi.zoneId);
   const lock = poiLockReason(state.profile, poi);
   const mods = describeModifier(poi.modifier);
+  // 洞型情报（#114·真话·与 mapgen 同源）：只有 maze zone 的 POI 出这条
+  const caveShape = describeCaveShape(poi);
   const corpses = canSelectTarget ? listRecoverableCorpses(state.profile.deaths, poi.zoneId) : [];
   const showPicker = !lock && corpses.length > 0;
 
@@ -391,6 +393,7 @@ function ChartInfo({
             {m}
           </span>
         ))}
+        {caveShape && <span className="chart-tag mod">{caveShape}</span>}
       </div>
 
       <p className="chart-info-blurb">{poi.blurb}</p>

@@ -141,6 +141,8 @@
 
 114. **洞型谱·迷路剖面曲线 depthCurve（#114）——深度公式只有一个求值点，变种都在那扩**：迷路图深度 = `d0 + span·frac^k`（`mapgen.ts` generateMazeMap 步 4·frac=树距比例），k 由 `resolveDepthCurve` 解析：显式 `GenOpts.depthCurve` > `ZoneDef.depthCurveRange`（蓝洞群 [0.45, 2.6]）内按 FNV(`zoneId::seedKey::curve`) log-uniform 派生（**零 rng·绝不移动任何 seed 的生成顺序**·同 POI 永远同洞型＝#98 思路）> 无 seedKey 或未配区间 → **k=1 逐字节复现旧图**——所有不传 seedKey 的脚本/回归路径天然不受 zone 接线影响（runner「洞型谱」块有护栏断言：缺省指纹=显式 k1）。k<1 井+廊 / k>1 廊+坑；**frac=1 处 pow 不动 ⇒ far exit/最深点仍到 d1**——「广」是行程剖面广、底永远在；想要真·全程浅的平廊，给 band/POI 配窄 `depthRange`（span 旋钮在调用方，别进 mapgen 夹）。pow 对任意 k>0 单调 ⇒ 「位置即深度」#92 与迷路不变量天然保持（极端 k 已扫描断言）。形状回归信号＝`analyzeMap.meanDepthFrac`（k 高→值低）。**加新剖面变种（虹吸/双坑…）：只改 generateMazeMap 那一个 `curved` 表达式 + 洞型谱块加锚点 + 配 scenario baseline，别在别处再写深度公式。**
 
+115. **平廊三件套 + 洞型情报同源（#115·续 #114）**：`PoiModifier` 是 **GenOpts 的薄投影**——`depthRange/layerCount/depthCurve` 三个可选字段经 `startDiveFromPoi → startDive → generateDiveMap` 直通（与 band 同义同管道）；以后给 maze 加新旋钮照这条链三处一起补（GenOpts + dive-start opts + PoiModifier），别只接 band。**平廊公式＝窄 span + 长图 + k 高**（横岩廊 `[16,30]`+`layerCount 10`+`k 2.4`·N 20-24·死路多）——威胁从「太深」换轴成「进来太远」（回程预算），机制零新增、全靠既有 canFreeAscend=false + 逐 hop 耗氧。**anchors 不再严格每 zone 一个**（横岩廊=蓝洞群第二口·`playthrough-chart` 锚点计数已 5·`_doc` 已改）。**洞型情报 `describeCaveShape` 与 mapgen 同一 k 来源**（`caveDepthCurveForPlace(zone, poi.id, modifier.depthCurve)`）⇒ 图上写的＝潜下去的（海图诚实轴 quirk #113 同理）；要做「情报模糊/被误标的洞」＝在 describeCaveShape 加参数分流话术，**别开第二个 k 来源**。坑：reach 档位边界很紧（blue_caves (0.46,0.30)=1 档但 (0.47,0.30)=2 档）——挪/加 anchor 坐标必跑 `playthrough-chart` §2 + §5b 验 reach 与点亮覆盖。
+
 > 已修复或被后续内容填平，留档备查。
 
 1. **沙箱权限**：在 Linux 沙箱里跑 `npm run build` 第二次会失败（删不掉旧 dist/），跑 `npm run dev` 同样问题（删不掉 .vite 缓存）。**用户本地 Mac 没问题**。

@@ -47,6 +47,12 @@ interface GenOpts {
    */
   depthRange?: [number, number];
   /**
+   * 覆盖 zone.layerCount 的图规模旋钮（POI/band 可传）：layered=层数；maze=节点数派生基数（N≈2×layerCount）。
+   * 「平廊」类出潜点靠它把图拉长——窄 span + 长图 ⇒ 威胁从「太深」换轴成「进来太远」（回程预算）。
+   * 缺省 → zone.layerCount＝旧规模（零 rng 顺序变化）。
+   */
+  layerCount?: number;
+  /**
    * 深度 band 的专属事件 tag 池（深水区内容期）：覆盖 zone.zoneTagsByDepth，让 band（trench）用自己的
    * twilight/midnight 专属事件池、与借来的 zone 内容隔离。缺省（POI / 教学 / 普通 zone 不传）→ 回退 tagsForDepth。
    * 同时作用于「节点 zoneTag 抽取」与「buildEventPool 事件筛选」两处，保证图与池一致。
@@ -196,13 +202,30 @@ function makeSeededRng(zoneId: string, seedKey: string, depthOffset: number): ()
  * 回归脚本不传 seedKey ⇒ 现有 sweep / baseline 全部不受 zone 接线影响（护栏）。
  */
 function resolveDepthCurve(opts: GenOpts): number {
-  if (opts.depthCurve !== undefined && opts.depthCurve > 0) return opts.depthCurve;
-  const range = opts.zone.depthCurveRange;
-  if (!range || opts.seedKey == null) return 1;
+  return caveDepthCurveForPlace(opts.zone, opts.seedKey, opts.depthCurve);
+}
+
+/**
+ * 某个「地点」（POI/band）的剖面曲线 k——**公共入口**：mapgen 生成与海图情报展示共用，
+ * 保证「图上写的洞型」与「潜下去的洞型」永远同源（海图=诚实轴·quirk #113 同理）。
+ * pinned（POI modifier.depthCurve）> zone.depthCurveRange 内按 seedKey log-uniform 派生 > 1。
+ */
+export function caveDepthCurveForPlace(zone: ZoneDef, seedKey: string | undefined, pinned?: number): number {
+  if (pinned !== undefined && pinned > 0) return pinned;
+  const range = zone.depthCurveRange;
+  if (!range || seedKey == null) return 1;
   const lo = Math.log(Math.max(0.05, Math.min(range[0], range[1])));
   const hi = Math.log(Math.max(0.05, Math.max(range[0], range[1])));
-  const u = fnv(`${opts.zone.id}::${opts.seedKey}::curve`) / 0x100000000;
+  const u = fnv(`${zone.id}::${seedKey}::curve`) / 0x100000000;
   return Math.exp(lo + (hi - lo) * u);
+}
+
+/** 洞型分桶（情报话术用·内部连续外部说人话）：k<0.8 井+廊 / 0.8–1.45 匀速 / >1.45 廊+坑。 */
+export type CaveShapeBucket = 'shaft' | 'linear' | 'gallery';
+export function caveShapeBucket(k: number): CaveShapeBucket {
+  if (k < 0.8) return 'shaft';
+  if (k <= 1.45) return 'linear';
+  return 'gallery';
 }
 
 /** spoof 在 NodeSelectView 声呐预览里「像……」的伪装文案（节点版 mimic「无灯之光」＝假上浮口/家的光/空水）。 */
@@ -408,7 +431,7 @@ function chooseLayeredNodeKind(
 function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap {
   const { zone, profileFlags, rng = Math.random, deaths = [], corpseChance = 0.6, targetCorpseId, maxRoomFeatures = 1, roomFeatureChanceBonus = 0 } = opts;
 
-  const totalLayers = zone.layerCount;
+  const totalLayers = opts.layerCount ?? zone.layerCount;
   const d0 = baseD0;
   const d1 = baseD1;
   const depthStep = (d1 - d0) / Math.max(1, totalLayers - 1);
@@ -551,8 +574,8 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
   const d1 = baseD1;
   const canFreeAscend = zone.canFreeAscend !== false;
 
-  // —— 节点数：从 zone 派生，规模与层状图相当（layerCount 6 → 12–16）——
-  const minN = Math.max(8, zone.layerCount * 2);
+  // —— 节点数：从 zone 派生，规模与层状图相当（layerCount 6 → 12–16）；opts.layerCount 可覆盖（平廊拉长图）——
+  const minN = Math.max(8, (opts.layerCount ?? zone.layerCount) * 2);
   const maxN = minN + 4;
   const N = randInt(minN, maxN, rng);
 

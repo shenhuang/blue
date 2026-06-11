@@ -45,6 +45,10 @@ export function startDive(
   opts?: {
     depthOffset?: number;
     depthRange?: [number, number];
+    /** 图规模覆盖（POI/band·平廊拉长图·#114 续）：直通 GenOpts.layerCount。 */
+    layerCount?: number;
+    /** 剖面曲线 k 钉死（POI 作者拍板洞型时用·缺省走 zone.depthCurveRange 按 seedKey 派生·#114）。 */
+    depthCurve?: number;
     bandTags?: ZoneTag[];
     maxRoomFeatures?: number;
     sonarDeception?: number;
@@ -69,6 +73,8 @@ export function startDive(
     deaths: state.profile.deaths,
     depthOffset: opts?.depthOffset,
     depthRange: opts?.depthRange,
+    layerCount: opts?.layerCount,
+    depthCurve: opts?.depthCurve,
     bandTags: opts?.bandTags,
     maxRoomFeatures: opts?.maxRoomFeatures,
     // 大房间出现率加成（声呐与房间 §6/§8.3 续·升级派生）：只在 maxRoomFeatures>1 的深 band 生效；缺省 0＝旧图不变。
@@ -192,6 +198,11 @@ export function startDiveFromPoi(
   let s: GameState = { ...state, profile: carry.profile, run };
   s = startDive(s, poi.zoneId, {
     depthOffset: poi.modifier?.depthOffset,
+    // 平廊/洞型 POI（#114 续）：modifier 是 GenOpts 的薄投影——窄 depthRange + 大 layerCount ＝
+    // 横向洞（威胁换轴成「进来太远」的回程预算）；depthCurve 钉死剖面（缺省仍按 POI id 哈希派生性格）。
+    depthRange: poi.modifier?.depthRange,
+    layerCount: poi.modifier?.layerCount,
+    depthCurve: poi.modifier?.depthCurve,
     targetCorpseId: opts?.targetCorpseId,
     // 洞穴一致性（SPEC §6①·#98）：POI 身份＝种子 ⇒ 同一海图点再潜＝同一张洞穴图。
     seedKey: poi.id,

@@ -29,6 +29,15 @@ export interface PoiModifier {
   current?: CurrentStrength;
   /** 能见度。MVP 仅落到 run.diveModifier + 叙事日志；光照半径/事件可见性效果待实装。 */
   visibility?: Visibility;
+  /**
+   * 覆盖 zone.depthRange 的绝对深度窗口（米·与 band.depthRange 同义）。**已实装**（直通 GenOpts.depthRange）。
+   * 「平廊」类 POI 用窄 span 表达横向洞——洞型谱 #114 的 span 旋钮在调用方，这就是那个调用方。
+   */
+  depthRange?: [number, number];
+  /** 覆盖 zone.layerCount 的图规模（maze: N≈2×layerCount）。**已实装**。平廊靠它做「进来太远」回程预算。 */
+  layerCount?: number;
+  /** 钉死本 POI 剖面曲线 k（#114·缺省按 POI id 哈希在 zone.depthCurveRange 内派生性格）。**已实装**。 */
+  depthCurve?: number;
 }
 
 /** 海图上的一个兴趣点 */

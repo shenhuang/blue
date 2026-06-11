@@ -17,8 +17,9 @@ import {
   isPoiDepartable,
   effectiveDistance,
   describePoi,
+  describeCaveShape,
 } from '../src/engine/chart';
-import { generateDiveMap } from '../src/engine/mapgen';
+import { generateDiveMap, analyzeMap, caveShapeBucket } from '../src/engine/mapgen';
 import { startDiveFromPoi, currentMoveCost } from '../src/engine/dive';
 import { tickTurns, visibilitySanityDrain } from '../src/engine/events';
 import { getZone } from '../src/engine/zones';
@@ -139,6 +140,7 @@ L(`  前哨点亮远端 + reach ${reachHome}→${reachOutpost} ✓`);
 const anchorReach: [string, number, number, number][] = [
   ['zone.east_reef', 0.18, 0.5, 0],
   ['zone.blue_caves', 0.46, 0.3, 1],
+  ['zone.blue_caves', 0.44, 0.28, 1], // 横岩廊（平廊侧口·#114 续）
   ['zone.old_lighthouse_reef', 0.44, 0.72, 1],
   ['zone.wreck_graveyard', 0.72, 0.55, 2],
 ];
@@ -147,7 +149,7 @@ for (const [zone, x, y, want] of anchorReach) {
   const got = effectiveDistance(homeOnly, p);
   assert(got === want, `${zone} 从 home 的 reach 应=${want}（手感不破），实际 ${got}`);
 }
-L('  4 锚点 home reach = 写死 distance（0/1/1/2，手感不破）✓');
+L('  5 锚点 home reach = 写死 distance（0/1/1/1/2，手感不破）✓');
 
 // ============================================
 // 3. roaming 刷新（runsCompleted 种子）
@@ -225,6 +227,58 @@ L(`  ${describePoi(postUp, deepPoi)}`);
 L(`  起始：深度 ${st.run!.currentDepth}m / 氧 ${st.run!.stats.oxygen} / turn ${st.run!.turn} / 修正已落 run ✓`);
 
 // ============================================
+// 5b. 平廊 POI（#114 续）：modifier=GenOpts 薄投影——窄 span + 长图 + 剖面 k 直通 mapgen
+// ============================================
+L('\n========== 5b. 平廊 POI（横岩廊·窄 span/长图/剖面 k 直通）==========');
+const chartG = generateChart({ profile: postUp });
+const galleryPoi = chartG.pois.find((p) => p.id === 'poi.anchor.flat_gallery');
+assert(galleryPoi, '横岩廊 anchor 应在海图上（flag 满足 + home 灯塔点亮覆盖 (0.44,0.28)）');
+let gs: GameState = { ...createInitialGameState(), profile: postUp };
+gs = startDiveFromPoi(gs, galleryPoi);
+assert(gs.phase.kind === 'dive', '平廊 POI 应进入 dive phase');
+const gmap = gs.run!.map!;
+const gDepths = Object.values(gmap.nodes).map((n) => n.depth);
+const ga = analyzeMap(gmap);
+assert(ga.nodeCount >= 20, `平廊 layerCount 10 应拉长图（N≥20），实际 ${ga.nodeCount}`);
+assert(
+  Math.min(...gDepths) === 16 && Math.max(...gDepths) === 30,
+  `平廊深度窗口应=[16,30]（窄 span＝横向洞），实际 [${Math.min(...gDepths)},${Math.max(...gDepths)}]`,
+);
+assert(
+  ga.meanDepthFrac <= 0.55,
+  `平廊剖面 k=2.4 应整体贴浅（meanDepthFrac≤0.55），实际 ${ga.meanDepthFrac.toFixed(3)}`,
+);
+// seedKey=poi.id ⇒ 同一地点再潜同一张图（#98 一致性在平廊 POI 上同样成立）
+const gs2 = startDiveFromPoi({ ...createInitialGameState(), profile: postUp }, galleryPoi);
+const depthFp = (m: NonNullable<RunState['map']>) =>
+  JSON.stringify(Object.keys(m.nodes).sort().map((id) => [id, m.nodes[id].depth, m.nodes[id].kind]));
+assert(depthFp(gs2.run!.map!) === depthFp(gmap), '平廊同 POI 再潜应同图（seedKey 一致性不破）');
+L(`  N=${ga.nodeCount}（≥20 长图）· 窗口 [16,30] · mdf=${ga.meanDepthFrac.toFixed(2)} · 同点同图 ✓·「进来太远」回程预算轴成立`);
+
+// ============================================
+// 5c. 洞型情报（#114·海图=诚实轴）：图上写的＝潜下去的（与 mapgen 同一 k 来源）
+// ============================================
+L('\n========== 5c. 洞型情报标签（真话·同源）==========');
+assert(
+  describeCaveShape(galleryPoi) === '洞型·往里钻',
+  `横岩廊（钉死 k=2.4）应标「往里钻」，实际 ${describeCaveShape(galleryPoi)}`,
+);
+const bcPoi = chartG.pois.find((p) => p.id === 'poi.anchor.blue_caves');
+assert(bcPoi, '蓝洞群 anchor 应在海图上');
+assert(
+  describeCaveShape(bcPoi) === '洞型·斜着下',
+  `蓝洞群（派生 k≈0.87）应标「斜着下」，实际 ${describeCaveShape(bcPoi)}`,
+);
+const wreckPoi = chartG.pois.find((p) => p.id === 'poi.anchor.wreck_graveyard');
+assert(wreckPoi && describeCaveShape(wreckPoi) === null, '开阔海域（layered）不应出洞型标签');
+// 分桶门槛（内部连续 k、外部三句人话）
+assert(
+  caveShapeBucket(0.5) === 'shaft' && caveShapeBucket(1) === 'linear' && caveShapeBucket(2.4) === 'gallery',
+  'caveShapeBucket 三档门槛漂了',
+);
+L('  横岩廊→往里钻（钉 2.4）· 蓝洞群→斜着下（派生 0.87）· 墓园→无标签 · 三档门槛 ✓');
+
+// ============================================
 // 6. current / visibility 实际效果
 // ============================================
 L('\n========== 6. current / visibility 实际效果 ==========');
@@ -300,9 +354,9 @@ const fogRoam = fogChart.pois.filter((p) => !p.persistent && !p.mimic).length;
 const calmRoam = calmChart.pois.filter((p) => !p.persistent && !p.mimic).length;
 assert(calmRoam === 2 && fogRoam === 1, `7: 浓雾遮一处机会点（非雾 ${calmRoam} → 浓雾 ${fogRoam}）`);
 assert(
-  fogChart.pois.filter((p) => p.persistent).length === 4 &&
-    calmChart.pois.filter((p) => p.persistent).length === 4,
-  '7: 锚点不受天气遮蔽（4 个都在·守进度安全）',
+  fogChart.pois.filter((p) => p.persistent).length === 5 &&
+    calmChart.pois.filter((p) => p.persistent).length === 5,
+  '7: 锚点不受天气遮蔽（5 个都在·守进度安全）',
 );
 assert(fogChart.conditions.weather === 'fog' && calmChart.conditions.weather !== 'fog', '7: SeaChart.conditions 落返回结构');
 L(`  海况确定性 + 随回合变 + 浓雾遮一处（run ${fogRun} 雾→${fogRoam} / run ${calmRun} ${calmChart.conditions.weather}→${calmRoam}）+ 锚点不受影响 ✓`);
