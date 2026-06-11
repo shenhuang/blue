@@ -1,0 +1,23 @@
+{
+  "_comment": "洞型谱锚点②「匀速下行」对照（#114）：显式 k=1＝旧线性剖面（与缺省逐字节同·护栏在 runner in-script ③）。meanDepthFrac 实测 0.531（居中）。",
+  "zoneId": "zone.blue_caves",
+  "seed": 11,
+  "depthCurve": 1,
+  "expect": {
+    "shape": "maze",
+    "nodeCount": 13,
+    "edgeCount": 14,
+    "maxDepth": 55,
+    "entranceDepth": 12,
+    "allReachable": true,
+    "isUndirected": true,
+    "hasCycle": true,
+    "hasDeadEnd": true,
+    "minDeepestPoints": 2,
+    "minAscentPoints": 2,
+    "allAscentReachable": true,
+    "entranceIsAscent": true,
+    "meanDepthFracMin": 0.46,
+    "meanDepthFracMax": 0.6
+  }
+}

@@ -75,6 +75,12 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
   );
   const [seed, setSeed] = useState<number>(1);
   const [depthOffset, setDepthOffset] = useState<number>(0);
+  // 剖面曲线 k（洞型谱·maze 专用）：空 = k=1 旧线性（dev 面板传显式 rng 无 seedKey，不走地点派生）。
+  const [depthCurveStr, setDepthCurveStr] = useState<string>('');
+  const depthCurve = (() => {
+    const v = Number(depthCurveStr);
+    return depthCurveStr.trim() !== '' && Number.isFinite(v) && v > 0 ? v : undefined;
+  })();
 
   const zone = ZONES.get(zoneId);
 
@@ -86,8 +92,9 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
       deaths: [],
       rng: makeLcg(seed),
       depthOffset,
+      depthCurve,
     });
-  }, [zone, seed, depthOffset]);
+  }, [zone, seed, depthOffset, depthCurve]);
 
   const analysis = useMemo(() => (map ? analyzeMap(map) : null), [map]);
 
@@ -205,12 +212,32 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
                   onChange={(e) => setDepthOffset(Number(e.target.value) || 0)}
                 />
               </label>
+              <label className="dev-inline">
+                <span>剖面 k</span>
+                <input
+                  className="dev-input dev-input-num"
+                  type="number"
+                  step="0.1"
+                  min="0.1"
+                  placeholder="1"
+                  value={depthCurveStr}
+                  onChange={(e) => setDepthCurveStr(e.target.value)}
+                />
+              </label>
             </div>
             {zone && (
               <div className="dev-faint" style={{ marginTop: 6 }}>
                 depthRange {zone.depthRange[0]}–{zone.depthRange[1]}m
                 {depthOffset ? ` (偏移后 ${zone.depthRange[0] + depthOffset}–${zone.depthRange[1] + depthOffset}m)` : ''}
                 {' · '}layerCount {zone.layerCount}
+                {zone.mapShape === 'maze' && (
+                  <>
+                    {' · '}剖面 k：空=1 线性 · k&lt;1 井+廊 · k&gt;1 廊+坑
+                    {zone.depthCurveRange
+                      ? ` · 实潜按 POI 派生 ${zone.depthCurveRange[0]}–${zone.depthCurveRange[1]}`
+                      : ''}
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -229,6 +256,17 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
               <div className="dev-map-check">
                 <span className="dev-map-check-key">节点 / 边</span>
                 <span>{analysis.nodeCount} / {analysis.edgeCount}</span>
+              </div>
+              <div className="dev-map-check">
+                <span className="dev-map-check-key">剖面 meanDepthFrac</span>
+                <span>
+                  {analysis.meanDepthFrac.toFixed(2)}
+                  {analysis.meanDepthFrac <= 0.42
+                    ? ' · 廊+坑'
+                    : analysis.meanDepthFrac >= 0.58
+                      ? ' · 井+廊'
+                      : ' · 匀速下行'}
+                </span>
               </div>
             </div>
           )}

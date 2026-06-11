@@ -1,0 +1,22 @@
+{
+  "_comment": "洞型谱锚点③「廊+坑」（#114）：k=2.6 → 长平廊道、尽头突然掉深坑（广中藏深）。最深点仍钉 d1=55（frac=1 处 pow 不变）⇒ 坑必到底、回程预算成为主威胁。meanDepthFrac 实测 0.360（低＝大部分行程贴浅处）。",
+  "zoneId": "zone.blue_caves",
+  "seed": 11,
+  "depthCurve": 2.6,
+  "expect": {
+    "shape": "maze",
+    "nodeCount": 13,
+    "edgeCount": 14,
+    "maxDepth": 55,
+    "entranceDepth": 12,
+    "allReachable": true,
+    "isUndirected": true,
+    "hasCycle": true,
+    "hasDeadEnd": true,
+    "minDeepestPoints": 2,
+    "minAscentPoints": 2,
+    "allAscentReachable": true,
+    "entranceIsAscent": true,
+    "meanDepthFracMax": 0.43
+  }
+}

@@ -33,6 +33,18 @@ export interface ZoneDef {
    */
   mapShape?: 'layered' | 'maze';
   /**
+   * 洞穴剖面曲线指数 k 的派生区间（仅 mapShape='maze' 生效·洞型谱机制）：
+   * 迷路图深度按 depth = d0 + span·frac^k 赋值（frac=树距比例），k 决定「落差发生在行进的哪一段」：
+   *  - k<1：进洞先掉竖井、深处横向铺开（井+廊）
+   *  - k≈1：匀速下行（旧线性剖面）
+   *  - k>1：长平廊道、尽头才突然掉深坑（广中藏深）
+   * 配了区间 → 每个地点（seedKey=POI/band id）由 FNV 哈希在 [min,max] 内 log-uniform 派生自己的 k
+   * ＝每个洞口有固定「性格」（与 #98 同地点同图同思路·零 rng·不动任何 seed 的生成顺序）。
+   * 缺省或无 seedKey → k=1＝逐字节复现旧图。显式 GenOpts.depthCurve 优先（scenario / dev 面板用）。
+   * 未来更多剖面变种（虹吸/双坑…）统一在 mapgen 的曲线求值点上扩，别在别处再写深度公式。
+   */
+  depthCurveRange?: [number, number];
+  /**
    * 是否允许在任意节点自由上浮（normal / rushed 模式）。
    *  - true（默认，开阔海域）：玩家可在任何 NodeSelect / RestView 触发 AscentView，三种模式都可用。
    *  - false（洞穴/封闭水道）：normal / rushed 必须在 ascent_point 节点才允许；其它地方只能 emergency，

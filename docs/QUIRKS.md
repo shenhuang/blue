@@ -135,6 +135,12 @@
 
 111. **猎手 active 探测依赖 `WAIT_TURNS ≥ ACTIVE_PROBE_PERIOD`（#110·承重关系）**：active 猎手丢信号后要**活着熬到** `turnsSinceSignal % STALKER_ACTIVE_PROBE_PERIOD === 0` 那一拍才探测；它能熬几拍由 waitTurns 管。`maybeSpawnStalker` 已为 active 档案把 waitTurns 至少抬到 `STALKER_WAIT_TURNS`（否则奇数槽 waitTurns=0 → searching 第 1 回合 despawn → active 永不发火＝死字段；#110 前盲鳗恰在偶数槽躲过此坑）。**调 tunables 别把 STALKER_WAIT_TURNS 调到 < STALKER_ACTIVE_PROBE_PERIOD**（现 3=3 恰好一拍）——会让所有 active 猎手只探得出零次，playthrough-stalker §13a/§15 会红（机制门在）。seek_last（双感）不受此限（搜索期不吃 waitTurns 上限、吃 SEEK_MAX）。
 
+112. **内容型界面统一壳 `PanelShell` + styles.css 滚动白名单（#111）**：内容随游戏数据增长的视图（修缮线/货架格/设施轨…）一律用 `ui/PanelShell.tsx`——头部状态固定（金币等·要随交易跳就传带 key 的节点）/ `.panel-shell-body` 内容滚动 / 底部出口通栏（与各页跳转操作对齐）——**别自己开滚动容器**：`check-boundaries` 规则三强制 src/styles.css 的 `overflow(-y): auto|scroll` 只许出现在 `.panel-shell-body` / `.changelog-body`（负路径实测红；`src/ui/dev/*.css` 是 dev 工具自留地不管；确属新的正当滚动体先加 SCROLL_WHITELIST 再写）。高度预算走 CSS 变量 `--shell-outside`（壳外 chrome：默认 150px·嵌 `.port-header` 下加修饰类 `under-port-header`=290px·改页眉记得同步）；视口用 dvh+vh 兜底（手机地址栏伸缩）。内容不足时壳随内容收缩、出口紧跟内容＝**小内容视图不必硬迁壳**。潜水侧不走壳：`.status-bar` 直接 sticky 钉顶（z-index 20·让出弹窗 1000），手机 ≤480px 属性条单列（两列死宽 60+80px 会把 380px 屏的条轨挤到 ~2px——改 `.stat-pill` 列宽时拿手机宽度心算一遍）。
+
+113. **海图 `.chart-map` 必须 1:1（与 hypot 同构·别改回定高）**：灯塔点亮范围/测绘 sweep 用归一化坐标的百分比定尺寸（CSS 百分比 width 按容器宽解析、height 按容器高），而引擎 reveal/reach 是归一化空间**各向同性**的 `Math.hypot`（`lighthouses.ts::distanceBetween`）——容器非正方形 ⇒ 圈被拉成椭圆（PC 上宽>高最明显）且屏幕像素与判定度量脱钩。修法只有「容器 1:1」（现 `aspect-ratio: 1/1; max-width: 460px`·手机全宽自适应）；**别**只把圈画成圆（会谎报纵向触达——灯塔=信息基建，海图是诚实轴，圈必须如实覆盖判定范围）、别恢复 `height: 260px` 一类定高。
+
+114. **洞型谱·迷路剖面曲线 depthCurve（#114）——深度公式只有一个求值点，变种都在那扩**：迷路图深度 = `d0 + span·frac^k`（`mapgen.ts` generateMazeMap 步 4·frac=树距比例），k 由 `resolveDepthCurve` 解析：显式 `GenOpts.depthCurve` > `ZoneDef.depthCurveRange`（蓝洞群 [0.45, 2.6]）内按 FNV(`zoneId::seedKey::curve`) log-uniform 派生（**零 rng·绝不移动任何 seed 的生成顺序**·同 POI 永远同洞型＝#98 思路）> 无 seedKey 或未配区间 → **k=1 逐字节复现旧图**——所有不传 seedKey 的脚本/回归路径天然不受 zone 接线影响（runner「洞型谱」块有护栏断言：缺省指纹=显式 k1）。k<1 井+廊 / k>1 廊+坑；**frac=1 处 pow 不动 ⇒ far exit/最深点仍到 d1**——「广」是行程剖面广、底永远在；想要真·全程浅的平廊，给 band/POI 配窄 `depthRange`（span 旋钮在调用方，别进 mapgen 夹）。pow 对任意 k>0 单调 ⇒ 「位置即深度」#92 与迷路不变量天然保持（极端 k 已扫描断言）。形状回归信号＝`analyzeMap.meanDepthFrac`（k 高→值低）。**加新剖面变种（虹吸/双坑…）：只改 generateMazeMap 那一个 `curved` 表达式 + 洞型谱块加锚点 + 配 scenario baseline，别在别处再写深度公式。**
+
 > 已修复或被后续内容填平，留档备查。
 
 1. **沙箱权限**：在 Linux 沙箱里跑 `npm run build` 第二次会失败（删不掉旧 dist/），跑 `npm run dev` 同样问题（删不掉 .vite 缓存）。**用户本地 Mac 没问题**。

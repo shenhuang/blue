@@ -52,6 +52,9 @@ interface MapgenExpect {
   allAscentReachable?: boolean;
   entranceIsAscent?: boolean;
   lastLayerHasAscent?: boolean;
+  /** 剖面形状包络（洞型谱·#114）：meanDepthFrac 的上下界（k>1 廊+坑 → 低；k<1 井+廊 → 高） */
+  meanDepthFracMin?: number;
+  meanDepthFracMax?: number;
 }
 
 interface MapgenScenario {
@@ -59,13 +62,15 @@ interface MapgenScenario {
   zoneId: string;
   seed: number;
   depthOffset?: number;
+  /** 剖面曲线指数 k（洞型谱·显式覆盖·见 GenOpts.depthCurve）；缺省 → 无 seedKey 路径 k=1 */
+  depthCurve?: number;
   expect?: MapgenExpect;
 }
 
-function genMap(zoneId: string, seed: number, depthOffset = 0): DiveMap {
+function genMap(zoneId: string, seed: number, depthOffset = 0, depthCurve?: number): DiveMap {
   const zone = getZone(zoneId);
   if (!zone) throw new Error(`zone ${zoneId} 不存在`);
-  return generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(seed), depthOffset });
+  return generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(seed), depthOffset, depthCurve });
 }
 
 function entranceDepth(map: DiveMap): number {
@@ -115,6 +120,9 @@ function assertExpect(name: string, map: DiveMap, a: MapAnalysis, zoneShape: str
   if (e.allAscentReachable !== undefined) expectEq(name, 'allAscentReachable', a.allAscentReachable, e.allAscentReachable);
   if (e.entranceIsAscent !== undefined) expectEq(name, 'entranceIsAscent', a.entranceIsAscent, e.entranceIsAscent);
   if (e.lastLayerHasAscent !== undefined) expectEq(name, 'lastLayerHasAscent', lastLayerHasAscent(map), e.lastLayerHasAscent);
+  if (e.meanDepthFracMin !== undefined) expectGte(name, 'meanDepthFrac(min)', a.meanDepthFrac, e.meanDepthFracMin);
+  if (e.meanDepthFracMax !== undefined && a.meanDepthFrac > e.meanDepthFracMax)
+    fails.push(`[${name}] meanDepthFrac(max): 期望 ≤ ${e.meanDepthFracMax}，实际 ${a.meanDepthFrac.toFixed(3)}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -145,12 +153,12 @@ function main() {
       const sc = JSON.parse(readFileSync(resolve(SCENARIO_DIR, f), 'utf8')) as MapgenScenario;
       const zone = getZone(sc.zoneId);
       const shape = zone?.mapShape ?? 'layered';
-      const map = genMap(sc.zoneId, sc.seed, sc.depthOffset ?? 0);
+      const map = genMap(sc.zoneId, sc.seed, sc.depthOffset ?? 0, sc.depthCurve);
       const a = analyzeMap(map);
       assertExpect(f, map, a, shape, sc.expect);
 
       // 确定性：同 seed 再生成一次，指纹必须一致
-      const map2 = genMap(sc.zoneId, sc.seed, sc.depthOffset ?? 0);
+      const map2 = genMap(sc.zoneId, sc.seed, sc.depthOffset ?? 0, sc.depthCurve);
       if (fingerprint(map) !== fingerprint(map2)) {
         fails.push(`[${f}] 非确定性：同 seed 两次生成结构不一致`);
       }
@@ -160,7 +168,7 @@ function main() {
         console.log(
           `  ✓ ${f}  [${shape}] N=${a.nodeCount} E=${a.edgeCount} ` +
             `cyc=${a.cycleRank} dead=${a.deadEndIds.length} deepest=${a.deepestNodeIds.length} ` +
-            `asc=${a.ascentPointIds.length} maxD=${a.maxDepth}m`,
+            `asc=${a.ascentPointIds.length} maxD=${a.maxDepth}m mdf=${a.meanDepthFrac.toFixed(2)}`,
         );
       } else {
         console.log(`  ✗ ${f}`);
@@ -257,6 +265,68 @@ function main() {
     } else {
       console.log(`  ✗ ${vfails.length} 处违反「位置即深度」：`);
       for (const v of vfails.slice(0, 12)) { console.log(`      ${v}`); fails.push(v); }
+    }
+  }
+
+  // —— 洞型谱（剖面曲线 depthCurve·#114）不变量 ——
+  // 守则：① 同 seed 下 meanDepthFrac 随 k 单调递减（井+廊 0.45 ≥ 线性 1 ≥ 廊+坑 2.6·逐点数学保证，断言非严格 +
+  //        全扫描聚合差距严格）② 极端 k 不破迷路不变量与「位置即深度」#92（pow 单调）③ 缺省（无 seedKey）＝显式 k=1
+  //        逐字节（zone 接线 depthCurveRange 不得影响既有回归路径——护栏）④ seedKey 派生：同 key 确定性、不同 POI
+  //        的 k 拉开成不同洞型（性格分布）。
+  console.log(`\n========== 洞型谱·剖面曲线不变量 (zone.blue_caves, k=0.45/1/2.6, seeds 1–30) ==========`);
+  {
+    const cfails: string[] = [];
+    const mean = (xs: number[]) => xs.reduce((s, x) => s + x, 0) / Math.max(1, xs.length);
+    const K_SHAFT = 0.45, K_LINEAR = 1, K_GALLERY = 2.6;
+    const aggr: Record<string, number[]> = { shaft: [], linear: [], gallery: [] };
+    for (let seed = 1; seed <= 30; seed++) {
+      const mShaft = genMap('zone.blue_caves', seed, 0, K_SHAFT);
+      const mLin = genMap('zone.blue_caves', seed, 0, K_LINEAR);
+      const mGal = genMap('zone.blue_caves', seed, 0, K_GALLERY);
+      const aS = analyzeMap(mShaft), aL = analyzeMap(mLin), aG = analyzeMap(mGal);
+      aggr.shaft.push(aS.meanDepthFrac); aggr.linear.push(aL.meanDepthFrac); aggr.gallery.push(aG.meanDepthFrac);
+      // ① 同 seed 同 jitter 流 ⇒ 逐点 frac^0.45 ≥ frac ≥ frac^2.6 ⇒ 非严格排序必须成立
+      if (!(aS.meanDepthFrac >= aL.meanDepthFrac && aL.meanDepthFrac >= aG.meanDepthFrac))
+        cfails.push(`seed=${seed}: meanDepthFrac 未随 k 单调（${aS.meanDepthFrac.toFixed(3)} / ${aL.meanDepthFrac.toFixed(3)} / ${aG.meanDepthFrac.toFixed(3)}）`);
+      // ② 极端 k 不破迷路不变量 + #92 垂直性
+      for (const [tag, m, a] of [['k0.45', mShaft, aS], ['k2.6', mGal, aG]] as const) {
+        if (!a.allReachable || !a.isUndirected || !a.hasCycle || !a.hasDeadEnd) cfails.push(`seed=${seed} ${tag}: 破迷路不变量`);
+        if (a.deepestNodeIds.length < 2) cfails.push(`seed=${seed} ${tag}: 最深点<2`);
+        if (!a.allAscentReachable || !a.entranceIsAscent) cfails.push(`seed=${seed} ${tag}: 上浮口/入口异常`);
+        const ns = Object.values(m.nodes);
+        if (m.nodes[m.startNodeId].depth !== Math.min(...ns.map((n) => n.depth))) cfails.push(`seed=${seed} ${tag}: 起点非全局最浅`);
+        const maxLayer = Math.max(...ns.map((n) => n.layer));
+        if (maxLayer >= 2) {
+          const near = ns.filter((n) => n.layer <= maxLayer / 2).map((n) => n.depth);
+          const far = ns.filter((n) => n.layer > maxLayer / 2).map((n) => n.depth);
+          if (near.length > 0 && far.length > 0 && !(mean(far) > mean(near))) cfails.push(`seed=${seed} ${tag}: 深度未随树距上升`);
+        }
+      }
+      // ③ 护栏：缺省（无 seedKey·无显式 k）＝显式 k=1 逐字节 —— zone 接线不得改变既有回归路径
+      if (fingerprint(genMap('zone.blue_caves', seed)) !== fingerprint(mLin))
+        cfails.push(`seed=${seed}: 缺省 ≠ 显式 k=1（zone 接线泄漏进无 seedKey 路径）`);
+    }
+    // ① 聚合差距严格：三档平均 meanDepthFrac 拉开（井+廊 vs 线性 vs 廊+坑 各差 ≥0.05）
+    const mS = mean(aggr.shaft), mL = mean(aggr.linear), mG = mean(aggr.gallery);
+    if (!(mS > mL + 0.05 && mL > mG + 0.05))
+      cfails.push(`聚合差距不足：shaft ${mS.toFixed(3)} / linear ${mL.toFixed(3)} / gallery ${mG.toFixed(3)}`);
+    // ④ seedKey 派生：同 key 确定性 + 不同 POI 拉开洞型
+    {
+      const zone = getZone('zone.blue_caves')!;
+      const genByKey = (key: string) =>
+        generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], seedKey: key });
+      if (fingerprint(genByKey('poi.test.7')) !== fingerprint(genByKey('poi.test.7')))
+        cfails.push('seedKey 派生非确定性（poi.test.7 两次不一致）');
+      const mdfs: number[] = [];
+      for (let i = 0; i < 12; i++) mdfs.push(analyzeMap(genByKey(`poi.test.${i}`)).meanDepthFrac);
+      const spread = Math.max(...mdfs) - Math.min(...mdfs);
+      if (!(spread >= 0.12)) cfails.push(`POI 洞型性格未拉开：12 个 key 的 meanDepthFrac 极差仅 ${spread.toFixed(3)}（期望 ≥0.12）`);
+    }
+    if (cfails.length === 0) {
+      console.log(`  ✓ 30 seed 三档单调（均值 ${mean(aggr.shaft).toFixed(2)}/${mean(aggr.linear).toFixed(2)}/${mean(aggr.gallery).toFixed(2)}）· 极端 k 守迷路+#92 · 缺省=k1 逐字节 · POI 性格拉开`);
+    } else {
+      console.log(`  ✗ ${cfails.length} 处洞型谱问题：`);
+      for (const c of cfails.slice(0, 12)) { console.log(`      ${c}`); fails.push(c); }
     }
   }
 

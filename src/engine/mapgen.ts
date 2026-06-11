@@ -29,6 +29,13 @@ interface GenOpts {
    */
   seedKey?: string;
   /**
+   * 迷路图剖面曲线指数 k（洞型谱·显式覆盖）：depth = d0 + span·frac^k。
+   * k<1 井+廊（先掉后平）/ k=1 匀速下行（旧行为）/ k>1 廊+坑（先平、尽头突然掉深）。
+   * 未传 → resolveDepthCurve 按 zone.depthCurveRange + seedKey 派生（见 ZoneDef.depthCurveRange）；
+   * 两边都没有 → k=1＝逐字节复现旧图。仅 maze 拓扑读它；layered 不受影响。
+   */
+  depthCurve?: number;
+  /**
    * 来自海图 POI 的深度偏移（米）。平移整张图每层深度（+ 更深）。
    * 经 tickTurns / planAscent 自然换算成更高耗氧 / 更长减压。clamp 到 depth ≥ 0。
    */
@@ -179,6 +186,23 @@ function makeSeededRng(zoneId: string, seedKey: string, depthOffset: number): ()
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/**
+ * 解析迷路图剖面曲线指数 k（洞型谱·**零 rng**——绝不移动任何 seed 的生成顺序）：
+ *   显式 opts.depthCurve > zone.depthCurveRange 内按 seedKey log-uniform 派生（同一地点同一性格·
+ *   域标签 ::curve 与 makeSeededRng 的种子解耦）> 无 seedKey 或未配区间 → 1（旧线性·逐字节复现旧图）。
+ * 真实游戏的迷路下潜都带 seedKey（POI.id / band.id·dive-start.ts）⇒ 每个洞口固定一种洞型；
+ * 回归脚本不传 seedKey ⇒ 现有 sweep / baseline 全部不受 zone 接线影响（护栏）。
+ */
+function resolveDepthCurve(opts: GenOpts): number {
+  if (opts.depthCurve !== undefined && opts.depthCurve > 0) return opts.depthCurve;
+  const range = opts.zone.depthCurveRange;
+  if (!range || opts.seedKey == null) return 1;
+  const lo = Math.log(Math.max(0.05, Math.min(range[0], range[1])));
+  const hi = Math.log(Math.max(0.05, Math.max(range[0], range[1])));
+  const u = fnv(`${opts.zone.id}::${opts.seedKey}::curve`) / 0x100000000;
+  return Math.exp(lo + (hi - lo) * u);
 }
 
 /** spoof 在 NodeSelectView 声呐预览里「像……」的伪装文案（节点版 mimic「无灯之光」＝假上浮口/家的光/空水）。 */
@@ -618,13 +642,17 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
     }
   }
 
-  // —— 4. 赋深度 ——
+  // —— 4. 赋深度（剖面曲线 frac^k＝洞型谱）——
+  // k=1 走原式（逐字节复现旧图）；k≠1 时 pow 单调 ⇒ 「位置即深度」#92（起点最浅·深度随树距上升）对任意 k>0 保持。
+  // jitter 的 rng 消耗每节点恒一次、与 k 无关 ⇒ 曲线只改深度值、不动结构 rng 流。
+  const kCurve = resolveDepthCurve(opts);
   const depth = new Array<number>(N).fill(d0);
   const jitterRange = (d1 - d0) * 0.12;
   for (let i = 1; i < N; i++) {
     const frac = dist[i] / maxDist;
+    const curved = kCurve === 1 ? frac : Math.pow(frac, kCurve);
     const jitter = (rng() * 2 - 1) * jitterRange;
-    depth[i] = Math.round(clamp(d0 + (d1 - d0) * frac + jitter, d0, d1));
+    depth[i] = Math.round(clamp(d0 + (d1 - d0) * curved + jitter, d0, d1));
   }
   // 最深点钉死 d1，并把其（唯一）邻居压到更浅 → 严格局部极大
   for (const dp of deepPoints) {
@@ -774,6 +802,11 @@ export interface MapAnalysis {
   cycleRank: number;
   hasCycle: boolean;
   maxDepth: number;
+  /**
+   * 平均深度占比：所有节点 (depth−minDepth)/(maxDepth−minDepth) 的均值（0..1·span=0 时取 0）。
+   * 剖面形状的回归信号：k>1 廊+坑 → 低（大部分行程浅）；k<1 井+廊 → 高；线性 ≈ 0.5。
+   */
+  meanDepthFrac: number;
   /** 深度等于全图最大深度的节点 id（"最深点"） */
   deepestNodeIds: string[];
   /** 局部深度极大节点 id（depth ≥ 所有邻居 depth，degree≥1） */
@@ -844,9 +877,18 @@ export function analyzeMap(map: DiveMap): MapAnalysis {
     }
   }
 
-  // 深度极值
+  // 深度极值 + 剖面形状信号
   let maxDepth = -Infinity;
-  for (const id of ids) maxDepth = Math.max(maxDepth, map.nodes[id].depth);
+  let minDepth = Infinity;
+  for (const id of ids) {
+    maxDepth = Math.max(maxDepth, map.nodes[id].depth);
+    minDepth = Math.min(minDepth, map.nodes[id].depth);
+  }
+  const span = maxDepth - minDepth;
+  const meanDepthFrac =
+    span <= 0 || ids.length === 0
+      ? 0
+      : ids.reduce((s, id) => s + (map.nodes[id].depth - minDepth), 0) / (ids.length * span);
   const deepestNodeIds = ids.filter((id) => map.nodes[id].depth === maxDepth);
   const localMaximaIds = ids.filter((id) => {
     const nbs = undirected.get(id)!;
@@ -871,6 +913,7 @@ export function analyzeMap(map: DiveMap): MapAnalysis {
     cycleRank,
     hasCycle: cycleRank > 0,
     maxDepth,
+    meanDepthFrac,
     deepestNodeIds,
     localMaximaIds,
     ascentPointIds,

@@ -44,6 +44,7 @@
       "requiresFlags": ["flag.tutorial_complete"],
       "generation": "random",
       "mapShape": "maze",
+      "depthCurveRange": [0.45, 2.6],
       "canFreeAscend": false,
       "ambushEncounters": ["combat.blind_eel_solo", "combat.cave_octopus_solo"],
       "weakHunts": true,
