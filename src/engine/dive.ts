@@ -17,6 +17,6 @@ export { startDive, startDiveFromPoi, startDiveFromOutpost, carryCapacityFor } f
 export { enterNodeSelection } from './dive-select';
 export { setLight, pingSonar, setSonarNext } from './dive-sensors';
 export { currentMoveCost, moveToNode } from './dive-move';
-export { standAndFight, deployDecoy } from './dive-stalker';
+export { standAndFight, deployDecoy, beginAscentFromDive } from './dive-stalker';
 export { exploreFeature, restAtNode, breatheAtAirPocket, campAtNode } from './dive-actions';
 export type { DiveNode, DiveMap } from '@/types';

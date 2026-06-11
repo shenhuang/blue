@@ -6,6 +6,7 @@ import type { GameState, DiveNode, DiveDecoy, RunState } from '@/types';
 import { getZone } from './zones';
 import { appendLog, removeFromInventory } from './state';
 import { startCombat } from './combat';
+import { beginAscent } from './transitions';
 import { getItemDef } from './items';
 import { tickTurns } from './events';
 import { predatorApproaches, ALERT_AFTER_TRIGGER, ALERT_MIN_DEPTH } from './clarity';
@@ -56,7 +57,6 @@ export function stalkerStep(
 ): { state: GameState; contact: boolean } {
   let run = state.run;
   if (!run || !run.map) return { state, contact: false };
-  if (target.kind !== 'event' && target.kind !== 'corpse') return { state, contact: false };
 
   // 诱饵过期的顺手清扫（§4·语义本体在 activeDecoy 的 turn 判定，这里只是把哑掉的字段擦掉 + 一句叙事收尾）。
   // 仅在字段已存在且确实过期时碰 run（没投过诱饵 → run 原对象原样＝逐字节不变）。
@@ -65,9 +65,17 @@ export function stalkerStep(
     state = appendLog({ ...state, run }, { tone: 'realistic', text: '你放出去的诱饵哑了——电用尽，沉进黑里。' });
   }
 
+  // 已有猎手 → **任何移动都推进**（06-11 作者「能穿过 hunter 不触发战斗」修复）：
+  // 旧版只在事件/尸体节点推进——走向休整/地标/上浮口时它原地冻结、走进/贴近/对穿判定根本不跑，
+  // 玩家可借「落脚点免疫」从它身上踏过去。现在推进与接触跟目的地 kind 无关；「地标是落脚点」
+  // 只保留给下面的**现身**门——落脚点不该凭空蹦新猎手，但已经在追你的那只不会因为你往
+  // 休整点跑就停表。能不能跑掉照旧由速度差决定（HSPEED<1 留逃口·北极星「无脚本死」不动）。
   if (run.stalker) {
     return advanceNarrated(state, run, run.stalker, fromNodeId);
   }
+
+  // 现身门仍只在事件/尸体节点（同旧路径·落脚点不 jump scare）。
+  if (target.kind !== 'event' && target.kind !== 'corpse') return { state, contact: false };
 
   // 无猎手：越线才现身（同 predatorApproaches 触发线·但不当场伏击）。
   if (!predatorApproaches(run)) return { state, contact: false };
@@ -108,6 +116,24 @@ function stalkerNear(run: RunState, st: NonNullable<RunState['stalker']>): boole
   const a = map.nodes[here]?.connectsTo ?? [];
   const b = map.nodes[st.nodeId]?.connectsTo ?? [];
   return a.includes(st.nodeId) || b.includes(here);
+}
+
+/**
+ * 潜中主动上浮的猎手拦截（06-11 作者「近在咫尺还能用上浮白嫖逃战」）：
+ * 你转身向上的那一拍，**贴邻/压点（stalkerNear）的猎手先手扑上**＝接触伏击——与 passTurnsWithStalker
+ * 「它摸到你歇着的地方」同一口径；不贴邻 → 照常进入上浮（逃生阀门保留：拉开一跳以上再走永远是出路）。
+ * 战斗内应急上浮（flee 已付代价）与事件强制上浮（脚本）不走这里——只接 NodeSelect / Rest 的主动上浮按钮。
+ */
+export function beginAscentFromDive(state: GameState): GameState {
+  const run = state.run;
+  if (run?.stalker && run.map && stalkerNear(run, run.stalker)) {
+    const s = appendLog(state, {
+      tone: 'uncanny',
+      text: '你转身向上——那东西等的就是这个背影，从黑里一口咬了过来。',
+    });
+    return contactAmbush(s, s.run!, run.stalker, run.stalker.weak === true);
+  }
+  return beginAscent(state);
 }
 
 /**
@@ -273,10 +299,10 @@ export function weakStalkerStep(
 ): { state: GameState; contact: boolean } | null {
   let run = state.run;
   if (!run || !run.map) return null;
-  if (target.kind !== 'event' && target.kind !== 'corpse') return null;
 
   const existing = run.stalker;
   if (existing) {
+    // 已有（弱）猎手 → 任何移动都推进（同 stalkerStep 的 06-11「穿过 hunter」修复·kind 门只管现身）。
     // 诱饵过期的顺手清扫（同 stalkerStep·仅字段已存在且确实过期时碰 run）。
     let s = state;
     if (run.decoy && !activeDecoy(run)) {
@@ -285,6 +311,9 @@ export function weakStalkerStep(
     }
     return advanceNarrated(s, run, existing, fromNodeId);
   }
+
+  // 现身门仍只在事件/尸体节点（落脚点不 jump scare·同旧路径）。
+  if (target.kind !== 'event' && target.kind !== 'corpse') return null;
 
   // 现身门：浅水线下（警觉积累不到的那段才归弱变体管）+ zone 数据 opt-in + 有池子 + 确定性小概率。
   // 池子优先专属「更小敌」（weakHuntEncounters·作者 2026-06-10 拍·幼体遭遇）；缺省回落 ambushEncounters（旧行为）。

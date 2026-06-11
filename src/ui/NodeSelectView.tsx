@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import type { GameState, NodeChoice, FeatureChoice, SonarDir } from '@/types';
-import { moveToNode, setLight, pingSonar, exploreFeature, standAndFight, deployDecoy, setSonarNext } from '@/engine/dive';
+import { moveToNode, setLight, pingSonar, exploreFeature, standAndFight, deployDecoy, setSonarNext, beginAscentFromDive } from '@/engine/dive';
 import { clarity, sonarPingCost, ALERT_WARN, ALERT_THRESHOLD, sonarStandingOn, sonarStandingNext } from '@/engine/clarity';
 import { seenStalkerSector } from '@/engine/sonar';
 import { activeDecoy } from '@/engine/stalker';
 import { getItemDef } from '@/engine/items';
 import { zoneAllowsBacktrack } from '@/engine/zones';
-import { beginAscent } from '@/engine/transitions';
 import { StatusBar } from './StatusBar';
 import { SonarScanPanel } from './SonarScanPanel';
 
@@ -81,7 +80,8 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
     onStateChange(exploreFeature(state, featureId));
   }
   function handleAscendNow() {
-    onStateChange(beginAscent(state));
+    // 经猎手拦截入口（06-11）：贴邻的猎手会在你转身向上时先手扑上；不贴邻照常上浮。
+    onStateChange(beginAscentFromDive(state));
   }
 
   // 多事件房间（S1）：当前房间里还没探的几处「事件点」。

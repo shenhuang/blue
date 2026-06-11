@@ -1,6 +1,5 @@
 import type { GameState } from '@/types';
-import { enterNodeSelection, restAtNode, breatheAtAirPocket, campAtNode } from '@/engine/dive';
-import { beginAscent } from '@/engine/transitions';
+import { enterNodeSelection, restAtNode, breatheAtAirPocket, campAtNode, beginAscentFromDive } from '@/engine/dive';
 import { StatusBar } from './StatusBar';
 
 interface Props {
@@ -21,7 +20,8 @@ export function RestView({ state, onStateChange }: Props) {
   }
 
   function handleAscendHere() {
-    onStateChange(beginAscent(state));
+    // 经猎手拦截入口（06-11）：贴邻的猎手会在你转身向上时先手扑上；不贴邻照常上浮。
+    onStateChange(beginAscentFromDive(state));
   }
 
   function handleBreathe() {

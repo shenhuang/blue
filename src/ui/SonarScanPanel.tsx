@@ -599,7 +599,13 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
       ctx.clearRect(0, 0, W, H);
       ctx.imageSmoothingEnabled = true;
       const prev = prevBakeRef.current;
-      if (animating && prev) drawBakeAt(prev); // 波前外侧：旧图打底
+      if (animating && prev) {
+        drawBakeAt(prev); // 波前外侧：旧图打底
+        // 重扫的可读性（06-11·黑场修复的配平）：旧图不删但**压暗**——波前扫过才恢复亮度。
+        // 「扩散」重新读得出来（作者：黑场修复后再也看不到扫描动画），又永不回全黑（测绘记忆仍在、只是暗着等波）。
+        ctx.fillStyle = 'rgba(3, 10, 14, 0.5)';
+        ctx.fillRect(0, 0, W, H);
+      }
       if (haveCave) {
         ctx.save();
         ctx.beginPath();
