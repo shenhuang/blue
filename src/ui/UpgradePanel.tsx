@@ -40,6 +40,14 @@ export function UpgradePanel({ state, onStateChange, onClose }: Props) {
     onStateChange(devUnlockUpgrade(state, id));
   }
 
+  // Dev 一键升满（作者 2026-06-11 验收反馈）：全部升级线全级 devUnlockUpgrade 串一遍。
+  // 引擎侧仍无门、已解锁 no-op（quirk #110 三条口径不变）——这颗按钮只是省测试者 N 次点击。
+  function handleDevUnlockAll() {
+    let s = state;
+    for (const line of lines) for (const u of line.upgrades) s = devUnlockUpgrade(s, u.id);
+    if (s !== state) onStateChange(s);
+  }
+
   // 内容型界面统一壳（quirk #112）：金币头固定、升级线在中间滚、返回钉底通栏。
   return (
     <PanelShell
@@ -52,6 +60,11 @@ export function UpgradePanel({ state, onStateChange, onClose }: Props) {
         </button>
       }
     >
+      {DEV_TOOLS && (
+        <button className="btn small upgrade-dev-unlock" onClick={handleDevUnlockAll}>
+          测试：一键升满全部（0 成本）
+        </button>
+      )}
       {lines.map((line) => (
         <UpgradeLineCard
           key={line.id}

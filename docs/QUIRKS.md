@@ -143,6 +143,8 @@
 
 115. **平廊三件套 + 洞型情报同源（#115·续 #114）**：`PoiModifier` 是 **GenOpts 的薄投影**——`depthRange/layerCount/depthCurve` 三个可选字段经 `startDiveFromPoi → startDive → generateDiveMap` 直通（与 band 同义同管道）；以后给 maze 加新旋钮照这条链三处一起补（GenOpts + dive-start opts + PoiModifier），别只接 band。**平廊公式＝窄 span + 长图 + k 高**（横岩廊 `[16,30]`+`layerCount 10`+`k 2.4`·N 20-24·死路多）——威胁从「太深」换轴成「进来太远」（回程预算），机制零新增、全靠既有 canFreeAscend=false + 逐 hop 耗氧。**anchors 不再严格每 zone 一个**（横岩廊=蓝洞群第二口·`playthrough-chart` 锚点计数已 5·`_doc` 已改）。**洞型情报 `describeCaveShape` 与 mapgen 同一 k 来源**（`caveDepthCurveForPlace(zone, poi.id, modifier.depthCurve)`）⇒ 图上写的＝潜下去的（海图诚实轴 quirk #113 同理）；要做「情报模糊/被误标的洞」＝在 describeCaveShape 加参数分流话术，**别开第二个 k 来源**。坑：reach 档位边界很紧（blue_caves (0.46,0.30)=1 档但 (0.47,0.30)=2 档）——挪/加 anchor 坐标必跑 `playthrough-chart` §2 + §5b 验 reach 与点亮覆盖。
 
+116. **声呐图两条「单一来源」红线（#113 同日续·作者验收反馈）**：①**隧道路由与猎手 blip 落点同源**——边的弯折折线只在 `SonarScanPanel.routeForEdgeEntry` 算一次（方向相关！控制点偏移依赖建造方向），任何要「沿水道取点」的读者走 `edgeRoutePts(from,to)`（自动按 layout.edges 真实条目取向）/ `stalkerRoutePoint`（弧长落点+残段截断），**别再用房心直线插值**（那就是「红点画进岩里」的根·smoke R 节守门）。②**测绘记忆 ≠ 扫描动画**——`run.scanMemory` 是玩家已测绘的知识，重挂载（过事件回来）重播扫描波时若 `prevBakeRef` 为空必须先拿本帧烤图打底，**绝不让已扫区域回到全黑再被波点亮**；波动画只对「真·新扫描」承担揭示叙事（§4 波前内换新图不变）。改 SonarScanPanel 的 bake/sweep 顺序时拿这两条当验收口径。
+
 > 已修复或被后续内容填平，留档备查。
 
 1. **沙箱权限**：在 Linux 沙箱里跑 `npm run build` 第二次会失败（删不掉旧 dist/），跑 `npm run dev` 同样问题（删不掉 .vite 缓存）。**用户本地 Mac 没问题**。

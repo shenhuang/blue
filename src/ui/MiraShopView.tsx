@@ -27,8 +27,6 @@ export function MiraShopView({ state, onStateChange }: Props) {
   // 交易反馈（作者 2026-06-10「点了毫无反应」根治）：flash＝最近一笔买/卖；goldShort＝钱不够红字差额。
   const [flash, setFlash] = useState<string | null>(null);
   const [goldShort, setGoldShort] = useState<{ itemId: string; lack: number } | null>(null);
-  // Dev 测试货架开合（#109）：默认收起——?dev 下也别让长长的全道具清单顶开正常柜台。
-  const [devShelfOpen, setDevShelfOpen] = useState(false);
   const sellables = listMiraSellables(state.profile.inventory);
   const total = sellables.reduce((a, b) => a + b.total, 0);
 
@@ -157,6 +155,34 @@ export function MiraShopView({ state, onStateChange }: Props) {
         {flash && <div className="mira-flash dim">{flash}</div>}
       </section>
 
+      {/* Dev 测试货架（#109·作者 2026-06-11 验收反馈改版）：与正常货架同款 ItemCell 格子——
+          全部商品·0 元·无限次（点一下拿 1·格上 ×N 显示已囤数量·cellKey 重挂载＝同款入场跳动）。
+          紧跟「她的货」之下＝不再被滚动条藏到最底。?dev 门后（quirk #97 同款门）；
+          真经济零触碰（devGrantItem 不动金币/备货·quirk #110 三条口径）。 */}
+      {DEV_TOOLS && (
+        <section className="mira-section mira-dev-shelf">
+          <h3>测试货架（dev · 0 元 · 无限）</h3>
+          <p className="dim">全部商品、白拿、不动金币不动她的备货。仅 ?dev 可见——别在这儿找游戏平衡。</p>
+          <div className="item-grid live">
+            {allItems().map((def) => {
+              const owned = state.profile.inventory.find((i) => i.itemId === def.id)?.qty ?? 0;
+              return (
+                <ItemCell
+                  key={def.id}
+                  cellKey={`${def.id}:${owned}`}
+                  def={def}
+                  itemId={def.id}
+                  qty={owned}
+                  note="0 金 · ∞"
+                  title={`${def.name}——点击白拿 1（dev·已囤 ${owned}）`}
+                  onClick={() => handleDevGrant(def.id, 1)}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       <section className="mira-section">
         <h3>你的储物柜（点击卖）</h3>
         {state.profile.inventory.filter((i) => i.qty > 0).length === 0 ? (
@@ -216,45 +242,6 @@ export function MiraShopView({ state, onStateChange }: Props) {
           </>
         )}
       </section>
-
-      {/* Dev 测试货架（#109·作者要求）：?dev 门后（quirk #97 同款门）·0 元白拿全部道具进仓库——
-          验收/测试用（如猎手 decoy 流不用先攒 48 金）。真经济零触碰（devGrantItem 不动金币/备货）；
-          普通访客 DEV_TOOLS=false 整段不渲染。 */}
-      {DEV_TOOLS && (
-        <section className="mira-section mira-dev-shelf">
-          <h3>测试货架（dev）</h3>
-          {devShelfOpen ? (
-            <>
-              <p className="dim">0 元、全道具、直接进仓库。仅 ?dev 可见——别在这儿找游戏平衡。</p>
-              <ul className="mira-items">
-                {allItems().map((def) => (
-                  <li key={def.id} className="mira-item">
-                    <div className="mira-item-info">
-                      <span className="mira-item-name">{def.name}</span>
-                      <span className="dim">{def.id}</span>
-                    </div>
-                    <div className="mira-item-actions">
-                      <button className="btn small" onClick={() => handleDevGrant(def.id, 1)}>
-                        拿 1（0 金）
-                      </button>
-                      <button className="btn small" onClick={() => handleDevGrant(def.id, 5)}>
-                        拿 5
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <button className="btn small" onClick={() => setDevShelfOpen(false)}>
-                收起测试货架
-              </button>
-            </>
-          ) : (
-            <button className="btn small" onClick={() => setDevShelfOpen(true)}>
-              打开测试货架（0 元全道具）
-            </button>
-          )}
-        </section>
-      )}
 
       </PanelShell>
     </div>

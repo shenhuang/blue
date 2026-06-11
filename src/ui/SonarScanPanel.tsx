@@ -221,6 +221,90 @@ export function caveSdf(wx: number, wy: number, tuns: CaveTun[], rooms: CaveRoom
 }
 
 /**
+ * 一条边的确定性弯折路由 + 半宽（**单一来源**·作者 06-11「红点出墙」修复的根）：
+ * buildCaveGeometry 画隧道与猎手 blip 落点（stalkerRoutePoint）共用同一条折线——
+ * 红点永远落在画出来的那条水道里，别再各写各的房心直线插值。
+ * pts 顺序 = layout.edges 条目的 (a→b)：控制点偏移依赖建造方向，换向是另一条曲线，
+ * 所以方向无关的读者必须经 edgeRoutePts 取向，不要自己重算。
+ */
+function routeForEdgeEntry(
+  layout: MapLayout,
+  e: { a: string; b: string },
+): { pts: Array<{ x: number; y: number }>; r: number } | null {
+  const pa = layout.pos[e.a];
+  const pb = layout.pos[e.b];
+  if (!pa || !pb) return null;
+  const key = e.a < e.b ? `${e.a}|${e.b}` : `${e.b}|${e.a}`;
+  const L = Math.hypot(pb.x - pa.x, pb.y - pa.y) || 1;
+  const nx = -(pb.y - pa.y) / L;
+  const ny = (pb.x - pa.x) / L;
+  const nc = L < 50 ? 1 : 2;
+  const pts: Array<{ x: number; y: number }> = [{ x: pa.x, y: pa.y }];
+  for (let i = 1; i <= nc; i++) {
+    const f = i / (nc + 1);
+    const offv = (hash01(`${key}:${i}`) - 0.5) * Math.min(L * 0.5, CTRL_OFF);
+    pts.push({ x: pa.x + (pb.x - pa.x) * f + nx * offv, y: pa.y + (pb.y - pa.y) * f + ny * offv });
+  }
+  pts.push({ x: pb.x, y: pb.y });
+  return { pts, r: CH_BASE + CH_VAR * hash01('w' + key) };
+}
+
+/** 按 (from→to) 方向取该边路由（找 layout.edges 真实条目·必要时反转输出）。没这条边 → null。 */
+export function edgeRoutePts(
+  layout: MapLayout,
+  from: string,
+  to: string,
+): Array<{ x: number; y: number }> | null {
+  const e = layout.edges.find((x) => (x.a === from && x.b === to) || (x.a === to && x.b === from));
+  if (!e) return null;
+  const route = routeForEdgeEntry(layout, e);
+  if (!route) return null;
+  return e.a === from ? route.pts : [...route.pts].reverse();
+}
+
+/**
+ * 猎手 blip 的路由落点（作者 06-11「红点出墙」修复）：沿渲染同源路由按弧长取 prog；
+ * 只有一端被扫过 → 截进半揭示残段口内（STUB_FRAC·留 8% 边距别顶死封口）——位置仍诚实
+ * （在哪条水道、朝哪头走都对），只是不画进没揭示的岩里；双端都没扫 → null（调用方回退直线·罕见）。
+ */
+export function stalkerRoutePoint(
+  layout: MapLayout,
+  from: string,
+  to: string,
+  prog: number,
+  memory: Record<string, number>,
+): { x: number; y: number } | null {
+  const pts = edgeRoutePts(layout, from, to);
+  if (!pts || pts.length < 2) return null;
+  const haveFrom = memory[from] !== undefined;
+  const haveTo = memory[to] !== undefined;
+  if (!haveFrom && !haveTo) return null;
+  const segL: number[] = [];
+  let total = 0;
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const l = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+    segL.push(l);
+    total += l;
+  }
+  if (total <= 0) return pts[0];
+  let target = Math.max(0, Math.min(1, prog)) * total;
+  const stub = total * STUB_FRAC * 0.92;
+  if (haveFrom && !haveTo) target = Math.min(target, stub);
+  else if (!haveFrom && haveTo) target = Math.max(target, total - stub);
+  for (let i = 0; i < segL.length; i++) {
+    if (target <= segL[i] || i === segL.length - 1) {
+      const t = segL[i] > 0 ? Math.min(1, target / segL[i]) : 0;
+      return {
+        x: pts[i].x + (pts[i + 1].x - pts[i].x) * t,
+        y: pts[i].y + (pts[i + 1].y - pts[i].y) * t,
+      };
+    }
+    target -= segL[i];
+  }
+  return pts[pts.length - 1];
+}
+
+/**
  * 由布局派生有机洞穴几何（确定性·按 node/edge id 派生·同地点同洞·守 #100）：
  *  - 每条**两端都已揭示**的边 → 弯折路由的隧道（1-2 控制点垂向偏移）+ 随边浮动半宽；
  *  - 每个**已揭示**的节点 → 主房间 blob + 1-2 散瓣（不规则形状）+ 偶发死路壁龛（alcove）。
@@ -237,22 +321,9 @@ export function buildCaveGeometry(
     const haveA = memory[e.a] !== undefined;
     const haveB = memory[e.b] !== undefined;
     if (!haveA && !haveB) continue;
-    const pa = layout.pos[e.a];
-    const pb = layout.pos[e.b];
-    if (!pa || !pb) continue;
-    const key = e.a < e.b ? `${e.a}|${e.b}` : `${e.b}|${e.a}`;
-    const L = Math.hypot(pb.x - pa.x, pb.y - pa.y) || 1;
-    const nx = -(pb.y - pa.y) / L;
-    const ny = (pb.x - pa.x) / L;
-    const nc = L < 50 ? 1 : 2;
-    const pts: Array<{ x: number; y: number }> = [{ x: pa.x, y: pa.y }];
-    for (let i = 1; i <= nc; i++) {
-      const f = i / (nc + 1);
-      const offv = (hash01(`${key}:${i}`) - 0.5) * Math.min(L * 0.5, CTRL_OFF);
-      pts.push({ x: pa.x + (pb.x - pa.x) * f + nx * offv, y: pa.y + (pb.y - pa.y) * f + ny * offv });
-    }
-    pts.push({ x: pb.x, y: pb.y });
-    const r = CH_BASE + CH_VAR * hash01('w' + key);
+    const route = routeForEdgeEntry(layout, e);
+    if (!route) continue;
+    const { pts, r } = route;
     if (haveA && haveB) {
       for (let i = 0; i + 1 < pts.length; i++) {
         tuns.push({ ax: pts[i].x, ay: pts[i].y, bx: pts[i + 1].x, by: pts[i + 1].y, r });
@@ -522,6 +593,10 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
     const replay = lastSweepRef.current !== `${lastScanTurn}`;
     let raf = 0;
     if (replay && typeof requestAnimationFrame === 'function') {
+      // 重挂载（过完事件回来/重开面板）旧图 ref 是空的——已扫区域是**测绘记忆**，不该回到全黑再被波
+      // 重新点亮（作者 06-11「每次扫描都从黑开始」反馈）：拿本帧烤图当「旧图」打底，重播的波只剩动画职责；
+      // 同一挂载内的真·新扫描仍是「旧图打底 + 波前内换新图」（§4 语义不变）。
+      if (!prevBakeRef.current && haveCave) prevBakeRef.current = { canvas: off, rect };
       lastSweepRef.current = `${lastScanTurn}`;
       const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
       const frame = (t: number) => {
@@ -564,6 +639,8 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   const adj = choices.filter((c) => layout.pos[c.nodeId]);
 
   // 猎手（§8.7 会过时·mid-edge 插值）：上次被扫到的位置（可能在通道中段）→ 红呼吸点（不要 X）。
+  // 落点沿**渲染同源路由**（stalkerRoutePoint·作者 06-11「红点出墙」修复）：隧道是弯折折线，
+  // 房心直线插值会把通道中段的点画进岩里；远端未扫时再截进半揭示残段口内。开阔水域无洞壁仍走直线。
   const stalkerFix = stalkerSonarBlip(run);
   let stalkerPos: { x: number; y: number } | null = null;
   if (stalkerFix) {
@@ -572,7 +649,12 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
       if (stalkerFix.edgeTo && layout.pos[stalkerFix.edgeTo] && stalkerFix.edgeProg !== undefined) {
         const b = layout.pos[stalkerFix.edgeTo];
         const t = stalkerFix.edgeProg;
-        stalkerPos = voidTrack(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t); // 跟随扭曲后的隧道
+        const onRoute = !isOpenWater
+          ? stalkerRoutePoint(layout, stalkerFix.nodeId, stalkerFix.edgeTo, t, renderMemory)
+          : null;
+        stalkerPos = onRoute
+          ? voidTrack(onRoute.x, onRoute.y)
+          : voidTrack(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t); // 直线回退（开阔水域/极端无知态）
       } else {
         stalkerPos = voidTrack(a.x, a.y);
       }
