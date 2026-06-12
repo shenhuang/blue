@@ -104,7 +104,7 @@ export function createInitialGameState(): GameState {
  */
 export const RUN_INVENTORY_CAPACITY = 8;
 
-/** 默认起始装备配置（继承父亲的装备） */
+/** 默认起始装备配置（导师留下的装备·canon 见剧情 SPEC §2） */
 export function createStarterLoadout(): EquipmentLoadout {
   return {
     tank: { itemId: 'item.tank.bluefin_mk1', slot: 'tank', level: 1 },

@@ -11,7 +11,7 @@
         { "minDepth": 0, "tags": ["tutorial"] }
       ],
       "generation": "linearScripted",
-      "scriptedStartEventId": "tutorial.descent"
+      "scriptedStartEventId": "tutorial.prologue"
     },
     {
       "id": "zone.old_lighthouse_reef",

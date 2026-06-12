@@ -147,6 +147,8 @@
 
 117. **剧情 canon 与剧透纪律（#114·剧情 SPEC 落档）**：叙事 canon 唯一权威=`docs/spec/深海回响_剧情_SPEC.md`（决策记录只增不重排·调性级改动须作者拍板·SPEC 按方向懒加载约定照旧）。**写内容硬红线：一二章文本对「失联真相=单程下行」「死亡=断片说」零泄漏、零暗示**（揭示节奏归三章专门 session·锁盒条目见该 SPEC §4.4 末）；主角尸体的脸/身份永不可见、不可确认；一章圆满结局按「当时为真」写，tells 只做低调回读伏笔不抢戏。解锁高亮实装时必须从结构化 `unlockedBy` 类字段渲染+独立配色（≠选择高亮≠红字幻觉诱饵·**红字骗你、解锁徽章永远诚实**），禁手写 label——届时照 #109 翻面先例配 lint 把本条机制化。
 
+118. **story flag 单一来源 + 教学 canon 守门（#115·St0 剧情脊柱）**：`story.*` flag 字符串**只由 `engine/story.ts` 生成器产出**（`CH1_HOOK_FLAG` / `ch1AnchorFlag()` / `ch1EndingFlag()`），UI/引擎别处禁手拼——剧情状态一律读 `ch1Story()`/`chapterUnlocked()` 派生，别直接 `flags.has('story....')`；data JSON 里的字面量必须与生成器输出一致（`playthrough-story` §4 抓 tutorial.json 漂移会红）。锚点/结局 flag 是 St1/St2 的供给侧，**置位只走事件 `setProfileFlags`**（dive 中持久·#69 套路），engine 不提供 setter=故意的（flags 是唯一事实来源，写入权归内容通道）。canon 自 2026-06-12 起失联者=**导师**（剧情 SPEC §2）：教学面（tutorial.json/aldo.json）「父亲」回潮由 §4 lint 抓红，**lint 只盖教学面两文件——新写任何 zone 内容提到失踪者一律「导师」**，别信旧事件文本的措辞惯性。教学钩=一根钩两个扣（prologue 种 · ending_log 收），改教学剧情别再埋第二根钩；教学新文案 [待过稿] 状态以教学关剧本 SPEC 标记为准，过稿前别「顺手润色」JSON 文本（会让 SPEC 与实装漂移）。
+
 > 已修复或被后续内容填平，留档备查。
 
 1. **沙箱权限**：在 Linux 沙箱里跑 `npm run build` 第二次会失败（删不掉旧 dist/），跑 `npm run dev` 同样问题（删不掉 .vite 缓存）。**用户本地 Mac 没问题**。

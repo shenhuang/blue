@@ -24,7 +24,7 @@
   "dialogs": {
     "aldo.briefing": {
       "id": "aldo.briefing",
-      "text": "「让我看看你的装备。」\n\nAldo 接过去，挨个检查。\n\n「你父亲的装备，我帮你保养了这么多年。今天你去东礁那个老沉船把这个浮标取回来。算是你的初次潜水，简单。」\n\n他停顿了一下。\n\n「记住：氧气是时间，氮气是债。慢慢上来，别贪。」\n\n「四样东西你要盯紧——体力，氧气，理智，氮气。前两样你能直接看到。第三样你自己感觉。第四样会找你算账。」",
+      "text": "「让我看看你的装备。」\n\nAldo 接过去，挨个检查。\n\n「你导师的装备，我帮你保养了这么多年。今天你去东礁那个老沉船把这个浮标取回来。算是你在这片海的初次潜水，简单。」\n\n他停顿了一下。\n\n「记住：氧气是时间，氮气是债。慢慢上来，别贪。」\n\n「四样东西你要盯紧——体力，氧气，理智，氮气。前两样你能直接看到。第三样你自己感觉。第四样会找你算账。」",
       "choices": [
         {
           "id": "depart_east",
@@ -46,14 +46,14 @@
           ]
         },
         {
-          "id": "ask_father",
-          "label": "你认识我父亲？",
-          "next": "aldo.about_father"
+          "id": "ask_mentor",
+          "label": "你认识我导师？",
+          "next": "aldo.about_mentor"
         }
       ]
     },
-    "aldo.about_father": {
-      "id": "aldo.about_father",
+    "aldo.about_mentor": {
+      "id": "aldo.about_mentor",
       "text": "Aldo 沉默了很久。\n\n「他是上一代最后一个还敢去深处的人。」\n\n他没说更多。",
       "choices": [
         {

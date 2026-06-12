@@ -228,7 +228,11 @@ while (dialog && safety++ < 20) {
 err(zoneStarted === 'zone.east_reef', `教学关：应进入 zone.east_reef，实际 ${zoneStarted}`);
 
 // 走完教学关事件链 + 拿浮标 + 看船长室
-let evId = 'tutorial.descent';
+// 起始事件从 zones.json 再生（别手钉 id——St0 起脚本链头是 tutorial.prologue 半本日志开场钩，
+// 以后再换开场也不用回来改这里）；默认每步选 options[0]，prologue 两个选项都接 descent。
+const tutorialZone = zones.find((z) => z.id === 'zone.east_reef');
+err(tutorialZone?.scriptedStartEventId, '教学 zone 应有 scriptedStartEventId');
+let evId = tutorialZone.scriptedStartEventId;
 let endReason = null;
 let depth = 12;
 safety = 0;
@@ -244,6 +248,7 @@ while (evId && safety++ < 20) {
   log.push(`  → ${opt.label}`);
   const out = opt.check?.onSuccess ?? opt.outcome;
   for (const f of out.applyFlags ?? []) profileFlags.add(f);
+  for (const f of out.setProfileFlags ?? []) profileFlags.add(f); // 持久 profile flag（story.ch1.hook 走这条）
   if (out.endDive === 'forceAscend' || out.endDive === 'death') {
     endReason = out.endDive;
     break;
@@ -253,6 +258,8 @@ while (evId && safety++ < 20) {
   if (out.deltas?.nitrogen) {} // ignore
 }
 err(endReason === 'forceAscend', `教学关：应 forceAscend，实际 ${endReason}`);
+err(profileFlags.has('story.ch1.hook'),
+  '教学关：半本日志开场钩应在链上置位 story.ch1.hook（St0·engine/story.ts CH1_HOOK_FLAG）');
 
 profileFlags.add('flag.tutorial_complete'); // 模拟最终读日志后设置
 

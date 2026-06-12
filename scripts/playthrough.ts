@@ -22,6 +22,7 @@ import { generateChart, poiLockReason } from '../src/engine/chart';
 import { planAscent, executeAscent } from '../src/engine/ascent';
 import { buildAtLighthouse } from '../src/engine/lighthouses';
 import { eventDoneFlag, pickReturnTrigger } from '../src/engine/portEvents';
+import { CH1_HOOK_FLAG, ch1Story } from '../src/engine/story';
 import { handleReturnToPort } from '../src/engine/port';
 import type { GameState, DialogNode, DiveEvent } from '../src/types';
 
@@ -129,6 +130,7 @@ let nextEv: string = (state.phase as any).subPhase.eventId;
 while (nextEv && !nextEv.startsWith('__')) {
   const id: string = nextEv;
   nextEv = runEvent(id, (ev) => {
+    if (ev.id === 'tutorial.prologue') return 'dive_in'; // St0 开场钩「半本日志」（#115）
     if (ev.id === 'tutorial.descent') return 'continue';
     if (ev.id === 'tutorial.grouper') return 'sneak';
     if (ev.id === 'tutorial.wreck') return 'stealth_grab'; // 走潜行成功路径
@@ -194,8 +196,19 @@ state = {
 if (!state.profile.flags.has('flag.tutorial_complete')) {
   throw new Error('close_book 应让 flag.tutorial_complete 落到 profile.flags');
 }
-if (!state.profile.loreEntries.has('lore.father_first_entry')) {
-  throw new Error('close_book 应解锁 lore.father_first_entry');
+if (!state.profile.loreEntries.has('lore.ch1.captains_page')) {
+  throw new Error('close_book 应解锁 lore.ch1.captains_page（旧 lore.father_first_entry 已随 canon 改名·#115）');
+}
+// St0 剧情脊柱：开场钩 flag 经 setProfileFlags 在 dive 中持久落 profile，回港后仍在；
+// ch1Story 派生应读到 hooked + tutorialComplete（engine/story.ts 单一来源）。
+if (!state.profile.flags.has(CH1_HOOK_FLAG)) {
+  throw new Error('教学关跑完 profile.flags 应有 story.ch1.hook（prologue setProfileFlags）');
+}
+{
+  const st = ch1Story(state.profile);
+  if (!st.hooked || !st.tutorialComplete || st.nextAnchor !== 'reef') {
+    throw new Error('ch1Story 派生应为 hooked+tutorialComplete+nextAnchor=reef，实际 ' + JSON.stringify(st));
+  }
 }
 // 二次触发要被吃掉（防 cutscene 重播）：构造一个新 run 把日志再塞回去
 const fakeState: GameState = {
@@ -209,7 +222,7 @@ const trigger2 = pickReturnTrigger(fakeState);
 if (trigger2 !== null) {
   throw new Error('event_done 标记已写入，再次回港不应重复触发，但拿到了 ' + trigger2);
 }
-log.push(`flag.tutorial_complete ✓ / lore.father_first_entry ✓ / 重播被防住 ✓`);
+log.push(`flag.tutorial_complete ✓ / lore.ch1.captains_page ✓ / story.ch1.hook ✓ / 重播被防住 ✓`);
 
 // ========== 港口修缮：买下船坞 Lv.1 解锁旧灯塔礁 ==========
 // 船坞 Lv.1 账单 = coral_shard×6, old_fishing_net×3 ＋ 20 金（基建地图 Phase A）。

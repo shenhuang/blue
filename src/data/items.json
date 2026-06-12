@@ -5,7 +5,7 @@
       "name": "潜水刀",
       "category": "equipment",
       "rarity": "common",
-      "description": "普通的不锈钢潜水刀，父亲留下的。刀柄上还有他的指纹。",
+      "description": "普通的不锈钢潜水刀，导师留下的。刀柄上还有他的指纹。",
       "weight": 1,
       "sellPrice": 0,
       "equipment": {
@@ -99,13 +99,13 @@
       "name": "航海日志",
       "category": "story",
       "rarity": "uncommon",
-      "description": "皮面封皮已经被水泡软。大部分页面糊在一起。其中一页是父亲的字。",
+      "description": "皮面封皮已经被水泡软。大部分页面糊在一起，只有一页还能看清。",
       "weight": 0.5,
       "sellPrice": 0,
       "decay": "eternal",
       "story": {
         "triggersEventId": "tutorial.ending_log",
-        "unlocksLoreEntry": "lore.father_first_entry"
+        "unlocksLoreEntry": "lore.ch1.captains_page"
       }
     },
     {
