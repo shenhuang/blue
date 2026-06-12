@@ -14,6 +14,7 @@ import type {
 import {
   canBuildAt,
   buildAtLighthouse,
+  devBuildAtLighthouse,
   getLighthouseTracks,
   getBuiltLevelInTrack,
   revealRadius,
@@ -22,6 +23,7 @@ import { getOutpostForLighthouse } from '@/engine/outposts';
 import { countInInventory, HOME_LIGHTHOUSE_ID } from '@/engine/state';
 import { getItemDef } from '@/engine/items';
 import { PanelShell } from './PanelShell';
+import { DEV_TOOLS } from './devMode';
 
 interface Props {
   state: GameState;
@@ -34,6 +36,18 @@ export function LighthouseBuildPanel({ state, onStateChange, onClose }: Props) {
 
   function handleBuild(lighthouseId: string, upgradeId: string) {
     onStateChange(buildAtLighthouse(state, lighthouseId, upgradeId));
+  }
+
+  // Dev 测试建造（#118·与港口修缮「测试解锁/一键升满」同款 quirk #110 口径）：
+  // 0 成本直建；一键建满只扫**该灯塔可见轨**（trackVisible 过滤后）——别给家灯塔
+  // 建出 outpostOnly 的能源设施（可见性即合法性·引擎侧已建/未知 no-op 兜底）。
+  function handleDevBuild(lighthouseId: string, upgradeId: string) {
+    onStateChange(devBuildAtLighthouse(state, lighthouseId, upgradeId));
+  }
+  function handleDevBuildAll(lighthouseId: string, visibleTracks: LighthouseTrack[]) {
+    let s = state;
+    for (const t of visibleTracks) for (const u of t.upgrades) s = devBuildAtLighthouse(s, lighthouseId, u.id);
+    if (s !== state) onStateChange(s);
   }
 
   // 内容型界面统一壳（quirk #112）：金币头固定、设施轨在中间滚、返回钉底通栏（从右上挪下来，
@@ -58,6 +72,7 @@ export function LighthouseBuildPanel({ state, onStateChange, onClose }: Props) {
           if (t.outpostOnly) return !!outpost;
           return true;
         };
+        const visibleTracks = tracks.filter(trackVisible);
         return (
         <div key={lh.id} className="lighthouse-section">
           <div className="lighthouse-section-head">
@@ -65,18 +80,25 @@ export function LighthouseBuildPanel({ state, onStateChange, onClose }: Props) {
             <span className="dim lighthouse-section-meta">
               Lv.{lh.level} · 点亮半径 {revealRadius(lh).toFixed(2)}
             </span>
+            {DEV_TOOLS && (
+              <button
+                className="btn small upgrade-dev-unlock"
+                onClick={() => handleDevBuildAll(lh.id, visibleTracks)}
+              >
+                测试：一键建满（0 成本）
+              </button>
+            )}
           </div>
-          {tracks
-            .filter(trackVisible)
-            .map((track) => (
-              <LighthouseTrackCard
-                key={track.id}
-                track={track}
-                lighthouse={lh}
-                state={state}
-                onBuild={handleBuild}
-              />
-            ))}
+          {visibleTracks.map((track) => (
+            <LighthouseTrackCard
+              key={track.id}
+              track={track}
+              lighthouse={lh}
+              state={state}
+              onBuild={handleBuild}
+              onDevBuild={handleDevBuild}
+            />
+          ))}
         </div>
         );
       })}
@@ -89,11 +111,13 @@ function LighthouseTrackCard({
   lighthouse,
   state,
   onBuild,
+  onDevBuild,
 }: {
   track: LighthouseTrack;
   lighthouse: Lighthouse;
   state: GameState;
   onBuild: (lighthouseId: string, upgradeId: string) => void;
+  onDevBuild: (lighthouseId: string, upgradeId: string) => void;
 }) {
   const haveLevel = getBuiltLevelInTrack(lighthouse, track);
 
@@ -114,6 +138,7 @@ function LighthouseTrackCard({
             lighthouse={lighthouse}
             state={state}
             onBuild={onBuild}
+            onDevBuild={onDevBuild}
           />
         ))}
       </div>
@@ -126,11 +151,13 @@ function LighthouseUpgradeRow({
   lighthouse,
   state,
   onBuild,
+  onDevBuild,
 }: {
   def: LighthouseUpgradeDef;
   lighthouse: Lighthouse;
   state: GameState;
   onBuild: (lighthouseId: string, upgradeId: string) => void;
+  onDevBuild: (lighthouseId: string, upgradeId: string) => void;
 }) {
   const built = lighthouse.builtUpgrades.has(def.id);
   const avail = canBuildAt(state.profile, lighthouse, def.id);
@@ -170,6 +197,16 @@ function LighthouseUpgradeRow({
         <div className="upgrade-row-name">{def.name}</div>
         <div className="upgrade-row-desc">{def.description}</div>
         {!built && <LighthouseCostLine cost={def.cost} profile={state.profile} />}
+        {/* Dev 测试建造（?dev 门后·与港口修缮「测试解锁」同款 #110 口径）：跳过材料/金币/
+            前置/灯塔等级，真建造路径零触碰；普通访客 DEV_TOOLS=false 不渲染。 */}
+        {DEV_TOOLS && !built && (
+          <button
+            className="btn small upgrade-dev-unlock"
+            onClick={() => onDevBuild(lighthouse.id, def.id)}
+          >
+            测试建造（0 成本）
+          </button>
+        )}
       </div>
       <div className="upgrade-row-side">{statusEl}</div>
     </div>

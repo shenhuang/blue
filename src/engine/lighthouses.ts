@@ -171,6 +171,36 @@ export function buildAtLighthouse(
   return next;
 }
 
+/**
+ * Dev 后门：0 成本在某灯塔直建一条设施（#118·quirk #110 家族三条口径：① 引擎纯函数
+ * 不查不扣——材料/金币/前置/灯塔等级全跳过，真路径 canBuildAt/buildAtLighthouse 零触碰；
+ * ② 门在 UI 的 DEV_TOOLS；③ 不进存档语义——产物与真建造同形（builtUpgrades 加一条），
+ * 无 dev 标记字段）。未知 upgrade/灯塔不存在/已建 → no-op。日志带「测试」字样（线上
+ * ?dev 验收时作者能分清哪笔是白建的）。
+ */
+export function devBuildAtLighthouse(
+  state: GameState,
+  lighthouseId: string,
+  upgradeId: string,
+): GameState {
+  const entry = INDEX.get(upgradeId);
+  if (!entry) return state;
+  const idx = state.profile.lighthouses.findIndex((l) => l.id === lighthouseId);
+  if (idx < 0) return state;
+  const lighthouse = state.profile.lighthouses[idx];
+  if (lighthouse.builtUpgrades.has(entry.def.id)) return state;
+
+  const builtUpgrades = new Set(lighthouse.builtUpgrades);
+  builtUpgrades.add(entry.def.id);
+  const lighthouses = state.profile.lighthouses.map((l, i) =>
+    i === idx ? { ...l, builtUpgrades } : l,
+  );
+  return appendLog(
+    { ...state, profile: { ...state.profile, lighthouses } },
+    { tone: 'system', text: `测试建造（dev·0 成本）：${lighthouse.name} · ${entry.def.name}。` },
+  );
+}
+
 /** 聚合某座灯塔已建设施的派生加成（Phase C 读取消费 reveal/reach）。 */
 export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses {
   const bonuses: LighthouseBonuses = {

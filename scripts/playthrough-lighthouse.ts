@@ -18,6 +18,7 @@ import {
 import {
   canBuildAt,
   buildAtLighthouse,
+  devBuildAtLighthouse,
   getLighthouseBonuses,
   getBuiltLevelInTrack,
   getLighthouseTracks,
@@ -190,6 +191,27 @@ assert(getLighthouseBonuses(homeDock).extraConsumableSlot === 1, '船坞 → get
 assert(getRunBonuses(sDock.profile).extraConsumableSlot === 1, '船坞 → getRunBonuses 并回 +1 槽');
 assert(getRunBonuses(createInitialGameState().profile).extraConsumableSlot === 0, '没船坞 → 0 槽');
 L('  船坞设施 → +1 消耗品槽（getLighthouseBonuses + getRunBonuses 桥）✓');
+
+// ============================================
+// 7. devBuildAtLighthouse（#118·quirk #110 家族：引擎无门·0 成本·真经济零触碰）
+// ============================================
+L('\n========== 7. dev 测试建造（0 成本·#110 口径）==========');
+{
+  // 空账户（无材料无金币）也能直建——跳过材料/金币/前置/灯塔等级
+  let sDev = stateWith([], 0);
+  sDev = devBuildAtLighthouse(sDev, HOME, 'lighthouse.beacon.lv2'); // 直跳 lv2=前置也不查
+  const homeDev = sDev.profile.lighthouses.find((l) => l.id === HOME)!;
+  assert(homeDev.builtUpgrades.has('lighthouse.beacon.lv2'), '7: dev 建造应落 builtUpgrades（跳过前置）');
+  assert(sDev.profile.bankedGold === 0, '7: dev 建造不动金币');
+  assert(sDev.profile.inventory.length === 0, '7: dev 建造不动材料');
+  // 已建 no-op + 未知 no-op（引用相等＝零写入）
+  assert(devBuildAtLighthouse(sDev, HOME, 'lighthouse.beacon.lv2') === sDev, '7: 已建应 no-op');
+  assert(devBuildAtLighthouse(sDev, HOME, 'lighthouse.nope.lv9') === sDev, '7: 未知 upgrade 应 no-op');
+  assert(devBuildAtLighthouse(sDev, 'lighthouse.nope', 'lighthouse.beacon.lv1') === sDev, '7: 未知灯塔应 no-op');
+  // 产物与真建造同形：派生加成照常生效
+  assert(revealRadius(homeDev) > BASE_LIGHT_RADIUS, '7: dev 建的 beacon 照常进 revealRadius 派生');
+  L('  空账户直建（跳前置）/不扣账/已建·未知 no-op/派生同真建 ✓');
+}
 
 console.log(log.join('\n'));
 console.log('\n✓ 灯塔基地（Phase B 数据模型 + 引擎脚手架）回归通过');
