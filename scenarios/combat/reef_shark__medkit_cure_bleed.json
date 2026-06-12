@@ -1,0 +1,23 @@
+{
+  "_comment": "#117 medkit 治伤接线 baseline（负伤 SPEC §8「medkit 治伤、药物买时间」）。fixture 带 bleed@2 + 背包 med_kit×1 进场：T1 用急救包——本回合 tick 仍先收（行动开局体力 -2·治疗不免当回合的债），效果段 +30 体力 clamp 回满 + healInjury(cure) 移除 bleed（onHeal 叙事「渗血停了，水里那条线慢慢淡掉」＝scentTrail 随伤消失·#116 读点折算自动失效），鲨当回合盘旋未出手＝Δ 只剩氧 -1。T2-T4 三刀收尾（seed 3 后续两记敌招均未再 proc·T3 鲨转身逃·T4 追杀）。injuriesFinal 空集＝cure 断言本体；对照 reef_shark__bleed_heavy_tick（同 bleed@2 进场不带包·tick 吃满 + 重档饱和）。med_kit 消耗在 applyPlayerAction 1b 统一扣（#108·lootGained 只记正向 diff 故不显）。",
+  "combatId": "combat.tutorial_shark",
+  "seed": 3,
+  "injuries": [{ "defId": "injury.bleed", "tier": 2 }],
+  "inventory": [{ "itemId": "item.med_kit", "qty": 1 }],
+  "actions": [
+    { "actionId": "action.use_medkit" },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 4,
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": { "item.shark_tooth": 1 },
+    "enemiesAlive": 0,
+    "statsDelta": { "stamina": -20, "oxygen": -4 },
+    "injuriesFinal": {}
+  }
+}

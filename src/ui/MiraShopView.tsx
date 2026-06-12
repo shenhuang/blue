@@ -1,5 +1,5 @@
 // Mira 的柜台 —— 把 profile.inventory 中可卖物品折成金币。
-// eternal / story 类的不收（保留给剧情）；sellPrice <= 0 的也不收（如急救包）。
+// eternal / story 类的不收（保留给剧情）；sellPrice <= 0 的也不收。
 
 import { useState } from 'react';
 import type { GameState } from '@/types';

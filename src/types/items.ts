@@ -93,4 +93,10 @@ export interface ConsumableMeta {
     deltas?: Partial<Record<'stamina' | 'oxygen' | 'sanity' | 'nitrogen', number>>;
     text?: string;
   };
+  /**
+   * 急救包语义（负伤 SPEC §8·data-driven 同 decoy.kind 套路·非硬编码 id）：使用时对身上
+   * **每处**伤按其 `InjuryDef.heal.medkit` 字段生效（cure 移除/downgrade 降档/none 不动——
+   * 「全部能治的一起处理」·作者拍 2026-06-12）。治疗只走 injuries.ts::healInjury 唯一入口。
+   */
+  medkit?: boolean;
 }

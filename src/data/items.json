@@ -219,10 +219,11 @@
       "rarity": "common",
       "description": "止血、绷带、镇痛针。能让你撑过最糟糕的一回合。",
       "weight": 0.5,
-      "sellPrice": 0,
+      "sellPrice": 25,
       "decay": "consumable",
       "consumable": {
         "usableIn": ["dive", "combat"],
+        "medkit": true,
         "effectOnUse": {
           "deltas": { "stamina": 30 },
           "text": "你撕开急救包，止血带勒紧，疼痛被推到一边。"

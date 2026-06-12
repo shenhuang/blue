@@ -116,7 +116,7 @@ export function sellItemToMira(
 // ============================================================
 //
 // - 仅 T1/T2 材料可回购；T3/T4 只卖不买（保住"深度 = 进度"门控）。
-// - 另有少量「装备性消耗品」（decoy·SHOP_STOCK_CONSUMABLES）：同一套限量/加价机制走货。
+// - 另有少量「装备性消耗品」（decoy/med_kit·SHOP_STOCK_CONSUMABLES）：同一套限量/加价机制走货。
 // - 买价 = 卖价（miraOfferFor）× markup，恒 > 卖价（markup>1），给金币一个去处又不破材料门控。
 // - 店铺限量：每种可买材料按 tier 有 shopStock 上限，购买递减、每次回港补满（handleReturnToPort 清空）。
 //   都是 tunable（见 SPEC §9），集中在下面三个常量。
@@ -134,11 +134,13 @@ const SHOP_STOCK_BY_TIER: Partial<Record<MaterialTier, number>> = {
  * Mira 柜台的「装备性消耗品」货架（猎手 SPEC §4 data 面·#108）：itemId → 每次回港备货上限。
  * 材料回购之外的第二类货——花金币买、出发前选带下水（dive-start.ts carryItems）。买价沿
  * miraOfferFor × MIRA_BUY_MARKUP 同一套（恒 > 卖价）；限量同 shopStock 机制（回港补满）。
- * 备货故意少（2）＝decoy 是「带一两枚保命」的开销，不是无限弹药（守可生存但代价巨大）。
+ * 备货故意少（2）＝「带一两枚保命」的开销，不是无限弹药（守可生存但代价巨大）。
+ * med_kit 上架（负伤 SPEC §8「medkit 治伤、药物买时间」·作者拍 2026-06-12·价/量后续可调）。
  */
 const SHOP_STOCK_CONSUMABLES: Record<string, number> = {
   'item.decoy_sound': 2,
   'item.decoy_light': 2,
+  'item.med_kit': 2,
 };
 
 /** 取某材料的 tier（非 material / 无 tier → undefined）。 */

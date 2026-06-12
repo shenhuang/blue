@@ -137,6 +137,28 @@ export function healInjury(
 }
 
 /**
+ * 急救包整包结算（SPEC §8「medkit 治伤」·consumable.medkit 旗标的引擎面·#117）：对身上
+ * **每处**伤按各自 `heal.medkit` 字段生效——「全部能治的一起处理」（作者拍 2026-06-12·
+ * 徽章「急救包可治」的承诺对每条都兑现）。cure 移除 / downgrade 降档 / none 不动。
+ * 住本文件＝伤势列表的遍历与治疗不出唯一写者（规则四触碰面）；逐条 onHeal 文案
+ * 返还调用方推日志（与三入口同口径·引擎纯函数不写日志）。
+ */
+export function applyMedkitHeal(run: RunState): { run: RunState; texts: string[] } {
+  const texts: string[] = [];
+  let cur = run;
+  for (const inj of [...cur.injuries]) {
+    const def = INJURY_DEFS.get(inj.defId);
+    const mode = def?.heal.medkit;
+    if (!def || !mode || mode === 'none') continue;
+    const healed = healInjury(cur, inj.defId, mode);
+    if (!healed.healed) continue;
+    cur = healed.run;
+    if (healed.text) texts.push(healed.text);
+  }
+  return { run: cur, texts };
+}
+
+/**
  * 测试 fixture 单点（combatScenario/eventScenario 起始伤势铺设用）——绕过升档状态机直落档位。
  * 游戏逻辑别用这个；游戏内受伤只走 addInjury/worsenInjury。
  */

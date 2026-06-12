@@ -27,7 +27,7 @@ import { appendLog, addToInventory, removeFromInventory, clampStats } from './st
 import { executeDeath } from './death';
 import { getItemDef } from './items';
 import { computeModifiers, effectiveStaminaMax } from './modifiers';
-import { addInjury, injuryIdForDamageType } from './injuries';
+import { addInjury, injuryIdForDamageType, applyMedkitHeal } from './injuries';
 
 // ——— 数据索引 ———
 
@@ -467,6 +467,18 @@ function applyUseItem(state: GameState, action: CombatAction): GameState {
   s = applyStatsDelta(s, itemDef.consumable.effectOnUse.deltas ?? {});
   if (itemDef.consumable.effectOnUse.text) {
     s = pushCombatLog(s, { actor: 'player', text: itemDef.consumable.effectOnUse.text });
+  }
+
+  // 急救包治伤（负伤 SPEC §8·consumable.medkit 数据旗标·#117）：整包结算住 injuries.ts
+  // 唯一写者（applyMedkitHeal·「全部能治的一起处理」），这里只落库 + 推 onHeal 叙事
+  // （actor=system 与 onGain/onWorsen 同口径）。止血副效应零接线：scentTrail 住
+  // tierEffects，伤一消、下个读点折算自然失效（#116）。
+  if (itemDef.consumable.medkit && s.run) {
+    const healed = applyMedkitHeal(s.run);
+    s = { ...s, run: healed.run };
+    for (const text of healed.texts) {
+      s = pushCombatLog(s, { actor: 'system', text });
+    }
   }
   return s;
 }

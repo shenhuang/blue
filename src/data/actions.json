@@ -100,7 +100,7 @@
     {
       "id": "action.use_medkit",
       "name": "使用急救包",
-      "description": "回 30 体力。占一次行动。",
+      "description": "回 30 体力，处理当场治得了的伤。占一次行动。",
       "costStamina": 0,
       "costOxygenTurns": 1,
       "requiresItemId": "item.med_kit",

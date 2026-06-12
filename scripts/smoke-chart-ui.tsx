@@ -722,16 +722,17 @@ assert(htmlK1.includes('珊瑚碎片'), 'K1: 买侧应列 T1 珊瑚碎片');
 assert(htmlK1.includes('点击买 1'), 'K1: 买得起的货格 title 应是「点击买 1」');
 assert(htmlK1.includes('item-cell'), 'K1: 货架应是格子陈列（ItemCell）');
 assert(!htmlK1.includes('冷光腺'), 'K1: T4 冷光腺不应出现在买侧');
-// K1b. 消耗品货架（猎手 SPEC §4 data 面·#108）：decoy 两种应上买侧（同一套限量/加价机制）
+// K1b. 消耗品货架（猎手 SPEC §4 data 面·#108·#117 med_kit 上架）：decoy 两种 + 急救包应上买侧（同一套限量/加价机制）
 assert(htmlK1.includes('声诱标') && htmlK1.includes('光诱棒'), 'K1b: 买侧应列出声诱标/光诱棒（消耗品货架）');
+assert(htmlK1.includes('急救包'), 'K1b: 买侧应列出急救包（#117 上架·负伤 SPEC §8）');
 // K1c. 卖侧储物柜（点击卖）：可卖品格上标收价 + title 点击卖；银行金币可见；全卖按钮在
 assert(htmlK1.includes('你的储物柜（点击卖）'), 'K1c: 应有卖侧标题');
 assert(htmlK1.includes('鲨鱼牙') && htmlK1.includes('点击卖 1'), 'K1c: 可卖品（鲨鱼牙）格可点卖');
 assert(/卖 \d+ 金/.test(htmlK1), 'K1c: 可卖品格上标收价（卖 N 金）');
 assert(htmlK1.includes('全卖给她'), 'K1c: 全卖按钮保留');
 assert(htmlK1.includes('gold-figure'), 'K1c: 买侧应显示银行金币（gold-figure）');
-// K1d. 她不收的（消耗品等）也陈列但惰性带原因
-const K1d = shopState([{ itemId: 'item.med_kit', qty: 1 }], 1000);
+// K1d. 她不收的（剧情物等）也陈列但惰性带原因（原样例 med_kit 已上架可卖·#117 换剧情物）
+const K1d = shopState([{ itemId: 'item.waterlogged_logbook', qty: 1 }], 1000);
 const htmlK1d = renderToStaticMarkup(<MiraShopView state={K1d} onStateChange={noop} />);
 assert(htmlK1d.includes('她不收'), 'K1d: 不可卖品陈列并标「她不收」');
 // K2. 没钱 → 货格红显差额钩子（short 样式·点击时给「还差 X 金」红字——SSR 静态层验 variant）
