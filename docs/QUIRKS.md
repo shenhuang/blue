@@ -151,6 +151,10 @@
 
 119. **负伤系统的四条数据/RNG 纪律（#116·负伤 Wave 1+scent）**：① **injuryOnHit 的 RNG 流纪律**——`enemyAttackPlayer` 只在攻击**带 `injuryOnHit` 字段**时才掷那一记 Math.random；给既有敌人攻击补这个字段=该敌所有 seeded 战斗基线的 RNG 流整体平移、**必须实跑重抄**（#43 套路·本批 shark/grouper 两条 normal_kill 即如此），但不碰其它敌人的基线——加数据时**别**把掷骰改成无条件（会把全部 seed 基线一锅端）。② **injuries.json 文件顺序有语义**：`injuryIdForDamageType` 的 cause 默认派生取同 cause **文件序第一条**（physical→流血），bleed 必须排在 rib 前；在 bleed 前插入新 physical 伤种会静默改变全部默认派生（`reef_shark__bleed_proc` 等基线会红=兜底，但别考验它）。③ scenario fixture 的 `injuries` 键属 quirk #106 同族：**写全或不写**（框架用 if 守护、显式 undefined 暂等价缺省，但别依赖这点养习惯）。④ `run.injuries` 触碰面由 **check-boundaries 规则四**收口（engine 内仅 injuries/modifiers/state/combatScenario 四文件；读数值一律 `computeModifiers`、写一律三入口、fixture 走 `seedInjuries`）——正则是 tripwire：匹配 `run.injuries`（含 `!`/`?.` 变体），**注释里写这个词组也会红**（写文档注释用「伤势列表」绕开），重命名变量能骗过它但骗过 lint 的代码过不了评审。
 
+120. **文案流程＝事后挑错制（#117·作者拍 2026-06-12·改写 #117/#118 的过稿环节）**：**全部系统/剧情文案直接落库，不再前置过稿**——作者实机读到不对再提，session 当场改；重大调性件（章节结局/canon 级转折）写完仍**主动贴给作者过目**（本批观测站圆满结局即先例）。[待过稿] 标记自此只表「作者尚未读过」的状态信息，**不再挡实装、不再要求清标仪式**；旧文档里的 [待过稿] 无需批量清理（撞见顺手删即可）。不变的部分：quirk #117 剧透红线（断片说/单程下行零泄漏·尸体脸不可见·当时为真）与 #118 canon 守门（导师/flag 字面量）**照常机制化自查**——挑错制管的是「好不好」，红线管的是「能不能」，后者永远前置。
+
+121. **一章锚点 POI 模板（#117·ChartPoi.story·St1）**：剧情锚点上海图只走 `ChartPoi.story{anchor,eventId}`——anchor 必须 ∈ `CH1_ANCHORS`、eventId 必须已注册、requiresFlags 只门 `flag.tutorial_complete`（教学尾「四个坐标圈上海图」＝同一动作），`playthrough-story` §5 全部守门（含 ch1/midwater/vent 三事件文件的 story 字面量+「父亲」禁令）。**story POI 的 `isPoiLit`/`isPoiExplainedByLighthouse` 恒真**＝日志坐标是「已知点」不走灯塔发现轴、也**不许**误穿 mimic「亮而无主」宏观 tell（海图诚实轴）——加新章节锚点照此两函数补分支，别给剧情点另开可见性通道。触发规则在 `dive-start.ts`：锚点 flag 未置位才强制开场（vent 类「结局分歧」锚点另带前置齐套门）、已置位＝普通下潜（回流重访免费成立）；**普通下潜开场本就可能从池里抽到环境事件——断言「不是节拍事件」而非「无事件」**（§5 踩过）。锚点节拍置位只走事件 `setProfileFlags`（quirk #118 不变），检定失败也要置位（节拍不软锁·锚点③「投射被经历即完成」先例）。
+
 > 已修复或被后续内容填平，留档备查。
 
 1. **沙箱权限**：在 Linux 沙箱里跑 `npm run build` 第二次会失败（删不掉旧 dist/），跑 `npm run dev` 同样问题（删不掉 .vite 缓存）。**用户本地 Mac 没问题**。
