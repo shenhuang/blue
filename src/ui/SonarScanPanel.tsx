@@ -533,6 +533,36 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   const layout = map ? deriveMapLayout(map, { pxPerMeter: SONAR_PX_PER_M, colW: SONAR_COL_W }) : null;
   const curId = run?.currentNodeId ?? null;
   const here = (layout && curId && layout.pos[curId]) || { x: (layout?.width ?? 0) / 2, y: (layout?.height ?? 0) / 2 };
+
+  // 选中即入画（#118·作者反馈「离得远要调地图才能看到」）：列表/图上选中相邻节点时，
+  // 若它在当前视窗外（10% 安全边距），平移视角到「你与它的中点」——两头尽量同框；
+  // 保留缩放档、钳制同 clampCam 口径（PAN_MARGIN）。只在选中那一刻平移，不锁视角。
+  const panCtxRef = useRef<{ p: { x: number; y: number } | null; here: { x: number; y: number }; w: number; h: number }>({ p: null, here, w: 0, h: 0 });
+  panCtxRef.current = {
+    p: (pendingNodeId && layout?.pos[pendingNodeId]) || null,
+    here,
+    w: layout?.width ?? 0,
+    h: layout?.height ?? 0,
+  };
+  useEffect(() => {
+    const { p, here: h0, w, h } = panCtxRef.current;
+    if (!p) return;
+    setCam((c) => {
+      const vw = VIEW_W / c.z;
+      const vh = VIEW_H / c.z;
+      const cx = h0.x + c.dx;
+      const cy = h0.y + c.dy;
+      const inView =
+        p.x >= cx - vw / 2 + vw * 0.1 &&
+        p.x <= cx + vw / 2 - vw * 0.1 &&
+        p.y >= cy - vh / 2 + vh * 0.1 &&
+        p.y <= cy + vh / 2 - vh * 0.1;
+      if (inView) return c;
+      const tx = Math.min(w + PAN_MARGIN, Math.max(-PAN_MARGIN, (h0.x + p.x) / 2));
+      const ty = Math.min(h + PAN_MARGIN, Math.max(-PAN_MARGIN, (h0.y + p.y) / 2));
+      return { dx: tx - h0.x, dy: ty - h0.y, z: c.z };
+    });
+  }, [pendingNodeId]);
   const isOpenWater = run ? !zoneAllowsBacktrack(run.zoneId) : false;
   // 渲染侧并入（不写 scanMemory·存档/引擎零变化·揭示与欺骗语义仍归 clarity/sonar）：
   //  ① 你脚下那间永远可见（#1）：人都站在这儿了，眼前这间洞不该是黑的；

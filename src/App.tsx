@@ -192,24 +192,20 @@ export default function App() {
           v0.0.1 · 更新日志
         </button>{' '}
         · 垂直切片 · build {__BUILD_TIME__} ({__BUILD_COMMIT__})
-        {/* Dev 删档重开（#118·quirk #110 口径：门在 UI·复用 gameOver 的 handleRestart=clearSave+新档·
-            window.confirm 防误触——这是唯一会动真存档的 dev 按钮，别学测试货架做成单击直发）。 */}
-        {DEV_TOOLS && (
-          <>
-            {' '}
-            ·{' '}
-            <button
-              type="button"
-              className="changelog-trigger dev-wipe-save"
-              onClick={() => {
-                if (window.confirm('删除当前存档并重开新档？（dev·不可恢复）')) handleRestart();
-              }}
-              title="dev：清空 localStorage 存档并立即开新档"
-            >
-              删档重开（dev）
-            </button>
-          </>
-        )}
+        {/* 重开新档（#118·作者拍「不该是 dev 功能」）：玩家可见——roguelike 重开是正当需求。
+            复用 gameOver 的 handleRestart（clearSave+新档）；window.confirm 防误触（唯一动真存档的按钮）。 */}
+        {' '}
+        ·{' '}
+        <button
+          type="button"
+          className="changelog-trigger wipe-save"
+          onClick={() => {
+            if (window.confirm('删除当前存档、从头开始？（不可恢复）')) handleRestart();
+          }}
+          title="清空存档并立即开新档"
+        >
+          重开新档
+        </button>
       </footer>
 
       {changelogOpen && <ChangelogModal onClose={() => setChangelogOpen(false)} />}
