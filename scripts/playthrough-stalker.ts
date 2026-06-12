@@ -73,6 +73,8 @@ function assert(cond: unknown, msg: string): asserts cond {
 }
 
 const CAVE_POOL = ['combat.blind_eel_solo', 'combat.cave_octopus_solo'];
+/** 无嗅觉系对照池（§20g）：盲鳗自 #117 已进 scent 名单（§12.2 作者拍），对照只剩章鱼。 */
+const NO_SCENT_POOL = ['combat.cave_octopus_solo'];
 
 /** 一条 5 节点链 n0→n1→…→n4（blue_caves·cave·事件节点·深 depth m）；无向邻接让猎手能沿链逼近你。 */
 function chainMap(depth: number): DiveMap {
@@ -1051,8 +1053,9 @@ L('\n========== 20. scent 第三通道（流血·重 × enemy.scent·负伤 SPEC
     const rG = { ...huntState({ alert: half }).run! };
     assert(!scentSpawnReady(rG, SCENT_POOL), '20g: 无伤 → 半线不触发（旧门不变）');
     assert(scentSpawnReady(bleedHeavy(rG), SCENT_POOL), '20g: 流血·重 + 嗅觉池 → 半线即现身');
-    assert(!scentSpawnReady(bleedHeavy(rG), CAVE_POOL), '20g: 池里没有嗅觉系（盲鳗/章鱼）→ 不提前');
-    assert(poolHasScent(SCENT_POOL) && !poolHasScent(CAVE_POOL), '20g: poolHasScent 从 EnemyDef.scent 派生');
+    assert(!scentSpawnReady(bleedHeavy(rG), NO_SCENT_POOL), '20g: 池里没有嗅觉系（章鱼）→ 不提前');
+    assert(poolHasScent(SCENT_POOL) && !poolHasScent(NO_SCENT_POOL), '20g: poolHasScent 从 EnemyDef.scent 派生');
+    assert(poolHasScent(CAVE_POOL), '20g: 盲鳗进名单后蓝洞池=嗅觉池（#117·§12.2 作者拍·幼体随亲代）');
     // 全链：reef 池（梭鱼=scent）·半线·流血·重 → moveToNode 现身；同 fixture 无伤 → 不现身
     const mkG = (bled: boolean): GameState => {
       let sg = huntState({ alert: half, light: true });
