@@ -19,6 +19,8 @@
 //   - statsDelta        { stat: number }（严格相等）
 //   - sanityDeltaAtMost / hpDeltaAtMost / oxygenDeltaAtMost
 //                       number（实际 delta ≤ 给定值；用于"至少损失这么多"断言）
+//   - injuriesFinal     { defId: tier }（**精确集合匹配**：总数一致且每条档位相等；
+//                       {} = 断言全程无伤。负伤 SPEC §10 baseline 用）
 //
 // 详见 docs/STATUS.md "战斗回归框架（Phase 3）" 一节。
 
@@ -47,6 +49,7 @@ interface ScenarioFile extends CombatScenarioInput {
     sanityDeltaAtMost?: number;
     hpDeltaAtMost?: number;
     oxygenDeltaAtMost?: number;
+    injuriesFinal?: Record<string, number>;
     notes?: string;
   };
 }
@@ -122,6 +125,22 @@ function assertScenario(name: string, result: CombatScenarioResult, expect: Scen
     const got = (s.statsDelta as Record<string, number | undefined>)[field] ?? 0;
     if (got > threshold) {
       fail(name, `${label} 不符：期望 ≤ ${threshold}，实际 ${got}`);
+    }
+  }
+
+  if (expect.injuriesFinal) {
+    const got = new Map(s.injuriesFinal.map((i) => [i.defId, i.tier]));
+    const want = Object.entries(expect.injuriesFinal);
+    if (got.size !== want.length) {
+      fail(
+        name,
+        `injuriesFinal 数量不符：期望 ${want.length} 处，实际 ${got.size} 处（${[...got.entries()].map(([d, t]) => `${d}@${t}`).join(', ') || '无伤'}）`,
+      );
+    }
+    for (const [defId, tier] of want) {
+      if (got.get(defId) !== tier) {
+        fail(name, `injuriesFinal.${defId} 不符：期望 tier ${tier}，实际 ${got.get(defId) ?? '(没有这处伤)'}`);
+      }
     }
   }
 

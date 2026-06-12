@@ -12,6 +12,7 @@
       "hostility": "territorial",
       "initialStance": "alerted",
       "aiPattern": "aggressor",
+      "scent": true,
       "attacks": [
         {
           "id": "shark.bite",
@@ -19,7 +20,8 @@
           "damageType": "physical",
           "damage": [4, 7],
           "description": "它冲过来，齿列在水里划出一道白线。",
-          "weight": 3
+          "weight": 3,
+          "injuryOnHit": { "chance": 0.35 }
         },
         {
           "id": "shark.tail_swipe",

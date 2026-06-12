@@ -12,6 +12,7 @@
       "hostility": "predatory",
       "initialStance": "alerted",
       "aiPattern": "flanker",
+      "scent": true,
       "attacks": [
         {
           "id": "barracuda.dart",
@@ -56,6 +57,7 @@
       "hostility": "territorial",
       "initialStance": "alerted",
       "aiPattern": "flanker",
+      "scent": true,
       "attacks": [
         {
           "id": "barracuda_juv.nip",

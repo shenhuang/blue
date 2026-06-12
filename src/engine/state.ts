@@ -212,6 +212,8 @@ export function createNewRun(opts: {
     bandAlertFactor: 1,
     sonarDeception: 0,
     huntEnabled: false,
+    // 负伤（负伤 SPEC §3）：run 级身体债，出海无伤起步；回港随 run 销毁＝全愈。
+    injuries: [],
   };
 }
 
@@ -316,6 +318,7 @@ export function hydrateGameState(state: GameState): GameState {
       bandAlertFactor: run.bandAlertFactor ?? 1,
       sonarDeception: run.sonarDeception ?? 0,
       huntEnabled: run.huntEnabled ?? false,
+      injuries: run.injuries ?? [],
     },
   };
 }

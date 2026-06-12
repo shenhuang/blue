@@ -4,6 +4,7 @@
 
 import type {
   GameState,
+  RunState,
   CombatState,
   CombatAction,
   CombatLogEntry,
@@ -25,6 +26,8 @@ import grouperData from '@/data/enemies/reef_grouper.json';
 import { appendLog, addToInventory, removeFromInventory, clampStats } from './state';
 import { executeDeath } from './death';
 import { getItemDef } from './items';
+import { computeModifiers, effectiveStaminaMax } from './modifiers';
+import { addInjury, injuryIdForDamageType } from './injuries';
 
 // ——— 数据索引 ———
 
@@ -84,6 +87,9 @@ export function startCombat(
   const enc = COMBAT_ENCOUNTERS.get(combatId);
   if (!enc || !state.run) return state;
 
+  // scent（负伤 SPEC §6.1）：玩家流血·重时嗅觉系敌种开局就闻到你——unaware 直接 alerted
+  // （潜行/突袭红利对它失效·骗局在你身上）。无伤/非嗅觉系 → initialStance 逐字节不变。
+  const scentTrail = computeModifiers(state.run).scentTrail;
   const enemies: EnemyInstance[] = enc.party.members.map((m, idx) => {
     const def = ENEMY_DEFS.get(m.defId);
     if (!def) throw new Error(`Enemy def not found: ${m.defId}`);
@@ -92,7 +98,7 @@ export function startCombat(
       defId: def.id,
       hp: def.hp,
       sanityHp: def.sanityHp,
-      stance: def.initialStance,
+      stance: scentTrail && def.scent && def.initialStance === 'unaware' ? 'alerted' : def.initialStance,
       aggro: def.threat,
       statuses: [],
     };
@@ -142,15 +148,28 @@ export interface ActionAvailability {
   reason?: string;
 }
 
+/**
+ * 行动的实际资源消耗（负伤 SPEC §5：costStamina × staminaCostMult、costOxygenTurns × o2CostMult，
+ * 向上取整）。无伤时乘数恒 1 → ceil(整数×1) 逐字节不变。availability 与扣费共用本函数＝面板诚实。
+ */
+function actionCosts(run: RunState, action: CombatAction): { stamina: number; oxygen: number } {
+  const mods = computeModifiers(run);
+  return {
+    stamina: Math.ceil(action.costStamina * mods.staminaCostMult),
+    oxygen: Math.ceil(action.costOxygenTurns * mods.o2CostMult),
+  };
+}
+
 export function checkActionAvailability(state: GameState, action: CombatAction): ActionAvailability {
   const run = state.run;
   if (!run) return { available: false, reason: '无 run state' };
 
-  if (run.stats.stamina < action.costStamina) {
-    return { available: false, reason: `体力不足（需 ${action.costStamina}）` };
+  const costs = actionCosts(run, action);
+  if (run.stats.stamina < costs.stamina) {
+    return { available: false, reason: `体力不足（需 ${costs.stamina}）` };
   }
-  if (run.stats.oxygen < action.costOxygenTurns) {
-    return { available: false, reason: `氧气不足（需 ${action.costOxygenTurns} 回合）` };
+  if (run.stats.oxygen < costs.oxygen) {
+    return { available: false, reason: `氧气不足（需 ${costs.oxygen} 回合）` };
   }
   if (action.requiresEquipment) {
     if (!run.equipment[action.requiresEquipment]) {
@@ -187,10 +206,22 @@ export function applyPlayerAction(
   if (!avail.available) return { state, outcome: 'continue' };
 
   let s = state;
-  // —— 1. 扣资源 ——
+  // —— 0. 回合开始 tick（负伤 SPEC §5：流血·重等持续身体债·modifiers 单点折算）——
+  // 在付行动费前结算；availability 是按 tick 前体力校验的——带着重流血硬挥这一下，
+  // 力气可能在半途漏光（死亡螺旋是意图·SPEC §1）。文案 [待过稿]。
+  const tick = computeModifiers(state.run).staminaTickPerTurn;
+  if (tick !== 0) {
+    s = applyStatsDelta(s, { stamina: tick });
+    s = pushCombatLog(s, {
+      actor: 'system',
+      text: `伤口没合上，力气跟着血走（体力 ${tick}）。`,
+    });
+  }
+  // —— 1. 扣资源（负伤修正后的实际消耗·与 availability 同一函数） ——
+  const costs = actionCosts(s.run!, action);
   s = applyStatsDelta(s, {
-    stamina: -action.costStamina,
-    oxygen: -action.costOxygenTurns,
+    stamina: -costs.stamina,
+    oxygen: -costs.oxygen,
   });
 
   // —— 1b. 物品消耗统一在此（任何 requiresItemId + consumesItem 的行动·#108）——
@@ -446,7 +477,8 @@ function applyStatsDelta(state: GameState, deltas: Partial<Record<keyof Stats, n
   for (const [k, v] of Object.entries(deltas) as [keyof Stats, number][]) {
     stats[k] = stats[k] + v;
   }
-  stats = clampStats(stats, { stamina: state.run.staminaMax, oxygen: state.run.oxygenMax });
+  // 体力上限走负伤折算（负伤 SPEC §5 体力上限消费点）；无伤＝run.staminaMax 逐字节不变。
+  stats = clampStats(stats, { stamina: effectiveStaminaMax(state.run), oxygen: state.run.oxygenMax });
   return { ...state, run: { ...state.run, stats } };
 }
 
@@ -555,11 +587,25 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
     text: `${chosen.description}（体力 -${dmg}）`,
   });
 
-  // 理智伤害
+  // 理智伤害（负伤 SPEC §5 敌攻理智消费点：sd × sanityTakenMult·向上取整；无伤 ×1 逐字节不变）
   if (chosen.sanityDamage) {
-    const sd = randRange(chosen.sanityDamage);
+    const sd = Math.ceil(randRange(chosen.sanityDamage) * computeModifiers(state.run).sanityTakenMult);
     s = applyStatsDelta(s, { sanity: -sd });
     s = pushCombatLog(s, { actor: 'enemy', text: `你的脑子里像是被人按了一下（理智 -${sd}）。` });
+  }
+
+  // 负伤判定（负伤 SPEC §4.1）：**仅带 injuryOnHit 的攻击才掷骰**——不带的攻击零额外 RNG 消耗，
+  // 既有 seed 基线不被搅（只有配了数据的敌人的 baseline 需要重抄）。injuryId 缺省 → 按
+  // damageType 查 cause 默认派生（physical→流血）；同类升档/上限顶替封死在 addInjury。
+  if (chosen.injuryOnHit && s.run && Math.random() < chosen.injuryOnHit.chance) {
+    const injuryId = chosen.injuryOnHit.injuryId ?? injuryIdForDamageType(chosen.damageType);
+    if (injuryId) {
+      const change = addInjury(s.run, injuryId);
+      s = { ...s, run: change.run };
+      if (change.text) {
+        s = pushCombatLog(s, { actor: 'system', text: change.text });
+      }
+    }
   }
   return s;
 }

@@ -45,6 +45,8 @@ import {
   weakStalkerHasSignal,
   decoyLures,
   activeDecoy,
+  scentSpawnReady,
+  poolHasScent,
   DECOY_TURNS,
   STALKER_WAIT_TURNS,
   STALKER_EVADE_DEPTH,
@@ -52,10 +54,13 @@ import {
   STALKER_HSPEED,
   STALKER_CONTACT_DIST,
   STALKER_PATIENCE,
+  STALKER_SCENT_PATIENCE_MULT,
+  STALKER_SCENT_SPAWN_ALERT_MULT,
   STALKER_ACTIVE_PROBE_PERIOD,
   STALKER_ACTIVE_PROBE_HOPS,
   STALKER_WEAK_HSPEED,
 } from '../src/engine/stalker';
+import { seedInjuries } from '../src/engine/injuries';
 
 const log: string[] = [];
 const L = (s: string) => log.push(s);
@@ -991,5 +996,93 @@ L('\n========== 19. 上浮拦截（贴身不许白嫖·远了仍是出路·06-11
   L('  贴身上浮＝先手伏击 / 一跳以上＝照常上浮 / 无猎手不变 ✓');
 }
 
+// ============================================================
+// 20. scent 第三感官通道（负伤 SPEC §6.1·#116）：流血·重 × 嗅觉系猎手（EnemyDef/StalkerProfile.scent）
+//     ＝光声纪律全失效（关灯/闭声呐/吸声/迷彩照常只管 light/sound）；decoy 仍 guaranteed 全效（北极星）；
+//     轻档不漏味（§12.2b 当前拍）；非嗅觉系不受影响（旁路逐敌·sensesBy 矩阵不重写）；
+//     现身线砍半（≈刷出概率 ×2）；守口 patience ×1.5（闻着血等得起）。
+// ============================================================
+L('\n========== 20. scent 第三通道（流血·重 × enemy.scent·负伤 SPEC §6.1）==========');
+{
+  const SCENT_POOL = ['combat.tutorial_shark']; // 鲨＝EnemyDef.scent:true（#116 起手名单·待作者过 §12.2）
+  const bleedHeavy = (r: RunState): RunState => seedInjuries(r, [{ defId: 'injury.bleed', tier: 2 }]);
+  const mk20 = (over: Partial<Stalker> = {}): Stalker => ({
+    nodeId: 'n3', sensesBy: 'sound', onLostSignal: 'wait', waitTurns: 2, state: 'hunting',
+    encounterId: CAVE_POOL[0], lastSignalNodeId: 'n0', turnsSinceSignal: 0, waitedTurns: 0, scent: true, ...over,
+  });
+  /** 你摸黑且不响（alert 0·光声全切）——旧规则下它必失去信号。 */
+  const darkRun = (): RunState => ({ ...huntState({ alert: 0, light: false }).run! });
+
+  // (a) 对照：无伤 → 信号切断 searching（旧行为逐字节不变）
+  const a20 = advanceStalker(darkRun(), mk20());
+  assert(a20.stalker?.state === 'searching', '20a: 无伤+摸黑 → 信号切断 searching（旧行为）');
+  // (b) 流血·重 → 摸黑失效：恒「有你的信号」·hunting 且确实逼近
+  const b20 = advanceStalker(bleedHeavy(darkRun()), mk20());
+  assert(b20.stalker?.state === 'hunting', '20b: 流血·重 × scent → 关灯/不响照样被咬死（恒有信号）');
+  assert(b20.stalker?.edgeTo !== undefined || b20.stalker?.nodeId !== 'n3', '20b: 且确实在朝你逼近（非原地）');
+  // (c) 轻档不漏味（伤口按得住·免费警告设计不破）
+  const c20 = advanceStalker(seedInjuries(darkRun(), [{ defId: 'injury.bleed', tier: 1 }]), mk20());
+  assert(c20.stalker?.state === 'searching', '20c: 流血·轻不漏味 → 与无伤同（searching）');
+  // (d) 非嗅觉系不受影响（旁路是逐敌能力，不是全体敌人买单）
+  const d20 = advanceStalker(bleedHeavy(darkRun()), mk20({ scent: undefined }));
+  assert(d20.stalker?.state === 'searching', '20d: 非嗅觉系猎手照旧按光声走（矩阵未重写）');
+  // (e) T1 吸声对 scent 失效：先找一个「无伤本可甩掉」的回合，再验流血·重时咬死不放
+  {
+    const tuned = (r: RunState): RunState => ({ ...r, sensorTuning: { ...r.sensorTuning, soundAbsorbBonus: 0.6 } });
+    let evadeTurn = -1;
+    for (let t = 0; t < 40; t++) {
+      if (playerEvadesStalker(tuned({ ...huntState({ alert: 90 }).run!, turn: t }), mk20())) { evadeTurn = t; break; }
+    }
+    assert(evadeTurn >= 0, '20e: fixture 事实——吸声 0.6 总有某回合甩得掉声感猎手');
+    const rE = tuned({ ...huntState({ alert: 90 }).run!, turn: evadeTurn });
+    assert(advanceStalker(rE, mk20()).stalker?.state === 'searching', '20e: 无伤+吸声 → 该回合甩掉（§3 旧行为）');
+    assert(advanceStalker(bleedHeavy(rE), mk20()).stalker?.state === 'hunting', '20e: 流血·重 → 吸声/迷彩对 scent 失效（骗局在你身上）');
+  }
+  // (f) decoy 仍 guaranteed 全效（分支在 scent 旁路之前·「decoy 永远是出路」）
+  {
+    const rF = bleedHeavy(darkRun());
+    const f20 = advanceStalker({ ...rF, decoy: { nodeId: 'n1', kind: 'sound', expiresTurn: rF.turn + DECOY_TURNS } }, mk20());
+    assert(f20.lured === true, '20f: 流血·重时声诱照常引开 scent 猎手（lured·烧消耗品＝代价已付）');
+    assert(f20.stalker?.lastSignalNodeId === 'n1', '20f: lastSignal 刷成诱饵点（它追假信号不追你）');
+  }
+  // (g) 现身线砍半（scentSpawnReady ≈「刷出概率 ×2」的阈值制翻译）+ 全链接线（moveToNode → stalkerStep）
+  {
+    const half = ALERT_THRESHOLD * STALKER_SCENT_SPAWN_ALERT_MULT;
+    const rG = { ...huntState({ alert: half }).run! };
+    assert(!scentSpawnReady(rG, SCENT_POOL), '20g: 无伤 → 半线不触发（旧门不变）');
+    assert(scentSpawnReady(bleedHeavy(rG), SCENT_POOL), '20g: 流血·重 + 嗅觉池 → 半线即现身');
+    assert(!scentSpawnReady(bleedHeavy(rG), CAVE_POOL), '20g: 池里没有嗅觉系（盲鳗/章鱼）→ 不提前');
+    assert(poolHasScent(SCENT_POOL) && !poolHasScent(CAVE_POOL), '20g: poolHasScent 从 EnemyDef.scent 派生');
+    // 全链：reef 池（梭鱼=scent）·半线·流血·重 → moveToNode 现身；同 fixture 无伤 → 不现身
+    const mkG = (bled: boolean): GameState => {
+      let sg = huntState({ alert: half, light: true });
+      const runG = { ...sg.run!, zoneId: 'zone.old_lighthouse_reef' };
+      sg = { ...sg, run: bled ? bleedHeavy(runG) : runG };
+      return setAlert(sg, half);
+    };
+    const gBled = moveToNode(mkG(true), 'n1');
+    assert(gBled.run?.stalker !== undefined, '20g: 全链——半线+流血·重 → 猎手循血现身（stalkerStep 接线）');
+    assert(gBled.run?.stalker?.scent === true, '20g: 现身的猎手 scent=true（梭鱼遭遇 → EnemyDef.scent 派生）');
+    const gCtrl = moveToNode(mkG(false), 'n1');
+    assert(gCtrl.run?.stalker === undefined, '20g: 同 fixture 无伤 → 半线不现身（对照）');
+  }
+  // (h) 守口 patience ×1.5（读点折算·复用 §11 窄缝设施：你躲 n4 窄缝·大型 scent 猎手守 n3 口外）
+  {
+    const refuge = (): RunState => bleedHeavy({ ...huntState({ alert: 90, depth: 70 }).run!, currentNodeId: 'n4' });
+    let cur: Stalker | null = mk20({ large: true, lastSignalNodeId: 'n4' });
+    let guards = 0;
+    let gaveUp = false;
+    for (let i = 0; i < 20 && cur; i++) {
+      const r = advanceStalker(refuge(), cur);
+      if (r.guarding) guards++;
+      if (r.gaveUp) gaveUp = true;
+      cur = r.stalker;
+    }
+    const want = Math.ceil(STALKER_PATIENCE * STALKER_SCENT_PATIENCE_MULT);
+    assert(guards === want && gaveUp, `20h: 闻着血守口 ${want} 回合（${STALKER_PATIENCE}×${STALKER_SCENT_PATIENCE_MULT} 向上取整）才放弃，实际 ${guards}`);
+  }
+  L('  摸黑/吸声失效·轻档不漏·非嗅觉不波及·decoy 仍出路·半线循血现身（全链）·守口 ×1.5 ✓');
+}
+
 console.log(log.join('\n'));
-console.log('\n✓ 猎手（Stalker mid-edge 追击重做 + §4 decoy + §5/§6/§2.2/Q3 Phase 2 收尾 + wreck/幼体档案 + 原地同拍 06-10）playthrough 完成');
+console.log('\n✓ 猎手（Stalker mid-edge 追击重做 + §4 decoy + §5/§6/§2.2/Q3 Phase 2 收尾 + wreck/幼体档案 + 原地同拍 06-10 + §6.1 scent 第三通道 #116）playthrough 完成');

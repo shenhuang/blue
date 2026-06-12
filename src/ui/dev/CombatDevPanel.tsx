@@ -102,6 +102,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
           lootGained: [],
           enemiesAlive: [],
           enemiesFinal: [],
+          injuriesFinal: [],
           finalPhase: 'error',
           survived: true,
         },

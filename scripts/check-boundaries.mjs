@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 架构边界检查（三条规则，命中任一即打印 file:line 并退出 1）：
+// 架构边界检查（四条规则，命中任一即打印 file:line 并退出 1）：
 //
 // 规则一：engine ↛ ui —— 引擎层不得依赖 UI 层 / React。
 //   扫 src/engine/**/*.ts(x) 的模块说明符：
@@ -15,6 +15,14 @@
 // 规则三：styles.css 滚动容器白名单 —— 内容滚动统一走 PanelShell（quirk #112）。
 //   `overflow(-y): auto|scroll` 只许出现在 .panel-shell-body / .changelog-body；
 //   内容型视图要内部滚动＝用 ui/PanelShell 包，别自己开滚动容器。
+//
+// 规则四：run.injuries 触碰面收口（负伤 SPEC §5「机制化」）。
+//   src/engine 内 `run.injuries`（含 run!./run?. 变体）只许出现在：
+//   injuries.ts（add/worsen/heal 三入口 + fixture seedInjuries＝唯一写者）、
+//   modifiers.ts（computeModifiers 折算＝唯一数值读者）、state.ts（createNewRun 种子 +
+//   hydrateGameState 单点补默认）、combatScenario.ts（回归框架快照只读·写走 seedInjuries）。
+//   其余引擎文件要数值走 computeModifiers、要写走 injuries.ts——消耗修正散成一地 if 就是这条防的。
+//   （正则是 tripwire 不是沙箱：把 run 重命名再访问可以骗过它，但骗过 lint 的代码过不了评审。）
 //
 // 把此前靠散文（CLAUDE.md / 评审记忆）维持的解耦约定做成会在 `npm run regress`
 // 里失败的门。现状 0 违例 → 直接绿；以后谁越界，这个门会红——不再靠下一个
@@ -125,6 +133,28 @@ const scrollViolations = [];
   }
 }
 
+// ── 规则四：run.injuries 触碰面收口（负伤 SPEC §5·quirk #95 风格）──
+// 匹配 run.injuries / run!.injuries / run?.injuries（任何前缀对象的 .run 也命中，
+// 因为 \b 在点号后照样断词：s.run.injuries / state.run!.injuries 都抓）。
+const INJURY_RE = /\brun!?\??\.injuries\b/g;
+const INJURY_WHITELIST = new Set([
+  'src/engine/injuries.ts',
+  'src/engine/modifiers.ts',
+  'src/engine/state.ts',
+  'src/engine/combatScenario.ts',
+]);
+const injuryViolations = [];
+for (const file of engineFiles) {
+  const rel = relative(ROOT, file).split('\\').join('/');
+  if (INJURY_WHITELIST.has(rel)) continue;
+  const text = readFileSync(file, 'utf-8');
+  let m;
+  INJURY_RE.lastIndex = 0;
+  while ((m = INJURY_RE.exec(text))) {
+    injuryViolations.push({ file: rel, line: lineOf(text, m.index) });
+  }
+}
+
 let failed = false;
 
 if (importViolations.length) {
@@ -165,11 +195,25 @@ if (scrollViolations.length) {
   );
 }
 
+if (injuryViolations.length) {
+  failed = true;
+  console.error('✘ run.injuries 触碰面违例：负伤数值折算单点在 engine/modifiers.ts\n');
+  for (const v of injuryViolations) {
+    console.error(`  ${v.file}:${v.line}  直接触碰 run.injuries`);
+  }
+  console.error(
+    `\n共 ${injuryViolations.length} 处。引擎内读负伤效果一律走 computeModifiers(run)，` +
+      `\n写一律走 engine/injuries.ts 的 addInjury / worsenInjury / healInjury；` +
+      `\n回归 fixture 用 seedInjuries。别让消耗修正散成一地 if（负伤 SPEC §5）。\n`,
+  );
+}
+
 if (failed) process.exit(1);
 
 console.log(
   `✓ 边界干净：engine ↛ ui（src/engine ${engineFiles.length} 文件·0 违例）` +
     `；src/ui 无 phase 字面量（src/ui+App ${uiFiles.length} 文件·0 违例）` +
-    `；styles.css 滚动容器全在白名单（${SCROLL_WHITELIST.join(' / ')}）`,
+    `；styles.css 滚动容器全在白名单（${SCROLL_WHITELIST.join(' / ')}）` +
+    `；run.injuries 触碰面收口（engine 内仅 injuries/modifiers/state/combatScenario）`,
 );
 process.exit(0);

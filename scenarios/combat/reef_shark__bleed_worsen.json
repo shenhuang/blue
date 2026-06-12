@@ -1,0 +1,22 @@
+{
+  "_comment": "负伤 SPEC §10 baseline ② 同类升档（无→轻→重的第二步）。fixture 带 bleed@1 进场（seedInjuries 单点·quirk #106：injuries key 写全或不写），seed 7 同一记鲨咬这回不再新增行而是升档 → injuriesFinal 仍单行 bleed@2（不是两行 bleed）。对照 reef_shark__bleed_proc（同 seed 无 fixture·dSta -24）：本场 -28 = 升档后两记回合开始 tick（-2×2）当场生效＝翻脸即收账。",
+  "combatId": "combat.tutorial_shark",
+  "seed": 7,
+  "injuries": [{ "defId": "injury.bleed", "tier": 1 }],
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 3,
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": { "item.shark_tooth": 1 },
+    "enemiesAlive": 0,
+    "statsDelta": { "stamina": -28, "oxygen": -3 },
+    "injuriesFinal": { "injury.bleed": 2 }
+  }
+}

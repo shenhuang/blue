@@ -238,6 +238,7 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
     'huntEnabled',
     'stalker',
     'decoy',
+    'injuries',
   ]) {
     delete old.run[k];
   }
@@ -259,6 +260,10 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
   assert(
     Object.keys(h.run.scanMemory).length === 0 && h.run.bandAlertFactor === 1 && h.run.sonarDeception === 0 && h.run.huntEnabled === false,
     '6: scanMemory {} / bandAlertFactor 1 / sonarDeception 0 / huntEnabled false',
+  );
+  assert(
+    Array.isArray(h.run.injuries) && h.run.injuries.length === 0,
+    '6: injuries 补 []（负伤 SPEC §10·quirk #99/#106）',
   );
   // 真条件字段不补（缺席即语义：无猎手 / 无诱饵 / 声呐持续开关未解锁不落）
   assert(h.run.stalker === undefined, '6: stalker 缺席不补（真条件字段）');

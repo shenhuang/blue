@@ -4,6 +4,7 @@
 import type { GameState, RunState, Stats } from '@/types';
 import { clampStats, appendLog } from './state';
 import { executeDeath, ageAndDecayDeaths, getPreservationBonus } from './death';
+import { effectiveStaminaMax } from './modifiers';
 import { miraOfferFor } from './port';
 import { getZone } from './zones';
 
@@ -124,7 +125,7 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
   // 应用属性
   const newStats: Stats = clampStats(
     { ...run.stats, oxygen, nitrogen, sanity: run.stats.sanity },
-    { stamina: run.staminaMax, oxygen: run.oxygenMax }
+    { stamina: effectiveStaminaMax(run), oxygen: run.oxygenMax }
   );
 
   // 减压病的持久效果：写入 profile.flags 给下一次 run 用

@@ -1,5 +1,5 @@
 {
-  "_comment": "礁区石斑鱼单体 baseline · knife_slash × 5（4th 击杀，5th 未用）seed 1。territorial 重装『礁檐守卫』原型：hp 30（全场非教学最厚）/ armor 2（最高）/ evasion 1（最低，几乎必中——与梭鱼 evasion 4 玻璃大炮正相反）/ threat 4（低，不追，opt-in）/ gulp[6,10] 全场最高单击。knife_slash 减 2 甲后 8-10/刀 → 4 turn 消耗战（对照梭鱼 2 turn 速杀 / 章鱼 3 turn）。seed 1：grouper 仅 buffet×2（无 gulp），hp≤30% territorial 撤退（turn 3 fled），turn 4 补刀。stamina -32 / oxygen -4 随 seed 浮动（gulp 不 gulp 由 RNG），故只锁 seed 1（同 quirk #45/#46/#48）。掉 grouper_maw（天然物→ Mira，quirk #44）。",
+  "_comment": "礁区石斑鱼单体 baseline · knife_slash × 5（4th 击杀，5th 未用）seed 1。territorial 重装『礁檐守卫』原型：hp 30（全场非教学最厚）/ armor 2（最高）/ evasion 1（最低，几乎必中——与梭鱼 evasion 4 玻璃大炮正相反）/ threat 4（低，不追，opt-in）/ gulp[6,10] 全场最高单击。knife_slash 减 2 甲后 8-10/刀 → 4 turn 消耗战（对照梭鱼 2 turn 速杀 / 章鱼 3 turn）。seed 1：grouper 仅 buffet×2（无 gulp），hp≤30% territorial 撤退（turn 3 fled），turn 4 补刀。stamina -32 / oxygen -4 随 seed 浮动（gulp 不 gulp 由 RNG），故只锁 seed 1（同 quirk #45/#46/#48）。掉 grouper_maw（天然物→ Mira，quirk #44）。负伤接入后（侧撞 injuryOnHit 0.4→rib 显式·#116）：seed 1 buffet×2 恰 proc 一次 → 离场带 rib@1（轻档零效果·氧耗 -4 没变即旁证），实跑抄钉进 injuriesFinal。",
   "combatId": "combat.reef_grouper_solo",
   "seed": 1,
   "actions": [
@@ -16,6 +16,7 @@
     "finalPhase": "dive",
     "lootGained": { "item.grouper_maw": 1 },
     "enemiesAlive": 0,
-    "statsDelta": { "stamina": -32, "oxygen": -4 }
+    "statsDelta": { "stamina": -32, "oxygen": -4 },
+    "injuriesFinal": { "injury.rib": 1 }
   }
 }

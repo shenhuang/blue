@@ -1,0 +1,21 @@
+{
+  "_comment": "负伤 SPEC §10 baseline ① 流血·轻＝免费警告。seed 7：鲨咬（injuryOnHit chance 0.35·physical→cause 默认派生 bleed）在 3 回合内恰 proc 一次 → injuriesFinal bleed@1。轻档零数值效果：dSta -24 = 行动费 6×3 + 敌伤，**无 tick 日志、无氧耗变化（-3 = 裸行动费）**——警告先行，决策点是『带着轻伤继续还是回头』。同 seed 实跑抄（#43）。",
+  "combatId": "combat.tutorial_shark",
+  "seed": 7,
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 3,
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": { "item.shark_tooth": 1 },
+    "enemiesAlive": 0,
+    "statsDelta": { "stamina": -24, "oxygen": -3 },
+    "injuriesFinal": { "injury.bleed": 1 }
+  }
+}

@@ -4,6 +4,7 @@
 import type { EquipmentSlot, DecoyKind } from './items';
 import type { DiveMap, NodeKind } from './dive';
 import type { CombatState } from './combat';
+import type { ActiveInjury } from './injuries';
 import type { PoiModifier } from './chart';
 import type { Lighthouse } from './lighthouse';
 import type { MaterialCost } from './upgrades';
@@ -255,6 +256,13 @@ export interface Stalker {
   hspeed?: number;
   /** Q3 浅水弱变体标记（§2.6「浅水小且弱」）：叙事/观感用（小东西）；缺省 undefined＝常规猎手。 */
   weak?: boolean;
+  /**
+   * 嗅觉系猎手（负伤 SPEC §6.1 scent 第三感官通道·spawn 时从 StalkerProfile.scent ?? 成员 EnemyDef.scent 派生）。
+   * 玩家流血·重（modifiers.scentTrail）期间：光声切断/迷彩规避对它失效＝恒「有你的信号」（stalker.ts 旁路分支·
+   * sensesBy 对抗矩阵不重写），守口 patience ×1.5（闻着血，等得起）。decoy 不受影响（仍 guaranteed·北极星）。
+   * 缺省 undefined＝非嗅觉系（逐字节不变）。
+   */
+  scent?: boolean;
 }
 
 /**
@@ -355,6 +363,13 @@ export interface RunState {
    * 真条件字段：缺席＝没有诱饵（quirk #106·不种不补·不 bump SAVE_VERSION）。
    */
   decoy?: DiveDecoy;
+  /**
+   * 身上的负伤（负伤 SPEC §3·run 级身体债·同时最多 3 处）。回港随 run 销毁＝全愈（SPEC §8）。
+   * 纯加字段不 bump SAVE_VERSION：createNewRun 种 []、旧档由 hydrateGameState 单点补 []（quirk #99/#106）。
+   * **写入只许 engine/injuries.ts 三入口（add/worsen/heal），读取只许 engine/modifiers.ts 折算**
+   * （UI 渲染徽章直读不限）——check-boundaries 规则四强制。
+   */
+  injuries: ActiveInjury[];
 }
 
 /** 装备配置 */

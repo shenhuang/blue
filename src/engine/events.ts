@@ -14,6 +14,7 @@ import type {
 import { addToInventory, appendLog, clampStats } from './state';
 import { restoreLighthouse, advanceOutpost } from './lighthouses';
 import { lampPowerDrain, alertDelta, ALERT_MAX } from './clarity';
+import { effectiveStaminaMax } from './modifiers';
 
 // —— 数据装载 ——
 // 单一事件库是 zones.ts::EVENT_DB（含全部 zone 的事件）。getEvent 直接委托给它，
@@ -124,7 +125,7 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
       stats.oxygen -= outcome.oxygenTurnCost;
     }
     stats = clampStats(stats, {
-      stamina: s.run.staminaMax,
+      stamina: effectiveStaminaMax(s.run),
       oxygen: s.run.oxygenMax,
     });
     s = { ...s, run: { ...s.run, stats } };
@@ -281,11 +282,20 @@ export function visibilitySanityDrain(
 }
 
 /** 将一个 RunState 推进 N 个标准回合的氧气/氮气消耗（不处理事件内额外消耗） */
-export function tickTurns(run: RunState, turns: number): RunState {
+export function tickTurns(
+  run: RunState,
+  turns: number,
+  /**
+   * 可选消耗修正（负伤 SPEC §5 dive-move 消费点）：o2CostMult 乘进本次 tick 的氧耗。
+   * 由调用方（dive-move 移动）从 computeModifiers 取值传入——本函数不自读伤势列表
+   * （check-boundaries 规则四），其余调用点（休息/事件）不传＝行为逐字节不变。
+   */
+  opts?: { o2CostMult?: number },
+): RunState {
   if (turns <= 0) return run;
   const depth = run.currentDepth;
   const depthFactor = 1 + depth / 50;
-  const oxygenDrain = turns * 1 * depthFactor;
+  const oxygenDrain = turns * 1 * depthFactor * (opts?.o2CostMult ?? 1);
   const nitrogenGain = turns * (depth / 30);
 
   const stats: Stats = {

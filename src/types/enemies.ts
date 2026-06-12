@@ -57,6 +57,14 @@ export interface EnemyDef {
   initialStance: EnemyStance;
   aiPattern: AiPattern;
 
+  /**
+   * 嗅觉系敌种（负伤 SPEC §6.1 scent 第三感官·鲨/梭鱼类天然候选 true·管水母类 false/缺省）。
+   * 玩家流血·重（modifiers.scentTrail）时对它光声纪律全部失效：迷彩/关灯/闭声呐照常只管 light/sound，
+   * scent 通道直接判「已锁定」（stalker.ts 旁路·sensesBy 矩阵不重写）；战斗里 unaware 直接 alerted。
+   * 仅有的两个解法：decoy 照常 guaranteed 全效（北极星）；medkit 止血。具体名单 [待作者拍·SPEC §12.2]。
+   */
+  scent?: boolean;
+
   // —— 攻击 ——
   attacks: EnemyAttack[];
 
@@ -83,6 +91,12 @@ export interface EnemyAttack {
   sanityDamage?: [number, number];
   description: string; // 战斗叙事文本
   weight?: number; // AI 选用此攻击的权重
+  /**
+   * 命中后给玩家负伤（负伤 SPEC §4.1）。injuryId 缺省 → 按 attack.damageType 查 injuries.json
+   * 的 cause 默认派生（physical→流血）；「physical 但属挤压」的肋裂由攻击显式 injuryId 覆盖，
+   * 不加新 DamageType。**仅带本字段的攻击才掷骰**——不带的攻击零额外 RNG 消耗（守既有 seed 基线）。
+   */
+  injuryOnHit?: { chance: number; injuryId?: string };
 }
 
 export interface LootTable {

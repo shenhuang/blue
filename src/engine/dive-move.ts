@@ -6,6 +6,7 @@ import { tickTurns } from './events';
 import { appendLog } from './state';
 import { executeDeath } from './death';
 import { sonarStandingNext } from './clarity';
+import { computeModifiers } from './modifiers';
 import { enterNodeSelection } from './dive-select';
 import { autoScanOnArrival } from './dive-sensors';
 import { stalkerStep, weakStalkerStep, maybeApproachEncounter } from './dive-stalker';
@@ -35,7 +36,10 @@ function applyTransit(state: GameState, target: DiveNode): GameState {
   const run = state.run!;
   const transitionTurns = 1 + Math.floor(Math.abs(target.depth - run.currentDepth) / 5);
 
-  let ticked = tickTurns(run, transitionTurns);
+  // 负伤修正（负伤 SPEC §5 dive-move 消费点）：移动 tick 氧耗 × o2CostMult、洋流消耗 × 对应 mult。
+  // 无伤＝恒等元 1，下方全部算式逐字节不变。
+  const mods = computeModifiers(run);
+  let ticked = tickTurns(run, transitionTurns, { o2CostMult: mods.o2CostMult });
   // 声呐开/关窗口（声呐渲染重做 §4）：移动＝回合推进＝把 sonarNext 落成下回合的 sonarOn（「本回合开/关是上回合定的」）。
   //   持续开 + 有电 → sonar='ping'（本站发射·到站 autoScanOnArrival 扫一记 scan-on-open）；关/无电 → 'off'（看保留的旧图）。定向聚焦每步清掉（§5）。
   //   **仅 sonarUnlocked 才落 sonarOn/sonarNext + 持续发射＝未解锁逐字节不变**（旧档/浅水/无声呐：仍是脉冲瞬时·移动归 off）。
@@ -62,7 +66,8 @@ function applyTransit(state: GameState, target: DiveNode): GameState {
     sensors: nextSensors,
   };
 
-  // 洋流（海图 POI 修正）：每次移动额外耗体力 + 氧气（在死亡判定前应用，使洋流耗氧也能致死）
+  // 洋流（海图 POI 修正）：每次移动额外耗体力 + 氧气（在死亡判定前应用，使洋流耗氧也能致死）。
+  // 负伤修正乘进实际扣减（currentMoveCost 仍是无修正基准·纯函数回归断言不动），向上取整。
   const curCost = currentMoveCost(run.diveModifier?.current);
   const hasCurrentCost = curCost.stamina > 0 || curCost.oxygen > 0;
   if (hasCurrentCost) {
@@ -70,8 +75,8 @@ function applyTransit(state: GameState, target: DiveNode): GameState {
       ...ticked,
       stats: {
         ...ticked.stats,
-        stamina: Math.max(0, ticked.stats.stamina - curCost.stamina),
-        oxygen: Math.max(0, ticked.stats.oxygen - curCost.oxygen),
+        stamina: Math.max(0, ticked.stats.stamina - Math.ceil(curCost.stamina * mods.staminaCostMult)),
+        oxygen: Math.max(0, ticked.stats.oxygen - Math.ceil(curCost.oxygen * mods.o2CostMult)),
       },
     };
   }

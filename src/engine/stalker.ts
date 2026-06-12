@@ -12,8 +12,9 @@
 
 import type { RunState, DiveMap, Stalker, SenseModality, StalkerLostBehavior, DiveDecoy, DecoyKind } from '@/types';
 import { buildUndirectedAdjacency, revealSonarScan, sonarScanRange, nodeIsNarrow } from './sonar';
-import { ALERT_WARN } from './clarity';
-import { getEncounter } from './combat';
+import { ALERT_WARN, ALERT_THRESHOLD, ALERT_MIN_DEPTH } from './clarity';
+import { getEncounter, getEnemyDef } from './combat';
+import { computeModifiers } from './modifiers';
 
 // ============================================================
 // 可调参数（tunables，SPEC §8）
@@ -68,6 +69,53 @@ export const STALKER_ACTIVE_PROBE_HOPS = 3;
 export const STALKER_WEAK_HSPEED = 0.55;
 /** Q3 浅水弱变体出现率分母：进入事件/尸体节点时 1/此值 概率现身（确定性哈希·按 run+节点·不耗 RNG）。 */
 export const WEAK_HUNT_DENOM = 10;
+/** scent 守口耐心倍率（负伤 SPEC §6.1「闻着血，等得起」·读点折算非 spawn 烤死＝止血当场回常）。起手值·baseline 调。 */
+export const STALKER_SCENT_PATIENCE_MULT = 1.5;
+/**
+ * scent 现身线倍率（负伤 SPEC §6.1「刷出概率 ×2」的阈值制翻译·本引擎现身是 alert 越线不是掷骰：
+ * 概率 ×2 ≈ 线砍半＝一半的动静就引来它）。起手值·baseline 调。
+ */
+export const STALKER_SCENT_SPAWN_ALERT_MULT = 0.5;
+
+// ============================================================
+// scent 第三感官通道（负伤 SPEC §6.1）——sensesBy 光/声矩阵的**旁路**，不重写矩阵
+// ============================================================
+
+/**
+ * 这只猎手此刻是否「闻着你的血」（负伤 SPEC §6.1）：嗅觉系猎手 × 玩家流血·重（modifiers.scentTrail）。
+ * 锁定期间光声纪律全失效（关灯/闭声呐/T1 吸声/T2 迷彩照常只管 light/sound 通道——骗局在你身上）；
+ * 仅有的两个解：decoy 照常全效（advanceStalker 的诱饵分支在信号判定**之前**·北极星「decoy 永远是出路」）、
+ * medkit 止血（bleed: cure → scentTrail 消失＝本函数当场回 false·读点折算不烤死）。
+ */
+export function stalkerScentLocked(run: RunState, stalker: Stalker): boolean {
+  return stalker.scent === true && computeModifiers(run).scentTrail;
+}
+
+/** 遭遇池里有没有嗅觉系敌种（spawn 门用：场上有闻得到血的东西，这片水才对血敏感）。 */
+export function poolHasScent(pool: string[]): boolean {
+  for (const encounterId of pool) {
+    const enc = getEncounter(encounterId);
+    if (enc?.stalker?.scent !== undefined) {
+      if (enc.stalker.scent) return true;
+      continue; // per-encounter 钉死 false → 这条遭遇不算嗅觉系
+    }
+    if (enc?.party.members.some((m) => getEnemyDef(m.defId)?.scent)) return true;
+  }
+  return false;
+}
+
+/**
+ * 流血·重的提前现身门（负伤 SPEC §6.1「场上有 scent 敌种的区域，刷出概率 ×2」）：
+ * 玩家拖着血味 + 池里有嗅觉系敌种 + 够深（§7.5 浅水仍不积累警觉·铁律不动）→ 现身线砍半
+ * （ALERT_THRESHOLD × STALKER_SCENT_SPAWN_ALERT_MULT）。无伤/池子不嗅 → false＝旧门逐字节不变。
+ * dive-stalker.ts::stalkerStep 在 predatorApproaches 之外多查这一条。
+ */
+export function scentSpawnReady(run: RunState, pool: string[]): boolean {
+  if (run.currentDepth < ALERT_MIN_DEPTH) return false;
+  if (run.alert < ALERT_THRESHOLD * STALKER_SCENT_SPAWN_ALERT_MULT) return false;
+  if (!computeModifiers(run).scentTrail) return false;
+  return poolHasScent(pool);
+}
 
 /** 确定性哈希（FNV-1a），不消耗 RNG（保 mapgen/场景确定性）。 */
 function hashStr(s: string): number {
@@ -333,6 +381,11 @@ export function maybeSpawnStalker(run: RunState, pool: string[]): Stalker | null
     node = spawnNodeFor(run.map, run.currentNodeId, STALKER_SPAWN_HOPS);
   }
   if (!node) return null;
+  // 嗅觉系（负伤 SPEC §6.1）：per-encounter 标签优先，缺省按遭遇成员的 EnemyDef.scent 派生（任一成员嗅觉系即 true）。
+  // true | undefined（非 false）＝JSON round-trip 干净、无标签数据逐字节不变。
+  const enc = getEncounter(encounterId);
+  const scent =
+    (prof?.scent ?? enc?.party.members.some((m) => getEnemyDef(m.defId)?.scent) ?? false) ? true : undefined;
   return {
     nodeId: node,
     sensesBy,
@@ -347,6 +400,7 @@ export function maybeSpawnStalker(run: RunState, pool: string[]): Stalker | null
     active: prof?.active ? true : undefined,
     patience: prof?.patience,
     hspeed: prof?.hspeed,
+    scent,
   };
 }
 
@@ -433,6 +487,7 @@ export function advanceStalker(run: RunState, stalker: Stalker, fromNodeId?: str
   const s: Stalker = { ...stalker };
   const speed = stalker.hspeed ?? STALKER_HSPEED; // §7 速率分布（弱变体慢·缺省＝旧常量）
   const blocked = stalker.large ? nodeIsNarrow : undefined; // §5 大型生物的避障
+  const scentLocked = stalkerScentLocked(run, stalker); // 负伤 §6.1 嗅觉旁路（chase 的守口耐心也读它）
 
   /** 追逐一步：真目标 targetId；大型猎手对窄目标改奔「口外」（largeGoalFor）。返回是否「被挡且已到口外」。 */
   const pursue = (targetId: string): boolean => {
@@ -456,8 +511,11 @@ export function advanceStalker(run: RunState, stalker: Stalker, fromNodeId?: str
     if (atMouth) {
       // §5 钻不进 + §6 执着围守：有信号却被窄缝挡在口外 → 烧它的 patience；等够 → 放弃离开。
       // 你在里面每回合照常烧氧/电（资源博弈·§6）；想立刻了断可以出去迎战（standAndFight）或走另一个口。
+      // scent（负伤 SPEC §6.1）：闻着血守口耐心 ×1.5（读点折算·止血当场回常·向上取整）。
       s.guardedTurns = (stalker.guardedTurns ?? 0) + 1;
-      if (s.guardedTurns > (stalker.patience ?? STALKER_PATIENCE)) {
+      const basePatience = stalker.patience ?? STALKER_PATIENCE;
+      const patience = scentLocked ? Math.ceil(basePatience * STALKER_SCENT_PATIENCE_MULT) : basePatience;
+      if (s.guardedTurns > patience) {
         return { stalker: null, contact: false, gaveUp: true, ...flags };
       }
       return { stalker: s, contact: false, guarding: true, ...flags };
@@ -468,13 +526,17 @@ export function advanceStalker(run: RunState, stalker: Stalker, fromNodeId?: str
 
   // 诱饵优先（§4）：朝诱饵点推进、刷新 lastSignal 到诱饵点、清等待计时（它「有信号」——只是信号是假的）。
   // 接触判定仍对你做（它扑向诱饵的路上路过你＝照样撞上·诚实；你把诱饵丢在脚下不走＝它就是冲你来）。
+  // **本分支在 scent 旁路之前**＝流血·重时 decoy 仍全效（负伤 SPEC §6.1·北极星「decoy 永远是出路」）。
   const decoy = activeDecoy(run);
   if (decoy && decoyLures(stalker, decoy.kind)) return chase(decoy.nodeId, { lured: true });
 
+  // scent 旁路（负伤 SPEC §6.1）：嗅觉系猎手 × 流血·重 → 恒「有你的信号」且免疫 §3 装备规避——
+  // 关灯/闭声呐/吸声/迷彩只管 light/sound 通道，骗局在你自己身上。sensesBy 矩阵不重写（旁路非改写）。
   // 有你的信号 ＝ 常规：你够「响」（alert 越线）；弱变体（Q3 浅水·alert 不积累）：直读灯/声呐开关。
   // 且这一回合没被你的规避装备甩脱（§3·缺省无升级 → playerEvadesStalker 恒 false → 逐字节不变）。
-  const hasSignal = stalker.weak ? weakStalkerHasSignal(run, stalker) : run.alert >= STALKER_SIGNAL_ALERT;
-  if (hasSignal && !playerEvadesStalker(run, stalker)) return chase(here, {});
+  const hasSignal =
+    scentLocked || (stalker.weak ? weakStalkerHasSignal(run, stalker) : run.alert >= STALKER_SIGNAL_ALERT);
+  if (hasSignal && (scentLocked || !playerEvadesStalker(run, stalker))) return chase(here, {});
 
   // 信号切断 → 按性格搜（§2.3）。
   s.turnsSinceSignal += 1;

@@ -1,0 +1,22 @@
+{
+  "_comment": "负伤 SPEC §10 baseline ⑤ 一场战斗里走完 无→轻→重 + 修正当场生效（死亡螺旋的最小标本）。seed 9：石斑侧撞（injuryOnHit chance 0.4·显式 injuryId=injury.rib——physical 默认派生是 bleed，挤压伤靠显式覆盖·SPEC §4.1）proc 两次 → rib@1 → rib@2；升档后剩余行动氧耗立刻 ×1.4 → 4 回合 dOxy -6（裸 -4）。dSta -28 全来自行动费+敌伤＝rib 不碰体力。",
+  "combatId": "combat.reef_grouper_solo",
+  "seed": 9,
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 4,
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": { "item.grouper_maw": 1 },
+    "enemiesAlive": 0,
+    "statsDelta": { "stamina": -28, "oxygen": -6 },
+    "injuriesFinal": { "injury.rib": 2 }
+  }
+}

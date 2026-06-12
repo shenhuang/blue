@@ -1,0 +1,22 @@
+{
+  "_comment": "负伤 SPEC §10 baseline ③ 流血·重的回合 tick + 重档饱和。fixture 带 bleed@2 进场，每次玩家行动开局 tick 体力 -2（3 回合 = -6·见战斗日志 system 行；victory 收尾那回合的日志按框架惯例不入 turns[].log 但数值在 statsDelta）。seed 1 鲨咬仍 proc 两次但已是重档 → saturated 无额外惩罚（SPEC §3/§12.1）＝injuriesFinal 仍 bleed@2。对照同 seed 裸跑 dSta -30（含场中 proc→升档后 1 记 tick）：本场 -34 = 纯 tick 差 2 记。氧耗 -3 不变＝流血不碰氧。",
+  "combatId": "combat.tutorial_shark",
+  "seed": 1,
+  "injuries": [{ "defId": "injury.bleed", "tier": 2 }],
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 3,
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": { "item.shark_tooth": 1 },
+    "enemiesAlive": 0,
+    "statsDelta": { "stamina": -34, "oxygen": -3 },
+    "injuriesFinal": { "injury.bleed": 2 }
+  }
+}

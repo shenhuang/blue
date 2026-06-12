@@ -33,6 +33,7 @@ import type {
   LootEntry,
   InventoryItem,
   EquipmentLoadout,
+  ActiveInjury,
 } from '../types';
 
 import {
@@ -40,6 +41,7 @@ import {
   createNewRun,
   createStarterLoadout,
 } from './state';
+import { seedInjuries } from './injuries';
 import {
   applyPlayerAction,
   checkActionAvailability,
@@ -75,6 +77,12 @@ export interface CombatScenarioInput {
   equipment?: Partial<EquipmentLoadout>;
   /** 起始 inventory（默认空） */
   inventory?: InventoryItem[];
+  /**
+   * 起始伤势铺设（负伤 SPEC §10 baseline 用·经 injuries.ts::seedInjuries 单点落库）。
+   * 缺省＝无伤。quirk #106 注意：fixture 要么写全这个 key 要么别写——显式 undefined 与缺省同义
+   * （这里用 if 守护不用展开，不会盖种子），但别依赖这一点养成习惯。
+   */
+  injuries?: ActiveInjury[];
   /** profile.unlockedUpgrades 起始集合 */
   unlockedUpgrades?: string[];
   /** 起始 zoneId（影响 run.zoneId，对战斗本身无副作用） */
@@ -159,6 +167,8 @@ export interface CombatScenarioSummary {
   enemiesAlive: EnemySnapshot[];
   /** 战斗结束时所有 enemies（含死的）的最终切片 */
   enemiesFinal: EnemySnapshot[];
+  /** 战斗结束时身上的伤（负伤 SPEC §10 baseline 断言用：受伤/升档走到哪一档） */
+  injuriesFinal: ActiveInjury[];
   /** 引擎吐回的最终 phase.kind */
   finalPhase: string;
   survived: boolean;
@@ -200,10 +210,12 @@ function buildInitialState(input: CombatScenarioInput): GameState {
 
   // ----- run -----
   const zoneId = input.zoneId ?? 'zone.old_lighthouse_reef';
-  const run: RunState = createNewRun({ zoneId });
+  let run: RunState = createNewRun({ zoneId });
   if (input.depth !== undefined) run.currentDepth = input.depth;
   run.equipment = buildEquipment(input.equipment);
   run.inventory = (input.inventory ?? []).map((i) => ({ ...i }));
+  // 起始伤势（负伤 baseline 用）：走 injuries.ts 的 fixture 单点，不直写 run.injuries
+  if (input.injuries) run = seedInjuries(run, input.injuries);
 
   const defaultStats: Stats = {
     stamina: run.staminaMax,
@@ -333,9 +345,15 @@ function makeEmptySummary(reason: CombatScenarioOutcome, state: GameState): Comb
     lootGained: [],
     enemiesAlive: [],
     enemiesFinal: [],
+    injuriesFinal: snapshotInjuries(state),
     finalPhase: state.phase.kind,
     survived: true,
   };
+}
+
+/** 终局伤势快照（深拷贝防外部改动；写路径全在 injuries.ts，此处只读） */
+function snapshotInjuries(state: GameState): ActiveInjury[] {
+  return (state.run?.injuries ?? []).map((i) => ({ ...i }));
 }
 
 export function runCombatScenario(input: CombatScenarioInput): CombatScenarioResult {
@@ -572,6 +590,7 @@ export function runCombatScenario(input: CombatScenarioInput): CombatScenarioRes
     lootGained,
     enemiesAlive,
     enemiesFinal,
+    injuriesFinal: snapshotInjuries(state),
     finalPhase: state.phase.kind,
     survived: finalOutcome !== 'defeat',
   };

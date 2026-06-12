@@ -15,6 +15,7 @@ import {
   maybeSpawnWeakStalker,
   advanceStalker,
   activeDecoy,
+  scentSpawnReady,
   DECOY_TURNS,
   type StalkerAdvance,
 } from './stalker';
@@ -78,14 +79,19 @@ export function stalkerStep(
   if (target.kind !== 'event' && target.kind !== 'corpse') return { state, contact: false };
 
   // 无猎手：越线才现身（同 predatorApproaches 触发线·但不当场伏击）。
-  if (!predatorApproaches(run)) return { state, contact: false };
+  // scent 例外（负伤 SPEC §6.1）：流血·重 + 池里有嗅觉系敌种 → 现身线砍半（scentSpawnReady）——
+  // 血味替你「喊」了一半的动静；无伤/池子不嗅 → 旧门逐字节不变。
   const pool = getZone(run.zoneId)?.ambushEncounters ?? [];
+  const scentDraws = scentSpawnReady(run, pool);
+  if (!predatorApproaches(run) && !scentDraws) return { state, contact: false };
   const spawned = maybeSpawnStalker(run, pool);
   if (!spawned) return { state, contact: false };
   let s: GameState = { ...state, run: { ...run, stalker: spawned } };
   s = appendLog(s, {
     tone: 'uncanny',
-    text: '黑水深处，有什么离开了它待着的地方，朝你这边来了——还远，但它知道你在哪。',
+    text: scentDraws && !predatorApproaches(run)
+      ? '你身后拖着的那条血线先你一步说了话——黑水深处，有什么循着那股味道，朝你这边来了。'
+      : '黑水深处，有什么离开了它待着的地方，朝你这边来了——还远，但它知道你在哪。',
   });
   return { state: s, contact: false };
 }

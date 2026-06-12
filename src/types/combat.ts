@@ -175,4 +175,9 @@ export interface StalkerProfile {
   hspeed?: number;
   /** 体型覆盖（§5）：'large' 钉死大型（钻不进窄缝）/ 'small' 钉死小型（无视深度派生）。缺省 → 按深度。 */
   size?: 'small' | 'large';
+  /**
+   * 嗅觉覆盖（负伤 SPEC §6.1 scent 第三通道）：钉死这只猎手嗅不嗅得到血。
+   * 缺省 → 按遭遇成员的 EnemyDef.scent 派生（任一成员嗅觉系即 true）。
+   */
+  scent?: boolean;
 }

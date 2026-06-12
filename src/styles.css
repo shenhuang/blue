@@ -1277,6 +1277,53 @@ html, body, #root {
   font-variant-numeric: tabular-nums;
 }
 
+/* 伤势徽章（负伤 SPEC §9：档位+效果+治疗路径三件套·点开浮出详情；轻=警示色描边、重=危险色） */
+.status-injuries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.injury-chip {
+  font-size: 12px;
+  line-height: 1;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.injury-chip.tier-2 {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.injury-chip.open {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.injury-detail {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.injury-detail-line {
+  margin-bottom: 4px;
+}
+
+.injury-detail-heal {
+  color: var(--text-faint);
+}
+
 .status-warn {
   margin-top: 10px;
   font-size: 12px;

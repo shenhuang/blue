@@ -1,5 +1,5 @@
 {
-  "_comment": "教学战斗 baseline · knife_stab × 2 击杀 reef_shark.tutorial。验证基本伤害公式 + 战利品 + victoryEventId 跳转。seed=1 下确定性击杀。",
+  "_comment": "教学战斗 baseline · knife_stab × 2 击杀 reef_shark.tutorial。验证基本伤害公式 + 战利品 + victoryEventId 跳转。seed=1 下确定性击杀。负伤接入后（鲨咬 injuryOnHit 0.35·#116）：seed 1 这两回合挨的咬恰 proc 一次 → 离场带 bleed@1（轻＝纯警告零数值效果·其余断言全程未动即旁证），实跑抄钉进 injuriesFinal。",
   "combatId": "combat.tutorial_shark",
   "seed": 1,
   "actions": [
@@ -12,6 +12,7 @@
     "survived": true,
     "finalPhase": "dive",
     "lootGained": { "item.shark_tooth": 1 },
-    "enemiesAlive": 0
+    "enemiesAlive": 0,
+    "injuriesFinal": { "injury.bleed": 1 }
   }
 }

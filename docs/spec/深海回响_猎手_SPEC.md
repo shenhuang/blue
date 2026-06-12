@@ -31,6 +31,7 @@
   - **双感（both）**：光声任一都锁定；要同时切断才甩得干净。
 - **越深越偏声感/双感 + 越会躲**（`evadesSonar`，随深 band 概率升）——兑现「越深越难缠」(Q3)。
 - Phase 2 落到数据（per-encounter `sensesBy`）；Phase 1 给一个 band 派生默认（§7）。
+- **第三通道 scent（旁路·已实装 #116）**：本矩阵不重写——玩家**流血·重**（负伤 SPEC §6.1·`modifiers.scentTrail`）时，嗅觉系敌种（`EnemyDef.scent`/`StalkerProfile.scent`·鲨/梭鱼起手）走 `stalker.ts` 短路分支恒「有你的信号」（关灯/闭声呐/T1 吸声/T2 迷彩失效·守口 patience ×1.5·现身线砍半）；decoy 照常 guaranteed（§4 北极星）、medkit 止血＝根治。详见负伤 SPEC §6.1。
 
 ### 2.3 切断信号后的行为（作者 Q2）
 > 「在切断信号源后，有些会停在原地几回合，有些会移到上次有信号的地方；后期会有能主动探测玩家的，需要升级装备。」
