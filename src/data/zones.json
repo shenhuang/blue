@@ -51,6 +51,38 @@
       "weakHuntEncounters": ["combat.blind_eel_juv_solo"]
     },
     {
+      "id": "zone.open_midwater",
+      "name": "远洋中层",
+      "description": "大陆架尽头再往外，海底从脚下撤走。上面是蓝，下面是黑，中间没有一块可以扶的东西。导师的日志在这里画过一种「会折光的薄膜」。",
+      "depthRange": [55, 85],
+      "layerCount": 6,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["midwater"] }
+      ],
+      "requiresFlags": ["flag.tutorial_complete"],
+      "generation": "random",
+      "canFreeAscend": true,
+      "ambushEncounters": ["combat.reef_barracuda_solo"]
+    },
+    {
+      "id": "zone.vent_trench",
+      "name": "海沟热液场",
+      "description": "海沟在这里裂开一道热口。黑烟一柱柱立在底上，水是温的，矿物味隔着调节器都尝得到。日志的最后几页坐标，都指着这道沟。",
+      "depthRange": [85, 118],
+      "layerCount": 6,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["vent"] }
+      ],
+      "requiresFlags": ["flag.tutorial_complete"],
+      "generation": "random",
+      "mapShape": "maze",
+      "depthCurveRange": [0.4, 0.75],
+      "canFreeAscend": false,
+      "ambushEncounters": ["combat.blind_eel_solo"]
+    },
+    {
       "id": "zone.wreck_graveyard",
       "name": "沉船墓园",
       "description": "鸢尾湾外二十海里。一片浅海大陆架在这里塌了个口子，沙底上歪着十几艘船——商船、渔船、半截军舰，年代各不一样。Mira 说这片地像是「被洋流牵着」——每次回来，沙位都不一样。",

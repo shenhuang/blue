@@ -136,6 +136,9 @@ function isLit(profile: PlayerProfile, mapX?: number, mapY?: number): boolean {
 /** POI 是否被灯塔点亮（reveal，基建地图 Phase C）。mimic「无灯之光」恒亮（这是诱饵，§3.5）。 */
 export function isPoiLit(profile: PlayerProfile, poi: ChartPoi): boolean {
   if (poi.mimic) return true; // 无灯之光：海图上点亮，引诱你横渡
+  // St1 一章锚点（#117）：日志抄来的坐标＝**已知点**，不走灯塔「发现」轴——教学尾
+  // 「四个坐标圈上海图」与海图解锁是同一个动作，你不需要网照到它才知道它在哪。
+  if (poi.story) return true;
   return isLit(profile, poi.mapX, poi.mapY);
 }
 
@@ -146,6 +149,9 @@ export function isPoiLit(profile: PlayerProfile, poi: ChartPoi): boolean {
  */
 export function isPoiExplainedByLighthouse(profile: PlayerProfile, poi: ChartPoi): boolean {
   if (poi.mimic) return false; // 无灯之光：不是你网里的任何一盏
+  // St1 一章锚点（#117）：亮的来源是「你自己抄的坐标」——有解释，别让剧情锚点误穿
+  // mimic 的「亮而无主」宏观 tell（海图诚实轴）。
+  if (poi.story) return true;
   return isLit(profile, poi.mapX, poi.mapY);
 }
 

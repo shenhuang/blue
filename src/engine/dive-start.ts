@@ -32,6 +32,7 @@ import {
 import { effectiveOutpostStage, effectiveOutpostBonuses } from './outposts';
 import { getBand, bandDiveModifier } from './bands';
 import { effectiveDistance, MIMIC_DIVE_EVENT_ID } from './chart';
+import { ch1Story, CH1_ANCHORS, type Ch1Anchor } from './story';
 import { enterNodeSelection } from './dive-select';
 
 /**
@@ -231,6 +232,26 @@ export function startDiveFromPoi(
       text: '你贴近那盏光。它不躲，不灭——越近越不像一座灯塔。',
     });
     s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: MIMIC_DIVE_EVENT_ID } } };
+  }
+
+  // St1 一章锚点（剧情 SPEC §4.1·#117·沿上方 mimic「强制开场」模板）：锚点 flag 未置位
+  // （vent=结局分歧·额外要求其余三锚点齐）→ 开场设成锚点节拍事件；否则普通下潜＝回流
+  // 重访自然成立（任意顺序·作者拍 2026-06-12）。置位归事件 setProfileFlags（quirk #118·
+  // 这里只读 ch1Story 派生，不写任何 flag）。
+  if (poi.story && (CH1_ANCHORS as readonly string[]).includes(poi.story.anchor)) {
+    const anchor = poi.story.anchor as Ch1Anchor;
+    const st = ch1Story(s.profile);
+    const anchorDone = st.anchorsDone.includes(anchor);
+    const ventReady =
+      anchor !== 'vent' ||
+      CH1_ANCHORS.filter((a) => a !== 'vent').every((a) => st.anchorsDone.includes(a));
+    if (!anchorDone && ventReady) {
+      s = appendLog(s, { tone: 'system', text: '日志上的坐标，就在这片水下面。' });
+      s = {
+        ...s,
+        phase: { kind: 'dive', subPhase: { kind: 'event', eventId: poi.story.eventId } },
+      };
+    }
   }
   return s;
 }

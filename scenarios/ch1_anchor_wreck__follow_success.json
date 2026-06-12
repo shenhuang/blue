@@ -1,0 +1,25 @@
+{
+  "_comment": "锚点②跟鱼成功（理智 vs 52·满 san seed1）：锈甲沉船鲷带路穿舱 → lore.ch1.fish_rust_bream + 锚点置位。",
+  "eventId": "ch1.anchor_wreck",
+  "seed": 1,
+  "zoneId": "zone.wreck_graveyard",
+  "depth": 30,
+  "choices": [
+    "follow_the_rust_fish"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "flagsAdded": [
+      "story.ch1.anchor.wreck"
+    ],
+    "loreAdded": [
+      "lore.ch1.fish_rust_bream"
+    ],
+    "statsDelta": {
+      "oxygen": -1
+    }
+  }
+}

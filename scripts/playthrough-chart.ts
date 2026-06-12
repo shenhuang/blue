@@ -109,10 +109,15 @@ L('  建家灯塔船坞后旧灯塔礁：解锁 ✓');
 // 2b. 灯塔 reveal（点亮）+ reach（最近灯塔算距离）
 // ============================================
 L('\n========== 2b. 灯塔 reveal + reach ==========');
-// (a) 无灯塔 → 没有任何点被点亮 → 海图空（reveal 门）
+// (a) 无灯塔 → 灯塔 reveal 全灭，海图只剩日志抄来的一章锚点（#117：story 坐标=已知点，
+//     不走「发现」轴——灯全灭了，抄在纸上的坐标不会消失）
 const noLh: PlayerProfile = { ...profileWith(['flag.tutorial_complete']), lighthouses: [] };
-assert(generateChart({ profile: noLh }).pois.length === 0, '无灯塔时海图应为空（reveal 门）');
-L('  无灯塔 → 海图全灭 ✓');
+const noLhPois = generateChart({ profile: noLh }).pois;
+assert(
+  noLhPois.length === 4 && noLhPois.every((p) => p.story !== undefined),
+  `无灯塔时海图应只剩 4 个日志锚点（story POI），实际 ${noLhPois.length}`,
+);
+L('  无灯塔 → 灯塔 reveal 全灭·只剩 4 个日志坐标 ✓');
 
 // (b) home 点亮近端、不点亮远端（北缘 ≈0.80）
 const homeOnly = profileWith(['flag.tutorial_complete']);
@@ -136,20 +141,25 @@ const reachOutpost = effectiveDistance(withOutpost, farPoi);
 assert(reachOutpost < reachHome, `前哨更近：reach 应下降 ${reachHome}→${reachOutpost}`);
 L(`  前哨点亮远端 + reach ${reachHome}→${reachOutpost} ✓`);
 
-// (d) 4 个锚点从 home 算的 reach 与写死 distance 一致（不破手感）
+// (d) 锚点从 home 算的 reach 与写死 distance 一致（不破手感）
 const anchorReach: [string, number, number, number][] = [
   ['zone.east_reef', 0.18, 0.5, 0],
   ['zone.blue_caves', 0.46, 0.3, 1],
   ['zone.blue_caves', 0.44, 0.28, 1], // 横岩廊（平廊侧口·#114 续）
   ['zone.old_lighthouse_reef', 0.44, 0.72, 1],
   ['zone.wreck_graveyard', 0.72, 0.55, 2],
+  // St1 一章锚点四点（#117·剧情 SPEC §4.1）
+  ['zone.old_lighthouse_reef', 0.17, 0.44, 0], // 漆号珊瑚丛
+  ['zone.wreck_graveyard', 0.62, 0.64, 2], // 温带商船残骸
+  ['zone.open_midwater', 0.78, 0.38, 2], // 远洋中层
+  ['zone.vent_trench', 0.9, 0.78, 3], // 海沟热液场
 ];
 for (const [zone, x, y, want] of anchorReach) {
   const p: ChartPoi = { id: 'a', zoneId: zone, name: '', blurb: '', distance: want, mapX: x, mapY: y, persistent: true };
   const got = effectiveDistance(homeOnly, p);
   assert(got === want, `${zone} 从 home 的 reach 应=${want}（手感不破），实际 ${got}`);
 }
-L('  5 锚点 home reach = 写死 distance（0/1/1/1/2，手感不破）✓');
+L('  9 锚点 home reach = 写死 distance（0/1/1/1/2 + 0/2/2/3，手感不破）✓');
 
 // ============================================
 // 3. roaming 刷新（runsCompleted 种子）
@@ -354,9 +364,9 @@ const fogRoam = fogChart.pois.filter((p) => !p.persistent && !p.mimic).length;
 const calmRoam = calmChart.pois.filter((p) => !p.persistent && !p.mimic).length;
 assert(calmRoam === 2 && fogRoam === 1, `7: 浓雾遮一处机会点（非雾 ${calmRoam} → 浓雾 ${fogRoam}）`);
 assert(
-  fogChart.pois.filter((p) => p.persistent).length === 5 &&
-    calmChart.pois.filter((p) => p.persistent).length === 5,
-  '7: 锚点不受天气遮蔽（5 个都在·守进度安全）',
+  fogChart.pois.filter((p) => p.persistent).length === 9 &&
+    calmChart.pois.filter((p) => p.persistent).length === 9,
+  '7: 锚点不受天气遮蔽（9 个都在·守进度安全·#117 一章四锚点入列）',
 );
 assert(fogChart.conditions.weather === 'fog' && calmChart.conditions.weather !== 'fog', '7: SeaChart.conditions 落返回结构');
 L(`  海况确定性 + 随回合变 + 浓雾遮一处（run ${fogRun} 雾→${fogRoam} / run ${calmRun} ${calmChart.conditions.weather}→${calmRoam}）+ 锚点不受影响 ✓`);

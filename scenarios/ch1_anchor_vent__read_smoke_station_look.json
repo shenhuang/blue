@@ -1,0 +1,28 @@
+{
+  "_comment": "锚点④读烟成功支线（理智 vs 58·满 san seed1）：热液岩鳞鱼群落=日志最后一张草图 → lore.ch1.fish_ventscale，链入观测站走 look_around_first（另一条站内文本·同样圆满置位+forceAscend）。",
+  "eventId": "ch1.anchor_vent",
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "depth": 100,
+  "choices": [
+    "read_the_smoke",
+    "look_around_first"
+  ],
+  "expect": {
+    "steps": 2,
+    "errors": [],
+    "finalPhase": "ascent",
+    "checkPassed": true,
+    "flagsAdded": [
+      "story.ch1.anchor.vent",
+      "story.ch1.ending.fulfilled"
+    ],
+    "loreAdded": [
+      "lore.ch1.fish_ventscale",
+      "lore.ch1.the_station"
+    ],
+    "statsDelta": {
+      "oxygen": -2
+    }
+  }
+}

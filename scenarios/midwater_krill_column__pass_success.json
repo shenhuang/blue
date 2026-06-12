@@ -1,0 +1,19 @@
+{
+  "_comment": "中层氛围·穿柱成功（体力 vs 45·满体力 seed1）：省路付小体力。",
+  "eventId": "midwater.krill_column",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 65,
+  "choices": [
+    "pass_through"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "statsDelta": {
+      "stamina": -4
+    }
+  }
+}

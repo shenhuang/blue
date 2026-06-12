@@ -18,7 +18,10 @@ export type ZoneTag =
   | 'subhadal'
   | 'nameless'
   | 'ruins'
-  | 'tutorial';
+  | 'tutorial'
+  // St1 一章锚点专属 zone 的事件池（剧情 SPEC §4.1·#117）：
+  | 'midwater' // 远洋中层（开阔无底蓝水·锚点③）
+  | 'vent'; // 海沟热液场（黑烟柱·锚点④）
 
 /** 一个下潜事件 */
 export interface DiveEvent {

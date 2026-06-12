@@ -1,0 +1,98 @@
+{
+  "_doc": "远洋中层 [midwater] 氛围池（St1·zone.open_midwater·锚点③专属 zone 的最小事件池——稠密度留周末引擎按 #102 法补批）。母题：没有参照物的水——上蓝下黑、悬浮无依、距离与气量都不可信（中氮醉档·剧情 SPEC §4.1：发光体/气量误读）。全 loot-free·叙述永不交底（#54）·无脚本死（每条都有诚实退路）。文案 [待过稿]（quirk #117）。",
+  "events": [
+    {
+      "id": "midwater.krill_column",
+      "depthRange": [55, 85],
+      "zoneTags": ["midwater"],
+      "weight": 3,
+      "cooldown": 6,
+      "title": "成柱的虾",
+      "body": "一根活的柱子从黑里升上来——磷虾，几百万只，密得像一道从海底立起来的烟。\n柱身缓慢地拧着，外缘不断有银色的小闪——灯笼鱼贴着柱面进食，吃出一层会动的光壳。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "watch_the_feed",
+          "label": "停桨，看完这一场",
+          "outcome": {
+            "text": "你悬停在柱外两个身位，看灯笼鱼一层层把光壳啃出新的形状。\n中层的大事件，教科书里叫垂直迁移，亲眼看叫别的——叫你今天没白下来。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": 5 }
+          }
+        },
+        {
+          "id": "pass_through",
+          "label": "从柱心穿过去——省一段路",
+          "check": {
+            "stat": "stamina",
+            "dc": 45,
+            "onSuccess": {
+              "text": "你压低头灯扎进去。几秒钟的密集敲击落在装具上，像穿过一场往上下的雨。\n穿出来的时候，肩上还粘着十几只发光的小东西，一蹬腿就散了。确实省了路。",
+              "deltas": { "stamina": -4 }
+            },
+            "onFailure": {
+              "text": "柱心比看上去稠得多。虾群糊住面罩，灯只照出一拳远，上下左右都是一样的银。\n你凭气泡的方向才钻出来——出口不在你以为的那一侧。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -8, "sanity": -4 }
+            }
+          }
+        },
+        {
+          "id": "go_around",
+          "label": "绕开它",
+          "outcome": {
+            "text": "你绕着柱子走了半圈。它不在乎。几百万只小东西照常往上去，照常被吃。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "midwater.the_long_blue",
+      "depthRange": [55, 85],
+      "zoneTags": ["midwater"],
+      "weight": 2,
+      "cooldown": 8,
+      "oncePerRun": true,
+      "title": "没有参照物的蓝",
+      "body": "你停桨多久了？\n上面是蓝，下面是黑，四面是渐变。没有礁，没有壁，没有底。你的深度计说你没动，你的眼睛说一切都在缓慢地转。\n远处有一点银光闪了一下。也可能是很近。这里没有东西告诉你多远算远。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "trust_the_bubbles",
+          "label": "看气泡——它们往哪边走，哪边就是上",
+          "outcome": {
+            "text": "你呼出一口气，看着那串银亮的珠子稳稳地朝一个方向爬。\n上。世界回到原位：上面是上，下面是下，你悬在中间，没动。\n中层教给人的第一课：别信眼睛，信物理。",
+            "deltas": { "sanity": 3 }
+          }
+        },
+        {
+          "id": "chase_the_glint",
+          "label": "朝那点银光游过去看清",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你游了十几桨，银光大了一圈——一条旗鱼，远得很，正用你看不懂的速度横穿中层。\n它根本没注意你。你停下来，看它把那点银拉成一道线，消失。\n距离感回来了：它很远。一直都很远。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": 2 }
+            },
+            "onFailure": {
+              "text": "你游。银光不变大，也不变小。\n你又游。深度计的数字动了——往下。你明明在平游。\n你停住，盯着气压表把呼吸数回来。等你抬头，银光没了。这段路的气，白烧了。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -6 }
+            }
+          }
+        },
+        {
+          "id": "close_eyes_a_beat",
+          "label": "闭眼三秒，按表回航向",
+          "outcome": {
+            "text": "你闭眼，数三下，睁开只看仪表：深度、航向、气量。\n数字不漂。你照着数字走。蓝还是那片蓝，但它管不着你了。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    }
+  ]
+}

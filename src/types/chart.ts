@@ -78,6 +78,14 @@ export interface ChartPoi {
    * isPoiLit 对 mimic 恒真（这是诱饵），isPoiExplainedByLighthouse 恒假（这是 tell）。
    */
   mimic?: boolean;
+  /**
+   * 一章剧情锚点（St1·剧情 SPEC §4.1·#117·沿 mimic「入潜强制开场事件」模板）：
+   * anchor ∈ engine/story.ts::CH1_ANCHORS（'reef'|'wreck'|'midwater'|'vent'·quirk #118
+   * 字面量守门归 playthrough-story）；eventId = 入潜强制开场的锚点节拍事件。
+   * 触发规则（作者拍 2026-06-12·任意顺序）：该锚点 flag 未置位才强制开场；其中 vent
+   * （结局分歧）额外要求其余三锚点全置位——否则都是普通下潜（回流重访自然成立）。
+   */
+  story?: { anchor: string; eventId: string };
 }
 
 /**

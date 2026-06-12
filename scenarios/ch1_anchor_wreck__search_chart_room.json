@@ -1,0 +1,24 @@
+{
+  "_comment": "锚点②主线：海图室锁孔里的半页日志=「生态锚点」伏笔（§4.1 剧情拍）→ story.ch1.anchor.wreck + lore.ch1.anchor_wreck。",
+  "eventId": "ch1.anchor_wreck",
+  "seed": 1,
+  "zoneId": "zone.wreck_graveyard",
+  "depth": 30,
+  "choices": [
+    "search_the_chart_room"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "flagsAdded": [
+      "story.ch1.anchor.wreck"
+    ],
+    "loreAdded": [
+      "lore.ch1.anchor_wreck"
+    ],
+    "statsDelta": {
+      "oxygen": -2
+    }
+  }
+}

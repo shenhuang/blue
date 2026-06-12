@@ -1,0 +1,22 @@
+{
+  "_comment": "锚点③ give-in：游进光点=失向·掌心剩半透明鳍膜（不交底是鱼还是别的）·锚点置位无 lore。",
+  "eventId": "ch1.anchor_midwater",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 70,
+  "choices": [
+    "swim_into_them"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "flagsAdded": [
+      "story.ch1.anchor.midwater"
+    ],
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": -6
+    }
+  }
+}

@@ -57,6 +57,55 @@
       "mapY": 0.55,
       "persistent": true,
       "requiresFlags": ["flag.tutorial_complete"]
+    },
+    {
+      "id": "poi.anchor.ch1_coral_grove",
+      "zoneId": "zone.old_lighthouse_reef",
+      "name": "漆号珊瑚丛",
+      "blurb": "日志第一条坐标。礁盘背流的一侧——导师队标记样地用的漆号，褪了十年，应该还认得出来。",
+      "distance": 0,
+      "mapX": 0.17,
+      "mapY": 0.44,
+      "persistent": true,
+      "requiresFlags": ["flag.tutorial_complete"],
+      "modifier": { "depthRange": [10, 22] },
+      "story": { "anchor": "reef", "eventId": "ch1.anchor_reef" }
+    },
+    {
+      "id": "poi.anchor.ch1_temperate_wreck",
+      "zoneId": "zone.wreck_graveyard",
+      "name": "温带商船残骸",
+      "blurb": "日志第二条坐标。一艘侧躺在大陆架上的温带商船——导师队进去过，日志在那里断了一页。",
+      "distance": 2,
+      "mapX": 0.62,
+      "mapY": 0.64,
+      "persistent": true,
+      "requiresFlags": ["flag.tutorial_complete"],
+      "story": { "anchor": "wreck", "eventId": "ch1.anchor_wreck" }
+    },
+    {
+      "id": "poi.anchor.ch1_open_midwater",
+      "zoneId": "zone.open_midwater",
+      "name": "远洋中层",
+      "blurb": "日志第三条坐标落在没有底的地方。中层水，上蓝下黑，没有参照物。日志说他们在这里追过一种「会折光的薄膜」。",
+      "distance": 2,
+      "mapX": 0.78,
+      "mapY": 0.38,
+      "persistent": true,
+      "requiresFlags": ["flag.tutorial_complete"],
+      "story": { "anchor": "midwater", "eventId": "ch1.anchor_midwater" }
+    },
+    {
+      "id": "poi.anchor.ch1_vent_field",
+      "zoneId": "zone.vent_trench",
+      "name": "海沟热液场",
+      "blurb": "日志最后一条坐标。海沟底的热液口，黑烟成柱。剩下的页都粘着——能读的最后一行写：往烟柱后面看。",
+      "distance": 3,
+      "mapX": 0.9,
+      "mapY": 0.78,
+      "persistent": true,
+      "requiresFlags": ["flag.tutorial_complete"],
+      "story": { "anchor": "vent", "eventId": "ch1.anchor_vent" }
     }
   ],
   "roamingTemplates": [

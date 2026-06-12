@@ -1,0 +1,22 @@
+{
+  "_comment": "热液氛围·关灯摸影=诚实但盲的逃生口（守无脚本死 §9·最低 signature 套路）。",
+  "eventId": "vent.the_anglers",
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "depth": 105,
+  "stats": {
+    "sanity": 60
+  },
+  "choices": [
+    "douse_and_pass"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -2
+    }
+  }
+}

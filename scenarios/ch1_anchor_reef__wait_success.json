@@ -1,0 +1,25 @@
+{
+  "_comment": "锚点①守鱼成功（理智 vs 50·满 san seed1 rate0.95）：萤光背礁鳚活体群落=教学日志草图兑现 → lore.ch1.fish_blenny + 锚点照常置位（节拍不因走支线丢失）。",
+  "eventId": "ch1.anchor_reef",
+  "seed": 1,
+  "zoneId": "zone.old_lighthouse_reef",
+  "depth": 14,
+  "choices": [
+    "wait_in_shadow"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "flagsAdded": [
+      "story.ch1.anchor.reef"
+    ],
+    "loreAdded": [
+      "lore.ch1.fish_blenny"
+    ],
+    "statsDelta": {
+      "oxygen": -2
+    }
+  }
+}

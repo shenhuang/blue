@@ -32,6 +32,8 @@ import {
 import { resolveOption } from '../src/engine/events';
 import { getEventById } from '../src/engine/zones';
 import { pickFromInventory, eventDoneFlag } from '../src/engine/portEvents';
+import { startDiveFromPoi } from '../src/engine/dive';
+import { generateChart } from '../src/engine/chart';
 import type { GameState, PlayerProfile } from '../src/types';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -227,5 +229,131 @@ L('§4 canon/字面量守门');
   L('  canon + 接线 + 字面量 ✓');
 }
 
+// ═══════════════════════════════════════════════════════════════
+// §5 St1 锚点链接线（#117）：POI 强制开场 + 任意顺序 + vent 门 + 字面量守门
+// ═══════════════════════════════════════════════════════════════
+L('§5 St1 锚点链（POI 强制开场·任意顺序·vent 门·守门）');
+
+{
+  // —— (a) 数据面守门：chart_pois story 字段 ↔ story.ts 生成器 ——
+  const poisJson = JSON.parse(readFileSync(resolve(ROOT, 'src/data/chart_pois.json'), 'utf-8'));
+  const storyPois = (poisJson.anchors as { id: string; story?: { anchor: string; eventId: string }; requiresFlags?: string[] }[]).filter(
+    (p) => p.story,
+  );
+  assert(storyPois.length === 4, `§5 海图应有恰好 4 个一章锚点 POI，实际 ${storyPois.length}`);
+  const anchorsSeen = new Set(storyPois.map((p) => p.story!.anchor));
+  for (const a of CH1_ANCHORS) {
+    assert(anchorsSeen.has(a), `§5 锚点 ${a} 应有对应 POI（一锚一点）`);
+  }
+  for (const p of storyPois) {
+    assert(
+      (CH1_ANCHORS as readonly string[]).includes(p.story!.anchor),
+      `§5 POI ${p.id} 的 story.anchor 必须 ∈ CH1_ANCHORS（quirk #118）`,
+    );
+    assert(getEventById(p.story!.eventId), `§5 POI ${p.id} 的 story.eventId ${p.story!.eventId} 应已注册`);
+    assert(
+      JSON.stringify(p.requiresFlags) === JSON.stringify([TUTORIAL_COMPLETE_FLAG]),
+      `§5 POI ${p.id} requiresFlags 应只门 ${TUTORIAL_COMPLETE_FLAG}（四坐标同上图）`,
+    );
+  }
+
+  // —— (b) ch1/midwater/vent 事件 JSON 字面量守门（story.* 只许生成器输出·canon 导师） ——
+  const legalStoryFlags = new Set<string>([
+    CH1_HOOK_FLAG,
+    ...CH1_ANCHORS.map((a) => ch1AnchorFlag(a)),
+    ch1EndingFlag('fulfilled'),
+    ch1EndingFlag('blank'),
+  ]);
+  for (const file of ['ch1.json', 'midwater.json', 'vent.json']) {
+    const raw = readFileSync(resolve(ROOT, `src/data/events/${file}`), 'utf-8');
+    assert(!raw.includes('父亲'), `§5 ${file} 不应出现「父亲」（canon=导师·quirk #118）`);
+    const parsed = JSON.parse(raw) as { events: { id: string; options: { id: string; outcome?: { setProfileFlags?: string[] }; check?: { onSuccess: { setProfileFlags?: string[] }; onFailure: { setProfileFlags?: string[] } } }[] }[] };
+    for (const ev of parsed.events) {
+      const outs = ev.options.flatMap((o) => [o.outcome, o.check?.onSuccess, o.check?.onFailure]);
+      for (const out of outs) {
+        for (const f of out?.setProfileFlags ?? []) {
+          if (!f.startsWith('story.')) continue;
+          assert(legalStoryFlags.has(f), `§5 ${file}:${ev.id} 手拼了非法 story flag「${f}」（quirk #118）`);
+        }
+      }
+    }
+  }
+
+  // —— (c) 接线面：startDiveFromPoi 强制开场 + 任意顺序 + vent 门 + 已做锚点回流=普通下潜 ——
+  const base = createInitialGameState();
+  const ready: GameState = {
+    ...base,
+    profile: { ...base.profile, flags: new Set([TUTORIAL_COMPLETE_FLAG]) },
+  };
+  const chart = generateChart({ profile: ready.profile });
+  const poiOf = (anchor: string) => {
+    const p = chart.pois.find((q) => q.story?.anchor === anchor);
+    assert(p, `§5 海图上应能找到锚点 ${anchor} 的 POI`);
+    return p!;
+  };
+
+  const subEvent = (s: GameState): string | null =>
+    s.phase.kind === 'dive' && s.phase.subPhase.kind === 'event' ? s.phase.subPhase.eventId : null;
+
+  // 锚点①：未置位 → 强制开场节拍事件
+  const dReef = startDiveFromPoi(ready, poiOf('reef'));
+  assert(subEvent(dReef) === 'ch1.anchor_reef', '§5 锚点① 入潜应强制开场 ch1.anchor_reef');
+
+  // 任意顺序：跳过①直接潜③ → 照样强制开场（作者拍 2026-06-12）
+  const dMid = startDiveFromPoi(ready, poiOf('midwater'));
+  assert(subEvent(dMid) === 'ch1.anchor_midwater', '§5 任意顺序：未做①也应强制开场锚点③');
+
+  // vent 门：前三未齐 → 普通下潜（开场可为池抽环境事件，但绝不是结局节拍）；齐 → 强制开场结局分歧
+  const dVentEarly = startDiveFromPoi(ready, poiOf('vent'));
+  assert(subEvent(dVentEarly) !== 'ch1.anchor_vent', '§5 前三锚点未齐时锚点④不应开场结局节拍（结局分歧门）');
+  const threeDone: GameState = {
+    ...ready,
+    profile: {
+      ...ready.profile,
+      flags: new Set([
+        TUTORIAL_COMPLETE_FLAG,
+        ch1AnchorFlag('reef'),
+        ch1AnchorFlag('wreck'),
+        ch1AnchorFlag('midwater'),
+      ]),
+    },
+  };
+  const dVentReady = startDiveFromPoi(threeDone, poiOf('vent'));
+  assert(subEvent(dVentReady) === 'ch1.anchor_vent', '§5 前三齐后锚点④应强制开场 ch1.anchor_vent');
+
+  // 回流：已置位锚点重访 = 普通下潜（开场可为池抽环境事件，但不重播节拍）
+  const dReefAgain = startDiveFromPoi(threeDone, poiOf('reef'));
+  assert(subEvent(dReefAgain) !== 'ch1.anchor_reef', '§5 已做锚点回流不应重播节拍');
+
+  // —— (d) 节拍真实落账：resolveOption 走 setProfileFlags + lore（#69 套路·dive 中持久） ——
+  const reefEvent = getEventById('ch1.anchor_reef')!;
+  const pry = reefEvent.options.find((o) => o.id === 'pry_the_box')!;
+  const afterPry = resolveOption(dReef, pry).state;
+  assert(
+    afterPry.profile.flags.has(ch1AnchorFlag('reef')),
+    '§5 锚点①节拍应经 setProfileFlags 持久置位（dive 中写 profile）',
+  );
+  assert(afterPry.profile.loreEntries.has('lore.ch1.anchor_reef'), '§5 锚点① lore 应入档');
+  assert(ch1Story(afterPry.profile).nextAnchor === 'wreck', '§5 置位后派生 nextAnchor=wreck');
+
+  // 结局事件（站内·两选项都落圆满）：vent + fulfilled 两 flag + ch2 解锁
+  const station = getEventById('ch1.ending_station')!;
+  for (const opt of station.options) {
+    const flags = opt.outcome?.setProfileFlags ?? [];
+    assert(
+      flags.includes(ch1AnchorFlag('vent')) && flags.includes(ch1EndingFlag('fulfilled')),
+      `§5 观测站选项 ${opt.id} 应同时置 vent + fulfilled`,
+    );
+    assert(opt.outcome?.endDive === 'forceAscend', `§5 观测站选项 ${opt.id} 应 forceAscend 收尾（一章收束）`);
+  }
+  const afterStation = resolveOption(dVentReady, station.options[0]).state;
+  const endSt = ch1Story(afterStation.profile);
+  assert(endSt.complete && endSt.anchorsDone.length === 4, '§5 结局落账后一章 complete·四锚点齐');
+  assert(chapterUnlocked(afterStation.profile, 'ch2'), '§5 圆满后 ch2 解锁（SPEC §1 解锁链）');
+  L('  POI 强制开场/任意顺序/vent 门/回流/落账/守门 ✓');
+}
+
 console.log(log.join('\n'));
-console.log('\n✓ playthrough 完成：剧情脊柱（St0）§1 派生 / §2 港口路径 / §3 round-trip / §4 守门 全部通过');
+console.log(
+  '\n✓ playthrough 完成：剧情脊柱 §1 派生 / §2 港口路径 / §3 round-trip / §4 守门 / §5 St1 锚点链 全部通过',
+);

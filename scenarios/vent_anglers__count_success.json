@@ -1,0 +1,20 @@
+{
+  "_comment": "热液氛围·灯的间距数清成功（理智 vs 54·满 san seed1）：鮟鱇钓饭=平淡解释·间距匀是影子裁的巧合（不交底·§4.1「鮟鱇灯=导师探照灯」低强度预回声）。",
+  "eventId": "vent.the_anglers",
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "depth": 105,
+  "choices": [
+    "count_the_lights"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -3
+    }
+  }
+}

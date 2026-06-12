@@ -1,0 +1,24 @@
+{
+  "_comment": "热液氛围·读梯度失败（sanity 18·seed 1）：仪表没预告的横向热流=烫手缩回（环境伤口径留位·本批纯 stat）。",
+  "eventId": "vent.the_smokers",
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "depth": 100,
+  "stats": {
+    "sanity": 18
+  },
+  "choices": [
+    "read_the_gradient"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": false,
+    "statsDelta": {
+      "stamina": -7,
+      "oxygen": -2,
+      "sanity": -3
+    }
+  }
+}

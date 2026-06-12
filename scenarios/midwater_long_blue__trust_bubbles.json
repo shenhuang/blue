@@ -1,0 +1,21 @@
+{
+  "_comment": "中层氛围·没有参照物的蓝（uncanny·oncePerRun）：看气泡找回「上」=教学阀门（别信眼睛信物理）·小回。",
+  "eventId": "midwater.the_long_blue",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 72,
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "trust_the_bubbles"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "sanity": 3
+    }
+  }
+}
