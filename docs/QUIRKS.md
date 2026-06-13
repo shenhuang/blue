@@ -157,6 +157,22 @@
 
 122. **章节哨站＝独立网·`requiresAnchor` 双义（#118·章节哨站批·深水区 SPEC §10）**：`OutpostDef.requiresAnchor`（值＝Ch1Anchor 串）**一字段两义**——①**解锁门**：对应一章锚点节拍（`ch1AnchorFlag(anchor)`）置位前哨站为「暗·已知不可建」（`outpostUnlocked` 派生·`advanceOutpost`/`canAdvanceOutpost` 都拒锁态），置位后转可建；②**章节网标记**：设了 requiresAnchor＝本哨站**自成一网、与 blue_caves 深 band 线性脊柱解耦**。四条解耦约定（加新章节哨站照此）：(a) `deepestOutpostLaunch`（dive-start.ts）**跳过章节前哨**（`isChapterOutpost` continue）——它的自动起跳链只服务深脊柱，章节哨站别被深 band 误选为起跳点；(b) 章节蛙跳走**显式 `startDiveFromOutpost(state, bandId, {launchOutpostId})`**（落本区 band·要求该前哨半亮≥USABLE 否则忽略退回深脊柱/home），不靠 deepestOutpostLaunch 推导；(c) 章节区 band（`isChapterBand`＝有 requiresAnchor 哨站服务它）**不进深脊柱蛙跳列表**（SeaChartView `filter(!isChapterBand)`）——章节区只从其哨站出蛙跳（OutpostPanel 按钮，海图 marker 点选是留作者的视觉层）；(d) 章节 band 的 `order` 取**与深脊柱（1–7）分段的高值**（本批 11/12/13）明示「不在线性梯子上」，深度重叠不影响——order 只在被排除的 deepestOutpostLaunch 与已过滤的列表里有意义。**深脊柱前哨不带 requiresAnchor**＝不被章节网逻辑误伤（playthrough-outpost §0 守「脊柱非章节」）。锚点 flag 仍只由锚点事件 `setProfileFlags` 置位（quirk #118·#121），lighthouses.ts 只读 `ch1AnchorFlag` 输出、不手拼 `story.*`。dev 旁路＝`devAdvanceOutpost`（跳门+跳料·#110 家族）。**未做（机制核已就位可直接挂·留作者逐拍）**：首扫仪式（#80 sweep 动画）、海图可见性三态渲染（亮/暗/无·诚实轴）。
 
+123. **分阶段双栏布局＝容器类驱动·1200px 断点（作者 06-13·宽屏主从）**：界面分三族由 `App.tsx` 按 `phase.kind` 给根 `.app` 加修饰类（**只读分流·不构造 phase**，check-boundaries 规则二不触）——**港口族**（port/portEvent/chart/shop）`.app-port`、**下潜族**（dive/combat/ascent）`.app-dive`、其余（结算/葬礼/gameOver）裸 `.app`（720 居中不变）。两族的左右双栏都**只在 `@media (min-width:1200px)` 触发**（窄屏含手机回退单栏/覆盖＝旧版式）；列宽 `minmax(0,720)`×2 或 `flex 1 1 720/max 720`＝够宽各 720、不够等比收窄。**机制全在 CSS 断点 + 容器类**，没新开 `overflow` 滚动容器（白名单门 #112 没碰·内容仍走 window 滚动 + `.dive-pinned` sticky / 右栏 PanelShell 自带壳滚）。
+
+  - **港口主从（`ui/PortLayout.tsx`）**：港口主界面/对话常驻左栏（`.app-port` 桌面 `margin-left:0` 靠左、放宽到 `1472＝720×2+32`），海图/装备/商店/行会作右栏 720 服务面板；窄屏 `.port-layout.has-panel` 时藏 `.port-pane-left`＝右栏全屏覆盖（接近改前）。右栏内容**两类来源**：chart/shop 是引擎 phase（SeaChartView/MiraShopView 自带 `toPort` 回港→右栏消失）；**gear/salvage 升级是 PortLayout 持有的纯 UI 态**（升级＝港口服务、**故意不做成 phase**·不污染存档 phase 形状）。两者互斥：`upgradeMode` 只在 port 阶段有意义，`useEffect([phase.kind])` 一离 port 即清；左栏点「改装/行会」若正处 chart/shop **先 `toPort` 再 set**（防 phase 优先级盖住升级面板＝点了没反应的 dead-end）。**对话永远在左栏**（PortView 的 `openDialog` + portEvent cutscene·作者明确要求）——升级面板已从 PortView 内联**移交右栏**，PortView 只 `onOpenService(mode)` 触发、不自渲染升级。
+
+124. **区域揭示＝配置化（`data/chart_regions.json` 单一来源·#120）**：每区一行（owner 灯塔 id/palette/shape/radius）·`engine/regions.ts::regionRadius` 喂 `revealRadius`（旧全局 `BASE_LIGHT_RADIUS=0.72` 已删·未配 owner 回 `DEFAULT_REVEAL_RADIUS`）·UI(SeaChartView) 读 palette/shape/label。加/改区域＝改这个数据；Ch.2/外传只加一个 mapId 段、引擎渲染零改。**圈即 reveal 边界**（圈内=可见可去·诚实轴·别把视觉圈与逻辑半径解耦）。挪 anchor/哨站坐标或改半径必跑 `playthrough-chart`（POI 须落其区圈内才揭示）。
+
+125. **per-哨站扫描（`profile.outpostScanSig` per-灯塔·#120·非全局单值）**：每座有区域配置的灯塔签名＝「它点亮的 POI 集(id+三态)+有效半径」·只扫签名变的灯塔（解锁=新灯塔新签名=必扫·潮汐=该灯塔 POI 变才扫），不是全图一起扫。**扫描动画播完 `SWEEP_SECONDS` 才持久化签名**——立刻写会让 sweepActive 当帧翻 false、圆形扫描线与「波到才亮/淡出」POI 动画一帧即卸（旧 bug）。`SWEEP_SECONDS` 须与 `.chart-survey-sweep`/`.chart-poi-arrive` CSS 动画时长一致。
+
+126. **章节前哨三门正交（别假设章节前哨=恒显/恒可建·#120·作者 2026-06-14）**：`OutpostDef` 三字段——`discoveredFlag`（**发现门**·剧情节拍置位才在图上现「暗·待解锁」标记·`isOutpostDiscovered` 不再对章节前哨恒 true）/ `requiresAnchor`|`requiresFlag`（**解锁建造门**·二选一·后者=非锚点章节门如海沟）/ built（点亮=push 灯塔=区揭示）。dev：海图顶「解锁大区」strip 一键 `devUnlockChapterRegion`、`devRevealOutpost` 置 `outpostState[id].discovered` 模拟发现。
+
+  - **下潜双栏 + 战斗/上浮统一**：`.app-dive .dive` 桌面变两列网格，**要求 `.dive` 恰好两个直接子＝左 `.dive-pinned` + 右内容**。事件/选点/扎营/翻尸用 `DiveHeader`（左）+ `.event`（右）；**战斗/上浮原是满宽**——已把其 `StatusBar` 包进 `.dive-pinned`（左列·手机 sticky 钉顶·状态锁顶只滑内容）、战斗三段（敌人/日志/行动）归进 `.combat-main`（右）。**以后给任何 dive 视图加第三块内容＝要么塞进左 `.dive-pinned`、要么塞进右内容容器，别直接挂 `.dive` 下**（否则网格把它丢进错的列）。**战斗/上浮的 `.dive-pinned` 不带 `.dive-header`**＝不进手机抽屉、状态栏照常钉顶（关键值常显防困死）。
+
+  - **下潜手机抽屉（`DiveHeader`）**：窄屏「状态/声呐」栏收进抽屉——`.dive-header` 顶左 `.dive-header-toggle` 按钮开合、body 包进 `.dive-header-body`，**默认收起**（作者拍板·模块级 `diveHeaderMobileOpen` 跨子阶段重挂载沿用·同 `sonarMapCollapsed` 套路）；桌面（≥1200）CSS 强制 `.dive-header-body` 常显 + 隐藏 toggle＝左栏始终在。隐藏规则**只在 `@media (max-width:1199px)`**（`.dive-header:not(.mobile-open) .dive-header-body{display:none}`），别写进无 media 的基规则否则桌面也被藏。
+
+  - 配套：EventView 新事件（`eventId` 变）`window.scrollTo(0,0)`＝右栏读长事件滚下去后换事件滚回顶（事件链 continueEvent 不卸载会残留）。
+
 > 已修复或被后续内容填平，留档备查。
 
 1. **沙箱权限**：在 Linux 沙箱里跑 `npm run build` 第二次会失败（删不掉旧 dist/），跑 `npm run dev` 同样问题（删不掉 .vite 缓存）。**用户本地 Mac 没问题**。

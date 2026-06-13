@@ -151,7 +151,7 @@ export function purchaseUpgrade(state: GameState, upgradeId: string): GameState 
   };
   next = appendLog(next, {
     tone: 'system',
-    text: `港口修缮：${def.name}（${describeUpgradeCost(def.cost)}）。`,
+    text: `装备改装：${def.name}（${describeUpgradeCost(def.cost)}）。`,
   });
   return next;
 }
@@ -198,7 +198,6 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
     lampRangeBonus: 0,
     sonarRangeBonus: 0,
     sonarScanRangeBonus: 0,
-    sonarDirReach: { deeper: 0, lateral: 0, back: 0 },
     roomFeatureChanceBonus: 0,
     soundAbsorbBonus: 0,
     camoBonus: 0,
@@ -262,13 +261,9 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
         case 'sonarRangeBonus':
           bonuses.sonarRangeBonus += e.value;
           break;
-        // 声呐与房间 §8.1：声呐扫描跳数（主升级轴，sum 聚合，上限在 deriveSensorTuning）。
+        // 猎手听觉量程跳数（升级轴，sum 聚合，上限在 deriveSensorTuning）。
         case 'sonarScanRangeBonus':
           bonuses.sonarScanRangeBonus += e.value;
-          break;
-        // 声呐与房间 §5「各方向 reach 各自升级」：逐向累加（每向夹紧在 deriveSensorTuning）。
-        case 'sonarDirReachBonus':
-          bonuses.sonarDirReach[e.dir] += e.value;
           break;
         // 声呐与房间 §6/§8.3 续：大房间出现率（sum 聚合，上限在 deriveSensorTuning）。
         case 'roomFeatureChanceBonus':

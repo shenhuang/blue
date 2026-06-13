@@ -51,12 +51,11 @@ function applyTransit(state: GameState, target: DiveNode): GameState {
     nextSensors = {
       ...ticked.sensors,
       sonar: emitting ? 'ping' : 'off',
-      sonarDir: undefined,
       sonarOn: standing,
       sonarNext: standing,
     };
   } else {
-    nextSensors = { ...ticked.sensors, sonar: 'off', sonarDir: undefined };
+    nextSensors = { ...ticked.sensors, sonar: 'off' };
   }
   ticked = {
     ...ticked,

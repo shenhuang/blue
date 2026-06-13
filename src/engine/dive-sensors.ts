@@ -2,7 +2,7 @@
 // scan-on-open（autoScanOnArrival·供 dive-move 到站调用）。refreshSelection 收在此处——仅传感器切换后刷新选点预览。
 // 函数体与拆分前逐字相同。
 
-import type { GameState, RunState, SonarDir, Stalker } from '@/types';
+import type { GameState, RunState, Stalker } from '@/types';
 import { appendLog } from './state';
 import {
   sonarPingCost,
@@ -10,7 +10,6 @@ import {
   sonarPingAlertDelta,
   sonarStandingNext,
 } from './clarity';
-import { revealSonarScanDirectional, sonarScanRange, sonarDirReach } from './sonar';
 import { scanStalker } from './stalker';
 import { enterNodeSelection } from './dive-select';
 
@@ -45,9 +44,6 @@ export function setLight(state: GameState, on: boolean): GameState {
   return refreshSelection(s);
 }
 
-/** 定向 ping 的方向叙述标签（声呐与房间 §5）。 */
-const SONAR_DIR_LABEL: Record<SonarDir, string> = { deeper: '更深处', lateral: '侧旁', back: '来路' };
-
 /**
  * 发一记声呐 ping（深水区 Phase 0a）：耗一大口电，本次选点改读"不可信的声呐返回"（≠ 真内容）。
  * 需已解锁声呐能力（后期深料升级）；电量不足则只叙事不消费。移动后 ping 自动消散（脉冲是瞬时的）。
@@ -58,33 +54,25 @@ const SONAR_DIR_LABEL: Record<SonarDir, string> = { deeper: '更深处', lateral
  * 总听得到近场的它），只是「看到的洞」和「招来的注意」随方向变。
  */
 /**
- * 一次声呐扫描的核心（声呐与房间 §5/§8.7）：从当前位置揭示有限程内真实节点为草图（stamp 当前 turn）+ 快照猎手位置。
- * 纯揭示，**不动 power / alert / sensors**（由调用方决定暴露与开关态）。手动 ping 与 scan-on-open 共用。
+ * 一次声呐扫描的核心（几何圆揭示·作者 06-13 重设计）：把**当前所在节点**记成「本回合的扫描中心」
+ * （scanMemory[当前节点]=本回合）——渲染层据此画出以你为心、半径 SONAR_REVEAL_R 的揭示圆。
+ * 同时快照猎手位置（听觉量程·§8.7）。纯揭示，**不动 power / alert / sensors**（由调用方决定暴露与开关态）。
  */
-function scanReveal(run: RunState, dir?: SonarDir): { scanMemory: Record<string, number>; stalker: Stalker | undefined } {
+function scanReveal(run: RunState): { scanMemory: Record<string, number>; stalker: Stalker | undefined } {
   const scanMemory: Record<string, number> = { ...run.scanMemory };
-  if (run.map && run.currentNodeId) {
-    for (const id of revealSonarScanDirectional(
-      run.map,
-      run.currentNodeId,
-      sonarScanRange(run),
-      dir,
-      sonarDirReach(run, dir), // 各方向 reach 各自升级（§5）：聚焦那一向的专精焦距（全向/缺省 → 0 逐字节不变）
-    )) {
-      scanMemory[id] = run.turn;
-    }
-  }
-  // 猎手 SPEC §2.1/§8.7：扫到猎手（量程内 + 未躲过）→ 刷新它在声呐图上的（会过时的）位置；没扫到/躲过 → 原样。
+  // 只盖**当前节点**＝这一站、这一回合的扫描中心（渲染按所有中心 + 半径画几何圆；移动到新节点再扫＝新中心·#1）。
+  if (run.currentNodeId) scanMemory[run.currentNodeId] = run.turn;
+  // 猎手 SPEC §2.1/§8.7：听到猎手（听觉量程内 + 未躲过）→ 刷新它在声呐图上的（会过时的）位置；没听到/躲过 → 原样。
   const stalker = run.stalker ? scanStalker(run, run.stalker) : undefined;
   return { scanMemory, stalker };
 }
 
 /**
- * 主动发一记声呐 ping（深水区 Phase 0a + 声呐渲染重做 §4「本回合反悔」）：耗一大口电 + 当场抬警觉尖峰（loud 主动暴露），
- * 揭示新图。需已解锁 + 有电 + 这一站还没扫过。声呐关时也可用＝「本回合反悔扫一记」（扫了就算本回合开·付暴露·之后再设关只影响下回合）。
- * 定向（dir）聚焦扇区（§5）；全向（缺省）等程。
+ * 发一记声呐扫描（深水区 Phase 0a + 声呐渲染重做 §4「本回合反悔」）：耗一大口电 + 当场抬警觉尖峰（loud 主动暴露），
+ * 以你当前节点为心点亮一块揭示圆。需已解锁 + 有电 + 这一站还没扫过。声呐关时也可用＝「本回合反悔扫一记」
+ * （扫了就算本回合开·付暴露·之后再设关只影响下回合）——开/关切换的「关着点开＝立即扫」也走这里。
  */
-export function pingSonar(state: GameState, dir?: SonarDir): GameState {
+export function pingSonar(state: GameState): GameState {
   const run = state.run;
   if (!run) return state;
   if (!run.sensors.sonarUnlocked) {
@@ -99,9 +87,9 @@ export function pingSonar(state: GameState, dir?: SonarDir): GameState {
     return appendLog(state, { tone: 'realistic', text: '电量不够再发一记声呐了。' });
   }
   const power = Math.max(0, run.power - pingCost);
-  const { scanMemory, stalker } = scanReveal(run, dir);
-  // ping 当场抬警觉尖峰（暴露双刃，SPEC §5）：浅水免压、深 band 更狠；定向时按方向计（更安静 / 正对声感猎手则尖峰）。
-  const alert = Math.min(ALERT_MAX, run.alert + sonarPingAlertDelta(run, dir));
+  const { scanMemory, stalker } = scanReveal(run);
+  // 扫描当场抬警觉尖峰（暴露双刃，SPEC §5）：浅水免压、深 band 更狠。
+  const alert = Math.min(ALERT_MAX, run.alert + sonarPingAlertDelta(run));
   let s: GameState = {
     ...state,
     run: {
@@ -111,14 +99,12 @@ export function pingSonar(state: GameState, dir?: SonarDir): GameState {
       scanMemory,
       stalker,
       // 手动扫＝本回合发射（sonar='ping'）＝就算之前设了关也算本回合开（付暴露·§4 反悔）。
-      sensors: { ...run.sensors, sonar: 'ping', sonarDir: dir },
+      sensors: { ...run.sensors, sonar: 'ping' },
     },
   };
   s = appendLog(s, {
     tone: 'uncanny',
-    text: dir
-      ? `你把脉冲收窄，朝${SONAR_DIR_LABEL[dir]}打去——那个方向的回波探得更远，别处却暗了下来。`
-      : '你发出一记脉冲。回波荡了回来——只是你说不准能不能信它。',
+    text: '你发出一记脉冲。回波荡了回来——只是你说不准能不能信它。',
   });
   return refreshSelection(s);
 }
@@ -138,7 +124,7 @@ export function autoScanOnArrival(state: GameState): GameState {
     return { ...state, run: { ...run, sensors: { ...run.sensors, sonar: 'off' } } };
   }
   const power = Math.max(0, run.power - cost);
-  const { scanMemory, stalker } = scanReveal(run); // 自动扫＝全向
+  const { scanMemory, stalker } = scanReveal(run); // 到站自动扫＝以新节点为心点亮揭示圆
   return { ...state, run: { ...run, power, scanMemory, stalker } };
 }
 
@@ -151,7 +137,11 @@ export function setSonarNext(state: GameState, on: boolean): GameState {
   const run = state.run;
   if (!run || !run.sensors.sonarUnlocked) return state;
   if (sonarStandingNext(run) === on) return state;
-  let s: GameState = { ...state, run: { ...run, sensors: { ...run.sensors, sonarNext: on } } };
+  let s: GameState = {
+    ...state,
+    run: { ...run, sensors: { ...run.sensors, sonarNext: on } },
+    profile: { ...state.profile, sonarOn: on }, // 跨 run 持久：记进 profile，下次落地（startDive）按它种声呐开关
+  };
   s = appendLog(s, {
     tone: 'system',
     text: on

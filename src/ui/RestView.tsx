@@ -1,6 +1,6 @@
 import type { GameState } from '@/types';
 import { enterNodeSelection, restAtNode, breatheAtAirPocket, campAtNode, beginAscentFromDive } from '@/engine/dive';
-import { StatusBar } from './StatusBar';
+import { DiveHeader } from './DiveHeader';
 
 interface Props {
   state: GameState;
@@ -46,7 +46,7 @@ export function RestView({ state, onStateChange }: Props) {
 
   return (
     <div className="dive">
-      <StatusBar run={state.run} />
+      <DiveHeader state={state} onStateChange={onStateChange} />
       <article className="event tone-realistic">
         <h2 className="event-title">{title}</h2>
         <div className="event-body">

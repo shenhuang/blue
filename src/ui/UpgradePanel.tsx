@@ -1,6 +1,7 @@
-// 港口修缮面板 —— 把 upgrades.json 里的升级线呈现给玩家
+// 改装装备面板 —— 把 upgrades.json 里的升级线呈现给玩家（个人潜水装备；打捞行会=服务·已移交 Mira·作者 06-13）
 // 显示每条 line 的 lv1/lv2/lv3，标注已购、可购、缺前置、材料/金币不足（缺口高亮）
 
+import type { ReactNode } from 'react';
 import type {
   GameState,
   PlayerProfile,
@@ -25,10 +26,16 @@ interface Props {
   state: GameState;
   onStateChange: (s: GameState) => void;
   onClose: () => void;
+  /** 只显满足谓词的升级线（缺省＝全部）。用于把不同性质的升级摆到合理位置：
+   *  港口「改装装备」只放个人潜水装备、打捞行会（服务）改由 Mira 提供（作者 06-13）。 */
+  lineFilter?: (lineId: string) => boolean;
+  /** 面板标题/副标题覆写（缺省＝改装装备口径）。 */
+  title?: string;
+  sub?: ReactNode;
 }
 
-export function UpgradePanel({ state, onStateChange, onClose }: Props) {
-  const lines = getUpgradeLines();
+export function UpgradePanel({ state, onStateChange, onClose, lineFilter, title, sub }: Props) {
+  const lines = getUpgradeLines().filter((l) => (lineFilter ? lineFilter(l.id) : true));
 
   function handleBuy(id: string) {
     onStateChange(purchaseUpgrade(state, id));
@@ -52,8 +59,8 @@ export function UpgradePanel({ state, onStateChange, onClose }: Props) {
   return (
     <PanelShell
       className="under-port-header"
-      title="港口修缮"
-      sub={<>银行 {state.profile.bankedGold} 金币 · 用带回的材料修缮</>}
+      title={title ?? '改装装备'}
+      sub={sub ?? <>银行 {state.profile.bankedGold} 金币 · 用带回的材料改装随身装备</>}
       foot={
         <button className="btn" onClick={onClose}>
           返回
@@ -125,11 +132,11 @@ function UpgradeRow({
 
   let statusEl: JSX.Element;
   if (owned) {
-    statusEl = <span className="upgrade-status owned">已修缮</span>;
+    statusEl = <span className="upgrade-status owned">已改装</span>;
   } else if (avail.ok) {
     statusEl = (
       <button className="btn upgrade-buy" onClick={() => onBuy(def.id)}>
-        修缮
+        改装
       </button>
     );
   } else if (avail.reason === 'needsPrev') {
@@ -247,9 +254,7 @@ function renderEffect(e: UpgradeEffect): string {
     case 'sonarRangeBonus':
       return `声呐探得更深 +${e.value}m`;
     case 'sonarScanRangeBonus':
-      return `声呐扫得更广 +${e.value} 跳（一记 ping 多照一圈洞）`;
-    case 'sonarDirReachBonus':
-      return `定向声呐校准：${e.dir === 'deeper' ? '朝深处' : e.dir === 'lateral' ? '侧向' : '来路'}聚焦探得更远 +${e.value} 跳（那一向更远·别向仍短·整洞仍扫不穿）`;
+      return `声呐听得更远 +${e.value} 跳（更早察觉跟上来的猎手）`;
     case 'roomFeatureChanceBonus':
       return `更会翻找大洞室：开阔水域更常藏着多处可探（深处的「大房间」出现率 +${Math.round(e.value * 100)}%）`;
     // 猎手 SPEC §3 升级规避：玩家侧规避标签

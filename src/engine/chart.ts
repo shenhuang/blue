@@ -5,7 +5,7 @@
 //   2. 两级门控：requiresFlags = 发现（不满足不出现）；requiresUpgrade = 抵达能力
 //      （不满足则海图上灰显可见但不能出海）。
 
-import type { ChartPoi, PoiModifier, PlayerProfile, SeaChart, ChartConditions } from '@/types';
+import type { ChartPoi, PoiModifier, PlayerProfile, SeaChart, ChartConditions, PoiRevealState } from '@/types';
 import chartData from '@/data/chart_pois.json';
 import { getUpgradeDef } from './upgrades';
 import { caveDepthCurveForPlace, caveShapeBucket } from './mapgen';
@@ -19,6 +19,7 @@ import {
   getOutposts,
   outpostStage,
   OUTPOST_USABLE_STAGE,
+  LIGHT_RADIUS_PER_BONUS,
 } from './lighthouses';
 import { effectiveRevealRadius } from './outposts';
 
@@ -133,6 +134,24 @@ function isLit(profile: PlayerProfile, mapX?: number, mapY?: number): boolean {
   return false;
 }
 
+/**
+ * 勘测暗圈（Req A）：点在某座灯塔的勘测圈（revealRadius + dimRevealBonus × LIGHT_RADIUS_PER_BONUS）内，
+ * 但在该灯塔点亮半径（revealRadius）之外 → 可见为 dim（勘测站设施效果）。
+ * 无坐标 → false（不凭空给暗点）。仅 anchor/roaming POI 适用；mimic / story 不走这条路径。
+ */
+function isSurveyDim(profile: PlayerProfile, mapX?: number, mapY?: number): boolean {
+  if (mapX === undefined || mapY === undefined) return false;
+  for (const lh of profile.lighthouses) {
+    const bonus = getLighthouseBonuses(lh).dimRevealBonus;
+    if (bonus <= 0) continue;
+    const lit = effectiveRevealRadius(profile, lh);
+    const survey = lit + bonus * LIGHT_RADIUS_PER_BONUS;
+    const d = distanceBetween(lh.mapX, lh.mapY, mapX, mapY);
+    if (d > lit && d <= survey) return true;
+  }
+  return false;
+}
+
 /** POI 是否被灯塔点亮（reveal，基建地图 Phase C）。mimic「无灯之光」恒亮（这是诱饵，§3.5）。 */
 export function isPoiLit(profile: PlayerProfile, poi: ChartPoi): boolean {
   if (poi.mimic) return true; // 无灯之光：海图上点亮，引诱你横渡
@@ -156,12 +175,45 @@ export function isPoiExplainedByLighthouse(profile: PlayerProfile, poi: ChartPoi
 }
 
 /**
- * POI 是否对玩家"可见"。两道门：
- *   ① requiresFlags 已满足（发现）；② 落在某座已拥有灯塔的点亮半径内（reveal）。
- * home 灯塔默认点亮现有 4 个锚点 + 近端机会点；远端机会点要修复前哨灯塔才点亮。
+ * 天气对单个机会点的遮蔽（区域揭示三态·§10·C③「多数彻底不显示(无)、少数显示但过不去(暗)」）。
+ * 确定性 per-(poi.id, runsCompleted)；roaming 的 id 含 runsCompleted ⇒ 被遮的点随回合「来去」。
+ * 锚点 / story / mimic 永不被遮（进度安全 + mimic 是唯一谎点·守诚实轴）。
+ */
+function climateOcclusion(profile: PlayerProfile, poi: ChartPoi): 'none' | 'dim' | 'hidden' {
+  if (poi.persistent || poi.story || poi.mimic) return 'none';
+  const { weather } = chartConditions(profile);
+  if (weather === 'clear') return 'none';
+  const h = condHash(profile.runsCompleted, `occlude:${poi.id}`) % 100;
+  if (weather === 'mist') return h < 22 ? 'dim' : 'none'; // 薄雾：少数机会点「认得出、去不了」
+  return h < 30 ? 'hidden' : h < 50 ? 'dim' : 'none'; // 浓雾：多数彻底盖住(无)、一部分显示但过不去(暗)
+}
+
+/**
+ * POI 三态揭示（区域揭示主实装块·§10）。发现门 + 揭示圈门 + 能力门 + 天气，派生成 lit/dim/hidden：
+ *   hidden ＝ requiresFlags 未满足 / 不在任何揭示圈内（圈外无 POI·修「满图铺」偏差 A①）/ 天气彻底盖住；
+ *   dim    ＝ 圈内已发现，但当下去不了：能力门未解（requiresUpgrade / 灯塔设施）或天气遮成「暗」；
+ *   lit    ＝ 圈内·已发现·可出海。
+ * 诚实轴：mimic 恒 lit（唯一谎点）；anchor 永不被天气藏（climateOcclusion 对 persistent 恒 none）。
+ */
+export function poiRevealState(profile: PlayerProfile, poi: ChartPoi): PoiRevealState {
+  if (poi.mimic) return 'lit'; // 无灯之光：海图上「亮且可去」的诱饵
+  if (!flagsSatisfied(profile, poi.requiresFlags)) return 'hidden';
+  if (!isPoiLit(profile, poi)) {
+    // 勘测暗圈（Req A）：在勘测圈内（revealRadius 外）→ dim（可见不可去）。
+    // story/mimic 不到这里；anchor 不被天气遮 → 勘测暗点也安全。
+    if (isSurveyDim(profile, poi.mapX, poi.mapY)) return 'dim';
+    return 'hidden'; // 圈外不出现（reveal-gated·A①）
+  }
+  const occ = climateOcclusion(profile, poi);
+  if (occ !== 'none') return occ;
+  return poiLockReason(profile, poi) === null ? 'lit' : 'dim';
+}
+
+/**
+ * POI 是否对玩家"可见"（≠ hidden·向后兼容旧调用）。发现门 + 揭示圈门 + 天气，详见 poiRevealState。
  */
 export function isPoiVisible(profile: PlayerProfile, poi: ChartPoi): boolean {
-  return flagsSatisfied(profile, poi.requiresFlags) && isPoiLit(profile, poi);
+  return poiRevealState(profile, poi) !== 'hidden';
 }
 
 /**
@@ -195,9 +247,9 @@ export function effectiveDistance(profile: PlayerProfile, poi: ChartPoi): number
   return Math.max(0, tier - getLighthouseBonuses(near.lighthouse).reachReduction);
 }
 
-/** 是否可从该 POI 出海（可见且无能力门拦截） */
+/** 是否可从该 POI 出海（三态 lit＝圈内·已发现·无能力门·未被天气遮）。 */
 export function isPoiDepartable(profile: PlayerProfile, poi: ChartPoi): boolean {
-  return isPoiVisible(profile, poi) && poiLockReason(profile, poi) === null;
+  return poiRevealState(profile, poi) === 'lit';
 }
 
 /**
@@ -227,46 +279,43 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
 
   const pois: ChartPoi[] = [];
 
-  // anchor：所有"已发现"的都进（锚点是你的可靠网——海况/天气永不遮蔽它们，守进度安全）。
-  // 中途点亮灯塔→新进范围的锚点这里立刻进（SeaChartView chart memo 已加灯塔签名重算）＝即时浮现。
+  // anchor：已发现且在揭示圈内的都进，带三态标签（锚点永不被天气藏＝进度安全·见 climateOcclusion）。
+  // 中途点亮灯塔→新进范围的锚点这里立刻进（SeaChartView chartSig 已含灯塔有效半径→重算）＝即时浮现。
   for (const a of FILE.anchors) {
-    if (isPoiVisible(profile, a)) pois.push(a);
+    const st = poiRevealState(profile, a);
+    if (st !== 'hidden') pois.push({ ...a, revealState: st });
   }
 
-  // roaming：从"已发现 + 已点亮"的模板里取 roamingKey 最大的 ROAMING_COUNT 个（pool-independent 确定性·见 roamingKey）。
-  // （远端机会点不在 home 半径内 → 修复前哨灯塔点亮后才进可见池；池变大也不重洗已选，至多挤掉一个。）
+  // roaming：从"已发现 + 已点亮（圈内）"模板取 roamingKey 最大的 ROAMING_COUNT 个（pool-independent·见 roamingKey）。
+  // 天气遮蔽不再在此整点剔除，而是 per-poi 落进 poiRevealState（dim＝显示但去不了 / hidden＝彻底盖住·§10 C③）。
   const visibleTemplates = FILE.roamingTemplates.filter(
     (t) => flagsSatisfied(profile, t.requiresFlags) && isLit(profile, t.mapX, t.mapY),
   );
   const picked = [...visibleTemplates]
     .sort((a, b) => roamingKey(profile.runsCompleted, b) - roamingKey(profile.runsCompleted, a))
     .slice(0, ROAMING_COUNT);
-  let roaming: ChartPoi[] = picked.map((t) => ({
-    id: `poi.roam.${profile.runsCompleted}.${t.templateId}`,
-    zoneId: t.zoneId,
-    name: t.name,
-    blurb: t.blurb,
-    distance: t.distance,
-    mapX: t.mapX,
-    mapY: t.mapY,
-    modifier: t.modifier,
-    persistent: false,
-    requiresUpgrade: t.requiresUpgrade,
-    requiresLighthouseUpgrade: t.requiresLighthouseUpgrade,
-    requiresFlags: t.requiresFlags,
-  }));
-
-  // §6.5 天气/潮汐遮蔽：浓雾时一处 roaming 机会点被一时盖住、这一拍不显（确定性挑·随 runsCompleted 变＝
-  // 下次回港潮退又回来）。只遮 roaming（机会点），锚点/mimic 永不遮（海面相对可信、不挡进度，§6.5/§10）。
-  if (conditions.weather === 'fog' && roaming.length > 0) {
-    const hideIdx = condHash(profile.runsCompleted, 'occlude') % roaming.length;
-    roaming = roaming.filter((_, i) => i !== hideIdx);
+  for (const t of picked) {
+    const poi: ChartPoi = {
+      id: `poi.roam.${profile.runsCompleted}.${t.templateId}`,
+      zoneId: t.zoneId,
+      name: t.name,
+      blurb: t.blurb,
+      distance: t.distance,
+      mapX: t.mapX,
+      mapY: t.mapY,
+      modifier: t.modifier,
+      persistent: false,
+      requiresUpgrade: t.requiresUpgrade,
+      requiresLighthouseUpgrade: t.requiresLighthouseUpgrade,
+      requiresFlags: t.requiresFlags,
+    };
+    const st = poiRevealState(profile, poi);
+    if (st !== 'hidden') pois.push({ ...poi, revealState: st });
   }
-  pois.push(...roaming);
 
   // 深水区 Phase 3：mimic「无灯之光」假 POI（§3.5）。软门控——你在深处立了脚后才被引诱。
-  // 注入在最后＝海图远海一角多出一盏不属于你网的光（isPoiLit 恒真·isPoiExplainedByLighthouse 恒假 → UI tell）。
-  if (shouldLureMimic(profile)) pois.push(makeMimicPoi());
+  // 恒 lit（诱饵）：isPoiLit 恒真 · isPoiExplainedByLighthouse 恒假 → UI 给「不在你网里」的宏观 tell。
+  if (shouldLureMimic(profile)) pois.push({ ...makeMimicPoi(), revealState: 'lit' });
 
   return { generatedForRun: profile.runsCompleted, pois, conditions };
 }

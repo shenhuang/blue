@@ -239,17 +239,16 @@ L('\n========== 8. tickTurns 灯耗电（水况分级）==========');
 }
 
 // ============================================================
-// 9. 声呐持续开/关窗口（声呐渲染重做 §4）：开→到站自动扫（scan-on-open·sonar 保持 ping）·定向聚焦清成全向；关→不扫看旧图
+// 9. 声呐持续开/关窗口（声呐渲染重做 §4）：开→到站自动扫（scan-on-open·sonar 保持 ping）；关→不扫看旧图
 // ============================================================
 L('\n========== 9. 声呐开/关窗口（§4）==========');
 {
-  // 持续开（缺省）：移动后到站自动扫一记·定向聚焦清成全向
+  // 持续开（缺省）：移动后到站自动扫一记
   let s = enterNodeSelection(mk({ sonarUnlocked: true }));
-  s = pingSonar(s, 'deeper');
-  assert(s.run!.sensors.sonar === 'ping' && s.run!.sensors.sonarDir === 'deeper', '9: 定向 ping 后 sonar=ping + 记 deeper');
+  s = pingSonar(s);
+  assert(s.run!.sensors.sonar === 'ping', '9: ping 后 sonar=ping');
   s = moveToNode(s, 'n1');
   assert(s.run!.sensors.sonar === 'ping', '9: 持续开 → 移动后到站自动扫（sonar 保持 ping·scan-on-open §4）');
-  assert(s.run!.sensors.sonarDir === undefined, '9: 移动后定向聚焦清成全向');
   assert(s.run!.sensors.light === true, '9: 灯状态不受移动影响（仍开）');
 
   // 持续关：预承诺下回合关 → 移动后 sonar=off（不自动扫·只看保留旧图·暴露停）
@@ -257,7 +256,7 @@ L('\n========== 9. 声呐开/关窗口（§4）==========');
   off = moveToNode(off, 'n1');
   assert(off.run!.sensors.sonar === 'off', '9: 设了下回合关 → 移动后 sonar=off（不自动扫·看保留旧图）');
   assert(off.run!.sensors.sonarOn === false, '9: 移动后本回合承诺=关（sonarNext→sonarOn 落定·§4）');
-  L('  持续开→到站自动扫(+聚焦清成全向) / 持续关→不扫看旧图 / 灯不受影响 ✓');
+  L('  持续开→到站自动扫 / 持续关→不扫看旧图 / 灯不受影响 ✓');
 }
 
 // ============================================================

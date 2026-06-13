@@ -5,7 +5,7 @@ import { enterNodeSelection } from '@/engine/dive';
 import { appendLog } from '@/engine/state';
 import { getItemDef } from '@/engine/items';
 import { renderDiverName, D_REVEAL_FLAG } from './diverName';
-import { StatusBar } from './StatusBar';
+import { DiveHeader } from './DiveHeader';
 
 function decayLabel(tier: DecayTier | undefined): { text: string; tone: string } {
   switch (tier) {
@@ -78,7 +78,7 @@ export function CorpseView({ state, deathRecordId, onStateChange }: Props) {
 
   return (
     <div className="dive">
-      <StatusBar run={state.run} />
+      <DiveHeader state={state} onStateChange={onStateChange} />
       <article className="event tone-uncanny">
         <h2 className="event-title">熟悉的轮廓</h2>
         <div className="event-body">

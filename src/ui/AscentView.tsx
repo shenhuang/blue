@@ -1,5 +1,6 @@
 import type { GameState } from '@/types';
 import { executeAscent, planAscent, isAscentBlocked } from '@/engine/ascent';
+import { cancelAscent } from '@/engine/transitions';
 import { StatusBar } from './StatusBar';
 
 interface Props {
@@ -14,6 +15,9 @@ export function AscentView({ state, onStateChange }: Props) {
   const normalSafe = oxygenLeft >= plan.normalTurns;
   const rushedSafe = oxygenLeft >= plan.rushedTurns;
   const blocked = isAscentBlocked(state.run);
+  // 主动上浮才带 returnTo（NodeSelect / Rest 的来处）；带了就给「取消」按钮回到原地。
+  // 事件强制 / 战斗应急 / 走到死路的自动上浮无 returnTo → 不出取消（不可反悔）。
+  const returnTo = state.phase.kind === 'ascent' ? state.phase.returnTo : undefined;
 
   function ascend(mode: 'normal' | 'rushed' | 'emergency') {
     const result = executeAscent(state, mode);
@@ -22,7 +26,10 @@ export function AscentView({ state, onStateChange }: Props) {
 
   return (
     <div className="dive ascent-screen">
-      <StatusBar run={state.run} />
+      {/* 左栏（桌面双栏）/ 钉顶（手机）：上浮屏状态栏锁定（氧气/氮关键值常显·与战斗同款 .dive-pinned·无抽屉）。 */}
+      <div className="dive-pinned">
+        <StatusBar run={state.run} />
+      </div>
       <article className="event tone-realistic">
         <h2 className="event-title">上浮选择</h2>
         <div className="event-body">
@@ -77,6 +84,16 @@ export function AscentView({ state, onStateChange }: Props) {
                 : '应急上浮（1 回合，深处必死）'}
             </button>
           </li>
+          {returnTo && (
+            <li>
+              <button
+                className="btn event-option cancel"
+                onClick={() => onStateChange(cancelAscent(state))}
+              >
+                ← 取消，留在原处
+              </button>
+            </li>
+          )}
         </ul>
       </article>
     </div>

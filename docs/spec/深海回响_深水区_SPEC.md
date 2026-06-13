@@ -227,6 +227,7 @@
    5. **点击地图哨站→显示其升级选项**（取代 C1 的列表面板）；dev 下免费（devBuildAtLighthouse/devAdvanceOutpost/devUnlockChapterRegion 同口径）。
    6. **每个哨站扫描圈颜色不同**（同 demo·家蓝/残骸青/中层琥珀/热液珊瑚·风格可保持游戏现状不照搬 demo 简陋）。
    7. **地图显示宽度与下方界面对齐**（CSS·chart-map 宽度=面板宽·现 aspect-ratio:1/1 max-width:460px 见 quirk #113·要对齐改这条）。
+  **D. 声呐图 pan/zoom 三反馈（作者 06-13·这套 pan/zoom 将被新海图复用·故先在声呐图理顺）**：① **方框宽但地图可视范围窄**＝viewBox 是 portrait（VIEW_W 220×VIEW_H 300）在 landscape 宽框里 `xMidYMid meet` letterbox→中间窄条+节点溢进留白；**作者要全框可用于显示**＝把取景窗横向铺满框（vw 随框 aspect 算·锚定纵向 VIEW_H 深度窗）——**与新海图「填满框」是同一个 aspect 问题·一起解（别在声呐图先打补丁·避免做两遍 aspect 数学）**·留 chart-build session。② **可把图拖出屏丢失**＝旧 clampCam「中心 ±PAN_MARGIN 定值」不看 z·放大后能整张拖走 → **已修**（缩放感知钳·取景窗与内容始终 ≥40% 重叠·新海图直接套此口径）。③ **选中节点外的方框**＝role=button 的 `<g>` 浏览器焦点环 → **已修**（`.sonar-node-marker:focus 去 outline`·`:focus-visible` 保留键盘焦点）。②③ 见 CHANGELOG #119 同日续。
   **实装牵动（建议顺序）**：(1) chart.ts 可见性派生：reveal-gated（圈内才出）+ 三态（亮/暗/无）+ climate 扩三态；(2) 新 pannable/zoomable 固定 viewport 海图组件（世界坐标·边界随解锁外扩·复用声呐 pan/zoom）；(3) 大扫描 sweep 动画 + **sweep-line 门控 add/remove**（触发=气候/升级/点位更新·持久态记「已扫到的世界范围」候选 outpostState/scanMemory 类）；(4) 点击哨站→升级 popup（替代 OutpostPanel 列表）；(5) dev 下拉解锁未发现哨站；(6) 删旧蛙跳 band 列表+OutpostPanel 行·点哨站→选目标蛙跳；(7) 圈分色 + 宽度对齐。诚实轴/北极星不破（暗/隐没=天气真话·mimic 唯一谎点·anchor 进度安全）。**作者在场调风格/手感最佳**。
 
 ---

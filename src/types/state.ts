@@ -58,7 +58,18 @@ export interface PlayerProfile {
    * 容器必填：createInitialProfile 种 {}，旧存档缺它由 hydrateGameState 单点补 {}（CHANGELOG #107）。
    * advanceOutpost / maintainOutpost / depositToDepot / withdrawFromDepot 写它。
    */
-  outpostState: Record<string, { maintainedRun: number; stored?: MaterialCost[]; storedRun?: number }>;
+  outpostState: Record<string, { maintainedRun: number; stored?: MaterialCost[]; storedRun?: number; discovered?: boolean }>;
+  /**
+   * 海图测绘扫描·**每哨站**已扫签名（区域揭示·作者 2026-06-14：解锁/潮汐只扫**受影响的灯塔**、非全图一起扫）。
+   * key=灯塔 id，value=该灯塔上次扫到的「点亮 POI 集 + 有效半径」签名（SeaChartView 算）。当前签名 ≠ 记录 → 只扫该灯塔，
+   * 动画播完写回。additive·JSON 原生 round-trip·不 bump SAVE_VERSION·旧档缺省 {} = 各灯塔第一次开图必扫。
+   */
+  outpostScanSig?: Record<string, string>;
+  /**
+   * 声呐开/关偏好（跨 run 持久·作者拍板）：玩家上一次设定的声呐持续开/关，新 run 落地（startDive）按它种 sonarOn/sonarNext。
+   * 缺省（旧档/未设）→ 开（读点一律 `?? true`）。additive·JSON 原生 round-trip·不 bump SAVE_VERSION。后续「装备/行前装包」里也能调。
+   */
+  sonarOn?: boolean;
 }
 
 /** 死亡记录，用于尸体回收 */
@@ -91,13 +102,6 @@ export interface DeathRecord {
 export type ClarityTier = 'full' | 'sonar' | 'none';
 
 /**
- * 定向 ping 的聚焦方向（声呐与房间 SPEC §5「定向 ping」）：按节点 layer 差分的三向扇区——
- * 朝深处（layer 更大·声呐图右侧）/ 朝来路（layer 更小·上浮口一侧）/ 侧向（同层旁支）。
- * undefined ＝全向 ping（旧行为）。作者 2026-06-06 拍板「方向扇区」（其口述「朝深处/侧向/朝来路」即此三向）。
- */
-export type SonarDir = 'deeper' | 'lateral' | 'back';
-
-/**
  * 微观双传感器状态（深水区 Phase 0a）。灯＝近距真相 + 解锁信息、暴露(signature)高；
  * 声呐＝远距不可信回波、暴露低、费电。关灯关声呐＝致盲但最隐蔽（主动感知是双向的）。
  * 声呐能力本身是后期解锁（sonarUnlocked，门控在深料升级 upgrade.sonar.lv1）——
@@ -117,11 +121,6 @@ export interface SensorState {
   sonar: 'off' | 'ping';
   /** 声呐能力是否已解锁（升级派生，后期才有）。未解锁则 ping 不可用、黑水保持盲航。 */
   sonarUnlocked: boolean;
-  /**
-   * 上一记 ping 的聚焦方向（定向 ping·SPEC §5）；undefined＝全向。仅供声呐图标注「这一记朝哪打」，
-   * 不影响存档形状（run 级·随 sonar 一道移动后清掉）。
-   */
-  sonarDir?: SonarDir;
   /**
    * 声呐持续开/关——**本回合已承诺的状态**（声呐渲染重做 SPEC §4「开/关窗口规则」）。缺省（undefined）→ 视为开（缺省开）。
    * 开＝本回合处于暴露/发射态（sonarActive 计暴露·到站自动扫一记 scan-on-open）；关＝不自动扫、只看保留的旧图。
@@ -161,12 +160,6 @@ export interface SensorTuning {
    * sonar.ts::sonarScanRange(run) 读它；缺省（旧档/部分 run）→ 回退基线常量。
    */
   sonarScanRange: number;
-  /**
-   * 定向 ping 各扇区「reach 各自升级」的额外焦距（声呐与房间 §5「各方向 reach 各自升级」·#86 续）。
-   * 逐向独立（deeper/lateral/back 各一档·缺省全 0），每向夹到 [0, SONAR_DIR_REACH_MAX]——你能专精某一向比基线焦距再多探几跳，
-   * 但守北极星「再聚焦也扫不穿整洞」（别向仍短）。sonar.ts::sonarDirReach(run,dir) 读它；缺省（旧档/部分 run）→ 全 0＝定向行为逐字节不变。
-   */
-  sonarDirReach: Record<SonarDir, number>;
   /**
    * 大房间（多事件房间）出现率加成（声呐与房间 §6/§8.3 续）。默认 0，升级上调、有上限 ROOM_FEATURE_CHANCE_MAX。
    * mapgen.rollExtraFeatures 读它抬大房间概率；**band 的 maxRoomFeatures 仍是房间最大 feature 数的天花板**
@@ -416,7 +409,7 @@ export type GamePhase =
   | { kind: 'shop'; shopId: string } // 港口商店（目前只有 Mira）
   | { kind: 'dive'; subPhase: DiveSubPhase }
   | { kind: 'combat'; combat: CombatState }
-  | { kind: 'ascent'; targetDepth: number }
+  | { kind: 'ascent'; targetDepth: number; returnTo?: DiveSubPhase } // returnTo：主动上浮（beginAscentFromDive）记下的来处子阶段·给上浮界面「取消」回退点；forced 上浮（事件/战斗应急/走到死路自动）不带 → 不可取消
   | { kind: 'resolution'; outcome: RunOutcome }
   | { kind: 'funeral'; record: DeathRecord }
   | { kind: 'gameOver'; reason: string };

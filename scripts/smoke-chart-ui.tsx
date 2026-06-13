@@ -9,7 +9,8 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createInitialGameState, createNewRun } from '../src/engine/state';
-import { SeaChartView } from '../src/ui/SeaChartView';
+import { devRevealOutpost } from '../src/engine/lighthouses';
+import { SeaChartView, OutpostPopup, HomeDivePopup } from '../src/ui/SeaChartView';
 import { PortView } from '../src/ui/PortView';
 import { NodeSelectView } from '../src/ui/NodeSelectView';
 import {
@@ -20,6 +21,8 @@ import {
   projectIntoWater,
   caveSdf,
   WALL_LO,
+  clampViewCenter,
+  bakeCaveRGBA,
 } from '../src/ui/SonarScanPanel';
 import type { MapLayout } from '../src/ui/mapLayout';
 import { EventView } from '../src/ui/EventView';
@@ -107,22 +110,24 @@ const REEF_DEEP_LH = { id: 'lighthouse.reef_deep_outpost', name: '深槽前哨',
 const TRENCH_DEEP_LH = { id: 'lighthouse.trench_deep_outpost', name: '竖井前哨', mapX: 0.62, mapY: 0.78 };
 
 // ============================================
-// A. SeaChartView · 教学后无升级 → 灯塔礁锁、蓝洞/沉船可出海
+// A. SeaChartView · 教学后无升级 → 区域揭示配置化：只点亮家·珊瑚区（旧灯塔礁缺船坞·dim）；
+//    剧情锚点恒显；蓝洞群/沉船墓园属未解锁的海沟/残骸区→不揭示；蛙跳入口收编进 home 灯塔 popup。
 // ============================================
 L('========== A. 教学后 · 无升级 ==========');
 const A = stateWith(['flag.tutorial_complete'], []);
 const htmlA = renderToStaticMarkup(<SeaChartView state={A} onStateChange={noop} />);
 assert(htmlA.includes('海图'), 'A: 应渲染海图标题');
-assert(htmlA.includes('旧灯塔礁'), 'A: 应含旧灯塔礁 POI');
-assert(htmlA.includes('蓝洞群'), 'A: 应含蓝洞群 POI');
-assert(htmlA.includes('沉船墓园'), 'A: 应含沉船墓园 POI');
-assert(htmlA.includes('需要「船坞 Lv.1」'), 'A: 旧灯塔礁应显示锁定原因（disabled 按钮）');
-assert(htmlA.includes('出海'), 'A: 蓝洞/沉船应有可点的出海按钮');
-// A2. 深水区 Phase 1：蛙跳深潜 band 列表（home 灯塔在 → 列出全部 band，软门控不锁）
-assert(htmlA.includes('蛙跳'), 'A2: 应渲染蛙跳深潜入口（home 灯塔出潜）');
-assert(htmlA.includes('竖井'), 'A2: 应列出深 band（竖井·口/喉，突破 60m）');
-assert(htmlA.includes('60–82m'), 'A2: band 按钮带绝对深度窗口');
-L('  渲染成功，灯塔礁锁定 + 蓝洞/沉船可出海 ✓');
+assert(htmlA.includes('旧灯塔礁'), 'A: 家区应含旧灯塔礁 POI');
+assert(htmlA.includes('东礁'), 'A: 家区应含东礁 POI');
+assert(htmlA.includes('需要「船坞 Lv.1」'), 'A: 旧灯塔礁应显示锁定原因（缺船坞·dim）');
+assert(htmlA.includes('出海'), 'A: 家区可去点应有出海按钮');
+// 区域揭示门控（区域揭示配置化 SPEC）：蓝洞群在海沟区·教学后未解锁 → 不揭示。
+assert(!htmlA.includes('蓝洞群'), 'A: 蓝洞群属海沟区·教学后未解锁 → 不出现（区域门控）');
+// 剧情锚点（story·日志已知坐标·#117）恒显，不靠揭示圈。
+assert(htmlA.includes('温带商船残骸'), 'A: 剧情锚点温带商船残骸恒显（日志已知坐标）');
+// A2. 蛙跳入口收编进 home 灯塔 popup（Step 6·点击弹 HomeDivePopup）；SSR 不点击 → 断言 home 灯塔标记（入口）在。
+assert(htmlA.includes('灯塔：旧灯塔'), 'A2: 应渲染 home 灯塔标记＝从家蛙跳入口（旧 band 列表已收编进点击 popup）');
+L('  渲染成功：家区 POI + 剧情锚点恒显 + 海沟区门控 + home 灯塔蛙跳入口 ✓');
 
 // ============================================
 // B. SeaChartView · 教学后 + 家灯塔船坞 → 灯塔礁解锁（无锁定串）
@@ -200,7 +205,7 @@ const htmlTruth = renderToStaticMarkup(
 assert(htmlTruth.includes('一段倾斜的船体'), 'E: full 档渲染地面真相预览');
 assert(htmlTruth.includes('电量'), 'E: StatusBar 应有电量');
 assert(htmlTruth.includes('开灯') || htmlTruth.includes('熄灯'), 'E: 应有灯开关按钮');
-assert(!htmlTruth.includes('声呐 ping'), 'E: 未解锁声呐不应显示 ping 按钮');
+assert(!htmlTruth.includes('声呐：'), 'E: 未解锁声呐不应显示声呐开关');
 
 const htmlBlind = renderToStaticMarkup(
   <NodeSelectView state={diveState({ visibility: 'dark' })} choices={blindChoice} onStateChange={noop} />,
@@ -212,7 +217,7 @@ const htmlSonar = renderToStaticMarkup(
   <NodeSelectView state={diveState({ sonarUnlocked: true })} choices={sonarChoice} onStateChange={noop} />,
 );
 assert(htmlSonar.includes('clar-sonar'), 'E: sonar 档预览应带 clar-sonar 样式类');
-assert(htmlSonar.includes('声呐 ping'), 'E: 已解锁声呐应显示 ping 按钮');
+assert(htmlSonar.includes('声呐：'), 'E: 已解锁声呐应显示声呐开/关切换');
 L('  full 真相 / none 盲 / sonar 表象 + 电量 + 灯开关 + 声呐门控 ✓');
 
 // E2. NodeSelectView · 警觉预警（深水区 Phase 0b：被探测预警，给玩家熄灯反应窗口）
@@ -311,47 +316,6 @@ const htmlNoSonar = renderToStaticMarkup(
 assert(!htmlNoSonar.includes('声呐图'), 'E4: 未解锁声呐不应渲染声呐图面板');
 assert(!htmlNoSonar.includes('sonar-toggle'), 'E4: 未解锁声呐 → 无开/关切换按钮');
 L('  解锁→面板/空态 · 有记忆→canvas洞穴+相邻可点标记+你+残图 · 开/关(§4) · 未解锁→无面板 ✓');
-
-// ============================================
-// E4b. NodeSelectView · 定向 ping 控件（声呐与房间 SPEC §5·作者「方向扇区」）：
-//   解锁声呐+可ping+未扫 → 三向扇区控件（朝深处/侧向/来路）+ omni 标「全向」；
-//   定向 ping 进行中（sonar='ping'+sonarDir）→ 声呐图标聚焦；看到的猎手在某扇区 → 该向按钮带 aims-threat。
-// ============================================
-L('\n========== E4b. NodeSelectView 定向 ping 控件 (§5) ==========');
-const htmlDirControls = renderToStaticMarkup(
-  <NodeSelectView state={sonarState({ scanMemory: { n0: 0 } })} choices={[]} onStateChange={noop} />,
-);
-assert(htmlDirControls.includes('sonar-dir-controls'), 'E4b: 解锁声呐+可ping 应渲染定向 ping 控件');
-assert(
-  htmlDirControls.includes('朝深处') && htmlDirControls.includes('侧向') && htmlDirControls.includes('来路'),
-  'E4b: 三向扇区按钮（朝深处/侧向/来路）',
-);
-assert(htmlDirControls.includes('全向'), 'E4b: omni ping 按钮标「全向」');
-// 定向 ping 进行中 → 声呐图标注聚焦（且这站已 ping → 定向控件隐藏）
-const baseDir = sonarState({ scanMemory: { n0: 0 } });
-const focusState: GameState = {
-  ...baseDir,
-  run: { ...baseDir.run!, sensors: { ...baseDir.run!.sensors, sonar: 'ping', sonarDir: 'deeper' } },
-};
-const htmlFocus = renderToStaticMarkup(<NodeSelectView state={focusState} choices={[]} onStateChange={noop} />);
-assert(htmlFocus.includes('sonar-focus-tag') && htmlFocus.includes('聚焦'), 'E4b: 定向 ping 进行中→声呐图标聚焦');
-assert(htmlFocus.includes('sonar-focus-wedge'), 'E4b: 定向 ping 进行中→声呐图画聚焦扇区楔形（§5 可视化）');
-assert(!htmlFocus.includes('sonar-dir-controls'), 'E4b: 已 ping（脉冲未散）→ 定向控件隐藏（1 scan/turn）');
-// 看到的猎手在「朝深处」扇区（n1.layer 1 > n0.layer 0）→ 该按钮带 aims-threat 警示
-const warnState: GameState = {
-  ...baseDir,
-  run: {
-    ...baseDir.run!,
-    stalker: {
-      nodeId: 'n1', sensesBy: 'sound', onLostSignal: 'wait', waitTurns: 0, state: 'hunting',
-      encounterId: 'x', lastSignalNodeId: 'n0', turnsSinceSignal: 0, waitedTurns: 0,
-      seenNodeId: 'n1', seenTurn: 0,
-    },
-  },
-};
-const htmlWarn = renderToStaticMarkup(<NodeSelectView state={warnState} choices={[]} onStateChange={noop} />);
-assert(htmlWarn.includes('aims-threat'), 'E4b: 看到的猎手在某扇区 → 该向按钮带 aims-threat 警示');
-L('  三向控件 / omni 全向 / 进行中聚焦标 / 朝猎手向 aims-threat ✓');
 
 // ============================================
 // E4c. SonarScanPanel · 开放水域 vs 洞穴（声呐渲染重做 §2/§3）：
@@ -474,13 +438,13 @@ const decAdj = choicesFor(decMap, 'n0'); // [n1 spoof, n2 evade, n3, n6(garble)]
 const htmlDecLow = renderToStaticMarkup(<SonarScanPanel state={deceptionSonarState(18)} choices={decAdj} onStateChange={noop} />);
 assert(htmlDecLow.includes('is-spoof'), 'E6: spoof 相邻节点画成假信标 (is-spoof)');
 assert(htmlDecLow.includes('↑'), 'E6: spoof 假信标画成上浮口符号（图上无真出口·↑ 即假象＝节点版 mimic）');
-assert(!htmlDecLow.includes('199m'), 'E6: evade 节点无回波→声呐图不画该标记（其深度 199m 在声呐图缺席）');
+assert(!htmlDecLow.includes('199m</text>'), 'E6: evade 节点无回波→声呐图不画该标记（其深度标签 199m 在声呐图缺席·用 </text> 锚定·避开 animation-delay 的 1199ms 子串误匹配）');
 assert(htmlDecLow.includes('is-garbled'), 'E6: 低 san → 读数乱码 (is-garbled)');
 assert(htmlDecLow.includes('sonar-phantom'), 'E6: 低 san → 伪接触幻影 blip (sonar-phantom)');
 // 高 san 控制组：低 san 腐蚀消失，spoof/evade 固有仍在（是世界在骗你、不是你脑子崩）
 const htmlDecHigh = renderToStaticMarkup(<SonarScanPanel state={deceptionSonarState(100)} choices={decAdj} onStateChange={noop} />);
 assert(!htmlDecHigh.includes('is-garbled') && !htmlDecHigh.includes('sonar-phantom'), 'E6: 高 san → 无乱码/伪接触（低 san 腐蚀消失·大致为真）');
-assert(htmlDecHigh.includes('is-spoof') && !htmlDecHigh.includes('199m'), 'E6: spoof/evade 是节点固有 → 高 san 仍欺骗');
+assert(htmlDecHigh.includes('is-spoof') && !htmlDecHigh.includes('199m</text>'), 'E6: spoof/evade 是节点固有 → 高 san 仍欺骗（199m 深度标签缺席·</text> 锚定避开 1199ms 误匹配）');
 L('  spoof 假信标 / evade 无回波 / 低 san 乱码+伪接触 / 高 san 控制组 ✓');
 
 // ============================================
@@ -672,7 +636,7 @@ const J1 = upgradeState([{ itemId: 'item.coral_shard', qty: 5 }, { itemId: 'item
 const htmlJ1 = renderToStaticMarkup(<UpgradePanel state={J1} onStateChange={noop} onClose={noop} />);
 assert(htmlJ1.includes('珊瑚碎片×5'), 'J1: 账单应列出材料名×需求量');
 assert(htmlJ1.includes('＋ 30 金'), 'J1: 账单应列出金币价（salvage_guild.lv1 = 30 金）');
-assert(htmlJ1.includes('upgrade-buy">修缮'), 'J1: 账单满足应出现可点（非 disabled）"修缮"按钮（面板渲染全部升级线，其它行显示不足是正常的）');
+assert(htmlJ1.includes('upgrade-buy">改装'), 'J1: 账单满足应出现可点（非 disabled）"改装"按钮（面板渲染全部升级线，其它行显示不足是正常的）');
 // J4. 深水区 Phase 0 升级轨：新「潜水装备」线 + 声呐 lv2 + 传感器效果标签都渲染（UI 数据路径，quirk #38/#58）
 assert(htmlJ1.includes('潜水装备'), 'J4: 应渲染新「潜水装备」升级线');
 assert(htmlJ1.includes('加大电池组') && htmlJ1.includes('电池总量 +20'), 'J4: 渲染电池升级 + powerMaxBonus 效果标签');
@@ -683,7 +647,7 @@ assert(htmlJ1.includes('远摄灯组') && htmlJ1.includes('灯探得更深'), 'J
 assert(htmlJ1.includes('声呐组件 Lv.3') && htmlJ1.includes('声呐探得更深'), 'J5: 渲染 sonar lv3 + sonarRangeBonus 效果标签');
 // J6. 声呐与房间 §8.1：声呐扫描范围主升级轴（sonar lv4/lv5，新 sonarScanRangeBonus 效果标签）
 assert(htmlJ1.includes('声呐组件 Lv.4') && htmlJ1.includes('声呐组件 Lv.5'), 'J6: 渲染 sonar lv4/lv5（扫描范围轴）');
-assert(htmlJ1.includes('声呐扫得更广'), 'J6: 渲染 sonarScanRangeBonus 效果标签（一记 ping 多照一圈洞）');
+assert(htmlJ1.includes('声呐听得更远'), 'J6: 渲染 sonarScanRangeBonus 效果标签（听得更远·更早察觉猎手）');
 // J7. 声呐与房间 §6/§8.3 续：房间 feature 出现率升级（salvage_guild lv4·新 roomFeatureChanceBonus 效果标签）
 assert(htmlJ1.includes('打捞行会 Lv.4'), 'J7: 渲染 salvage_guild lv4（房间出现率轴）');
 assert(htmlJ1.includes('更会翻找大洞室'), 'J7: 渲染 roomFeatureChanceBonus 效果标签');
@@ -691,9 +655,6 @@ assert(htmlJ1.includes('更会翻找大洞室'), 'J7: 渲染 roomFeatureChanceBo
 assert(htmlJ1.includes('规避装备'), 'J8: 渲染新「规避装备」升级线');
 assert(htmlJ1.includes('吸声涂层') && htmlJ1.includes('甩脱声感猎手'), 'J8: 渲染 evasion_rig lv1 + soundAbsorbBonus 效果标签');
 assert(htmlJ1.includes('主动迷彩') && htmlJ1.includes('甩脱光感猎手'), 'J8: 渲染 evasion_rig lv2 + camoBonus 效果标签');
-// J9. 声呐与房间 §5：定向 ping 各方向 reach 各自升级（sonar lv6/7/8·新 sonarDirReachBonus 效果标签·带 dir 判别）
-assert(htmlJ1.includes('声呐组件 Lv.6') && htmlJ1.includes('声呐组件 Lv.8'), 'J9: 渲染 sonar lv6/lv8（定向 reach 各自升级轴）');
-assert(htmlJ1.includes('定向声呐校准'), 'J9: 渲染 sonarDirReachBonus 效果标签（定向声呐校准·带 dir）');
 // J2. 空仓 + 满金 → "材料不足" + 缺口"（有 0）"
 const J2 = upgradeState([], 9999);
 const htmlJ2 = renderToStaticMarkup(<UpgradePanel state={J2} onStateChange={noop} onClose={noop} />);
@@ -806,21 +767,23 @@ assert(!homeOnlyPanel.includes('材料中转站'), 'M5: 家灯塔不显示材料
 L('  家灯塔船坞/信标轨 + 能源/中转设施轨 outpostOnly/currentOnly 门控（家×/静水/水流）✓');
 
 // ============================================
-// N. SeaChartView · 深水前哨面板（Phase 2b：建造/维护/能源/衰减 surfacing）
+// N. 章节前哨标记（海图） + OutpostPopup 前哨详情面板（区域揭示配置化 SPEC）
+//    深脊柱前哨已移出 Ch.1 图（作者 2026-06-13）；前哨建造/维护/能源/中转面板收编进点击 popup（Step 4），
+//    故 SSR 不点击 → 面板内容直接渲染 OutpostPopup 验（同 E6 直渲 SonarScanPanel 的隔离思路）。
 // ============================================
-L('\n========== N. SeaChartView 深水前哨面板 ==========');
-// N1：未动工 → 列出前哨 + 状态 + 建造按钮（label 含账单）
+L('\n========== N. 章节前哨标记（发现门控）+ 前哨详情面板 ==========');
+// N1：发现门控（作者 2026-06-14）——教学后章节前哨**未发现**→ 图上不留暗节点（不再恒显）。
 const htmlN1 = renderToStaticMarkup(
   <SeaChartView state={stateWith(['flag.tutorial_complete'], [])} onStateChange={noop} />,
 );
-assert(htmlN1.includes('深水前哨'), 'N1: 应渲染深水前哨面板标题');
-assert(htmlN1.includes('深槽前哨'), 'N1: 应列出 reef_deep 前哨');
-assert(htmlN1.includes('竖井前哨'), 'N1: 应列出 trench_deep 前哨（多前哨链）');
-assert(htmlN1.includes('超渊前哨'), 'N1: 应列出 hadal_deep 前哨（方向 D·脊柱延到 band.hadal，服务渊外蛙跳）');
-assert(htmlN1.includes('深渊前哨'), 'N1: 应列出 abyssal_deep 前哨（Phase 2b 续·补脊柱 abyssal 缺口）');
-assert(htmlN1.includes('未动工'), 'N1: 未建前哨显示「未动工」');
-assert(htmlN1.includes('勘察并清理塔基'), 'N1: 建造按钮 label 含下一阶段账单');
-// N2：reef_deep 点亮 + 重度衰减（runs 8）→ 能源/衰减/荒废/维护
+assert(!htmlN1.includes('残骸前哨') && !htmlN1.includes('中层浮标'), 'N1: 未发现的章节前哨不在图上（发现门控·无暗节点）');
+assert(!htmlN1.includes('深槽前哨') && !htmlN1.includes('超渊前哨'), 'N1: 深脊柱前哨也不在 Ch.1 图');
+// devReveal（或剧情发现门 discoveredFlag）后 → 该章节前哨暗标记现身「暗·待解锁」。
+const n1Revealed = devRevealOutpost(stateWith(['flag.tutorial_complete'], []), 'outpost.ch1_wreck');
+const htmlN1b = renderToStaticMarkup(<SeaChartView state={n1Revealed} onStateChange={noop} />);
+assert(htmlN1b.includes('残骸前哨'), 'N1: devReveal/剧情发现后 → 章节前哨暗标记现身');
+assert(htmlN1b.includes('待解锁'), 'N1: 现身的未解锁章节前哨标为「暗·待解锁」');
+// N2：reef_deep 点亮 + 重度衰减（runs 8）→ OutpostPopup 渲染能源/衰减/荒废/维护
 const N2 = litOutpostState({
   outpostId: 'outpost.reef_deep',
   resultLh: REEF_DEEP_LH,
@@ -828,32 +791,39 @@ const N2 = litOutpostState({
   runsCompleted: 8,
   maintainedRun: 0,
 });
-const htmlN2 = renderToStaticMarkup(<SeaChartView state={N2} onStateChange={noop} />);
-assert(htmlN2.includes('能源'), 'N2: 点亮前哨显示能源状态');
+const htmlN2 = renderToStaticMarkup(
+  <OutpostPopup outpostId="outpost.reef_deep" state={N2} onStateChange={noop} onDive={noop} onClose={noop} />,
+);
+assert(htmlN2.includes('能源'), 'N2: 点亮前哨 popup 显示能源状态');
 assert(htmlN2.includes('衰减'), 'N2: 衰减的前哨显示衰减级');
 assert(htmlN2.includes('部分补给掉线'), 'N2: 容量不足 → 标注补给掉线（变暗）');
 assert(htmlN2.includes('荒废 · 蛙跳失效'), 'N2: 重度衰减 → 有效阶段回退、蛙跳失效');
 assert(htmlN2.includes('维护'), 'N2: 衰减的前哨有「维护」按钮');
-// N3：建了材料中转站 + 寄存了料 → 渲染寄存区（容量/库存/存取按钮）（Phase 2b 续·方向 D）
+// N3：建了材料中转站 + 寄存了料 → popup 渲染寄存区（容量/库存/存取按钮）
 const N3 = litOutpostState({
   outpostId: 'outpost.reef_deep',
   resultLh: REEF_DEEP_LH,
   facilities: ['lighthouse.depot.lv1'],
   stored: [{ itemId: 'item.brass_fitting', qty: 3 }],
 });
-const htmlN3 = renderToStaticMarkup(<SeaChartView state={N3} onStateChange={noop} />);
-assert(htmlN3.includes('中转站 3/6'), 'N3: 建了中转站的前哨显示寄存区（用量/容量）');
+const htmlN3 = renderToStaticMarkup(
+  <OutpostPopup outpostId="outpost.reef_deep" state={N3} onStateChange={noop} onDive={noop} onClose={noop} />,
+);
+assert(htmlN3.includes('中转站 3/6'), 'N3: 建了中转站 → popup 显示寄存区（用量/容量）');
 assert(htmlN3.includes('取'), 'N3: 寄存的料有「取」按钮');
 assert(htmlN3.includes('存'), 'N3: 寄存区有「存」料按钮');
-// N4：未建中转站的前哨不显示寄存区
+// N4：未建中转站的前哨不显示寄存区（软门控）
 const htmlN4 = renderToStaticMarkup(
-  <SeaChartView
+  <OutpostPopup
+    outpostId="outpost.reef_deep"
     state={litOutpostState({ outpostId: 'outpost.reef_deep', resultLh: REEF_DEEP_LH })}
     onStateChange={noop}
+    onDive={noop}
+    onClose={noop}
   />,
 );
 assert(!htmlN4.includes('中转站'), 'N4: 未建中转站的前哨不显示寄存区（软门控）');
-L('  前哨面板：未动工/建造按钮 + 点亮/能源/衰减/荒废/维护 + 中转站寄存区（建了才显示）✓');
+L('  章节前哨标记（暗·待解锁·深脊柱不在图）+ 前哨 popup 能源/衰减/荒废/维护/中转站寄存 ✓');
 
 // ============================================
 // O. SeaChartView · mimic「无灯之光」引诱 + 宏观 tell（深水区 Phase 3）
@@ -959,12 +929,42 @@ const qLayout: MapLayout = {
 const qFull = buildCaveGeometry(qLayout, ['a', 'b'], { a: 0, b: 0 });
 const qStub = buildCaveGeometry(qLayout, ['a'], { a: 0 });
 const qNone = buildCaveGeometry(qLayout, [], {});
-const tunLen = (g: { tuns: Array<{ ax: number; ay: number; bx: number; by: number }> }) =>
-  g.tuns.reduce((s, t) => s + Math.hypot(t.bx - t.ax, t.by - t.ay), 0);
+// 06-13 重设计（作者）：单端揭示 → **敞口通道**伸向未扫端（不再短残段封口·洞穴固定·不完整揭示）。
+const reachFromA = (g: { tuns: Array<{ ax: number; ay: number; bx: number; by: number }> }) =>
+  g.tuns.reduce((m, t) => Math.max(m, Math.hypot(t.bx, t.by), Math.hypot(t.ax, t.ay)), 0); // 距 a(0,0) 最远
 assert(qNone.tuns.length === 0 && qNone.rooms.length === 0, 'Q3: 无揭示 → 不画任何几何（防剧透不破）');
-assert(qStub.rooms.length >= 1 && qStub.tuns.length >= 1, 'Q3: 单端揭示 → 有房间 + 残段隧道口（#1）');
-assert(tunLen(qStub) < tunLen(qFull), 'Q3: 残段总长 < 双端整隧道（只露口、不剧透走向）');
-L('  洞穴空记忆非空态(开阔仍空态) · SSR 无交互态残留 · 残段存在且短于整隧道 ✓');
+assert(qStub.rooms.length >= 1 && qStub.tuns.length >= 1, 'Q3: 单端揭示 → 有房间 + 通向未知端的敞口通道');
+assert(reachFromA(qStub) > 0.8 * Math.hypot(80, 60), 'Q3: 敞口通道伸到未扫端附近（不再短残段·作者 06-13：不完整洞穴而非闭合墙）');
+assert(qStub.tuns[0].r > qStub.tuns[qStub.tuns.length - 1].r, 'Q3: 通道向未知端逐渐收窄（敞口没入黑暗）');
+L('  洞穴空记忆非空态(开阔仍空态) · SSR 无交互态残留 · 敞口通道伸向未扫端并收窄 ✓');
+// Q4: 取景钳制（作者 06-13「向上拖拽把洞穴拖出框」）——任意离谱平移后 viewBox 都夹在内容 ±margin 内。
+// vbY = clampViewCenter(center, vh, height) − vh/2；断言上拖（center→−∞）后 vbY ≥ −margin（洞顶永不被拖出框顶）。
+{
+  const MARGIN = 40, vh = 300, height = 477;
+  const cyUp = clampViewCenter(24 + -999999, vh, height, MARGIN); // here.y=24（洞顶）·疯狂上拖
+  const vbYUp = cyUp - vh / 2;
+  assert(vbYUp >= -MARGIN - 1e-6, `Q4: 上拖到底 vbY(${vbYUp.toFixed(1)}) ≥ −margin(−${MARGIN})＝洞穴甩不出框顶`);
+  const cyDown = clampViewCenter(24 + 999999, vh, height, MARGIN); // 疯狂下拖
+  const vbYDown = cyDown - vh / 2;
+  assert(vbYDown + vh <= height + MARGIN + 1e-6, `Q4: 下拖到底 viewBox 底(${(vbYDown + vh).toFixed(1)}) ≤ 内容底+margin＝甩不出框底`);
+  // 短内容（取景窗 > 内容+2margin）→ 居中锁定
+  const cyShort = clampViewCenter(24 + -999999, 300, 120, MARGIN);
+  assert(Math.abs(cyShort - 60) < 1e-6, 'Q4: 内容比取景窗小 → 居中(extent/2)·锁平移');
+  L('  取景钳制：上/下拖到底都夹在内容±margin、短内容居中锁定（向上拖不出框）✓');
+}
+// Q5: bakeCaveRGBA 烤出「整张全亮的洞」底图（几何圆战争迷雾三态改在合成层做·作者 06-13 重设计）：
+//     水道像素有色不透明 / 洞外岩石透明。黑/暗/亮三态＝rAF 合成层 clip 到「扫描中心圆」（非纯函数·肉眼 dev 验）。
+{
+  const fogLayout: MapLayout = { pos: { a: { x: 30, y: 30 }, b: { x: 120, y: 120 } }, edges: [{ a: 'a', b: 'b' }], width: 160, height: 160 };
+  const rect = { x: 0, y: 0, w: 160, h: 160 };
+  const W = 160, H = 160;
+  const px = (buf: Uint8ClampedArray, x: number, y: number) => { const i = (Math.round(y) * W + Math.round(x)) * 4; return { r: buf[i], a: buf[i + 3] }; };
+  const cave = buildCaveGeometry(fogLayout, ['a', 'b'], { a: 0, b: 0 });
+  const buf = bakeCaveRGBA(cave, rect, W, H);
+  assert(px(buf, 30, 30).a > 0, 'Q5: 烤图水道像素不透明（全亮底图·三态遮罩移到合成层几何圆）');
+  assert(px(buf, 158, 2).a === 0, 'Q5: 洞外岩石透明（露面板暗底＝岩）');
+  L('  bakeCaveRGBA 全亮底图：水道不透明 / 洞外透明（三态几何圆遮罩在合成层·肉眼 dev 验）✓');
+}
 
 // ============================================================
 // R. 猎手 blip 路由落点（06-11 作者「红点出墙」修复·纯函数直测）
@@ -1063,29 +1063,36 @@ assert(rInWater.x === 0 && rInWater.y === 0, 'R7: 已在水里的点零扰动');
 L('  方向无关 · 端点=房心 · blip 永在路由上 · 残段双向截断 · 无知态回退 · fix 锚点并入有水可站 · SDF 投影闸 ✓');
 
 // ============================================
-// S. 章节哨站批：OutpostPanel 暗（待解锁）/ 点亮后出蛙跳按钮 / 深脊柱 band 列表不含章节区 band
+// S. 章节哨站：OutpostPopup 锁态(暗·待解锁)/点亮(从此处下潜) + HomeDivePopup 深脊柱列表不含章节区 band。
+//    面板收编进点击 popup（Step 4）→ SSR 直渲 popup 验（同 N·OutpostPopup/HomeDivePopup 已 export）。
 // ============================================
-L('\n========== S. 章节哨站 OutpostPanel ==========');
-// 锁态：教学完成但 wreck 锚点未到 → 残骸前哨显示「暗 · 待解锁」、无蛙跳按钮
-const sLockChap = stateWith(['flag.tutorial_complete'], []);
-const htmlSLock = renderToStaticMarkup(<SeaChartView state={sLockChap} onStateChange={noop} />);
-assert(htmlSLock.includes('暗 · 待解锁'), 'S: 锚点未到的章节前哨显示「暗 · 待解锁」');
-assert(htmlSLock.includes('它才会在海图上') || htmlSLock.includes('走到对应的锚点'), 'S: 锁态给解锁提示');
-// 深脊柱蛙跳列表不含章节区 band（章节区由哨站出蛙跳）
-assert(!htmlSLock.includes('温带商船残骸（18–50m）'), 'S: 深脊柱列表不列章节区 band（温带商船残骸）');
-assert(htmlSLock.includes('蛙跳'), 'S: 深脊柱蛙跳列表仍在（家灯塔）');
-
-// 点亮态：置 wreck 锚点 flag + 残骸前哨三阶 flag + push 其灯塔 → 出「蛙跳下潜」按钮
+L('\n========== S. 章节哨站 popup ==========');
+// 锁态：wreck 锚点未到 → OutpostPopup 显示「暗 · 待解锁」+ 解锁提示。
+const sLockState = stateWith(['flag.tutorial_complete'], []);
+const htmlSLock = renderToStaticMarkup(
+  <OutpostPopup outpostId="outpost.ch1_wreck" state={sLockState} onStateChange={noop} onDive={noop} onClose={noop} />,
+);
+assert(htmlSLock.includes('暗 · 待解锁'), 'S: 锚点未到的章节前哨 popup 显示「暗 · 待解锁」');
+assert(htmlSLock.includes('走到对应的锚点') || htmlSLock.includes('它才会在海图上'), 'S: 锁态给解锁提示');
+// HomeDivePopup（家灯塔蛙跳列表）：列深脊柱 band、不列章节区 band（章节区由各自前哨出蛙跳·含新海沟 band）。
+const htmlHomeDive = renderToStaticMarkup(
+  <HomeDivePopup state={sLockState} carryPicks={[]} onDive={noop} onClose={noop} />,
+);
+assert(!htmlHomeDive.includes('温带商船残骸'), 'S: 家蛙跳列表不含章节区 band（温带商船残骸＝残骸前哨出）');
+assert(htmlHomeDive.includes('竖井') || htmlHomeDive.includes('深槽'), 'S: 家蛙跳列表列深脊柱 band（竖井/深槽）');
+// 点亮态：wreck 锚点 + 残骸前哨三阶 → OutpostPopup 出「从此处下潜」蛙跳 +「已点亮」。
 const CH1_WRECK_LH = { id: 'lighthouse.ch1_wreck_outpost', name: '残骸前哨', mapX: 0.6, mapY: 0.62 };
 const sLitChap = litOutpostState({ outpostId: 'outpost.ch1_wreck', resultLh: CH1_WRECK_LH });
 const sLitChapWithAnchor: GameState = {
   ...sLitChap,
   profile: { ...sLitChap.profile, flags: new Set([...sLitChap.profile.flags, 'story.ch1.anchor.wreck']) },
 };
-const htmlSLit = renderToStaticMarkup(<SeaChartView state={sLitChapWithAnchor} onStateChange={noop} />);
-assert(htmlSLit.includes('蛙跳下潜'), 'S: 点亮的章节前哨出「蛙跳下潜」按钮');
+const htmlSLit = renderToStaticMarkup(
+  <OutpostPopup outpostId="outpost.ch1_wreck" state={sLitChapWithAnchor} onStateChange={noop} onDive={noop} onClose={noop} />,
+);
+assert(htmlSLit.includes('从此处下潜'), 'S: 点亮的章节前哨 popup 出「从此处下潜」蛙跳按钮');
 assert(htmlSLit.includes('已点亮'), 'S: 点亮态状态显示「已点亮」');
-L('  锁态「暗·待解锁」+ 解锁提示 + 深脊柱列表不含章节 band + 点亮出蛙跳按钮 ✓');
+L('  章节前哨 popup 锁态(暗·待解锁)/点亮(从此处下潜·已点亮) + 家蛙跳列表不含章节 band ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 海图 UI 冒烟测试通过');

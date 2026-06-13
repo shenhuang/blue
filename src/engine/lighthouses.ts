@@ -21,12 +21,12 @@ import type {
   OutpostDef,
   OutpostStageDef,
   PlayerProfile,
-  SonarDir,
 } from '@/types';
 import lighthouseData from '@/data/lighthouse_upgrades.json';
 import { appendLog, removeFromInventory, HOME_LIGHTHOUSE_ID } from './state';
 import { materialShortfall, describeUpgradeCost, getUpgradeBonuses } from './upgrades';
 import { ch1AnchorFlag, TUTORIAL_COMPLETE_FLAG, type Ch1Anchor } from './story';
+import { regionRadius } from './regions';
 
 const file = lighthouseData as unknown as LighthouseUpgradesFile;
 const TRACKS: LighthouseTrack[] = file.tracks;
@@ -46,16 +46,16 @@ const OUTPOST_INDEX = new Map<string, OutpostDef>();
 for (const o of OUTPOSTS) OUTPOST_INDEX.set(o.id, o);
 
 // —— 点亮半径 / reach 换算的 tunable 常数（SPEC §3.4 / §4 / §9）——
-// 半径用海图归一化坐标（0–1）。home（level 1，无 beacon）= BASE，刚好覆盖现有 4 个锚点
-// （最远沉船墓园 ≈ 0.662）+ 近端机会点，但不覆盖两个远端 roaming（≈0.79/0.80）——
-// 那两个留给「修复前哨灯塔」点亮，使修复循环立刻有意义（决策：作者选 uniform radius）。
-export const BASE_LIGHT_RADIUS = 0.72;
+// 半径用海图归一化坐标（0–1）。**区域揭示配置化 SPEC**：每座灯塔的揭示半径由其**区域配置**给
+// （data/chart_regions.json·owner→radius·见 engine/regions.ts），替代旧全局 BASE_LIGHT_RADIUS=0.72
+// 巨值——那让每个圈直径 1.44>全图、相互重叠成糊（作者反馈「很多大圈重叠」）。
+// 未配置 owner（如修复的废弃灯塔）回 DEFAULT_REVEAL_RADIUS＝适中离岸圈，不盖满全图。
 export const LIGHT_RADIUS_PER_LEVEL = 0.12;
 export const LIGHT_RADIUS_PER_BONUS = 0.12;
 
-/** 一座灯塔的点亮半径（归一化海图距离）。= base(level) + lightRadiusBonus 换算。 */
+/** 一座灯塔的点亮半径（归一化海图距离）。= 区域配置 base(owner) + level + lightRadiusBonus 换算。 */
 export function revealRadius(lighthouse: Lighthouse): number {
-  const base = BASE_LIGHT_RADIUS + (lighthouse.level - 1) * LIGHT_RADIUS_PER_LEVEL;
+  const base = regionRadius(lighthouse.id) + (lighthouse.level - 1) * LIGHT_RADIUS_PER_LEVEL;
   const bonus = getLighthouseBonuses(lighthouse).lightRadiusBonus * LIGHT_RADIUS_PER_BONUS;
   return base + bonus;
 }
@@ -213,6 +213,7 @@ export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses 
     rechargeBonus: 0,
     oxygenSupply: 0,
     storageCapacity: 0,
+    dimRevealBonus: 0,
   };
   for (const id of lighthouse.builtUpgrades) {
     const def = getLighthouseUpgradeDef(id);
@@ -243,6 +244,9 @@ export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses 
         case 'storageCapacity':
           bonuses.storageCapacity += e.value;
           break;
+        case 'dimRevealBonus':
+          bonuses.dimRevealBonus += e.value;
+          break;
       }
     }
   }
@@ -271,10 +275,8 @@ export interface RunStartBonuses {
   // 深水区 Phase 1 续·节点级 clarity 范围/分辨：灯/声呐 reach 加成。
   lampRangeBonus: number;
   sonarRangeBonus: number;
-  // 声呐与房间 §8.1：声呐扫描跳数加成（主升级轴）。
+  // 猎手听觉量程跳数加成。
   sonarScanRangeBonus: number;
-  // 声呐与房间 §5：定向 ping 各扇区 reach 各自升级（逐向独立）。
-  sonarDirReach: Record<SonarDir, number>;
   // 声呐与房间 §6/§8.3 续：大房间出现率加成。
   roomFeatureChanceBonus: number;
   // 猎手 SPEC §3 升级规避：玩家侧规避（吸声 T1 / 迷彩 T2）。
@@ -305,7 +307,6 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
     lampRangeBonus: g.lampRangeBonus,
     sonarRangeBonus: g.sonarRangeBonus,
     sonarScanRangeBonus: g.sonarScanRangeBonus,
-    sonarDirReach: g.sonarDirReach,
     roomFeatureChanceBonus: g.roomFeatureChanceBonus,
     soundAbsorbBonus: g.soundAbsorbBonus,
     camoBonus: g.camoBonus,
@@ -466,9 +467,9 @@ export function isOutpostLit(profile: PlayerProfile, outpostId: string): boolean
 //      （不参与深脊柱自动起跳链）；章节蛙跳走显式 launchOutpostId（dive-start.ts），落本区 band。
 // flag 字符串单一来源在 story.ts（quirk #118）——这里只读 ch1AnchorFlag 的输出、不手拼 'story.*'。
 
-/** 是否章节前哨（requiresAnchor 已设）。深脊柱前哨缺省 → false，行为逐字节不变。 */
+/** 是否章节前哨（requiresAnchor 或 requiresFlag 已设）。深脊柱前哨两者皆缺省 → false，行为逐字节不变。 */
 export function isChapterOutpost(def: OutpostDef): boolean {
-  return def.requiresAnchor !== undefined;
+  return def.requiresAnchor !== undefined || def.requiresFlag !== undefined;
 }
 
 /**
@@ -479,8 +480,12 @@ export function isChapterOutpost(def: OutpostDef): boolean {
  */
 export function outpostUnlocked(profile: PlayerProfile, outpostId: string): boolean {
   const def = OUTPOST_INDEX.get(outpostId);
-  if (!def || def.requiresAnchor === undefined) return true;
-  return profile.flags.has(ch1AnchorFlag(def.requiresAnchor as Ch1Anchor));
+  if (!def) return true;
+  if (def.requiresAnchor !== undefined) {
+    return profile.flags.has(ch1AnchorFlag(def.requiresAnchor as Ch1Anchor));
+  }
+  if (def.requiresFlag !== undefined) return profile.flags.has(def.requiresFlag); // 非锚点章节门（海沟·剧情节拍待接）
+  return true;
 }
 
 /** band 对应的章节哨站（若该 band 是某章节前哨服务的本区 band）。无 → undefined（深 band / 非章节）。 */
@@ -637,16 +642,61 @@ export function devUnlockChapterRegion(state: GameState, outpostId: string): Gam
   const def = OUTPOST_INDEX.get(outpostId);
   if (!def) return state;
   let s = state;
-  if (def.requiresAnchor !== undefined) {
+  if (def.requiresAnchor !== undefined || def.requiresFlag !== undefined) {
     const flags = new Set(s.profile.flags);
     flags.add(TUTORIAL_COMPLETE_FLAG);
-    flags.add(ch1AnchorFlag(def.requiresAnchor as Ch1Anchor));
+    if (def.requiresAnchor !== undefined) flags.add(ch1AnchorFlag(def.requiresAnchor as Ch1Anchor));
+    if (def.requiresFlag !== undefined) flags.add(def.requiresFlag); // 海沟等非锚点章节门
     s = { ...s, profile: { ...s.profile, flags } };
   }
   // 连推到点亮（devAdvanceOutpost 已点亮即 no-op，故 OUTPOST_MAX_STAGE 次封顶安全）。
   for (let i = 0; i < OUTPOST_MAX_STAGE; i++) s = devAdvanceOutpost(s, outpostId);
   return appendLog(s, {
     tone: 'system',
-    text: `测试解锁本区（dev）：${def.name} 已点亮${def.requiresAnchor ? '·对应锚点潜点已开' : ''}。`,
+    text: `测试解锁本区（dev）：${def.name} 已点亮${def.requiresAnchor || def.requiresFlag ? '·对应潜点已开' : ''}。`,
   });
+}
+
+// ============================================================
+// 前哨发现状态（Step 4/5·区域揭示 §10·map popup 系）
+// ============================================================
+
+/**
+ * 前哨是否在海图上「已发现」（可渲染地图标记·区域揭示 §10）：
+ *   - 章节前哨（requiresAnchor 设）：恒 true（日志/剧情已知位置，哪怕还没解锁建造）；
+ *   - 非章节前哨：已建过任一阶 OR 被 devRevealOutpost 显式发现（profile.outpostState[id].discovered）；
+ *   - 尚未发现的非章节前哨在海图上不可见——玩家需在下潜中找到它才会出现。
+ */
+export function isOutpostDiscovered(profile: PlayerProfile, outpostId: string): boolean {
+  const def = OUTPOST_INDEX.get(outpostId);
+  if (!def) return false;
+  if (outpostStage(profile, outpostId) > 0) return true; // 动过工 → 必可见
+  if (profile.outpostState[outpostId]?.discovered === true) return true; // dev「让它现身」/ 事件显式发现
+  // 章节前哨发现门（作者 2026-06-14·非恒显）：剧情节拍置 discoveredFlag 才在图上现「暗·待解锁」标记。
+  // 缺省 discoveredFlag（St1 剧情未接）→ 非 dev 不显示；dev 用海图顶「解锁大区」直接点亮、或 popup「让它现身」。
+  if (def.discoveredFlag !== undefined && profile.flags.has(def.discoveredFlag)) return true;
+  return false;
+}
+
+/**
+ * dev 后门：把一座「未发现」的前哨标记为已发现（让它的地图标记现身）。
+ * 区别于 devAdvanceOutpost（推进建造阶段）和 devUnlockChapterRegion（解锁整片章节区）——
+ * 这条只做「已发现」标记，不动建造进度、不动 flag、不动银行/库存。
+ * 已发现的前哨（已建过 / 章节哨站）→ no-op（已然可见，不必重标）。仅 DEV_TOOLS 后调用。
+ */
+export function devRevealOutpost(state: GameState, outpostId: string): GameState {
+  const def = OUTPOST_INDEX.get(outpostId);
+  if (!def) return state;
+  if (isOutpostDiscovered(state.profile, outpostId)) return state; // 已可见 → no-op
+  const outpostState = {
+    ...state.profile.outpostState,
+    [outpostId]: {
+      ...(state.profile.outpostState[outpostId] ?? { maintainedRun: state.profile.runsCompleted }),
+      discovered: true,
+    },
+  };
+  return appendLog(
+    { ...state, profile: { ...state.profile, outpostState } },
+    { tone: 'system', text: `测试现身（dev）：${def.name} 已标记为「已发现」，海图上可见其位置。` },
+  );
 }

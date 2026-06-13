@@ -40,6 +40,15 @@ export interface PoiModifier {
   depthCurve?: number;
 }
 
+/**
+ * POI 在海图上的揭示态（区域揭示主实装块·三态·§10）：
+ *   lit    = 圈内·已发现·可出海（亮）
+ *   dim    = 已知但当下去不了（暗：能力门未解 / 天气遮成暗 / 勘测到但超出可达）——显示但过不去
+ *   hidden = 未揭示（圈外 / flags 未满足 / 天气彻底盖住）——不进 chart.pois、不渲染
+ * 诚实轴：暗/隐没是天气与能力的真话；anchor 永不被天气藏（进度安全）；mimic 恒 lit（唯一谎点）。
+ */
+export type PoiRevealState = 'lit' | 'dim' | 'hidden';
+
 /** 海图上的一个兴趣点 */
 export interface ChartPoi {
   /** 运行时稳定 id（anchor 在数据里写死；roaming 形如 `poi.roam.<runsCompleted>.<templateId>`，按模板键稳定·中途点亮灯塔不重洗） */
@@ -86,6 +95,11 @@ export interface ChartPoi {
    * （结局分歧）额外要求其余三锚点全置位——否则都是普通下潜（回流重访自然成立）。
    */
   story?: { anchor: string; eventId: string };
+  /**
+   * 运行时揭示态（generateChart 派生写入·区域揭示三态·§10）。只有进了 chart.pois 的点带它（'lit'|'dim'）；
+   * 'hidden' 点不入结果。纯派生、不入存档（同 roaming 的运行时 id 一样按 profile 重算）。
+   */
+  revealState?: PoiRevealState;
 }
 
 /**
@@ -108,4 +122,33 @@ export interface SeaChart {
   pois: ChartPoi[];
   /** 本次海况（潮汐/天气）——§6.5「海图是活的、随回合变」。 */
   conditions: ChartConditions;
+}
+
+// ── 区域揭示配置（区域揭示配置化 SPEC·data-driven·跨章复用）─────────────────
+// 单一来源 data/chart_regions.json：引擎读 radius（揭示半径）、UI 读 palette/shape/label。
+// owner 灯塔在 profile.lighthouses 中存在＝本区揭示（圈出现）。每个区＝一座 owner 灯塔的揭示圈。
+
+/** 揭示区调色板 token（CSS 类 .reveal-<palette>·作者 2026-06-13 配色）。 */
+export type RegionPalette = 'cyan' | 'green' | 'blue' | 'amber' | 'navy' | 'ruin';
+
+/** 揭示区形状：circle=离岸整圆 / coast=海岸半圆（clip 左半·家灯塔从海岸鼓进水里）。 */
+export type RegionShape = 'circle' | 'coast';
+
+/** 一个揭示区的配置。owner 灯塔点亮（push 进 profile.lighthouses）即本区揭示。 */
+export interface ChartRegionDef {
+  /** 区 id（'reef'|'trench'|'wreck'|'midwater'|'vent'…）。 */
+  id: string;
+  /** UI 标签（'珊瑚区' 等）。 */
+  label: string;
+  /** owner 灯塔 id（全局唯一）。该灯塔存在＝本区揭示·圈出现·半径＝本区 radius。 */
+  owner: string;
+  palette: RegionPalette;
+  shape: RegionShape;
+  /** 归一化揭示半径（世界单位·替代旧全局 BASE_LIGHT_RADIUS 巨值）。 */
+  radius: number;
+}
+
+/** 一张地图的揭示区集合（ch1 / ch2 / 外传…按 mapId 分；owner 全局唯一·跨图按 owner 索引）。 */
+export interface ChartMapRegionsFile {
+  [mapId: string]: { regions: ChartRegionDef[] } | string;
 }

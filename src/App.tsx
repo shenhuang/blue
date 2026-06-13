@@ -3,10 +3,8 @@ import type { GameState } from '@/types';
 import { createInitialGameState, loadGame, saveGame, clearSave } from '@/engine/state';
 import { handleReturnToPort as handleReturnToPortFn } from '@/engine/port';
 import { toPort } from '@/engine/transitions';
-import { PortView } from '@/ui/PortView';
-import { PortEventView } from '@/ui/PortEventView';
-import { SeaChartView } from '@/ui/SeaChartView';
-import { MiraShopView } from '@/ui/MiraShopView';
+import { TUTORIAL_COMPLETE_FLAG } from '@/engine/story';
+import { PortLayout } from '@/ui/PortLayout';
 import { EventView } from '@/ui/EventView';
 import { NodeSelectView } from '@/ui/NodeSelectView';
 import { RestView } from '@/ui/RestView';
@@ -52,8 +50,19 @@ function initialDevPanel(): DevPanelKind {
 }
 
 export default function App() {
-  // 启动时尝试读存档；无 / 损坏 / 版本不兼容则开新档
-  const [state, setState] = useState<GameState>(() => loadGame() ?? createInitialGameState());
+  // 启动时尝试读存档；无 / 损坏 / 版本不兼容则开新档。
+  // dev（?dev / dev server）：进 dev 即视作已过教学——海图等教学门一律放行，方便测试（作者 2026-06-13）。
+  // 普通访客 DEV_TOOLS=false 时零变化。会随自动存档落盘＝dev 档开过即标记教学完成（重开新档可清）。
+  const [state, setState] = useState<GameState>(() => {
+    const s = loadGame() ?? createInitialGameState();
+    if (DEV_TOOLS && !s.profile.flags.has(TUTORIAL_COMPLETE_FLAG)) {
+      return {
+        ...s,
+        profile: { ...s.profile, flags: new Set([...s.profile.flags, TUTORIAL_COMPLETE_FLAG]) },
+      };
+    }
+    return s;
+  });
 
   // Dev 面板开关：本地 state，不进 GameState（避免污染存档版本号；quirk #23）；?dev&panel=… 可 URL 直开（见上）
   const [devPanel, setDevPanel] = useState<DevPanelKind>(initialDevPanel);
@@ -102,27 +111,22 @@ export default function App() {
     setState(createInitialGameState());
   }
 
+  // 容器布局分阶段（作者 06-13）：港口族（port/portEvent/chart/shop）走主从布局（PortLayout·左主界面/对话·
+  // 右服务面板 海图/装备/商店/行会）；下潜族（dive/combat/ascent）走左右双栏（左状态/声呐·右内容）。
+  // 其余（结算/葬礼/gameOver）保持 720 居中。读 phase.kind 分流是允许的（check-boundaries 规则二只禁构造 phase 字面量）。
+  const phaseKind = state.phase.kind;
+  const isPort =
+    phaseKind === 'port' ||
+    phaseKind === 'portEvent' ||
+    phaseKind === 'chart' ||
+    phaseKind === 'shop';
+  const isDive = phaseKind === 'dive' || phaseKind === 'combat' || phaseKind === 'ascent';
+  const appClass = isPort ? 'app app-port' : isDive ? 'app app-dive' : 'app';
+
   return (
-    <div className="app">
-      {state.phase.kind === 'port' && (
-        <PortView state={state} onStateChange={setState} />
-      )}
-
-      {state.phase.kind === 'portEvent' && (
-        <PortEventView
-          state={state}
-          eventId={state.phase.eventId}
-          onStateChange={setState}
-        />
-      )}
-
-      {state.phase.kind === 'chart' && (
-        <SeaChartView state={state} onStateChange={setState} />
-      )}
-
-      {state.phase.kind === 'shop' && (
-        <MiraShopView state={state} onStateChange={setState} />
-      )}
+    <div className={appClass}>
+      {/* 港口族：主从布局——主界面/对话常驻左栏，海图/装备/商店/行会作为右栏服务面板（窄屏覆盖）。 */}
+      {isPort && <PortLayout state={state} onStateChange={setState} />}
 
       {state.phase.kind === 'dive' && state.phase.subPhase.kind === 'event' && (
         <EventView

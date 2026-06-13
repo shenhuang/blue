@@ -10,7 +10,7 @@
 
 import { createInitialGameState, createNewRun, countInInventory, HOME_LIGHTHOUSE_ID } from '../src/engine/state';
 import { POWER_MAX, SONAR_PING_COST, LAMP_DEPTH_REACH, SONAR_DEPTH_REACH, ROOM_FEATURE_CHANCE_MAX, STEALTH_BONUS_MAX } from '../src/engine/clarity';
-import { SONAR_SCAN_RANGE_MAX, SONAR_DIR_REACH_MAX } from '../src/engine/sonar';
+import { SONAR_SCAN_RANGE_MAX } from '../src/engine/sonar';
 import {
   canPurchase,
   getUpgradeBonuses,
@@ -262,8 +262,8 @@ assert(sb.sonarRobustness === 20, '8: sonarRobustness = 20（sonar lv2）');
 // 深水区 Phase 1 续·节点级 clarity 范围/分辨（dk lv4 灯 reach / sonar lv3 声呐 reach）
 assert(sb.lampRangeBonus === 4, '8: lampRangeBonus = 4（dive_kit lv4 远摄灯组）');
 assert(sb.sonarRangeBonus === 8, '8: sonarRangeBonus = 8（sonar lv3）');
-// 声呐与房间 §8.1：扫描跳数主升级轴（sonar lv4+lv5 各 +1）
-assert(sb.sonarScanRangeBonus === 2, '8: sonarScanRangeBonus = 2（sonar lv4 + lv5 各 +1）');
+// 声呐与房间 §8.1：扫描跳数主升级轴（sonar lv4 +1 / lv5 +2·06-13 lv5 提到 +2 让 base1 仍能升满到 MAX 4）
+assert(sb.sonarScanRangeBonus === 3, '8: sonarScanRangeBonus = 3（sonar lv4 +1 + lv5 +2）');
 
 // 桥：getRunBonuses 透传 → createNewRun 把升级烤进 run.powerMax / run.sensorTuning
 const rb = getRunBonuses(state.profile);
@@ -279,7 +279,7 @@ assert(upRun.sensorTuning!.lampHallucinationSanity === 15, '8: run.sensorTuning.
 assert(upRun.sensorTuning!.signatureReduction === 3, '8: run.sensorTuning.signatureReduction');
 assert(upRun.sensorTuning!.lampDepthReach === LAMP_DEPTH_REACH + 4, '8: run.sensorTuning.lampDepthReach（dk lv4 扩灯 reach）');
 assert(upRun.sensorTuning!.sonarDepthReach === SONAR_DEPTH_REACH + 8, '8: run.sensorTuning.sonarDepthReach（sonar lv3 扩声呐 reach）');
-// 声呐与房间 §8.1：扫描跳数烤进 run（2 基线 + 2 升级 = 4 = 上限·守「扫不穿整洞/最深」）
+// 声呐与房间 §8.1：扫描跳数烤进 run（1 基线〔06-13 调小·一级声呐只照身边一圈〕 + 3 升级〔lv4 +1 / lv5 +2〕 = 4 = 上限·守「扫不穿整洞/最深」）
 assert(upRun.sensorTuning!.sonarScanRange === SONAR_SCAN_RANGE_MAX, '8: run.sensorTuning.sonarScanRange = 上限（sonar lv4+lv5 升满）');
 log.push('  dive_kit lv1-4 + sonar lv1-5 → bonuses 聚合 → getRunBonuses 透传 → createNewRun 烤进 run（含扫描范围轴）✓');
 
@@ -337,46 +337,6 @@ log.push('  dive_kit lv1-4 + sonar lv1-5 → bonuses 聚合 → getRunBonuses �
   // 前置门控：lv2 需先买 lv1
   assert(!canPurchase(createInitialGameState().profile, 'upgrade.evasion_rig.lv2').ok, '10: evasion_rig lv2 需先买 lv1');
   log.push('  evasion_rig lv1/lv2 → soundAbsorb/camo 0.5 · 烤进 run · 缺省 0 · 夹上限 STEALTH_BONUS_MAX · 前置门控 ✓');
-}
-
-// ============================================================
-// 11. 定向 ping 各方向 reach 各自升级（sonar lv6/7/8·声呐与房间 §5「各方向 reach 各自升级」）
-//    新 sonarDirReachBonus（带 dir 判别）沿同款传感器桥：逐向累加 → deriveSensorTuning 逐向夹 [0, SONAR_DIR_REACH_MAX]。
-// ============================================================
-{
-  const prof11 = {
-    ...createInitialGameState().profile,
-    unlockedUpgrades: new Set([
-      'upgrade.sonar.lv1', 'upgrade.sonar.lv2', 'upgrade.sonar.lv3', 'upgrade.sonar.lv4', 'upgrade.sonar.lv5',
-      'upgrade.sonar.lv6', 'upgrade.sonar.lv7', 'upgrade.sonar.lv8',
-    ]),
-  };
-  const sb11 = getUpgradeBonuses(prof11);
-  assert(
-    sb11.sonarDirReach.deeper === 1 && sb11.sonarDirReach.lateral === 1 && sb11.sonarDirReach.back === 1,
-    '11: sonar lv6/7/8 → 逐向 reach 各 +1（deeper/lateral/back）',
-  );
-  // 桥：getRunBonuses 透传 → createNewRun 烤进 run.sensorTuning（逐向）
-  const run11 = createNewRun({ zoneId: 'zone.old_lighthouse_reef', bonuses: getRunBonuses(prof11) });
-  assert(
-    run11.sensorTuning!.sonarDirReach.deeper === 1 && run11.sensorTuning!.sonarDirReach.back === 1,
-    '11: 烤进 run.sensorTuning.sonarDirReach（逐向）',
-  );
-  // 缺省（未升级）→ 全 0（定向逐字节不变的护栏）
-  const base11 = createNewRun({ zoneId: 'zone.old_lighthouse_reef' });
-  assert(
-    base11.sensorTuning!.sonarDirReach.deeper === 0 && base11.sensorTuning!.sonarDirReach.lateral === 0 && base11.sensorTuning!.sonarDirReach.back === 0,
-    '11: 未升级 → 各向 0（定向行为逐字节不变）',
-  );
-  // 升满逐向夹到上限 SONAR_DIR_REACH_MAX
-  const cap11 = createNewRun({ zoneId: 'zone.old_lighthouse_reef', bonuses: { sonarDirReach: { deeper: 99, lateral: 99, back: 99 } } });
-  assert(
-    cap11.sensorTuning!.sonarDirReach.deeper === SONAR_DIR_REACH_MAX && cap11.sensorTuning!.sonarDirReach.back === SONAR_DIR_REACH_MAX,
-    '11: 升满逐向夹到 SONAR_DIR_REACH_MAX',
-  );
-  // 前置门控：未买 lv5 → 不可买 lv6（线内连续·镜像 §9/§10 的前置断言）
-  assert(!canPurchase(createInitialGameState().profile, 'upgrade.sonar.lv6').ok, '11: sonar lv6 需先买 lv5（前置门控）');
-  log.push('  sonar lv6/7/8 → 逐向 reach 各 +1 · 烤进 run · 缺省全 0 · 逐向夹上限 SONAR_DIR_REACH_MAX · 前置门控 ✓');
 }
 
 console.log(log.join('\n'));

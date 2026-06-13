@@ -39,7 +39,8 @@ export type LighthouseEffect =
   | { kind: 'energyDraw'; value: number } // 设施能源占用 +value（超出该前哨能源容量的设施掉线）
   | { kind: 'rechargeBonus'; value: number } // 充电设施：从该前哨蛙跳时电池总量 +value（设施在线才生效）
   | { kind: 'oxygenSupply'; value: number } // 充氧设施：从该前哨蛙跳时氧气上限 +value（设施在线才生效）
-  | { kind: 'storageCapacity'; value: number }; // 材料中转/寄存设施：该前哨可寄存 +value 单位材料（深水区 Phase 2b 续；engine/outposts.ts 消费，**不耗能源**＝被动库房恒可用）
+  | { kind: 'storageCapacity'; value: number } // 材料中转/寄存设施：该前哨可寄存 +value 单位材料（深水区 Phase 2b 续；engine/outposts.ts 消费，**不耗能源**＝被动库房恒可用）
+  | { kind: 'dimRevealBonus'; value: number }; // 勘测站：在该灯塔正常点亮半径之外再多照一圈「暗区」（dim·可见但过不去）；value 级数乘 LIGHT_RADIUS_PER_BONUS = 额外勘测半径（Req A·chart.ts 消费）
 
 /** 一条灯塔设施升级定义。账单复用全局的材料＋金币双资源 UpgradeCost（Phase A）。 */
 export interface LighthouseUpgradeDef {
@@ -122,6 +123,21 @@ export interface OutpostDef {
    */
   requiresAnchor?: string;
   /**
+   * 章节前哨解锁门（非锚点版·区域揭示配置化 SPEC）：设了 = 本哨站也是**章节前哨**
+   * （isChapterOutpost/isChapterBand/isOutpostDiscovered/decoupling 同 requiresAnchor），
+   * 但解锁门是任意一个剧情 flag（不占用 story.ts 的 4 个 canon anchor·守 quirk #117/#118）。
+   * 海沟区用它：剧情节拍待作者接（占位 flag），dev 一键解锁（devUnlockChapterRegion）置该 flag。
+   * requiresAnchor 与 requiresFlag 二选一（前者优先）；都缺省 → 深脊柱前哨·无门。
+   */
+  requiresFlag?: string;
+  /**
+   * 发现门（作者 2026-06-14·区域揭示）：章节前哨的「暗·待解锁」标记**只在此剧情 flag 置位后**才在海图现身
+   * （不再恒显·见 isOutpostDiscovered）。与解锁门正交：discoveredFlag 决定「看不看得到位置」、
+   * requiresFlag/requiresAnchor 决定「能不能建」。缺省＝剧情未接（St1）→ 非 dev 不显示；dev 用海图顶「解锁大区」
+   * 直接点亮、或 devRevealOutpost（置 profile.outpostState[id].discovered）模拟发现。
+   */
+  discoveredFlag?: string;
+  /**
    * 水下前哨（会衰减；深水区 Phase 2b）。缺省/false = 水上或前期前哨（只增不减，如 home / ruin_north）。
    * 衰减按"自上次维护以来经过的 run 数"算（profile.outpostState），后果＝设施掉线 / 半亮回退 / 蛙跳失效，
    * 可重新 ferry 材料维护补回（engine/outposts.ts）。
@@ -172,4 +188,10 @@ export interface LighthouseBonuses {
   oxygenSupply: number;
   /** 材料中转/寄存设施给的寄存容量（单位材料数；深水区 Phase 2b 续，engine/outposts.ts 的 depotCapacity 读它）。 */
   storageCapacity: number;
+  /**
+   * 勘测站加成（Req A）：在该灯塔正常点亮半径之外再多照一圈「暗区」——
+   * 勘测半径 = effectiveRevealRadius + dimRevealBonus × LIGHT_RADIUS_PER_BONUS。
+   * 勘测圈内但 reveal 圈外的 POI 显示为 dim（可见不可去）；chart.ts 的 isSurveyDim 消费。
+   */
+  dimRevealBonus: number;
 }

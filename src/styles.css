@@ -492,6 +492,87 @@ html, body, #root {
   gap: 20px;
 }
 
+/* 宽屏双栏（作者 06-13）：网页打开时把下潜界面拆成左右两个 ~720 宽的区域——
+   左栏＝常驻头部（声呐图 / 属性 / 灯·声呐开关·.dive-pinned）·sticky 锁在视口左上、不随滚动消失；
+   右栏＝事件正文（.event）·随窗口滚动（新事件滚回顶部由 EventView 的 effect 负责）。
+   各 dive 子阶段（事件 / 选点 / 扎营 / 翻尸）共用 .dive>.dive-pinned+.event 结构，故此一处对全部生效。
+   容器宽由 App.tsx 的 .app-dive 放宽到 1472＝720×2+32 间隙（其它界面仍 720·见 .app）。
+   窗口 < 1200px（含手机 ≤480）不触发＝回退原单栏堆叠版式，手机不变。
+   列用 minmax(0,720)：够宽时各 720、不够时等比收窄并优雅降级；min 0 让长词换行不撑破。 */
+@media (min-width: 1200px) {
+  .app-dive {
+    max-width: 1472px;
+  }
+  .app-dive .dive {
+    display: grid;
+    grid-template-columns: minmax(0, 720px) minmax(0, 720px);
+    align-items: start; /* 左栏不被右栏高度拉伸＝sticky 生效、背景不溢出 */
+    gap: 32px;
+  }
+}
+
+/* === 港口主从布局 + 战斗左栏 + 下潜手机抽屉（作者 06-13 大改·见 PortLayout.tsx / DiveHeader.tsx）=== */
+
+/* 战斗右栏内容堆叠（敌人 / 日志 / 行动）——左栏是 .dive-pinned 里的状态栏。
+   桌面进 .app-dive 网格右列；手机在 .dive-pinned（sticky）下方堆叠并滚动。 */
+.combat-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 港口主从：默认（窄屏）纵向；桌面下方 @media 转左右并排。 */
+.port-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 下潜手机抽屉按钮：桌面隐藏（左栏常显），窄屏显示（下方 @media）。 */
+.dive-header-toggle {
+  display: none;
+}
+
+@media (max-width: 1199px) {
+  /* 窄屏：开了右栏服务面板＝全屏覆盖（藏左栏主界面·接近改前·作者要求手机直接覆盖当前窗口）。 */
+  .port-layout.has-panel .port-pane-left {
+    display: none;
+  }
+  /* 下潜：状态/声呐栏收进抽屉，默认收起，左上角按钮开合。
+     战斗/上浮的 .dive-pinned 不带 .dive-header＝不进抽屉、状态栏照常 sticky 钉顶（作者：战斗状态锁顶·只滑事件）。 */
+  .dive-header-toggle {
+    display: inline-block;
+    width: auto;
+    margin: 0 0 8px;
+  }
+  .dive-header:not(.mobile-open) .dive-header-body {
+    display: none;
+  }
+}
+
+@media (min-width: 1200px) {
+  /* 港口：整体靠左 + 放宽到两个 ~720 区域（左＝主界面/对话·右＝海图/装备/商店/行会）。 */
+  .app-port {
+    max-width: 1472px; /* 720×2 + 32 间隙 */
+    margin-left: 0;
+    margin-right: auto; /* 整体靠左（作者：首页靠左·空出右侧给服务面板） */
+  }
+  .port-layout {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 32px;
+  }
+  .port-pane {
+    flex: 1 1 720px;
+    min-width: 0;
+    max-width: 720px;
+  }
+  /* 右栏直挂的升级面板上方无 port-header（海图/商店各自嵌在 .port 下、有 header），
+     给它减小壳外预算免过矮（用直接子选择器只命中升级面板、不碰嵌套的海图/商店壳）。 */
+  .port-pane-right > .panel-shell {
+    --shell-outside: 170px;
+  }
+}
+
 .event {
   background: var(--bg-elev);
   border: 1px solid var(--border);
@@ -552,6 +633,11 @@ html, body, #root {
 .event-option.danger {
   border-color: var(--danger);
   color: var(--danger);
+}
+
+/* 取消上浮：次要 / 中性的回退动作——比三种上浮模式弱一档，读作「退回去」而非又一个选项。 */
+.event-option.cancel {
+  color: var(--text-faint);
 }
 
 .warn {
@@ -879,10 +965,34 @@ html, body, #root {
 }
 
 /* 传感器控制行（灯 / 声呐 ping） */
+/* 属性栏 + 传感器开关一起固定（作者 06-13 #3）：整块 sticky 钉顶·滚动时一起不动。
+   内含的 StatusBar 取消自身 sticky（由本容器统一钉），避免双 sticky 打架。 */
+.dive-pinned {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+}
+.dive-pinned .status-bar {
+  position: static;
+}
+/* 传感器开关条：紧贴属性栏下方（作者 06-13 #3）——随属性栏一起固定、不被下方内容挤走。 */
+.dive-sensor-bar {
+  margin: 8px 0 0;
+}
+.sonar-collapse {
+  margin-top: 12px;
+}
+.sonar-collapse-toggle {
+  width: 100%;
+}
 .sensor-controls {
   display: flex;
   gap: 8px;
   margin: 12px 0 0;
+}
+.dive-sensor-bar .sensor-controls {
+  margin: 0;
 }
 .sensor-btn {
   flex: 1;
@@ -892,34 +1002,6 @@ html, body, #root {
 .sensor-btn.on {
   border-color: var(--accent);
   color: var(--accent);
-}
-
-/* —— 定向 ping 控件（声呐与房间 §5·方向扇区）：把波束朝一个扇区聚焦——更远 / 更隐蔽；别朝威胁打 —— */
-.sonar-dir-controls {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 6px 0 0;
-}
-.sonar-dir-hint {
-  font-size: 0.74em;
-  color: var(--text-faint);
-}
-.sonar-dir-btn {
-  font-size: 0.78em;
-  padding: 4px 9px;
-}
-/* 这个扇区正对你上次扫到的东西——朝它打会照亮它（琥珀＝威胁色，与真节点的 cyan 一眼可分）。 */
-.sonar-dir-btn.aims-threat {
-  border-color: var(--warn);
-  color: var(--warn);
-}
-/* 声呐图上「这一记朝哪打」的聚焦标注（定向 ping）。 */
-.sonar-focus-tag {
-  font-size: 0.72em;
-  letter-spacing: 0.06em;
-  color: var(--warn);
 }
 
 /* —— 声呐探索图（声呐与房间 SPEC §5/§7 S0）：冷色、接触式草图、随回合渐隐的余像 —— */
@@ -976,21 +1058,13 @@ html, body, #root {
   font-size: 1.4em;
   opacity: 0.5;
 }
+/* 量程环（声呐开着时·半径＝SONAR_REVEAL_R 揭示圆同大）：淡青虚线，标出这一记扫多远。 */
 .sonar-range-ring {
   fill: none;
   stroke: var(--cyan);
   stroke-width: 0.6;
   opacity: 0.16;
   stroke-dasharray: 3 5;
-}
-/* 定向聚焦扇区（声呐与房间 §5 可视化）：朝聚焦方向的一道很淡的暖色楔形（略超量程环＝那一向探更远）。
-   暖色（warn）＝「主动朝这边打」，与冷色 cyan 真图一眼可分；够淡，不抢真接触的注意。 */
-.sonar-focus-wedge {
-  fill: var(--warn);
-  opacity: 0.08;
-  stroke: var(--warn);
-  stroke-width: 0.5;
-  stroke-opacity: 0.25;
 }
 .sonar-edge {
   stroke: var(--cyan);
@@ -1404,9 +1478,9 @@ html, body, #root {
 
 .chart-2d {
   display: flex;
+  flex-direction: column; /* 区域揭示 §10 规格⑦：地图在上、信息在下，地图宽度与下方面板对齐 */
   gap: 14px;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  align-items: stretch;
   margin-bottom: 16px;
 }
 
@@ -1428,10 +1502,12 @@ html, body, #root {
 
 .chart-coast {
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 15%;
+  /* 上下 + 左各延伸出一个世界框：上下藏「世界矩阵两端」；**向左延伸**填掉全解锁缩小后取景窗左缘
+     露到世界 x<0 处的黑缝（作者反馈「海岸左边露出一条黑线」）。海岸线（border-right）仍落在 15% 处。 */
+  left: -100%;
+  top: -100%;
+  bottom: -100%;
+  width: 115%;
   background: var(--bg-elev);
   border-right: 1px dashed var(--border);
 }
@@ -1526,12 +1602,12 @@ html, body, #root {
   position: absolute;
   transform: translate(-50%, -50%) scale(0.15);
   border-radius: 50%;
-  border: 1.5px solid rgba(243, 166, 74, 0.5);
+  border: 4px solid rgba(243, 166, 74, 0.6);
   background: radial-gradient(circle, rgba(243, 166, 74, 0.12) 0%, rgba(243, 166, 74, 0) 70%);
   pointer-events: none;
   z-index: 0;
   opacity: 0;
-  animation: chart-survey 3.2s ease-out 1;
+  animation: chart-survey 5s linear 1;
 }
 @keyframes chart-survey {
   0% {
@@ -1559,6 +1635,21 @@ html, body, #root {
   100% {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
+  }
+}
+/* 扫描完整版：再扫时被移除的点随扫描边缘到达逐个淡出（区域揭示·该消失的消失）。 */
+.chart-map-poi.chart-poi-leave {
+  animation: chart-poi-leave 0.7s ease-in both;
+  pointer-events: none;
+}
+@keyframes chart-poi-leave {
+  0% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.6);
   }
 }
 /* 海况一行（活的海图）：潮汐 + 天气，淡、斜体，置于副标下。 */
@@ -1592,8 +1683,16 @@ html, body, #root {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  pointer-events: none;
+  /* 现在是可点按钮（点击弹 popup）：覆盖旧 pointer-events:none + 清默认 <button> 白框/灰底（作者反馈「灯塔有白框」）。 */
+  pointer-events: auto;
   z-index: 1;
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+}
+.chart-lighthouse.sel .chart-light-dot {
+  box-shadow: 0 0 0 4px rgba(243, 166, 74, 0.3);
 }
 
 .chart-light-dot {
@@ -1612,6 +1711,216 @@ html, body, #root {
   background: rgba(11, 17, 22, 0.85);
   padding: 1px 5px;
   border-radius: 3px;
+}
+
+/* 章节前哨地图标记（区域揭示·章节哨站批）：未点亮的章节前哨在图上的可点标记（locked=暗待解锁 / building=修建中 / sel=选中）。
+   之前完全无 CSS＝默认 <button> 白框 + 静态堆叠（作者反馈「哨站有白框」），这里补齐定位 + 按钮 reset + 菱形点/标签。 */
+.chart-map-outpost {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  z-index: 1;
+}
+.chart-outpost-dot {
+  width: 11px;
+  height: 11px;
+  background: var(--warn);
+  border: 2px solid #0b1116;
+  box-sizing: border-box;
+  transform: rotate(45deg);
+}
+.chart-map-outpost.locked .chart-outpost-dot {
+  background: #0b1116;
+  border-color: var(--text-faint);
+}
+.chart-map-outpost.building .chart-outpost-dot {
+  opacity: 0.7;
+}
+.chart-map-outpost.sel .chart-outpost-dot {
+  box-shadow: 0 0 0 4px rgba(243, 166, 74, 0.3);
+}
+.chart-outpost-label {
+  font-size: 0.66rem;
+  white-space: nowrap;
+  color: var(--warn);
+  background: rgba(11, 17, 22, 0.85);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.chart-map-outpost.locked .chart-outpost-label {
+  color: var(--text-faint);
+}
+
+/* 地图标记按钮焦点：清掉浏览器默认焦点环（白框）；键盘 :focus-visible 才显无障碍环（同声呐节点 SPEC §10 D③）。 */
+.chart-lighthouse:focus,
+.chart-map-outpost:focus,
+.chart-map-poi:focus {
+  outline: none;
+}
+.chart-lighthouse:focus-visible,
+.chart-map-outpost:focus-visible,
+.chart-map-poi:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ───────── 区域揭示主实装块（§10）：有界 pan/zoom 取景窗 + 三态 + 分色揭示圈 ───────── */
+/* ChartViewport（src/ui/ChartViewport.tsx）：.chart-viewport-surface 接替旧 .chart-map 方框
+   （正方·overflow 裁剪·守 quirk #112「圆才是圆」）；.chart-world 是被 translate+scale 的世界层，
+   POI/灯塔仍按 left/top % 摆在它里头。零声呐依赖。 */
+.chart-viewport {
+  position: relative;
+  width: 100%;
+}
+
+.chart-viewport-surface {
+  position: relative;
+  width: 100%;
+  /* 横向长方形·宽度对齐 720 面板（作者 2026-06-13：海图不必正方·世界越往右越远）。
+     内容各向同性（圈是圆）靠 .chart-world 正方层 + ChartViewport 的 aspect-aware 变换保证（守 quirk #112）；
+     框非方的部分由 overflow 裁掉。max-height 防超高屏过高。 */
+  aspect-ratio: 16 / 9;
+  max-height: 58vh;
+  background: #0b1116;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  touch-action: none; /* 触屏拖拽不触发页面滚动 */
+  cursor: grab;
+}
+.chart-viewport-surface:active {
+  cursor: grabbing;
+}
+.chart-viewport-surface.at-fit {
+  cursor: default; /* 最 zoom-out 全览时不可拖（钳死·规格⑤） */
+}
+
+.chart-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 1 / 1; /* 正方层（边长＝框宽）：% 定位的圈两轴等比＝圆；超出横向框的下半由 overflow 裁掉 */
+  /* transform / transform-origin 由 ChartViewport 内联（translate %+scale·origin 0 0） */
+}
+
+.chart-zoom-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 3;
+}
+.chart-zoom-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--text);
+  background: rgba(11, 17, 22, 0.78);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.chart-zoom-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.chart-zoom-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 三态·暗点（已知但当下去不了：能力门未解 / 天气遮成暗）——显示但弱化、虚点描边。 */
+.chart-map-poi.dim {
+  opacity: 0.5;
+}
+.chart-map-poi.dim .chart-dot {
+  background: #0b1116;
+  border-style: dotted;
+  border-color: var(--text-faint);
+}
+.chart-map-poi.dim.sel {
+  opacity: 0.85;
+}
+
+/* #117 剧情锚点＝日志抄来的「已知坐标」（不走揭示圈·恒显·作者 2026-06-13 选「专属样式」）：
+   铅笔标的空心菱形，与圈内实心揭示点区分——读作「知道在那·还没进你的网」。放在 dim/locked 规则之后＝胜出。 */
+.chart-map-poi.story .chart-dot {
+  background: transparent;
+  border: 2px solid var(--warn);
+  border-radius: 2px;
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+}
+.chart-map-poi.story.sel .chart-dot {
+  box-shadow: 0 0 0 4px rgba(243, 166, 74, 0.22);
+}
+.chart-map-poi.story .chart-poi-name {
+  color: var(--warn);
+}
+.chart-map-poi.story.dim {
+  opacity: 1; /* 已知坐标不因「未揭示」而变暗——它就是恒显的已知点 */
+}
+
+/* 分色揭示圈（区域揭示配置化 SPEC·data-driven·.reveal-<palette>）：青(家/珊瑚)/绿(残骸)/蓝(中层)/
+   琥珀(热液)/深蓝(海沟)/废墟默认。柔和径向渐变填充 + 清晰彩色描边（替代旧粗糙白圈·后期换手绘背景时只留描边）。
+   双类 specificity 高于 .chart-light-radius，覆盖其底色与边。.reveal-coast 裁成海岸线半圆（家灯塔）。 */
+.chart-reveal-circle.reveal-coast {
+  clip-path: inset(0 0 0 50%); /* 只留右半＝从海岸线鼓进水里的半圆 */
+}
+.chart-reveal-circle.reveal-cyan {
+  background: radial-gradient(circle, rgba(93, 202, 165, 0.16) 0%, rgba(93, 202, 165, 0.05) 62%, rgba(93, 202, 165, 0) 100%);
+  border: 1.5px solid rgba(93, 202, 165, 0.5);
+}
+.chart-reveal-circle.reveal-green {
+  background: radial-gradient(circle, rgba(151, 196, 89, 0.15) 0%, rgba(151, 196, 89, 0.05) 62%, rgba(151, 196, 89, 0) 100%);
+  border: 1.5px solid rgba(151, 196, 89, 0.48);
+}
+.chart-reveal-circle.reveal-blue {
+  background: radial-gradient(circle, rgba(111, 168, 232, 0.15) 0%, rgba(111, 168, 232, 0.05) 62%, rgba(111, 168, 232, 0) 100%);
+  border: 1.5px solid rgba(111, 168, 232, 0.48);
+}
+.chart-reveal-circle.reveal-amber {
+  background: radial-gradient(circle, rgba(239, 159, 39, 0.15) 0%, rgba(239, 159, 39, 0.05) 62%, rgba(239, 159, 39, 0) 100%);
+  border: 1.5px solid rgba(239, 159, 39, 0.5);
+}
+.chart-reveal-circle.reveal-navy {
+  background: radial-gradient(circle, rgba(63, 98, 179, 0.18) 0%, rgba(63, 98, 179, 0.06) 62%, rgba(63, 98, 179, 0) 100%);
+  border: 1.5px solid rgba(110, 144, 218, 0.55);
+}
+.chart-reveal-circle.reveal-violet {
+  background: radial-gradient(circle, rgba(181, 156, 232, 0.16) 0%, rgba(181, 156, 232, 0.05) 62%, rgba(181, 156, 232, 0) 100%);
+  border: 1.5px solid rgba(199, 180, 240, 0.55);
+}
+
+/* dev 一键解锁大区条（DEV_TOOLS only·普通访客零渲染）：海图标题下的虚线小条，列各章节区解锁按钮。 */
+.chart-dev-unlock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 10px;
+  padding: 6px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: rgba(243, 166, 74, 0.05);
+}
+.chart-reveal-circle.reveal-ruin {
+  background: radial-gradient(circle, rgba(214, 178, 102, 0.13) 0%, rgba(214, 178, 102, 0.05) 60%, rgba(214, 178, 102, 0) 100%);
+  border: 1.5px solid rgba(214, 178, 102, 0.4);
 }
 
 .chart-actions {

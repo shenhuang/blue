@@ -17,6 +17,7 @@ import { dirname, resolve } from 'node:path';
 
 import {
   createInitialGameState,
+  createNewRun,
   serializeGameState,
   deserializeGameState,
 } from '../src/engine/state';
@@ -31,7 +32,7 @@ import {
 } from '../src/engine/story';
 import { resolveOption } from '../src/engine/events';
 import { getEventById } from '../src/engine/zones';
-import { pickFromInventory, eventDoneFlag } from '../src/engine/portEvents';
+import { pickFromInventory, pickFlagTrigger, eventDoneFlag } from '../src/engine/portEvents';
 import { startDiveFromPoi } from '../src/engine/dive';
 import { generateChart } from '../src/engine/chart';
 import type { GameState, PlayerProfile } from '../src/types';
@@ -153,6 +154,61 @@ L('§2 ending_log 港口路径（无 run → flag 直进 profile）');
   const again = pickFromInventory(state.profile.inventory, state.profile.flags);
   assert(again === null, '§2 event_done 后不应重复触发');
   L('  portEvent 路径 + 防重播 ✓');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// §2b 教学「上浮（任务完成）」一路也能完成（作者 06-13「两路都能完成」）：
+//     无船长日志（没下去看影子）→ flag.tutorial_ascended → 回港 flag 触发 ending_safe → tutorial_complete
+// ═══════════════════════════════════════════════════════════════
+L('§2b ending_safe 上浮一路（flag 触发·无剧情物）');
+{
+  // §2b-0 真·下潜流程：在 dive 中（run 存在）选 ascend_now → flag.tutorial_ascended 必须**持久进 profile.flags**
+  // （setProfileFlags·不是 applyFlags——后者 dive 中只进 run.activeFlags、回港即丢＝海图永不解锁的真凶 06-13）。
+  {
+    let s: GameState = createInitialGameState();
+    s = { ...s, run: createNewRun({ zoneId: 'zone.tutorial_reef' }) };
+    const deeper = getEventById('tutorial.deeper')!;
+    const ascend = deeper.options.find((o) => o.id === 'ascend_now')!;
+    const r = resolveOption(s, ascend);
+    assert(
+      r.state.profile.flags.has('flag.tutorial_ascended'),
+      '§2b-0 dive 中选「上浮（任务完成）」→ flag.tutorial_ascended 持久进 profile.flags（setProfileFlags·回港不丢）',
+    );
+  }
+
+  let state: GameState = createInitialGameState();
+  // 上浮一路：拿了浮标就上浮，没拿船长日志（库存无 captain_log）；ascend_now 已种 flag.tutorial_ascended（上面验证持久）。
+  state = {
+    ...state,
+    run: null,
+    profile: {
+      ...state.profile,
+      flags: new Set([CH1_HOOK_FLAG, 'flag.tutorial_ascended']),
+      inventory: [],
+    },
+  };
+  // 剧情物触发为空（没日志）→ 走 flag 触发
+  assert(pickFromInventory(state.profile.inventory, state.profile.flags) === null, '§2b 无剧情物触发（没拿日志）');
+  const trigger = pickFlagTrigger(state.profile.flags);
+  assert(trigger === 'tutorial.ending_safe', `§2b tutorial_ascended 应 flag 触发 ending_safe，实际 ${trigger}`);
+
+  const ev = getEventById(trigger)!;
+  assert(ev && ev.options.length === 1 && ev.options[0].id === 'close_book', '§2b ending_safe 单选项 close_book');
+  // 一致性（作者「符合实际」）：没下去 → 不该拿到/解锁船长日志的 lore
+  assert(!(ev.options[0].outcome?.loreEntry === 'lore.ch1.captains_page'), '§2b 上浮一路不解锁船长日志 lore（没下去看）');
+
+  const result = resolveOption(state, ev.options[0]);
+  state = result.state;
+  state = {
+    ...state,
+    profile: { ...state.profile, flags: new Set([...state.profile.flags, eventDoneFlag(trigger)]) },
+    run: null,
+  };
+  assert(state.profile.flags.has(TUTORIAL_COMPLETE_FLAG), '§2b 上浮一路也置 tutorial_complete（海图解锁）');
+  assert(chapterUnlocked(state.profile, 'ch1'), '§2b ch1 解锁');
+  // 防重播 + 已完成不再触发
+  assert(pickFlagTrigger(state.profile.flags) === null, '§2b 完成后 flag 触发不再重复（event_done + tutorial_complete 双守）');
+  L('  flag 触发 ending_safe + 完成 + 防重播 + 不解锁船长 lore ✓');
 }
 
 // ═══════════════════════════════════════════════════════════════

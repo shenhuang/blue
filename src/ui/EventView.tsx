@@ -1,9 +1,10 @@
+import { useEffect } from 'react';
 import type { GameState, EventOption } from '@/types';
 import { getEvent, isOptionEnabled, isOptionVisible, resolveOption } from '@/engine/events';
 import { enterNodeSelection } from '@/engine/dive';
 import { startCombat } from '@/engine/combat';
 import { toDiveEvent, beginAscent, toGameOver } from '@/engine/transitions';
-import { StatusBar } from './StatusBar';
+import { DiveHeader } from './DiveHeader';
 
 interface Props {
   state: GameState;
@@ -15,6 +16,13 @@ interface Props {
 const STAT_LABEL: Record<string, string> = { sanity: '理智', stamina: '体力', oxygen: '氧气', nitrogen: '氮' };
 
 export function EventView({ state, eventId, onStateChange }: Props) {
+  // 新事件 → 滚回顶部（作者 06-13）：事件链（continueEvent）换 eventId 但 EventView 不卸载，
+  // 之前读长事件滚下去的位置会残留；下潜界面随窗口滚动（非内部滚动容器），故统一把窗口滚回顶，
+  // 让每条新事件都从标题读起。eventId 不变（仅选项重渲染）时不触发。hooks 必须在早退之前（规则）。
+  useEffect(() => {
+    if (typeof window !== 'undefined') window.scrollTo(0, 0);
+  }, [eventId]);
+
   const event = getEvent(eventId);
   if (!event || !state.run) {
     return <div>[事件未找到：{eventId}]</div>;
@@ -52,7 +60,7 @@ export function EventView({ state, eventId, onStateChange }: Props) {
 
   return (
     <div className="dive">
-      <StatusBar run={state.run} />
+      <DiveHeader state={state} onStateChange={onStateChange} />
 
       <article className={`event tone-${event.tone}`}>
         <h2 className="event-title">{event.title}</h2>

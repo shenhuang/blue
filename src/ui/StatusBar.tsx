@@ -38,8 +38,6 @@ export function StatusBar({ run }: Props) {
     <div className="status-bar">
       <div className="status-row">
         <span className="depth">深度 {currentDepth}m</span>
-        <span className="turn">回合 {run.turn}</span>
-        <span className="gold">金币 {run.gold}</span>
       </div>
       <div className="status-stats">
         <StatPill label="体力" value={stats.stamina} max={staminaMax} tint="green" />

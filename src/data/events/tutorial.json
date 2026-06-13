@@ -182,6 +182,7 @@
           "label": "上浮（任务完成）",
           "outcome": {
             "text": "你转身。这是个不错的选择。",
+            "setProfileFlags": ["flag.tutorial_ascended"],
             "endDive": "forceAscend"
           }
         },
@@ -260,6 +261,27 @@
             "text": "你合上两本日志，吹掉海图上的橡皮屑。\n海的味道还在指尖。",
             "applyFlags": ["flag.tutorial_complete"],
             "loreEntry": "lore.ch1.captains_page"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "tutorial.ending_safe",
+      "depthRange": [0, 0],
+      "zoneTags": ["tutorial"],
+      "weight": 0,
+      "oncePerSave": true,
+      "title": "导师的日志",
+      "body": "夜里。你把浮标还给了公会——今天这趟，活儿干完了，没多事。\n睡前你又翻开导师那半本日志。能看清的还是最后一页，页脚那串坐标你看过很多遍。\n\n你把浮标挪开，腾出桌角，摊开海图，照着日志把坐标逐条比对。\n能落在这张海图范围里的，有四个。\n\n（船舱里那个更暗的入口，你没下去。也许那儿什么都没有。也许下次。）",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "close_book",
+          "label": "圈下四个坐标，合上日志。",
+          "outcome": {
+            "text": "你合上日志，吹掉海图上的橡皮屑。\n海的味道还在指尖。",
+            "applyFlags": ["flag.tutorial_complete"]
           }
         }
       ]

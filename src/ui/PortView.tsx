@@ -3,18 +3,21 @@ import type { GameState, DialogNode, NpcDef } from '@/types';
 import { getDialogNode, getNpc, selectChoice } from '@/engine/dialog';
 import { evalCondition } from '@/engine/events';
 import { toShop, toChart } from '@/engine/transitions';
-import { UpgradePanel } from './UpgradePanel';
+import type { PortServiceMode } from './PortLayout';
+import { DEV_TOOLS } from './devMode';
 
 interface Props {
   state: GameState;
   onStateChange: (s: GameState) => void;
+  /** 打开右栏服务面板（改装装备 / 打捞行会）——升级面板已移交 PortLayout 右栏（作者 06-13）；
+   *  PortView 只负责「触发」，不再自渲染（对话仍留本视图＝左栏）。 */
+  onOpenService: (mode: PortServiceMode) => void;
 }
 
-export function PortView({ state, onStateChange }: Props) {
+export function PortView({ state, onStateChange, onOpenService }: Props) {
   const aldo = getNpc('npc.aldo');
   const mira = getNpc('npc.mira');
   const [openDialog, setOpenDialog] = useState<DialogNode | null>(null);
-  const [upgradesOpen, setUpgradesOpen] = useState(false);
 
   if (!aldo) return <div className="port">[资源缺失：npc.aldo]</div>;
 
@@ -45,7 +48,8 @@ export function PortView({ state, onStateChange }: Props) {
   }
 
   // 教学完成后，海图成为主出海入口；教学前只能走 Aldo 的资格潜水。
-  const chartUnlocked = state.profile.flags.has('flag.tutorial_complete');
+  // ?dev 下海图直接可开（作者 06-13·免做教程方便测试）；普通访客仍需 tutorial_complete。
+  const chartUnlocked = state.profile.flags.has('flag.tutorial_complete') || DEV_TOOLS;
 
   return (
     <div className="port">
@@ -60,13 +64,7 @@ export function PortView({ state, onStateChange }: Props) {
         </div>
       </header>
 
-      {upgradesOpen ? (
-        <UpgradePanel
-          state={state}
-          onStateChange={onStateChange}
-          onClose={() => setUpgradesOpen(false)}
-        />
-      ) : !openDialog ? (
+      {!openDialog ? (
         <div className="port-npcs">
           <NpcCard
             name={aldo.name}
@@ -81,6 +79,7 @@ export function PortView({ state, onStateChange }: Props) {
               description={mira.shortDescription}
               onTalk={() => startDialogWith(mira)}
               extraAction={{ label: '直接找她卖东西', onClick: openMiraShop }}
+              extraAction2={{ label: '打捞行会（升级服务）', onClick: () => onOpenService('salvage') }}
             />
           ) : (
             <NpcCard name="Mira" role="打捞商" description="柜台还没开。" disabled />
@@ -93,9 +92,9 @@ export function PortView({ state, onStateChange }: Props) {
           )}
           <button
             className="btn port-upgrade-btn"
-            onClick={() => setUpgradesOpen(true)}
+            onClick={() => onOpenService('gear')}
           >
-            修缮港口（材料 ＋ 金币）
+            改装装备（材料 ＋ 金币）
           </button>
         </div>
       ) : (
@@ -117,6 +116,7 @@ function NpcCard({
   onTalk,
   disabled,
   extraAction,
+  extraAction2,
 }: {
   name: string;
   role: string;
@@ -124,6 +124,7 @@ function NpcCard({
   onTalk?: () => void;
   disabled?: boolean;
   extraAction?: { label: string; onClick: () => void };
+  extraAction2?: { label: string; onClick: () => void };
 }) {
   return (
     <div className={`npc-card ${disabled ? 'disabled' : ''}`}>
@@ -138,6 +139,11 @@ function NpcCard({
       {!disabled && extraAction && (
         <button className="btn" onClick={extraAction.onClick}>
           {extraAction.label}
+        </button>
+      )}
+      {!disabled && extraAction2 && (
+        <button className="btn" onClick={extraAction2.onClick}>
+          {extraAction2.label}
         </button>
       )}
     </div>

@@ -32,6 +32,7 @@ import {
   OUTPOST_USABLE_STAGE,
 } from './lighthouses';
 import { effectiveOutpostStage, effectiveOutpostBonuses } from './outposts';
+import { autoScanOnArrival } from './dive-sensors';
 import { getBand, bandDiveModifier } from './bands';
 import { effectiveDistance, MIMIC_DIVE_EVENT_ID } from './chart';
 import { ch1Story, CH1_ANCHORS, type Ch1Anchor } from './story';
@@ -88,16 +89,31 @@ export function startDive(
     seedKey: opts?.seedKey,
   });
 
-  const run: RunState = {
+  const run0: RunState = {
     ...state.run,
     zoneId,
     map,
     currentNodeId: map.startNodeId,
     currentDepth: map.nodes[map.startNodeId].depth,
     visitedNodeIds: [map.startNodeId],
+    // 新一潜＝新一张图的全新探索：重置随上一潜带过来的「逐潜瞬时态」——声呐迷雾（scanMemory·扫描中心记忆）
+    // 与猎手（stalker）。不重置会泄漏：确定性地图（同 band/POI ⇒ 同 node id·#98）下，上一潜扫过的中心会在
+    // 这一潜点亮你这次没扫过的地方（作者报「一条不该亮的线」）。两者皆 run 级派生·不入存档，重置即新图新雾。
+    scanMemory: {},
+    stalker: undefined,
   };
 
   const startNode = map.nodes[map.startNodeId];
+
+  // 落地＝到站（作者拍板·所有下潜一致）：按 profile 记的声呐开关偏好种 sonarOn/sonarNext（跨 run 持久）；
+  // 声呐开着 + 已解锁 → 立刻扫一记起始节点（一落地就看见掉进的那片洞）。与「到站自动扫」逐字一致：
+  // 落发射态(sonar='ping')、耗一记电、从第 0 回合起就暴露；电不够则哑火转 off（autoScanOnArrival 自带）。
+  const sonarPref = state.profile.sonarOn ?? true;
+  let run: RunState = { ...run0, sensors: { ...run0.sensors, sonarOn: sonarPref, sonarNext: sonarPref } };
+  if (run.sensors.sonarUnlocked && sonarPref) {
+    run = { ...run, sensors: { ...run.sensors, sonar: 'ping' } };
+    run = autoScanOnArrival({ ...state, run }).run!;
+  }
 
   // 教学关 / 脚本下潜：直接进入起始事件
   if (zone.generation === 'linearScripted' && startNode.eventId) {

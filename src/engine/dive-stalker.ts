@@ -139,7 +139,10 @@ export function beginAscentFromDive(state: GameState): GameState {
     });
     return contactAmbush(s, s.run!, run.stalker, run.stalker.weak === true);
   }
-  return beginAscent(state);
+  // 主动上浮（非被伏击那支）：记下来处子阶段（NodeSelect / Rest）交给 beginAscent，
+  // 让上浮界面能「取消」回到原地——贴邻被伏击的那支已转去战斗、不给退路。
+  const returnTo = state.phase.kind === 'dive' ? state.phase.subPhase : undefined;
+  return beginAscent(state, returnTo);
 }
 
 /**

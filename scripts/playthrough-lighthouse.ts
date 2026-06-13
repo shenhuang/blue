@@ -25,9 +25,9 @@ import {
   nearestLighthouse,
   revealRadius,
   getRunBonuses,
-  BASE_LIGHT_RADIUS,
   LIGHT_RADIUS_PER_BONUS,
 } from '../src/engine/lighthouses';
+import { regionRadius } from '../src/engine/regions';
 import type { GameState, InventoryItem, Lighthouse } from '../src/types';
 
 const log: string[] = [];
@@ -177,9 +177,9 @@ L('  最近灯塔（多座按距离）+ 空 → null ✓');
 L('\n========== 6. revealRadius + 船坞桥接 ==========');
 // 空 home（level 1，无 beacon）→ 半径 = BASE
 const homeBare = createHomeLighthouse();
-assert(Math.abs(revealRadius(homeBare) - BASE_LIGHT_RADIUS) < 1e-9, `空 home 半径应=BASE(${BASE_LIGHT_RADIUS})`);
-// h2 建了 beacon lv1+lv2（lightRadiusBonus 2）→ 半径 = BASE + 2*PER_BONUS
-const expR = BASE_LIGHT_RADIUS + 2 * LIGHT_RADIUS_PER_BONUS;
+assert(Math.abs(revealRadius(homeBare) - regionRadius(homeBare.id)) < 1e-9, `空 home 半径应=区域配置(${regionRadius(homeBare.id)})`);
+// h2 建了 beacon lv1+lv2（lightRadiusBonus 2）→ 半径 = 区域配置 + 2*PER_BONUS
+const expR = regionRadius(homeBare.id) + 2 * LIGHT_RADIUS_PER_BONUS;
 assert(Math.abs(revealRadius(h2) - expR) < 1e-9, `beacon lv1+lv2 → 半径应=${expR}，实际 ${revealRadius(h2)}`);
 L(`  半径：空 home ${revealRadius(homeBare)} / +beacon2 ${revealRadius(h2).toFixed(2)} ✓`);
 // 船坞设施 → getLighthouseBonuses.extraConsumableSlot 1；getRunBonuses 把它并进随身加成
@@ -209,7 +209,7 @@ L('\n========== 7. dev 测试建造（0 成本·#110 口径）==========');
   assert(devBuildAtLighthouse(sDev, HOME, 'lighthouse.nope.lv9') === sDev, '7: 未知 upgrade 应 no-op');
   assert(devBuildAtLighthouse(sDev, 'lighthouse.nope', 'lighthouse.beacon.lv1') === sDev, '7: 未知灯塔应 no-op');
   // 产物与真建造同形：派生加成照常生效
-  assert(revealRadius(homeDev) > BASE_LIGHT_RADIUS, '7: dev 建的 beacon 照常进 revealRadius 派生');
+  assert(revealRadius(homeDev) > regionRadius(homeDev.id), '7: dev 建的 beacon 照常进 revealRadius 派生');
   L('  空账户直建（跳前置）/不扣账/已建·未知 no-op/派生同真建 ✓');
 }
 

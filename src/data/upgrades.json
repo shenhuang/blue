@@ -11,14 +11,26 @@
           "name": "打捞行会 Lv.1",
           "cost": {
             "materials": [
-              { "itemId": "item.coral_shard", "qty": 5 },
-              { "itemId": "item.brass_fitting", "qty": 3 }
+              {
+                "itemId": "item.coral_shard",
+                "qty": 5
+              },
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 3
+              }
             ],
             "gold": 30
           },
           "effects": [
-            { "kind": "preservationBonus", "value": 2 },
-            { "kind": "revealCorpseHint", "value": true }
+            {
+              "kind": "preservationBonus",
+              "value": 2
+            },
+            {
+              "kind": "revealCorpseHint",
+              "value": true
+            }
           ],
           "description": "尸体物品保鲜期 +2 次出海。海图上的尸体位置带上提示。"
         },
@@ -28,15 +40,30 @@
           "name": "打捞行会 Lv.2",
           "cost": {
             "materials": [
-              { "itemId": "item.brass_fitting", "qty": 4 },
-              { "itemId": "item.crab_chitin", "qty": 3 },
-              { "itemId": "item.cave_octopus_beak", "qty": 2 }
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 4
+              },
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 3
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 2
+              }
             ],
             "gold": 70
           },
           "effects": [
-            { "kind": "preservationBonus", "value": 5 },
-            { "kind": "preDiveCorpseSelect", "value": true }
+            {
+              "kind": "preservationBonus",
+              "value": 5
+            },
+            {
+              "kind": "preDiveCorpseSelect",
+              "value": true
+            }
           ],
           "description": "保鲜期 +5。出海前可选定一具尸体作为本次目标。"
         },
@@ -46,15 +73,30 @@
           "name": "打捞行会 Lv.3",
           "cost": {
             "materials": [
-              { "itemId": "item.cave_octopus_beak", "qty": 4 },
-              { "itemId": "item.eel_skin", "qty": 3 },
-              { "itemId": "item.lantern_gland", "qty": 1 }
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 4
+              },
+              {
+                "itemId": "item.eel_skin",
+                "qty": 3
+              },
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 1
+              }
             ],
             "gold": 150
           },
           "effects": [
-            { "kind": "preservationBonus", "value": 10 },
-            { "kind": "currentSweepImmune", "value": true }
+            {
+              "kind": "preservationBonus",
+              "value": 10
+            },
+            {
+              "kind": "currentSweepImmune",
+              "value": true
+            }
           ],
           "description": "保鲜期 +10。海流不再随机冲走物品。"
         },
@@ -64,12 +106,23 @@
           "name": "打捞行会 Lv.4",
           "cost": {
             "materials": [
-              { "itemId": "item.eel_skin", "qty": 4 },
-              { "itemId": "item.lantern_gland", "qty": 2 }
+              {
+                "itemId": "item.eel_skin",
+                "qty": 4
+              },
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 2
+              }
             ],
             "gold": 220
           },
-          "effects": [{ "kind": "roomFeatureChanceBonus", "value": 0.18 }],
+          "effects": [
+            {
+              "kind": "roomFeatureChanceBonus",
+              "value": 0.18
+            }
+          ],
           "description": "深潜打捞队：你更会在开阔的大洞室里翻找——深处那些「大房间」更常被你摸出不止一处可探的东西（每片水域能装下几处，仍由它本身的大小定）。"
         }
       ]
@@ -85,14 +138,26 @@
           "name": "气瓶库 Lv.1",
           "cost": {
             "materials": [
-              { "itemId": "item.shark_tooth", "qty": 4 },
-              { "itemId": "item.lobster", "qty": 4 }
+              {
+                "itemId": "item.shark_tooth",
+                "qty": 4
+              },
+              {
+                "itemId": "item.lobster",
+                "qty": 4
+              }
             ],
             "gold": 25
           },
           "effects": [
-            { "kind": "oxygenMaxBonus", "value": 10 },
-            { "kind": "unlockShopItem", "itemId": "item.spare_tank" }
+            {
+              "kind": "oxygenMaxBonus",
+              "value": 10
+            },
+            {
+              "kind": "unlockShopItem",
+              "itemId": "item.spare_tank"
+            }
           ],
           "description": "氧气上限 +10 回合。解锁备用气瓶购买。"
         }
@@ -109,13 +174,27 @@
           "name": "声呐组件 Lv.1",
           "cost": {
             "materials": [
-              { "itemId": "item.lantern_gland", "qty": 1 },
-              { "itemId": "item.eel_skin", "qty": 2 },
-              { "itemId": "item.cave_octopus_beak", "qty": 2 }
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 1
+              },
+              {
+                "itemId": "item.eel_skin",
+                "qty": 2
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 2
+              }
             ],
             "gold": 120
           },
-          "effects": [{ "kind": "unlockSonar", "value": true }],
+          "effects": [
+            {
+              "kind": "unlockSonar",
+              "value": true
+            }
+          ],
           "description": "组起一台手持声呐。关灯时可发脉冲探测前方——但回波远不如灯下所见可靠。黑水区从此能摸着探路。"
         },
         {
@@ -124,14 +203,26 @@
           "name": "声呐组件 Lv.2",
           "cost": {
             "materials": [
-              { "itemId": "item.lantern_gland", "qty": 1 },
-              { "itemId": "item.eel_skin", "qty": 3 }
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 1
+              },
+              {
+                "itemId": "item.eel_skin",
+                "qty": 3
+              }
             ],
             "gold": 160
           },
           "effects": [
-            { "kind": "sonarPingCostReduction", "value": 2 },
-            { "kind": "sonarRobustness", "value": 20 }
+            {
+              "kind": "sonarPingCostReduction",
+              "value": 2
+            },
+            {
+              "kind": "sonarRobustness",
+              "value": 20
+            }
           ],
           "description": "换上更省电的换能器、给回波加一层滤噪。每记 ping 省 2 电；理智更低些时回波才开始骗你（仍不全可信）。"
         },
@@ -141,12 +232,23 @@
           "name": "声呐组件 Lv.3",
           "cost": {
             "materials": [
-              { "itemId": "item.eel_skin", "qty": 3 },
-              { "itemId": "item.cave_octopus_beak", "qty": 2 }
+              {
+                "itemId": "item.eel_skin",
+                "qty": 3
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 2
+              }
             ],
             "gold": 200
           },
-          "effects": [{ "kind": "sonarRangeBonus", "value": 8 }],
+          "effects": [
+            {
+              "kind": "sonarRangeBonus",
+              "value": 8
+            }
+          ],
           "description": "更高增益的发射阵列：脉冲打得更远，深得多的陡坑也能扫回个轮廓——只是越远的回波越不能当真。"
         },
         {
@@ -155,12 +257,23 @@
           "name": "声呐组件 Lv.4",
           "cost": {
             "materials": [
-              { "itemId": "item.eel_skin", "qty": 3 },
-              { "itemId": "item.cave_octopus_beak", "qty": 3 }
+              {
+                "itemId": "item.eel_skin",
+                "qty": 3
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 3
+              }
             ],
             "gold": 240
           },
-          "effects": [{ "kind": "sonarScanRangeBonus", "value": 1 }],
+          "effects": [
+            {
+              "kind": "sonarScanRangeBonus",
+              "value": 1
+            }
+          ],
           "description": "宽频扫描阵列：一记 ping 铺开的扇面更阔，扫描图一次多照亮一圈洞——黑里能看清的范围大了些。再广的回波也照不全整座洞。"
         },
         {
@@ -169,56 +282,24 @@
           "name": "声呐组件 Lv.5",
           "cost": {
             "materials": [
-              { "itemId": "item.lantern_gland", "qty": 2 },
-              { "itemId": "item.cave_octopus_beak", "qty": 3 }
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 2
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 3
+              }
             ],
             "gold": 320
           },
-          "effects": [{ "kind": "sonarScanRangeBonus", "value": 1 }],
+          "effects": [
+            {
+              "kind": "sonarScanRangeBonus",
+              "value": 2
+            }
+          ],
           "description": "相控阵换能器：扫描扇面再阔一圈，一记脉冲拼出的洞形最广——但整座洞、尤其最深那道陡降，声呐永远扫不穿。那儿只能自己摸黑下去。"
-        },
-        {
-          "id": "upgrade.sonar.lv6",
-          "level": 6,
-          "name": "声呐组件 Lv.6",
-          "cost": {
-            "materials": [
-              { "itemId": "item.eel_skin", "qty": 4 },
-              { "itemId": "item.cave_octopus_beak", "qty": 3 }
-            ],
-            "gold": 360
-          },
-          "effects": [{ "kind": "sonarDirReachBonus", "dir": "deeper", "value": 1 }],
-          "description": "向深处定向校准：把波束朝更深处聚焦时，它比寻常焦距再往下多探一跳——你想往下看得更远，就得舍掉两侧与来路。再聚焦也扫不穿整洞。"
-        },
-        {
-          "id": "upgrade.sonar.lv7",
-          "level": 7,
-          "name": "声呐组件 Lv.7",
-          "cost": {
-            "materials": [
-              { "itemId": "item.lantern_gland", "qty": 2 },
-              { "itemId": "item.cave_octopus_beak", "qty": 4 }
-            ],
-            "gold": 400
-          },
-          "effects": [{ "kind": "sonarDirReachBonus", "dir": "lateral", "value": 1 }],
-          "description": "侧向定向校准：朝同层两侧聚焦时波束多探一跳——绕回的环、旁支的岔口探得更远，代价仍是别向更短。"
-        },
-        {
-          "id": "upgrade.sonar.lv8",
-          "level": 8,
-          "name": "声呐组件 Lv.8",
-          "cost": {
-            "materials": [
-              { "itemId": "item.eel_skin", "qty": 4 },
-              { "itemId": "item.lantern_gland", "qty": 2 },
-              { "itemId": "item.cave_octopus_beak", "qty": 4 }
-            ],
-            "gold": 440
-          },
-          "effects": [{ "kind": "sonarDirReachBonus", "dir": "back", "value": 1 }],
-          "description": "向来路定向校准：回望走过的水路时波束多探一跳——确认身后有没有跟来的东西更远些。三向各自调好，可你一记 ping 仍只能聚焦一向。"
         }
       ]
     },
@@ -233,12 +314,23 @@
           "name": "加大电池组",
           "cost": {
             "materials": [
-              { "itemId": "item.coral_shard", "qty": 4 },
-              { "itemId": "item.lobster", "qty": 3 }
+              {
+                "itemId": "item.coral_shard",
+                "qty": 4
+              },
+              {
+                "itemId": "item.lobster",
+                "qty": 3
+              }
             ],
             "gold": 30
           },
-          "effects": [{ "kind": "powerMaxBonus", "value": 20 }],
+          "effects": [
+            {
+              "kind": "powerMaxBonus",
+              "value": 20
+            }
+          ],
           "description": "电池总量 +20。待得更久、多会几次灯、多 ping 几记。"
         },
         {
@@ -247,14 +339,26 @@
           "name": "聚光灯具",
           "cost": {
             "materials": [
-              { "itemId": "item.brass_fitting", "qty": 3 },
-              { "itemId": "item.crab_chitin", "qty": 2 }
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 3
+              },
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 2
+              }
             ],
             "gold": 70
           },
           "effects": [
-            { "kind": "lampEfficiency", "value": 0.5 },
-            { "kind": "signatureReduction", "value": 3 }
+            {
+              "kind": "lampEfficiency",
+              "value": 0.5
+            },
+            {
+              "kind": "signatureReduction",
+              "value": 3
+            }
           ],
           "description": "收束的光束：黑/浊水里灯耗电减半，外溢更少、没那么扎眼——被探测得更慢（但点着灯永远暴露你）。"
         },
@@ -264,14 +368,26 @@
           "name": "抗扰灯罩",
           "cost": {
             "materials": [
-              { "itemId": "item.lantern_gland", "qty": 1 },
-              { "itemId": "item.cave_octopus_beak", "qty": 3 }
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 1
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 3
+              }
             ],
             "gold": 150
           },
           "effects": [
-            { "kind": "lampRobustness", "value": 10 },
-            { "kind": "powerMaxBonus", "value": 20 }
+            {
+              "kind": "lampRobustness",
+              "value": 10
+            },
+            {
+              "kind": "powerMaxBonus",
+              "value": 20
+            }
           ],
           "description": "拿冷光腺给灯罩做了层稳光滤层。理智压到更低时灯才开始骗你（灯最后崩、但仍会崩）；电池再 +20。"
         },
@@ -281,12 +397,23 @@
           "name": "远摄灯组",
           "cost": {
             "materials": [
-              { "itemId": "item.cave_octopus_beak", "qty": 2 },
-              { "itemId": "item.crab_chitin", "qty": 3 }
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 2
+              },
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 3
+              }
             ],
             "gold": 130
           },
-          "effects": [{ "kind": "lampRangeBonus", "value": 4 }],
+          "effects": [
+            {
+              "kind": "lampRangeBonus",
+              "value": 4
+            }
+          ],
           "description": "一组可调焦的远摄灯头：把光柱送进更深的陡坑，原先黑下去的地方现在能看清几米——但再深的坑，灯还是照不穿。"
         }
       ]
@@ -302,12 +429,23 @@
           "name": "吸声涂层",
           "cost": {
             "materials": [
-              { "itemId": "item.eel_skin", "qty": 3 },
-              { "itemId": "item.cave_octopus_beak", "qty": 2 }
+              {
+                "itemId": "item.eel_skin",
+                "qty": 3
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 2
+              }
             ],
             "gold": 180
           },
-          "effects": [{ "kind": "soundAbsorbBonus", "value": 0.5 }],
+          "effects": [
+            {
+              "kind": "soundAbsorbBonus",
+              "value": 0.5
+            }
+          ],
           "description": "给外壳镀一层吸声涂层：循声的猎手更难锁住你——你 ping、你出声时，约半数时候它丢掉你的信号、转去别处搜。深到一定程度它仍听得见你。"
         },
         {
@@ -316,13 +454,27 @@
           "name": "主动迷彩",
           "cost": {
             "materials": [
-              { "itemId": "item.lantern_gland", "qty": 2 },
-              { "itemId": "item.eel_skin", "qty": 3 },
-              { "itemId": "item.cave_octopus_beak", "qty": 3 }
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 2
+              },
+              {
+                "itemId": "item.eel_skin",
+                "qty": 3
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 3
+              }
             ],
             "gold": 280
           },
-          "effects": [{ "kind": "camoBonus", "value": 0.5 }],
+          "effects": [
+            {
+              "kind": "camoBonus",
+              "value": 0.5
+            }
+          ],
           "description": "一层会随环境变色的主动迷彩：循光的猎手更难锁住你。配上吸声涂层，连「光声都认」的双感猎手也甩得动了——但最深最凶的那些，照样找得到你。"
         }
       ]

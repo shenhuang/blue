@@ -1,12 +1,11 @@
 // 声呐探索扫描回归（声呐与房间 SPEC §5/§7「S0」）。纯引擎断言（不碰 UI/combat）：
 //   1. revealSonarScan：有限程无向 BFS——range 决定揭示几跳、永不照全洞、含 origin、缺 origin → []
 //   2. sonarScanRange：S0 基线常量（升级轨留后续）
-//   3. pingSonar 写 scanMemory（揭示集合 stamp 当前 turn）+ 扣电 + sonar='ping'
+//   3. pingSonar 写 scanMemory（盖当前节点为扫描中心·stamp 当前 turn）+ 扣电 + sonar='ping'
 //   4. 软门控：声呐未解锁 → ping 无效（不写记忆、不扣电）
 //   5. 1 scan / 停留：已 ping（未移动）→ 再 ping no-op（不重复扣电/写记忆）
 //   6. ping 当场抬警觉：深水 spike / 浅水免压（深度因子 0）/ 深 band 倍率 / clamp 上限
-//   7. 会过时的记忆：移动后 sonar 归 off + turn 前进；再 ping 刷新被扫到的 stamp，没扫到的留旧 stamp（staleness）
-//   8. scanFreshness：age 0→满、中段线性、≥fade→0（余像渐隐、重复 ping 不超过 1）
+//   7. 会过时的记忆：持续开到站自动扫(盖新中心)·turn 前进；再 ping 刷新被扫到的 stamp，没扫到的留旧 stamp（staleness）
 //   9. 不动存档：scanMemory 走 JSON round-trip，SAVE_VERSION 仍 4
 //
 // 跑法： npx tsx scripts/playthrough-sonar.ts
@@ -18,7 +17,7 @@ import {
   serializeGameState,
   deserializeGameState,
 } from '../src/engine/state';
-import { pingSonar, moveToNode, enterNodeSelection, exploreFeature, setSonarNext } from '../src/engine/dive';
+import { pingSonar, moveToNode, enterNodeSelection, exploreFeature, setSonarNext, startDive } from '../src/engine/dive';
 import {
   POWER_MAX,
   SONAR_PING_COST,
@@ -31,8 +30,6 @@ import {
   alertDelta,
   sonarStandingOn,
   sonarStandingNext,
-  SONAR_PING_DIR_MULT,
-  SONAR_PING_TOWARD_MULT,
   alertDepthFactor,
   sonarReturn,
   nodeSonarView,
@@ -49,15 +46,9 @@ import { getBand } from '../src/engine/bands';
 import type { DiveNode } from '../src/types';
 import {
   revealSonarScan,
-  revealSonarScanDirectional,
-  nodeSector,
   sonarScanRange,
-  sonarDirReach,
-  scanFreshness,
   SONAR_SCAN_RANGE,
   SONAR_SCAN_RANGE_MAX,
-  SONAR_DIR_REACH_MAX,
-  SCAN_FADE_TURNS,
 } from '../src/engine/sonar';
 
 const log: string[] = [];
@@ -204,11 +195,11 @@ L('\n========== 3. ping 写 scanMemory + 扣电 ==========');
   assert(run.power === POWER_MAX - SONAR_PING_COST, `3: ping 扣 ${SONAR_PING_COST} 电`);
   assert(run.sensors.sonar === 'ping', '3: ping 后 sonar=ping');
   assert(
-    sameSet(sortedKeys(run.scanMemory ?? {}), ['n0', 'n1', 'n2', 'n3', 'n5']),
-    '3: scanMemory = 该 ping 揭示集合（range2）',
+    sameSet(sortedKeys(run.scanMemory ?? {}), ['n0']),
+    '3: scanMemory = 本回合扫描中心＝当前节点（几何圆揭示·scanReveal 只盖当前节点·作者 06-13 重设计）',
   );
-  assert(Object.values(run.scanMemory!).every((t) => t === run.turn), '3: 揭示节点 stamp 当前 turn');
-  L('  ping 揭示 range2 + 扣电 + stamp turn ✓');
+  assert(run.scanMemory!['n0'] === run.turn, '3: 扫描中心 stamp 当前 turn');
+  L('  ping 盖当前节点为扫描中心 + 扣电 + stamp turn ✓');
 }
 
 // ============================================================
@@ -268,30 +259,16 @@ L('\n========== 6. ping 抬警觉 ==========');
 // ============================================================
 L('\n========== 7. 会过时的记忆 + scan-on-open（§4·staleness）==========');
 {
-  const first = pingSonar(mk({ depth: 50 })); // 在 n0，turn 0，stamp {n0,n1,n2,n3,n5}=0
+  const first = pingSonar(mk({ depth: 50 })); // 在 n0·turn 0·scanReveal 只盖中心 → scanMemory={n0:0}
   const t0 = first.run!.turn;
-  const moved = moveToNode(first, 'n1'); // 去 n1：声呐持续开 → 到站自动扫一记（scan-on-open §4）·turn 前进
+  const moved = moveToNode(first, 'n1'); // 去 n1：声呐持续开 → 到站自动扫一记（scan-on-open §4）·turn 前进·盖新中心 n1
   assert(moved.run!.sensors.sonar === 'ping', '7: 声呐持续开 → 到站自动扫（sonar 保持 ping·scan-on-open §4，不再「移动归 off」）');
   assert(moved.run!.turn > t0, '7: 移动后 turn 前进');
   const t1 = moved.run!.turn;
-  assert(moved.run!.scanMemory!['n0'] === t1, '7: 到站自动扫刷新了量程内的 n0（新 turn）');
-  assert(moved.run!.scanMemory!['n5'] === t0, '7: 量程外的旧记忆（n5）随你而留——仍是旧 turn（保留到下次扫到才刷新·staleness）');
+  assert(moved.run!.scanMemory!['n1'] === t1, '7: 到站自动扫＝盖新扫描中心 n1（新 turn）');
+  assert(moved.run!.scanMemory!['n0'] === t0, '7: 旧扫描中心 n0 随你而留——仍是旧 turn（中心记忆持久·staleness）');
   assert(t1 > t0, '7: 新 stamp 比旧 stamp 新');
-  L('  持续开→到站自动扫(scan-on-open) + 量程外旧记忆留存(staleness) ✓');
-}
-
-// ============================================================
-// 8. scanFreshness：余像渐隐
-// ============================================================
-L('\n========== 8. scanFreshness 渐隐 ==========');
-{
-  assert(scanFreshness(0) === 1, '8: age 0 → 满亮（刚扫到）');
-  assert(scanFreshness(-3) === 1, '8: 重复 ping（age≤0）不超过 1（固定亮度）');
-  assert(scanFreshness(SCAN_FADE_TURNS) === 0, '8: age≥fade → 淡尽');
-  assert(scanFreshness(SCAN_FADE_TURNS + 5) === 0, '8: 更旧仍 0（不为负）');
-  const mid = scanFreshness(SCAN_FADE_TURNS / 2);
-  assert(mid > 0 && mid < 1, '8: 中段线性渐隐');
-  L('  满亮 / 不超 1 / 中段线性 / 淡尽 ✓');
+  L('  持续开→到站自动扫(scan-on-open·盖新中心) + 旧中心留存(staleness) ✓');
 }
 
 // ============================================================
@@ -474,125 +451,6 @@ L('\n========== 12. 威胁定位（S3 廉价版）==========');
 }
 
 // ============================================================
-// 13. 定向 ping（声呐与房间 SPEC §5·作者 2026-06-06 拍板「方向扇区」）
-// ============================================================
-// 定向测图：origin c(depth60) 三向各有支链——back: c─m1(50)─e0(40) / deeper: c─d3(70)─d4(80)─d5(90) / lateral: c─s2(60)─s2b(60)。
-// **depth 字段即扇区依据**（#92 起 nodeSector 按 depth 差分·深水区 SPEC §13）。layer 字段在此**故意与 depth 相反**
-// （deeper 支链 layer 反而小、back 支链 layer 反而大、lateral 支链 layer 各异）→ 真测 depth-based：
-// 旧 layer-based 实现会在 13a 当场三条全错（deeper↔back 颠倒、lateral 误判 deeper），守住「别退回按 layer 分」。
-function makeDirMap(): DiveMap {
-  return {
-    zoneId: 'zone.blue_caves', generatedAt: 0, startNodeId: 'e0',
-    nodes: {
-      e0: { id: 'e0', layer: 4, depth: 40, zoneTag: 'cave', kind: 'event', connectsTo: ['m1'], preview: '' },
-      m1: { id: 'm1', layer: 3, depth: 50, zoneTag: 'cave', kind: 'event', connectsTo: ['c'], preview: '' },
-      c: { id: 'c', layer: 2, depth: 60, zoneTag: 'cave', kind: 'event', connectsTo: ['d3', 's2'], preview: '' },
-      d3: { id: 'd3', layer: 1, depth: 70, zoneTag: 'cave', kind: 'event', connectsTo: ['d4'], preview: '' },
-      d4: { id: 'd4', layer: 1, depth: 80, zoneTag: 'cave', kind: 'event', connectsTo: ['d5'], preview: '' },
-      d5: { id: 'd5', layer: 0, depth: 90, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '' },
-      s2: { id: 's2', layer: 5, depth: 60, zoneTag: 'cave', kind: 'event', connectsTo: ['s2b'], preview: '' },
-      s2b: { id: 's2b', layer: 6, depth: 60, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '' },
-    },
-  };
-}
-function mkDir(opts?: { depth?: number; stalker?: Stalker }): RunState {
-  const r0 = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } });
-  return { ...r0, map: makeDirMap(), currentNodeId: 'c', currentDepth: opts?.depth ?? 80, stalker: opts?.stalker };
-}
-L('\n========== 13. 定向 ping（§5 方向扇区）==========');
-{
-  const map = makeDirMap();
-  // (a) 扇区按**真实深度**差分（#92·与布局 y∝depth 一致：更深在下/来路在上/侧向同深）。
-  //     fixture 里 layer 与 depth 故意相反 → 这三条同时验证「用 depth、不用 layer」（layer-based 实现会全错）。
-  assert(nodeSector(map, 'c', 'd3') === 'deeper', '13a: 更深(depth70>60) → deeper（尽管 d3 的 layer 反而更小）');
-  assert(nodeSector(map, 'c', 'm1') === 'back', '13a: 更浅(depth50<60) → back（尽管 m1 的 layer 反而更大）');
-  assert(nodeSector(map, 'c', 's2') === 'lateral', '13a: 同深(depth60·|Δ|≤EPS) → lateral（尽管 s2 的 layer 不同）');
-  assert(nodeSector(map, 'c', 'c') === null, '13a: 自身 → null（总在近场）');
-
-  // (b) omni（dir 缺省）＝旧 revealSonarScan 同集合（向后兼容·逐字节）
-  assert(
-    sameSet(revealSonarScanDirectional(map, 'c', 2, undefined), revealSonarScan(map, 'c', 2)),
-    '13b: dir 缺省 → 退回全向',
-  );
-
-  // (c) 聚焦探更远、别处更短：base2 → omni 到 2 跳；deeper 波束沿深向到 3 跳够到 d5（omni-2 够不到），但丢掉 off-axis 的 2 跳
-  const omni2 = revealSonarScan(map, 'c', 2); // {c,m1,d3,s2,e0,d4,s2b}（不含 d5）
-  const deeper = revealSonarScanDirectional(map, 'c', 2, 'deeper');
-  assert(!omni2.includes('d5') && deeper.includes('d5'), '13c: deeper 波束探更远（够到 omni-2 够不到的 d5）');
-  assert(omni2.includes('e0') && !deeper.includes('e0'), '13c: deeper 丢掉来路远点 e0（别处更短）');
-  assert(omni2.includes('s2b') && !deeper.includes('s2b'), '13c: deeper 丢掉侧向远点 s2b（别处更短）');
-  assert(deeper.includes('m1') && deeper.includes('s2') && deeper.includes('d3'), '13c: 近场 1 跳仍全向（身边不至全黑）');
-
-  // (d) back / lateral 各自只把自己那条支链探远
-  const back = revealSonarScanDirectional(map, 'c', 2, 'back');
-  assert(back.includes('e0') && !back.includes('d4') && !back.includes('s2b'), '13d: back 只探来路支链');
-  const lat = revealSonarScanDirectional(map, 'c', 2, 'lateral');
-  assert(lat.includes('s2b') && !lat.includes('d4') && !lat.includes('e0'), '13d: lateral 只探侧向支链');
-
-  // (e) 确定性
-  assert(sameSet(revealSonarScanDirectional(map, 'c', 2, 'deeper'), deeper), '13e: 定向揭示确定性');
-
-  // (f) 暴露按方向计：聚焦更安静（×DIR_MULT）/ 正对声感猎手扇区尖峰（×TOWARD_MULT）/ 光感猎手不算 / omni 不变
-  const runNo = mkDir();
-  const omniDelta = sonarPingAlertDelta(runNo);
-  assert(omniDelta > 0, '13f: 深水全向 ping 抬警觉（base>0）');
-  const quiet = sonarPingAlertDelta(runNo, 'deeper');
-  assert(Math.abs(quiet - omniDelta * SONAR_PING_DIR_MULT) < 1e-9 && quiet < omniDelta, '13f: 无猎手定向更安静（×DIR_MULT<base）');
-  const sound: Stalker = { nodeId: 'd3', sensesBy: 'sound', onLostSignal: 'wait', waitTurns: 0, state: 'hunting', encounterId: 'x', lastSignalNodeId: 'c', turnsSinceSignal: 0, waitedTurns: 0 };
-  const runSound = mkDir({ stalker: sound });
-  const toward = sonarPingAlertDelta(runSound, 'deeper');
-  assert(Math.abs(toward - omniDelta * SONAR_PING_TOWARD_MULT) < 1e-9 && toward > omniDelta, '13f: 正对声感猎手扇区→尖峰（×TOWARD_MULT>base＝照亮它）');
-  assert(sonarPingAlertDelta(runSound, 'back') < omniDelta, '13f: 背着声感猎手打→仍安静（避开它）');
-  assert(sonarPingAlertDelta(mkDir({ stalker: { ...sound, sensesBy: 'light' } }), 'deeper') < omniDelta, '13f: 光感猎手听不见声呐→朝它打不尖峰');
-  assert(sonarPingAlertDelta(runSound) === omniDelta, '13f: 全向暴露不随猎手变（旧行为逐字节）');
-
-  // (g) pingSonar(dir)：写定向揭示集合 + 记 sonarDir + alert 用定向增量；全向 ping 写全向集合 + 不记 sonarDir
-  const dstate: GameState = {
-    ...createInitialGameState(), run: mkDir(),
-    phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } },
-  };
-  const range = sonarScanRange(dstate.run!);
-  const pinged = pingSonar(dstate, 'deeper');
-  assert(
-    sameSet(sortedKeys(pinged.run!.scanMemory ?? {}), revealSonarScanDirectional(makeDirMap(), 'c', range, 'deeper')),
-    '13g: pingSonar(deeper) 写定向揭示集合',
-  );
-  assert(pinged.run!.sensors.sonarDir === 'deeper' && pinged.run!.sensors.sonar === 'ping', '13g: 记聚焦方向 + sonar=ping');
-  assert(
-    pinged.run!.alert === Math.min(ALERT_MAX, (dstate.run!.alert ?? 0) + sonarPingAlertDelta(dstate.run!, 'deeper')),
-    '13g: alert 用定向增量',
-  );
-  const pingedOmni = pingSonar(dstate);
-  assert(sameSet(sortedKeys(pingedOmni.run!.scanMemory ?? {}), revealSonarScan(makeDirMap(), 'c', range)), '13g: 全向 ping 写全向集合');
-  assert(pingedOmni.run!.sensors.sonarDir === undefined, '13g: 全向 ping 不记 sonarDir');
-
-  // (h) 移动后聚焦清掉（§5）：定向聚焦每步清成全向；声呐持续开 → 到站自动全向扫一记（§4·sonar 保持 ping·非 off）。
-  const moved = moveToNode(pinged, 'd3');
-  assert(moved.run!.sensors.sonarDir === undefined, '13h: 移动后聚焦清掉（sonarDir→undefined·下一站重新全向）');
-  assert(moved.run!.sensors.sonar === 'ping', '13h: 声呐持续开 → 到站自动全向扫（scan-on-open §4）');
-
-  // (i) 各方向 reach 各自升级（§5）：dirReach 把聚焦那一向的焦距再推远一跳，别向/缺省不变。
-  //     base1·deeper 焦距 = min(5,1+1)=2 跳 → 够 d4 不够 d5；dirReach1 → min(6,1+1+1)=3 跳 → 够更深的 d5。
-  const dr0 = revealSonarScanDirectional(map, 'c', 1, 'deeper', 0);
-  const dr1 = revealSonarScanDirectional(map, 'c', 1, 'deeper', 1);
-  assert(dr0.includes('d4') && !dr0.includes('d5'), '13i: dirReach0 → 焦距基线（够 d4 不够 d5）');
-  assert(dr1.includes('d5'), '13i: dirReach1 → 聚焦焦距 +1 跳（够到更深的 d5）');
-  assert(sameSet(revealSonarScanDirectional(map, 'c', 1, 'deeper'), dr0), '13i: dirReach 缺省第 5 参 = 0（既有 4 参调用逐字节）');
-  assert(!dr1.includes('e0') && !dr1.includes('s2b'), '13i: deeper 的 reach 不延长别向支链（别向仍短·守北极星）');
-  assert(sameSet(revealSonarScanDirectional(map, 'c', 1, 'deeper', 1), dr1), '13i: 定向 reach 揭示确定性');
-
-  // (j) 桥：sensorTuning.sonarDirReach → sonarDirReach(run,dir)；全向/未升级 0；逐向夹到 SONAR_DIR_REACH_MAX。
-  const updReach = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true, sonarDirReach: { deeper: 1, lateral: 0, back: 0 } } });
-  assert(sonarDirReach(updReach, 'deeper') === 1 && sonarDirReach(updReach, 'lateral') === 0, '13j: sonarDirReach 逐向读 sensorTuning');
-  assert(sonarDirReach(updReach) === 0, '13j: 全向（dir 缺省）→ 0');
-  assert(sonarDirReach(createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } }), 'deeper') === 0, '13j: 未升级 → 各向 0（定向逐字节不变）');
-  const capReach = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true, sonarDirReach: { deeper: 99, lateral: 99, back: 99 } } });
-  assert(sonarDirReach(capReach, 'deeper') === SONAR_DIR_REACH_MAX, '13j: 升满逐向夹到 SONAR_DIR_REACH_MAX');
-
-  L('  扇区分类 / omni 回退 / 聚焦更远·别处更短 / 三向各探一支 / 暴露按方向(安静·尖峰·光感豁免) / pingSonar 集成 / 移动清聚焦 / 各方向 reach 各自升级(更远·别向不变·桥·夹上限) ✓');
-}
-
-// ============================================================
 // 14. 声呐开/关窗口规则（声呐渲染重做 §4·本 session 重做）：缺省开·预承诺下回合·暴露按状态·本回合反悔·旧图保留
 // ============================================================
 L('\n========== 14. 声呐开/关窗口（§4 重做）==========');
@@ -631,7 +489,35 @@ L('\n========== 14. 声呐开/关窗口（§4 重做）==========');
   L('  缺省开 / 切换只改下回合 / 移动落定 / 暴露按状态(on>off) / 本回合反悔扫一记 / 存档 round-trip ✓');
 }
 
+// ============================================================
+// 15. 落地即扫 + 声呐开关偏好跨 run 持久（作者拍板·所有下潜·startDive 当到站处理）
+// ============================================================
+L('\n========== 15. 落地即扫 + 偏好持久 ==========');
+{
+  const base = createInitialGameState();
+  // 偏好开（默认）+ 已解锁 → startDive 落地立刻扫一记起始节点（看见掉进的那片洞）。
+  const onState: GameState = { ...base, run: createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } }) };
+  const dived = startDive(onState, 'zone.blue_caves');
+  const start = dived.run!.currentNodeId;
+  assert(dived.run!.scanMemory[start] === dived.run!.turn, '15: 落地即扫——起始节点＝本回合扫描中心（声呐开+解锁）');
+  assert(dived.run!.sensors.sonar === 'ping', '15: 落地处于发射态 sonar=ping（exposed·与到站自动扫一致）');
+  assert(dived.run!.sensors.sonarOn === true && dived.run!.sensors.sonarNext === true, '15: 偏好开 → 种 sonarOn/sonarNext=true');
+
+  // 偏好关（profile.sonarOn=false）→ 落地不扫、不发射（全黑·隐蔽）。
+  const offState: GameState = { ...base, profile: { ...base.profile, sonarOn: false }, run: createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } }) };
+  const divedOff = startDive(offState, 'zone.blue_caves');
+  assert(Object.keys(divedOff.run!.scanMemory).length === 0, '15: 偏好关 → 落地不扫（scanMemory 空·全黑）');
+  assert(divedOff.run!.sensors.sonarOn === false && divedOff.run!.sensors.sonar === 'off', '15: 偏好关 → 种 sonarOn=false·不发射');
+
+  // setSonarNext 把偏好写进 profile（跨 run 持久的单一来源·下次落地按它种）。
+  const stOn: GameState = { ...base, run: createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } }) };
+  const turnedOff = setSonarNext(stOn, false);
+  assert(turnedOff.profile.sonarOn === false, '15: setSonarNext(false) 写 profile.sonarOn=false（跨 run 持久）');
+  assert(setSonarNext(turnedOff, true).profile.sonarOn === true, '15: setSonarNext(true) 写 profile.sonarOn=true');
+  L('  落地即扫(开) / 落地全黑(关) / 偏好写 profile 跨 run ✓');
+}
+
 console.log(log.join('\n'));
 console.log(
-  '\n✓ 声呐探索扫描回归通过（S0 + S1 多事件房间 + S2 不可信扫描 + S3 威胁定位 + 定向 ping §5 + 开/关窗口 §4）',
+  '\n✓ 声呐探索扫描回归通过（S0 + S1 多事件房间 + S2 不可信扫描 + S3 威胁定位 + 开/关窗口 §4）',
 );

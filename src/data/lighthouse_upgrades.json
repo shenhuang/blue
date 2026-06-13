@@ -208,6 +208,40 @@
       ]
     },
     {
+      "id": "lhtrack.survey",
+      "name": "勘测站",
+      "description": "在前哨搭起水下勘测仪——把前哨能「暗照到」的远处点位圈更大，让你提前知道那里有什么、能不能去。",
+      "outpostOnly": true,
+      "upgrades": [
+        {
+          "id": "lighthouse.survey.lv1",
+          "level": 1,
+          "name": "勘测站",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 2
+              },
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 2
+              }
+            ],
+            "gold": 50
+          },
+          "effects": [
+            {
+              "kind": "dimRevealBonus",
+              "value": 1
+            }
+          ],
+          "description": "搭起勘测站。该前哨点亮范围之外再多覆盖一圈「暗区」——圈内的机会点以暗点形式现身（可见、但这一拍过不去）。",
+          "requiresLighthouseLevel": 1
+        }
+      ]
+    },
+    {
       "id": "lhtrack.depot",
       "name": "材料中转站",
       "description": "在前哨搭起料棚与吊架——把材料就近寄存在这里，维护时就地取用、省下从岸上运料的船钱。不占能源（被动库房），但水下的存料会随前哨荒废而锈蚀流失（激流前哨更快），得回来补。",
@@ -601,8 +635,8 @@
       "result": {
         "id": "lighthouse.ch1_wreck_outpost",
         "name": "残骸前哨",
-        "mapX": 0.6,
-        "mapY": 0.62,
+        "mapX": 0.3,
+        "mapY": 0.69,
         "level": 1,
         "region": "wreck_graveyard"
       }
@@ -656,8 +690,8 @@
       "result": {
         "id": "lighthouse.ch1_midwater_outpost",
         "name": "中层浮标",
-        "mapX": 0.76,
-        "mapY": 0.4,
+        "mapX": 0.5,
+        "mapY": 0.52,
         "level": 1,
         "region": "open_midwater"
       }
@@ -720,10 +754,104 @@
       "result": {
         "id": "lighthouse.ch1_vent_outpost",
         "name": "热液井台",
-        "mapX": 0.88,
-        "mapY": 0.8,
+        "mapX": 0.75,
+        "mapY": 0.61,
         "level": 1,
         "region": "vent_trench"
+      }
+    },
+    {
+      "id": "outpost.ch1_trench",
+      "name": "海沟前哨",
+      "bandId": "band.ch1_trench",
+      "requiresFlag": "story.ch1.trench_found",
+      "submerged": true,
+      "stages": [
+        {
+          "label": "在竖井口岩架上凿出锚位（珊瑚碎片×3 ＋ 50 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.coral_shard",
+                "qty": 3
+              }
+            ],
+            "gold": 50
+          },
+          "narrative": "你在蓝洞最里头那道竖井的口沿凿出锚位。井往下黑得没有底，岩冷得扎手。第一批桩子打进去了。"
+        },
+        {
+          "label": "架起井口落脚台与系绳（蛛蟹甲壳×2·黄铜配件×2 ＋ 90 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 2
+              },
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 2
+              }
+            ],
+            "gold": 90
+          },
+          "narrative": "落脚台在井口撑住了，系绳垂进黑里。能在这儿换气、起跳——竖井口总算有了个落脚的地方。"
+        },
+        {
+          "label": "通电点亮（冷光腺×2·章鱼角喙×2 ＋ 140 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 2
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 2
+              }
+            ],
+            "gold": 140
+          }
+        }
+      ],
+      "result": {
+        "id": "lighthouse.ch1_trench_outpost",
+        "name": "海沟前哨",
+        "mapX": 0.93,
+        "mapY": 0.5,
+        "level": 1,
+        "region": "blue_caves"
+      }
+    },
+    {
+      "id": "outpost.ch1_whalefall",
+      "name": "鲸落营地",
+      "bandId": "band.ch1_whalefall",
+      "requiresFlag": "story.ch1.whalefall_found",
+      "submerged": true,
+      "stages": [
+        {
+          "label": "在鲸骨架间清出锚位（珊瑚碎片×3 ＋ 60 金）",
+          "cost": { "materials": [ { "itemId": "item.coral_shard", "qty": 3 } ], "gold": 60 },
+          "narrative": "你在那副比船还大的骨架之间清出锚位。骨上爬满管虫与盲虾，谁也不在意你。第一批桩子打进去了。"
+        },
+        {
+          "label": "架起营地与系留（蛛蟹甲壳×3·黄铜配件×2 ＋ 100 金）",
+          "cost": { "materials": [ { "itemId": "item.crab_chitin", "qty": 3 }, { "itemId": "item.brass_fitting", "qty": 2 } ], "gold": 100 },
+          "narrative": "营地在鲸落上方撑住了。脚下整副巨骨各自养着一窝生灵——你像住进了一座还在被吃掉的城。"
+        },
+        {
+          "label": "通电点亮（冷光腺×2·章鱼角喙×2 ＋ 150 金）",
+          "cost": { "materials": [ { "itemId": "item.lantern_gland", "qty": 2 }, { "itemId": "item.cave_octopus_beak", "qty": 2 } ], "gold": 150 }
+        }
+      ],
+      "result": {
+        "id": "lighthouse.ch1_whalefall_outpost",
+        "name": "鲸落营地",
+        "mapX": 0.59,
+        "mapY": 0.24,
+        "level": 1,
+        "region": "open_midwater"
       }
     }
   ]

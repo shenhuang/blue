@@ -41,8 +41,13 @@ export function CombatView({ state, onStateChange }: Props) {
 
   return (
     <div className="dive combat">
-      <StatusBar run={state.run} />
+      {/* 左栏（桌面双栏）/ 钉顶（手机）：战斗中状态栏锁定不随滚动（作者：状态挪到事件上方·只滑下面内容）。
+          用 .dive-pinned（同事件栏机制）：桌面进 .app-dive 网格左列；手机 sticky 钉顶。不带 .dive-header＝无抽屉。 */}
+      <div className="dive-pinned">
+        <StatusBar run={state.run} />
+      </div>
 
+      <div className="combat-main">
       <div className="combat-enemies">
         <h3>敌人</h3>
         {combat.enemies.length === 0 && <div className="dim">（空）</div>}
@@ -99,6 +104,7 @@ export function CombatView({ state, onStateChange }: Props) {
             </button>
           </li>
         </ul>
+      </div>
       </div>
     </div>
   );
