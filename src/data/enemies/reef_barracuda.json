@@ -2,6 +2,14 @@
   "enemies": [
     {
       "id": "enemy.reef_barracuda",
+      "bands": ["zone.old_lighthouse_reef"],
+      "biomes": ["reef_tropical"],
+      "role": "predator",
+      "codex": {
+        "habitat": "礁缘开阔水",
+        "behavior": "高速直线突袭·玻璃大炮",
+        "appearance": "银亮流线·下颌前突"
+      },
       "name": "梭鱼",
       "tier": "realistic",
       "hp": 16,
@@ -47,6 +55,14 @@
     },
     {
       "id": "enemy.reef_barracuda_juv",
+      "bands": ["zone.old_lighthouse_reef"],
+      "biomes": ["reef_tropical"],
+      "role": "predator",
+      "codex": {
+        "habitat": "礁缘",
+        "behavior": "成群试探",
+        "appearance": "幼体·尚短"
+      },
       "name": "梭鱼幼体",
       "tier": "realistic",
       "hp": 7,

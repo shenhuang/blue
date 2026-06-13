@@ -38,6 +38,26 @@ export type Weakness =
 
 export type VictoryPath = 'kill' | 'flee' | 'tame' | 'scare' | 'commune';
 
+// —— 敌人库元数据类型（敌人库 SPEC 支柱一·docs/spec/深海回响_敌人库_SPEC.md §2） ——
+
+/** 战斗生态位（与 aiPattern 正交：aiPattern=战斗 AI 行为；role=内容侧"这段需要什么样的威胁"）。草案词表·可增。 */
+export type EnemyRole = 'predator' | 'gatekeeper' | 'sanity' | 'swarm' | 'ambusher';
+
+/** 粗档威胁。缺省时由 enemyLibrary 从 threat 数值派生（开放问题①·派生 + 可显式覆盖）。 */
+export type ThreatTier = 'low' | 'mid' | 'high';
+
+/** 背景/图鉴文本（喂未来图鉴 + 辅助判断场景契合·非机器过滤项·能过滤的信息一律走 bands/biomes/role）。 */
+export interface CodexEntry {
+  /** 栖息地。 */
+  habitat?: string;
+  /** 行为 / 习性。 */
+  behavior?: string;
+  /** 外观。 */
+  appearance?: string;
+  /** 初见提示（可选）。 */
+  firstSeenHint?: string;
+}
+
 /** 敌人定义（数据模板） */
 export interface EnemyDef {
   id: string;
@@ -78,6 +98,25 @@ export interface EnemyDef {
   loot: LootTable;
   victoryConditions: VictoryPath[];
   loreEntry?: string;
+
+  // —— 库元数据（敌人库 SPEC 支柱一·全可选·不入存档·驱动 pickEnemy 选取与未来图鉴）——
+  /**
+   * "在哪出现"轴：深度 band id（band.*）与 random-zone id（zone.*）混排。
+   * pickEnemy 按 scene.band 过滤；无 bands＝孤儿敌人（永选不中）·check-enemy-refs 会拦。
+   */
+  bands?: string[];
+  /**
+   * 环境/栖息地轴（与 bands 正交·开放词表新值即用）：
+   * reef_tropical / cave_anchialine / wreck_field / polar_under_ice / mangrove / hydrothermal_vent …
+   * 同样 50m，热带礁的鱼与极地冰下的鱼是两套池子——"红树林热带鱼不进极地"靠这条。
+   */
+  biomes?: string[];
+  /** 战斗生态位（内容侧选取用）。 */
+  role?: EnemyRole;
+  /** 粗档威胁（缺省由 threat 派生）。 */
+  threatTier?: ThreatTier;
+  /** 背景/图鉴文本（非机器过滤项）。 */
+  codex?: CodexEntry;
 
   /** 遭遇事件中可显示的额外选项（潜行/挑衅/谈判/...） */
   encounterOptions?: EventOption[];

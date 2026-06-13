@@ -2,6 +2,14 @@
   "enemies": [
     {
       "id": "enemy.blind_eel",
+      "bands": ["zone.blue_caves"],
+      "biomes": ["cave_anchialine"],
+      "role": "ambusher",
+      "codex": {
+        "habitat": "无光洞道的缝隙",
+        "behavior": "靠水流与声压伏击·近身缠绕",
+        "appearance": "通体苍白·无眼"
+      },
       "name": "盲鳗",
       "tier": "uncanny",
       "hp": 18,
@@ -60,6 +68,14 @@
     },
     {
       "id": "enemy.blind_eel_juv",
+      "bands": ["zone.blue_caves"],
+      "biomes": ["cave_anchialine"],
+      "role": "ambusher",
+      "codex": {
+        "habitat": "洞道缝隙",
+        "behavior": "未成形的伏击者",
+        "appearance": "半透明幼体"
+      },
       "name": "盲鳗幼体",
       "tier": "uncanny",
       "hp": 6,

@@ -182,7 +182,9 @@ function assertRegistered(dataDirRel, registrarRel, label) {
   }
 }
 assertRegistered('src/data/events', 'src/engine/zones.ts', 'event 文件');
-assertRegistered('src/data/enemies', 'src/engine/combat.ts', 'enemy 文件');
+// 敌人改"目录自动加载"（敌人库 SPEC 支柱三）：注册器从 combat.ts 手动 import 迁到生成的
+// registry.generated.ts；漏 regen 会被这里 + check-enemy-refs（registry 过期门）双重拦下。
+assertRegistered('src/data/enemies', 'src/data/enemies/registry.generated.ts', 'enemy 文件');
 assertRegistered('src/data/npcs', 'src/engine/dialog.ts', 'NPC 文件');
 
 // —— 6. 端到端模拟 ——

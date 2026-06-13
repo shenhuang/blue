@@ -2,6 +2,14 @@
   "enemies": [
     {
       "id": "enemy.wreck_spider_crab",
+      "bands": ["zone.wreck_graveyard"],
+      "biomes": ["wreck_field"],
+      "role": "gatekeeper",
+      "codex": {
+        "habitat": "沉船甲板与缆绳间",
+        "behavior": "领地性·常成对·钳击",
+        "appearance": "长足覆藤壶"
+      },
       "name": "沉船蛛蟹",
       "tier": "realistic",
       "hp": 22,

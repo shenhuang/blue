@@ -2,6 +2,15 @@
   "enemies": [
     {
       "id": "enemy.drowned_lantern",
+      "bands": ["zone.wreck_graveyard"],
+      "biomes": ["wreck_field"],
+      "role": "sanity",
+      "codex": {
+        "habitat": "沉船间的静水",
+        "behavior": "以光诱近·消耗心神",
+        "appearance": "伞下垂着一盏不灭的、不该亮的灯",
+        "firstSeenHint": "远处有一点灯火，像有人在等你"
+      },
       "name": "沉灯水母",
       "tier": "cosmic",
       "hp": 24,

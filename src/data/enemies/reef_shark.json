@@ -2,6 +2,14 @@
   "enemies": [
     {
       "id": "enemy.reef_shark.tutorial",
+      "bands": ["zone.old_lighthouse_reef"],
+      "biomes": ["reef_tropical"],
+      "role": "predator",
+      "codex": {
+        "habitat": "暖水礁缘与浅坡",
+        "behavior": "循血而来·试探盘旋后突进",
+        "appearance": "幼体·体侧一道白线般的齿列"
+      },
       "name": "暗礁鲨（幼体）",
       "tier": "realistic",
       "hp": 32,

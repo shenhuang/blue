@@ -16,13 +16,7 @@ import type {
   Stats,
 } from '@/types';
 import actionData from '@/data/actions.json';
-import sharkData from '@/data/enemies/reef_shark.json';
-import eelData from '@/data/enemies/blind_eel.json';
-import crabData from '@/data/enemies/wreck_spider_crab.json';
-import barracudaData from '@/data/enemies/reef_barracuda.json';
-import octopusData from '@/data/enemies/cave_octopus.json';
-import lanternData from '@/data/enemies/drowned_lantern.json';
-import grouperData from '@/data/enemies/reef_grouper.json';
+import { ENEMY_FILE_MODULES } from '@/data/enemies/registry.generated';
 import { appendLog, addToInventory, removeFromInventory, clampStats } from './state';
 import { executeDeath } from './death';
 import { getItemDef } from './items';
@@ -34,36 +28,15 @@ import { addInjury, injuryIdForDamageType, applyMedkitHeal } from './injuries';
 const ACTIONS: Map<string, CombatAction> = new Map();
 for (const a of (actionData as { actions: CombatAction[] }).actions) ACTIONS.set(a.id, a);
 
+// 敌人库 SPEC 支柱三：从生成的注册表（src/data/enemies/registry.generated.ts·目录自动加载）灌入。
+// 新增纯数据敌人＝丢一个 JSON + `npm run gen:enemies`，本文件零改动（registry 过期由 regress 门拦）。
 const ENEMY_DEFS: Map<string, EnemyDef> = new Map();
-for (const e of sharkData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
-for (const e of eelData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
-for (const e of crabData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
-for (const e of barracudaData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
-for (const e of octopusData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
-for (const e of lanternData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
-for (const e of grouperData.enemies as unknown as EnemyDef[]) ENEMY_DEFS.set(e.id, e);
-
 const COMBAT_ENCOUNTERS: Map<string, CombatEncounterDef> = new Map();
-for (const c of (sharkData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
-  COMBAT_ENCOUNTERS.set(c.id, c);
-}
-for (const c of (eelData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
-  COMBAT_ENCOUNTERS.set(c.id, c);
-}
-for (const c of (crabData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
-  COMBAT_ENCOUNTERS.set(c.id, c);
-}
-for (const c of (barracudaData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
-  COMBAT_ENCOUNTERS.set(c.id, c);
-}
-for (const c of (octopusData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
-  COMBAT_ENCOUNTERS.set(c.id, c);
-}
-for (const c of (lanternData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
-  COMBAT_ENCOUNTERS.set(c.id, c);
-}
-for (const c of (grouperData.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
-  COMBAT_ENCOUNTERS.set(c.id, c);
+for (const file of ENEMY_FILE_MODULES) {
+  for (const e of (file.enemies as unknown as EnemyDef[]) ?? []) ENEMY_DEFS.set(e.id, e);
+  for (const c of (file.combatEncounters as unknown as CombatEncounterDef[]) ?? []) {
+    COMBAT_ENCOUNTERS.set(c.id, c);
+  }
 }
 
 export function getAction(id: string): CombatAction | undefined { return ACTIONS.get(id); }

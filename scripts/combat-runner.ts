@@ -40,6 +40,8 @@ import {
   type CombatActionInput,
 } from '../src/engine/combatScenario';
 import { getEncounter, getEnemyDef } from '../src/engine/combat';
+import { matchEnemies } from '../src/engine/enemyLibrary';
+import type { EnemyRole, ThreatTier } from '../src/types';
 
 // ---------------------------------------------------------------------------
 // argv 解析（手写）
@@ -134,7 +136,7 @@ function printHelp() {
     echo '{"combatId":"...","actions":[...]}' | npx tsx scripts/combat-runner.ts --in -
   辅助命令：
     npx tsx scripts/combat-runner.ts --list                    # 列出战斗 encounter
-    npx tsx scripts/combat-runner.ts --list-enemies            # 列出 enemy def
+    npx tsx scripts/combat-runner.ts --list-enemies [--band <id>] [--biome <id>] [--role <r>] [--threat-tier <low|mid|high>]
     npx tsx scripts/combat-runner.ts --list-actions            # 列出 player action
     npx tsx scripts/combat-runner.ts --show <combatId>
     npx tsx scripts/combat-runner.ts --show-enemy <enemyId>
@@ -354,15 +356,33 @@ function handleList(args: CliArgs) {
 }
 
 function handleListEnemies(args: CliArgs) {
-  const out = listAllEnemies();
+  let out = listAllEnemies();
+  // 敌人库 SPEC §4/§5：按 band / biome / role / threat-tier 过滤（消费支柱一元数据·喂"先取后造"recon）。
+  const band = flagString(args, '--band');
+  const biome = flagString(args, '--biome');
+  const role = flagString(args, '--role');
+  const threatTier = flagString(args, '--threat-tier');
+  if (band || biome || role || threatTier) {
+    const allowed = new Set(
+      matchEnemies(
+        { band, biome },
+        { role: role as EnemyRole | undefined, threatTier: threatTier as ThreatTier | undefined },
+      ).map((d) => d.id),
+    );
+    out = out.filter((e) => allowed.has(e.id));
+  }
   if (flagString(args, '--out') === 'json') {
     process.stdout.write(JSON.stringify(out, null, 2) + '\n');
     return;
   }
   console.log(`Enemy defs (${out.length}):`);
   for (const e of out) {
+    const def = getEnemyDef(e.id);
+    const meta = def
+      ? `  bands=[${(def.bands ?? []).join(',')}] biomes=[${(def.biomes ?? []).join(',')}] role=${def.role ?? '-'}`
+      : '';
     console.log(
-      `  ${e.id.padEnd(32)} ${e.name.padEnd(14)} tier=${e.tier.padEnd(9)} hp=${String(e.hp).padEnd(3)} armor=${e.armor} threat=${e.threat} hostility=${e.hostility} attacks=${e.attackCount}`,
+      `  ${e.id.padEnd(32)} ${e.name.padEnd(14)} tier=${e.tier.padEnd(9)} hp=${String(e.hp).padEnd(3)} armor=${e.armor} threat=${e.threat} hostility=${e.hostility} attacks=${e.attackCount}${meta}`,
     );
   }
 }
