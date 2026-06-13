@@ -145,7 +145,7 @@ L(`  前哨点亮远端 + reach ${reachHome}→${reachOutpost} ✓`);
 const anchorReach: [string, number, number, number][] = [
   ['zone.east_reef', 0.18, 0.5, 0],
   ['zone.blue_caves', 0.46, 0.3, 1],
-  ['zone.blue_caves', 0.44, 0.28, 1], // 横岩廊（平廊侧口·#114 续）
+  ['zone.blue_caves', 0.38, 0.22, 1], // 横岩廊（平廊侧口·#114 续·#118 挪开与蓝洞群的视觉重叠）
   ['zone.old_lighthouse_reef', 0.44, 0.72, 1],
   ['zone.wreck_graveyard', 0.72, 0.55, 2],
   // St1 一章锚点四点（#117·剧情 SPEC §4.1）

@@ -41,8 +41,8 @@
       "name": "横岩廊",
       "blurb": "这洞几乎不往下走——一直往里。水浅，气省，省到你容易忘了：来路有多长，回头的路就有多长。老规矩，气用掉三分之一就掉头。",
       "distance": 1,
-      "mapX": 0.44,
-      "mapY": 0.28,
+      "mapX": 0.38,
+      "mapY": 0.22,
       "persistent": true,
       "requiresFlags": ["flag.tutorial_complete"],
       "modifier": { "depthRange": [16, 30], "layerCount": 10, "depthCurve": 2.4, "visibility": "murky" }

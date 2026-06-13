@@ -226,7 +226,35 @@ L('§4 canon/字面量守门');
     !tutorialRaw.includes('father_first_entry') && !itemsRaw.includes('father_first_entry'),
     '§4 lore.father_first_entry 不应残留（已改 lore.ch1.captains_page）',
   );
-  L('  canon + 接线 + 字面量 ✓');
+
+  // Aldo 教学后分流（#118·作者反馈「新手指导结束后不该继续有相同对话」）：root 的教学
+  // 选项（ready/not_yet）必须 notHasFlag 门控、教学后入口（morning）必须 hasFlag 门控
+  // ——教学 briefing 永不对已完教学的玩家重播（数据形状守门·visibleIf 词汇同事件 Condition）。
+  const aldo = JSON.parse(aldoRaw) as {
+    npc: { dialogRoot: { choices: { id: string; visibleIf?: { kind: string; flag?: string } }[] } };
+    dialogs: Record<string, { choices: { id: string; next: string; visibleIf?: { kind: string; flag?: string } }[] }>;
+  };
+  const rootChoices = new Map(aldo.npc.dialogRoot.choices.map((c) => [c.id, c]));
+  for (const id of ['ready', 'not_yet']) {
+    const c = rootChoices.get(id);
+    assert(
+      c?.visibleIf?.kind === 'notHasFlag' && c.visibleIf.flag === TUTORIAL_COMPLETE_FLAG,
+      `§4 aldo.root 教学选项 ${id} 必须 notHasFlag 教学完成门控`,
+    );
+  }
+  const morning = rootChoices.get('morning');
+  assert(
+    morning?.visibleIf?.kind === 'hasFlag' && morning.visibleIf.flag === TUTORIAL_COMPLETE_FLAG,
+    '§4 aldo.root 教学后入口 morning 必须 hasFlag 门控',
+  );
+  assert(aldo.dialogs['aldo.harbor_morning'], '§4 教学后日常节点 aldo.harbor_morning 应存在');
+  const backs = aldo.dialogs['aldo.about_mentor'].choices;
+  assert(
+    backs.some((c) => c.next === 'aldo.briefing' && c.visibleIf?.kind === 'notHasFlag') &&
+      backs.some((c) => c.next === 'aldo.harbor_morning' && c.visibleIf?.kind === 'hasFlag'),
+    '§4 about_mentor 返回必须按教学完成双分流（不许把完教学的玩家送回 briefing）',
+  );
+  L('  canon + 接线 + 字面量 + Aldo 教学后分流 ✓');
 }
 
 // ═══════════════════════════════════════════════════════════════

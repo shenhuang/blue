@@ -11,12 +11,20 @@
         {
           "id": "ready",
           "label": "准备好了。",
-          "next": "aldo.briefing"
+          "next": "aldo.briefing",
+          "visibleIf": { "kind": "notHasFlag", "flag": "flag.tutorial_complete" }
         },
         {
           "id": "not_yet",
           "label": "还差一点。",
-          "next": "aldo.look_around"
+          "next": "aldo.look_around",
+          "visibleIf": { "kind": "notHasFlag", "flag": "flag.tutorial_complete" }
+        },
+        {
+          "id": "morning",
+          "label": "（坐下，跟他看一会儿海）",
+          "next": "aldo.harbor_morning",
+          "visibleIf": { "kind": "hasFlag", "flag": "flag.tutorial_complete" }
         }
       ]
     }
@@ -52,6 +60,30 @@
         }
       ]
     },
+    "aldo.harbor_morning": {
+      "id": "aldo.harbor_morning",
+      "text": "你在长椅另一头坐下。海面有风，雾往外退。\n\n「潮位正好。」Aldo 朝海图桌那边抬了抬下巴，「今天去哪，你自己挑——那些坐标，你现在比我熟。」\n\n他顿了顿。\n\n「带够气。回来吃饭。」",
+      "choices": [
+        {
+          "id": "open_chart",
+          "label": "（摊开海图，挑一个潜点）",
+          "next": "end",
+          "effects": [
+            { "kind": "openChart" }
+          ]
+        },
+        {
+          "id": "ask_mentor",
+          "label": "你认识我导师？",
+          "next": "aldo.about_mentor"
+        },
+        {
+          "id": "leave",
+          "label": "（再坐一会儿，然后起身）",
+          "next": "end"
+        }
+      ]
+    },
     "aldo.about_mentor": {
       "id": "aldo.about_mentor",
       "text": "Aldo 沉默了很久。\n\n「他是上一代最后一个还敢去深处的人。」\n\n他没说更多。",
@@ -59,7 +91,14 @@
         {
           "id": "back",
           "label": "（沉默地点头）",
-          "next": "aldo.briefing"
+          "next": "aldo.briefing",
+          "visibleIf": { "kind": "notHasFlag", "flag": "flag.tutorial_complete" }
+        },
+        {
+          "id": "back_morning",
+          "label": "（沉默地点头）",
+          "next": "aldo.harbor_morning",
+          "visibleIf": { "kind": "hasFlag", "flag": "flag.tutorial_complete" }
         }
       ]
     },
