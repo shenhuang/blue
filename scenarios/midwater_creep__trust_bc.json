@@ -1,0 +1,14 @@
+{
+  "_comment": "中层暗流下沉·充浮力等稳（无 check·氧-1）",
+  "eventId": "midwater.creep",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 70,
+  "choices": ["trust_bc"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": { "oxygen": -1 }
+  }
+}

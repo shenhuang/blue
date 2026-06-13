@@ -1,0 +1,14 @@
+{
+  "_comment": "灯笼鱼群·停在原地让它们过（无 check·氧-1）",
+  "eventId": "midwater.the_lantern",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 65,
+  "choices": ["let_them_pass"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": { "oxygen": -1 }
+  }
+}

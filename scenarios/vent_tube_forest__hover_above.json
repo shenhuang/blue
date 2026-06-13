@@ -1,0 +1,15 @@
+{
+  "_comment": "管虫林·从上方悬停看（无 check·sanity+3）",
+  "eventId": "vent.tube_forest",
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "depth": 95,
+  "stats": { "sanity": 80 },
+  "choices": ["hover_above"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": { "oxygen": -1, "sanity": 3 }
+  }
+}

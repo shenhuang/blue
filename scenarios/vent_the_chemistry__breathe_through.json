@@ -1,0 +1,14 @@
+{
+  "_comment": "热液化学味·继续走（无 check·氧-1）",
+  "eventId": "vent.the_chemistry",
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "depth": 95,
+  "choices": ["breathe_through_it"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": { "oxygen": -1 }
+  }
+}
