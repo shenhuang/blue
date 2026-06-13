@@ -16,6 +16,10 @@ import {
   nextOutpostStage,
   canAdvanceOutpost,
   advanceOutpost,
+  devAdvanceOutpost,
+  isChapterBand,
+  isChapterOutpost,
+  outpostUnlocked,
   OUTPOST_MAX_STAGE,
   OUTPOST_USABLE_STAGE,
 } from '@/engine/lighthouses';
@@ -41,6 +45,7 @@ import { getUpgradeBonuses } from '@/engine/upgrades';
 import { getItemDef } from '@/engine/items';
 import { listRecoverableCorpses } from '@/engine/death';
 import { LighthouseBuildPanel } from './LighthouseBuildPanel';
+import { DEV_TOOLS } from './devMode';
 import { ItemCell, EmptyCell } from './ItemCell';
 
 interface Props {
@@ -145,8 +150,10 @@ export function SeaChartView({ state, onStateChange }: Props) {
   // 深水区 Phase 1：从前哨「蛙跳」直接下到一个深度 band（本期最小版＝home 灯塔出潜）。
   // 软门控：band 不锁，列出全部——越深越黑，能不能活由装备（声呐/电量/升级）决定，不是开关。
   const home = getHomeLighthouse(state.profile);
-  function handleOutpostDive(bandId: string) {
-    onStateChange(startDiveFromOutpost(state, bandId, { carryItems: carryPicks }));
+  function handleOutpostDive(bandId: string, launchOutpostId?: string) {
+    onStateChange(
+      startDiveFromOutpost(state, bandId, { carryItems: carryPicks, launchOutpostId }),
+    );
   }
 
   return (
@@ -325,7 +332,8 @@ export function SeaChartView({ state, onStateChange }: Props) {
             从{home.name}直接下到更深的水段。越深越黑——没有声呐和电量，别硬下。
           </p>
           <div className="chart-band-list">
-            {getBands().map((b) => (
+            {/* 章节区 band 不在深脊柱列表里——它们由点亮的章节哨站出蛙跳（见 OutpostPanel）。 */}
+            {getBands().filter((b) => !isChapterBand(b.id)).map((b) => (
               <button
                 key={b.id}
                 className="btn small chart-band-btn"
@@ -339,7 +347,7 @@ export function SeaChartView({ state, onStateChange }: Props) {
         </div>
       )}
 
-      <OutpostPanel state={state} onStateChange={onStateChange} />
+      <OutpostPanel state={state} onStateChange={onStateChange} onFrogjump={handleOutpostDive} />
 
       <div className="chart-actions">
         <button className="btn" onClick={() => setShowBuild(true)}>
@@ -440,7 +448,11 @@ function ChartInfo({
  * 分阶段建造（advanceOutpost）+ 维护衰减（maintainOutpost）+ 能源/衰减/半亮状态。蛙跳出潜点本身仍走上面的
  * band 列表（半亮前哨自动缩短预耗氧、收益透明）。账单从 profile 银行出（同 advanceOutpost）。
  */
-function OutpostPanel({ state, onStateChange }: Props) {
+function OutpostPanel({
+  state,
+  onStateChange,
+  onFrogjump,
+}: Props & { onFrogjump: (bandId: string, launchOutpostId: string) => void }) {
   const outposts = getOutposts();
   if (outposts.length === 0) return null;
 
@@ -460,6 +472,9 @@ function OutpostPanel({ state, onStateChange }: Props) {
           const decay = outpostDecayLevel(state.profile, o.id);
           const next = nextOutpostStage(state.profile, o.id);
           const canBuild = canAdvanceOutpost(state.profile, o.id);
+          // 章节哨站批：章节前哨在对应锚点节拍未到前为「暗」（已知不可建）；点亮后出蛙跳入本区 band。
+          const chapter = isChapterOutpost(o);
+          const unlocked = outpostUnlocked(state.profile, o.id);
           const lh = getLighthouse(state.profile, o.result.id);
           const energy = lh ? outpostEnergy(state.profile, lh) : null;
           const maint = canMaintainOutpost(state.profile, o.id);
@@ -480,13 +495,16 @@ function OutpostPanel({ state, onStateChange }: Props) {
                 )
               : [];
 
-          const status = lit
-            ? usable
-              ? '已点亮'
-              : '荒废 · 蛙跳失效'
-            : stage === 0
-              ? '未动工'
-              : `修建中 ${stage}/${OUTPOST_MAX_STAGE}${usable ? ' · 半亮可用' : ''}`;
+          const status =
+            chapter && !unlocked
+              ? '暗 · 待解锁'
+              : lit
+                ? usable
+                  ? '已点亮'
+                  : '荒废 · 蛙跳失效'
+                : stage === 0
+                  ? '未动工'
+                  : `修建中 ${stage}/${OUTPOST_MAX_STAGE}${usable ? ' · 半亮可用' : ''}`;
 
           return (
             <li key={o.id} className="chart-outpost-item">
@@ -503,14 +521,29 @@ function OutpostPanel({ state, onStateChange }: Props) {
                   {decay > 0 ? ` · 衰减 ${decay}` : ''}
                 </span>
               )}
+              {chapter && !unlocked && (
+                <span className="dim chart-outpost-locked">
+                  这片海图上还是暗的——走到对应的锚点，它才会亮起来、能动工。
+                </span>
+              )}
               <div className="chart-outpost-actions">
-                {next && (
+                {next && unlocked && (
                   <button
                     className="btn small chart-outpost-build"
                     disabled={!canBuild}
                     onClick={() => onStateChange(advanceOutpost(state, o.id))}
                   >
                     {next.label}
+                  </button>
+                )}
+                {/* 章节哨站批：点亮（或半亮可用）的章节前哨出蛙跳——落本区 band（显式起跳点）。 */}
+                {chapter && usable && (
+                  <button
+                    className="btn small chart-outpost-frogjump"
+                    onClick={() => onFrogjump(o.bandId, o.id)}
+                    title={`从${o.name}蛙跳下潜`}
+                  >
+                    蛙跳下潜
                   </button>
                 )}
                 {decay > 0 && (
@@ -520,6 +553,15 @@ function OutpostPanel({ state, onStateChange }: Props) {
                     onClick={() => onStateChange(maintainOutpost(state, o.id))}
                   >
                     维护
+                  </button>
+                )}
+                {/* dev（?dev 后·#110 家族）：免解锁门 + 免料推进一阶；普通访客 DEV_TOOLS=false 不渲染。 */}
+                {DEV_TOOLS && !lit && (
+                  <button
+                    className="btn small chart-outpost-dev"
+                    onClick={() => onStateChange(devAdvanceOutpost(state, o.id))}
+                  >
+                    测试推进（dev）
                   </button>
                 )}
               </div>

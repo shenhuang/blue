@@ -113,6 +113,15 @@ export interface OutpostDef {
   /** 本前哨所在的 band（决定蛙跳出潜深度 = 该 band 底；只服务 order 更深的 band）。 */
   bandId: string;
   /**
+   * 章节哨站解锁门（章节哨站批·#118 §10 2026-06-12）：设了 = 本哨站是**章节前哨**，
+   * 在对应一章锚点节拍（ch1AnchorFlag(requiresAnchor)）置位前为「暗」（已知但不可建·见 outpostUnlocked），
+   * 锚点完成后才转「可建」。值为 Ch1Anchor 字符串（'wreck'|'midwater'|'vent'；reef 由 home 灯塔覆盖不设哨站）。
+   * **同时把本哨站标记为「章节网」**——与 blue_caves 深 band 线性脊柱解耦：deepestOutpostLaunch
+   * 跳过章节哨站（不参与深脊柱自动起跳链），章节蛙跳走显式 launchOutpostId（startDiveFromOutpost）。
+   * 缺省（深脊柱前哨 reef_deep/trench_deep/… 不设）→ 无门、行为逐字节不变。
+   */
+  requiresAnchor?: string;
+  /**
    * 水下前哨（会衰减；深水区 Phase 2b）。缺省/false = 水上或前期前哨（只增不减，如 home / ruin_north）。
    * 衰减按"自上次维护以来经过的 run 数"算（profile.outpostState），后果＝设施掉线 / 半亮回退 / 蛙跳失效，
    * 可重新 ferry 材料维护补回（engine/outposts.ts）。

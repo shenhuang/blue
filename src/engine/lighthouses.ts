@@ -26,6 +26,7 @@ import type {
 import lighthouseData from '@/data/lighthouse_upgrades.json';
 import { appendLog, removeFromInventory, HOME_LIGHTHOUSE_ID } from './state';
 import { materialShortfall, describeUpgradeCost, getUpgradeBonuses } from './upgrades';
+import { ch1AnchorFlag, type Ch1Anchor } from './story';
 
 const file = lighthouseData as unknown as LighthouseUpgradesFile;
 const TRACKS: LighthouseTrack[] = file.tracks;
@@ -458,6 +459,40 @@ export function isOutpostLit(profile: PlayerProfile, outpostId: string): boolean
   return outpostStage(profile, outpostId) >= OUTPOST_MAX_STAGE;
 }
 
+// ── 章节哨站（章节哨站批·#118 §10 2026-06-12）──────────────────────────────
+// 章节前哨＝OutpostDef.requiresAnchor 已设的前哨（坐标落一章锚点②③④三区）。两条解耦约定：
+//   1. 解锁门：对应锚点节拍（ch1AnchorFlag）置位前为「暗」（已知但不可建），置位后转「可建」。
+//   2. 章节网：与 blue_caves 深 band 线性脊柱解耦——deepestOutpostLaunch 跳过章节哨站
+//      （不参与深脊柱自动起跳链）；章节蛙跳走显式 launchOutpostId（dive-start.ts），落本区 band。
+// flag 字符串单一来源在 story.ts（quirk #118）——这里只读 ch1AnchorFlag 的输出、不手拼 'story.*'。
+
+/** 是否章节前哨（requiresAnchor 已设）。深脊柱前哨缺省 → false，行为逐字节不变。 */
+export function isChapterOutpost(def: OutpostDef): boolean {
+  return def.requiresAnchor !== undefined;
+}
+
+/**
+ * 章节哨站是否已**解锁**（解锁门，章节哨站批）：
+ *   - 非章节前哨（无 requiresAnchor）→ 恒 true（深脊柱不带门，软门控由料/装备决定）。
+ *   - 章节前哨 → 对应一章锚点节拍 flag 已置位才解锁（建造门开）；未置位＝海图上「暗」（已知不可建）。
+ * 锚点 flag 只由锚点事件 setProfileFlags 置位（quirk #118）；这里纯读。
+ */
+export function outpostUnlocked(profile: PlayerProfile, outpostId: string): boolean {
+  const def = OUTPOST_INDEX.get(outpostId);
+  if (!def || def.requiresAnchor === undefined) return true;
+  return profile.flags.has(ch1AnchorFlag(def.requiresAnchor as Ch1Anchor));
+}
+
+/** band 对应的章节哨站（若该 band 是某章节前哨服务的本区 band）。无 → undefined（深 band / 非章节）。 */
+export function chapterOutpostForBand(bandId: string): OutpostDef | undefined {
+  return OUTPOSTS.find((o) => isChapterOutpost(o) && o.bandId === bandId);
+}
+
+/** band 是否为章节区 band（有章节哨站服务它）。深脊柱 band → false。 */
+export function isChapterBand(bandId: string): boolean {
+  return chapterOutpostForBand(bandId) !== undefined;
+}
+
 /**
  * 推进一座前哨的建造一阶（深水区 Phase 2a，applyOutcome 的 advanceOutpostId 调）。
  * 权威校验**当前阶段**账单（profile 银行材料＋金币）：
@@ -474,6 +509,14 @@ export function advanceOutpost(state: GameState, outpostId: string): GameState {
   const cur = outpostStage(state.profile, outpostId);
   if (cur >= def.stages.length) {
     return appendLog(state, { tone: 'system', text: `「${def.name}」已经点亮了。` });
+  }
+  // 章节哨站解锁门（章节哨站批）：对应一章锚点节拍未到 → 还不能动工（海图上「暗」）。
+  // 深脊柱前哨无门、outpostUnlocked 恒 true，逐字节不变。
+  if (!outpostUnlocked(state.profile, outpostId)) {
+    return appendLog(state, {
+      tone: 'system',
+      text: `「${def.name}」还动不了——你得先在这片海里走到那一步，它才会在海图上亮起来。`,
+    });
   }
   const stageDef = def.stages[cur]; // 下一阶段（cur 是 0-based 已建数 = 下一阶段索引）
   const shortfall = materialShortfall(state.profile, stageDef.cost);
@@ -545,8 +588,40 @@ export function nextOutpostStage(
 
 /** 前哨下一阶段是否建得起（材料＋金币够、未点亮）。UI disable 建造按钮用，校验逻辑与 advanceOutpost 一致。 */
 export function canAdvanceOutpost(profile: PlayerProfile, outpostId: string): boolean {
+  if (!outpostUnlocked(profile, outpostId)) return false; // 章节哨站：锚点未到＝暗，不可建
   const stageDef = nextOutpostStage(profile, outpostId);
   if (!stageDef) return false; // 已点亮 / 未知
   if (materialShortfall(profile, stageDef.cost).length > 0) return false;
   return profile.bankedGold >= stageDef.cost.gold;
+}
+
+/**
+ * dev 免费推进一座前哨一阶（章节哨站批·#110 dev 家族：devBuildAtLighthouse / devGrantItem 同口径）。
+ * **跳过解锁门 + 跳过材料/金币校验**，纯置阶段 flag、建满 promote 灯塔。引擎仍无门（门在 UI 的 ?dev 后），
+ * 真路径（advanceOutpost）零触碰；已点亮 → no-op。dev 不动银行/库存＝真经济零触碰。
+ */
+export function devAdvanceOutpost(state: GameState, outpostId: string): GameState {
+  const def = OUTPOST_INDEX.get(outpostId);
+  if (!def) return state;
+  const cur = outpostStage(state.profile, outpostId);
+  if (cur >= def.stages.length) return state;
+  const newStage = cur + 1;
+  const flags = new Set(state.profile.flags);
+  flags.add(outpostStageFlag(outpostId, newStage));
+  const outpostState = {
+    ...state.profile.outpostState,
+    [outpostId]: {
+      ...(state.profile.outpostState[outpostId] ?? {}),
+      maintainedRun: state.profile.runsCompleted,
+    },
+  };
+  let lighthouses = state.profile.lighthouses;
+  const lit = newStage >= def.stages.length;
+  if (lit && !lighthouses.some((l) => l.id === def.result.id)) {
+    lighthouses = [...lighthouses, { ...def.result, builtUpgrades: new Set<string>() }];
+  }
+  return appendLog(
+    { ...state, profile: { ...state.profile, flags, outpostState, lighthouses } },
+    { tone: 'system', text: `测试推进（dev·0 成本）：${def.name} → 阶段 ${newStage}/${def.stages.length}${lit ? '（点亮）' : ''}。` },
+  );
 }

@@ -13,12 +13,23 @@
           "name": "船坞 Lv.1",
           "cost": {
             "materials": [
-              { "itemId": "item.coral_shard", "qty": 6 },
-              { "itemId": "item.old_fishing_net", "qty": 3 }
+              {
+                "itemId": "item.coral_shard",
+                "qty": 6
+              },
+              {
+                "itemId": "item.old_fishing_net",
+                "qty": 3
+              }
             ],
             "gold": 20
           },
-          "effects": [{ "kind": "extraConsumableSlot", "value": 1 }],
+          "effects": [
+            {
+              "kind": "extraConsumableSlot",
+              "value": 1
+            }
+          ],
           "description": "修起灯塔脚下的船坞。出海前可多带 1 个消耗品；远海点位（旧灯塔礁等）从此出得去。",
           "requiresLighthouseLevel": 1
         }
@@ -35,12 +46,23 @@
           "name": "信标 Lv.1",
           "cost": {
             "materials": [
-              { "itemId": "item.coral_shard", "qty": 4 },
-              { "itemId": "item.brass_fitting", "qty": 2 }
+              {
+                "itemId": "item.coral_shard",
+                "qty": 4
+              },
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 2
+              }
             ],
             "gold": 30
           },
-          "effects": [{ "kind": "lightRadiusBonus", "value": 1 }],
+          "effects": [
+            {
+              "kind": "lightRadiusBonus",
+              "value": 1
+            }
+          ],
           "description": "重新点亮灯室。点亮半径 +1。"
         },
         {
@@ -49,14 +71,26 @@
           "name": "信标 Lv.2",
           "cost": {
             "materials": [
-              { "itemId": "item.brass_fitting", "qty": 4 },
-              { "itemId": "item.crab_chitin", "qty": 2 }
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 4
+              },
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 2
+              }
             ],
             "gold": 60
           },
           "effects": [
-            { "kind": "lightRadiusBonus", "value": 1 },
-            { "kind": "reachReduction", "value": 1 }
+            {
+              "kind": "lightRadiusBonus",
+              "value": 1
+            },
+            {
+              "kind": "reachReduction",
+              "value": 1
+            }
           ],
           "description": "加装聚光镜。点亮半径再 +1，从这座灯塔出海更近 1。",
           "requiresLighthouseLevel": 1
@@ -75,12 +109,23 @@
           "name": "水轮机组",
           "cost": {
             "materials": [
-              { "itemId": "item.brass_fitting", "qty": 3 },
-              { "itemId": "item.crab_chitin", "qty": 2 }
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 3
+              },
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 2
+              }
             ],
             "gold": 80
           },
-          "effects": [{ "kind": "energyGen", "value": 2 }],
+          "effects": [
+            {
+              "kind": "energyGen",
+              "value": 2
+            }
+          ],
           "description": "架起水轮机组。前哨能源 +2——但只在水流（激流）前哨才转得起来，静水前哨建了也不产电。",
           "requiresLighthouseLevel": 1
         }
@@ -98,14 +143,26 @@
           "name": "充电桩",
           "cost": {
             "materials": [
-              { "itemId": "item.brass_fitting", "qty": 2 },
-              { "itemId": "item.eel_skin", "qty": 1 }
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 2
+              },
+              {
+                "itemId": "item.eel_skin",
+                "qty": 1
+              }
             ],
             "gold": 60
           },
           "effects": [
-            { "kind": "energyDraw", "value": 1 },
-            { "kind": "rechargeBonus", "value": 20 }
+            {
+              "kind": "energyDraw",
+              "value": 1
+            },
+            {
+              "kind": "rechargeBonus",
+              "value": 20
+            }
           ],
           "description": "建一座充电桩。从这座前哨蛙跳时电池总量 +20（占用能源 1——前哨能源不够它会掉线）。",
           "requiresLighthouseLevel": 1
@@ -124,14 +181,26 @@
           "name": "制氧机",
           "cost": {
             "materials": [
-              { "itemId": "item.crab_chitin", "qty": 2 },
-              { "itemId": "item.lantern_gland", "qty": 1 }
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 2
+              },
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 1
+              }
             ],
             "gold": 70
           },
           "effects": [
-            { "kind": "energyDraw", "value": 1 },
-            { "kind": "oxygenSupply", "value": 10 }
+            {
+              "kind": "energyDraw",
+              "value": 1
+            },
+            {
+              "kind": "oxygenSupply",
+              "value": 10
+            }
           ],
           "description": "建一座制氧机。从这座前哨蛙跳时氧气上限 +10（占用能源 1——前哨能源不够它会掉线）。",
           "requiresLighthouseLevel": 1
@@ -150,12 +219,23 @@
           "name": "料棚",
           "cost": {
             "materials": [
-              { "itemId": "item.brass_fitting", "qty": 2 },
-              { "itemId": "item.crab_chitin", "qty": 1 }
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 2
+              },
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 1
+              }
             ],
             "gold": 40
           },
-          "effects": [{ "kind": "storageCapacity", "value": 6 }],
+          "effects": [
+            {
+              "kind": "storageCapacity",
+              "value": 6
+            }
+          ],
           "description": "搭起料棚。可在这座前哨寄存 6 单位材料；维护时就地取料、免去那趟运料的船钱。",
           "requiresLighthouseLevel": 1
         },
@@ -165,12 +245,23 @@
           "name": "料棚扩建",
           "cost": {
             "materials": [
-              { "itemId": "item.brass_fitting", "qty": 3 },
-              { "itemId": "item.eel_skin", "qty": 2 }
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 3
+              },
+              {
+                "itemId": "item.eel_skin",
+                "qty": 2
+              }
             ],
             "gold": 80
           },
-          "effects": [{ "kind": "storageCapacity", "value": 6 }],
+          "effects": [
+            {
+              "kind": "storageCapacity",
+              "value": 6
+            }
+          ],
           "description": "扩建料棚与吊架。寄存容量再 +6（共 12 单位）。",
           "requiresLighthouseLevel": 1
         }
@@ -182,9 +273,18 @@
       "id": "ruin.north_beacon",
       "cost": {
         "materials": [
-          { "itemId": "item.brass_fitting", "qty": 4 },
-          { "itemId": "item.crab_chitin", "qty": 2 },
-          { "itemId": "item.cave_octopus_beak", "qty": 1 }
+          {
+            "itemId": "item.brass_fitting",
+            "qty": 4
+          },
+          {
+            "itemId": "item.crab_chitin",
+            "qty": 2
+          },
+          {
+            "itemId": "item.cave_octopus_beak",
+            "qty": 1
+          }
         ],
         "gold": 80
       },
@@ -207,15 +307,29 @@
       "stages": [
         {
           "label": "勘察并清理塔基（珊瑚碎片×4 ＋ 50 金）",
-          "cost": { "materials": [{ "itemId": "item.coral_shard", "qty": 4 }], "gold": 50 },
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.coral_shard",
+                "qty": 4
+              }
+            ],
+            "gold": 50
+          },
           "narrative": "你摸清了深槽底那座旧测候塔的骨架，把灯室口的淤泥和碎玻璃清了出去。塔基还立得住——能往下修了。"
         },
         {
           "label": "运来支柱与浮筒部件（黄铜配件×3·蛛蟹甲壳×2 ＋ 90 金）",
           "cost": {
             "materials": [
-              { "itemId": "item.brass_fitting", "qty": 3 },
-              { "itemId": "item.crab_chitin", "qty": 2 }
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 3
+              },
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 2
+              }
             ],
             "gold": 90
           },
@@ -225,8 +339,14 @@
           "label": "通电点亮（章鱼角喙×2·黄铜配件×2 ＋ 140 金）",
           "cost": {
             "materials": [
-              { "itemId": "item.cave_octopus_beak", "qty": 2 },
-              { "itemId": "item.brass_fitting", "qty": 2 }
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 2
+              },
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 2
+              }
             ],
             "gold": 140
           }
@@ -250,15 +370,29 @@
       "stages": [
         {
           "label": "在竖井壁上凿出锚位（章鱼角喙×2 ＋ 90 金）",
-          "cost": { "materials": [{ "itemId": "item.cave_octopus_beak", "qty": 2 }], "gold": 90 },
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 2
+              }
+            ],
+            "gold": 90
+          },
           "narrative": "你在竖井收窄处的岩壁上凿出几个锚位，把第一批桩子打了进去。急流一直在拽你，但架子算是有了起点。"
         },
         {
           "label": "运来抗流支架与浮筒（鳗皮×3·黄铜配件×3 ＋ 150 金）",
           "cost": {
             "materials": [
-              { "itemId": "item.eel_skin", "qty": 3 },
-              { "itemId": "item.brass_fitting", "qty": 3 }
+              {
+                "itemId": "item.eel_skin",
+                "qty": 3
+              },
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 3
+              }
             ],
             "gold": 150
           },
@@ -268,8 +402,14 @@
           "label": "通电点亮（冷光腺×2·章鱼角喙×2 ＋ 240 金）",
           "cost": {
             "materials": [
-              { "itemId": "item.lantern_gland", "qty": 2 },
-              { "itemId": "item.cave_octopus_beak", "qty": 2 }
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 2
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 2
+              }
             ],
             "gold": 240
           }
@@ -292,15 +432,29 @@
       "stages": [
         {
           "label": "在深渊边沿找一处立得住的崖肩（章鱼角喙×2 ＋ 110 金）",
-          "cost": { "materials": [{ "itemId": "item.cave_octopus_beak", "qty": 2 }], "gold": 110 },
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 2
+              }
+            ],
+            "gold": 110
+          },
           "narrative": "深渊里石壁退尽，几乎没有能立桩的硬岩。你顺着最后一道还算结实的崖肩摸了很久，总算卡住第一批桩子——再往外，就是没有壁、没有底的纯粹的黑了。"
         },
         {
           "label": "运来耐压支架与浮筒（鳗皮×3·黄铜配件×3 ＋ 180 金）",
           "cost": {
             "materials": [
-              { "itemId": "item.eel_skin", "qty": 3 },
-              { "itemId": "item.brass_fitting", "qty": 3 }
+              {
+                "itemId": "item.eel_skin",
+                "qty": 3
+              },
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 3
+              }
             ],
             "gold": 180
           },
@@ -310,8 +464,14 @@
           "label": "通电点亮（冷光腺×2·章鱼角喙×3 ＋ 290 金）",
           "cost": {
             "materials": [
-              { "itemId": "item.lantern_gland", "qty": 2 },
-              { "itemId": "item.cave_octopus_beak", "qty": 3 }
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 2
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 3
+              }
             ],
             "gold": 290
           }
@@ -334,15 +494,29 @@
       "stages": [
         {
           "label": "在超渊壁上找一处立得住的窄台（章鱼角喙×2 ＋ 120 金）",
-          "cost": { "materials": [{ "itemId": "item.cave_octopus_beak", "qty": 2 }], "gold": 120 },
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 2
+              }
+            ],
+            "gold": 120
+          },
           "narrative": "这么深几乎没有能立桩的硬岩——你贴着超渊的壁摸了很久，终于找到一道窄台，勉强卡得住第一批桩子。再往下，就是没名字的水了。"
         },
         {
           "label": "运来耐压支架与浮筒（鳗皮×4·黄铜配件×3 ＋ 200 金）",
           "cost": {
             "materials": [
-              { "itemId": "item.eel_skin", "qty": 4 },
-              { "itemId": "item.brass_fitting", "qty": 3 }
+              {
+                "itemId": "item.eel_skin",
+                "qty": 4
+              },
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 3
+              }
             ],
             "gold": 200
           },
@@ -352,8 +526,14 @@
           "label": "通电点亮（冷光腺×3·章鱼角喙×3 ＋ 340 金）",
           "cost": {
             "materials": [
-              { "itemId": "item.lantern_gland", "qty": 3 },
-              { "itemId": "item.cave_octopus_beak", "qty": 3 }
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 3
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 3
+              }
             ],
             "gold": 340
           }
@@ -366,6 +546,184 @@
         "mapY": 0.9,
         "level": 1,
         "region": "blue_caves"
+      }
+    },
+    {
+      "id": "outpost.ch1_wreck",
+      "name": "残骸前哨",
+      "bandId": "band.ch1_wreck",
+      "requiresAnchor": "wreck",
+      "submerged": true,
+      "stages": [
+        {
+          "label": "清出一截船体当塔基（珊瑚碎片×3 ＋ 40 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.coral_shard",
+                "qty": 3
+              }
+            ],
+            "gold": 40
+          },
+          "narrative": "你把一截还算完整的船舱清空，撑住，当作前哨的塔基。锈味很重，但它立得住。"
+        },
+        {
+          "label": "搭起落脚架与浮筒（蛛蟹甲壳×2·黄铜配件×2 ＋ 70 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 2
+              },
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 2
+              }
+            ],
+            "gold": 70
+          },
+          "narrative": "架子搭起来了——能在墓园里落脚、换气、起跳。半个前哨，墓地里也算有了个家。"
+        },
+        {
+          "label": "通电点亮（冷光腺×2 ＋ 110 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 2
+              }
+            ],
+            "gold": 110
+          }
+        }
+      ],
+      "result": {
+        "id": "lighthouse.ch1_wreck_outpost",
+        "name": "残骸前哨",
+        "mapX": 0.6,
+        "mapY": 0.62,
+        "level": 1,
+        "region": "wreck_graveyard"
+      }
+    },
+    {
+      "id": "outpost.ch1_midwater",
+      "name": "中层浮标",
+      "bandId": "band.ch1_midwater",
+      "requiresAnchor": "midwater",
+      "submerged": true,
+      "stages": [
+        {
+          "label": "抛锚定位浮标基座（珊瑚碎片×3 ＋ 50 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.coral_shard",
+                "qty": 3
+              }
+            ],
+            "gold": 50
+          },
+          "narrative": "开阔水里没有岩壁可依，你只能把锚一直放到看不见的底，让浮标基座先稳住。"
+        },
+        {
+          "label": "撑起浮标架与系留（黄铜配件×3 ＋ 90 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 3
+              }
+            ],
+            "gold": 90
+          },
+          "narrative": "浮标在中层悬住了，系留绷得笔直。没有参照物的蓝里，总算有了一个属于你的坐标。"
+        },
+        {
+          "label": "通电点亮（蛛蟹甲壳×3 ＋ 130 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 3
+              }
+            ],
+            "gold": 130
+          }
+        }
+      ],
+      "result": {
+        "id": "lighthouse.ch1_midwater_outpost",
+        "name": "中层浮标",
+        "mapX": 0.76,
+        "mapY": 0.4,
+        "level": 1,
+        "region": "open_midwater"
+      }
+    },
+    {
+      "id": "outpost.ch1_vent",
+      "name": "热液井台",
+      "bandId": "band.ch1_vent",
+      "requiresAnchor": "vent",
+      "submerged": true,
+      "current": true,
+      "stages": [
+        {
+          "label": "在井口岩架上凿出锚位（鳗皮×2 ＋ 70 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.eel_skin",
+                "qty": 2
+              }
+            ],
+            "gold": 70
+          },
+          "narrative": "你在热液井口的岩架上凿出锚位，烟柱在不远处吐着温水。第一批桩子打进去了。"
+        },
+        {
+          "label": "架设抗流井台（黄铜配件×3·鳗皮×2 ＋ 120 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 3
+              },
+              {
+                "itemId": "item.eel_skin",
+                "qty": 2
+              }
+            ],
+            "gold": 120
+          },
+          "narrative": "井台在温热的浑水里撑了起来——能落脚、起跳。热液会一直熏它，得常回来照看。"
+        },
+        {
+          "label": "通电点亮（冷光腺×2·章鱼角喙×2 ＋ 170 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 2
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 2
+              }
+            ],
+            "gold": 170
+          }
+        }
+      ],
+      "result": {
+        "id": "lighthouse.ch1_vent_outpost",
+        "name": "热液井台",
+        "mapX": 0.88,
+        "mapY": 0.8,
+        "level": 1,
+        "region": "vent_trench"
       }
     }
   ]

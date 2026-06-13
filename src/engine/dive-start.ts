@@ -27,6 +27,8 @@ import {
   getHomeLighthouse,
   getLighthouse,
   getOutposts,
+  getOutpostDef,
+  isChapterOutpost,
   OUTPOST_USABLE_STAGE,
 } from './lighthouses';
 import { effectiveOutpostStage, effectiveOutpostBonuses } from './outposts';
@@ -295,6 +297,9 @@ function deepestOutpostLaunch(
   let best: { name: string; launchDepth: number; order: number; lighthouse?: Lighthouse } | null =
     null;
   for (const def of getOutposts()) {
+    // 章节哨站批：章节前哨自成一网（落锚点②③④三区），不参与深脊柱线性自动起跳链——
+    // 它的蛙跳走显式 launchOutpostId（见 startDiveFromOutpost），落本区 band，别被深 band 误选为起跳点。
+    if (isChapterOutpost(def)) continue;
     // 深水区 Phase 2b：用衰减后的**有效**阶段——荒废到半亮回退（< USABLE）的前哨会丢失蛙跳资格。
     if (effectiveOutpostStage(profile, def.id) < OUTPOST_USABLE_STAGE) continue;
     const ob = getBand(def.bandId);
@@ -325,7 +330,7 @@ function deepestOutpostLaunch(
 export function startDiveFromOutpost(
   state: GameState,
   bandId: string,
-  opts?: { carryItems?: InventoryItem[] },
+  opts?: { carryItems?: InventoryItem[]; launchOutpostId?: string },
 ): GameState {
   const band = getBand(bandId);
   if (!band) {
@@ -334,7 +339,19 @@ export function startDiveFromOutpost(
   }
   // 蛙跳出潜点（深水区 Phase 2a）：从**已半亮（≥ OUTPOST_USABLE_STAGE）、且比目标 band 更浅**的最深前哨起跳，
   // 起跳深度＝该前哨所在 band 底（省掉从水面到那里的下潜）。没有这样的前哨 → 退回 home 灯塔 stand-in（从水面起跳＝Phase 1 旧行为）。
-  const launch = deepestOutpostLaunch(state.profile, band.order);
+  //
+  // 章节哨站批：opts.launchOutpostId 显式指定起跳前哨（点海图章节哨站→蛙跳入本区 band）——
+  // 章节前哨自成一网、不在 deepestOutpostLaunch 的深脊柱链里，故走显式起跳。要求该前哨已半亮（否则忽略、退回深脊柱/home）。
+  const explicit = opts?.launchOutpostId ? getOutpostDef(opts.launchOutpostId) : undefined;
+  const explicitLaunch =
+    explicit && effectiveOutpostStage(state.profile, explicit.id) >= OUTPOST_USABLE_STAGE
+      ? {
+          name: explicit.name,
+          launchDepth: getBand(explicit.bandId)?.depthRange[1] ?? 0,
+          lighthouse: getLighthouse(state.profile, explicit.result.id),
+        }
+      : null;
+  const launch = explicitLaunch ?? deepestOutpostLaunch(state.profile, band.order);
   const outpost = launch ? undefined : getHomeLighthouse(state.profile);
   const launchName = launch?.name ?? outpost?.name ?? '前哨';
   const launchDepth = launch?.launchDepth ?? 0;

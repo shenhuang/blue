@@ -31,9 +31,18 @@ import {
   outpostStageFlag,
   isOutpostLit,
   getOutpostDef,
+  getOutposts,
+  canAdvanceOutpost,
+  devAdvanceOutpost,
+  isChapterOutpost,
+  isChapterBand,
+  chapterOutpostForBand,
+  outpostUnlocked,
   OUTPOST_MAX_STAGE,
   OUTPOST_USABLE_STAGE,
 } from '../src/engine/lighthouses';
+import { ch1AnchorFlag, CH1_ANCHORS, type Ch1Anchor } from '../src/engine/story';
+import { getBand } from '../src/engine/bands';
 import {
   outpostEnergy,
   effectiveOutpostBonuses,
@@ -103,6 +112,32 @@ const abyDef = getOutpostDef('outpost.abyssal_deep')!;
 assert(abyDef.bandId === 'band.abyssal', '0: abyssal_deep 在 band.abyssal');
 assert(abyDef.submerged && !abyDef.current, '0: abyssal_deep 水下·静水（无水力·base 能源 1）');
 L(`  脊柱四前哨各 3 阶段；abyssal_deep @ band.abyssal（静水）✓`);
+// 章节哨站批：三章节前哨（②③④锚点区）自洽——3 阶段、requiresAnchor 合法、band 是章节区 band、
+// result id 全局唯一、深脊柱前哨不带 requiresAnchor（章节标记不污染脊柱）。
+const CHAPTER_OUTPOSTS: Array<[string, Ch1Anchor, string]> = [
+  ['outpost.ch1_wreck', 'wreck', 'band.ch1_wreck'],
+  ['outpost.ch1_midwater', 'midwater', 'band.ch1_midwater'],
+  ['outpost.ch1_vent', 'vent', 'band.ch1_vent'],
+];
+const allResultIds = getOutposts().map((o) => o.result.id);
+assert(new Set(allResultIds).size === allResultIds.length, '0: 所有前哨 result.id 全局唯一');
+for (const [oid, anchor, bandId] of CHAPTER_OUTPOSTS) {
+  const cd = getOutpostDef(oid);
+  assert(cd, `0: ${oid} 已注册`);
+  assert(cd!.stages.length === OUTPOST_MAX_STAGE, `0: ${oid} 3 阶段`);
+  assert(cd!.requiresAnchor === anchor, `0: ${oid} requiresAnchor=${anchor}`);
+  assert(isChapterOutpost(cd!), `0: ${oid} 是章节前哨`);
+  assert(cd!.bandId === bandId, `0: ${oid} @ ${bandId}`);
+  assert(getBand(bandId), `0: 章节 band ${bandId} 已注册`);
+  assert(isChapterBand(bandId), `0: ${bandId} 是章节区 band`);
+  assert(chapterOutpostForBand(bandId)?.id === oid, `0: ${bandId} ↔ ${oid} 反查一致`);
+  assert(CH1_ANCHORS.includes(anchor), `0: ${anchor} ∈ CH1_ANCHORS`);
+}
+// reef 锚点①由 home 灯塔覆盖、不设哨站（无 band.ch1_reef / 无 requiresAnchor=reef 的前哨）
+assert(!getOutposts().some((o) => o.requiresAnchor === 'reef'), '0: 锚点①(reef)无哨站（home 灯塔覆盖）');
+// 深脊柱前哨不带 requiresAnchor（章节标记不污染脊柱·不被章节网排除逻辑误伤）
+for (const id of SPINE) assert(!isChapterOutpost(getOutpostDef(id)!), `0: 脊柱 ${id} 非章节前哨`);
+L(`  三章节哨站（沉船/中层/热液）各 3 阶段·requiresAnchor·章节区 band 双向一致；reef 无哨站；脊柱不带章节标记 ✓`);
 
 // ============================================================
 // 1. 三阶段推进：扣料＋金、置 flag、点亮 promote
@@ -583,7 +618,89 @@ const abyTM = startDiveFromOutpost(sAby, 'band.trench_mouth').run!.turn;
 assert(abyTM === homeTM, '13: abyssal_deep 不服务更浅的 trench_mouth（蛙跳点须更浅）');
 L(`  abyssal_deep 半亮：hadal ${homeHadal}→${abyHadal} / subhadal 缩短 / 不服务 trench_mouth ✓`);
 
+// ============================================================
+// 14. 章节哨站批：解锁门（锚点 flag）+ dev 免解 + 章节蛙跳（显式起跳·不污染深脊柱）
+// ============================================================
+L('\n========== 14. 章节哨站：解锁门 / dev / 蛙跳 ==========');
+const WRECK_OUT = 'outpost.ch1_wreck';
+const WRECK_BAND = 'band.ch1_wreck';
+const WRECK_LH = 'lighthouse.ch1_wreck_outpost';
+
+// 备齐残骸前哨全程料（s1 coral×3/40 · s2 crab×2+brass×2/70 · s3 lantern×2/110）
+function wreckStock(): GameState {
+  return stateWith(
+    [
+      { itemId: 'item.coral_shard', qty: 3 },
+      { itemId: 'item.crab_chitin', qty: 2 },
+      { itemId: 'item.brass_fitting', qty: 2 },
+      { itemId: 'item.lantern_gland', qty: 2 },
+    ],
+    400,
+  );
+}
+
+// 14a 锁态：锚点 flag 未置 → outpostUnlocked false · canAdvance false · advanceOutpost 不动 stage
+let sLock = wreckStock();
+assert(!sLock.profile.flags.has(ch1AnchorFlag('wreck')), '14a: 起手无 wreck 锚点 flag');
+assert(!outpostUnlocked(sLock.profile, WRECK_OUT), '14a: 暗（未解锁）');
+assert(!canAdvanceOutpost(sLock.profile, WRECK_OUT), '14a: 锁态不可建（料够也不行）');
+const sTryLocked = advanceOutpost(sLock, WRECK_OUT);
+assert(outpostStage(sTryLocked.profile, WRECK_OUT) === 0, '14a: 锁态 advanceOutpost 不推进 stage');
+assert(countInInventory(sTryLocked.profile.inventory, 'item.coral_shard') === 3, '14a: 锁态不扣料');
+assert(sTryLocked.profile.bankedGold === 400, '14a: 锁态不扣金');
+
+// 14b 置锚点 flag → 解锁 → 可建（料够）→ 三阶推进点亮
+let sUnlk: GameState = {
+  ...sLock,
+  profile: { ...sLock.profile, flags: new Set([...sLock.profile.flags, ch1AnchorFlag('wreck')]) },
+};
+assert(outpostUnlocked(sUnlk.profile, WRECK_OUT), '14b: 锚点置位后解锁');
+assert(canAdvanceOutpost(sUnlk.profile, WRECK_OUT), '14b: 解锁+料够 → 可建');
+sUnlk = advanceOutpost(sUnlk, WRECK_OUT);
+assert(outpostStage(sUnlk.profile, WRECK_OUT) === 1, '14b: 解锁后能推进');
+assert(countInInventory(sUnlk.profile.inventory, 'item.coral_shard') === 0, '14b: 推进扣料');
+sUnlk = advanceOutpost(sUnlk, WRECK_OUT);
+sUnlk = advanceOutpost(sUnlk, WRECK_OUT);
+assert(isOutpostLit(sUnlk.profile, WRECK_OUT), '14b: 三阶建满点亮');
+assert(hasLh(sUnlk, WRECK_LH), '14b: 点亮 push 残骸前哨灯塔');
+
+// 14c dev 免解：锁态直接 devAdvanceOutpost → 跳过门+跳过料，置 stage、不扣资源
+let sDev = wreckStock();
+assert(!outpostUnlocked(sDev.profile, WRECK_OUT), '14c: dev 前仍是锁态');
+sDev = devAdvanceOutpost(sDev, WRECK_OUT);
+assert(outpostStage(sDev.profile, WRECK_OUT) === 1, '14c: dev 免解锁推进一阶');
+assert(countInInventory(sDev.profile.inventory, 'item.coral_shard') === 3, '14c: dev 不扣料');
+assert(sDev.profile.bankedGold === 400, '14c: dev 不扣金');
+sDev = devAdvanceOutpost(sDev, WRECK_OUT);
+sDev = devAdvanceOutpost(sDev, WRECK_OUT);
+assert(isOutpostLit(sDev.profile, WRECK_OUT), '14c: dev 三连点亮');
+const sDevNoop = devAdvanceOutpost(sDev, WRECK_OUT);
+assert(outpostStage(sDevNoop.profile, WRECK_OUT) === OUTPOST_MAX_STAGE, '14c: 已点亮 dev no-op');
+
+// 14d 章节蛙跳：显式 launchOutpostId 从点亮的残骸前哨跳入本区 band，落到 wreck 区 zone
+const litWreck = sDev; // dev 点亮的残骸前哨
+const wreckBand = getBand(WRECK_BAND)!;
+const dive = startDiveFromOutpost(litWreck, WRECK_BAND, { launchOutpostId: WRECK_OUT });
+assert(dive.run, '14d: 蛙跳产生 run');
+assert(dive.run!.zoneId === wreckBand.zoneId, `14d: 落到本区 zone（${wreckBand.zoneId}）`);
+
+// 14e 章节网解耦：章节前哨不参与深脊柱 deepestOutpostLaunch——
+// 即便点亮了残骸前哨，对深 band（trench_mouth）的蛙跳预耗氧与没有它时相同（没被误选为起跳点）。
+const noOutpost = stateWith([], 0);
+const baseTM = startDiveFromOutpost(noOutpost, 'band.trench_mouth').run!.turn;
+const withWreckTM = startDiveFromOutpost(litWreck, 'band.trench_mouth').run!.turn;
+assert(withWreckTM === baseTM, '14e: 章节前哨不污染深脊柱自动起跳（trench_mouth 预耗氧不变）');
+
+// 14f 半亮门：未达 USABLE 的章节前哨，显式起跳忽略（退回 home stand-in）——与点亮版起跳点不同则预耗氧不同
+let sChHalf = wreckStock();
+sChHalf = { ...sChHalf, profile: { ...sChHalf.profile, flags: new Set([...sChHalf.profile.flags, ch1AnchorFlag('wreck')]) } };
+sChHalf = advanceOutpost(sChHalf, WRECK_OUT); // stage 1 < USABLE(2)
+assert(effectiveOutpostStage(sChHalf.profile, WRECK_OUT) < OUTPOST_USABLE_STAGE, '14f: stage1 未达半亮');
+const diveHalf = startDiveFromOutpost(sChHalf, WRECK_BAND, { launchOutpostId: WRECK_OUT });
+assert(diveHalf.run, '14f: 未半亮显式起跳被忽略·仍能蛙跳（退回 home）');
+L('  锁态不可建/不扣料 → 锚点置位解锁建满 → dev 免解三连 → 章节蛙跳落本区 → 不污染深脊柱 → 半亮门 ✓');
+
 console.log(log.join('\n'));
 console.log(
-  '\n✓ 深水前哨（Phase 2a 建造/蛙跳 + Phase 2b 能源/衰减/维护/寄存/多前哨链/reveal dimming + abyssal 脊柱）回归通过',
+  '\n✓ 深水前哨（Phase 2a 建造/蛙跳 + Phase 2b 能源/衰减/维护/寄存/多前哨链/reveal dimming + abyssal 脊柱 + 章节哨站批解锁门/dev/蛙跳）回归通过',
 );

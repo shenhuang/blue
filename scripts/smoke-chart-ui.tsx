@@ -1062,5 +1062,30 @@ const rInWater = projectIntoWater({ x: 0, y: 0 }, qFull); // 房心=水
 assert(rInWater.x === 0 && rInWater.y === 0, 'R7: 已在水里的点零扰动');
 L('  方向无关 · 端点=房心 · blip 永在路由上 · 残段双向截断 · 无知态回退 · fix 锚点并入有水可站 · SDF 投影闸 ✓');
 
+// ============================================
+// S. 章节哨站批：OutpostPanel 暗（待解锁）/ 点亮后出蛙跳按钮 / 深脊柱 band 列表不含章节区 band
+// ============================================
+L('\n========== S. 章节哨站 OutpostPanel ==========');
+// 锁态：教学完成但 wreck 锚点未到 → 残骸前哨显示「暗 · 待解锁」、无蛙跳按钮
+const sLockChap = stateWith(['flag.tutorial_complete'], []);
+const htmlSLock = renderToStaticMarkup(<SeaChartView state={sLockChap} onStateChange={noop} />);
+assert(htmlSLock.includes('暗 · 待解锁'), 'S: 锚点未到的章节前哨显示「暗 · 待解锁」');
+assert(htmlSLock.includes('它才会在海图上') || htmlSLock.includes('走到对应的锚点'), 'S: 锁态给解锁提示');
+// 深脊柱蛙跳列表不含章节区 band（章节区由哨站出蛙跳）
+assert(!htmlSLock.includes('温带商船残骸（18–50m）'), 'S: 深脊柱列表不列章节区 band（温带商船残骸）');
+assert(htmlSLock.includes('蛙跳'), 'S: 深脊柱蛙跳列表仍在（家灯塔）');
+
+// 点亮态：置 wreck 锚点 flag + 残骸前哨三阶 flag + push 其灯塔 → 出「蛙跳下潜」按钮
+const CH1_WRECK_LH = { id: 'lighthouse.ch1_wreck_outpost', name: '残骸前哨', mapX: 0.6, mapY: 0.62 };
+const sLitChap = litOutpostState({ outpostId: 'outpost.ch1_wreck', resultLh: CH1_WRECK_LH });
+const sLitChapWithAnchor: GameState = {
+  ...sLitChap,
+  profile: { ...sLitChap.profile, flags: new Set([...sLitChap.profile.flags, 'story.ch1.anchor.wreck']) },
+};
+const htmlSLit = renderToStaticMarkup(<SeaChartView state={sLitChapWithAnchor} onStateChange={noop} />);
+assert(htmlSLit.includes('蛙跳下潜'), 'S: 点亮的章节前哨出「蛙跳下潜」按钮');
+assert(htmlSLit.includes('已点亮'), 'S: 点亮态状态显示「已点亮」');
+L('  锁态「暗·待解锁」+ 解锁提示 + 深脊柱列表不含章节 band + 点亮出蛙跳按钮 ✓');
+
 console.log(log.join('\n'));
 console.log('\n✓ 海图 UI 冒烟测试通过');

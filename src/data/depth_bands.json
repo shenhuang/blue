@@ -5,7 +5,10 @@
       "id": "band.reef_deep",
       "name": "灯塔礁·深槽",
       "zoneId": "zone.old_lighthouse_reef",
-      "depthRange": [45, 60],
+      "depthRange": [
+        45,
+        60
+      ],
       "order": 1,
       "visibility": "murky",
       "blurb": "礁体侧面那道深槽的底。水冷下来，悬浮物把灯光散成一团白——还看得见，只是看不远。",
@@ -15,11 +18,17 @@
       "id": "band.trench_mouth",
       "name": "竖井·口",
       "zoneId": "zone.blue_caves",
-      "depthRange": [60, 82],
+      "depthRange": [
+        60,
+        82
+      ],
       "order": 2,
       "visibility": "dark",
       "alertFactor": 1.3,
-      "tags": ["cave", "twilight"],
+      "tags": [
+        "cave",
+        "twilight"
+      ],
       "maxRoomFeatures": 2,
       "hunts": true,
       "blurb": "蓝洞群最里头，岩壁裂开一道一直向下的竖井。没人量过底。当地人说，从这儿下去的，水声是反着回来的。",
@@ -29,11 +38,17 @@
       "id": "band.trench_throat",
       "name": "竖井·喉",
       "zoneId": "zone.blue_caves",
-      "depthRange": [82, 108],
+      "depthRange": [
+        82,
+        108
+      ],
       "order": 3,
       "visibility": "dark",
       "alertFactor": 1.6,
-      "tags": ["cave", "midnight"],
+      "tags": [
+        "cave",
+        "midnight"
+      ],
       "maxRoomFeatures": 2,
       "sonarDeception": 0.2,
       "hunts": true,
@@ -44,11 +59,17 @@
       "id": "band.abyssal",
       "name": "深渊·界",
       "zoneId": "zone.blue_caves",
-      "depthRange": [108, 140],
+      "depthRange": [
+        108,
+        140
+      ],
       "order": 4,
       "visibility": "dark",
       "alertFactor": 2.0,
-      "tags": ["cave", "abyssal"],
+      "tags": [
+        "cave",
+        "abyssal"
+      ],
       "maxRoomFeatures": 3,
       "sonarDeception": 0.28,
       "hunts": true,
@@ -59,11 +80,17 @@
       "id": "band.hadal",
       "name": "超渊·缝",
       "zoneId": "zone.blue_caves",
-      "depthRange": [140, 180],
+      "depthRange": [
+        140,
+        180
+      ],
       "order": 5,
       "visibility": "dark",
       "alertFactor": 2.5,
-      "tags": ["cave", "hadal"],
+      "tags": [
+        "cave",
+        "hadal"
+      ],
       "maxRoomFeatures": 3,
       "sonarDeception": 0.32,
       "hunts": true,
@@ -74,11 +101,17 @@
       "id": "band.subhadal",
       "name": "渊外·无底",
       "zoneId": "zone.blue_caves",
-      "depthRange": [180, 230],
+      "depthRange": [
+        180,
+        230
+      ],
       "order": 6,
       "visibility": "dark",
       "alertFactor": 3.0,
-      "tags": ["cave", "subhadal"],
+      "tags": [
+        "cave",
+        "subhadal"
+      ],
       "maxRoomFeatures": 3,
       "sonarDeception": 0.06,
       "hunts": true,
@@ -89,16 +122,60 @@
       "id": "band.nameless",
       "name": "无名·应",
       "zoneId": "zone.blue_caves",
-      "depthRange": [230, 290],
+      "depthRange": [
+        230,
+        290
+      ],
       "order": 7,
       "visibility": "dark",
       "alertFactor": 3.5,
-      "tags": ["cave", "nameless"],
+      "tags": [
+        "cave",
+        "nameless"
+      ],
       "maxRoomFeatures": 3,
       "sonarDeception": 0.04,
       "hunts": true,
       "blurb": "渊外之外，连名字都用完了。这一层海图上没有，渊外那些『下去的理由』也停了——它不再递给你什么，因为往下的那个，已经不全是你，也不全是别的什么。声呐扫回来的是你的形状，黑里答你的是你的声音，你的记号在你没去过的前头等着你。到了这里，『你』和『它』，是同一个正在往下的东西。",
       "danger": "比渊外更里。没有要躲的怪物，也没有要拆穿的谎——要认清的是你自己：哪一半还想上去，哪一半已经不想。分得清的，才回得来。"
+    },
+    {
+      "id": "band.ch1_wreck",
+      "name": "温带商船残骸",
+      "zoneId": "zone.wreck_graveyard",
+      "depthRange": [
+        18,
+        50
+      ],
+      "order": 11,
+      "visibility": "murky",
+      "blurb": "点亮的残骸前哨脚下，那片沉船的墓园。水不深，悬浮的锈屑把灯光磨得发毛——你已经来过，认得路。",
+      "danger": "沉船的影子里不止一种比你想象中大的东西。来过不等于安全。"
+    },
+    {
+      "id": "band.ch1_midwater",
+      "name": "远洋中层",
+      "zoneId": "zone.open_midwater",
+      "depthRange": [
+        55,
+        85
+      ],
+      "order": 12,
+      "blurb": "离开任何岩壁的开阔蓝水。前哨的灯在身后，前方只有上下都望不到底的蓝——没有参照物，但你回得去。",
+      "danger": "开阔水里没有可躲的缝。被盯上了，只能靠速度。"
+    },
+    {
+      "id": "band.ch1_vent",
+      "name": "海沟热液场",
+      "zoneId": "zone.vent_trench",
+      "depthRange": [
+        85,
+        118
+      ],
+      "order": 13,
+      "visibility": "murky",
+      "blurb": "热液场的井与廊。黑烟柱在远处一根根立着，水是温的，灯照不透那团矿物的浑浊。前哨就架在井口。",
+      "danger": "热液口的浑浊里，盲鳗循着你的动静摸过来。"
     }
   ]
 }
