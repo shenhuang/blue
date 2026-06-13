@@ -314,11 +314,20 @@ export function tickTurns(
     stats.sanity = Math.max(0, stats.sanity - visDrain);
   }
 
-  // 深水区 Phase 0a：灯耗电（清水因子 0 → 浅水近免费；黑水/微浊才耗；归零 → clarity 强制摸黑）。
-  const power = Math.max(0, run.power - lampPowerDrain(run, turns));
+  // 深水区 Phase 0a：灯耗电（清水因子 0＝有自然光不点灯；黑水/微浊才耗；归零 → clarity 强制摸黑）。
+  // litThisTurn（#118·作者拍）：本回合开过灯（哪怕看一眼又关了）＝按整回合开灯收电费，
+  // 与进回合前就开着等价——零电费偷看缝焊死。只动电费口；警觉仍按瞬时开关算（隐身轴
+  // 语义独立·要不要同样补收留电池经济批一起拍）。
+  const billRun =
+    !run.sensors.light && run.sensors.litThisTurn
+      ? { ...run, sensors: { ...run.sensors, light: true } }
+      : run;
+  const power = Math.max(0, run.power - lampPowerDrain(billRun, turns));
 
   // 深水区 Phase 0b：警觉积累（点灯/ping 在深水抬、摸黑/浅水降）；clamp 0–ALERT_MAX。
   const alert = Math.max(0, Math.min(ALERT_MAX, run.alert + alertDelta(run, turns)));
 
-  return { ...run, stats, power, alert, turn: run.turn + turns };
+  // 结算后复位 litThisTurn（缺席=本回合没开过灯·真条件字段不留尸）。
+  const sensors = run.sensors.litThisTurn ? { ...run.sensors, litThisTurn: undefined } : run.sensors;
+  return { ...run, sensors, stats, power, alert, turn: run.turn + turns };
 }

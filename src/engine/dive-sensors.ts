@@ -30,7 +30,12 @@ export function setLight(state: GameState, on: boolean): GameState {
   const run = state.run;
   if (!run) return state;
   if (run.sensors.light === on) return state;
-  let s: GameState = { ...state, run: { ...run, sensors: { ...run.sensors, light: on } } };
+  // litThisTurn（#118）：开灯即记「本回合见过光」，结算时按整回合开灯收电费（关灯不清——
+  // 这正是堵的那条缝）；回合 tick 后由 tickTurns 复位。
+  let s: GameState = {
+    ...state,
+    run: { ...run, sensors: { ...run.sensors, light: on, ...(on ? { litThisTurn: true } : {}) } },
+  };
   s = appendLog(s, {
     tone: 'realistic',
     text: on

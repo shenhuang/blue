@@ -215,6 +215,27 @@ L('\n========== 8. tickTurns 灯耗电（水况分级）==========');
   assert(lampPowerDrain(darkOff, 3) === 0, '8: 关灯不耗电（摸黑省电）');
   assert(tickTurns(darkOff, 3).power === darkOff.power, '8: 关灯 tick 不掉电');
   L('  清水近免费 / 黑水耗 / 关灯不耗 ✓');
+
+  // 8b. litThisTurn（#118·作者拍「本回合开过灯=按整回合开灯结算」）：黑水里开灯瞄一眼
+  //     再关 → 本回合 tick 照收灯电费（与全程开着同额）；结算后旗标复位，下回合纯摸黑不收。
+  {
+    let sPeek = enterNodeSelection(mk({ visibility: 'dark', light: false }));
+    sPeek = setLight(sPeek, true); // 瞄一眼
+    sPeek = setLight(sPeek, false); // 又关上
+    const peekRun = sPeek.run!;
+    assert(peekRun.sensors.litThisTurn === true, '8b: 开过灯应置 litThisTurn（关灯不清）');
+    const litRun = mk({ visibility: 'dark' }).run!;
+    const fullBill = litRun.power - tickTurns(litRun, 1).power;
+    assert(fullBill > 0, '8b: fixture 事实——黑水开灯 1 回合有真电费');
+    const ticked = tickTurns(peekRun, 1);
+    assert(
+      peekRun.power - ticked.power === fullBill,
+      `8b: 瞄一眼再关的回合应收整回合灯电费（${peekRun.power - ticked.power} 应=${fullBill}）`,
+    );
+    assert(ticked.sensors.litThisTurn === undefined, '8b: 结算后 litThisTurn 复位（真条件字段不留尸）');
+    assert(tickTurns(ticked, 1).power === ticked.power, '8b: 下一回合没再开灯 → 不再收（旗标不粘连）');
+  }
+  L('  8b 偷看缝焊死：瞄一眼=整回合灯费·结算复位 ✓');
 }
 
 // ============================================================

@@ -106,6 +106,13 @@ export type SonarDir = 'deeper' | 'lateral' | 'back';
 export interface SensorState {
   /** 探照灯开关。开＝灯有效时近距真相 + 解锁信息，但抬高 signature。默认开。 */
   light: boolean;
+  /**
+   * 本回合是否开过灯（#118·作者拍 2026-06-12「只要看清了这回合的选项，就按这回合开灯
+   * 计算电量，和进回合前就开着一样」）：setLight(true) 置位，回合结算（tickTurns）按它
+   * 补收灯电费后清掉——焊死「开灯瞄一眼再关」的零电费偷看缝。真条件字段：缺席＝本回合
+   * 没开过灯（hydrate 不补·quirk #106 同族·additive 不 bump SAVE_VERSION）。
+   */
+  litThisTurn?: boolean;
   /** 声呐模式。'ping'＝本次选点扫一发（耗电、回波不可信）；'off'＝不扫。默认 off。移动后归 off（脉冲是瞬时的）。 */
   sonar: 'off' | 'ping';
   /** 声呐能力是否已解锁（升级派生，后期才有）。未解锁则 ping 不可用、黑水保持盲航。 */
