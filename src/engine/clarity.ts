@@ -73,12 +73,17 @@ export const SIGNATURE_MIN_ACTIVE = 2;
 export const CLARITY_FULL_DEPTH = 25;
 /** 深水里灯给"地面真相"的最大深度差（m）：节点比你深 ≤ 此值＝灯照得到 full；更深的陡降灯打不透。 */
 export const LAMP_DEPTH_REACH = 6;
-/** 深水里声呐够得到的最大深度差（m，> 灯）：更深的坑连回波都没有＝黑。 */
-export const SONAR_DEPTH_REACH = 14;
+/**
+ * 深水里声呐够得到的最大深度差（m，>> 灯）：更深的坑连回波都没有＝黑。
+ * 声呐＝深水的眼睛（作者拍 2026-06-13）：竖井/陡降里灯照不透（LAMP_DEPTH_REACH 6m 远够不到），
+ * 但 ping 能打下去把上半段结构读出来——把它从 14 抬到 22，让海沟这类「每步落差 14–22m」的竖井
+ * 在开声呐后可导航（上半段可见），最深的几跳（>22m）仍要凑近/摸黑＝守「最深处必须自己下去」北极星。
+ */
+export const SONAR_DEPTH_REACH = 22;
 /** 灯 reach 升满上限（守"永远有比最深更深的"：灯不可能照穿任意深的陡降，最深处必须自己摸黑下去）。 */
 export const LAMP_DEPTH_REACH_MAX = 14;
-/** 声呐 reach 升满上限。 */
-export const SONAR_DEPTH_REACH_MAX = 26;
+/** 声呐 reach 升满上限（基线抬到 22 后同步抬高·留升级头距；升满 30 仍读不穿 33m+ 的最深陡降＝守北极星）。 */
+export const SONAR_DEPTH_REACH_MAX = 30;
 /** 大房间（多事件房间）出现率加成上限（声呐与房间 §6/§8.3 续）：升满也到此为止——大房间仍稀有、band maxRoomFeatures 仍是天花板。 */
 export const ROOM_FEATURE_CHANCE_MAX = 0.3;
 /** 猎手规避上限（猎手 SPEC §3 守地板）：单条规避旋钮（吸声/迷彩）升满也到此为止——规避永不到 1，最深/最凶仍找得到你（对称 SIGNATURE_MIN_ACTIVE 的「永不全隐」铁律）。 */

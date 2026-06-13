@@ -377,6 +377,8 @@ const DEEP_NEAR = '近处的坑，看得清。'; // dd 4
 const DEEP_EDGE = '刚够到的坑沿。'; // dd 8
 const DEEP_MID = '中段沉下去的水道。'; // dd 12
 const DEEP_FAR = '更深处，一道直坠下去的裂口。'; // dd 20
+const DEEP_DEEP = '再往下，连回波都要拐个弯才回来。'; // dd 26（基线声呐 22 够不到、升级才扫得到）
+const DEEP_ABYSS = '最底下那道缝，什么都不回来。'; // dd 35（声呐升满 30 也读不穿＝守北极星）
 
 /** d0(40m) 连到四个不同深度差的事件节点 + 一个深处尸体（测尸体也被深度藏住）。 */
 function makeDeepMap(): DiveMap {
@@ -388,11 +390,13 @@ function makeDeepMap(): DiveMap {
     generatedAt: 0,
     startNodeId: 'd0',
     nodes: {
-      d0: { id: 'd0', layer: 0, depth: 40, zoneTag: 'cave', kind: 'event', connectsTo: ['near', 'edge', 'mid', 'far', 'dcorpse'], preview: '起点。' },
+      d0: { id: 'd0', layer: 0, depth: 40, zoneTag: 'cave', kind: 'event', connectsTo: ['near', 'edge', 'mid', 'far', 'deep', 'abyss', 'dcorpse'], preview: '起点。' },
       near: ev('near', 44, DEEP_NEAR),
       edge: ev('edge', 48, DEEP_EDGE),
       mid: ev('mid', 52, DEEP_MID),
       far: ev('far', 60, DEEP_FAR),
+      deep: ev('deep', 66, DEEP_DEEP),
+      abyss: ev('abyss', 75, DEEP_ABYSS),
       dcorpse: { id: 'dcorpse', layer: 1, depth: 60, zoneTag: 'cave', kind: 'corpse', connectsTo: [], preview: '一具卡在深处的尸体。' },
     },
   };
@@ -453,10 +457,11 @@ L('\n========== 12. 节点级 clarity：深度分档 ==========');
     const cs = choicesOf(s);
     assert(byId(cs, 'near').clarity === 'full', '12c: 近处灯下真相（full）');
     assert(byId(cs, 'edge').clarity === 'sonar', '12c: dd8 灯够不到、声呐够到 → sonar');
-    assert(byId(cs, 'mid').clarity === 'sonar', '12c: dd12(≤sonarReach14) → sonar');
+    assert(byId(cs, 'mid').clarity === 'sonar', '12c: dd12(≤sonarReach22) → sonar');
     assert(byId(cs, 'mid').preview !== DEEP_MID, '12c: 声呐表象 ≠ 真内容');
-    assert(byId(cs, 'far').clarity === 'none', '12c: dd20(>sonarReach14) 连声呐都够不到 = 黑');
-    L('  灯近真相 + 声呐补中段 + 最深仍黑（用途分工）✓');
+    assert(byId(cs, 'far').clarity === 'sonar', '12c: dd20(≤sonarReach22) 声呐够到 → sonar（声呐=深水的眼·2026-06-13 抬到 22）');
+    assert(byId(cs, 'abyss').clarity === 'none', '12c: dd35(>sonarReach22) 连声呐都够不到 = 黑（最深仍黑）');
+    L('  灯近真相 + 声呐补中段/陡降 + 最深仍黑（用途分工）✓');
   }
 
   // 12d 深水 + 黑水（灯无效）+ 声呐 ping：天花板 = sonar，近/中都 sonar、太深黑
@@ -467,7 +472,8 @@ L('\n========== 12. 节点级 clarity：深度分档 ==========');
     assert(clarity(s.run!) === 'sonar', '12d: 黑水灯无效、声呐在跑 → 天花板 sonar');
     assert(byId(cs, 'near').clarity === 'sonar', '12d: 黑水近处也只有声呐表象（无灯真相）');
     assert(byId(cs, 'mid').clarity === 'sonar', '12d: dd12 ≤ sonarReach → sonar');
-    assert(byId(cs, 'far').clarity === 'none', '12d: dd20 > sonarReach → 黑');
+    assert(byId(cs, 'far').clarity === 'sonar', '12d: dd20 ≤ sonarReach22 → sonar');
+    assert(byId(cs, 'abyss').clarity === 'none', '12d: dd35 > sonarReach22 → 黑');
     L('  黑水：全靠声呐、近处也无真相、最深仍黑 ✓');
   }
 
@@ -482,13 +488,14 @@ L('\n========== 12. 节点级 clarity：深度分档 ==========');
     L('  灯 reach 升级把陡降里看清更远（填 #60 范围/分辨钩子）✓');
   }
 
-  // 12f 声呐 reach 升级（sonarRangeBonus）：原先黑的 dd20 变 sonar
+  // 12f 声呐 reach 升级（sonarRangeBonus）：原先黑的 dd26 变 sonar（基线 22 够不到、升级 +8→30 扫得到）
   {
     let sBase = pingSonar(enterNodeSelection(mkDeep({ sonarUnlocked: true })));
-    assert(byId(choicesOf(sBase), 'far').clarity === 'none', '12f: 基线 dd20 > sonarReach14 = 黑');
-    let sUp = pingSonar(enterNodeSelection(mkDeep({ bonuses: { sonarUnlocked: true, sonarRangeBonus: 8 } }))); // reach 14→22
-    assert(byId(choicesOf(sUp), 'far').clarity === 'sonar', '12f: 声呐 reach 升级(+8→22) → dd20 扫得到 sonar');
-    L('  声呐 reach 升级把更深的陡降扫回个轮廓 ✓');
+    assert(byId(choicesOf(sBase), 'deep').clarity === 'none', '12f: 基线 dd26 > sonarReach22 = 黑');
+    let sUp = pingSonar(enterNodeSelection(mkDeep({ bonuses: { sonarUnlocked: true, sonarRangeBonus: 8 } }))); // reach 22→30
+    assert(byId(choicesOf(sUp), 'deep').clarity === 'sonar', '12f: 声呐 reach 升级(+8→30) → dd26 扫得到 sonar');
+    assert(byId(choicesOf(sUp), 'abyss').clarity === 'none', '12f: 升满 reach30 仍读不穿 dd35（守北极星·最深处必须自己下去）');
+    L('  声呐 reach 升级把更深的陡降扫回个轮廓·最深仍买不穿 ✓');
   }
 
   // 12g 未升级 = 基线 + reach 上限（守"永远有比最深更深的"：最深处灯/声呐都买不穿）
@@ -498,9 +505,11 @@ L('\n========== 12. 节点级 clarity：深度分档 ==========');
     assert(baseTuning.sonarDepthReach === SONAR_DEPTH_REACH, '12g: 未升级声呐 reach = 基线');
     assert(deriveSensorTuning({ lampRangeBonus: 99 }).lampDepthReach === LAMP_DEPTH_REACH_MAX, '12g: 灯 reach 有上限');
     assert(deriveSensorTuning({ sonarRangeBonus: 99 }).sonarDepthReach === SONAR_DEPTH_REACH_MAX, '12g: 声呐 reach 有上限');
-    // 灯 reach 上限 < 深图最深陡降（dd20）：灯升满也照不穿最深，守北极星
+    // 灯 reach 上限 < 深图最深陡降：灯升满也照不穿最深，守北极星
     assert(LAMP_DEPTH_REACH_MAX < 20, '12g: 灯 reach 上限 < 最深陡降（最深处必须自己摸黑/声呐下去）');
-    L('  reach 默认=基线 + 有上限（最深处灯也买不穿）✓');
+    // 声呐 reach 上限(30) < 深图最深陡降 dd35：声呐升满也读不穿最底，守"永远有比最深更深的"
+    assert(SONAR_DEPTH_REACH_MAX < 35, '12g: 声呐 reach 上限 < 最深陡降 dd35（声呐升满也买不穿最底）');
+    L('  reach 默认=基线 + 有上限（最深处灯/声呐都买不穿）✓');
   }
 
   // 12h 横行 / 上行不降档：与你同深或更浅的节点，深水里也始终给天花板档

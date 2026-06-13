@@ -26,7 +26,7 @@ import type {
 import lighthouseData from '@/data/lighthouse_upgrades.json';
 import { appendLog, removeFromInventory, HOME_LIGHTHOUSE_ID } from './state';
 import { materialShortfall, describeUpgradeCost, getUpgradeBonuses } from './upgrades';
-import { ch1AnchorFlag, type Ch1Anchor } from './story';
+import { ch1AnchorFlag, TUTORIAL_COMPLETE_FLAG, type Ch1Anchor } from './story';
 
 const file = lighthouseData as unknown as LighthouseUpgradesFile;
 const TRACKS: LighthouseTrack[] = file.tracks;
@@ -624,4 +624,29 @@ export function devAdvanceOutpost(state: GameState, outpostId: string): GameStat
     { ...state, profile: { ...state.profile, flags, outpostState, lighthouses } },
     { tone: 'system', text: `测试推进（dev·0 成本）：${def.name} → 阶段 ${newStage}/${def.stages.length}${lit ? '（点亮）' : ''}。` },
   );
+}
+
+/**
+ * dev 一键解锁一个章节前哨**整片区域**（章节哨站批·#118·作者拍 2026-06-13）：
+ * 像 demo 那样不走剧情节拍、不收材料，直接把这一区开出来——
+ *   ① 置 `flag.tutorial_complete`（海图本身的门）+ 对应锚点节拍 flag（解锁门 + 让对应潜点的剧情门记为已达）；
+ *   ② 把前哨直接点亮（建满 = devAdvanceOutpost 连推到 OUTPOST_MAX_STAGE）。
+ * 非章节前哨（无 requiresAnchor）→ 只点亮、不动 flag。引擎仍无门（门在 UI 的 ?dev 后）；真路径零触碰。
+ */
+export function devUnlockChapterRegion(state: GameState, outpostId: string): GameState {
+  const def = OUTPOST_INDEX.get(outpostId);
+  if (!def) return state;
+  let s = state;
+  if (def.requiresAnchor !== undefined) {
+    const flags = new Set(s.profile.flags);
+    flags.add(TUTORIAL_COMPLETE_FLAG);
+    flags.add(ch1AnchorFlag(def.requiresAnchor as Ch1Anchor));
+    s = { ...s, profile: { ...s.profile, flags } };
+  }
+  // 连推到点亮（devAdvanceOutpost 已点亮即 no-op，故 OUTPOST_MAX_STAGE 次封顶安全）。
+  for (let i = 0; i < OUTPOST_MAX_STAGE; i++) s = devAdvanceOutpost(s, outpostId);
+  return appendLog(s, {
+    tone: 'system',
+    text: `测试解锁本区（dev）：${def.name} 已点亮${def.requiresAnchor ? '·对应锚点潜点已开' : ''}。`,
+  });
 }

@@ -34,6 +34,7 @@ import {
   getOutposts,
   canAdvanceOutpost,
   devAdvanceOutpost,
+  devUnlockChapterRegion,
   isChapterOutpost,
   isChapterBand,
   chapterOutpostForBand,
@@ -698,7 +699,16 @@ sChHalf = advanceOutpost(sChHalf, WRECK_OUT); // stage 1 < USABLE(2)
 assert(effectiveOutpostStage(sChHalf.profile, WRECK_OUT) < OUTPOST_USABLE_STAGE, '14f: stage1 未达半亮');
 const diveHalf = startDiveFromOutpost(sChHalf, WRECK_BAND, { launchOutpostId: WRECK_OUT });
 assert(diveHalf.run, '14f: 未半亮显式起跳被忽略·仍能蛙跳（退回 home）');
-L('  锁态不可建/不扣料 → 锚点置位解锁建满 → dev 免解三连 → 章节蛙跳落本区 → 不污染深脊柱 → 半亮门 ✓');
+// 14g dev 一键解锁本区：锁态直接 devUnlockChapterRegion → 点亮 + 置锚点 flag + 置 tutorial_complete（潜点门开）
+let sRegion = wreckStock();
+assert(!sRegion.profile.flags.has(ch1AnchorFlag('wreck')), '14g: 解锁前无 wreck 锚点 flag');
+sRegion = devUnlockChapterRegion(sRegion, WRECK_OUT);
+assert(isOutpostLit(sRegion.profile, WRECK_OUT), '14g: dev 解锁本区 → 前哨点亮');
+assert(sRegion.profile.flags.has(ch1AnchorFlag('wreck')), '14g: dev 解锁本区 → 置 wreck 锚点 flag（潜点门）');
+assert(sRegion.profile.flags.has('flag.tutorial_complete'), '14g: dev 解锁本区 → 置 tutorial_complete（海图门）');
+assert(countInInventory(sRegion.profile.inventory, 'item.coral_shard') === 3, '14g: dev 解锁本区不扣料');
+assert(hasLh(sRegion, WRECK_LH), '14g: dev 解锁本区 push 灯塔');
+L('  锁态不可建/不扣料 → 锚点置位解锁建满 → dev 免解三连 → 章节蛙跳落本区 → 不污染深脊柱 → 半亮门 → dev 一键解锁本区 ✓');
 
 console.log(log.join('\n'));
 console.log(

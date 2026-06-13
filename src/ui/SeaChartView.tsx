@@ -17,6 +17,7 @@ import {
   canAdvanceOutpost,
   advanceOutpost,
   devAdvanceOutpost,
+  devUnlockChapterRegion,
   isChapterBand,
   isChapterOutpost,
   outpostUnlocked,
@@ -562,6 +563,15 @@ function OutpostPanel({
                     onClick={() => onStateChange(devAdvanceOutpost(state, o.id))}
                   >
                     测试推进（dev）
+                  </button>
+                )}
+                {/* dev 一键解锁本区（作者拍·像 demo）：章节前哨直接点亮 + 对应锚点潜点开（不走剧情/材料）。 */}
+                {DEV_TOOLS && chapter && !lit && (
+                  <button
+                    className="btn small chart-outpost-dev"
+                    onClick={() => onStateChange(devUnlockChapterRegion(state, o.id))}
+                  >
+                    解锁本区（dev）
                   </button>
                 )}
               </div>
