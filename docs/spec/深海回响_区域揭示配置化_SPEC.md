@@ -10,8 +10,8 @@
 - demo 目标（作者口径）：**几个离得较远的彩色大圈区域**，家＝海岸线半圆。
 
 ## 2. 设计原则（最小血量·保留既有 reveal 架构）
-- **不重写 reveal 模型**：`isLit / poiRevealState / climateOcclusion / mimic 恒lit / story 恒显 /
-  isSurveyDim / 前哨衰减 dimming` 全部保留（都已测·blast radius 才可控）。
+- **不重写 reveal 模型**：`isLit / poiRevealState / climateOcclusion / mimic 恒lit / story 恒显`
+  全部保留（都已测·blast radius 才可控）。〔isSurveyDim〔勘测站〕、前哨衰减 dimming 后均已删除〕
 - 改为：**每个区域 = 一座 owner 灯塔的揭示圈，其半径/颜色/形状由数据配置**（集中单一来源）。
 - `revealRadius(lighthouse)` 改为**读区域配置的 radius**（替代巨型 BASE）；`effectiveRevealRadius` 衰减逻辑不变。
 - **「教学后只点亮家区」自然涌现**：家圈半径只够近岸 ⇒ 远处 POI 不落在任何 active 圈 ⇒ `hidden`，

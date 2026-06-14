@@ -13,14 +13,12 @@ import { getZone } from './zones';
 import {
   distanceBetween,
   nearestLighthouse,
-  getLighthouseBonuses,
   getHomeLighthouse,
   getLighthouseUpgradeDef,
   getOutposts,
   outpostStage,
   revealRadius,
   OUTPOST_USABLE_STAGE,
-  LIGHT_RADIUS_PER_BONUS,
 } from './lighthouses';
 import { flagGatedRegions } from './regions';
 import { buildColumnPois, columnBuiltLevel, depthTierRevealState } from './columns';
@@ -145,24 +143,6 @@ function isLit(profile: PlayerProfile, mapX?: number, mapY?: number): boolean {
   return false;
 }
 
-/**
- * 勘测暗圈（Req A）：点在某座灯塔的勘测圈（revealRadius + dimRevealBonus × LIGHT_RADIUS_PER_BONUS）内，
- * 但在该灯塔点亮半径（revealRadius）之外 → 可见为 dim（勘测站设施效果）。
- * 无坐标 → false（不凭空给暗点）。仅 anchor/roaming POI 适用；mimic / story 不走这条路径。
- */
-function isSurveyDim(profile: PlayerProfile, mapX?: number, mapY?: number): boolean {
-  if (mapX === undefined || mapY === undefined) return false;
-  for (const lh of profile.lighthouses) {
-    const bonus = getLighthouseBonuses(lh).dimRevealBonus;
-    if (bonus <= 0) continue;
-    const lit = revealRadius(lh);
-    const survey = lit + bonus * LIGHT_RADIUS_PER_BONUS;
-    const d = distanceBetween(lh.mapX, lh.mapY, mapX, mapY);
-    if (d > lit && d <= survey) return true;
-  }
-  return false;
-}
-
 /** POI 是否被灯塔点亮（reveal，基建地图 Phase C）。mimic「无灯之光」恒亮（这是诱饵，§3.5）。 */
 export function isPoiLit(profile: PlayerProfile, poi: ChartPoi): boolean {
   if (poi.mimic) return true; // 无灯之光：海图上点亮，引诱你横渡
@@ -215,12 +195,7 @@ export function poiRevealState(profile: PlayerProfile, poi: ChartPoi): PoiReveal
     return depthTierRevealState(columnBuiltLevel(profile, poi.columnId), poi.depthTier);
   }
   if (!flagsSatisfied(profile, poi.requiresFlags)) return 'hidden';
-  if (!isPoiLit(profile, poi)) {
-    // 勘测暗圈（Req A）：在勘测圈内（revealRadius 外）→ dim（可见不可去）。
-    // story/mimic 不到这里；anchor 不被天气遮 → 勘测暗点也安全。
-    if (isSurveyDim(profile, poi.mapX, poi.mapY)) return 'dim';
-    return 'hidden'; // 圈外不出现（reveal-gated·A①）
-  }
+  if (!isPoiLit(profile, poi)) return 'hidden'; // 圈外不出现（reveal-gated·A①·勘测圈已删→非点亮一律 hidden）
   const occ = climateOcclusion(profile, poi);
   if (occ !== 'none') return occ;
   return poiLockReason(profile, poi) === null ? 'lit' : 'dim';
@@ -271,8 +246,8 @@ export function isPoiDepartable(profile: PlayerProfile, poi: ChartPoi): boolean 
 
 /**
  * dim POI 的「为什么去不了 / 怎样才能去」——给 UI 一句可执行的话（已假定 visible；lit 可去 → null）。
- * 三类 dim 各自的解法（作者 2026-06-14：暗点必须告诉玩家达成什么条件能去）：
- *   ① 勘测暗点（在勘测圈、点亮圈外·!isPoiLit）→ 把更近处的灯塔/前哨点亮（你的网还没把「可去」照到这儿）；
+ * 各类 dim 的解法（作者 2026-06-14：暗点必须告诉玩家达成什么条件能去）：
+ *   ① 深度柱档（低频声呐没建到这一级·columnId/depthTier）→ 升一级；
  *   ② 能力门（已点亮但缺设施/装备）→ poiLockReason 的「需要『X』」；
  *   ③ 天气遮成暗 → 潮一变又不同（短暂）。
  */
@@ -280,17 +255,13 @@ export function poiBlockReason(profile: PlayerProfile, poi: ChartPoi): string | 
   if (isPoiDepartable(profile, poi)) return null;
   // 低频声呐「深度柱」暗档（#131）：dim 只因「低频声呐还没建到这一级」——给一句可执行的话。
   if (poi.columnId !== undefined && poi.depthTier !== undefined) {
-    return '把这座灯塔的低频声呐再升一级，才下得到这一档';
+    return '声呐探得到，但还没有路。低频声呐升一级，这里才能落脚。';
   }
-  // 不在任何「可去」圈内 → 勘测暗点（hidden 已被 poiRevealState 滤掉·能 visible 说明落在勘测圈内）。
-  if (!isPoiLit(profile, poi)) {
-    return '把更近的灯塔/前哨点亮才能去（现只勘测到）';
-  }
-  // 已点亮（在可去圈内、已发现）但仍 dim：先报能力门，否则是天气遮。
+  // 已点亮（在可去圈内、已发现）但仍 dim：先报能力门，否则是天气遮（勘测圈已删·非 lit 一律 hidden 不到这里）。
   const lock = poiLockReason(profile, poi);
   if (lock) return lock;
   if (climateOcclusion(profile, poi) === 'dim') {
-    return '雾遮着这一带 · 这一拍过不去（潮一变又不同）';
+    return '这一带被雾压着，这一拍过不去。';
   }
   return '去不了';
 }

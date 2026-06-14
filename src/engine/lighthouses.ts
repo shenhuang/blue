@@ -30,7 +30,7 @@ import { regionRadius } from './regions';
 import { columnProbeTracks } from './columns';
 
 const file = lighthouseData as unknown as LighthouseUpgradesFile;
-// 设施轨两来源（#131）：lighthouse_upgrades.json 手写轨（船坞/能源/勘测…）+ 各深度柱派生的「低频声呐」轨
+// 设施轨两来源（#131）：lighthouse_upgrades.json 手写轨（船坞/能源…）+ 各深度柱派生的「低频声呐」轨
 // （columnProbeTracks·onlyLighthouse=宿主灯塔·各级 cost=该 tier 账单·effects 空＝纯门控）。合并后
 // INDEX/canBuildAt/buildAtLighthouse/getBuiltLevelInTrack/设施面板全部零改即认派生 probe 升级。
 const TRACKS: LighthouseTrack[] = [...file.tracks, ...columnProbeTracks()];
@@ -55,12 +55,10 @@ for (const o of OUTPOSTS) OUTPOST_INDEX.set(o.id, o);
 // 巨值——那让每个圈直径 1.44>全图、相互重叠成糊（作者反馈「很多大圈重叠」）。
 // 未配置 owner（如修复的废弃灯塔）回 DEFAULT_REVEAL_RADIUS＝适中离岸圈，不盖满全图。
 export const LIGHT_RADIUS_PER_LEVEL = 0.12;
-export const LIGHT_RADIUS_PER_BONUS = 0.12;
 
 /** 一座灯塔的点亮半径（归一化海图距离）＝区域配置值（固定·不随升级/等级扩大）。 */
 export function revealRadius(lighthouse: Lighthouse): number {
-  // 作者 2026-06-14：灯塔升级**不**扩大点亮（reveal）范围——半径恒为区域配置值（信标轨已删）。
-  // 勘测站的 dimRevealBonus 只在此「可去圈」之外罩一圈「暗区」（纯情报·见 chart.ts isSurveyDim），不动可去圈。
+  // 作者 2026-06-14：灯塔升级**不**扩大点亮（reveal）范围——半径恒为区域配置值（信标轨已删·勘测站已删）。
   return regionRadius(lighthouse.id);
 }
 
@@ -223,7 +221,6 @@ export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses 
     energyDraw: 0,
     rechargeBonus: 0,
     oxygenSupply: 0,
-    dimRevealBonus: 0,
   };
   for (const id of lighthouse.builtUpgrades) {
     const def = getLighthouseUpgradeDef(id);
@@ -244,9 +241,6 @@ export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses 
           break;
         case 'oxygenSupply':
           bonuses.oxygenSupply += e.value;
-          break;
-        case 'dimRevealBonus':
-          bonuses.dimRevealBonus += e.value;
           break;
       }
     }

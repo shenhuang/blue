@@ -94,7 +94,7 @@ function poiSweepDelay(
 function conditionLine(c: { tide: 'flood' | 'ebb'; weather: 'clear' | 'mist' | 'fog' }): string {
   const tide = c.tide === 'flood' ? '涨潮' : '退潮';
   const weather = c.weather === 'clear' ? '晴' : c.weather === 'mist' ? '薄雾' : '浓雾';
-  const fog = c.weather === 'fog' ? '——浓雾里有处机会点没显出来，潮一退就回来' : '';
+  const fog = c.weather === 'fog' ? '——浓雾压着，有处地方这一拍看不见，潮一退就回来' : '';
   return `${tide} · ${weather}${fog}`;
 }
 
@@ -501,9 +501,9 @@ export function SeaChartView({ state, onStateChange }: Props) {
           </ChartViewport>
 
           <div className="chart-legend">
-            <span><i className="chart-swatch anchor" />锚点</span>
-            <span><i className="chart-swatch roam" />机会点（潮位常变）</span>
-            <span><i className="chart-swatch locked" />未解锁</span>
+            <span><i className="chart-swatch anchor" />已知地点</span>
+            <span><i className="chart-swatch roam" />随潮出现</span>
+            <span><i className="chart-swatch locked" />还到不了</span>
           </div>
 
           {/* 行前装包（猎手 SPEC §4 data 面·#108；2026-06-10 作者改拍「格子化」）：
@@ -619,7 +619,7 @@ function ChartInfo({
   // 洞型情报（#114·真话·与 mapgen 同源）：只有 maze zone 的 POI 出这条
   const caveShape = describeCaveShape(poi);
   const corpses = canSelectTarget ? listRecoverableCorpses(state.profile.deaths, poi.zoneId) : [];
-  // 三态：lit 才可出海；dim（勘测暗点 / 能力门 / 天气遮）显示但去不了——poiBlockReason 给「怎样才能去」。
+  // 三态：lit 才可出海；dim（深度柱档 / 能力门 / 天气遮）显示但去不了——poiBlockReason 给「怎样才能去」。
   const departable = isPoiDepartable(state.profile, poi);
   const blockReason = poiBlockReason(state.profile, poi);
   const showPicker = departable && corpses.length > 0;
@@ -630,7 +630,7 @@ function ChartInfo({
         <h3 className="chart-info-name">{poi.name}</h3>
         <span className="dim chart-info-zone">
           {zone?.name ?? poi.zoneId}
-          {!poi.persistent && ' · 机会点'}
+          {!poi.persistent && ' · 随潮出现'}
         </span>
       </div>
 
@@ -746,12 +746,12 @@ export function OutpostPopup({
 
   const status =
     chapter && !unlocked
-      ? '暗 · 待解锁'
+      ? '隐约可见 · 还没路'
       : lit
-        ? '已点亮'
+        ? '灯亮着'
         : stage === 0
           ? '未动工'
-          : `修建中 ${stage}/${OUTPOST_MAX_STAGE}${usable ? ' · 半亮可用' : ''}`;
+          : `修建中 ${stage}/${OUTPOST_MAX_STAGE}${usable ? ' · 已可用' : ''}`;
 
   return (
     <div className="chart-popup chart-popup-outpost">
@@ -763,12 +763,12 @@ export function OutpostPopup({
       {energy && (
         <p className="dim chart-popup-energy">
           能源 {energy.capacity}（占用 {energy.demand}
-          {energy.demand > energy.capacity ? ' · 部分补给掉线' : ''}）
+          {energy.demand > energy.capacity ? ' · 部分设施停转' : ''}）
         </p>
       )}
       {chapter && !unlocked && (
         <p className="dim chart-popup-locked">
-          这片海图上还是暗的——走到对应的锚点，它才会亮起来、能动工。
+          这片还没探到——走到附近，它才会亮起来、能动工。
         </p>
       )}
 

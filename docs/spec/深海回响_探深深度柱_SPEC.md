@@ -59,7 +59,6 @@ tier 旋钮语义 == `DepthBand`（`types/bands.ts`）。
 
 - 每柱每级**实际深度**（米 / band 范围）+ 各级**材料金账单** + **早期 on-ramp 节奏**（现 `depth_columns.json` 全是起手值·从旧 band 深度/探深料价推导）。
 - 深入 POI 的**海图坐标手感**（现按 tier 在宿主灯塔附近扇开·占位）。
-- 勘测站 `dimRevealBonus` 暗点圈半径手感（水平向·与垂直深度柱同一「信息基建」轴·一并调）。
 
 ## 9. 后续 Phase（不在本批）
 

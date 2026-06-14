@@ -1513,7 +1513,8 @@ html, body, #root {
 
 .chart-map-poi {
   position: absolute;
-  transform: translate(-50%, -50%);
+  /* counter-scale（#131 续·作者反馈）：抵消 .chart-world 的 1/spanX → 标记+文字恒定屏幕大小、不随 zoom 放大。 */
+  transform: translate(-50%, -50%) scale(var(--chart-cscale, 1));
   background: none;
   border: none;
   cursor: pointer;
@@ -1600,11 +1601,11 @@ html, body, #root {
 @keyframes chart-poi-arrive {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.6);
+    transform: translate(-50%, -50%) scale(calc(var(--chart-cscale, 1) * 0.6));
   }
   100% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(-50%, -50%) scale(var(--chart-cscale, 1));
   }
 }
 /* 扫描完整版：再扫时被移除的点随扫描边缘到达逐个淡出（区域揭示·该消失的消失）。 */
@@ -1615,11 +1616,11 @@ html, body, #root {
 @keyframes chart-poi-leave {
   0% {
     opacity: 0.7;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(-50%, -50%) scale(var(--chart-cscale, 1));
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.6);
+    transform: translate(-50%, -50%) scale(calc(var(--chart-cscale, 1) * 0.6));
   }
 }
 /* 海况一行（活的海图）：潮汐 + 天气，淡、斜体，置于副标下。 */
@@ -1648,7 +1649,7 @@ html, body, #root {
 
 .chart-lighthouse {
   position: absolute;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(var(--chart-cscale, 1)); /* counter-scale·恒定屏幕大小·#131 续 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1687,7 +1688,7 @@ html, body, #root {
    之前完全无 CSS＝默认 <button> 白框 + 静态堆叠（作者反馈「哨站有白框」），这里补齐定位 + 按钮 reset + 菱形点/标签。 */
 .chart-map-outpost {
   position: absolute;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(var(--chart-cscale, 1)); /* counter-scale·恒定屏幕大小·#131 续 */
   display: flex;
   flex-direction: column;
   align-items: center;

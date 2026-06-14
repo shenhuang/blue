@@ -1,6 +1,6 @@
 // 探深「深度柱」（probe depth columns）—— 取代旧「一脊柱·一级一点·flag.probe.* 解锁」模型（#131）。
 //
-// 北极星「灯塔＝信息基建」的**垂直**实装：每座灯塔自带一根向下的深度柱（勘测站暗圈的垂直版）。
+// 北极星「灯塔＝信息基建」的**垂直**实装：每座灯塔自带一根向下的深度柱（水平揭示圈之外·再往下看得更深）。
 // 建到第 K 级（probe Lv.K）→ 深度档 1…K 可下潜（lit）、第 K+1 档以暗点现身（dim·看得到去不了）、
 // 更深 hidden。一级露一档（depthTierRevealState：tier≤built → lit / ==built+1 → dim / else hidden）。
 //

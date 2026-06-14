@@ -89,8 +89,8 @@ export function CombatView({ state, onStateChange }: Props) {
                 <div className="action-row">
                   <span className="action-name">{action.name}</span>
                   <span className="action-cost">
-                    {action.costStamina > 0 && `体 -${action.costStamina} `}
-                    {action.costOxygenTurns > 0 && `氧 -${action.costOxygenTurns}`}
+                    {action.costStamina > 0 && `体力 -${action.costStamina} `}
+                    {action.costOxygenTurns > 0 && `氧气 -${action.costOxygenTurns}`}
                   </span>
                 </div>
                 <div className="action-desc dim">

@@ -101,8 +101,8 @@ function columnTrack(c: DepthColumn): LighthouseTrack {
     // 低频声呐是**纯门控**：没有被动加成（可见性靠 columnBuiltLevel vs tier 派生·不靠 effects）。
     effects: [],
     description: t.capstone
-      ? `把这座灯塔的深度柱探到第 ${t.tier} 级——名义可达 ~360m，但能去的只有「${t.label}」这一个下潜点（~${t.depthRange[1]}m）；建成即在海图上揭示它通向的区域。`
-      : `把这座灯塔的深度柱探到第 ${t.tier} 级——海图上「${t.label}」深入潜点转为可下潜（${t.depthRange[0]}–${t.depthRange[1]}m）；再下一档以暗点现身。`,
+      ? `探针到 ~${t.depthRange[1]}m。唯一找到的落脚处是「${t.label}」入口——再往下什么样，只有亲自去才知道。`
+      : `「${t.label}」（${t.depthRange[0]}–${t.depthRange[1]}m）的航路已经打通。声呐还能探到再往下一截——但那里暂时还落不了脚。`,
     requiresLighthouseLevel: 1,
     // capstone（科考站电梯）建成置 flag → 揭示 flag-gated 区（#124）；普通档无 setsFlag（纯门控·可见性靠档位派生）。
     ...(t.setsFlag ? { setsFlag: t.setsFlag } : {}),
@@ -110,7 +110,7 @@ function columnTrack(c: DepthColumn): LighthouseTrack {
   return {
     id: columnProbeTrackId(c.id),
     name: '低频声呐',
-    description: `给「${c.name}」装一套低频声呐——每升一级，海图上多探出一档更深的深入潜点（建到第 K 级 → 1…K 档可下潜、第 K+1 档以暗点现身、更深尚不可见）。`,
+    description: `低频脉冲打得深，回波慢但远。每升一级，往下多开一段路。`,
     onlyLighthouse: c.lighthouseId,
     upgrades,
   };
@@ -164,8 +164,9 @@ function tierPoi(c: DepthColumn, t: DepthColumnTier, hostX: number, hostY: numbe
     name: t.label,
     blurb: t.blurb ?? c.blurb ?? `${c.name}·第 ${t.tier} 级（${t.depthRange[0]}–${t.depthRange[1]}m）。`,
     distance: t.tier,
-    mapX: clamp(hostX + dx),
-    mapY: clamp(hostY + dy),
+    // 显式坐标（t.mapX/Y）覆盖自动扇形布点——capstone（电梯）摆到独立位置·脱离本柱密集簇（#131 续·作者反馈）。
+    mapX: clamp(t.mapX ?? hostX + dx),
+    mapY: clamp(t.mapY ?? hostY + dy),
     bandId: columnTierBandId(c.id, t.tier),
     columnId: c.id,
     depthTier: t.tier,

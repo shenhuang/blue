@@ -65,7 +65,7 @@ export function RestView({ state, onStateChange }: Props) {
           {kind === 'air_pocket' ? (
             <li>
               <button className="btn event-option" onClick={handleBreathe} disabled={airUsed}>
-                {airUsed ? '气穴已被吸空' : '上去呼吸（氧气 +6 / 理智 +4）'}
+                {airUsed ? '气穴已被吸空' : '上去呼吸（氧气 +6 · 理智 +4）'}
               </button>
             </li>
           ) : kind === 'camp' ? (
@@ -84,7 +84,7 @@ export function RestView({ state, onStateChange }: Props) {
           ) : (
             <li>
               <button className="btn event-option" onClick={handleRest}>
-                停下来调整呼吸（消耗 3 回合 / 体力 +15）
+                停下来调整呼吸（3 回合 · 体力 +15）
               </button>
             </li>
           )}

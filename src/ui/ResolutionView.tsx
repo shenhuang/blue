@@ -13,7 +13,7 @@ export function ResolutionView({ outcome, onReturn }: Props) {
       <h2>{outcome.survived ? '回到水面' : '未能归来'}</h2>
       <div className="resolution-rows">
         <div>最深深度：{outcome.maxDepthReached}m</div>
-        <div>触发事件：{outcome.eventsTriggered}</div>
+        <div>遭遇了 {outcome.eventsTriggered} 次</div>
         <div>金币：+{outcome.goldEarned}</div>
         {outcome.lootValue > 0 && (
           <div className="dim">战利品估价：~{outcome.lootValue} 金（回港找 Mira 兑现）</div>

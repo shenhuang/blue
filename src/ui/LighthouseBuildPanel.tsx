@@ -57,7 +57,7 @@ export function LighthouseBuildPanel({ state, onStateChange, onClose, focusLight
     <PanelShell
       className="lighthouse-build"
       title="设施升级"
-      sub={<>银行 {state.profile.bankedGold} 金币 · 探得更深</>}
+      sub={<>银行 {state.profile.bankedGold} 金币 · 低频声呐升级</>}
       foot={
         <button className="btn" onClick={onClose}>
           返回

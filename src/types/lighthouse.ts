@@ -36,8 +36,7 @@ export type LighthouseEffect =
   | { kind: 'energyGen'; value: number } // 水力发电：能源产出 +value（仅在水流 current 前哨有产出，否则计 0）
   | { kind: 'energyDraw'; value: number } // 设施能源占用 +value（超出该前哨能源容量的设施掉线）
   | { kind: 'rechargeBonus'; value: number } // 充电设施：从该前哨蛙跳时电池总量 +value（设施在线才生效）
-  | { kind: 'oxygenSupply'; value: number } // 充氧设施：从该前哨蛙跳时氧气上限 +value（设施在线才生效）
-  | { kind: 'dimRevealBonus'; value: number }; // 勘测站：在该灯塔正常点亮半径之外再多照一圈「暗区」（dim·可见但过不去）；value 级数乘 LIGHT_RADIUS_PER_BONUS = 额外勘测半径（Req A·chart.ts 消费）
+  | { kind: 'oxygenSupply'; value: number }; // 充氧设施：从该前哨蛙跳时氧气上限 +value（设施在线才生效）
 
 /** 一条灯塔设施升级定义。账单复用全局的材料＋金币双资源 UpgradeCost（Phase A）。 */
 export interface LighthouseUpgradeDef {
@@ -191,10 +190,4 @@ export interface LighthouseBonuses {
   rechargeBonus: number;
   /** 充氧设施给的氧气上限加成（在线才计入蛙跳 run）。 */
   oxygenSupply: number;
-  /**
-   * 勘测站加成（Req A）：在该灯塔正常点亮半径之外再多照一圈「暗区」——
-   * 勘测半径 = revealRadius + dimRevealBonus × LIGHT_RADIUS_PER_BONUS。
-   * 勘测圈内但 reveal 圈外的 POI 显示为 dim（可见不可去）；chart.ts 的 isSurveyDim 消费。
-   */
-  dimRevealBonus: number;
 }

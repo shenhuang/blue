@@ -64,7 +64,7 @@
               "value": 2
             }
           ],
-          "description": "架起水轮机组。前哨能源 +2——但只在水流（激流）前哨才转得起来，静水前哨建了也不产电。",
+          "description": "架起水轮机组。前哨能源 +2，但只在激流前哨才转得起来，静水里是摆设。",
           "requiresLighthouseLevel": 1
         }
       ]
@@ -102,7 +102,7 @@
               "value": 20
             }
           ],
-          "description": "建一座充电桩。从这座前哨蛙跳时电池总量 +20（占用能源 1——前哨能源不够它会掉线）。",
+          "description": "出发前多充一截电，上限 +20。占用前哨 1 格能源，能源不足时自动断电。",
           "requiresLighthouseLevel": 1
         }
       ]
@@ -140,41 +140,7 @@
               "value": 10
             }
           ],
-          "description": "建一座制氧机。从这座前哨蛙跳时氧气上限 +10（占用能源 1——前哨能源不够它会掉线）。",
-          "requiresLighthouseLevel": 1
-        }
-      ]
-    },
-    {
-      "id": "lhtrack.survey",
-      "name": "勘测站",
-      "description": "在前哨搭起水下勘测仪——把前哨能「暗照到」的远处点位圈更大，让你提前知道那里有什么、能不能去。",
-      "outpostOnly": true,
-      "upgrades": [
-        {
-          "id": "lighthouse.survey.lv1",
-          "level": 1,
-          "name": "勘测站",
-          "cost": {
-            "materials": [
-              {
-                "itemId": "item.brass_fitting",
-                "qty": 2
-              },
-              {
-                "itemId": "item.crab_chitin",
-                "qty": 2
-              }
-            ],
-            "gold": 50
-          },
-          "effects": [
-            {
-              "kind": "dimRevealBonus",
-              "value": 1
-            }
-          ],
-          "description": "搭起勘测站。该前哨点亮范围之外再多覆盖一圈「暗区」——圈内的机会点以暗点形式现身（可见、但这一拍过不去）。",
+          "description": "出发前多灌一截气，上限 +10。占用前哨 1 格能源，能源不足时自动断电。",
           "requiresLighthouseLevel": 1
         }
       ]
