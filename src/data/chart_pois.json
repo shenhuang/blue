@@ -170,6 +170,42 @@
       "weight": 3,
       "requiresFlags": ["flag.tutorial_complete"],
       "modifier": { "current": "mild" }
+    },
+    {
+      "templateId": "roam.midwater_thermocline_step",
+      "zoneId": "zone.open_midwater",
+      "name": "温跃断层",
+      "blurb": "中层里一道温度的坎，上下差着七八度。水到这里发糊，鱼群贴着坎游，不肯往下。",
+      "distance": 2,
+      "mapX": 0.46,
+      "mapY": 0.58,
+      "weight": 2,
+      "requiresFlags": ["flag.tutorial_complete"],
+      "modifier": { "depthRange": [60, 84], "visibility": "murky" }
+    },
+    {
+      "templateId": "roam.midwater_drift_band",
+      "zoneId": "zone.open_midwater",
+      "name": "暗流斜带",
+      "blurb": "一股斜着穿过中层的流，没有底也没有壁，只有水推着你偏。省力，但容易把人带远——回头的气要算清。",
+      "distance": 2,
+      "mapX": 0.56,
+      "mapY": 0.46,
+      "weight": 2,
+      "requiresFlags": ["flag.tutorial_complete"],
+      "modifier": { "current": "strong" }
+    },
+    {
+      "templateId": "roam.vent_cold_seep",
+      "zoneId": "zone.vent_trench",
+      "name": "冷泉洼",
+      "blurb": "热液场边上一处不冒烟的洼地，水反倒是凉的，底上结着一层白霜似的东西。东西沉得久，气味也淡。",
+      "distance": 3,
+      "mapX": 0.7,
+      "mapY": 0.66,
+      "weight": 1,
+      "requiresFlags": ["flag.tutorial_complete"],
+      "modifier": { "depthRange": [92, 116], "visibility": "dark" }
     }
   ]
 }
