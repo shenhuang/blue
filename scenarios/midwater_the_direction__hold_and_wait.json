@@ -1,0 +1,14 @@
+{
+  "_comment": "中层深档 95-135m · 气泡朝右走（uncanny）· 停着等气泡自己恢复正常。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "midwater.the_direction",
+  "depth": 110,
+  "seed": 1,
+  "sanity": 60,
+  "choices": ["hold_and_wait"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -2 }
+  }
+}

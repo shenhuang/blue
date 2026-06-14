@@ -1,0 +1,15 @@
+{
+  "_comment": "热液深档 125-165m · 地板里的（cosmic·oncePerRun）· sanity vs 55 高 sanity seed 1 通过 → 看清多毛虫住在石头气孔里。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "vent.sub_floor",
+  "depth": 140,
+  "seed": 1,
+  "sanity": 80,
+  "choices": ["get_closer"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2, "sanity": -3 }
+  }
+}

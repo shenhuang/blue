@@ -1,0 +1,14 @@
+{
+  "_comment": "热液深档 125-155m · 在生长的（realistic）· 就这么看着它生长。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "vent.mineral_column",
+  "depth": 140,
+  "seed": 1,
+  "sanity": 60,
+  "choices": ["just_watch"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -2 }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "_comment": "热液深档 125-155m · 在生长的（realistic）· 认真记录烟囱柱 → sanity+3。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "vent.mineral_column",
+  "stats": { "sanity": 80 },
+  "depth": 140,
+  "seed": 1,
+  "choices": ["document_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -2, "sanity": 3 }
+  }
+}

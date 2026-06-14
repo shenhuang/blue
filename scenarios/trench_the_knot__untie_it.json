@@ -1,0 +1,14 @@
+{
+  "_comment": "海沟深档 108-160m · 结（uncanny·midnight）· 把结解开把线还原 → sanity+2。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "trench.the_knot",
+  "stats": { "sanity": 80 },
+  "depth": 130,
+  "seed": 1,
+  "choices": ["untie_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -1, "sanity": 2 }
+  }
+}

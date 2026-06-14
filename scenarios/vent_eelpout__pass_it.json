@@ -1,0 +1,14 @@
+{
+  "_comment": "热液深档 125-165m · 只有眼睛在跟（uncanny）· 从它旁边游过去不停。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "vent.eelpout",
+  "depth": 140,
+  "seed": 1,
+  "sanity": 60,
+  "choices": ["pass_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -1, "sanity": -2 }
+  }
+}

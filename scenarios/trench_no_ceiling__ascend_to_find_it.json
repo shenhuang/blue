@@ -1,0 +1,14 @@
+{
+  "_comment": "海沟深档 115-175m · 找不到的顶（uncanny·midnight）· 往上游十二米后天花板回来了。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "trench.no_ceiling",
+  "depth": 140,
+  "seed": 1,
+  "sanity": 60,
+  "choices": ["ascend_to_find_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -3, "sanity": -3 }
+  }
+}

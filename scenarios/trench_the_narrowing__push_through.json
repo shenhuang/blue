@@ -1,0 +1,14 @@
+{
+  "_comment": "海沟深档 108-160m · 收窄的（cosmic·oncePerRun·midnight）· 一米五够过，继续往下。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "trench.the_narrowing",
+  "depth": 130,
+  "seed": 1,
+  "sanity": 60,
+  "choices": ["push_through"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -2 }
+  }
+}
