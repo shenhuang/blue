@@ -65,3 +65,27 @@ tier 旋钮语义 == `DepthBand`（`types/bands.ts`）。
 
 - 鲸落营地〔类灯塔〕+ 后续章节新大地图：各加一条 `depth_columns.json` 即有柱。
 - 「另一个世界」（abyssal/hadal/subhadal/nameless 下行入口·`d_reveal`）：专门 session·别擅自动（见 deep_game_vision / 深水区 SPEC）。海沟柱 6 级故意止于 ~108m、不一路通到底。
+
+## 10. 下一迭代·已锁（作者 2026-06-14 讨论拍板·**待实现**·supersedes §2/§8 起手占位值）
+
+#130 落地的是机制 + 占位数值。作者讨论后定案下面这套深度/级数/收尾，**下个 session 实现**（改 `depth_columns.json` + 删预留 band + 接电梯 capstone + 对齐周末 schedule·结构不动）。
+
+**级数 + 每级深度（数字＝该级**底深**·band 范围＝上一级底→本级底·步长递增＝难度信号）：**
+
+| 柱 | 级数 | 每级底深(m) | 定位 |
+|---|---|---|---|
+| 家礁 home | 2 | 40 / 60 | 熟悉游戏 + 一点洞穴探险 |
+| 残骸 wreck | 3 | 50 / 75 / 100 | 难度略增 |
+| 中层 midwater | 6 | 60 / 90 / 120 / 150 / 180 / 210 | **主探索区·内容最重**（步长 30） |
+| 热液 vent | 4 | 75 / 125 / 175 / 225 | 比中层陡增（步长 50）·高风险·更强材料 |
+| 海沟 trench | 4 | 90 / 180 / 270 / 〔第4级=电梯〕 | 深度骤降（步长 90）·近一章结尾 |
+
+**海沟第 4 级 = 科考站电梯 capstone（不是普通刷怪 band）：**
+- **材料 gate（非剧情 gate）**：第 4 级升级 cost 含一个「特殊升级模块」item——该模块由额外剧情/内容获得，但建造门是「手头有没有这个模块」的**材料检查**（canBuildAt 走料），不是直接 story flag 门。
+- 建第 4 级**只解锁「海沟科考站电梯入口」这一个下潜点**。
+- 探深名义最大 360m（**信息范围**）；**电梯入口实际深度 ~310m（300 多一点）**——信息范围 vs 实际可达点分离（守「灯塔=信息基建」：探得到 360、能去的只有电梯那一点）。
+- 电梯入口 → 科考站（一章收束剧情·占位 + 接口即可）。**科考站做成 flag-gated region（复用 #124 owner-less 区原语）**：后面章节回来往下接（继续向下探索·Phase 3 在此长出）。
+
+**删除预留 band**：`abyssal/hadal/subhadal/nameless`（作者：旧测试内容·不再需要·直接删·**不必**挪到 360m 以下）。连带要改：`playthrough-bands` §10-13 + `playthrough-sonar` §11（测这些 band·重指或删）；`events/*` 里 `[abyssal]/[hadal]/[subhadal]/[nameless]` tag 的周末事件会变 dormant（无 band 抵达）——下个 session 拍：删事件 or 留着待 Phase 3 re-home。
+
+**周末 schedule/SKILL 对齐新结构**：midwater 6 级＝主探索区·内容最重·优先喂；按新 column zone/depth 喂（reef/wreck_graveyard/open_midwater/vent_trench/blue_caves 的新深度窗口）；别再喂已删的 abyssal/hadal band。当前定时任务全停（06-10 作者刻意）·恢复时按此对齐。
