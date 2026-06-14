@@ -100,6 +100,19 @@ console.log(
   }
 }
 
+// —— 1c. 并行工作树（git worktree·多 feature 并行·quirk #130）：>1 棵才报 ——
+{
+  const wt = git(['worktree', 'list']);
+  const trees = wt.split('\n').filter((l) => l.trim() && !l.startsWith('('));
+  if (trees.length > 1) {
+    console.log('\n并行工作树（各自独立 node_modules/regress·quirk #130）：');
+    console.log(wt);
+    console.log(
+      '（append-only 文档〔CHANGELOG/QUIRKS〕只在 main 整合时写·别在 feature 树里碰＝免 merge 冲突。）',
+    );
+  }
+}
+
 // —— 2. 最新 nightly REPORT 头部 ——
 console.log(hr('最新 nightly REPORT 头部'));
 const nightlyDir = resolve(ROOT, 'docs/archive/nightly');
