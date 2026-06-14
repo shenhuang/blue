@@ -67,6 +67,11 @@ export interface DepthColumnTier {
    */
   mapX?: number;
   mapY?: number;
+  /**
+   * 不在海图上生成下潜 POI（竖井等单入口深度柱的中间档）。设此的 tier 仍正常派生 band + probe 升级轨，
+   * 只是不在海图上产生可点击的下潜点。仅 capstone POI 保留（如海沟科考站电梯入口·t4）。
+   */
+  noPoi?: boolean;
 }
 
 /**

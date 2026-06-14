@@ -209,13 +209,14 @@ L('  教学前空 / 宿主未建则该柱无潜点 / home 柱恒在 ✓');
 
 // ============================================================
 // 7. 从 lit 档下潜：startDiveFromPoi 走 band 路径落 run
+//    用中层柱（有完整 POI 的柱·trench t1-t3 设 noPoi 无海图点）。
 // ============================================================
 L('\n========== 7. 柱潜点下潜落 run ==========');
 {
-  const s = colState('col.trench', 3);
-  const poi = generateChart({ profile: s.profile }).pois.find((p) => p.id === columnDivePoiId('col.trench', 2))!;
-  assert(poi && poi.revealState === 'lit' && poi.bandId === columnTierBandId('col.trench', 2), '7: t2 lit 潜点带 bandId');
-  const band = getBand(columnTierBandId('col.trench', 2))!;
+  const s = colState('col.midwater', 3);
+  const poi = generateChart({ profile: s.profile }).pois.find((p) => p.id === columnDivePoiId('col.midwater', 2))!;
+  assert(poi && poi.revealState === 'lit' && poi.bandId === columnTierBandId('col.midwater', 2), '7: midwater t2 lit 潜点带 bandId');
+  const band = getBand(columnTierBandId('col.midwater', 2))!;
   const after = startDiveFromPoi(s, poi);
   assert(after.run, '7: 下潜后有 run');
   assert(after.run!.zoneId === band.zoneId, '7: run.zoneId = band.zone');
@@ -229,18 +230,19 @@ L('  从 lit 档 startDiveFromPoi → run 落 zone/turn0/alert/sonarDeception/hu
 
 // ============================================================
 // 8. 宿主前哨在线补给设施并入柱下潜（能源保留接线·老蛙跳删后承接）
+//    用中层柱（trench t1-t3 设 noPoi·无海图 POI 可下潜）；effectiveOutpostBonuses 逻辑与柱种无关。
 // ============================================================
 L('\n========== 8. 宿主前哨补给设施 ==========');
 {
   // 静水前哨容量=OUTPOST_BASE_ENERGY(1)；单建制氧（draw 1）→ 在线 → oxygenSupply 10。
-  const host = colState('col.trench', 1, ['lighthouse.oxygen_supply.lv1']).profile.lighthouses.find(
-    (l) => l.id === 'lighthouse.ch1_trench_outpost',
+  const host = colState('col.midwater', 1, ['lighthouse.oxygen_supply.lv1']).profile.lighthouses.find(
+    (l) => l.id === 'lighthouse.ch1_midwater_outpost',
   )!;
   assert(effectiveOutpostBonuses(host).oxygenSupply === 10, '8: 制氧设施在线 → oxygenSupply 10');
-  const sNo = colState('col.trench', 1);
-  const sOx = colState('col.trench', 1, ['lighthouse.oxygen_supply.lv1']);
-  const poiNo = generateChart({ profile: sNo.profile }).pois.find((p) => p.id === columnDivePoiId('col.trench', 1))!;
-  const poiOx = generateChart({ profile: sOx.profile }).pois.find((p) => p.id === columnDivePoiId('col.trench', 1))!;
+  const sNo = colState('col.midwater', 1);
+  const sOx = colState('col.midwater', 1, ['lighthouse.oxygen_supply.lv1']);
+  const poiNo = generateChart({ profile: sNo.profile }).pois.find((p) => p.id === columnDivePoiId('col.midwater', 1))!;
+  const poiOx = generateChart({ profile: sOx.profile }).pois.find((p) => p.id === columnDivePoiId('col.midwater', 1))!;
   const oxNo = startDiveFromPoi(sNo, poiNo).run!.oxygenMax;
   const oxOx = startDiveFromPoi(sOx, poiOx).run!.oxygenMax;
   assert(oxOx - oxNo === 10, `8: 宿主在线制氧 → 柱下潜氧上限 +10（实得 +${oxOx - oxNo}）`);

@@ -191,6 +191,7 @@ export function buildColumnPois(profile: PlayerProfile): ChartPoi[] {
     for (const t of c.tiers) {
       const st = depthTierRevealState(built, t.tier);
       if (st === 'hidden') continue;
+      if (t.noPoi) continue; // 竖井等单入口柱的中间档：band/probe 轨正常派生，不出海图 POI
       out.push({ ...tierPoi(c, t, host.mapX, host.mapY), revealState: st });
     }
   }
