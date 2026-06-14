@@ -14,6 +14,14 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-06-14',
+    title: '更深的水 · 新去处与新遭遇',
+    changes: [
+      '海图新增三处机会点：中层的温跃断层、暗流斜带，以及热液场边的冷泉洼。水发糊的、把人带偏的、又凉又静的——各有各的脾气，下去之前先把回头的气算清。',
+      '中层、热液场和海沟更深的地方补了一批新遭遇与水况。越往下，看到的越不一定作数。',
+    ],
+  },
+  {
     date: '2026-06-11',
     title: '横岩廊 · 洞有了形状',
     changes: [
