@@ -50,7 +50,7 @@ interface Props {
  * 最小可视跨度（区域揭示·§10 规格④「最 zoom-in ＝ 开始场景跨度」·世界单位·tunable）。
  * 作者在场调手感最佳——这是「能放多近」的下限，不是初始取景（初始由 contentBox 全览 autozoom）。
  */
-const MIN_VIEW_SPAN = 0.55;
+const MIN_VIEW_SPAN = 0.18; // #131 续：0.55→0.18（POI 密集时能放更近；配合标记 counter-scale 不随 zoom 放大＝点能点到）
 
 // 揭示圈分色/形状由**区域配置**给（区域揭示配置化 SPEC·data-driven·跨章复用）：
 // regionForOwner(灯塔 id) → palette(cyan/green/blue/amber/navy) + shape(circle/coast)。

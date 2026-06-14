@@ -309,6 +309,17 @@
       "sellPrice": 15,
       "decay": "organic",
       "tier": 2
+    },
+    {
+      "id": "item.station_module",
+      "name": "科考站升级模块",
+      "category": "material",
+      "rarity": "rare",
+      "description": "一块来历不明的精密模块，接口规格不像这个时代的东西。装上它，海沟最深处那部停了很久的电梯，也许还能再往下走一次。",
+      "weight": 1,
+      "sellPrice": 0,
+      "decay": "eternal",
+      "tier": 5
     }
   ]
 }

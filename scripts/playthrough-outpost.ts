@@ -209,8 +209,8 @@ assert(outpostStage(sUsable.profile, OUTPOST) === OUTPOST_USABLE_STAGE, '4: 主�
 const round = deserializeGameState(serializeGameState(sUsable));
 assert(round, '4: deserialize 不为 null');
 assert(outpostStage(round!.profile, OUTPOST) === 2, '4: round-trip 后 stage 仍 2（flag 持久）');
-assert(round!.version === 5, '4: SAVE_VERSION 5（round-trip 后不变·#131 已 bump）');
-L('  stage flag round-trip / SAVE_VERSION 5 不变 ✓');
+assert(round!.version === 6, '4: SAVE_VERSION 6（round-trip 后不变·#131 §10 已 bump）');
+L('  stage flag round-trip / SAVE_VERSION 6 不变 ✓');
 
 // ============================================================
 // 5. 能源：静水前哨 base 能源只够 1 个补给设施在线

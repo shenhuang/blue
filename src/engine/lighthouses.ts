@@ -30,7 +30,7 @@ import { regionRadius } from './regions';
 import { columnProbeTracks } from './columns';
 
 const file = lighthouseData as unknown as LighthouseUpgradesFile;
-// 设施轨两来源（#131）：lighthouse_upgrades.json 手写轨（船坞/能源/勘测…）+ 各深度柱派生的「探深」轨
+// 设施轨两来源（#131）：lighthouse_upgrades.json 手写轨（船坞/能源/勘测…）+ 各深度柱派生的「低频声呐」轨
 // （columnProbeTracks·onlyLighthouse=宿主灯塔·各级 cost=该 tier 账单·effects 空＝纯门控）。合并后
 // INDEX/canBuildAt/buildAtLighthouse/getBuiltLevelInTrack/设施面板全部零改即认派生 probe 升级。
 const TRACKS: LighthouseTrack[] = [...file.tracks, ...columnProbeTracks()];
@@ -160,7 +160,7 @@ export function buildAtLighthouse(
     i === idx ? { ...l, builtUpgrades } : l,
   );
 
-  // 「探深」设施派生深入潜点（灯塔/蛙跳重构 step ②·#125）：def.setsFlag → 置一个 profile flag，
+  // 「低频声呐」设施派生深入潜点（灯塔/蛙跳重构 step ②·#125）：def.setsFlag → 置一个 profile flag，
   // 海图上对应的深入 POI（ChartPoi.requiresFlags 门）随之在该灯塔揭示圈内浮现（建升级即解锁·扫描即现）。
   const flags = def.setsFlag ? new Set(state.profile.flags).add(def.setsFlag) : state.profile.flags;
 
@@ -205,7 +205,7 @@ export function devBuildAtLighthouse(
   const lighthouses = state.profile.lighthouses.map((l, i) =>
     i === idx ? { ...l, builtUpgrades } : l,
   );
-  // 「探深」设施派生深入潜点（同 buildAtLighthouse·dev 免料版）：setsFlag → 置 flag → 深入 POI 浮现。
+  // 「低频声呐」设施派生深入潜点（同 buildAtLighthouse·dev 免料版）：setsFlag → 置 flag → 深入 POI 浮现。
   const flags = entry.def.setsFlag
     ? new Set(state.profile.flags).add(entry.def.setsFlag)
     : state.profile.flags;

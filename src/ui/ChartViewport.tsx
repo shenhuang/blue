@@ -9,7 +9,7 @@
 //   translate(-vlx/spanX*100%, -vty/spanX*100%) scale(1/spanX)   （vlx=cx-spanX/2·vty=cy-spanY/2·spanY=spanX·H/W）
 // 取景矩形 aspect ＝ 框 aspect（spanY=spanX·H/W）⇒ 各向同性、无椭圆畸变、铺满框（守 quirk #112）。
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 
 // SSR 安全的 layout effect：client 用 useLayoutEffect（首帧前量框、避免闪烁），
 // server（react-dom/server·smoke-chart-ui）用 useEffect 占位——后者在服务端根本不跑，
@@ -192,7 +192,11 @@ export function ChartViewport({ contentBox, minSpan, fitKey, children }: Props) 
         onPointerCancel={endDrag}
         onPointerLeave={endDrag}
       >
-        <div className="chart-world" style={{ transform, transformOrigin: '0 0' }}>
+        {/* --chart-cscale=spanX：标记/文字用 scale(var(--chart-cscale)) 抵消本层 1/spanX 缩放 → 恒定屏幕大小、不随 zoom 放大（作者反馈·#131 续）。揭示圈不取它＝仍随 world 缩放。 */}
+        <div
+          className="chart-world"
+          style={{ transform, transformOrigin: '0 0', '--chart-cscale': view.spanX } as CSSProperties}
+        >
           {children}
         </div>
         {canZoom && (

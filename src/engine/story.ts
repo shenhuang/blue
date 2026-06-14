@@ -99,6 +99,13 @@ export const WHALE_SEARCH_READY_FLAG = 'story.ch1.whale_search_ready';
 export const WHALEFALL_FOUND_FLAG = 'story.ch1.whalefall_found';
 
 /**
+ * 海沟科考站电梯 capstone 揭示 flag（#131·SPEC §10）：建海沟探深第 4 级（电梯·module-gated）即由
+ * depth_columns trench t4 的 setsFlag 置位 → chart_regions 科考站 flag-gated 区揭示（= 其 revealFlag·
+ * 复用 #124 owner-less 区原语）。科考站＝一章收束剧情占位 + 接口（后章回来往下接·Phase 3 在此长出）。
+ */
+export const STATION_FOUND_FLAG = 'story.ch1.station_found';
+
+/**
  * story.ts 生成的**全部** story.* flag 枚举（单一来源）。playthrough-story §4 据此守门
  * 「任何 data 文件里出现的 story.* 字面量都必须 ∈ 本集合」——新增任何 story flag 生成器
  * 务必在此登记，否则用到它的 data 会在 regress 红（这是把「门=flag·派生进 story.ts」
@@ -115,6 +122,7 @@ export function allStoryFlags(): string[] {
     WHALE_SIGHTING_WRECK_FLAG,
     WHALE_SEARCH_READY_FLAG,
     WHALEFALL_FOUND_FLAG,
+    STATION_FOUND_FLAG,
   ];
 }
 

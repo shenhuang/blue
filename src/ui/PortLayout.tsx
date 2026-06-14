@@ -15,7 +15,7 @@
 // 所有 phase 切换仍由各子视图调 engine/transitions.ts 的具名转移完成，这里不构造 phase。
 
 import { useState, useEffect } from 'react';
-import type { GameState } from '@/types';
+import type { GameState, DialogNode } from '@/types';
 import { toPort } from '@/engine/transitions';
 import { PortView } from './PortView';
 import { PortEventView } from './PortEventView';
@@ -23,8 +23,10 @@ import { SeaChartView } from './SeaChartView';
 import { MiraShopView } from './MiraShopView';
 import { UpgradePanel } from './UpgradePanel';
 import { BestiaryView } from './BestiaryView';
+import { portRightPane, type PortServiceMode } from './portFocus';
 
-export type PortServiceMode = 'gear' | 'salvage' | 'bestiary';
+// PortServiceMode 定义迁至 ./portFocus（与「右栏↔对话互斥」决策同源）；此处 re-export 兼容旧 import 路径。
+export type { PortServiceMode };
 
 // 打捞行会的升级线 id：'salvage'＝只放它（Mira 的服务）；'gear'＝其余全部（个人潜水装备）。
 const SALVAGE_LINE = 'line.salvage_guild';
@@ -35,35 +37,62 @@ interface Props {
 }
 
 export function PortLayout({ state, onStateChange }: Props) {
-  // 升级服务面板（港口本地 UI 态·非 phase）：'gear'＝改装装备；'salvage'＝打捞行会；null＝不开。
+  // 升级服务面板（港口本地 UI 态·非 phase）：'gear'＝改装装备；'salvage'＝打捞行会；'bestiary'＝图鉴；null＝不开。
   const [upgradeMode, setUpgradeMode] = useState<PortServiceMode | null>(null);
 
-  // 升级只在 port 阶段有意义：离开 port（chart/shop/portEvent）即清，免得回港残留弹出。
+  // 港口左栏对话态上提到本组件（原属 PortView·2026-06-14 修「面板与对话同屏」上提）——
+  // 好让「对话 ↔ 右栏服务界面」互斥在单一处强制：开对话即收右栏（见 openDialog / portRightPane）。
+  // PortView 退化为受控：读 dialog、改动一律回调 onDialogChange。
+  const [dialog, setDialog] = useState<DialogNode | null>(null);
+
+  // 离开 port（去 chart/shop/portEvent/下潜）即清本地态：服务面板 + 对话都收，免得回港残留弹出旧界面。
   useEffect(() => {
-    if (state.phase.kind !== 'port') setUpgradeMode(null);
+    if (state.phase.kind !== 'port') {
+      setUpgradeMode(null);
+      setDialog(null);
+    }
   }, [state.phase.kind]);
 
-  // 右栏：chart/shop 看 phase；升级看本地态（三者互斥·见文件头）。
+  // 开/推进/关对话的单一入口（互斥不变量·守「对话不与界面同屏」）：一旦进入对话——
+  //   ① 收起右栏本地服务面板；② 若正停在海图/商店 phase，回港离开它（chart/shop 是 phase·靠 toPort 收）。
+  // PortView 的所有 setOpenDialog 都改打这里：开新对话 / 推进子节点都过这道收口；关对话（null）只清态、不联动。
+  function openDialog(node: DialogNode | null) {
+    setDialog(node);
+    if (node) {
+      setUpgradeMode(null);
+      if (state.phase.kind !== 'port') onStateChange(toPort(state));
+    }
+  }
+
+  // 右栏显示什么由 portFocus.portRightPane 单点裁决：对话/cutscene 进行时恒 null（结构上杜绝同屏）；
+  // 否则 chart/shop（phase）优先于本地服务面板（gear/salvage/bestiary）。新增右栏界面并进这里即自动受互斥门管。
+  const rightPane = portRightPane({
+    phaseKind: state.phase.kind,
+    service: upgradeMode,
+    // portEvent 过场＝左栏 cutscene·同样算「对话进行中」→ 右栏让位（与 openDialog 对话同源对待）。
+    dialogActive: dialog !== null || state.phase.kind === 'portEvent',
+  });
+
   const right =
-    state.phase.kind === 'chart' ? (
+    rightPane === 'chart' ? (
       <SeaChartView state={state} onStateChange={onStateChange} />
-    ) : state.phase.kind === 'shop' ? (
+    ) : rightPane === 'shop' ? (
       <MiraShopView state={state} onStateChange={onStateChange} />
-    ) : upgradeMode === 'bestiary' ? (
+    ) : rightPane === 'bestiary' ? (
       <BestiaryView state={state} onClose={() => setUpgradeMode(null)} />
-    ) : upgradeMode ? (
+    ) : rightPane ? (
       <UpgradePanel
         state={state}
         onStateChange={onStateChange}
         onClose={() => setUpgradeMode(null)}
         lineFilter={
-          upgradeMode === 'salvage'
+          rightPane === 'salvage'
             ? (id) => id === SALVAGE_LINE
             : (id) => id !== SALVAGE_LINE
         }
-        title={upgradeMode === 'salvage' ? '打捞行会' : '改装装备'}
+        title={rightPane === 'salvage' ? '打捞行会' : '改装装备'}
         sub={
-          upgradeMode === 'salvage' ? (
+          rightPane === 'salvage' ? (
             <>银行 {state.profile.bankedGold} 金币 · Mira 的打捞行会：信息、定位、保鲜</>
           ) : undefined
         }
@@ -82,10 +111,13 @@ export function PortLayout({ state, onStateChange }: Props) {
       <PortView
         state={state}
         onStateChange={onStateChange}
+        dialog={dialog}
+        onDialogChange={openDialog}
         onOpenService={(mode) => {
-          // 桌面左栏常驻、海图/商店可能正占着右栏（phase=chart/shop）；此时点「改装/行会」要先回港，
+          // 桌面左栏常驻、海图/商店可能正占着右栏（phase=chart/shop）；此时点「改装/行会/图鉴」要先回港，
           // 否则 chart/shop 的 phase 优先级会盖住升级面板＝点了没反应（防 dead-end·作者：符合操作预期）。
           if (state.phase.kind !== 'port') onStateChange(toPort(state));
+          setDialog(null); // 开服务面板＝收起任何残留对话（互斥·防御性；正常流程下服务按钮在对话中本就不可见）
           setUpgradeMode(mode);
         }}
       />

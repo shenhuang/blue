@@ -9,10 +9,10 @@
 
 ## 2. 锁定参数（作者拍）
 
-- **每柱级数**：家礁 `col.home` 2 / 残骸 `col.wreck` 3 / 中层 `col.midwater` 4 / 热液 `col.vent` 4 / 海沟 `col.trench` 6。
+- **每柱级数（§10 定案·已实现 2026-06-14）**：家礁 `col.home` 2 / 残骸 `col.wreck` 3 / 中层 `col.midwater` **6**（主探索区·内容最重）/ 热液 `col.vent` 4 / 海沟 `col.trench` **4**（t4=科考站电梯 capstone）。〔#130 起手是 4/4/6·§10 把中层↔海沟互换成 6/4〕
 - **宿主灯塔**：home / 四章节前哨点亮后的灯塔（`lighthouse.ch1_{wreck,midwater,vent,trench}_outpost`）。
 - **可拓展＝硬要求**：每柱配置走数据（`src/data/depth_columns.json`），**新灯塔（鲸落营地〔类灯塔〕/ 后续章节新大地图）只加一条 `DepthColumn` 配置即有自己的柱**，不碰引擎。
-- **最深留后续 Phase**：各柱只下到「能见底」的中段（海沟 6 级止于 ~108m）。`abyssal/hadal/subhadal/nameless`「另一个世界」是**专门 Phase**（`d_reveal` 别擅自动·见 `深海回响_深水区_SPEC.md` / deep_game_vision）——`depth_bands.json` 保留这四条 band 作脚手架·**暂无柱档抵达**。
+- **最深留后续 Phase**：各柱普通档只下到「能见底」的中段（海沟普通档止于 270m·t4 电梯入口实际 ~310m·名义探深 360m）。「另一个世界」是**专门 Phase**（`d_reveal` 别擅自动·见 `深海回响_深水区_SPEC.md` / deep_game_vision）——原 `depth_bands.json` 的 `abyssal/hadal/subhadal/nameless` 预留 band **已于 §10 删**（连带 4 事件文件 + 111 scenarios）·Phase 3 下行入口改在海沟科考站电梯（t4 capstone）之下重新长出。
 
 ## 3. 数据模型（单一来源）
 
@@ -66,9 +66,9 @@ tier 旋钮语义 == `DepthBand`（`types/bands.ts`）。
 - 鲸落营地〔类灯塔〕+ 后续章节新大地图：各加一条 `depth_columns.json` 即有柱。
 - 「另一个世界」（abyssal/hadal/subhadal/nameless 下行入口·`d_reveal`）：专门 session·别擅自动（见 deep_game_vision / 深水区 SPEC）。海沟柱 6 级故意止于 ~108m、不一路通到底。
 
-## 10. 下一迭代·已锁（作者 2026-06-14 讨论拍板·**待实现**·supersedes §2/§8 起手占位值）
+## 10. 级数/深度/电梯 capstone 定案（作者 2026-06-14 拍板·**已实现 2026-06-14**·supersedes §2/§8 起手占位值）
 
-#130 落地的是机制 + 占位数值。作者讨论后定案下面这套深度/级数/收尾，**下个 session 实现**（改 `depth_columns.json` + 删预留 band + 接电梯 capstone + 对齐周末 schedule·结构不动）。
+#130 落地的是机制 + 占位数值。作者讨论后定案下面这套深度/级数/收尾，**已于 2026-06-14 实现**（改 `depth_columns.json` + 删预留 band + 接电梯 capstone + 对齐周末喂料目标·结构不动·regress 33/33+build 绿·见本节末「实现注记」）。
 
 **级数 + 每级深度（数字＝该级**底深**·band 范围＝上一级底→本级底·步长递增＝难度信号）：**
 
@@ -88,4 +88,14 @@ tier 旋钮语义 == `DepthBand`（`types/bands.ts`）。
 
 **删除预留 band**：`abyssal/hadal/subhadal/nameless`（作者：旧测试内容·不再需要·直接删·**不必**挪到 360m 以下）。连带要改：`playthrough-bands` §10-13 + `playthrough-sonar` §11（测这些 band·重指或删）；`events/*` 里 `[abyssal]/[hadal]/[subhadal]/[nameless]` tag 的周末事件会变 dormant（无 band 抵达）——下个 session 拍：删事件 or 留着待 Phase 3 re-home。
 
-**周末 schedule/SKILL 对齐新结构**：midwater 6 级＝主探索区·内容最重·优先喂；按新 column zone/depth 喂（reef/wreck_graveyard/open_midwater/vent_trench/blue_caves 的新深度窗口）；别再喂已删的 abyssal/hadal band。当前定时任务全停（06-10 作者刻意）·恢复时按此对齐。
+**周末 schedule/SKILL 对齐新结构**：midwater 6 级＝主探索区·内容最重·优先喂；按新 column zone/depth 喂（reef/wreck_graveyard/open_midwater/vent_trench/blue_caves 的新深度窗口）；别再喂已删的 abyssal/hadal band。当前定时任务全停（06-10 作者刻意）·恢复时按此对齐（喂料目标已同步进 [[weekend_content_log]] 记忆）。
+
+---
+
+### 实现注记（2026-06-14·regress 33/33 + build 绿·未 commit·待 closeout + 作者 push）
+
+- **数据**：`depth_columns.json` 改 §10 级数/深度。每柱 **tier-1 顶深为占位入口**（home/wreck/trench 沿用旧入口 30/18/60·midwater/vent 取「底−步长」=30/25·作者按手感直接改数字·结构不动）：home [30,40][40,60]·wreck [18,50][50,75][75,100]·midwater [30,60]…[180,210]（步长 30·6 档）·vent [25,75][75,125][125,175][175,225]（步长 50）·trench [60,90][90,180][180,270] + t4 电梯 [270,310]。
+- **电梯 capstone**：`DepthColumnTier` 加 `capstone?`+`setsFlag?`（types/columns.ts）；`engine/columns.ts::columnTrack` 把 `t.setsFlag` 透传进派生 `LighthouseUpgradeDef`（capstone 用不同文案·名义 360m）。新 item `item.station_module`（items.json·material·sellPrice 0·decay eternal·**获取途径未实装**·占位由额外剧情得·测试/dev 直接给）= 海沟 lv4 料门（canBuildAt 走料）。建 lv4 → `setsFlag=story.ch1.station_found`（`STATION_FOUND_FLAG`·engine/story.ts·已登记 `allStoryFlags()`）→ 揭示 `chart_regions.trench_station` flag-gated owner-less 区（center {0.9,0.36}·palette navy·占位·复用 #124 原语）+ 电梯入口潜点（`poi.dive.trench.t4`）lit。
+- **删除**：`abyssal/hadal/subhadal/nameless` 4 band（depth_bands.json 现空表）+ `events/{abyssal,hadal,subhadal,nameless}.json` 4 文件 + 111 个 `scenarios/{abyssal,hadal,subhadal,nameless}_*.json` + `zones.ts` 4 import/注册。**ZoneTag 枚举成员保留**（`abyssal` 仍被 mimic corpse-wearer apex 用·其余 harmless）。
+- **回归**：`playthrough-bands` 删 §10-13、§4/§8/§14 fixture 重指 trench.t3/t2/t4 capstone；`playthrough-sonar` §11 欺骗梯度改用 trench.t2(0.1)/t3(0.15)；`playthrough-columns` 重写（§4/§5 切 midwater 6 档·新 §9 capstone 端到端：module gate→build→setsFlag→电梯入口 lit）；`SAVE_VERSION` 5→6（sonar/save/outpost 共 4 处版本断言同步）。`check-dive-refs` 守柱配置自动覆盖新数值。
+- **占位/待作者**：tier-1 顶深 + 各级账单 + 早期 on-ramp 节奏 + 深入 POI 坐标 + 站区 center 仍是占位手感值（§8）；科考站内容/剧情 + `item.station_module` 获取途径 + 周末 schedule 恢复留待作者在场（与 St1 四锚点 / 鲸落 step②-⑤ 一并）。

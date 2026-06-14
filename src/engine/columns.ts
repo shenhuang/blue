@@ -96,17 +96,21 @@ function columnTrack(c: DepthColumn): LighthouseTrack {
   const upgrades: LighthouseUpgradeDef[] = c.tiers.map((t) => ({
     id: columnProbeUpgradeId(c.id, t.tier),
     level: t.tier,
-    name: `探深 Lv.${t.tier}·${t.label}`,
+    name: `低频声呐 Lv.${t.tier}·${t.label}`,
     cost: t.cost,
-    // 探深是**纯门控**：没有被动加成（可见性靠 columnBuiltLevel vs tier 派生·不靠 effects/flag）。
+    // 低频声呐是**纯门控**：没有被动加成（可见性靠 columnBuiltLevel vs tier 派生·不靠 effects）。
     effects: [],
-    description: `把这座灯塔的深度柱探到第 ${t.tier} 级——海图上「${t.label}」深入潜点转为可下潜（${t.depthRange[0]}–${t.depthRange[1]}m）；再下一档以暗点现身。`,
+    description: t.capstone
+      ? `把这座灯塔的深度柱探到第 ${t.tier} 级——名义可达 ~360m，但能去的只有「${t.label}」这一个下潜点（~${t.depthRange[1]}m）；建成即在海图上揭示它通向的区域。`
+      : `把这座灯塔的深度柱探到第 ${t.tier} 级——海图上「${t.label}」深入潜点转为可下潜（${t.depthRange[0]}–${t.depthRange[1]}m）；再下一档以暗点现身。`,
     requiresLighthouseLevel: 1,
+    // capstone（科考站电梯）建成置 flag → 揭示 flag-gated 区（#124）；普通档无 setsFlag（纯门控·可见性靠档位派生）。
+    ...(t.setsFlag ? { setsFlag: t.setsFlag } : {}),
   }));
   return {
     id: columnProbeTrackId(c.id),
-    name: '探深',
-    description: `给「${c.name}」装一根向下的探深柱——每升一级，海图上多探出一档更深的深入潜点（建到第 K 级 → 1…K 档可下潜、第 K+1 档以暗点现身、更深尚不可见）。`,
+    name: '低频声呐',
+    description: `给「${c.name}」装一套低频声呐——每升一级，海图上多探出一档更深的深入潜点（建到第 K 级 → 1…K 档可下潜、第 K+1 档以暗点现身、更深尚不可见）。`,
     onlyLighthouse: c.lighthouseId,
     upgrades,
   };
@@ -118,7 +122,7 @@ export function columnProbeTracks(): LighthouseTrack[] {
 }
 
 /**
- * 某柱已建到的探深级数（0 = 没建过）。读宿主灯塔 builtUpgrades 里本柱派生 probe 升级、取最高 tier。
+ * 某柱已建到的低频声呐级数（0 = 没建过）。读宿主灯塔 builtUpgrades 里本柱派生 probe 升级、取最高 tier。
  * （probe 升级 canBuildAt 强制同轨连建，故最高 tier ＝ 连续建到的级数。）
  */
 export function columnBuiltLevel(profile: PlayerProfile, columnId: string): number {
@@ -136,7 +140,7 @@ export function columnBuiltLevel(profile: PlayerProfile, columnId: string): numb
 /**
  * 档位可见性（核心规则·#131）：建到第 builtLevel 级时，第 tier 档的揭示态——
  *   tier ≤ builtLevel      → lit（可下潜）
- *   tier == builtLevel + 1 → dim（暗点·看得到去不了·「再推一级探深」）
+ *   tier == builtLevel + 1 → dim（暗点·看得到去不了·「再升一级低频声呐」）
  *   else                   → hidden（更深·尚不可见）
  */
 export function depthTierRevealState(builtLevel: number, tier: number): PoiRevealState {

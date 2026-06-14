@@ -1,49 +1,51 @@
-import { useState } from 'react';
 import type { GameState, DialogNode, NpcDef } from '@/types';
 import { getDialogNode, getNpc, selectChoice } from '@/engine/dialog';
 import { evalCondition } from '@/engine/events';
 import { toShop, toChart } from '@/engine/transitions';
-import type { PortServiceMode } from './PortLayout';
+import type { PortServiceMode } from './portFocus';
 import { DEV_TOOLS } from './devMode';
 
 interface Props {
   state: GameState;
   onStateChange: (s: GameState) => void;
-  /** 打开右栏服务面板（改装装备 / 打捞行会）——升级面板已移交 PortLayout 右栏（作者 06-13）；
+  /** 打开右栏服务面板（改装装备 / 打捞行会 / 图鉴）——升级面板已移交 PortLayout 右栏（作者 06-13）；
    *  PortView 只负责「触发」，不再自渲染（对话仍留本视图＝左栏）。 */
   onOpenService: (mode: PortServiceMode) => void;
+  /** 当前打开的港口对话节点（null＝没在对话·显示 NPC 列表）。态由 PortLayout 持有（互斥单点·见 portFocus）。 */
+  dialog: DialogNode | null;
+  /** 改动对话节点（开新对话 / 推进 / 关闭 null）。PortLayout 在此收口互斥：开对话即收右栏服务界面。 */
+  onDialogChange: (node: DialogNode | null) => void;
 }
 
-export function PortView({ state, onStateChange, onOpenService }: Props) {
+export function PortView({ state, onStateChange, onOpenService, dialog, onDialogChange }: Props) {
   const aldo = getNpc('npc.aldo');
   const mira = getNpc('npc.mira');
-  const [openDialog, setOpenDialog] = useState<DialogNode | null>(null);
 
   if (!aldo) return <div className="port">[资源缺失：npc.aldo]</div>;
 
   function startDialogWith(npc: NpcDef | undefined) {
     if (!npc) return;
     const root = getDialogNode(npc.dialogRoot.id) ?? npc.dialogRoot;
-    setOpenDialog(root);
+    onDialogChange(root);
   }
 
   function handleChoice(choiceId: string) {
-    if (!openDialog || !openDialog.choices) return;
-    const choice = openDialog.choices.find((c) => c.id === choiceId);
+    if (!dialog || !dialog.choices) return;
+    const choice = dialog.choices.find((c) => c.id === choiceId);
     if (!choice) return;
-    const { state: newState, next } = selectChoice(state, openDialog, choice);
+    const { state: newState, next } = selectChoice(state, dialog, choice);
     onStateChange(newState);
     // openShop / startDive 切换了 phase；这种情况 selectChoice 会返回 next=null
-    setOpenDialog(next);
+    onDialogChange(next);
   }
 
   function openMiraShop() {
-    setOpenDialog(null);
+    onDialogChange(null);
     onStateChange(toShop(state, 'mira.bench'));
   }
 
   function openChart() {
-    setOpenDialog(null);
+    onDialogChange(null);
     onStateChange(toChart(state));
   }
 
@@ -65,7 +67,7 @@ export function PortView({ state, onStateChange, onOpenService }: Props) {
         </div>
       </header>
 
-      {!openDialog ? (
+      {!dialog ? (
         <div className="port-npcs">
           <NpcCard
             name={aldo.name}
@@ -106,10 +108,10 @@ export function PortView({ state, onStateChange, onOpenService }: Props) {
         </div>
       ) : (
         <DialogPanel
-          node={openDialog}
+          node={dialog}
           state={state}
           onChoose={handleChoice}
-          onClose={() => setOpenDialog(null)}
+          onClose={() => onDialogChange(null)}
         />
       )}
     </div>

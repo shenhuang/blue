@@ -569,9 +569,19 @@ html, body, #root {
     align-items: flex-start;
     gap: 32px;
   }
+  /* 左右栏宽度不变量（作者 06-14·见 quirk #132）：左栏（港口主界面/对话）必须恒 720，
+     右栏开/关都不许动它。曾用 .port-pane{flex:1 1 720;max-width:720} 对称收缩——在 1200–1472px
+     的笔记本上，右栏开着时两栏一起被挤窄(~680)、关掉后左栏回弹到 720＝左栏宽度跳变。
+     拆开：左栏 flex:0 0 720 锁死（不grow不shrink·与右栏开合无关）；右栏吸收所有变化（基准720·
+     max 720 不超宽屏·min-width:0 可收缩到 0 让位给恒定左栏·内部自滚动）。别回对称写法。 */
   .port-pane {
-    flex: 1 1 720px;
     min-width: 0;
+  }
+  .port-pane-left {
+    flex: 0 0 720px;
+  }
+  .port-pane-right {
+    flex: 1 1 720px;
     max-width: 720px;
   }
   /* 右栏直挂的升级面板上方无 port-header（海图/商店各自嵌在 .port 下、有 header），

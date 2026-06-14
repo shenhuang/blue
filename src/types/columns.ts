@@ -50,6 +50,23 @@ export interface DepthColumnTier {
   blurb?: string;
   /** 危险提示（软门控·派生 band.danger）。 */
   danger?: string;
+  /**
+   * 标记为 capstone 档（非普通刷怪 band·如海沟科考站电梯入口·SPEC §10）。纯语义 + 派生 probe 升级文案分支；
+   * band/POI 仍正常派生（它就是「那一个下潜点」），但通常不设 hunts/sonarDeception＝不是普通深 band。
+   */
+  capstone?: boolean;
+  /**
+   * 建该级 probe 升级时置的 profile flag（buildAtLighthouse / devForceBuild 应用 def.setsFlag）。
+   * capstone 用它揭示 flag-gated 区（如科考站·复用 #124 owner-less 区原语·= chart_regions.revealFlag）；
+   * 必须 ∈ story.ts allStoryFlags()（playthrough-story §4 守「data story.* 字面量 ⊆ allStoryFlags()」）。
+   */
+  setsFlag?: string;
+  /**
+   * 显式海图坐标（归一化·覆盖默认「宿主灯塔附近按 tier 扇开」的自动布点）。capstone（电梯）等需要摆到
+   * 独立位置、脱离本柱密集簇时用——与对应 chart_regions flag-gated 区 center 对齐＝圈内含该点（不空圈）。
+   */
+  mapX?: number;
+  mapY?: number;
 }
 
 /**

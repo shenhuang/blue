@@ -205,7 +205,7 @@ L('  非浏览器环境 loadGame() → null ✓');
   // (c) 合法当前版本存档 → 正常读取、不删
   store[SAVE_KEY] = raw;
   const ok = loadGame();
-  assert(ok && ok.version === 5, '当前版本存档应正常读取');
+  assert(ok && ok.version === 6, '当前版本存档应正常读取');
   assert(SAVE_KEY in store, '合法存档不应被删除');
   delete (globalThis as { localStorage?: unknown }).localStorage;
 }

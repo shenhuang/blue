@@ -51,7 +51,7 @@ export interface LighthouseUpgradeDef {
   /** 需要灯塔达到该 level 才能建（缺省 1） */
   requiresLighthouseLevel?: number;
   /**
-   * 建成时置一个 profile flag（灯塔/蛙跳重构 step ②·#125「探深」设施派生深入潜点）：
+   * 建成时置一个 profile flag（灯塔/蛙跳重构 step ②·#125「低频声呐」设施派生深入潜点）：
    * buildAtLighthouse / devBuildAtLighthouse 建好本设施 → 把此 flag 加进 profile.flags →
    * 海图上 requiresFlags 含此 flag 的「深入 POI」随之在该灯塔揭示圈内浮现（升级即解锁·扫描即现）。
    */
@@ -71,7 +71,7 @@ export interface LighthouseTrack {
   /** true = 只能建在水流（current）前哨（水力发电；静水前哨建了也不产电）。深水区 Phase 2b。 */
   currentOnly?: boolean;
   /**
-   * 只在某一座指定 id 的灯塔显示（灯塔/蛙跳重构 step ②·「探深」设施按宿主灯塔分流）：
+   * 只在某一座指定 id 的灯塔显示（灯塔/蛙跳重构 step ②·「低频声呐」设施按宿主灯塔分流）：
    * 家灯塔的近岸探深、各前哨各自的探深各是一条 onlyLighthouse 轨——建造 UI 只在该灯塔露此轨。
    * 与 homeOnly/outpostOnly/currentOnly 并列（最具体·优先判定）。
    */

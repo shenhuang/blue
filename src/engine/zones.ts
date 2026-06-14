@@ -8,10 +8,6 @@ import blueCavesEvents from '@/data/events/blue_caves.json';
 import wreckGraveyardEvents from '@/data/events/wreck_graveyard.json';
 import lighthouseEvents from '@/data/events/lighthouse.json';
 import trenchEvents from '@/data/events/trench.json';
-import abyssalEvents from '@/data/events/abyssal.json';
-import hadalEvents from '@/data/events/hadal.json';
-import subhadalEvents from '@/data/events/subhadal.json';
-import namelessEvents from '@/data/events/nameless.json';
 import mimicEvents from '@/data/events/mimic.json';
 import ch1Events from '@/data/events/ch1.json';
 import midwaterEvents from '@/data/events/midwater.json';
@@ -31,10 +27,6 @@ for (const e of (blueCavesEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (wreckGraveyardEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (lighthouseEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (trenchEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (abyssalEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (hadalEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (subhadalEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (namelessEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (mimicEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (ch1Events.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (midwaterEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
@@ -47,7 +39,7 @@ export function getZone(id: string): ZoneDef | undefined {
 
 /**
  * 这个 zone 的下潜图能否「回头」（节点级 backtrack）。
- * 迷路图（mapShape='maze'，如蓝洞群 + 借它的 trench/abyssal/hadal band）双向连通＝能原路返回；
+ * 迷路图（mapShape='maze'，如蓝洞群 + 借它的 trench 柱 band）双向连通＝能原路返回；
  * 层状图（开阔水域 reef/wreck，缺省）connectsTo 只向下＝一旦往深处走，走过的节点不再是选项（单向下潜·设计如此）。
  * UI 据此在层状 zone 给「只能往下、回不去」的预告，避免玩家在过了上浮口后才被「回不了头」打个措手不及。
  */

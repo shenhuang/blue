@@ -152,11 +152,11 @@ L('  渲染成功，空态提示正确 ✓');
 // ============================================
 L('\n========== D. PortView 海图入口门控 ==========');
 const htmlPortPost = renderToStaticMarkup(
-  <PortView state={stateWith(['flag.tutorial_complete'], [])} onStateChange={noop} />,
+  <PortView state={stateWith(['flag.tutorial_complete'], [])} onStateChange={noop} onOpenService={noop} dialog={null} onDialogChange={noop} />,
 );
 assert(htmlPortPost.includes('摊开海图'), 'D: 教学后港口应有"摊开海图"按钮');
 const htmlPortPre = renderToStaticMarkup(
-  <PortView state={stateWith([], [])} onStateChange={noop} />,
+  <PortView state={stateWith([], [])} onStateChange={noop} onOpenService={noop} dialog={null} onDialogChange={noop} />,
 );
 assert(!htmlPortPre.includes('摊开海图'), 'D: 教学前港口不应有"摊开海图"按钮');
 L('  教学后有入口 / 教学前无入口 ✓');
