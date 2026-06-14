@@ -2,7 +2,13 @@
 // 验证三轴过滤（深度 ∩ 环境 ∩ 生态位）、环境隔离（"热带鱼不进极地"）、threatTier 派生、
 // pickEnemy 确定性（rng 注入）与 excludeIds。纯引擎层·无 UI。
 
-import { pickEnemy, matchEnemies, enemyThreatTier } from '../src/engine/enemyLibrary';
+import {
+  pickEnemy,
+  matchEnemies,
+  enemyThreatTier,
+  resolveEncounterMember,
+  canResolveMember,
+} from '../src/engine/enemyLibrary';
 import { getEnemyDef } from '../src/engine/combat';
 
 let failures = 0;
@@ -55,6 +61,23 @@ check('excludeIds 生效（不取被排除的）', !!pickedExcl && pickedExcl.id
 
 // 8. 无匹配 → undefined
 check('无匹配返回 undefined', pickEnemy({ band: 'zone.__nonexistent__' }) === undefined);
+
+// 9. resolveEncounterMember（支柱二 route B：defId 直查 / enemyRef 取一只）
+const byDefId = resolveEncounterMember({ defId: 'enemy.reef_grouper' });
+check('member.defId 直查命中', byDefId?.id === 'enemy.reef_grouper');
+const byRef = resolveEncounterMember({ enemyRef: { band: 'zone.blue_caves' } }, () => 0);
+check('member.enemyRef 解析到匹配集第一只', byRef?.id === firstCave?.id);
+check(
+  'member.enemyRef 无匹配 → undefined',
+  resolveEncounterMember({ enemyRef: { band: 'zone.__none__' } }) === undefined,
+);
+
+// 10. canResolveMember（不掷 RNG 的可解析校验·喂 combatScenario/check）
+check('canResolveMember defId 有效', canResolveMember({ defId: 'enemy.reef_grouper' }) === true);
+check('canResolveMember defId 无效', canResolveMember({ defId: 'enemy.__nope__' }) === false);
+check('canResolveMember enemyRef 可解析', canResolveMember({ enemyRef: { band: 'zone.blue_caves' } }) === true);
+check('canResolveMember enemyRef 不可解析', canResolveMember({ enemyRef: { band: 'zone.__none__' } }) === false);
+check('canResolveMember 空成员 → false', canResolveMember({}) === false);
 
 if (failures > 0) {
   console.log(`\n✗ 敌人库回归失败：${failures} 处`);

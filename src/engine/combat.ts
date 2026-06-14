@@ -22,6 +22,7 @@ import { executeDeath } from './death';
 import { getItemDef } from './items';
 import { computeModifiers, effectiveStaminaMax } from './modifiers';
 import { addInjury, injuryIdForDamageType, applyMedkitHeal } from './injuries';
+import { resolveEncounterMember } from './enemyLibrary';
 
 // ——— 数据索引 ———
 
@@ -64,8 +65,9 @@ export function startCombat(
   // （潜行/突袭红利对它失效·骗局在你身上）。无伤/非嗅觉系 → initialStance 逐字节不变。
   const scentTrail = computeModifiers(state.run).scentTrail;
   const enemies: EnemyInstance[] = enc.party.members.map((m, idx) => {
-    const def = ENEMY_DEFS.get(m.defId);
-    if (!def) throw new Error(`Enemy def not found: ${m.defId}`);
+    // 敌人库 SPEC §4/支柱二：defId 直查 · enemyRef 经 pickEnemy 取一只合适的（route B 加法·非破坏）。
+    const def = resolveEncounterMember(m);
+    if (!def) throw new Error(`Enemy def not resolved for party member: ${JSON.stringify(m)}`);
     return {
       instanceId: `${combatId}.${idx}`,
       defId: def.id,

@@ -53,6 +53,7 @@ import {
   listAllEncounters,
   startCombat,
 } from './combat';
+import { canResolveMember } from './enemyLibrary';
 import { withSeededRandom } from './eventScenario';
 
 // ---------------------------------------------------------------------------
@@ -399,15 +400,15 @@ export function runCombatScenario(input: CombatScenarioInput): CombatScenarioRes
         errors: [`combatId "${input.combatId}" 未在 COMBAT_ENCOUNTERS 中找到`],
       };
     }
-    // 校验每个 member.defId 存在
+    // 校验每个 member 可解析（defId 已注册 或 enemyRef 至少匹配一只·不掷 RNG）
     for (const m of enc.party.members) {
-      if (!getEnemyDef(m.defId)) {
+      if (!canResolveMember(m)) {
         return {
           input,
           resolvedInitialState,
           turns: [],
           summary: makeEmptySummary('invalidEnemyDef', state),
-          errors: [`combat "${input.combatId}" 引用了未注册的 enemy def "${m.defId}"`],
+          errors: [`combat "${input.combatId}" 的 party 成员无法解析：${JSON.stringify(m)}`],
         };
       }
     }
@@ -658,7 +659,7 @@ export function listAllCombats(): CombatListEntry[] {
     out.push({
       id: enc.id,
       memberCount: enc.party.members.length,
-      memberDefIds: enc.party.members.map((m) => m.defId),
+      memberDefIds: enc.party.members.map((m) => m.defId ?? `<ref:${m.enemyRef?.band ?? '?'}>`),
       victoryEventId: enc.victoryEventId,
       introText: enc.introText,
     });

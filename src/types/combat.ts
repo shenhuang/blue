@@ -2,7 +2,7 @@
 
 import type { Stat } from './state';
 import type { EquipmentSlot } from './items';
-import type { EnemyInstance, EnemyParty, DamageType } from './enemies';
+import type { EnemyInstance, EnemyParty, EnemyPartyMemberDef, DamageType } from './enemies';
 
 /** 玩家行动定义（数据驱动） */
 export interface CombatAction {
@@ -147,7 +147,7 @@ export interface CombatLogEntry {
 /** 战斗 encounter 数据（来自 enemies/*.json 的 combatEncounters） */
 export interface CombatEncounterDef {
   id: string;
-  party: { members: { defId: string }[] };
+  party: { members: EnemyPartyMemberDef[] };
   /** 进入战斗的过场文本 */
   introText?: string;
   /** 胜利后跳转的事件 id */

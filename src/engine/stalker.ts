@@ -99,7 +99,8 @@ export function poolHasScent(pool: string[]): boolean {
       if (enc.stalker.scent) return true;
       continue; // per-encounter 钉死 false → 这条遭遇不算嗅觉系
     }
-    if (enc?.party.members.some((m) => getEnemyDef(m.defId)?.scent)) return true;
+    // enemyRef 成员的 scent 运行期才定（pickEnemy 取一只）→ 静态派生保守按非嗅觉处理（player-friendly·不误锁）。
+    if (enc?.party.members.some((m) => (m.defId ? getEnemyDef(m.defId)?.scent : false))) return true;
   }
   return false;
 }
@@ -385,7 +386,9 @@ export function maybeSpawnStalker(run: RunState, pool: string[]): Stalker | null
   // true | undefined（非 false）＝JSON round-trip 干净、无标签数据逐字节不变。
   const enc = getEncounter(encounterId);
   const scent =
-    (prof?.scent ?? enc?.party.members.some((m) => getEnemyDef(m.defId)?.scent) ?? false) ? true : undefined;
+    (prof?.scent ?? enc?.party.members.some((m) => (m.defId ? getEnemyDef(m.defId)?.scent : false)) ?? false)
+      ? true
+      : undefined;
   return {
     nodeId: node,
     sensesBy,

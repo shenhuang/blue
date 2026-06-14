@@ -48,6 +48,20 @@ function collectDefIdRefs(node, acc) {
   }
 }
 
+/** 深扫收集所有 enemyRef 描述符（key==='enemyRef' 的对象值·敌人库 SPEC §4 支柱二）。 */
+function collectEnemyRefs(node, acc) {
+  if (Array.isArray(node)) {
+    for (const v of node) collectEnemyRefs(v, acc);
+    return;
+  }
+  if (node && typeof node === 'object') {
+    for (const [k, v] of Object.entries(node)) {
+      if (k === 'enemyRef' && v && typeof v === 'object') acc.push(v);
+      else collectEnemyRefs(v, acc);
+    }
+  }
+}
+
 for (const f of enemyFiles) {
   let data;
   try {
@@ -61,13 +75,18 @@ for (const f of enemyFiles) {
       id: e.id,
       bands: Array.isArray(e.bands) ? e.bands : [],
       biomes: Array.isArray(e.biomes) ? e.biomes : [],
+      role: typeof e.role === 'string' ? e.role : undefined,
+      threat: typeof e.threat === 'number' ? e.threat : 0,
+      threatTier: typeof e.threatTier === 'string' ? e.threatTier : undefined,
       file: f,
     });
   }
   for (const c of data.combatEncounters ?? []) {
     const refIds = [];
     collectDefIdRefs(c, refIds);
-    encounters.push({ id: c.id, refIds, file: f });
+    const enemyRefs = [];
+    collectEnemyRefs(c, enemyRefs);
+    encounters.push({ id: c.id, refIds, enemyRefs, file: f });
   }
 }
 
@@ -85,6 +104,30 @@ for (const enc of encounters) {
   for (const ref of enc.refIds) {
     if (!enemyIds.has(ref)) {
       errors.push(`[ref] encounter ${enc.id}（${enc.file}）引用未注册敌人 defId=${ref}`);
+    }
+  }
+}
+
+// —— (b2) enemyRef 可解析（每个描述符至少匹配一只敌人·否则运行期 party 会空·镜像 enemyLibrary.matchEnemies） ——
+function threatTierOf(d) {
+  if (d.threatTier) return d.threatTier;
+  if (d.threat <= 3) return 'low';
+  if (d.threat <= 6) return 'mid';
+  return 'high';
+}
+function refMatchCount(ref) {
+  return enemyDefs.filter((d) => {
+    if (ref.band && !d.bands.includes(ref.band)) return false;
+    if (ref.biome && !d.biomes.includes(ref.biome)) return false;
+    if (ref.role && d.role !== ref.role) return false;
+    if (ref.threatTier && threatTierOf(d) !== ref.threatTier) return false;
+    return true;
+  }).length;
+}
+for (const enc of encounters) {
+  for (const ref of enc.enemyRefs ?? []) {
+    if (refMatchCount(ref) === 0) {
+      errors.push(`[enemyRef] encounter ${enc.id}（${enc.file}）的 enemyRef 匹配不到任何敌人：${JSON.stringify(ref)}`);
     }
   }
 }
