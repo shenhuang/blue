@@ -790,7 +790,7 @@ const htmlN2 = renderToStaticMarkup(
   <OutpostPopup outpostId="outpost.ch1_wreck" state={N2} onStateChange={noop} onDive={noop} onClose={noop} />,
 );
 assert(htmlN2.includes('能源'), 'N2: 点亮前哨 popup 显示能源状态');
-assert(htmlN2.includes('部分补给掉线'), 'N2: 设施占用超能源容量 → 标注补给掉线');
+assert(htmlN2.includes('部分设施停转'), 'N2: 设施占用超能源容量 → 标注设施停转');
 assert(!htmlN2.includes('衰减') && !htmlN2.includes('荒废'), 'N2: 衰减已删 → 无衰减级/荒废 UI');
 L('  章节前哨标记（暗·待解锁·未发现不在图）+ 前哨 popup 能源/掉线（衰减已删·中转寄存已删）✓');
 
@@ -1042,8 +1042,8 @@ const sLockState = stateWith(['flag.tutorial_complete'], []);
 const htmlSLock = renderToStaticMarkup(
   <OutpostPopup outpostId="outpost.ch1_wreck" state={sLockState} onStateChange={noop} onDive={noop} onClose={noop} />,
 );
-assert(htmlSLock.includes('暗 · 待解锁'), 'S: 锚点未到的章节前哨 popup 显示「暗 · 待解锁」');
-assert(htmlSLock.includes('走到对应的锚点') || htmlSLock.includes('它才会在海图上'), 'S: 锁态给解锁提示');
+assert(htmlSLock.includes('隐约可见 · 还没路'), 'S: 锚点未到的章节前哨 popup 显示锁态「隐约可见 · 还没路」');
+assert(htmlSLock.includes('走到附近'), 'S: 锁态给解锁提示');
 // 点亮态：wreck 锚点 + 残骸前哨三阶 → OutpostPopup 显「已点亮」·不再出「从此处下潜」（章节蛙跳已删→深入 POI）。
 const sLitChap = litOutpostState({ outpostId: 'outpost.ch1_wreck', resultLh: WRECK_OUTPOST_LH });
 const sLitChapWithAnchor: GameState = {
@@ -1054,7 +1054,7 @@ const htmlSLit = renderToStaticMarkup(
   <OutpostPopup outpostId="outpost.ch1_wreck" state={sLitChapWithAnchor} onStateChange={noop} onDive={noop} onClose={noop} />,
 );
 assert(!htmlSLit.includes('从此处下潜'), 'S: 章节前哨蛙跳已删（改深入 POI·作者 06-14）→ popup 不再出「从此处下潜」');
-assert(htmlSLit.includes('已点亮'), 'S: 点亮态状态显示「已点亮」');
+assert(htmlSLit.includes('灯亮着'), 'S: 点亮态状态显示「灯亮着」');
 L('  章节前哨 popup 锁态(暗·待解锁)/点亮(已点亮·无蛙跳·改深入 POI) ✓');
 
 console.log(log.join('\n'));
