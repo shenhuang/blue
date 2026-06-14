@@ -18,10 +18,10 @@ import {
   getLighthouseUpgradeDef,
   getOutposts,
   outpostStage,
+  revealRadius,
   OUTPOST_USABLE_STAGE,
   LIGHT_RADIUS_PER_BONUS,
 } from './lighthouses';
-import { effectiveRevealRadius } from './outposts';
 import { flagGatedRegions } from './regions';
 
 /**
@@ -129,8 +129,8 @@ function makeMimicPoi(): ChartPoi {
 function isLit(profile: PlayerProfile, mapX?: number, mapY?: number): boolean {
   if (mapX === undefined || mapY === undefined) return true;
   for (const lh of profile.lighthouses) {
-    // 有效半径＝随前哨衰减收缩（深水区 Phase 2b 真 reveal dimming）；home/废墟/水上灯塔无衰减＝原样。
-    if (distanceBetween(lh.mapX, lh.mapY, mapX, mapY) <= effectiveRevealRadius(profile, lh)) return true;
+    // 点亮半径（衰减已删·#125）：灯塔的点亮范围＝固定 revealRadius（不再随 run 收缩）。
+    if (distanceBetween(lh.mapX, lh.mapY, mapX, mapY) <= revealRadius(lh)) return true;
   }
   // flag-gated 揭示区（owner-less·鲸落区起）：revealFlag 满足时，它的 center+radius 圈也是一个
   // 揭示源——圈内 POI 随 found flag 正常点亮（无灯塔→无衰减·半径取 region.radius）。
@@ -154,7 +154,7 @@ function isSurveyDim(profile: PlayerProfile, mapX?: number, mapY?: number): bool
   for (const lh of profile.lighthouses) {
     const bonus = getLighthouseBonuses(lh).dimRevealBonus;
     if (bonus <= 0) continue;
-    const lit = effectiveRevealRadius(profile, lh);
+    const lit = revealRadius(lh);
     const survey = lit + bonus * LIGHT_RADIUS_PER_BONUS;
     const d = distanceBetween(lh.mapX, lh.mapY, mapX, mapY);
     if (d > lit && d <= survey) return true;

@@ -541,17 +541,8 @@ export function advanceOutpost(state: GameState, outpostId: string): GameState {
   const flags = new Set(state.profile.flags);
   flags.add(outpostStageFlag(outpostId, newStage));
 
-  // 深水区 Phase 2b：建造一阶＝刚 ferry 过料 → 重置结构衰减计时（maintainedRun = 当前 run）。
-  // 水上前哨（!submerged）outpostDecayLevel 恒 0、写它也无害（保持一致、零分支）。
-  // 深水区 Phase 2b 续：**保留既有 stored/storedRun**（建造不动寄存——寄存损耗走独立 storedRun 计时、由存/取/维护打理）；
-  // 既有 outpostState 缺 stored 的前哨仍写出 { maintainedRun } 单字段＝行为逐字节不变（守回归）。
-  const outpostState = {
-    ...state.profile.outpostState,
-    [outpostId]: {
-      ...(state.profile.outpostState[outpostId] ?? {}),
-      maintainedRun: state.profile.runsCompleted,
-    },
-  };
+  // 衰减已删（#125）：建造不再写 outpostState（原仅为重置衰减计时 maintainedRun）；
+  // 寄存 stored 由存/取动作维护、建造不碰它。
 
   // 点亮 → promote：push 一座灯塔（复用 Phase C reveal/reach；幂等防重复 push）。
   let lighthouses = state.profile.lighthouses;
@@ -568,7 +559,6 @@ export function advanceOutpost(state: GameState, outpostId: string): GameState {
       bankedGold: state.profile.bankedGold - stageDef.cost.gold,
       lighthouses,
       flags,
-      outpostState,
     },
   };
   next = appendLog(next, {

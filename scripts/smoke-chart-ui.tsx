@@ -77,8 +77,8 @@ function litOutpostState(opts: {
   resultLh: { id: string; name: string; mapX: number; mapY: number };
   facilities?: string[];
   runsCompleted?: number;
-  maintainedRun?: number;
   stored?: { itemId: string; qty: number }[];
+  inventory?: { itemId: string; qty: number }[];
 }): GameState {
   const base = createInitialGameState();
   const flags = new Set([
@@ -88,19 +88,16 @@ function litOutpostState(opts: {
     `flag.${opts.outpostId}.s3`,
   ]);
   const lh = { ...opts.resultLh, level: 1, builtUpgrades: new Set(opts.facilities ?? []) };
-  const entry: { maintainedRun: number; stored?: { itemId: string; qty: number }[]; storedRun?: number } = {
-    maintainedRun: opts.maintainedRun ?? 0,
-  };
-  if (opts.stored) {
-    entry.stored = opts.stored;
-    entry.storedRun = opts.runsCompleted ?? 0; // storedRun=当前 run → 零寄存损耗（除非测试另设）
-  }
+  // 衰减已删（#125）：outpostState 只剩 { stored? }（无 maintainedRun/storedRun 计时）。
+  const entry: { stored?: { itemId: string; qty: number }[] } = {};
+  if (opts.stored) entry.stored = opts.stored;
   return {
     ...base,
     profile: {
       ...base.profile,
       flags,
       runsCompleted: opts.runsCompleted ?? 0,
+      inventory: opts.inventory ?? base.profile.inventory,
       lighthouses: [...base.profile.lighthouses, lh],
       outpostState: { [opts.outpostId]: entry },
     },
@@ -783,28 +780,26 @@ const n1Revealed = devRevealOutpost(stateWith(['flag.tutorial_complete'], []), '
 const htmlN1b = renderToStaticMarkup(<SeaChartView state={n1Revealed} onStateChange={noop} />);
 assert(htmlN1b.includes('残骸前哨'), 'N1: devReveal/剧情发现后 → 章节前哨暗标记现身');
 assert(htmlN1b.includes('待解锁'), 'N1: 现身的未解锁章节前哨标为「暗·待解锁」');
-// N2：reef_deep 点亮 + 重度衰减（runs 8）→ OutpostPopup 渲染能源/衰减/荒废/维护
+// N2：reef_deep 点亮 + 两个补给设施（draw 超 base 能源）→ OutpostPopup 渲染能源状态 + 部分掉线。
+// 衰减已删（#125）：不再有衰减级/荒废/维护 UI；掉线纯由「设施占用 > 能源容量」结构性触发（与时间无关）。
 const N2 = litOutpostState({
   outpostId: 'outpost.reef_deep',
   resultLh: REEF_DEEP_LH,
   facilities: ['lighthouse.recharge.lv1', 'lighthouse.oxygen_supply.lv1'],
-  runsCompleted: 8,
-  maintainedRun: 0,
 });
 const htmlN2 = renderToStaticMarkup(
   <OutpostPopup outpostId="outpost.reef_deep" state={N2} onStateChange={noop} onDive={noop} onClose={noop} />,
 );
 assert(htmlN2.includes('能源'), 'N2: 点亮前哨 popup 显示能源状态');
-assert(htmlN2.includes('衰减'), 'N2: 衰减的前哨显示衰减级');
-assert(htmlN2.includes('部分补给掉线'), 'N2: 容量不足 → 标注补给掉线（变暗）');
-assert(htmlN2.includes('荒废 · 蛙跳失效'), 'N2: 重度衰减 → 有效阶段回退、蛙跳失效');
-assert(htmlN2.includes('维护'), 'N2: 衰减的前哨有「维护」按钮');
+assert(htmlN2.includes('部分补给掉线'), 'N2: 设施占用超能源容量 → 标注补给掉线');
+assert(!htmlN2.includes('衰减') && !htmlN2.includes('荒废'), 'N2: 衰减已删 → 无衰减级/荒废 UI');
 // N3：建了材料中转站 + 寄存了料 → popup 渲染寄存区（容量/库存/存取按钮）
 const N3 = litOutpostState({
   outpostId: 'outpost.reef_deep',
   resultLh: REEF_DEEP_LH,
   facilities: ['lighthouse.depot.lv1'],
   stored: [{ itemId: 'item.brass_fitting', qty: 3 }],
+  inventory: [{ itemId: 'item.brass_fitting', qty: 2 }], // 手头有料 → 中转站可「存」（衰减删后＝任意材料前置库房）
 });
 const htmlN3 = renderToStaticMarkup(
   <OutpostPopup outpostId="outpost.reef_deep" state={N3} onStateChange={noop} onDive={noop} onClose={noop} />,
@@ -823,7 +818,7 @@ const htmlN4 = renderToStaticMarkup(
   />,
 );
 assert(!htmlN4.includes('中转站'), 'N4: 未建中转站的前哨不显示寄存区（软门控）');
-L('  章节前哨标记（暗·待解锁·深脊柱不在图）+ 前哨 popup 能源/衰减/荒废/维护/中转站寄存 ✓');
+L('  章节前哨标记（暗·待解锁·深脊柱不在图）+ 前哨 popup 能源/掉线/中转站寄存（衰减已删）✓');
 
 // ============================================
 // O. SeaChartView · mimic「无灯之光」引诱 + 宏观 tell（深水区 Phase 3）

@@ -177,7 +177,7 @@ export interface LighthouseBonuses {
   /** 随身消耗品槽 +value（仅家灯塔的「船坞」设施会贡献；桥接进 createNewRun 的 run 加成）。 */
   extraConsumableSlot: number;
   // —— 深水区 Phase 2b 前哨能源（engine/outposts.ts 据此做能源容量/在线判定）。这些是**原始**聚合值，
-  //     设施是否真在线（受能源容量 + 衰减影响）由 outposts.ts 的 effectiveOutpostBonuses 二次结算。——
+  //     设施是否真在线（受能源容量影响）由 outposts.ts 的 effectiveOutpostBonuses 二次结算。——
   /** 能源产出（水力；仅水流前哨实际产出，见 outposts.ts::outpostEnergy）。 */
   energyGen: number;
   /** 能源占用（所有设施的 draw 之和；用于在线判定）。 */
@@ -190,7 +190,7 @@ export interface LighthouseBonuses {
   storageCapacity: number;
   /**
    * 勘测站加成（Req A）：在该灯塔正常点亮半径之外再多照一圈「暗区」——
-   * 勘测半径 = effectiveRevealRadius + dimRevealBonus × LIGHT_RADIUS_PER_BONUS。
+   * 勘测半径 = revealRadius + dimRevealBonus × LIGHT_RADIUS_PER_BONUS。
    * 勘测圈内但 reveal 圈外的 POI 显示为 dim（可见不可去）；chart.ts 的 isSurveyDim 消费。
    */
   dimRevealBonus: number;

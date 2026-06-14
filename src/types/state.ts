@@ -48,17 +48,15 @@ export interface PlayerProfile {
    */
   lighthouses: Lighthouse[];
   /**
-   * 水下前哨的维护 + 寄存状态（深水区 Phase 2b / 2b 续）：outpostId → { maintainedRun, stored?, storedRun? }。
-   * - maintainedRun = 上次建造/维护时的 runsCompleted；结构衰减 = (runsCompleted − maintainedRun) × 速率（水流前哨更快）。
-   * - stored = 寄存在该前哨「材料中转站」里的材料（Phase 2b 续：深水前哨可寄存材料、维护就近取用并免 ferry 金费）。
-   * - storedRun = 上次「打理寄存」（存/取/维护）时的 runsCompleted；寄存损耗 = (runsCompleted − storedRun) × 速率独立计
-   *   （与 maintainedRun 解耦——建造一阶重置结构衰减但不一定补寄存；维护两者都重置）。
-   * 条目内字段可选（懒默认＝刚维护、空寄存、零损耗·语义留在 outposts.ts 读点），JSON 原生 round-trip，
-   * 无需迁移、不 bump SAVE_VERSION（同 shopStock 套路；作者 2026-06-04 未发布不迁移）。
+   * 水下前哨的寄存 + 发现状态（深水区 Phase 2b·衰减删除后 #125）：outpostId → { stored?, discovered? }。
+   * - stored = 寄存在该前哨「材料中转站」里的材料（深水前哨可寄存材料、建更深一阶时就近取用）。纯库房·不锈蚀。
+   * - discovered = 该前哨是否已被发现（上图可见）。
+   * 条目内字段全可选（懒默认＝空寄存、未发现·语义留在 outposts.ts/lighthouses.ts 读点），JSON 原生 round-trip。
    * 容器必填：createInitialProfile 种 {}，旧存档缺它由 hydrateGameState 单点补 {}（CHANGELOG #107）。
-   * advanceOutpost / maintainOutpost / depositToDepot / withdrawFromDepot 写它。
+   * depositToDepot / withdrawFromDepot 写 stored；发现门写 discovered。
+   * 衰减删除＝去掉 maintainedRun/storedRun（旧档残留这两字段无害·代码不再读）；未发布·不写迁移（quirk #99）。
    */
-  outpostState: Record<string, { maintainedRun: number; stored?: MaterialCost[]; storedRun?: number; discovered?: boolean }>;
+  outpostState: Record<string, { stored?: MaterialCost[]; discovered?: boolean }>;
   /**
    * 海图测绘扫描·**每哨站**已扫签名（区域揭示·作者 2026-06-14：解锁/潮汐只扫**受影响的灯塔**、非全图一起扫）。
    * key=灯塔 id，value=该灯塔上次扫到的「点亮 POI 集 + 有效半径」签名（SeaChartView 算）。当前签名 ≠ 记录 → 只扫该灯塔，

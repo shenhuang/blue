@@ -23,24 +23,18 @@ import {
   isChapterOutpost,
   isOutpostDiscovered,
   outpostUnlocked,
+  revealRadius,
   OUTPOST_MAX_STAGE,
   OUTPOST_USABLE_STAGE,
 } from '@/engine/lighthouses';
 import {
-  effectiveRevealRadius,
-  effectiveOutpostStage,
-  outpostDecayLevel,
   outpostEnergy,
-  maintainOutpost,
-  canMaintainOutpost,
   depotCapacity,
-  effectiveStored,
+  storedMaterials,
   storedUnits,
-  depotDecayLevel,
   depositToDepot,
   withdrawFromDepot,
   canDeposit,
-  OUTPOST_MAINTENANCE_COST,
 } from '@/engine/outposts';
 import { getBands } from '@/engine/bands';
 import { getZone } from '@/engine/zones';
@@ -71,7 +65,7 @@ const MIN_VIEW_SPAN = 0.55;
 // 揭示圈分色/形状由**区域配置**给（区域揭示配置化 SPEC·data-driven·跨章复用）：
 // regionForOwner(灯塔 id) → palette(cyan/green/blue/amber/navy) + shape(circle/coast)。
 // 无配置的灯塔（深脊柱前哨 / 未配置废墟）不画揭示圈、不在本图渲染（守作者「只这几片分离区」）。
-// 半径仍由 effectiveRevealRadius（读同一配置·engine/regions.ts）给——圈即 reveal 边界，诚实轴不破。
+// 半径仍由 revealRadius（衰减已删·#125）给——圈即 reveal 边界，诚实轴不破。
 
 /** 标记点归一化坐标；数据缺省时按 distance 兜底（左→右 ≈ 越远） */
 function poiPos(poi: ChartPoi): { x: number; y: number } {
@@ -98,7 +92,7 @@ function poiSweepDelay(
   let best = Infinity;
   for (const lh of profile.lighthouses) {
     if (!sweepingLhIds.has(lh.id)) continue;
-    const r = effectiveRevealRadius(profile, lh);
+    const r = revealRadius(lh);
     if (r <= 0) continue;
     const d = Math.hypot(lh.mapX - x, lh.mapY - y);
     if (d <= r) best = Math.min(best, (d / r) * SWEEP_SECONDS);
@@ -124,7 +118,7 @@ export function SeaChartView({ state, onStateChange }: Props) {
     const lh = p.lighthouses
       .map(
         (l) =>
-          `${l.id}@${l.mapX.toFixed(3)},${l.mapY.toFixed(3)}:${[...l.builtUpgrades].sort().join('+')}:${effectiveRevealRadius(p, l).toFixed(3)}`,
+          `${l.id}@${l.mapX.toFixed(3)},${l.mapY.toFixed(3)}:${[...l.builtUpgrades].sort().join('+')}:${revealRadius(l).toFixed(3)}`,
       )
       .sort()
       .join('|');
@@ -217,7 +211,7 @@ export function SeaChartView({ state, onStateChange }: Props) {
     const m: Record<string, string> = {};
     for (const lh of state.profile.lighthouses) {
       if (!regionForOwner(lh.id)) continue;
-      const r = effectiveRevealRadius(state.profile, lh);
+      const r = revealRadius(lh);
       const within = chart.pois
         .filter((p) => {
           const { x, y } = poiPos(p);
@@ -367,7 +361,7 @@ export function SeaChartView({ state, onStateChange }: Props) {
             {state.profile.lighthouses.filter((lh) => regionForOwner(lh.id)).map((lh) => {
               // 只渲染本图配置了区域的灯塔（家 + 已点亮的章节前哨）；半径随前哨衰减收缩（Phase 2b）。
               const region = regionForOwner(lh.id)!;
-              const r = effectiveRevealRadius(state.profile, lh);
+              const r = revealRadius(lh);
               const isHome = lh.id === HOME_LIGHTHOUSE_ID;
               // 家灯塔 → popup 蛙跳列表；前哨灯塔（点亮的前哨）→ popup 建造/维护面板。
               const outpostId = getOutposts().find((o) => o.result.id === lh.id)?.id;
@@ -763,7 +757,7 @@ export function HomeDivePopup({
 
 /**
  * 前哨 popup（Step 4/5/6）：点击海图上前哨标记（未点亮 / 半亮 / 点亮的前哨灯塔）弹出，
- * 包含建造/维护/能源/中转站/蛙跳（非章节前哨也出蛙跳）+ dev 按钮。
+ * 包含建造/能源/中转站/蛙跳（非章节前哨也出蛙跳）+ dev 按钮。
  */
 export function OutpostPopup({
   outpostId,
@@ -782,39 +776,32 @@ export function OutpostPopup({
   if (!o) return null;
 
   const stage = outpostStage(state.profile, o.id);
-  const effStage = effectiveOutpostStage(state.profile, o.id);
   const lit = stage >= OUTPOST_MAX_STAGE;
-  const usable = effStage >= OUTPOST_USABLE_STAGE;
-  const decay = outpostDecayLevel(state.profile, o.id);
+  const usable = stage >= OUTPOST_USABLE_STAGE;
   const next = nextOutpostStage(state.profile, o.id);
   const canBuild = canAdvanceOutpost(state.profile, o.id);
   const chapter = isChapterOutpost(o);
   const unlocked = outpostUnlocked(state.profile, o.id);
   const lh = getLighthouse(state.profile, o.result.id);
-  const energy = lh ? outpostEnergy(state.profile, lh) : null;
-  const maint = canMaintainOutpost(state.profile, o.id);
+  const energy = lh ? outpostEnergy(lh) : null;
 
   const cap = depotCapacity(state.profile, o.id);
-  const stored = cap > 0 ? effectiveStored(state.profile, o.id) : [];
+  const stored = cap > 0 ? storedMaterials(state.profile, o.id) : [];
   const depotUsed = storedUnits(stored);
-  const depotDecay = cap > 0 ? depotDecayLevel(state.profile, o.id) : 0;
+  // 中转站＝纯前置库房（衰减/维护删除后·#125）：可存任意手头材料，不再绑维护料/下一阶建造料
+  // （维护已删；且中转站只存在于已点亮前哨·已无「下一阶」，旧的 next-cost 来源恒空）。
   const depositables =
     cap > 0
-      ? Array.from(
-          new Set([
-            ...OUTPOST_MAINTENANCE_COST.materials.map((m) => m.itemId),
-            ...(next?.cost.materials.map((m) => m.itemId) ?? []),
-          ]),
-        )
+      ? state.profile.inventory
+          .filter((i) => i.qty > 0 && getItemDef(i.itemId)?.category === 'material')
+          .map((i) => i.itemId)
       : [];
 
   const status =
     chapter && !unlocked
       ? '暗 · 待解锁'
       : lit
-        ? usable
-          ? '已点亮'
-          : '荒废 · 蛙跳失效'
+        ? '已点亮'
         : stage === 0
           ? '未动工'
           : `修建中 ${stage}/${OUTPOST_MAX_STAGE}${usable ? ' · 半亮可用' : ''}`;
@@ -831,7 +818,6 @@ export function OutpostPopup({
         <p className="dim chart-popup-energy">
           能源 {energy.capacity}（占用 {energy.demand}
           {energy.demand > energy.capacity ? ' · 部分补给掉线' : ''}）
-          {decay > 0 ? ` · 衰减 ${decay}` : ''}
         </p>
       )}
       {chapter && !unlocked && (
@@ -858,15 +844,6 @@ export function OutpostPopup({
             title={`从${o.name}蛙跳下潜`}
           >
             从此处下潜
-          </button>
-        )}
-        {decay > 0 && (
-          <button
-            className="btn small chart-outpost-maintain"
-            disabled={!maint.ok}
-            onClick={() => onStateChange(maintainOutpost(state, o.id))}
-          >
-            维护
           </button>
         )}
         {/* dev 家族（#110）：免料推进 / 一键解锁本区 / 发现未发现前哨（Step 5）。 */}
@@ -900,7 +877,6 @@ export function OutpostPopup({
         <div className="chart-outpost-depot">
           <span className="dim chart-outpost-depot-head">
             中转站 {depotUsed}/{cap}
-            {depotDecay > 0 ? ` · 锈蚀 ${depotDecay}（存料在流失，回来补一补）` : ''}
           </span>
           {stored.length > 0 && (
             <ul className="chart-depot-stored">
