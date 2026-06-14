@@ -1,0 +1,17 @@
+{
+  "_comment": "导引线·不管它（realistic·60-82m twilight·氧-1）。",
+  "eventId": "trench.the_guide_line",
+  "depth": 70,
+  "seed": 42,
+  "choices": [
+    "leave_it"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1
+    }
+  }
+}

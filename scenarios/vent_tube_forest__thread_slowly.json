@@ -1,0 +1,14 @@
+{
+  "_comment": "管虫林·慢慢穿过（无 check·氧-2）",
+  "eventId": "vent.tube_forest",
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "depth": 95,
+  "choices": ["thread_slowly"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": { "oxygen": -2 }
+  }
+}

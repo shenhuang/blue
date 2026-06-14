@@ -1,0 +1,14 @@
+{
+  "_comment": "中层温跃层·穿过去（realistic·sanity-2·磨砂玻璃幻觉）",
+  "eventId": "midwater.the_skin",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 65,
+  "choices": ["push_through"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": { "oxygen": -1, "sanity": -2 }
+  }
+}

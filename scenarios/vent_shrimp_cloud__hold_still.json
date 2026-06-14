@@ -1,0 +1,21 @@
+{
+  "_comment": "云·不动（uncanny·85-118m·sanity80·氧-2 理智+3）。",
+  "eventId": "vent.shrimp_cloud",
+  "depth": 95,
+  "seed": 42,
+  "choices": [
+    "hold_still"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": 3
+    }
+  },
+  "stats": {
+    "sanity": 80
+  }
+}

@@ -137,6 +137,7 @@ function printHelp() {
   辅助命令：
     npx tsx scripts/combat-runner.ts --list                    # 列出战斗 encounter
     npx tsx scripts/combat-runner.ts --list-enemies [--band <id>] [--biome <id>] [--role <r>] [--threat-tier <low|mid|high>]
+    npx tsx scripts/combat-runner.ts --new-enemy <slug> [--band <id>] [--biome <id>] [--role <r>]   # 吐敌人骨架(填空模板)
     npx tsx scripts/combat-runner.ts --list-actions            # 列出 player action
     npx tsx scripts/combat-runner.ts --show <combatId>
     npx tsx scripts/combat-runner.ts --show-enemy <enemyId>
@@ -387,6 +388,72 @@ function handleListEnemies(args: CliArgs) {
   }
 }
 
+// 敌人库 SPEC §5/§7.4 入库契约：吐一个填空式敌人骨架（也是 schema 的活模板）。
+// stdout=纯 JSON（可重定向落文件）；stderr=下一步指引。喂"描述→实装"与定时生成两工作流。
+function handleNewEnemy(args: CliArgs) {
+  const slug = flagString(args, '--new-enemy');
+  if (!slug) throw new Error('--new-enemy 需要一个 id slug，例如：--new-enemy cave_lurker');
+  const id = slug.startsWith('enemy.') ? slug : `enemy.${slug}`;
+  const base = id.replace(/^enemy\./, '');
+  const band = flagString(args, '--band') ?? 'TODO.band_or_zone_id';
+  const biome = flagString(args, '--biome') ?? 'TODO_biome';
+  const role = flagString(args, '--role') ?? 'predator';
+  const skeleton = {
+    enemies: [
+      {
+        id,
+        name: 'TODO 名字',
+        tier: 'realistic',
+        bands: [band],
+        biomes: [biome],
+        role,
+        codex: { habitat: 'TODO 栖息地', behavior: 'TODO 行为/习性', appearance: 'TODO 外观' },
+        hp: 20,
+        armor: 0,
+        evasion: 2,
+        speed: 6,
+        threat: 5,
+        hostility: 'territorial',
+        initialStance: 'alerted',
+        aiPattern: 'aggressor',
+        attacks: [
+          {
+            id: `${base}.strike`,
+            name: 'TODO 攻击名',
+            damageType: 'physical',
+            damage: [3, 6],
+            description: 'TODO 战斗叙事文本（克制·冷·短句）。',
+            weight: 1,
+          },
+        ],
+        physicalDamage: [3, 6],
+        loot: { guaranteed: [], rolls: [], rollCount: 0, victoryModifier: { kill: 1.0, flee: 0.5 } },
+        victoryConditions: ['kill', 'flee'],
+      },
+    ],
+    combatEncounters: [
+      {
+        id: `combat.${base}_solo`,
+        party: { members: [{ defId: id }] },
+        introText: 'TODO 开场白。',
+      },
+    ],
+  };
+  process.stdout.write(JSON.stringify(skeleton, null, 2) + '\n');
+  console.error(
+    [
+      ``,
+      `# 已生成敌人骨架：${id}（敌人库 SPEC §5 入库契约）`,
+      `# 下一步：`,
+      `#   1. 落文件：npx tsx scripts/combat-runner.ts --new-enemy ${base} --band <id> --biome <id> --role <r> > src/data/enemies/${base}.json`,
+      `#   2. 填掉所有 TODO（数值对照同 band×biome 近邻锚定·别瞎编）`,
+      `#   3. 注册：npm run gen:enemies`,
+      `#   4. 加 ≥1 baseline：npx tsx scripts/combat-runner.ts combat.${base}_solo --action <id> --seed 1 --out json > scenarios/combat/${base}_solo__normal_kill.json（补 expect 字段）`,
+      `#   5. 绿门：npm run regress -- --only typecheck,check-enemy-refs,verify-tutorial,combat`,
+    ].join('\n'),
+  );
+}
+
 function handleListActions(args: CliArgs) {
   const acts = listAllActions();
   if (flagString(args, '--out') === 'json') {
@@ -518,6 +585,10 @@ function main() {
   }
   if (flagBool(args, '--list-actions')) {
     handleListActions(args);
+    return;
+  }
+  if (args.flags.has('--new-enemy')) {
+    handleNewEnemy(args);
     return;
   }
   if (args.flags.has('--show')) {

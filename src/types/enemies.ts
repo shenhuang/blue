@@ -58,6 +58,21 @@ export interface CodexEntry {
   firstSeenHint?: string;
 }
 
+/** 遭遇里"取一只合适的已有敌人"的描述符（敌人库 SPEC §4·由 pickEnemy 解析·route B 加法接入）。 */
+export interface EnemyRef {
+  band?: string;
+  biome?: string;
+  role?: EnemyRole;
+  threatTier?: ThreatTier;
+  excludeIds?: string[];
+}
+
+/** 战斗 encounter 的一个 party 成员（def 侧）：写死 `defId`，或用 `enemyRef` 让库取一只合适的（二选一）。 */
+export interface EnemyPartyMemberDef {
+  defId?: string;
+  enemyRef?: EnemyRef;
+}
+
 /** 敌人定义（数据模板） */
 export interface EnemyDef {
   id: string;

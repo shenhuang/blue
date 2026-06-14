@@ -1,0 +1,14 @@
+{
+  "_comment": "玄武岩裂口·大弧绕行（无 check·氧-2）",
+  "eventId": "vent.pressure_seam",
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "depth": 95,
+  "choices": ["go_around_wide"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": { "oxygen": -2 }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "_comment": "导引线·跟线走（realistic·60-82m twilight·sanity80·氧-2 理智+2）。",
+  "eventId": "trench.the_guide_line",
+  "depth": 70,
+  "seed": 42,
+  "choices": [
+    "follow_the_line"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": 2
+    }
+  },
+  "stats": {
+    "sanity": 80
+  }
+}

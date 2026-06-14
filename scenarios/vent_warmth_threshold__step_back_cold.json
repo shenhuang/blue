@@ -1,0 +1,21 @@
+{
+  "_comment": "温度的那边·退回冷水（cosmic·85-118m·sanity80·氧-1 理智+2）。",
+  "eventId": "vent.warmth_threshold",
+  "depth": 100,
+  "seed": 42,
+  "choices": [
+    "step_back_cold"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": 2
+    }
+  },
+  "stats": {
+    "sanity": 80
+  }
+}

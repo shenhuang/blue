@@ -1,0 +1,15 @@
+{
+  "_comment": "中层管水母链·跟到头成功（sanity 80 > dc 53·识破管水母·氧-3 sanity+4）",
+  "eventId": "midwater.the_chain",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 70,
+  "stats": { "sanity": 80 },
+  "choices": ["follow_one_end"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": { "oxygen": -3, "sanity": 4 }
+  }
+}

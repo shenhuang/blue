@@ -1,0 +1,21 @@
+{
+  "_comment": "每十七秒·停止计数（cosmic·88-118m·sanity80·氧-1 理智-2）。",
+  "eventId": "vent.the_interval",
+  "depth": 100,
+  "seed": 42,
+  "choices": [
+    "stop_counting"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -2
+    }
+  },
+  "stats": {
+    "sanity": 80
+  }
+}

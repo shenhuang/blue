@@ -1,0 +1,21 @@
+{
+  "_comment": "过路的·关灯听声（uncanny·60-85m·sanity80·氧-2 理智+2）。",
+  "eventId": "midwater.the_transit",
+  "depth": 72,
+  "seed": 42,
+  "choices": [
+    "go_dark_and_listen"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": 2
+    }
+  },
+  "stats": {
+    "sanity": 80
+  }
+}

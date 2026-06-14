@@ -1,0 +1,21 @@
+{
+  "_comment": "云·关灯（uncanny·85-118m·sanity80·氧-1 理智-2）。",
+  "eventId": "vent.shrimp_cloud",
+  "depth": 95,
+  "seed": 42,
+  "choices": [
+    "douse_the_light"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -2
+    }
+  },
+  "stats": {
+    "sanity": 80
+  }
+}
