@@ -275,6 +275,189 @@
       ]
     },
     {
+      "id": "midwater.marine_snow",
+      "depthRange": [55, 85],
+      "zoneTags": ["midwater"],
+      "weight": 2,
+      "cooldown": 10,
+      "oncePerRun": true,
+      "title": "海雪",
+      "body": "你停桨，什么都没动了。\n一片白色的碎屑在你四周慢慢飘——海雪，有机碎屑，从上面一路落下来的死东西。\n你看了一会儿，对了一下方向：不是它们在往下落。是你在往下沉，它们是静止的。你是移动的那个。\n深度计说你没在动。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "hold_still",
+          "label": "一动不动——看它们是真的静止，还是你也在动",
+          "outcome": {
+            "text": "你充了浮力，钉在这一层，屏住呼吸。\n海雪停了，或者说你和它们一起停了，分不出来是谁在动。\n你呼出一口气，气泡往上走，你往下沉了一厘米，海雪又开始飘，方向没变过。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": 2 }
+          }
+        },
+        {
+          "id": "track_one_flake",
+          "label": "盯住一片，跟着它走",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你选了一片，盯了十秒。它不动。\n你向下游了三桨，那片雪相对你往上走了——是你在动，不是它。\n你用了一分钟确认这件事，然后接受了它，继续走，带着一个新的参照系：中层里，你永远是在动的那个。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": 3 }
+            },
+            "onFailure": {
+              "text": "你盯住一片，追了两桨。它跑了，或者你把它跟丢了——这里所有的碎屑看起来都一样。\n你抬头想找一个新的，发现上下左右都在飘，方向混了。气泡去了那个方向，表说你没动，你眼睛里全是往反方向飘的雪。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 }
+            }
+          }
+        },
+        {
+          "id": "push_through",
+          "label": "不管它，继续走",
+          "outcome": {
+            "text": "你划动手，海雪在你周围散开，然后重新聚拢。\n它不关心你在想什么。你也不用关心它在想什么——它什么都不想，这就是一片死东西在往下落。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "midwater.biolum_field",
+      "depthRange": [55, 85],
+      "zoneTags": ["midwater"],
+      "weight": 2,
+      "cooldown": 12,
+      "oncePerRun": true,
+      "title": "会亮的水",
+      "body": "你的手划过去，水亮了一下。\n不是磷光——是几千几万只只有微米大的东西，碰到就点，点了就灭，让你在中层水里留下一道亮着又熄掉的签名。\n你停下来，亮的地方都熄灭了。\n然后你手边还有一道没熄的，形状不是你划出来的那个形状。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "hold_still_watch",
+          "label": "不动，等它灭",
+          "outcome": {
+            "text": "你屏气，不动。那道形状悬在你手边，慢慢暗下去，用了比你预计更长的时间。\n最后它灭了。\n你在黑里等了另外一分钟，没有动，什么都没有亮。也许是水流，也许是你来之前有别的东西在这里游过。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        },
+        {
+          "id": "draw_a_shape",
+          "label": "故意划一个形状——确认自己画的是什么",
+          "check": {
+            "stat": "sanity",
+            "dc": 48,
+            "onSuccess": {
+              "text": "你划了一个圆。\n圆亮了，持续了几秒，熄灭——是你自己的轨迹，完整的，干净的，和你划的完全对应。\n刚才的那道形状，应该也只是这样：你的手，你的水流，你在中层留下的一点涟漪。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": 3 }
+            },
+            "onFailure": {
+              "text": "你划了一个圆。它亮了——圆的，对的，是你画的那个。\n然后在它旁边，又有东西亮了一下，不是圆，不是你划的形状，位置也不对。\n你把手收回来，看着那道形状慢慢熄灭，没有动，没有再划。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -6 }
+            }
+          }
+        },
+        {
+          "id": "swim_out_fast",
+          "label": "快速穿出去",
+          "outcome": {
+            "text": "你用力划，身后的水全部亮起来，你游出了一道三十米长的发光轨迹。\n你在轨迹末端停下来，回头看：一道逐渐熄灭的亮线，弯弯的，是你走过的路的形状。\n你整趟潜水都在这里留痕，你一直都不知道。",
+            "oxygenTurnCost": 2,
+            "deltas": { "stamina": -4 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "midwater.the_transit",
+      "depthRange": [60, 85],
+      "zoneTags": ["midwater"],
+      "weight": 2,
+      "cooldown": 11,
+      "oncePerRun": true,
+      "title": "过路的",
+      "body": "你灯柱的边缘，有东西横过去。\n你来不及数秒，它已经离开了你的光圈。没有掉头，没有停，没有朝你的方向打量。\n你从来没有这样感觉过「大」这个字——大，就是你的灯能照到的最远处，那个东西只是它的一部分轮廓，一部分，而且是很小的一部分。\n水里没有扰动。像是它不在那里。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "turn_and_look",
+          "label": "转过去看它走的方向",
+          "outcome": {
+            "text": "你转了过去。黑水，没有形状，没有水流。\n你的灯照进那片黑里，照不到任何东西，也照不到底。\n你等了一分钟，什么都没有再过去。你决定这件事不算发生过。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        },
+        {
+          "id": "go_dark_and_listen",
+          "label": "关灯——听一听有没有声音",
+          "check": {
+            "stat": "sanity",
+            "dc": 52,
+            "onSuccess": {
+              "text": "你关灯，什么都黑掉了。\n你数了三十秒，听着自己的呼吸和调节器。什么都没有——没有声音，没有水流，没有东西从你旁边经过的压力差。\n你开灯。空水，仪表正常。不管是什么，它有别的地方要去，那个地方不在你这里。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": 2 }
+            },
+            "onFailure": {
+              "text": "你关灯。\n三秒后你听到一个声音，或者你以为你听到了，或者你的大脑在黑暗里替你补了一个你觉得应该在那里的声音。\n你把灯开回来的速度比你计划的要快。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -8 }
+            }
+          }
+        },
+        {
+          "id": "stay_course",
+          "label": "不管它，按航向继续走",
+          "outcome": {
+            "text": "你继续走。之后又游了大约十分钟，开阔的中层，正常的蓝黑，什么都没有再经过。\n不管是什么，它有它的去向，那里不是你这里。你只是它的路过。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "midwater.omz",
+      "depthRange": [55, 80],
+      "zoneTags": ["midwater"],
+      "weight": 2,
+      "cooldown": 9,
+      "title": "无生之水",
+      "body": "你进了一片没有鱼的水。\n不是少了——是没有。你上方有，下方有，这一层没有，连磷虾都看不见。\n氧极少层。某些深度的溶解氧骤降到接近零，低到大多数生物都绕开。你的气瓶里有足够的氧，仪器全部正常。这不是你的问题。\n但你是这里目前唯一会动的东西。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "check_instruments",
+          "label": "对一遍仪器，确认参数",
+          "outcome": {
+            "text": "气量，正常。深度，正常。气体配比，正常。\n仪器全部告诉你你没问题。水告诉你别的，仪器是对的。\n你记下深度，记下「无生命层」这几个字，继续走。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": 2 }
+          }
+        },
+        {
+          "id": "push_through",
+          "label": "快速穿过去",
+          "outcome": {
+            "text": "你用力，快速穿过。\n你身后，鱼又回来了。这个层只有大约二十米厚——比你待的时间更窄。\n你回头看了一眼：上方的鱼，下方的鱼，中间那片干净的水，把两群东西隔开。",
+            "oxygenTurnCost": 2,
+            "deltas": { "stamina": -5 }
+          }
+        },
+        {
+          "id": "wait_and_observe",
+          "label": "停下来，等一等——看会不会有什么路过",
+          "outcome": {
+            "text": "你在这里等了两分钟。\n什么都没有路过。\n这就是重点：没有什么路过，这里不是路过的地方。你等够了，然后往下走，穿出了层的底部，鱼又出现了。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
       "id": "midwater.the_lantern",
       "depthRange": [55, 80],
       "zoneTags": ["midwater"],

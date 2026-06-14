@@ -1,0 +1,21 @@
+{
+  "_comment": "中层海雪·静止观察（cosmic·55-85m·有机碎屑=你在动不是它们在动）。hold_still 无判定·起始 sanity80·氧-1 理智+2。",
+  "eventId": "midwater.marine_snow",
+  "depth": 70,
+  "seed": 42,
+  "choices": [
+    "hold_still"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": 2
+    }
+  },
+  "stats": {
+    "sanity": 80
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "_comment": "白垫·踩过去（realistic·85-118m·体力-4 氧-2）。",
+  "eventId": "vent.bacterial_mat",
+  "depth": 95,
+  "seed": 42,
+  "choices": [
+    "wade_through"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "stamina": -4,
+      "oxygen": -2
+    }
+  }
+}

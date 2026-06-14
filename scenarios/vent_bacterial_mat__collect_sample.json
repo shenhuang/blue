@@ -1,0 +1,21 @@
+{
+  "_comment": "白垫·采样（realistic·85-118m·sanity80·氧-1 理智+3）。",
+  "eventId": "vent.bacterial_mat",
+  "depth": 95,
+  "seed": 42,
+  "choices": [
+    "collect_sample"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": 3
+    }
+  },
+  "stats": {
+    "sanity": 80
+  }
+}

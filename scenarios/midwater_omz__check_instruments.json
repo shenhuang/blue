@@ -1,0 +1,21 @@
+{
+  "_comment": "无生之水·查仪表（realistic·55-80m·sanity80·氧-1 理智+2）。",
+  "eventId": "midwater.omz",
+  "depth": 68,
+  "seed": 42,
+  "choices": [
+    "check_instruments"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": 2
+    }
+  },
+  "stats": {
+    "sanity": 80
+  }
+}

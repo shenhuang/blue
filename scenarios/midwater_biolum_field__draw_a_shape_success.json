@@ -1,0 +1,22 @@
+{
+  "_comment": "会亮的水·画形状检定成功（cosmic·55-85m·sanity 90 > dc·氧-2 理智+3）。",
+  "eventId": "midwater.biolum_field",
+  "depth": 70,
+  "seed": 1,
+  "choices": [
+    "draw_a_shape"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": 3
+    }
+  },
+  "stats": {
+    "sanity": 90
+  }
+}

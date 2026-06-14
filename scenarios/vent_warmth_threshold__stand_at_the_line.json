@@ -1,0 +1,21 @@
+{
+  "_comment": "温度的那边·站在边界（cosmic·85-118m·sanity80·氧-2 理智-3）。",
+  "eventId": "vent.warmth_threshold",
+  "depth": 100,
+  "seed": 42,
+  "choices": [
+    "stand_at_the_line"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -3
+    }
+  },
+  "stats": {
+    "sanity": 80
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "_comment": "过路的·转头看（uncanny·60-85m·sanity80·氧-1 理智-3）。",
+  "eventId": "midwater.the_transit",
+  "depth": 72,
+  "seed": 42,
+  "choices": [
+    "turn_and_look"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -3
+    }
+  },
+  "stats": {
+    "sanity": 80
+  }
+}
