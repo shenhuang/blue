@@ -36,68 +36,6 @@
       ]
     },
     {
-      "id": "lhtrack.beacon",
-      "name": "信标光源",
-      "description": "重燃灯室——点亮的海域更大，照见更远的点位，出海也更近。",
-      "upgrades": [
-        {
-          "id": "lighthouse.beacon.lv1",
-          "level": 1,
-          "name": "信标 Lv.1",
-          "cost": {
-            "materials": [
-              {
-                "itemId": "item.coral_shard",
-                "qty": 4
-              },
-              {
-                "itemId": "item.brass_fitting",
-                "qty": 2
-              }
-            ],
-            "gold": 30
-          },
-          "effects": [
-            {
-              "kind": "lightRadiusBonus",
-              "value": 1
-            }
-          ],
-          "description": "重新点亮灯室。点亮半径 +1。"
-        },
-        {
-          "id": "lighthouse.beacon.lv2",
-          "level": 2,
-          "name": "信标 Lv.2",
-          "cost": {
-            "materials": [
-              {
-                "itemId": "item.brass_fitting",
-                "qty": 4
-              },
-              {
-                "itemId": "item.crab_chitin",
-                "qty": 2
-              }
-            ],
-            "gold": 60
-          },
-          "effects": [
-            {
-              "kind": "lightRadiusBonus",
-              "value": 1
-            },
-            {
-              "kind": "reachReduction",
-              "value": 1
-            }
-          ],
-          "description": "加装聚光镜。点亮半径再 +1，从这座灯塔出海更近 1。",
-          "requiresLighthouseLevel": 1
-        }
-      ]
-    },
-    {
       "id": "lhtrack.hydro",
       "name": "水力发电",
       "description": "在激流里架起水轮——只有水流够急的前哨才转得动。转起来，前哨的能源足以同时跑更多补给设施。",
@@ -242,61 +180,150 @@
       ]
     },
     {
-      "id": "lhtrack.depot",
-      "name": "材料中转站",
-      "description": "在前哨搭起料棚与吊架——把材料就近寄存在这里，维护时就地取用、省下从岸上运料的船钱。不占能源（被动库房），但水下的存料会随前哨荒废而锈蚀流失（激流前哨更快），得回来补。",
-      "outpostOnly": true,
+      "id": "lhtrack.probe_home",
+      "name": "近岸探深",
+      "description": "给家灯塔装一台向下的探深声呐——把礁体侧面那道深槽的底摸出来，海图上多一个能下潜的深入潜点。",
+      "onlyLighthouse": "lighthouse.home",
       "upgrades": [
         {
-          "id": "lighthouse.depot.lv1",
+          "id": "lighthouse.probe_home.lv1",
           "level": 1,
-          "name": "料棚",
+          "name": "近岸探深声呐",
+          "cost": {
+            "materials": [{ "itemId": "item.brass_fitting", "qty": 1 }],
+            "gold": 30
+          },
+          "effects": [],
+          "setsFlag": "flag.probe.reef_deep",
+          "description": "装一台向下的探深声呐。海图上浮现「灯塔礁·深槽」深入潜点（可下潜至 45–60m）。",
+          "requiresLighthouseLevel": 1
+        }
+      ]
+    },
+    {
+      "id": "lhtrack.probe_reef",
+      "name": "深槽探深",
+      "description": "深槽前哨装探深声呐，往更外、更深的竖井口探一道——海图上多一个深入潜点。",
+      "onlyLighthouse": "lighthouse.reef_deep_outpost",
+      "upgrades": [
+        {
+          "id": "lighthouse.probe_reef.lv1",
+          "level": 1,
+          "name": "深槽探深声呐",
           "cost": {
             "materials": [
-              {
-                "itemId": "item.brass_fitting",
-                "qty": 2
-              },
-              {
-                "itemId": "item.crab_chitin",
-                "qty": 1
-              }
+              { "itemId": "item.brass_fitting", "qty": 2 },
+              { "itemId": "item.crab_chitin", "qty": 1 }
             ],
-            "gold": 40
+            "gold": 60
           },
-          "effects": [
-            {
-              "kind": "storageCapacity",
-              "value": 6
-            }
-          ],
-          "description": "搭起料棚。可在这座前哨寄存 6 单位材料；维护时就地取料、免去那趟运料的船钱。",
+          "effects": [],
+          "setsFlag": "flag.probe.trench_mouth",
+          "description": "向更深处探一道。海图上浮现「竖井·口」深入潜点（可下潜至 60–82m）。",
+          "requiresLighthouseLevel": 1
+        }
+      ]
+    },
+    {
+      "id": "lhtrack.probe_trench",
+      "name": "竖井探深",
+      "description": "竖井前哨往井喉深处探声呐——海图上多一个更深的深入潜点。",
+      "onlyLighthouse": "lighthouse.trench_deep_outpost",
+      "upgrades": [
+        {
+          "id": "lighthouse.probe_trench.lv1",
+          "level": 1,
+          "name": "竖井探深声呐",
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 3 },
+              { "itemId": "item.eel_skin", "qty": 1 }
+            ],
+            "gold": 90
+          },
+          "effects": [],
+          "setsFlag": "flag.probe.trench_throat",
+          "description": "向井喉深处探一道。海图上浮现「竖井·喉」深入潜点（可下潜至 82–108m）。",
+          "requiresLighthouseLevel": 1
+        }
+      ]
+    },
+    {
+      "id": "lhtrack.probe_abyssal",
+      "name": "深渊探深",
+      "description": "深渊前哨往界外探声呐——海图上多一个更深的深入潜点。",
+      "onlyLighthouse": "lighthouse.abyssal_deep_outpost",
+      "upgrades": [
+        {
+          "id": "lighthouse.probe_abyssal.lv1",
+          "level": 1,
+          "name": "深渊探深声呐",
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 3 },
+              { "itemId": "item.eel_skin", "qty": 2 }
+            ],
+            "gold": 130
+          },
+          "effects": [],
+          "setsFlag": "flag.probe.abyssal",
+          "description": "向界外探一道。海图上浮现「深渊·界」深入潜点（108–140m）。",
+          "requiresLighthouseLevel": 1
+        }
+      ]
+    },
+    {
+      "id": "lhtrack.probe_hadal",
+      "name": "超渊探深",
+      "description": "超渊前哨往缝里、缝外、连名字都用完的地方一层层探——每深一级，海图上多一个深入潜点。",
+      "onlyLighthouse": "lighthouse.hadal_deep_outpost",
+      "upgrades": [
+        {
+          "id": "lighthouse.probe_hadal.lv1",
+          "level": 1,
+          "name": "超渊探深声呐",
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 4 },
+              { "itemId": "item.eel_skin", "qty": 2 }
+            ],
+            "gold": 160
+          },
+          "effects": [],
+          "setsFlag": "flag.probe.hadal",
+          "description": "向缝里探。海图上浮现「超渊·缝」深入潜点（140–180m）。",
           "requiresLighthouseLevel": 1
         },
         {
-          "id": "lighthouse.depot.lv2",
+          "id": "lighthouse.probe_hadal.lv2",
           "level": 2,
-          "name": "料棚扩建",
+          "name": "渊外探深声呐",
           "cost": {
             "materials": [
-              {
-                "itemId": "item.brass_fitting",
-                "qty": 3
-              },
-              {
-                "itemId": "item.eel_skin",
-                "qty": 2
-              }
+              { "itemId": "item.brass_fitting", "qty": 5 },
+              { "itemId": "item.eel_skin", "qty": 3 }
             ],
-            "gold": 80
+            "gold": 200
           },
-          "effects": [
-            {
-              "kind": "storageCapacity",
-              "value": 6
-            }
-          ],
-          "description": "扩建料棚与吊架。寄存容量再 +6（共 12 单位）。",
+          "effects": [],
+          "setsFlag": "flag.probe.subhadal",
+          "description": "向缝外探。海图上浮现「渊外·无底」深入潜点（180–230m）。",
+          "requiresLighthouseLevel": 1
+        },
+        {
+          "id": "lighthouse.probe_hadal.lv3",
+          "level": 3,
+          "name": "无名探深声呐",
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 6 },
+              { "itemId": "item.eel_skin", "qty": 4 }
+            ],
+            "gold": 260
+          },
+          "effects": [],
+          "setsFlag": "flag.probe.nameless",
+          "description": "向连名字都用完的地方探。海图上浮现「无名·应」深入潜点（230–290m）。",
           "requiresLighthouseLevel": 1
         }
       ]

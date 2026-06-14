@@ -556,6 +556,14 @@ html, body, #root {
     margin-left: 0;
     margin-right: auto; /* 整体靠左（作者：首页靠左·空出右侧给服务面板） */
   }
+  /* portEvent 过场（cutscene·作者 06-14）：港口族里唯一没有右服务面板的阶段（PortLayout right 恒 null），
+     不必为面板留右侧空当——收回 720 + margin auto 居中，与紧邻其前的结算屏（.app·720 居中）同一水平位置。
+     双类选择器特异性高于 .app-port 且在其后 → 覆盖上面的靠左；只命中 portEvent，普通港口/海图/商店仍靠左。 */
+  .app-port.app-port-cutscene {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+  }
   .port-layout {
     flex-direction: row;
     align-items: flex-start;
@@ -1204,35 +1212,6 @@ html, body, #root {
   fill: #eafffb;
 }
 
-/* 深水区 Phase 2b 续：前哨材料中转站（寄存区）—— 与无样式的 chart-outpost-* 同列，只给两排按钮一点排版 */
-.chart-outpost-depot {
-  margin-top: 4px;
-  padding-top: 4px;
-  border-top: 1px dashed var(--border);
-}
-.chart-outpost-depot-head {
-  display: block;
-  margin-bottom: 3px;
-}
-.chart-depot-stored {
-  list-style: none;
-  margin: 0 0 3px;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.chart-depot-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-.chart-depot-deposit {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
 /* 深水区 Phase 0b：警觉预警（被探测） */
 .alert-warning {
   margin: 10px 0 0;
@@ -1512,25 +1491,6 @@ html, body, #root {
   border-right: 1px dashed var(--border);
 }
 
-.chart-port {
-  position: absolute;
-  left: 7.5%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 0.7rem;
-  color: var(--warn);
-  text-align: center;
-  line-height: 1.2;
-}
-
-.chart-port-dot {
-  display: block;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--warn);
-  margin: 0 auto 3px;
-}
 
 .chart-axis {
   position: absolute;
@@ -1945,6 +1905,7 @@ html, body, #root {
 .lighthouse-section-name {
   font-weight: 600;
   color: var(--warn);
+  white-space: nowrap;
 }
 
 .lighthouse-section-meta {

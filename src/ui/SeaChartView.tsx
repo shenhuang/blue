@@ -5,8 +5,8 @@
 
 import { useMemo, useState, useEffect, useRef } from 'react';
 import type { GameState, ChartPoi, InventoryItem } from '@/types';
-import { generateChart, poiLockReason, isPoiDepartable, describeModifier, describeCaveShape } from '@/engine/chart';
-import { startDiveFromPoi, startDiveFromOutpost, carryCapacityFor } from '@/engine/dive';
+import { generateChart, poiLockReason, poiBlockReason, isPoiDepartable, describeModifier, describeCaveShape } from '@/engine/chart';
+import { startDiveFromPoi, carryCapacityFor } from '@/engine/dive';
 import { toPort } from '@/engine/transitions';
 import {
   getHomeLighthouse,
@@ -19,7 +19,6 @@ import {
   devAdvanceOutpost,
   devRevealOutpost,
   devUnlockChapterRegion,
-  isChapterBand,
   isChapterOutpost,
   isOutpostDiscovered,
   outpostUnlocked,
@@ -27,16 +26,7 @@ import {
   OUTPOST_MAX_STAGE,
   OUTPOST_USABLE_STAGE,
 } from '@/engine/lighthouses';
-import {
-  outpostEnergy,
-  depotCapacity,
-  storedMaterials,
-  storedUnits,
-  depositToDepot,
-  withdrawFromDepot,
-  canDeposit,
-} from '@/engine/outposts';
-import { getBands } from '@/engine/bands';
+import { outpostEnergy } from '@/engine/outposts';
 import { getZone } from '@/engine/zones';
 import { getUpgradeBonuses } from '@/engine/upgrades';
 import { getItemDef } from '@/engine/items';
@@ -48,7 +38,7 @@ import { regionForOwner, flagGatedRegions } from '@/engine/regions';
 import { DEV_TOOLS } from './devMode';
 import { ItemCell, EmptyCell } from './ItemCell';
 
-/** 地图节点弹窗选择态：点击家灯塔 → 蛙跳列表；点击前哨 → 建造/维护/跳。 */
+/** 地图节点弹窗选择态：点击前哨 → 建造/能源/设施/章节蛙跳。（家灯塔 + 已点亮前哨灯塔点击直接开灯塔设施面板·灯塔/蛙跳重构 step ③） */
 type MapPopup = { kind: 'home' } | { kind: 'outpost'; id: string };
 
 interface Props {
@@ -169,10 +159,9 @@ export function SeaChartView({ state, onStateChange }: Props) {
   const defaultId =
     chart.pois.find((p) => isPoiDepartable(state.profile, p))?.id ?? chart.pois[0]?.id ?? '';
   const [selectedId, setSelectedId] = useState<string>(defaultId);
-  const selected =
-    chart.pois.find((p) => p.id === selectedId) ??
-    chart.pois.find((p) => p.id === defaultId) ??
-    null;
+  // selectedId='' （点灯塔/前哨时清空·互斥）→ **不回退 defaultId**（否则资格区等默认点仍高亮·
+  // 破「同一时间只一个 POI 点亮」·作者 2026-06-14 #4）。初次进图由 useState(defaultId) 给默认选中。
+  const selected = chart.pois.find((p) => p.id === selectedId) ?? null;
 
   // 切换点位时清掉"锁定目标"（lift 到此处，便于 useEffect 重置）
   const [target, setTarget] = useState<string>('');
@@ -266,14 +255,16 @@ export function SeaChartView({ state, onStateChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anySweeping, chartSig]);
 
-  // 灯塔设施建造面板（灯塔在海图上可见，建造也在海图上）
-  const [showBuild, setShowBuild] = useState(false);
-  if (showBuild) {
+  // 灯塔设施建造面板（灯塔/蛙跳重构 step ③：点海图上的灯塔/前哨节点 → 开此面板·聚焦该灯塔；不再有底部全局入口）。
+  // buildFocusId: null=未开 / 灯塔 id=聚焦该灯塔。
+  const [buildFocusId, setBuildFocusId] = useState<string | null>(null);
+  if (buildFocusId !== null) {
     return (
       <LighthouseBuildPanel
         state={state}
+        focusLighthouseId={buildFocusId || undefined}
         onStateChange={onStateChange}
-        onClose={() => setShowBuild(false)}
+        onClose={() => setBuildFocusId(null)}
       />
     );
   }
@@ -285,14 +276,6 @@ export function SeaChartView({ state, onStateChange }: Props) {
 
   function handleLeave() {
     onStateChange(toPort(state));
-  }
-
-  // 从某 band 出发蛙跳（可带哨站起跳点）：关 popup、启动下潜。
-  function handleOutpostDive(bandId: string, launchOutpostId?: string) {
-    setMapPopup(null);
-    onStateChange(
-      startDiveFromOutpost(state, bandId, { carryItems: carryPicks, launchOutpostId }),
-    );
   }
 
   return (
@@ -350,9 +333,6 @@ export function SeaChartView({ state, onStateChange }: Props) {
         <div className="chart-2d">
           <ChartViewport contentBox={contentBox} minSpan={MIN_VIEW_SPAN} fitKey={chartSig}>
             <div className="chart-coast" aria-hidden="true" />
-            <div className="chart-port">
-              <span className="chart-port-dot" />港
-            </div>
             <span className="chart-axis" style={{ left: '20%' }}>近岸</span>
             <span className="chart-axis" style={{ left: '50%' }}>中段</span>
             <span className="chart-axis" style={{ left: '80%' }}>远海</span>
@@ -403,6 +383,7 @@ export function SeaChartView({ state, onStateChange }: Props) {
                     style={{ left: `${lh.mapX * 100}%`, top: `${lh.mapY * 100}%` }}
                     onClick={() => {
                       setSelectedId(''); // 关 POI 信息
+                      // 灯塔/蛙跳重构 step ③：点灯塔节点（家/前哨）→ 弹 popup·里面有「灯塔设施」入口（家＝HomePopup·前哨＝OutpostPopup·交互一致）。
                       setMapPopup(isActive ? null : popupTarget);
                     }}
                   >
@@ -584,19 +565,16 @@ export function SeaChartView({ state, onStateChange }: Props) {
           {/* popup（点灯塔/前哨标记）或 POI 详情（点 POI），二者互斥。 */}
           {mapPopup ? (
             mapPopup.kind === 'home' ? (
-              <HomeDivePopup
+              <HomePopup
                 state={state}
-                carryPicks={carryPicks}
-                onDive={handleOutpostDive}
-                onClose={() => setMapPopup(null)}
+                onOpenFacilities={(id) => { setMapPopup(null); setBuildFocusId(id); }}
               />
             ) : (
               <OutpostPopup
                 outpostId={(mapPopup as { kind: 'outpost'; id: string }).id}
                 state={state}
                 onStateChange={onStateChange}
-                onDive={handleOutpostDive}
-                onClose={() => setMapPopup(null)}
+                onOpenFacilities={(id) => { setMapPopup(null); setBuildFocusId(id); }}
               />
             )
           ) : selected ? (
@@ -613,9 +591,6 @@ export function SeaChartView({ state, onStateChange }: Props) {
       )}
 
       <div className="chart-actions">
-        <button className="btn" onClick={() => setShowBuild(true)}>
-          灯塔设施
-        </button>
         <button className="btn" onClick={handleLeave}>
           卷起海图（回港口）
         </button>
@@ -640,15 +615,13 @@ function ChartInfo({
   onDepart: (poi: ChartPoi, targetCorpseId?: string) => void;
 }) {
   const zone = getZone(poi.zoneId);
-  const lock = poiLockReason(state.profile, poi);
   const mods = describeModifier(poi.modifier);
   // 洞型情报（#114·真话·与 mapgen 同源）：只有 maze zone 的 POI 出这条
   const caveShape = describeCaveShape(poi);
   const corpses = canSelectTarget ? listRecoverableCorpses(state.profile.deaths, poi.zoneId) : [];
-  // 三态：lit 才可出海；dim（能力门未解 / 天气遮蔽）显示但去不了，给原因。
+  // 三态：lit 才可出海；dim（勘测暗点 / 能力门 / 天气遮）显示但去不了——poiBlockReason 给「怎样才能去」。
   const departable = isPoiDepartable(state.profile, poi);
-  const blockReason =
-    lock ?? (poi.revealState === 'dim' ? '雾遮着这一带 · 这一拍过不去（潮一变又不同）' : null);
+  const blockReason = poiBlockReason(state.profile, poi);
   const showPicker = departable && corpses.length > 0;
 
   return (
@@ -662,7 +635,6 @@ function ChartInfo({
       </div>
 
       <div className="chart-tags">
-        {poi.distance > 0 && <span className="chart-tag dist">距岸 {poi.distance}</span>}
         {mods.map((m, i) => (
           <span key={i} className="chart-tag mod">
             {m}
@@ -715,62 +687,49 @@ function ChartInfo({
 // ============================================================
 
 /**
- * 家灯塔 popup：从家灯塔出发蛙跳到任意深脊柱 band（Step 6 收编旧蛙跳列表）。
- * 章节区 band 由各章节前哨覆盖，不在这里出现。
+ * 家灯塔 popup（灯塔/蛙跳重构 step ③）：点家灯塔 → 弹此 popup·里面「灯塔设施」入口开建造面板（与前哨同款交互·一致）。
+ * 家灯塔无建造阶段/无蛙跳（深脊柱走升级派生的深入 POI）——只一个设施入口。
  */
-export function HomeDivePopup({
+function HomePopup({
   state,
-  carryPicks,
-  onDive,
-  onClose,
+  onOpenFacilities,
 }: {
   state: GameState;
-  carryPicks: InventoryItem[];
-  onDive: (bandId: string, launchOutpostId?: string) => void;
-  onClose: () => void;
+  onOpenFacilities: (lighthouseId: string) => void;
 }) {
   const home = getHomeLighthouse(state.profile);
-  const bands = getBands().filter((b) => !isChapterBand(b.id));
-  void carryPicks; // 由外层 handleOutpostDive 注入到 startDiveFromOutpost，这里只传 bandId
+  if (!home) return null;
   return (
-    <div className="chart-popup chart-popup-home">
+    <div className="chart-popup chart-popup-outpost">
       <div className="chart-popup-head">
-        <span className="chart-popup-title">从{home?.name ?? '旧灯塔'}出发</span>
-        <button type="button" className="btn small chart-popup-close" onClick={onClose}>×</button>
+        <span className="chart-popup-title">{home.name}</span>
+        <span className="dim chart-popup-status">家灯塔</span>
       </div>
-      <p className="dim chart-popup-desc">直接下到更深的水段——越深越黑，没有声呐和电量别硬下。</p>
-      <div className="chart-band-list">
-        {bands.map((b) => (
-          <button
-            key={b.id}
-            className="btn small chart-band-btn"
-            onClick={() => onDive(b.id)}
-            title={b.danger ?? ''}
-          >
-            {b.name}（{b.depthRange[0]}–{b.depthRange[1]}m）
-          </button>
-        ))}
+      <div className="chart-outpost-actions">
+        <button className="btn small chart-outpost-facilities" onClick={() => onOpenFacilities(home.id)}>
+          设施升级
+        </button>
       </div>
     </div>
   );
 }
 
 /**
- * 前哨 popup（Step 4/5/6）：点击海图上前哨标记（未点亮 / 半亮 / 点亮的前哨灯塔）弹出，
- * 包含建造/能源/中转站/蛙跳（非章节前哨也出蛙跳）+ dev 按钮。
+ * 前哨 popup（Step 4/5·灯塔/蛙跳重构 step ③）：点击海图上前哨标记（未点亮 / 半亮 / 点亮的前哨灯塔）弹出，
+ * 包含建造/能源 + 章节蛙跳（仅章节前哨）+「灯塔设施」入口（点亮节点）+ dev 按钮。
+ * 深脊柱前哨不再出蛙跳——改走升级（探深）派生的深入 POI（HomeDivePopup 旧深脊柱蛙跳列表已删·step ③）。
  */
 export function OutpostPopup({
   outpostId,
   state,
   onStateChange,
-  onDive,
-  onClose,
+  onOpenFacilities,
 }: {
   outpostId: string;
   state: GameState;
   onStateChange: (s: GameState) => void;
-  onDive: (bandId: string, launchOutpostId: string) => void;
-  onClose: () => void;
+  /** 打开该前哨灯塔的设施面板（灯塔/蛙跳重构 step ③·点亮节点的「设施升级」入口）。可选＝SSR/测试可不传。 */
+  onOpenFacilities?: (lighthouseId: string) => void;
 }) {
   const o = getOutposts().find((x) => x.id === outpostId);
   if (!o) return null;
@@ -784,18 +743,6 @@ export function OutpostPopup({
   const unlocked = outpostUnlocked(state.profile, o.id);
   const lh = getLighthouse(state.profile, o.result.id);
   const energy = lh ? outpostEnergy(lh) : null;
-
-  const cap = depotCapacity(state.profile, o.id);
-  const stored = cap > 0 ? storedMaterials(state.profile, o.id) : [];
-  const depotUsed = storedUnits(stored);
-  // 中转站＝纯前置库房（衰减/维护删除后·#125）：可存任意手头材料，不再绑维护料/下一阶建造料
-  // （维护已删；且中转站只存在于已点亮前哨·已无「下一阶」，旧的 next-cost 来源恒空）。
-  const depositables =
-    cap > 0
-      ? state.profile.inventory
-          .filter((i) => i.qty > 0 && getItemDef(i.itemId)?.category === 'material')
-          .map((i) => i.itemId)
-      : [];
 
   const status =
     chapter && !unlocked
@@ -811,7 +758,6 @@ export function OutpostPopup({
       <div className="chart-popup-head">
         <span className="chart-popup-title">{o.name}</span>
         <span className="dim chart-popup-status">{status}</span>
-        <button type="button" className="btn small chart-popup-close" onClick={onClose}>×</button>
       </div>
 
       {energy && (
@@ -836,14 +782,14 @@ export function OutpostPopup({
             {next.label}
           </button>
         )}
-        {/* 蛙跳：章节前哨 OR 非章节前哨（深脊柱）——只要半亮可用就出蛙跳（Step 6 收编）。 */}
-        {usable && (
+        {/* 章节前哨蛙跳已删（作者 2026-06-14·#6）：章节 band 也改走升级/剧情派生的深入 POI（与深脊柱一致）。 */}
+        {/* 灯塔设施入口（灯塔/蛙跳重构 step ③：点亮节点 → 开该灯塔设施面板·建探深等）。 */}
+        {lit && onOpenFacilities && (
           <button
-            className="btn small chart-outpost-frogjump"
-            onClick={() => onDive(o.bandId, o.id)}
-            title={`从${o.name}蛙跳下潜`}
+            className="btn small chart-outpost-facilities"
+            onClick={() => onOpenFacilities(o.result.id)}
           >
-            从此处下潜
+            设施升级
           </button>
         )}
         {/* dev 家族（#110）：免料推进 / 一键解锁本区 / 发现未发现前哨（Step 5）。 */}
@@ -872,48 +818,6 @@ export function OutpostPopup({
           </button>
         )}
       </div>
-
-      {cap > 0 && (
-        <div className="chart-outpost-depot">
-          <span className="dim chart-outpost-depot-head">
-            中转站 {depotUsed}/{cap}
-          </span>
-          {stored.length > 0 && (
-            <ul className="chart-depot-stored">
-              {stored.map((m) => (
-                <li key={m.itemId} className="chart-depot-item">
-                  <span className="chart-depot-mat">
-                    {getItemDef(m.itemId)?.name ?? m.itemId}×{m.qty}
-                  </span>
-                  <button
-                    className="btn small chart-depot-withdraw"
-                    onClick={() => onStateChange(withdrawFromDepot(state, o.id, m.itemId, 1))}
-                  >
-                    取
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="chart-depot-deposit">
-            {depositables.map((itemId) => {
-              const have = state.profile.inventory.find((i) => i.itemId === itemId)?.qty ?? 0;
-              const dep = canDeposit(state.profile, o.id, itemId, 1);
-              return (
-                <button
-                  key={itemId}
-                  className="btn small chart-depot-store"
-                  disabled={!dep.ok}
-                  title={`岸上仓库：${have}`}
-                  onClick={() => onStateChange(depositToDepot(state, o.id, itemId, 1))}
-                >
-                  存 {getItemDef(itemId)?.name ?? itemId}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

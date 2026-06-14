@@ -17,7 +17,6 @@ import {
   devBuildAtLighthouse,
   getLighthouseTracks,
   getBuiltLevelInTrack,
-  revealRadius,
 } from '@/engine/lighthouses';
 import { getOutpostForLighthouse } from '@/engine/outposts';
 import { countInInventory, HOME_LIGHTHOUSE_ID } from '@/engine/state';
@@ -29,9 +28,11 @@ interface Props {
   state: GameState;
   onStateChange: (s: GameState) => void;
   onClose: () => void;
+  /** 只显示这一座灯塔的设施（灯塔/蛙跳重构 step ③：点海图节点 → 聚焦该灯塔；缺省＝全部·向后兼容）。 */
+  focusLighthouseId?: string;
 }
 
-export function LighthouseBuildPanel({ state, onStateChange, onClose }: Props) {
+export function LighthouseBuildPanel({ state, onStateChange, onClose, focusLighthouseId }: Props) {
   const tracks = getLighthouseTracks();
 
   function handleBuild(lighthouseId: string, upgradeId: string) {
@@ -55,18 +56,21 @@ export function LighthouseBuildPanel({ state, onStateChange, onClose }: Props) {
   return (
     <PanelShell
       className="lighthouse-build"
-      title="灯塔设施"
-      sub={<>银行 {state.profile.bankedGold} 金币 · 点亮的海更大、出海更近</>}
+      title="设施升级"
+      sub={<>银行 {state.profile.bankedGold} 金币 · 探得更深</>}
       foot={
         <button className="btn" onClick={onClose}>
           返回
         </button>
       }
     >
-      {state.profile.lighthouses.map((lh) => {
+      {state.profile.lighthouses
+        .filter((lh) => !focusLighthouseId || lh.id === focusLighthouseId)
+        .map((lh) => {
         // 深水区 Phase 2b：能源设施（充电/制氧/水力）只在 OutpostDef 支撑的深水前哨可建；水力再限水流前哨。
         const outpost = getOutpostForLighthouse(lh.id);
         const trackVisible = (t: LighthouseTrack): boolean => {
+          if (t.onlyLighthouse) return lh.id === t.onlyLighthouse;
           if (t.homeOnly) return lh.id === HOME_LIGHTHOUSE_ID;
           if (t.currentOnly) return !!outpost?.current;
           if (t.outpostOnly) return !!outpost;
@@ -77,18 +81,17 @@ export function LighthouseBuildPanel({ state, onStateChange, onClose }: Props) {
         <div key={lh.id} className="lighthouse-section">
           <div className="lighthouse-section-head">
             <span className="lighthouse-section-name">{lh.name}</span>
-            <span className="dim lighthouse-section-meta">
-              Lv.{lh.level} · 点亮半径 {revealRadius(lh).toFixed(2)}
-            </span>
-            {DEV_TOOLS && (
-              <button
-                className="btn small upgrade-dev-unlock"
-                onClick={() => handleDevBuildAll(lh.id, visibleTracks)}
-              >
-                测试：一键建满（0 成本）
-              </button>
-            )}
+            <span className="dim lighthouse-section-meta">Lv.{lh.level}</span>
           </div>
+          {/* dev「一键建满」单独一行（不挤进名称行·否则四字哨站名换行·作者 2026-06-14 #2）。 */}
+          {DEV_TOOLS && (
+            <button
+              className="btn small upgrade-dev-unlock"
+              onClick={() => handleDevBuildAll(lh.id, visibleTracks)}
+            >
+              测试：一键建满（0 成本）
+            </button>
+          )}
           {visibleTracks.map((track) => (
             <LighthouseTrackCard
               key={track.id}

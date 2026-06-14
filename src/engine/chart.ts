@@ -246,20 +246,42 @@ export function poiLockReason(profile: PlayerProfile, poi: ChartPoi): string | n
 }
 
 /**
- * 一次下潜的"距离档"——按**最近的已拥有灯塔**到该 POI 的归一化距离换算（reach，SPEC §3.4/§4）。
- * 再减最近灯塔的 reachReduction，clamp ≥ 0。无坐标 / 无灯塔 → 退回写死的 poi.distance（fallback）。
+ * 一次下潜的"距离档"——按**最近的已拥有灯塔**到该 POI 的归一化距离换算。无坐标 / 无灯塔 → 退回写死
+ * 的 poi.distance（fallback）。**纯展示/排序**：作者 2026-06-14 删「出海更近」/距离预耗氧后，距离档不再
+ * 影响下潜损耗（每潜从第一回合起算）——保留此函数仅供 describePoi/调试，无 reachReduction 折减。
  */
 export function effectiveDistance(profile: PlayerProfile, poi: ChartPoi): number {
   if (poi.mapX === undefined || poi.mapY === undefined) return poi.distance;
   const near = nearestLighthouse(profile, poi.mapX, poi.mapY);
   if (!near) return poi.distance;
-  const tier = Math.round(near.distance / REACH_NORM_PER_TIER);
-  return Math.max(0, tier - getLighthouseBonuses(near.lighthouse).reachReduction);
+  return Math.round(near.distance / REACH_NORM_PER_TIER);
 }
 
 /** 是否可从该 POI 出海（三态 lit＝圈内·已发现·无能力门·未被天气遮）。 */
 export function isPoiDepartable(profile: PlayerProfile, poi: ChartPoi): boolean {
   return poiRevealState(profile, poi) === 'lit';
+}
+
+/**
+ * dim POI 的「为什么去不了 / 怎样才能去」——给 UI 一句可执行的话（已假定 visible；lit 可去 → null）。
+ * 三类 dim 各自的解法（作者 2026-06-14：暗点必须告诉玩家达成什么条件能去）：
+ *   ① 勘测暗点（在勘测圈、点亮圈外·!isPoiLit）→ 把更近处的灯塔/前哨点亮（你的网还没把「可去」照到这儿）；
+ *   ② 能力门（已点亮但缺设施/装备）→ poiLockReason 的「需要『X』」；
+ *   ③ 天气遮成暗 → 潮一变又不同（短暂）。
+ */
+export function poiBlockReason(profile: PlayerProfile, poi: ChartPoi): string | null {
+  if (isPoiDepartable(profile, poi)) return null;
+  // 不在任何「可去」圈内 → 勘测暗点（hidden 已被 poiRevealState 滤掉·能 visible 说明落在勘测圈内）。
+  if (!isPoiLit(profile, poi)) {
+    return '把更近的灯塔/前哨点亮才能去（现只勘测到）';
+  }
+  // 已点亮（在可去圈内、已发现）但仍 dim：先报能力门，否则是天气遮。
+  const lock = poiLockReason(profile, poi);
+  if (lock) return lock;
+  if (climateOcclusion(profile, poi) === 'dim') {
+    return '雾遮着这一带 · 这一拍过不去（潮一变又不同）';
+  }
+  return '去不了';
 }
 
 /**

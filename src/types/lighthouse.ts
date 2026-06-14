@@ -31,15 +31,12 @@ export interface Lighthouse {
  * 未来扩：服务型（尸体提示/自由上浮/减压）、防御型。
  */
 export type LighthouseEffect =
-  | { kind: 'lightRadiusBonus'; value: number } // 揭示半径 +value（叠加在 level 基准上）
-  | { kind: 'reachReduction'; value: number } // 出海 distance -value（reach 拉近）
   | { kind: 'extraConsumableSlot'; value: number } // 随身消耗品槽 +value（家灯塔「船坞」设施，桥接进 run 加成；Phase C 迁移自全局 dockyard）
   // —— 深水区 Phase 2b 前哨能源经济（base 层；engine/outposts.ts 消费）——
   | { kind: 'energyGen'; value: number } // 水力发电：能源产出 +value（仅在水流 current 前哨有产出，否则计 0）
   | { kind: 'energyDraw'; value: number } // 设施能源占用 +value（超出该前哨能源容量的设施掉线）
   | { kind: 'rechargeBonus'; value: number } // 充电设施：从该前哨蛙跳时电池总量 +value（设施在线才生效）
   | { kind: 'oxygenSupply'; value: number } // 充氧设施：从该前哨蛙跳时氧气上限 +value（设施在线才生效）
-  | { kind: 'storageCapacity'; value: number } // 材料中转/寄存设施：该前哨可寄存 +value 单位材料（深水区 Phase 2b 续；engine/outposts.ts 消费，**不耗能源**＝被动库房恒可用）
   | { kind: 'dimRevealBonus'; value: number }; // 勘测站：在该灯塔正常点亮半径之外再多照一圈「暗区」（dim·可见但过不去）；value 级数乘 LIGHT_RADIUS_PER_BONUS = 额外勘测半径（Req A·chart.ts 消费）
 
 /** 一条灯塔设施升级定义。账单复用全局的材料＋金币双资源 UpgradeCost（Phase A）。 */
@@ -53,6 +50,12 @@ export interface LighthouseUpgradeDef {
   description: string;
   /** 需要灯塔达到该 level 才能建（缺省 1） */
   requiresLighthouseLevel?: number;
+  /**
+   * 建成时置一个 profile flag（灯塔/蛙跳重构 step ②·#125「探深」设施派生深入潜点）：
+   * buildAtLighthouse / devBuildAtLighthouse 建好本设施 → 把此 flag 加进 profile.flags →
+   * 海图上 requiresFlags 含此 flag 的「深入 POI」随之在该灯塔揭示圈内浮现（升级即解锁·扫描即现）。
+   */
+  setsFlag?: string;
 }
 
 /** 一条灯塔设施升级轨（如"信标光源"）。 */
@@ -67,6 +70,12 @@ export interface LighthouseTrack {
   outpostOnly?: boolean;
   /** true = 只能建在水流（current）前哨（水力发电；静水前哨建了也不产电）。深水区 Phase 2b。 */
   currentOnly?: boolean;
+  /**
+   * 只在某一座指定 id 的灯塔显示（灯塔/蛙跳重构 step ②·「探深」设施按宿主灯塔分流）：
+   * 家灯塔的近岸探深、各前哨各自的探深各是一条 onlyLighthouse 轨——建造 UI 只在该灯塔露此轨。
+   * 与 homeOnly/outpostOnly/currentOnly 并列（最具体·优先判定）。
+   */
+  onlyLighthouse?: string;
 }
 
 /**
@@ -172,8 +181,6 @@ export interface LighthouseUpgradesFile {
 
 /** 聚合某座灯塔已建设施的派生加成（Phase C 读取消费）。 */
 export interface LighthouseBonuses {
-  lightRadiusBonus: number;
-  reachReduction: number;
   /** 随身消耗品槽 +value（仅家灯塔的「船坞」设施会贡献；桥接进 createNewRun 的 run 加成）。 */
   extraConsumableSlot: number;
   // —— 深水区 Phase 2b 前哨能源（engine/outposts.ts 据此做能源容量/在线判定）。这些是**原始**聚合值，
@@ -186,8 +193,6 @@ export interface LighthouseBonuses {
   rechargeBonus: number;
   /** 充氧设施给的氧气上限加成（在线才计入蛙跳 run）。 */
   oxygenSupply: number;
-  /** 材料中转/寄存设施给的寄存容量（单位材料数；深水区 Phase 2b 续，engine/outposts.ts 的 depotCapacity 读它）。 */
-  storageCapacity: number;
   /**
    * 勘测站加成（Req A）：在该灯塔正常点亮半径之外再多照一圈「暗区」——
    * 勘测半径 = revealRadius + dimRevealBonus × LIGHT_RADIUS_PER_BONUS。

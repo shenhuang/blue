@@ -3,7 +3,7 @@
 //   2. 抵达门控：旧灯塔礁 anchor 可见但需 dockyard.lv1 才可出海
 //   3. roaming 刷新：同 runsCompleted → 同组合（确定性）；跨 runsCompleted → 会变
 //   4. depthOffset 真改深度：generateDiveMap(+offset) 整图平移；startDiveFromPoi 起始深度更深
-//   5. distance 预耗氧 + diveModifier 落到 run
+//   5. diveModifier 落到 run（距离预耗氧已删·作者 2026-06-14）
 //
 // 跑法： npx tsx scripts/playthrough-chart.ts
 
@@ -12,6 +12,8 @@ import {
   generateChart,
   chartConditions,
   poiLockReason,
+  poiBlockReason,
+  poiRevealState,
   isPoiVisible,
   isPoiLit,
   isPoiDepartable,
@@ -86,14 +88,8 @@ function fullyRevealedProfile(runsCompleted = 0): PlayerProfile {
     { id: 'lighthouse.ch1_vent_outpost', name: '热液井台', mapX: 0.75, mapY: 0.61, level: 1, builtUpgrades: new Set() },
     { id: 'lighthouse.ch1_trench_outpost', name: '海沟前哨', mapX: 0.93, mapY: 0.5, level: 1, builtUpgrades: new Set() },
   ];
-  // 维护记录＝当前 run → 零衰减 → 各前哨满半径揭示（否则 submerged 前哨无 maintainedRun 会算成高衰减、半径缩水）。
-  const outpostState = {
-    'outpost.ch1_wreck': { maintainedRun: runsCompleted },
-    'outpost.ch1_midwater': { maintainedRun: runsCompleted },
-    'outpost.ch1_vent': { maintainedRun: runsCompleted },
-    'outpost.ch1_trench': { maintainedRun: runsCompleted },
-  };
-  return { ...base, lighthouses: [...base.lighthouses, ...outpostLighthouses], outpostState };
+  // 衰减/中转寄存已删（#125·step ②③）：reveal 半径恒定·不再依赖 outpostState（maintainedRun 计时已删）。
+  return { ...base, lighthouses: [...base.lighthouses, ...outpostLighthouses] };
 }
 
 // ============================================
@@ -279,7 +275,7 @@ assert(offMin === baseMin + 8, `depthOffset+8 应使起始深度 +8：${baseMin}
 L(`  最深 ${baseMax}m → ${offMax}m，起始 ${baseMin}m → ${offMin}m ✓`);
 
 // ============================================
-// 5. startDiveFromPoi：distance 预耗氧 + diveModifier 落 run + 深点更深
+// 5. startDiveFromPoi：diveModifier 落 run + 深点更深（距离预耗氧已删·作者 2026-06-14）
 // ============================================
 L('\n========== 5. startDiveFromPoi 集成 ==========');
 const deepPoi: ChartPoi = {
@@ -296,11 +292,9 @@ let st: GameState = { ...createInitialGameState(), profile: postUp };
 const baseOxygen = createNewRun({ zoneId: deepPoi.zoneId }).stats.oxygen; // 60
 st = startDiveFromPoi(st, deepPoi);
 assert(st.phase.kind === 'dive', 'startDiveFromPoi 应进入 dive phase');
-assert(
-  st.run!.stats.oxygen === baseOxygen - deepPoi.distance * 2,
-  `距离 ${deepPoi.distance} 应预耗氧 ${deepPoi.distance * 2}：${baseOxygen} → ${st.run!.stats.oxygen}`,
-);
-assert(st.run!.turn === deepPoi.distance, `turn 应=distance(${deepPoi.distance})，实际 ${st.run!.turn}`);
+// 作者 2026-06-14：删掉「出海更近」/距离预耗氧——每个潜点都从第一回合起算（满氧起手 / turn 0）。
+assert(st.run!.stats.oxygen === baseOxygen, `起手满氧（不再预耗氧）：${baseOxygen} → ${st.run!.stats.oxygen}`);
+assert(st.run!.turn === 0, `turn 应=0（从第一回合起算），实际 ${st.run!.turn}`);
 assert(st.run!.diveModifier?.depthOffset === 12, 'diveModifier 应落到 run');
 const zoneBaseD0 = wreckZone.depthRange[0];
 assert(
@@ -485,6 +479,84 @@ assert(
   `8b: roaming id 应为模板键 poi.roam.<run>.<templateId>（稳定·不重洗），实际 ${ids1.join(',')}`,
 );
 L(`  远端 roaming 即时点亮(run ${clearRun}) + roaming 模板键 id 确定性(${ids1.length} 个) ✓`);
+
+// ============================================
+// 9. 「探深」设施派生深入潜点（灯塔/蛙跳重构 step ②·#125）：建升级置 flag → 深入 POI 在宿主灯塔圈内浮现；
+//    带 bandId 的 POI 走 band 绝对 depthRange 路径（与旧前哨蛙跳同源 diveIntoBand·落 band run 字段）。
+// ============================================
+L('\n========== 9. 探深设施 → 深入 POI（bandId 下潜）==========');
+// 9a 发现门：未建近岸探深（无 flag.probe.reef_deep）→ 深入 POI 隐藏；置 flag → 在家灯塔圈内点亮。
+const preProbe = profileWith(['flag.tutorial_complete'], []);
+assert(
+  !generateChart({ profile: preProbe }).pois.some((p) => p.id === 'poi.deep.reef_deep'),
+  '9a: 未建探深 → 深入 POI「灯塔礁·深槽」隐藏（requiresFlags 门）',
+);
+const postProbe = profileWith(['flag.tutorial_complete', 'flag.probe.reef_deep'], []);
+const deepReef = generateChart({ profile: postProbe }).pois.find((p) => p.id === 'poi.deep.reef_deep');
+assert(deepReef?.revealState === 'lit', '9a: 建探深(置 flag.probe.reef_deep) → 深入 POI 在家灯塔圈内点亮');
+assert(deepReef?.bandId === 'band.reef_deep', '9a: 深入 POI 携带 bandId（band.reef_deep）');
+// 9b bandId 下潜走 band 路径：落 band 的 zone + alertFactor/hunts（区别于 zone+modifier 普通下潜默认 1/false）。
+const deepMouth: ChartPoi = {
+  id: 'poi.deep.trench_mouth',
+  zoneId: 'zone.blue_caves',
+  bandId: 'band.trench_mouth',
+  name: '竖井·口',
+  blurb: '',
+  distance: 2,
+  persistent: true,
+};
+const sDeep = startDiveFromPoi(createInitialGameState(), deepMouth);
+assert(sDeep.run?.zoneId === 'zone.blue_caves', '9b: bandId POI → 进 band 的 zone（blue_caves）');
+assert(
+  sDeep.run?.bandAlertFactor === 1.3,
+  `9b: bandId POI → 落 band.alertFactor(1.3)，实 ${sDeep.run?.bandAlertFactor}`,
+);
+assert(sDeep.run?.huntEnabled === true, '9b: bandId POI → 落 band.hunts(true)');
+// 作者 2026-06-14 删「出海更近」/距离预耗氧：bandId 下潜也从第一回合起算（turn 0·满氧起手）。
+assert(sDeep.run?.turn === 0, `9b: bandId POI 从第一回合起算→turn=0，实 ${sDeep.run?.turn}`);
+L('  探深置 flag→深入 POI 浮现(家圈内) + bandId 走 band 路径(zone/alertFactor/hunts·无预耗氧) ✓');
+
+// ============================================
+// 10. poiBlockReason（暗点「怎样才能去」一句话·作者 2026-06-14）：可去→null；能力门→「需要『X』」。
+//     合约见 chart.ts::poiBlockReason 三类（① 勘测暗点含「点亮」；② 能力门「需要」；③ 天气「潮一变又不同」）。
+// ============================================
+L('\n========== 10. poiBlockReason（暗点一句话）==========');
+// (a) 能力门暗点（capability-dim）：story POI 恒「亮」（绕过揭示圈门）+ requiresLighthouseUpgrade 未建船坞
+//     → 落在「可去圈内、已发现、但缺设施」一类 → revealState=dim、poiBlockReason 含「需要」。
+const capDimPoi: ChartPoi = {
+  id: 'probe.cap_dim',
+  zoneId: 'zone.wreck_graveyard',
+  name: '需船坞的剧情点',
+  blurb: '',
+  distance: 2,
+  mapX: 0.85,
+  mapY: 0.64, // 远端·home 点亮不到——但 story=true 恒亮（不走揭示圈门），故能验「能力门」而非「圈外」
+  persistent: true,
+  story: { anchor: 'wreck', eventId: 'test.cap_dim' },
+  requiresLighthouseUpgrade: 'lighthouse.dockyard.lv1',
+};
+const noDock = profileWith(['flag.tutorial_complete']); // 教学已过·未建船坞
+assert(poiRevealState(noDock, capDimPoi) === 'dim', '10a: 能力门未解（未建船坞）的剧情点应为 dim（story 恒亮·只差设施）');
+const capReason = poiBlockReason(noDock, capDimPoi);
+assert(capReason !== null && capReason.includes('需要'), `10a: 能力门暗点 poiBlockReason 应含「需要」，实际 ${capReason}`);
+assert(capReason === poiLockReason(noDock, capDimPoi), '10a: 能力门暗点 blockReason 应与 poiLockReason 同源（一句话一致）');
+L(`  能力门暗点：dim + 「${capReason}」✓`);
+
+// (b) 可去点（departable）：story POI 恒亮 + 无任何能力门 → revealState=lit → poiBlockReason 返回 null。
+const litPoi: ChartPoi = {
+  id: 'probe.lit',
+  zoneId: 'zone.wreck_graveyard',
+  name: '无门剧情点',
+  blurb: '',
+  distance: 2,
+  mapX: 0.85,
+  mapY: 0.64,
+  persistent: true,
+  story: { anchor: 'wreck', eventId: 'test.lit' }, // 恒亮·无 requiresUpgrade/requiresLighthouseUpgrade → 可去
+};
+assert(poiRevealState(noDock, litPoi) === 'lit', '10b: 无能力门的剧情点应为 lit（可去）');
+assert(poiBlockReason(noDock, litPoi) === null, '10b: 可去点 poiBlockReason 应返回 null（没什么挡着）');
+L('  可去点：lit + blockReason=null ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 海图 playthrough 完成');

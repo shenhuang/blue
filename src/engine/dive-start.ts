@@ -10,6 +10,7 @@ import type {
   ZoneTag,
   Lighthouse,
   InventoryItem,
+  DepthBand,
 } from '@/types';
 import { generateDiveMap } from './mapgen';
 import { getZone } from './zones';
@@ -32,10 +33,11 @@ import {
   outpostStage,
   OUTPOST_USABLE_STAGE,
 } from './lighthouses';
+import type { RunStartBonuses } from './lighthouses';
 import { effectiveOutpostBonuses } from './outposts';
 import { autoScanOnArrival } from './dive-sensors';
 import { getBand, bandDiveModifier } from './bands';
-import { effectiveDistance, MIMIC_DIVE_EVENT_ID } from './chart';
+import { MIMIC_DIVE_EVENT_ID } from './chart';
 import { ch1Story, CH1_ANCHORS, type Ch1Anchor } from './story';
 import { enterNodeSelection } from './dive-select';
 
@@ -196,6 +198,23 @@ export function startDiveFromPoi(
   poi: ChartPoi,
   opts?: { targetCorpseId?: string; carryItems?: InventoryItem[] },
 ): GameState {
+  // 深入潜点（灯塔/蛙跳重构 step ②·#125）：POI 带 bandId ⇒ 走 band 绝对 depthRange 路径（与旧前哨蛙跳
+  // 同源 diveIntoBand），预耗氧从 POI 起潜深度（band 顶）纯推·launchDepth=0·不查 deepestOutpostLaunch
+  // 的前哨态。mimic / story 锚点不带 bandId、仍走下方 zone 路径；坏数据（bandId 悬空）→ 落回 zone
+  // 路径防白屏（check-dive-refs step ④ 把悬空引用焊成 regress 红）。
+  if (poi.bandId) {
+    const band = getBand(poi.bandId);
+    if (band) {
+      return diveIntoBand(state, band, {
+        bonuses: getRunBonuses(state.profile),
+        launchName: poi.name,
+        launchDepth: 0,
+        carryItems: opts?.carryItems,
+        seedKey: poi.id,
+      });
+    }
+  }
+
   // 随身加成 = 全局升级 ＋ 家灯塔「船坞」设施（dockyard 迁灯塔后由 getRunBonuses 并回，见 lighthouses.ts）
   // RunStartBonuses 字段全是 createNewRun bonuses 的超集，直接整个传（含深水区 Phase 0 升级轨，避免逐字段抄漏）。
   const bonuses = getRunBonuses(state.profile);
@@ -205,15 +224,8 @@ export function startDiveFromPoi(
   const carry = applyCarryItems(state.profile, run, opts?.carryItems ?? []);
   run = carry.run;
 
-  // reach：距离按最近的已拥有灯塔算（出海预耗氧 + turn）；写死 distance 仍作 fallback（SPEC §3.4/§4）
-  const dist = effectiveDistance(state.profile, poi);
-  const transitOxygen = dist * 2;
-  run = {
-    ...run,
-    diveModifier: poi.modifier,
-    turn: dist,
-    stats: { ...run.stats, oxygen: Math.max(1, run.stats.oxygen - transitOxygen) },
-  };
+  // 作者 2026-06-14：删掉「出海更近」/距离预耗氧机制——每个潜点都从第一回合起算损耗（不再有 turn 偏移 / 路上耗气）。
+  run = { ...run, diveModifier: poi.modifier };
 
   let s: GameState = { ...state, profile: carry.profile, run };
   s = startDive(s, poi.zoneId, {
@@ -228,12 +240,6 @@ export function startDiveFromPoi(
     seedKey: poi.id,
   });
 
-  if (dist > 0) {
-    s = appendLog(s, {
-      tone: 'system',
-      text: `航行至「${poi.name}」。路上耗气约 ${transitOxygen} 回合。`,
-    });
-  }
   const m = poi.modifier;
   if (m?.current && m.current !== 'none') {
     s = appendLog(s, {
@@ -337,6 +343,70 @@ function deepestOutpostLaunch(
 }
 
 /**
+ * band 下潜核心（深水区 Phase 1/2a · 灯塔/蛙跳重构 step ② 的共享体）：给定一个 band + 预算
+ * （bonuses / launchName / launchDepth / carryItems / seedKey），用 band 的**绝对 depthRange** 覆盖 zone、
+ * 落 band 的探测压力 / 声呐失真 / 猎手 run 字段、透传 band.tags / maxRoomFeatures 进 mapgen，并发出下潜叙事。
+ * 旧前哨蛙跳（startDiveFromOutpost·带前哨出潜点与补给设施）与深入 POI（startDiveFromPoi·bandId·预耗氧
+ * 从 POI 深度纯推）共用本体——单一实现、行为同源（折叠两入口的落点·见 step ②）。
+ * 预耗氧 = ⌈(band 顶 − launchDepth)/20⌉ × 2（出潜点越深越省）。
+ */
+function diveIntoBand(
+  state: GameState,
+  band: DepthBand,
+  opts: {
+    bonuses: RunStartBonuses;
+    launchName: string;
+    launchDepth: number;
+    carryItems?: InventoryItem[];
+    seedKey: string;
+  },
+): GameState {
+  let run = createNewRun({ zoneId: band.zoneId, bonuses: opts.bonuses });
+
+  // 出发前选带（#108·与 startDiveFromPoi 同一套）：勾选的消耗品仓库 → run 背包。
+  const carry = applyCarryItems(state.profile, run, opts.carryItems ?? []);
+  run = carry.run;
+
+  // 作者 2026-06-14：删掉距离预耗氧——从第一回合起算损耗（无 turn 偏移 / 路上耗气；与 startDiveFromPoi 同口径）。
+  const m = bandDiveModifier(band);
+  run = {
+    ...run,
+    diveModifier: m,
+    // 深水区 C：band 探测压力倍率落 run（band 数据缺省 → 1＝无加压·run 字段必填 #107）。
+    // 越深 band 越凶，在深度因子饱和（ALERT_DEPTH_FULL）之上继续加压；摸黑/浅水消退不受倍率影响（逃生阀门不被买断）。
+    bandAlertFactor: band.alertFactor ?? 1,
+    // 声呐与房间 S2：band 不可信声呐失真强度落 run（band 数据缺省 → 0＝声呐相对老实）。
+    sonarDeception: band.sonarDeception ?? 0,
+    // 猎手 SPEC Phase 1：本 band 是否启用「有位置的逼近猎手」（band 数据缺省 → false → moveToNode 走旧 alert→伏击瞬时路径）。
+    huntEnabled: band.hunts ?? false,
+  };
+
+  let s: GameState = { ...state, profile: carry.profile, run };
+  // band 用绝对 depthRange 覆盖 zone.depthRange（透传 mapgen GenOpts.depthRange）。
+  // band.tags（如有）覆盖 zoneTagsByDepth＝专属事件池（twilight/midnight），与借来的 zone 内容隔离。
+  // band.maxRoomFeatures（如有）开多事件「大房间」（声呐与房间 S1）——深段内容（C）铺在这些大房间里。
+  s = startDive(s, band.zoneId, {
+    depthRange: band.depthRange,
+    bandTags: band.tags,
+    maxRoomFeatures: band.maxRoomFeatures,
+    // band.sonarDeception（如有）让 mapgen 给部分内部节点挂 spoofs/evades（节点版 mimic / 无回波，S2）。
+    sonarDeception: band.sonarDeception,
+    // 洞穴一致性（SPEC §6①·#98）：调用方给定身份串（蛙跳＝bandId / 深入 POI＝poi.id）⇒ 同地点同图。
+    seedKey: opts.seedKey,
+  });
+
+  s = appendLog(s, {
+    tone: 'system',
+    text: `下潜至「${band.name}」（${band.depthRange[0]}–${band.depthRange[1]}m）。`,
+  });
+  s = appendVisibilityLog(s, m.visibility, run.sensors.sonarUnlocked);
+  if (band.danger) {
+    s = appendLog(s, { tone: 'uncanny', text: band.danger });
+  }
+  return s;
+}
+
+/**
  * 从前哨「蛙跳」下潜到一个深度 band（深水区 Phase 1 plumbing + Phase 2a 真前哨出潜点）。镜像 startDiveFromPoi，但：
  *   - 出潜点＝前哨（**本期最小版用 home 灯塔当 stand-in**；真·最深前哨是 Phase 2）；
  *   - 目标＝一个 band：用 band 的**绝对 depthRange 覆盖** zone.depthRange（band 决定下到多深、zone 决定那里有什么）；
@@ -384,52 +454,11 @@ export function startDiveFromOutpost(
       oxygenMaxBonus: bonuses.oxygenMaxBonus + ob.oxygenSupply,
     };
   }
-  let run = createNewRun({ zoneId: band.zoneId, bonuses });
-
-  // 出发前选带（#108·与 startDiveFromPoi 同一套）：勾选的消耗品仓库 → run 背包。
-  const carry = applyCarryItems(state.profile, run, opts?.carryItems ?? []);
-  run = carry.run;
-
-  // 蛙跳「航行预耗氧」：按**从出潜点到 band 顶端**的深度差粗估（前哨越深起跳越省），每 20m 约一档。
-  const dist = Math.max(1, Math.round((band.depthRange[0] - launchDepth) / 20));
-  const transitOxygen = dist * 2;
-  const m = bandDiveModifier(band);
-  run = {
-    ...run,
-    diveModifier: m,
-    // 深水区 C：band 探测压力倍率落 run（band 数据缺省 → 1＝无加压·在此落点消化，run 字段必填 #107）。
-    // 越深 band 越凶，在深度因子饱和（ALERT_DEPTH_FULL）之上继续加压；摸黑/浅水消退不受倍率影响（逃生阀门不被买断）。
-    bandAlertFactor: band.alertFactor ?? 1,
-    // 声呐与房间 S2：band 不可信声呐失真强度落 run（band 数据缺省 → 0＝声呐相对老实·同上在落点消化）。
-    // 深 band 越骗（throat/abyssal/hadal）、subhadal 回落（『把戏都停了』）；只抬低 san 失真阈值、不动其它。
-    sonarDeception: band.sonarDeception ?? 0,
-    // 猎手 SPEC Phase 1：本 band 是否启用「有位置的逼近猎手」（band 数据缺省 → false → moveToNode 走旧 alert→伏击瞬时路径）。
-    huntEnabled: band.hunts ?? false,
-    turn: dist,
-    stats: { ...run.stats, oxygen: Math.max(1, run.stats.oxygen - transitOxygen) },
-  };
-
-  let s: GameState = { ...state, profile: carry.profile, run };
-  // band 用绝对 depthRange 覆盖 zone.depthRange（透传 mapgen GenOpts.depthRange）。
-  // band.tags（如有）覆盖 zoneTagsByDepth＝trench 专属事件池（twilight/midnight），与借来的 zone 内容隔离。
-  // band.maxRoomFeatures（如有）开多事件「大房间」（声呐与房间 S1）——深段内容（C）铺在这些大房间里。
-  s = startDive(s, band.zoneId, {
-    depthRange: band.depthRange,
-    bandTags: band.tags,
-    maxRoomFeatures: band.maxRoomFeatures,
-    // band.sonarDeception（如有）让 mapgen 给部分内部节点挂 spoofs/evades（节点版 mimic / 无回波，S2）。
-    sonarDeception: band.sonarDeception,
-    // 洞穴一致性（SPEC §6①·#98）：band 身份＝种子 ⇒ 同一 band 再蛙跳＝同一张洞穴图。
+  return diveIntoBand(state, band, {
+    bonuses,
+    launchName,
+    launchDepth,
+    carryItems: opts?.carryItems,
     seedKey: bandId,
   });
-
-  s = appendLog(s, {
-    tone: 'system',
-    text: `自${launchName}蛙跳下潜至「${band.name}」（${band.depthRange[0]}–${band.depthRange[1]}m）。路上耗气约 ${transitOxygen} 回合。`,
-  });
-  s = appendVisibilityLog(s, m.visibility, run.sensors.sonarUnlocked);
-  if (band.danger) {
-    s = appendLog(s, { tone: 'uncanny', text: band.danger });
-  }
-  return s;
 }

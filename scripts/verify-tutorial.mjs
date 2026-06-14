@@ -297,7 +297,9 @@ for (const p of [...anchors, ...templates]) {
   if (p.requiresUpgrade) err(UPGRADE_IDS.has(p.requiresUpgrade), `海图 POI ${tag}: requiresUpgrade ${p.requiresUpgrade} 不存在`);
   if (p.requiresLighthouseUpgrade) err(LIGHTHOUSE_UPGRADE_IDS.has(p.requiresLighthouseUpgrade), `海图 POI ${tag}: requiresLighthouseUpgrade ${p.requiresLighthouseUpgrade} 不存在`);
 }
-const lhAnchor = anchors.find((p) => p.zoneId === 'zone.old_lighthouse_reef');
+// 按 id 找（不按 zoneId）：深入潜点 poi.deep.reef_deep 也在 zone.old_lighthouse_reef（band.reef_deep 的 zone），
+// 同 zone 多 anchor 后 zoneId 查找会撞上深入潜点（灯塔/蛙跳重构 step ②·#125）。
+const lhAnchor = anchors.find((p) => p.id === 'poi.anchor.old_lighthouse_reef');
 err(lhAnchor, '海图应有旧灯塔礁 anchor');
 err(lhAnchor && (lhAnchor.requiresFlags ?? []).includes('flag.tutorial_complete'),
   '旧灯塔礁 anchor 应需 flag.tutorial_complete 才出现');

@@ -7,7 +7,11 @@
       { "id": "midwater", "label": "中层区", "owner": "lighthouse.ch1_midwater_outpost", "palette": "blue", "shape": "circle", "radius": 0.2 },
       { "id": "vent", "label": "热液区", "owner": "lighthouse.ch1_vent_outpost", "palette": "amber", "shape": "circle", "radius": 0.14 },
       { "id": "trench", "label": "海沟区", "owner": "lighthouse.ch1_trench_outpost", "palette": "navy", "shape": "circle", "radius": 0.11 },
-      { "id": "whalefall", "label": "鲸落区", "revealFlag": "story.ch1.whalefall_found", "center": { "x": 0.59, "y": 0.24 }, "palette": "violet", "shape": "circle", "radius": 0.08 }
+      { "id": "whalefall", "label": "鲸落区", "revealFlag": "story.ch1.whalefall_found", "center": { "x": 0.59, "y": 0.24 }, "palette": "violet", "shape": "circle", "radius": 0.08 },
+      { "id": "deep_reef", "label": "深槽前哨", "owner": "lighthouse.reef_deep_outpost", "palette": "navy", "shape": "circle", "radius": 0.1 },
+      { "id": "deep_trench", "label": "竖井前哨", "owner": "lighthouse.trench_deep_outpost", "palette": "navy", "shape": "circle", "radius": 0.1 },
+      { "id": "deep_abyssal", "label": "深渊前哨", "owner": "lighthouse.abyssal_deep_outpost", "palette": "navy", "shape": "circle", "radius": 0.1 },
+      { "id": "deep_hadal", "label": "超渊前哨", "owner": "lighthouse.hadal_deep_outpost", "palette": "navy", "shape": "circle", "radius": 0.1 }
     ]
   }
 }

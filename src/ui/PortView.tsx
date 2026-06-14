@@ -48,7 +48,8 @@ export function PortView({ state, onStateChange, onOpenService }: Props) {
   }
 
   // 教学完成后，海图成为主出海入口；教学前只能走 Aldo 的资格潜水。
-  // ?dev 下海图直接可开（作者 06-13·免做教程方便测试）；普通访客仍需 tutorial_complete。
+  // dev 跳过教学开图：**只认显式 ?dev**（不认 npm-dev 的 import.meta.env.DEV／DEV_TOOLS——否则本地
+  // dev server 教学前就能开图＝作者 2026-06-14 报「非 dev 也能不教学开图」）。线上/本地无 ?dev 一律须 tutorial_complete。
   const chartUnlocked = state.profile.flags.has('flag.tutorial_complete') || DEV_TOOLS;
 
   return (

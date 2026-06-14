@@ -13,7 +13,8 @@
     "regress:quick": "node scripts/regress.mjs --only typecheck",
     "handoff": "node scripts/handoff.mjs",
     "gen:enemies": "node scripts/gen-enemy-registry.mjs",
-    "check:enemies": "node scripts/gen-enemy-registry.mjs --check"
+    "check:enemies": "node scripts/gen-enemy-registry.mjs --check",
+    "check:dive": "node scripts/check-dive-refs.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

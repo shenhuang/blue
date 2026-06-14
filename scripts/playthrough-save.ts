@@ -44,11 +44,7 @@ s = {
     inventory: [{ itemId: 'item.coral_shard', qty: 5 }],
     shopStock: { 'item.coral_shard': 3 },
     outpostState: {
-      'outpost.reef_deep': {
-        maintainedRun: 1,
-        stored: [{ itemId: 'item.brass_fitting', qty: 2 }],
-        storedRun: 1,
-      },
+      'outpost.reef_deep': { discovered: true },
     },
     lighthouses: [
       {
@@ -129,11 +125,8 @@ assert(
   'shopStock（普通 Record）应 round-trip',
 );
 assert(
-  back!.profile.outpostState?.['outpost.reef_deep']?.maintainedRun === 1 &&
-    back!.profile.outpostState?.['outpost.reef_deep']?.stored?.[0]?.itemId === 'item.brass_fitting' &&
-    back!.profile.outpostState?.['outpost.reef_deep']?.stored?.[0]?.qty === 2 &&
-    back!.profile.outpostState?.['outpost.reef_deep']?.storedRun === 1,
-  'outpostState（含寄存 stored/storedRun·Phase 2b 续·JSON-native 无需迁移）应 round-trip',
+  back!.profile.outpostState?.['outpost.reef_deep']?.discovered === true,
+  'outpostState（发现态 discovered·JSON-native 无需迁移）应 round-trip',
 );
 assert(
   back!.profile.lighthouses.length === 1 &&

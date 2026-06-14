@@ -89,8 +89,8 @@ assert(s.run!.zoneId === deep!.zoneId, '4: run.zoneId = band.zoneId');
 assert(s.run!.diveModifier?.visibility === 'dark', '4: run.diveModifier.visibility = band.visibility');
 const rd = depthsOf(s);
 assert(Math.min(...rd) >= deep!.depthRange[0] && Math.max(...rd) <= deep!.depthRange[1], '4: run.map 深度落在 band 窗口');
-assert(s.run!.stats.oxygen < s.run!.oxygenMax, '4: 蛙跳预耗氧（航行耗气）');
-L('  zoneId / 黑水 modifier / 深度窗口 / 预耗氧 ✓');
+assert(s.run!.stats.oxygen === s.run!.oxygenMax, '4: 无预耗氧——满氧起手（距离预耗氧已删·作者 2026-06-14）');
+L('  zoneId / 黑水 modifier / 深度窗口 / 满氧起手 ✓');
 
 // ============================================================
 // 5. 软门控：深黑 band + 无声呐 → 瞎；买了声呐 → run 解锁

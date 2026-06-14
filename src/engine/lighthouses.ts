@@ -53,11 +53,11 @@ for (const o of OUTPOSTS) OUTPOST_INDEX.set(o.id, o);
 export const LIGHT_RADIUS_PER_LEVEL = 0.12;
 export const LIGHT_RADIUS_PER_BONUS = 0.12;
 
-/** 一座灯塔的点亮半径（归一化海图距离）。= 区域配置 base(owner) + level + lightRadiusBonus 换算。 */
+/** 一座灯塔的点亮半径（归一化海图距离）＝区域配置值（固定·不随升级/等级扩大）。 */
 export function revealRadius(lighthouse: Lighthouse): number {
-  const base = regionRadius(lighthouse.id) + (lighthouse.level - 1) * LIGHT_RADIUS_PER_LEVEL;
-  const bonus = getLighthouseBonuses(lighthouse).lightRadiusBonus * LIGHT_RADIUS_PER_BONUS;
-  return base + bonus;
+  // 作者 2026-06-14：灯塔升级**不**扩大点亮（reveal）范围——半径恒为区域配置值（信标轨已删）。
+  // 勘测站的 dimRevealBonus 只在此「可去圈」之外罩一圈「暗区」（纯情报·见 chart.ts isSurveyDim），不动可去圈。
+  return regionRadius(lighthouse.id);
 }
 
 /** 全部灯塔设施升级轨（按 JSON 顺序）。 */
@@ -156,6 +156,10 @@ export function buildAtLighthouse(
     i === idx ? { ...l, builtUpgrades } : l,
   );
 
+  // 「探深」设施派生深入潜点（灯塔/蛙跳重构 step ②·#125）：def.setsFlag → 置一个 profile flag，
+  // 海图上对应的深入 POI（ChartPoi.requiresFlags 门）随之在该灯塔揭示圈内浮现（建升级即解锁·扫描即现）。
+  const flags = def.setsFlag ? new Set(state.profile.flags).add(def.setsFlag) : state.profile.flags;
+
   let next: GameState = {
     ...state,
     profile: {
@@ -163,6 +167,7 @@ export function buildAtLighthouse(
       inventory,
       bankedGold: state.profile.bankedGold - def.cost.gold,
       lighthouses,
+      flags,
     },
   };
   next = appendLog(next, {
@@ -196,8 +201,12 @@ export function devBuildAtLighthouse(
   const lighthouses = state.profile.lighthouses.map((l, i) =>
     i === idx ? { ...l, builtUpgrades } : l,
   );
+  // 「探深」设施派生深入潜点（同 buildAtLighthouse·dev 免料版）：setsFlag → 置 flag → 深入 POI 浮现。
+  const flags = entry.def.setsFlag
+    ? new Set(state.profile.flags).add(entry.def.setsFlag)
+    : state.profile.flags;
   return appendLog(
-    { ...state, profile: { ...state.profile, lighthouses } },
+    { ...state, profile: { ...state.profile, lighthouses, flags } },
     { tone: 'system', text: `测试建造（dev·0 成本）：${lighthouse.name} · ${entry.def.name}。` },
   );
 }
@@ -205,14 +214,11 @@ export function devBuildAtLighthouse(
 /** 聚合某座灯塔已建设施的派生加成（Phase C 读取消费 reveal/reach）。 */
 export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses {
   const bonuses: LighthouseBonuses = {
-    lightRadiusBonus: 0,
-    reachReduction: 0,
     extraConsumableSlot: 0,
     energyGen: 0,
     energyDraw: 0,
     rechargeBonus: 0,
     oxygenSupply: 0,
-    storageCapacity: 0,
     dimRevealBonus: 0,
   };
   for (const id of lighthouse.builtUpgrades) {
@@ -220,12 +226,6 @@ export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses 
     if (!def) continue;
     for (const e of def.effects) {
       switch (e.kind) {
-        case 'lightRadiusBonus':
-          bonuses.lightRadiusBonus += e.value;
-          break;
-        case 'reachReduction':
-          bonuses.reachReduction += e.value;
-          break;
         case 'extraConsumableSlot':
           bonuses.extraConsumableSlot += e.value;
           break;
@@ -240,9 +240,6 @@ export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses 
           break;
         case 'oxygenSupply':
           bonuses.oxygenSupply += e.value;
-          break;
-        case 'storageCapacity':
-          bonuses.storageCapacity += e.value;
           break;
         case 'dimRevealBonus':
           bonuses.dimRevealBonus += e.value;
@@ -603,20 +600,14 @@ export function devAdvanceOutpost(state: GameState, outpostId: string): GameStat
   const newStage = cur + 1;
   const flags = new Set(state.profile.flags);
   flags.add(outpostStageFlag(outpostId, newStage));
-  const outpostState = {
-    ...state.profile.outpostState,
-    [outpostId]: {
-      ...(state.profile.outpostState[outpostId] ?? {}),
-      maintainedRun: state.profile.runsCompleted,
-    },
-  };
+  // 衰减/中转寄存已删（#125·step ②③）：dev 推进不再写 outpostState（原仅为重置衰减计时 maintainedRun）。
   let lighthouses = state.profile.lighthouses;
   const lit = newStage >= def.stages.length;
   if (lit && !lighthouses.some((l) => l.id === def.result.id)) {
     lighthouses = [...lighthouses, { ...def.result, builtUpgrades: new Set<string>() }];
   }
   return appendLog(
-    { ...state, profile: { ...state.profile, flags, outpostState, lighthouses } },
+    { ...state, profile: { ...state.profile, flags, lighthouses } },
     { tone: 'system', text: `测试推进（dev·0 成本）：${def.name} → 阶段 ${newStage}/${def.stages.length}${lit ? '（点亮）' : ''}。` },
   );
 }
@@ -681,7 +672,7 @@ export function devRevealOutpost(state: GameState, outpostId: string): GameState
   const outpostState = {
     ...state.profile.outpostState,
     [outpostId]: {
-      ...(state.profile.outpostState[outpostId] ?? { maintainedRun: state.profile.runsCompleted }),
+      ...(state.profile.outpostState[outpostId] ?? {}),
       discovered: true,
     },
   };

@@ -7,7 +7,6 @@ import type { CombatState } from './combat';
 import type { ActiveInjury } from './injuries';
 import type { PoiModifier } from './chart';
 import type { Lighthouse } from './lighthouse';
-import type { MaterialCost } from './upgrades';
 
 /** 四属性 stat 名称（注意：氧气在战斗/事件中以"回合数"消耗） */
 export type Stat = 'stamina' | 'oxygen' | 'sanity' | 'nitrogen';
@@ -48,15 +47,13 @@ export interface PlayerProfile {
    */
   lighthouses: Lighthouse[];
   /**
-   * 水下前哨的寄存 + 发现状态（深水区 Phase 2b·衰减删除后 #125）：outpostId → { stored?, discovered? }。
-   * - stored = 寄存在该前哨「材料中转站」里的材料（深水前哨可寄存材料、建更深一阶时就近取用）。纯库房·不锈蚀。
+   * 水下前哨的发现状态（深水区 Phase 2b·衰减删除 #125·中转/寄存删除 step ②③）：outpostId → { discovered? }。
    * - discovered = 该前哨是否已被发现（上图可见）。
-   * 条目内字段全可选（懒默认＝空寄存、未发现·语义留在 outposts.ts/lighthouses.ts 读点），JSON 原生 round-trip。
+   * 条目内字段全可选（懒默认＝未发现·语义留在 lighthouses.ts 读点），JSON 原生 round-trip。
    * 容器必填：createInitialProfile 种 {}，旧存档缺它由 hydrateGameState 单点补 {}（CHANGELOG #107）。
-   * depositToDepot / withdrawFromDepot 写 stored；发现门写 discovered。
-   * 衰减删除＝去掉 maintainedRun/storedRun（旧档残留这两字段无害·代码不再读）；未发布·不写迁移（quirk #99）。
+   * 发现门写 discovered。旧档残留 maintainedRun/storedRun/stored 字段无害·代码不再读；未发布·不写迁移（quirk #99）。
    */
-  outpostState: Record<string, { stored?: MaterialCost[]; discovered?: boolean }>;
+  outpostState: Record<string, { discovered?: boolean }>;
   /**
    * 海图测绘扫描·**每哨站**已扫签名（区域揭示·作者 2026-06-14：解锁/潮汐只扫**受影响的灯塔**、非全图一起扫）。
    * key=灯塔 id，value=该灯塔上次扫到的「点亮 POI 集 + 有效半径」签名（SeaChartView 算）。当前签名 ≠ 记录 → 只扫该灯塔，

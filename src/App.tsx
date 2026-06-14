@@ -49,20 +49,27 @@ function initialDevPanel(): DevPanelKind {
   return p === 'map' || p === 'event' || p === 'combat' ? p : null;
 }
 
+/**
+ * dev 跳过教学（**仅 ?dev**·不含 npm-dev：本地 dev server 默认走真玩家流程·作者 2026-06-14 改）：
+ * 进 ?dev 即视作已过教学——海图等教学门放行，方便测试。**load 与「重开新档」两条路径都过它**
+ * （否则 handleRestart 不补标记 → 重开后丢 tutorial_complete → 看不到海图、须硬刷新才好·本次修复）。
+ */
+function withDevTutorialSkip(s: GameState): GameState {
+  if (DEV_TOOLS && !s.profile.flags.has(TUTORIAL_COMPLETE_FLAG)) {
+    return {
+      ...s,
+      profile: { ...s.profile, flags: new Set([...s.profile.flags, TUTORIAL_COMPLETE_FLAG]) },
+    };
+  }
+  return s;
+}
+
 export default function App() {
   // 启动时尝试读存档；无 / 损坏 / 版本不兼容则开新档。
-  // dev（?dev / dev server）：进 dev 即视作已过教学——海图等教学门一律放行，方便测试（作者 2026-06-13）。
-  // 普通访客 DEV_TOOLS=false 时零变化。会随自动存档落盘＝dev 档开过即标记教学完成（重开新档可清）。
-  const [state, setState] = useState<GameState>(() => {
-    const s = loadGame() ?? createInitialGameState();
-    if (DEV_TOOLS && !s.profile.flags.has(TUTORIAL_COMPLETE_FLAG)) {
-      return {
-        ...s,
-        profile: { ...s.profile, flags: new Set([...s.profile.flags, TUTORIAL_COMPLETE_FLAG]) },
-      };
-    }
-    return s;
-  });
+  // dev 跳过教学（仅 ?dev·见 withDevTutorialSkip）：load 与「重开新档」同一条路径补 tutorial_complete。
+  const [state, setState] = useState<GameState>(() =>
+    withDevTutorialSkip(loadGame() ?? createInitialGameState()),
+  );
 
   // Dev 面板开关：本地 state，不进 GameState（避免污染存档版本号；quirk #23）；?dev&panel=… 可 URL 直开（见上）
   const [devPanel, setDevPanel] = useState<DevPanelKind>(initialDevPanel);
@@ -108,20 +115,33 @@ export default function App() {
   function handleRestart() {
     // 真正的清存档（gameOver 路径才走这里；funeral 自己回港不清档）
     clearSave();
-    setState(createInitialGameState());
+    // 与 useState 初始化同一条路径：?dev 下重开也补 tutorial_complete，否则重开新档丢标记 →
+    // 看不到海图、须硬刷新才好（本次修复·作者 2026-06-14）。
+    setState(withDevTutorialSkip(createInitialGameState()));
   }
 
   // 容器布局分阶段（作者 06-13）：港口族（port/portEvent/chart/shop）走主从布局（PortLayout·左主界面/对话·
   // 右服务面板 海图/装备/商店/行会）；下潜族（dive/combat/ascent）走左右双栏（左状态/声呐·右内容）。
   // 其余（结算/葬礼/gameOver）保持 720 居中。读 phase.kind 分流是允许的（check-boundaries 规则二只禁构造 phase 字面量）。
+  //
+  // portEvent（港口过场 cutscene·作者 06-14）是港口族里的特例：它本就没有右服务面板（PortLayout 的 right
+  // 在该阶段恒 null·见其文件头），故宽屏不需要为面板留右侧空当——加 .app-port-cutscene 让容器回 720 居中，
+  // 与紧邻它前面的结算屏（.app·720 居中）同一水平位置，消除「结算居中→过场跳到左缘」的视觉错位（仅 ≥1200px 可见）。
   const phaseKind = state.phase.kind;
+  const isPortEvent = phaseKind === 'portEvent';
   const isPort =
     phaseKind === 'port' ||
     phaseKind === 'portEvent' ||
     phaseKind === 'chart' ||
     phaseKind === 'shop';
   const isDive = phaseKind === 'dive' || phaseKind === 'combat' || phaseKind === 'ascent';
-  const appClass = isPort ? 'app app-port' : isDive ? 'app app-dive' : 'app';
+  const appClass = isPort
+    ? isPortEvent
+      ? 'app app-port app-port-cutscene'
+      : 'app app-port'
+    : isDive
+      ? 'app app-dive'
+      : 'app';
 
   return (
     <div className={appClass}>
