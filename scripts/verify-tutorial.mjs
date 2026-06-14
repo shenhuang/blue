@@ -126,8 +126,20 @@ for (const ev of events) {
 
 // —— 4. 敌人 / 战斗 / 升级 ——
 for (const enc of enemies.combatEncounters ?? []) {
-  for (const m of enc.party.members)
-    err(ENEMY_IDS.has(m.defId), `combat ${enc.id}: enemy ${m.defId} not found`);
+  for (const m of enc.party.members) {
+    // 敌人库 SPEC §4 支柱二：成员二选一——写死 defId（须已注册）或 enemyRef（运行期 pickEnemy 取一只·
+    // 可解析性由 check-enemy-refs 的 enemyRef 门负责·这里只确认描述符非空）。
+    if (m.defId !== undefined) {
+      err(ENEMY_IDS.has(m.defId), `combat ${enc.id}: enemy ${m.defId} not found`);
+    } else if (m.enemyRef && typeof m.enemyRef === 'object') {
+      err(
+        Boolean(m.enemyRef.band || m.enemyRef.biome || m.enemyRef.role || m.enemyRef.threatTier),
+        `combat ${enc.id}: enemyRef 为空（至少需 band/biome/role/threatTier 之一）`,
+      );
+    } else {
+      err(false, `combat ${enc.id}: party 成员既无 defId 也无 enemyRef`);
+    }
+  }
   if (enc.victoryEventId)
     err(EVENT_IDS.has(enc.victoryEventId), `combat ${enc.id}: victoryEventId ${enc.victoryEventId} not found`);
 }

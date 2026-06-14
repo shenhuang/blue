@@ -22,7 +22,7 @@ import { executeDeath } from './death';
 import { getItemDef } from './items';
 import { computeModifiers, effectiveStaminaMax } from './modifiers';
 import { addInjury, injuryIdForDamageType, applyMedkitHeal } from './injuries';
-import { resolveEncounterMember } from './enemyLibrary';
+import { resolveEncounterMember, enemySeenFlag } from './enemyLibrary';
 
 // ——— 数据索引 ———
 
@@ -92,7 +92,23 @@ export function startCombat(
     resumeNodeId: state.run.currentNodeId,
   };
 
-  let s: GameState = { ...state, phase: { kind: 'combat', combat } };
+  // 图鉴发现门（敌人库·只显示已遭遇）：开战即把本场敌人（含 enemyRef 取到的）记入
+  // profile.flags 的 enemy_seen:<id>（持久·跨 run）。单一来源——所有真实开战路径（事件
+  // triggerCombatId / 猎手伏击）都经 startCombat；事件 scenario 遇 triggerCombatId 即停步、
+  // 不进战斗（见 eventScenario）故不污染其 profileFlags 断言。纯加 flag 串·不 bump SAVE_VERSION（#99）。
+  let profile = state.profile;
+  const seenFlags = new Set(profile.flags);
+  let sawNew = false;
+  for (const e of enemies) {
+    const key = enemySeenFlag(e.defId);
+    if (!seenFlags.has(key)) {
+      seenFlags.add(key);
+      sawNew = true;
+    }
+  }
+  if (sawNew) profile = { ...profile, flags: seenFlags };
+
+  let s: GameState = { ...state, profile, phase: { kind: 'combat', combat } };
   if (enc.introText) {
     s = pushCombatLog(s, { actor: 'system', text: enc.introText });
   }

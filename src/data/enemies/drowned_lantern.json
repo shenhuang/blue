@@ -6,10 +6,10 @@
       "biomes": ["wreck_field"],
       "role": "sanity",
       "codex": {
-        "habitat": "沉船间的静水",
-        "behavior": "以光诱近·消耗心神",
-        "appearance": "伞下垂着一盏不灭的、不该亮的灯",
-        "firstSeenHint": "远处有一点灯火，像有人在等你"
+        "habitat": "沉船之间不动的静水。哪儿最暗，它在哪儿亮着。",
+        "behavior": "以光引你近，再一收一张地照进你不愿想的地方。它不急——你会自己过去。",
+        "appearance": "钟形的伞，底下垂着一盏灯。那灯不灭，也不该亮。",
+        "firstSeenHint": "远处水里一点暖光，像有人提灯在等你。"
       },
       "name": "沉灯水母",
       "tier": "cosmic",

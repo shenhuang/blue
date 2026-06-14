@@ -412,7 +412,13 @@ export function runCombatScenario(input: CombatScenarioInput): CombatScenarioRes
         };
       }
     }
-    state = startCombat(state, input.combatId);
+    // 敌人库 SPEC §4：enemyRef 成员经 pickEnemy 取一只——pick 会掷一次 Math.random，必须落在
+    // seeded 窗口内，否则当 enemyRef 匹配多于一只敌人时 baseline 不可复现（此前 startCombat 在
+    // seeded 块外·见 enemyLibrary 注释）。defId 成员零 Math.random 消耗，故现有 defId 战斗 baseline
+    // 逐字节不变；下方回合循环另起的 withSeededRandom(seed) 各自从 seed 重置 LCG，turn RNG 流不受影响。
+    withSeededRandom(input.seed, () => {
+      state = startCombat(state, input.combatId!);
+    });
   } else if (input.enemyDefIds) {
     for (const id of input.enemyDefIds) {
       if (!getEnemyDef(id)) {

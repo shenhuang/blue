@@ -96,6 +96,12 @@ export function PortView({ state, onStateChange, onOpenService }: Props) {
           >
             改装装备（材料 ＋ 金币）
           </button>
+          <button
+            className="btn port-chart-btn"
+            onClick={() => onOpenService('bestiary')}
+          >
+            潜水志 · 图鉴
+          </button>
         </div>
       ) : (
         <DialogPanel

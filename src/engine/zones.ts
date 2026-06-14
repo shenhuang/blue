@@ -16,6 +16,7 @@ import mimicEvents from '@/data/events/mimic.json';
 import ch1Events from '@/data/events/ch1.json';
 import midwaterEvents from '@/data/events/midwater.json';
 import ventEvents from '@/data/events/vent.json';
+import wreckFieldPatrolEvents from '@/data/events/wreck_field_patrol.json';
 import zonesData from '@/data/zones.json';
 
 export const ZONES: Map<string, ZoneDef> = new Map();
@@ -38,6 +39,7 @@ for (const e of (mimicEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (ch1Events.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (midwaterEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (ventEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
+for (const e of (wreckFieldPatrolEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 敌人库 enemyRef 线上用例（SPEC §4）
 
 export function getZone(id: string): ZoneDef | undefined {
   return ZONES.get(id);

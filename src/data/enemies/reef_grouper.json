@@ -6,9 +6,10 @@
       "biomes": ["reef_tropical"],
       "role": "gatekeeper",
       "codex": {
-        "habitat": "礁洞与残骸下",
-        "behavior": "领地性·吞吸式咬击·皮厚耐打",
-        "appearance": "体宽厚·斑驳"
+        "habitat": "礁洞和塌下的残骸底下，塞进去守着。",
+        "behavior": "领地性，皮厚耐打。一张嘴把水连你吸进牙板，或横过身板闷闷地撞。",
+        "appearance": "宽厚的一大块，体色斑驳。一只眼钉着你，鳃盖一张一合。",
+        "firstSeenHint": "礁檐下整个压出来一块东西，比你还长。"
       },
       "name": "石斑鱼",
       "tier": "realistic",

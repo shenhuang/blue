@@ -6,9 +6,10 @@
       "biomes": ["wreck_field"],
       "role": "gatekeeper",
       "codex": {
-        "habitat": "沉船甲板与缆绳间",
-        "behavior": "领地性·常成对·钳击",
-        "appearance": "长足覆藤壶"
+        "habitat": "沉船的甲板与缆绳之间，锈铁皮下。",
+        "behavior": "领地性，常成对。八条腿刮过铁皮，大钳一闭夹住不放，或拿甲壳当盾整个撞上来。",
+        "appearance": "长足覆满藤壶，比你想象的大。",
+        "firstSeenHint": "渔网或舱口的暗处，八条腿刮过锈铁的声音。"
       },
       "name": "沉船蛛蟹",
       "tier": "realistic",

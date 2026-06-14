@@ -6,9 +6,10 @@
       "biomes": ["reef_tropical"],
       "role": "predator",
       "codex": {
-        "habitat": "暖水礁缘与浅坡",
-        "behavior": "循血而来·试探盘旋后突进",
-        "appearance": "幼体·体侧一道白线般的齿列"
+        "habitat": "暖水的礁缘与浅坡。循着血味来。",
+        "behavior": "先盘旋试探，圈一圈比一圈小，摸清你再突进。见血更急；被打疼了会撤——这次。",
+        "appearance": "还是幼体，齿列在水里划得出一道白线。",
+        "firstSeenHint": "鳃部一张一合，它盯着你，绕的圈收紧。"
       },
       "name": "暗礁鲨（幼体）",
       "tier": "realistic",

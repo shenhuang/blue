@@ -10,6 +10,7 @@ import drowned_lantern from './drowned_lantern.json';
 import reef_barracuda from './reef_barracuda.json';
 import reef_grouper from './reef_grouper.json';
 import reef_shark from './reef_shark.json';
+import wreck_field_patrol from './wreck_field_patrol.json';
 import wreck_spider_crab from './wreck_spider_crab.json';
 
 /** 单个敌人 JSON 文件的形状：enemies[] + 可选 combatEncounters[]。具体类型在 combat.ts 收口断言。 */
@@ -23,5 +24,6 @@ export const ENEMY_FILE_MODULES: EnemyFileModule[] = [
   reef_barracuda,
   reef_grouper,
   reef_shark,
+  wreck_field_patrol,
   wreck_spider_crab,
 ] as unknown as EnemyFileModule[];

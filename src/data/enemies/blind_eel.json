@@ -6,9 +6,10 @@
       "biomes": ["cave_anchialine"],
       "role": "ambusher",
       "codex": {
-        "habitat": "无光洞道的缝隙",
-        "behavior": "靠水流与声压伏击·近身缠绕",
-        "appearance": "通体苍白·无眼"
+        "habitat": "蓝洞无光段的岩壁裂缝。一辈子不需要光。",
+        "behavior": "不靠眼睛——靠水压和你呼吸的颤动定位。先远远缀着，等你乱了节奏才贴上来缠绕。",
+        "appearance": "通体死白，无眼。比你以为的长，一次只露一段。",
+        "firstSeenHint": "灯扫过一道缝，里面有什么白的东西缩了回去。"
       },
       "name": "盲鳗",
       "tier": "uncanny",
@@ -72,9 +73,10 @@
       "biomes": ["cave_anchialine"],
       "role": "ambusher",
       "codex": {
-        "habitat": "洞道缝隙",
-        "behavior": "未成形的伏击者",
-        "appearance": "半透明幼体"
+        "habitat": "同样的裂缝，更浅的那些。",
+        "behavior": "绕着你试探，凉的一截贴上来又溜走——本能齐了，耐心还没。",
+        "appearance": "半透明，看得见里面的影子。短，但牙是真的。",
+        "firstSeenHint": "一道小白影擦过小腿，凉得像泡软的绳子。"
       },
       "name": "盲鳗幼体",
       "tier": "uncanny",

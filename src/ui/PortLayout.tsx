@@ -22,8 +22,9 @@ import { PortEventView } from './PortEventView';
 import { SeaChartView } from './SeaChartView';
 import { MiraShopView } from './MiraShopView';
 import { UpgradePanel } from './UpgradePanel';
+import { BestiaryView } from './BestiaryView';
 
-export type PortServiceMode = 'gear' | 'salvage';
+export type PortServiceMode = 'gear' | 'salvage' | 'bestiary';
 
 // 打捞行会的升级线 id：'salvage'＝只放它（Mira 的服务）；'gear'＝其余全部（个人潜水装备）。
 const SALVAGE_LINE = 'line.salvage_guild';
@@ -48,6 +49,8 @@ export function PortLayout({ state, onStateChange }: Props) {
       <SeaChartView state={state} onStateChange={onStateChange} />
     ) : state.phase.kind === 'shop' ? (
       <MiraShopView state={state} onStateChange={onStateChange} />
+    ) : upgradeMode === 'bestiary' ? (
+      <BestiaryView state={state} onClose={() => setUpgradeMode(null)} />
     ) : upgradeMode ? (
       <UpgradePanel
         state={state}

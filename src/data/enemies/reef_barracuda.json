@@ -6,9 +6,10 @@
       "biomes": ["reef_tropical"],
       "role": "predator",
       "codex": {
-        "habitat": "礁缘开阔水",
-        "behavior": "高速直线突袭·玻璃大炮",
-        "appearance": "银亮流线·下颌前突"
+        "habitat": "礁缘外的开阔水，反光最强处。",
+        "behavior": "盯着反光和动作，一动不动地等你先动，再一道直线弹过来。咬得狠，也脆。",
+        "appearance": "银亮流线，下颌前突，一排倒钩的牙。比你的小臂还长。",
+        "firstSeenHint": "开阔水里一条银鱼悬着不动，正对着你。"
       },
       "name": "梭鱼",
       "tier": "realistic",
@@ -59,9 +60,10 @@
       "biomes": ["reef_tropical"],
       "role": "predator",
       "codex": {
-        "habitat": "礁缘",
-        "behavior": "成群试探",
-        "appearance": "幼体·尚短"
+        "habitat": "礁缘浅处，常成小群。",
+        "behavior": "还没学会绕，照着你最亮的地方直撞。一条不算什么，一群就难说。",
+        "appearance": "短、快，银线一样。牙已经齐了。",
+        "firstSeenHint": "光圈外缘几道小银影，绕着你打转。"
       },
       "name": "梭鱼幼体",
       "tier": "realistic",

@@ -93,6 +93,19 @@ export function resolveEncounterMember(
   return undefined;
 }
 
+/**
+ * 图鉴发现门（敌人库·只显示已遭遇）：profile.flags 里「已遭遇此敌人」标记的前缀。
+ * startCombat 是唯一写者（开战即记本场敌人·含 enemyRef 取到的）·BestiaryView 是读者。
+ * 纯 flag 串进既有 Set——不改存档形状·不 bump SAVE_VERSION（quirk #99）。
+ */
+export const ENEMY_SEEN_FLAG_PREFIX = 'enemy_seen:';
+export function enemySeenFlag(defId: string): string {
+  return ENEMY_SEEN_FLAG_PREFIX + defId;
+}
+export function hasSeenEnemy(flags: ReadonlySet<string>, defId: string): boolean {
+  return flags.has(enemySeenFlag(defId));
+}
+
 /** 校验一个 party 成员可解析（**不掷 RNG**·供回归/校验用）：defId 已注册，或 enemyRef 至少匹配一只。 */
 export function canResolveMember(member: EnemyPartyMemberDef): boolean {
   if (member.defId) return DEF_BY_ID.has(member.defId);

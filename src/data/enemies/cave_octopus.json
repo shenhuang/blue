@@ -6,9 +6,10 @@
       "biomes": ["cave_anchialine"],
       "role": "gatekeeper",
       "codex": {
-        "habitat": "深洞闸口的石缝",
-        "behavior": "领地性·堵口·受威胁喷墨撤退",
-        "appearance": "体色随岩壁变化"
+        "habitat": "洞道闸口的石缝，守着唯一的出路。",
+        "behavior": "领地性极强，堵在窄处。逼急了喷一团墨，把你的灯和方向一起夺走，自己退走。",
+        "appearance": "体色跟着岩壁变，贴壁上几乎看不出——直到一条腕动了。",
+        "firstSeenHint": "壳堆后面那块「石头」，纹路慢慢挪了一下。"
       },
       "name": "洞穴章鱼",
       "tier": "realistic",
