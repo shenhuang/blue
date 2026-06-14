@@ -316,7 +316,7 @@ assert(cc.run!.stats.stamina === Math.min(runBeforeShort.staminaMax, baseShort.s
 assert(cc.run!.stats.sanity === Math.min(100, baseShort.stats.sanity + 5), '短扎营理智 +5（叠加在 tick 后）');
 assert(cc.run!.stats.oxygen === baseShort.stats.oxygen && baseShort.stats.oxygen < ox0, '扎营消耗氧气（tick 回合 = 自带代价）');
 
-// 长档：体力 +30 理智 +10 氮气 −5
+// 长档：体力 +30 理智 +10（氮气不再在原深手动排·改由 tick 按 ceiling 决定·氮气 SPEC §2）
 let cl: GameState = createInitialGameState();
 cl = {
   ...cl,
@@ -332,7 +332,7 @@ const runBeforeLong = cl.run!;
 const baseLong = tickTurns(runBeforeLong, 6);
 cl = campAtNode(cl, 'long');
 L(`  长扎营：氮气 →${cl.run!.stats.nitrogen.toFixed(1)}, 理智 →${cl.run!.stats.sanity.toFixed(1)}, 体力 →${cl.run!.stats.stamina}`);
-assert(cl.run!.stats.nitrogen === Math.max(0, baseLong.stats.nitrogen - 5), '长扎营氮气 −5（叠加在 tick 后）');
+assert(cl.run!.stats.nitrogen === baseLong.stats.nitrogen, '长扎营不再手动排氮（氮气 = tick 后值·原深休息由饱和模型微涨）');
 assert(cl.run!.stats.sanity === Math.min(100, baseLong.stats.sanity + 10), '长扎营理智 +10（叠加在 tick 后）');
 assert(cl.run!.stats.stamina === Math.min(runBeforeLong.staminaMax, baseLong.stats.stamina + 30), '长扎营体力 +30（叠加在 tick 后）');
 L('  气穴/扎营节点效果 ✓');

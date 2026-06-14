@@ -105,7 +105,8 @@ export function campAtNode(state: GameState, mode: 'short' | 'long'): GameState 
   const turns = mode === 'long' ? 6 : 3;
   const staGain = mode === 'long' ? 30 : 15;
   const sanGain = mode === 'long' ? 10 : 5;
-  const n2Drop = mode === 'long' ? 5 : 0;
+  // 氮气不在原深休息时平白排出（饱和模型：休息这几回合由 passTurnsWithStalker→tickTurns
+  // 按 ceiling 自然处理·在原深 N 反而微涨）。排氮只走升浅/上浮——见氮气 SPEC §2 单写者。
   const passed = passTurnsWithStalker(s, turns);
   s = passed.state;
   if (passed.interrupted || !s.run) return s;
@@ -114,14 +115,13 @@ export function campAtNode(state: GameState, mode: 'short' | 'long'): GameState 
     ...run.stats,
     stamina: Math.min(effectiveStaminaMax(run), run.stats.stamina + staGain),
     sanity: Math.min(100, run.stats.sanity + sanGain),
-    nitrogen: Math.max(0, run.stats.nitrogen - n2Drop),
   };
   s = { ...s, run: { ...run, stats } };
   s = appendLog(s, {
     tone: 'realistic',
     text:
       mode === 'long'
-        ? `你关掉灯，认真扎了一会儿。重新打开灯时状态好多了。（${turns} 回合 · 体力 +${staGain} · 理智 +${sanGain} · 氮气 −${n2Drop}）`
+        ? `你关掉灯，认真扎了一会儿。重新打开灯时状态好多了。（${turns} 回合 · 体力 +${staGain} · 理智 +${sanGain}）`
         : `你卡住自己，听着呼吸。${turns} 回合后再起身，膝盖松了些。（体力 +${staGain} · 理智 +${sanGain}）`,
   });
   return s;

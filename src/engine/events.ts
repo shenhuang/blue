@@ -15,6 +15,7 @@ import { addToInventory, appendLog, clampStats } from './state';
 import { restoreLighthouse, advanceOutpost } from './lighthouses';
 import { lampPowerDrain, alertDelta, ALERT_MAX } from './clarity';
 import { effectiveStaminaMax } from './modifiers';
+import { stepNitrogen, narcosisSanityDrain } from './nitrogen';
 
 // —— 数据装载 ——
 // 单一事件库是 zones.ts::EVENT_DB（含全部 zone 的事件）。getEvent 直接委托给它，
@@ -296,17 +297,22 @@ export function tickTurns(
   const depth = run.currentDepth;
   const depthFactor = 1 + depth / 50;
   const oxygenDrain = turns * 1 * depthFactor * (opts?.o2CostMult ?? 1);
-  const nitrogenGain = turns * (depth / 30);
 
   const stats: Stats = {
     ...run.stats,
     oxygen: Math.max(0, run.stats.oxygen - oxygenDrain),
-    nitrogen: Math.min(100, run.stats.nitrogen + nitrogenGain),
+    // 氮气：饱和模型（深度定 ceiling·停留定逼近·同一式同管吸/排）·见 engine/nitrogen.ts
+    nitrogen: stepNitrogen(run.stats.nitrogen, depth, turns),
   };
-  // 简单的深度→理智衰减
+  // 深度→理智的「即时压抑」基础衰减（与氮气无关·一沉到深就压）
   if (depth >= 30) {
     const decayPerTurn = depth < 60 ? 0.2 : depth < 100 ? 0.5 : 1.0;
     stats.sanity = Math.max(0, stats.sanity - decayPerTurn * turns);
+  }
+  // 氮醉：高氮 × 深度 → 额外扣理智（连续·叠加在基础衰减之上·氮气 SPEC §3）
+  const narcosisDrain = narcosisSanityDrain(run.stats.nitrogen, depth, turns);
+  if (narcosisDrain > 0) {
+    stats.sanity = Math.max(0, stats.sanity - narcosisDrain);
   }
   // 能见度（海图 POI 修正）：看不清 → 额外理智压力
   const visDrain = visibilitySanityDrain(run.diveModifier?.visibility, turns);

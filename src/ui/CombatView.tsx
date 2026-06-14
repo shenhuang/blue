@@ -7,6 +7,7 @@ import {
   triggerEmergencyAscent,
 } from '@/engine/combat';
 import { beginAscent } from '@/engine/transitions';
+import { isAscentBlocked } from '@/engine/ascent';
 import { StatusBar } from './StatusBar';
 
 interface Props {
@@ -21,6 +22,9 @@ export function CombatView({ state, onStateChange }: Props) {
   const combat = state.phase.combat;
   const aliveEnemies = combat.enemies.filter((e) => e.hp > 0);
   const actions = listAvailableActions(state);
+  // 封闭水域离开上浮口（头上是岩顶）→ 战斗里不给紧急上浮：脱离只能靠 flee 再摸回上浮口。
+  // 开阔水 / 在上浮口才保留紧急上浮（也是高氮的死亡出口）。见氮气 SPEC §4。
+  const ascentBlocked = isAscentBlocked(state.run);
 
   // 自动锁定第一个活敌人，若 selectedTarget 已死则换
   const currentTarget =
@@ -98,11 +102,13 @@ export function CombatView({ state, onStateChange }: Props) {
               </button>
             </li>
           ))}
-          <li>
-            <button className="btn event-option danger" onClick={handleEmergencyAscent}>
-              ↑ 应急上浮（深处必死）
-            </button>
-          </li>
+          {!ascentBlocked && (
+            <li>
+              <button className="btn event-option danger" onClick={handleEmergencyAscent}>
+                ↑ 应急上浮（深处必死）
+              </button>
+            </li>
+          )}
         </ul>
       </div>
       </div>

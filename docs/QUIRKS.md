@@ -184,3 +184,5 @@
 5. **教学暗礁鲨调过两次**：原 50HP/6-10dmg 太硬，现 32HP/4-7dmg + 主动撤退（territorial 类敌人 HP ≤ 30% 时 50% 撤退）。
 
 20. **蓝洞群入口段（12–25m）事件密度偏低**：目前只有 `bluecaves.entrance_light` + `bluecaves.color_shift` 两个事件能命中浅段。`scripts/explore-bluecaves.ts` 30 局测试里 entrance_light 触发了 42 次——玩家几乎每次都见到同一段开场。需要再补 2–3 个 12–25m 段的 cave 事件，**这是内容稀缺，不是 bug**。
+
+128. **氮气演化单写者（engine/nitrogen.ts）**：潜水期氮气只由 `engine/nitrogen.ts` 纯函数计算·**唯一调用点是 `events.ts::tickTurns`**；升浮 `ascent.ts::executeAscent`（升浅排氮）与 item 效果是另两个合法写者。**别在别处手算氮气、别回加 `campAtNode` 的原深排氮**——饱和模型下原深休息按 ceiling 微涨、排氮只走升浅/上浮（旧 `n2Drop=−5` 已删）。`scripts/playthrough-nitrogen.ts` 守饱和/氮醉不变量（含「逐回合 tick==一次性 tick」守 stalker 一致性），但「不在别处手算」尚未 gated——日后宜加 check-boundaries 规则收口 `stats.nitrogen` 计算面（参 #116 injuries 单写者）。SPEC＝`docs/spec/深海回响_氮气系统_SPEC.md`。

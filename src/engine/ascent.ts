@@ -7,9 +7,9 @@ import { executeDeath, ageAndDecayDeaths, getPreservationBonus } from './death';
 import { effectiveStaminaMax } from './modifiers';
 import { miraOfferFor } from './port';
 import { getZone } from './zones';
+import { N2 } from './nitrogen';
 
-/** 氮气分档阈值（米制氮浓度 0–100）。减压停留次数与减压病分型共用这一份，避免两处各写一套。 */
-const N2 = { SAFE: 40, ONE_STOP: 60, TWO_STOP: 80 } as const;
+// 氮气分档阈值 N2（SAFE/ONE_STOP/TWO_STOP）迁居 engine/nitrogen.ts（与饱和曲线同住·单点可调）。
 
 export type AscentPlan = {
   /** 减压停留次数（按当前氮气浓度计算） */

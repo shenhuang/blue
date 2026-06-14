@@ -39,8 +39,8 @@ export function AscentView({ state, onStateChange }: Props) {
           </p>
           {blocked ? (
             <p className="warn">
-              头上是岩顶。你能感觉到水道在收窄。<br />
-              在这里只能凿穿洞顶——别的上浮方式行不通。
+              头上是岩顶，水道在收窄——这里上不去。<br />
+              回到标着「↑」的上浮口才能上浮；摸不回去，氧气就会在下面耗尽。
             </p>
           ) : (
             <p className="dim">
@@ -74,16 +74,19 @@ export function AscentView({ state, onStateChange }: Props) {
               {!blocked && !rushedSafe && <span className="warn"> ⚠ 氧气不够</span>}
             </button>
           </li>
-          <li>
-            <button
-              className="btn event-option danger"
-              onClick={() => ascend('emergency')}
-            >
-              {blocked
-                ? '凿穿洞顶上浮（1 回合，深处必死）'
-                : '应急上浮（1 回合，深处必死）'}
-            </button>
-          </li>
+          {/* 封闭水域离开上浮口 → 不给紧急上浮（删「凿穿洞顶」虚构·氮气 SPEC §4）。
+              !returnTo 的失保分支：万一被 forced/自动上浮塞进 blocked 屏（regress 守不该发生），
+              仍留一手避免无按钮卡死。 */}
+          {(!blocked || !returnTo) && (
+            <li>
+              <button
+                className="btn event-option danger"
+                onClick={() => ascend('emergency')}
+              >
+                应急上浮（1 回合，深处必死）
+              </button>
+            </li>
+          )}
           {returnTo && (
             <li>
               <button
