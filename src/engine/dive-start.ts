@@ -1,5 +1,7 @@
-// 开潜三入口（#106 拆分自 dive.ts·纯搬移）：港口 zone（startDive）/ 海图 POI（startDiveFromPoi）/
-// 前哨蛙跳（startDiveFromOutpost），及出海叙事与蛙跳出潜点派生。函数体与拆分前逐字相同。
+// 开潜入口（#106 拆分自 dive.ts）：港口 zone（startDive）/ 海图 POI（startDiveFromPoi），及出海叙事。
+// 旧「前哨蛙跳」startDiveFromOutpost + deepestOutpostLaunch 已删（#131 探深深度柱重构·老蛙跳废弃）——
+// 深入下潜统一走 startDiveFromPoi：深度柱深入 POI 带 bandId 走 band 绝对 depthRange 路径（diveIntoBand），
+// 宿主灯塔在线补给设施（充电/充氧）在此并入随身加成。
 
 import type {
   GameState,
@@ -8,7 +10,6 @@ import type {
   Visibility,
   PlayerProfile,
   ZoneTag,
-  Lighthouse,
   InventoryItem,
   DepthBand,
 } from '@/types';
@@ -23,18 +24,10 @@ import {
   RUN_INVENTORY_CAPACITY,
 } from './state';
 import { getItemDef } from './items';
-import {
-  getRunBonuses,
-  getHomeLighthouse,
-  getLighthouse,
-  getOutposts,
-  getOutpostDef,
-  isChapterOutpost,
-  outpostStage,
-  OUTPOST_USABLE_STAGE,
-} from './lighthouses';
+import { getRunBonuses } from './lighthouses';
 import type { RunStartBonuses } from './lighthouses';
 import { effectiveOutpostBonuses } from './outposts';
+import { getColumn } from './columns';
 import { autoScanOnArrival } from './dive-sensors';
 import { getBand, bandDiveModifier } from './bands';
 import { MIMIC_DIVE_EVENT_ID } from './chart';
@@ -205,10 +198,24 @@ export function startDiveFromPoi(
   if (poi.bandId) {
     const band = getBand(poi.bandId);
     if (band) {
+      // 随身加成 = 全局升级 + 家灯塔船坞（getRunBonuses）。深度柱深入潜点（#131·columnId 设）额外并入
+      // **宿主灯塔的在线补给设施**（充电/充氧·effectiveOutpostBonuses）——你是从那座前哨下去的，
+      // 它的能源设施仍然管用（老蛙跳删了·这层补给改由柱潜点承接·守「能源保留」#128）。
+      let bonuses = getRunBonuses(state.profile);
+      if (poi.columnId) {
+        const col = getColumn(poi.columnId);
+        const host = col ? state.profile.lighthouses.find((l) => l.id === col.lighthouseId) : undefined;
+        if (host) {
+          const ob = effectiveOutpostBonuses(host);
+          bonuses = {
+            ...bonuses,
+            powerMaxBonus: bonuses.powerMaxBonus + ob.rechargeBonus,
+            oxygenMaxBonus: bonuses.oxygenMaxBonus + ob.oxygenSupply,
+          };
+        }
+      }
       return diveIntoBand(state, band, {
-        bonuses: getRunBonuses(state.profile),
-        launchName: poi.name,
-        launchDepth: 0,
+        bonuses,
         carryItems: opts?.carryItems,
         seedKey: poi.id,
       });
@@ -310,53 +317,16 @@ function appendVisibilityLog(
 }
 
 /**
- * 比目标 band（targetOrder）更浅、且已半亮（≥ OUTPOST_USABLE_STAGE）的最深前哨蛙跳出潜点（深水区 Phase 2a）。
- * 进度读 profile.flags（outpostStage）、出潜深度＝前哨所在 band 底。没有合格前哨 → null（退回 home stand-in）。
- */
-function deepestOutpostLaunch(
-  profile: PlayerProfile,
-  targetOrder: number,
-): { name: string; launchDepth: number; lighthouse?: Lighthouse } | null {
-  let best: { name: string; launchDepth: number; order: number; lighthouse?: Lighthouse } | null =
-    null;
-  for (const def of getOutposts()) {
-    // 章节哨站批：章节前哨自成一网（落锚点②③④三区），不参与深脊柱线性自动起跳链——
-    // 它的蛙跳走显式 launchOutpostId（见 startDiveFromOutpost），落本区 band，别被深 band 误选为起跳点。
-    if (isChapterOutpost(def)) continue;
-    // 半亮（≥ USABLE）即可作起跳点（衰减已删·#125：阶段不再随 run 回退）。
-    if (outpostStage(profile, def.id) < OUTPOST_USABLE_STAGE) continue;
-    const ob = getBand(def.bandId);
-    if (!ob || ob.order >= targetOrder) continue; // 前哨必须比目标更浅（不能从同层/更深起跳）
-    if (!best || ob.order > best.order) {
-      best = {
-        name: def.name,
-        launchDepth: ob.depthRange[1],
-        order: ob.order,
-        // 点亮的前哨才有 Lighthouse 对象（半亮未 push）→ 充电/充氧补给设施只有点亮前哨提供（深水区 Phase 2b）。
-        lighthouse: getLighthouse(profile, def.result.id),
-      };
-    }
-  }
-  return best
-    ? { name: best.name, launchDepth: best.launchDepth, lighthouse: best.lighthouse }
-    : null;
-}
-
-/**
- * band 下潜核心（深水区 Phase 1/2a · 灯塔/蛙跳重构 step ② 的共享体）：给定一个 band + 预算
- * （bonuses / launchName / launchDepth / carryItems / seedKey），用 band 的**绝对 depthRange** 覆盖 zone、
- * 落 band 的探测压力 / 声呐失真 / 猎手 run 字段、透传 band.tags / maxRoomFeatures 进 mapgen，并发出下潜叙事。
- * 旧前哨蛙跳（startDiveFromOutpost·带前哨出潜点与补给设施）与深入 POI（startDiveFromPoi·bandId·预耗氧
- * 从 POI 深度纯推）共用本体——单一实现、行为同源（折叠两入口的落点·见 step ②）。
- * 预耗氧 = ⌈(band 顶 − launchDepth)/20⌉ × 2（出潜点越深越省）。
+ * band 下潜核心（#131 后唯一调用方＝startDiveFromPoi 的 bandId/深度柱分支）：给定一个 band + 预算
+ * （bonuses / carryItems / seedKey），用 band 的**绝对 depthRange** 覆盖 zone、落 band 的探测压力 /
+ * 声呐失真 / 猎手 run 字段、透传 band.tags / maxRoomFeatures 进 mapgen，并发出下潜叙事。
+ * 每潜从第一回合起算损耗（#128 删距离预耗氧·run.turn=0 满氧起手）——无 launchDepth/出潜点概念了。
  */
 function diveIntoBand(
   state: GameState,
   band: DepthBand,
   opts: {
     bonuses: RunStartBonuses;
-    launchName: string;
-    launchDepth: number;
     carryItems?: InventoryItem[];
     seedKey: string;
   },
@@ -404,61 +374,4 @@ function diveIntoBand(
     s = appendLog(s, { tone: 'uncanny', text: band.danger });
   }
   return s;
-}
-
-/**
- * 从前哨「蛙跳」下潜到一个深度 band（深水区 Phase 1 plumbing + Phase 2a 真前哨出潜点）。镜像 startDiveFromPoi，但：
- *   - 出潜点＝前哨（**本期最小版用 home 灯塔当 stand-in**；真·最深前哨是 Phase 2）；
- *   - 目标＝一个 band：用 band 的**绝对 depthRange 覆盖** zone.depthRange（band 决定下到多深、zone 决定那里有什么）；
- *   - **软门控**：不查解锁 flag——能不能活由装备（声呐解锁 + 电池/升级，吃深料，见 quirk #60）+ 后续强敌决定。
- *     深 band 的 visibility=dark → 灯打不透 → 被迫用更耗电的声呐（间接电量压力，不加深度耗电税；作者 2026-06-03）。
- *   - 随身加成走 getRunBonuses（含 Phase 0 升级轨的 sensorTuning/powerMax）——装备越强越下得去。
- */
-export function startDiveFromOutpost(
-  state: GameState,
-  bandId: string,
-  opts?: { carryItems?: InventoryItem[]; launchOutpostId?: string },
-): GameState {
-  const band = getBand(bandId);
-  if (!band) {
-    console.warn(`Band ${bandId} not found`);
-    return state;
-  }
-  // 蛙跳出潜点（深水区 Phase 2a）：从**已半亮（≥ OUTPOST_USABLE_STAGE）、且比目标 band 更浅**的最深前哨起跳，
-  // 起跳深度＝该前哨所在 band 底（省掉从水面到那里的下潜）。没有这样的前哨 → 退回 home 灯塔 stand-in（从水面起跳＝Phase 1 旧行为）。
-  //
-  // 章节哨站批：opts.launchOutpostId 显式指定起跳前哨（点海图章节哨站→蛙跳入本区 band）——
-  // 章节前哨自成一网、不在 deepestOutpostLaunch 的深脊柱链里，故走显式起跳。要求该前哨已半亮（否则忽略、退回深脊柱/home）。
-  const explicit = opts?.launchOutpostId ? getOutpostDef(opts.launchOutpostId) : undefined;
-  const explicitLaunch =
-    explicit && outpostStage(state.profile, explicit.id) >= OUTPOST_USABLE_STAGE
-      ? {
-          name: explicit.name,
-          launchDepth: getBand(explicit.bandId)?.depthRange[1] ?? 0,
-          lighthouse: getLighthouse(state.profile, explicit.result.id),
-        }
-      : null;
-  const launch = explicitLaunch ?? deepestOutpostLaunch(state.profile, band.order);
-  const outpost = launch ? undefined : getHomeLighthouse(state.profile);
-  const launchName = launch?.name ?? outpost?.name ?? '前哨';
-  const launchDepth = launch?.launchDepth ?? 0;
-
-  // 随身加成 = 全局升级 + 家灯塔船坞（getRunBonuses）+ 蛙跳出潜前哨的**在线**补给设施（深水区 Phase 2b）：
-  // 充电（电池总量）/ 充氧（氧气上限）只有在能源够（设施在线）时才计入（effectiveOutpostBonuses）。
-  let bonuses = getRunBonuses(state.profile);
-  if (launch?.lighthouse) {
-    const ob = effectiveOutpostBonuses(launch.lighthouse);
-    bonuses = {
-      ...bonuses,
-      powerMaxBonus: bonuses.powerMaxBonus + ob.rechargeBonus,
-      oxygenMaxBonus: bonuses.oxygenMaxBonus + ob.oxygenSupply,
-    };
-  }
-  return diveIntoBand(state, band, {
-    bonuses,
-    launchName,
-    launchDepth,
-    carryItems: opts?.carryItems,
-    seedKey: bandId,
-  });
 }

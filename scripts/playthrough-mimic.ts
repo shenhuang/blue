@@ -43,7 +43,7 @@ const SURVIVED = 'flag.mimic.false_beacon.survived';
 function deepFootholdState(): GameState {
   const base = createInitialGameState();
   const flags = new Set<string>();
-  for (let s = 1; s <= OUTPOST_USABLE_STAGE; s++) flags.add(outpostStageFlag('outpost.reef_deep', s));
+  for (let s = 1; s <= OUTPOST_USABLE_STAGE; s++) flags.add(outpostStageFlag('outpost.ch1_wreck', s));
   return { ...base, profile: { ...base.profile, flags } };
 }
 

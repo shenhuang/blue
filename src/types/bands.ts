@@ -50,7 +50,7 @@ export interface DepthBand {
    * 多事件「大房间」上限（声呐与房间 SPEC §6/§7 S1）：本 band 的事件房间最多含几个 feature。
    * 缺省 / ≤1（reef_deep 等不设）→ 永远单事件房间 ＝ 旧图逐字节不变（向后兼容、不破 mapgen 快照）。
    * >1（深 band 设 2–3）→ 事件房间偶尔升级成 2–3 feature 的大房间（大房间稀有）；深段内容（C）铺在其中，
-   * 配合声呐扫描「先看见一个开阔房间、再凑近逐个点亮」的探索质感。透传 startDiveFromOutpost → mapgen。
+   * 配合声呐扫描「先看见一个开阔房间、再凑近逐个点亮」的探索质感。透传 diveIntoBand（经 startDiveFromPoi） → mapgen。
    */
   maxRoomFeatures?: number;
   /**
@@ -67,7 +67,7 @@ export interface DepthBand {
   /**
    * 是否启用「猎手」（猎手 SPEC Phase 1·§2.6 范围门控）：true → 本 band 的高警觉遭遇升级成**有位置的逼近猎手**
    * （出现在你声呐量程外→逐回合沿图逼近→追到你才触发现有 ambushEncounters 伏击·复用现有捕食者不加新敌），
-   * 配合声呐「知道它在哪」/ 灯「只知道有东西在接近」的感知分层（§2.1）。落 run.huntEnabled（startDiveFromOutpost 透传）。
+   * 配合声呐「知道它在哪」/ 灯「只知道有东西在接近」的感知分层（§2.1）。落 run.huntEnabled（diveIntoBand（经 startDiveFromPoi） 透传）。
    * 缺省 / false（reef_deep / 非 band 的 POI 下潜 / 浅水）→ 走旧 alert→伏击瞬时路径＝逐字节不变（向后兼容·守 playthrough-stealth）。
    * Phase 1 范围＝深 band（trench+·越深越会 evadesSonar 躲扫描）；浅水小概率弱变体留 Phase 2（猎手 SPEC §7）。
    */

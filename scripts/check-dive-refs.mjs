@@ -1,14 +1,20 @@
 #!/usr/bin/env node
-// 深入潜点（灯塔/蛙跳重构 step ②③④·#125）的机制门——把「探深设施 ↔ 深入 POI」的约定变成
-// 会在 `npm run regress` 里失败的检查（仿 check-enemy-refs）。纯读 JSON·无 TS 依赖。任一不过 → exit 1。
+// 探深「深度柱」机制门（#131·重写自旧「探深↔深入 POI flag 配对」门·见 CHANGELOG #128 的旧四条）——
+// 把 depth_columns.json 的不变量变成会在 `npm run regress` 里失败的检查（仿 check-enemy-refs）。
+// 纯读 JSON·无 TS 依赖。任一不过 → exit 1。
 //
-// 四条门：
-//   (a) bandId 完整   —— 每个带 bandId 的 ChartPoi 引用的 band 都在 depth_bands.json 注册（悬空即红）。
-//   (b) 探深→POI 完整 —— 每个深入 POI（带 bandId）的 flag.probe.* requiresFlags 都有产出它的设施 setsFlag。
-//   (c) 无孤儿探深    —— 每个设施 setsFlag（flag.probe.*）都被某个深入 POI 的 requiresFlags 消费（否则建了白建）。
-//   (d) onlyLighthouse 完整 —— 每条 onlyLighthouse 设施轨指向的灯塔 id 真实存在（home / 前哨 / 废墟 result.id）。
+// 九条门：
+//   (a) lighthouseId 合法     —— 每根柱的宿主灯塔 id 真实存在（home / 前哨 result.id / 废墟 result.id）。
+//   (b) 一柱一灯塔            —— lighthouseId 不重复（一座灯塔至多一根柱）。
+//   (c) 柱 id 唯一            —— column.id 不重复、且形如 `col.<短名>`。
+//   (d) tier 连续单调         —— tiers 非空·tier 从 1 连续递增·每档 depthRange[0]<[1]·档间顶深非降（越深档越深）。
+//   (e) 账单在场              —— 每 tier cost.materials 是数组 + cost.gold 是数（≥0）。
+//   (f) zoneId 合法           —— column.zoneId 在 zones.json 注册。
+//   (g) 派生 band id 不撞     —— band.<短名>.t<tier> 不与 depth_bands.json 既有 id 冲突、彼此不重。
+//   (h) 派生 probe 升级 id 不撞 —— lighthouse.probe.<短名>.lv<tier> 不与 lighthouse_upgrades.json 既有 upgrade id 冲突。
+//   (i) 残留 bandId 可解析    —— 任何手写 ChartPoi.bandId（现应无·防回流）仍指向 depth_bands.json 注册 band。
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -17,32 +23,24 @@ const ROOT = join(HERE, '..');
 const DATA = join(ROOT, 'src', 'data');
 
 const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
-const PROBE_PREFIX = 'flag.probe.';
 
 const errors = [];
 const readJson = (p) => JSON.parse(readFileSync(join(DATA, p), 'utf8'));
 
-const chartPois = readJson('chart_pois.json');
+const columnsFile = readJson('depth_columns.json');
 const bandsFile = readJson('depth_bands.json');
 const lhFile = readJson('lighthouse_upgrades.json');
+const chartPois = readJson('chart_pois.json');
+const zonesFile = readJson('zones.json');
 
-// —— band id 集 ——
+const columns = columnsFile.columns ?? [];
+
+// —— 既有 id 集（用于碰撞检测）——
 const bandIds = new Set((bandsFile.bands ?? []).map((b) => b.id));
-
-// —— 全部 POI（anchors + roamingTemplates）——
-const allPois = [...(chartPois.anchors ?? []), ...(chartPois.roamingTemplates ?? [])];
-const deepPois = allPois.filter((p) => typeof p.bandId === 'string');
-
-// —— 设施 setsFlag（探深产出）+ onlyLighthouse 引用 ——
-const setsFlags = []; // {flag, upgradeId}
-const onlyLighthouseRefs = []; // {id, trackId}
+const zoneIds = new Set((zonesFile.zones ?? []).map((z) => z.id));
+const existingUpgradeIds = new Set();
 for (const track of lhFile.tracks ?? []) {
-  if (typeof track.onlyLighthouse === 'string') {
-    onlyLighthouseRefs.push({ id: track.onlyLighthouse, trackId: track.id });
-  }
-  for (const u of track.upgrades ?? []) {
-    if (typeof u.setsFlag === 'string') setsFlags.push({ flag: u.setsFlag, upgradeId: u.id });
-  }
+  for (const u of track.upgrades ?? []) existingUpgradeIds.add(u.id);
 }
 
 // —— 合法灯塔 id：home + 前哨 result.id + 废墟 result.id ——
@@ -50,37 +48,103 @@ const lighthouseIds = new Set([HOME_LIGHTHOUSE_ID]);
 for (const o of lhFile.outposts ?? []) if (o.result?.id) lighthouseIds.add(o.result.id);
 for (const r of lhFile.ruins ?? []) if (r.result?.id) lighthouseIds.add(r.result.id);
 
-// —— (a) bandId 完整 ——
-for (const p of deepPois) {
-  if (!bandIds.has(p.bandId)) {
-    errors.push(`[band] 深入 POI ${p.id ?? p.templateId}：bandId ${p.bandId} 不在 depth_bands.json`);
-  }
-}
+const short = (id) => String(id).replace(/^col\./, '');
 
-// —— (b) 探深→POI 完整：深入 POI 的 flag.probe.* 门必有产出 setsFlag ——
-const producedFlags = new Set(setsFlags.map((s) => s.flag));
-for (const p of deepPois) {
-  for (const f of p.requiresFlags ?? []) {
-    if (f.startsWith(PROBE_PREFIX) && !producedFlags.has(f)) {
-      errors.push(`[gate] 深入 POI ${p.id ?? p.templateId}：requiresFlags ${f} 无产出它的设施 setsFlag（POI 永不浮现）`);
+const seenColumnIds = new Set();
+const seenLighthouseIds = new Set();
+const derivedBandIds = new Set();
+
+for (const c of columns) {
+  const cid = c.id ?? '(无 id)';
+
+  // (c) 柱 id 唯一 + 命名
+  if (seenColumnIds.has(c.id)) errors.push(`[col-id] 柱 id 重复：${cid}`);
+  seenColumnIds.add(c.id);
+  if (typeof c.id !== 'string' || !/^col\./.test(c.id)) {
+    errors.push(`[col-id] 柱 id ${cid} 不形如 col.<短名>`);
+  }
+
+  // (a) lighthouseId 合法
+  if (!lighthouseIds.has(c.lighthouseId)) {
+    errors.push(`[host] 柱 ${cid}：lighthouseId ${c.lighthouseId} 不是合法灯塔 id（home / 前哨 / 废墟 result.id）`);
+  }
+  // (b) 一柱一灯塔
+  if (seenLighthouseIds.has(c.lighthouseId)) {
+    errors.push(`[host] 柱 ${cid}：lighthouseId ${c.lighthouseId} 被多根柱占用（一座灯塔至多一根柱）`);
+  }
+  seenLighthouseIds.add(c.lighthouseId);
+
+  // (f) zoneId 合法
+  if (!zoneIds.has(c.zoneId)) {
+    errors.push(`[zone] 柱 ${cid}：zoneId ${c.zoneId} 不在 zones.json`);
+  }
+
+  const tiers = c.tiers ?? [];
+  if (tiers.length === 0) errors.push(`[tier] 柱 ${cid}：tiers 为空`);
+
+  let prevTop = -Infinity;
+  tiers.forEach((t, i) => {
+    // (d) tier 连续递增（1-based）
+    if (t.tier !== i + 1) {
+      errors.push(`[tier] 柱 ${cid}：第 ${i + 1} 个 tier 的 tier=${t.tier}（应连续从 1 递增）`);
     }
+    // (d) depthRange 合法
+    const dr = t.depthRange;
+    if (!Array.isArray(dr) || dr.length !== 2 || !(dr[0] < dr[1])) {
+      errors.push(`[tier] 柱 ${cid} t${t.tier}：depthRange 非法（需 [min,max] 且 min<max）`);
+    } else {
+      // (d) 档间顶深非降（越深档越深）
+      if (dr[0] < prevTop) {
+        errors.push(`[tier] 柱 ${cid} t${t.tier}：顶深 ${dr[0]} < 上一档顶深 ${prevTop}（档须越来越深）`);
+      }
+      prevTop = dr[0];
+    }
+    // (e) 账单在场
+    const cost = t.cost ?? {};
+    if (!Array.isArray(cost.materials) || typeof cost.gold !== 'number' || cost.gold < 0) {
+      errors.push(`[cost] 柱 ${cid} t${t.tier}：cost 非法（需 materials[] + gold≥0）`);
+    }
+    // (g) 派生 band id 不撞
+    const bid = `band.${short(c.id)}.t${t.tier}`;
+    if (bandIds.has(bid)) errors.push(`[band] 柱 ${cid} t${t.tier}：派生 band id ${bid} 与 depth_bands.json 既有 id 冲突`);
+    if (derivedBandIds.has(bid)) errors.push(`[band] 派生 band id ${bid} 重复`);
+    derivedBandIds.add(bid);
+    // (h) 派生 probe 升级 id 不撞
+    const uid = `lighthouse.probe.${short(c.id)}.lv${t.tier}`;
+    if (existingUpgradeIds.has(uid)) {
+      errors.push(`[upgrade] 柱 ${cid} t${t.tier}：派生 probe 升级 id ${uid} 与 lighthouse_upgrades.json 既有 upgrade id 冲突`);
+    }
+  });
+}
+
+// (i) 残留手写 ChartPoi.bandId 仍可解析（现应无 poi.deep.*；派生 POI 不在 JSON 里·防回流悬空）。
+const allBandIds = new Set([...bandIds, ...derivedBandIds]);
+const authoredPois = [...(chartPois.anchors ?? []), ...(chartPois.roamingTemplates ?? [])];
+for (const p of authoredPois) {
+  if (typeof p.bandId === 'string' && !allBandIds.has(p.bandId)) {
+    errors.push(`[poi-band] 手写 POI ${p.id ?? p.templateId}：bandId ${p.bandId} 不在 depth_bands.json / 派生 band`);
   }
 }
 
-// —— (c) 无孤儿探深：每个 setsFlag 都被某深入 POI 消费 ——
-const consumedFlags = new Set();
-for (const p of allPois) for (const f of p.requiresFlags ?? []) consumedFlags.add(f);
-for (const { flag, upgradeId } of setsFlags) {
-  if (!consumedFlags.has(flag)) {
-    errors.push(`[orphan] 设施 ${upgradeId} 的 setsFlag ${flag} 无任何 POI requiresFlags 消费（建了白建）`);
+// (j) 事件 advanceOutpostId 必指向在册前哨（#131·防回流：旧深脊柱建造事件指向已删前哨＝无声 no-op）。
+const outpostIds = new Set((lhFile.outposts ?? []).map((o) => o.id));
+const EVENTS_DIR = join(DATA, 'events');
+const walkAdvance = (o, file) => {
+  if (!o || typeof o !== 'object') return;
+  if (Array.isArray(o)) return o.forEach((x) => walkAdvance(x, file));
+  if (typeof o.advanceOutpostId === 'string' && !outpostIds.has(o.advanceOutpostId)) {
+    errors.push(`[advanceOutpost] ${file}：advanceOutpostId ${o.advanceOutpostId} 不是在册前哨（lighthouse_upgrades.json outposts[]）`);
   }
-}
-
-// —— (d) onlyLighthouse 完整 ——
-for (const { id, trackId } of onlyLighthouseRefs) {
-  if (!lighthouseIds.has(id)) {
-    errors.push(`[onlyLighthouse] 设施轨 ${trackId}：onlyLighthouse ${id} 不是合法灯塔 id（home / 前哨 / 废墟 result.id）`);
+  for (const k of Object.keys(o)) walkAdvance(o[k], file);
+};
+for (const f of readdirSync(EVENTS_DIR).filter((n) => n.endsWith('.json'))) {
+  let ev;
+  try {
+    ev = JSON.parse(readFileSync(join(EVENTS_DIR, f), 'utf8'));
+  } catch {
+    continue;
   }
+  walkAdvance(ev, `events/${f}`);
 }
 
 // —— 汇报 ——
@@ -89,6 +153,7 @@ if (errors.length) {
   for (const e of errors) console.error('  - ' + e);
   process.exit(1);
 }
+const tierCount = columns.reduce((a, c) => a + (c.tiers?.length ?? 0), 0);
 console.log(
-  `✓ check-dive-refs：${deepPois.length} 深入 POI / ${setsFlags.length} 探深设施 · bandId 完整 · 探深↔POI 配对 · 无孤儿 · onlyLighthouse 合法`,
+  `✓ check-dive-refs：${columns.length} 根深度柱 / ${tierCount} 档 · 宿主合法 · 一柱一灯塔 · tier 连续单调 · 账单在场 · zone 合法 · 派生 band/probe id 不撞`,
 );

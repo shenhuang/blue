@@ -436,9 +436,11 @@ const calmRoam = calmChart.pois.filter((p) => !p.persistent && !p.mimic).length;
 // 非浓雾＝两个机会点全显；浓雾按 per-poi 概率遮一部分（≤2·不强求恰好遮 1·见 §3 robust 同理）。
 assert(calmRoam === 2, `7: 非浓雾应满 2 个机会点（实际 ${calmRoam}）`);
 assert(fogRoam <= 2, `7: 浓雾机会点 ≤2（实际 ${fogRoam}）`);
+// 只数真·zone/story 锚点（排除 #131 派生的深度柱深入 POI——它们也 persistent·但属档位制·不是天气轴）。
+const anchorCount = (c: { pois: { persistent: boolean; columnId?: string }[] }) =>
+  c.pois.filter((p) => p.persistent && p.columnId === undefined).length;
 assert(
-  fogChart.pois.filter((p) => p.persistent).length === 9 &&
-    calmChart.pois.filter((p) => p.persistent).length === 9,
+  anchorCount(fogChart) === 9 && anchorCount(calmChart) === 9,
   '7: 锚点不受天气遮蔽（9 个都在·守进度安全·#117 一章四锚点入列）',
 );
 assert(fogChart.conditions.weather === 'fog' && calmChart.conditions.weather !== 'fog', '7: SeaChart.conditions 落返回结构');
@@ -481,40 +483,50 @@ assert(
 L(`  远端 roaming 即时点亮(run ${clearRun}) + roaming 模板键 id 确定性(${ids1.length} 个) ✓`);
 
 // ============================================
-// 9. 「探深」设施派生深入潜点（灯塔/蛙跳重构 step ②·#125）：建升级置 flag → 深入 POI 在宿主灯塔圈内浮现；
-//    带 bandId 的 POI 走 band 绝对 depthRange 路径（与旧前哨蛙跳同源 diveIntoBand·落 band run 字段）。
+// 9. 探深「深度柱」→ 深入潜点（档位制·#131·取代旧 flag.probe.* 模型）：home 柱宿主=home 灯塔（恒在）；
+//    建到第 K 级 → 1…K 档 lit / K+1 档 dim / 更深 hidden（一级露一档）；带 bandId 的档走 band 绝对 depthRange 路径。
 // ============================================
-L('\n========== 9. 探深设施 → 深入 POI（bandId 下潜）==========');
-// 9a 发现门：未建近岸探深（无 flag.probe.reef_deep）→ 深入 POI 隐藏；置 flag → 在家灯塔圈内点亮。
+L('\n========== 9. 探深深度柱 → 深入 POI（档位制·#131）==========');
+// 9a 档位门：未建探深(0 级) → home 柱 t1 以暗点(dim)现身、t2 hidden；建 home 探深 lv1 → t1 转 lit。
 const preProbe = profileWith(['flag.tutorial_complete'], []);
-assert(
-  !generateChart({ profile: preProbe }).pois.some((p) => p.id === 'poi.deep.reef_deep'),
-  '9a: 未建探深 → 深入 POI「灯塔礁·深槽」隐藏（requiresFlags 门）',
-);
-const postProbe = profileWith(['flag.tutorial_complete', 'flag.probe.reef_deep'], []);
-const deepReef = generateChart({ profile: postProbe }).pois.find((p) => p.id === 'poi.deep.reef_deep');
-assert(deepReef?.revealState === 'lit', '9a: 建探深(置 flag.probe.reef_deep) → 深入 POI 在家灯塔圈内点亮');
-assert(deepReef?.bandId === 'band.reef_deep', '9a: 深入 POI 携带 bandId（band.reef_deep）');
-// 9b bandId 下潜走 band 路径：落 band 的 zone + alertFactor/hunts（区别于 zone+modifier 普通下潜默认 1/false）。
-const deepMouth: ChartPoi = {
-  id: 'poi.deep.trench_mouth',
+const preChartP = generateChart({ profile: preProbe });
+const preT1 = preChartP.pois.find((p) => p.id === 'poi.dive.home.t1');
+assert(preT1?.revealState === 'dim', '9a: 未建探深 → home 柱 t1 暗点(dim·看得到去不了)');
+assert(!preChartP.pois.some((p) => p.id === 'poi.dive.home.t2'), '9a: 第 2 档未露(hidden·更深不可见)');
+// 建 home 探深 lv1（直接置宿主 builtUpgrades·验档位揭示）。
+const probeProfile = (() => {
+  const base = createInitialGameState();
+  const lighthouses = base.profile.lighthouses.map((l) =>
+    l.id === 'lighthouse.home' ? { ...l, builtUpgrades: new Set(['lighthouse.probe.home.lv1']) } : l,
+  );
+  return { ...base.profile, flags: new Set(['flag.tutorial_complete']), lighthouses };
+})();
+const litT1 = generateChart({ profile: probeProfile }).pois.find((p) => p.id === 'poi.dive.home.t1');
+assert(litT1?.revealState === 'lit', '9a: 建 home 探深 lv1 → t1 转 lit');
+assert(litT1?.bandId === 'band.home.t1', '9a: 深入 POI 携带派生 bandId（band.home.t1）');
+assert(litT1?.columnId === 'col.home' && litT1?.depthTier === 1, '9a: 携带 columnId/depthTier（档位制门）');
+// 9b bandId 档下潜走 band 路径：落 band 的 zone + alertFactor/hunts（band.trench.t3：dark·alertFactor 1.4·hunts）。
+const deepTier: ChartPoi = {
+  id: 'poi.dive.trench.t3',
   zoneId: 'zone.blue_caves',
-  bandId: 'band.trench_mouth',
-  name: '竖井·口',
+  bandId: 'band.trench.t3',
+  columnId: 'col.trench',
+  depthTier: 3,
+  name: '竖井·喉',
   blurb: '',
-  distance: 2,
+  distance: 3,
   persistent: true,
 };
-const sDeep = startDiveFromPoi(createInitialGameState(), deepMouth);
-assert(sDeep.run?.zoneId === 'zone.blue_caves', '9b: bandId POI → 进 band 的 zone（blue_caves）');
+const sDeep = startDiveFromPoi(createInitialGameState(), deepTier);
+assert(sDeep.run?.zoneId === 'zone.blue_caves', '9b: bandId 档 → 进 band 的 zone（blue_caves）');
 assert(
-  sDeep.run?.bandAlertFactor === 1.3,
-  `9b: bandId POI → 落 band.alertFactor(1.3)，实 ${sDeep.run?.bandAlertFactor}`,
+  sDeep.run?.bandAlertFactor === 1.4,
+  `9b: bandId 档 → 落 band.trench.t3 alertFactor(1.4)，实 ${sDeep.run?.bandAlertFactor}`,
 );
-assert(sDeep.run?.huntEnabled === true, '9b: bandId POI → 落 band.hunts(true)');
-// 作者 2026-06-14 删「出海更近」/距离预耗氧：bandId 下潜也从第一回合起算（turn 0·满氧起手）。
-assert(sDeep.run?.turn === 0, `9b: bandId POI 从第一回合起算→turn=0，实 ${sDeep.run?.turn}`);
-L('  探深置 flag→深入 POI 浮现(家圈内) + bandId 走 band 路径(zone/alertFactor/hunts·无预耗氧) ✓');
+assert(sDeep.run?.huntEnabled === true, '9b: bandId 档 → 落 band.trench.t3 hunts(true)');
+// 每潜从第一回合起算（turn 0·满氧起手·#128）。
+assert(sDeep.run?.turn === 0, `9b: bandId 档从第一回合起算→turn=0，实 ${sDeep.run?.turn}`);
+L('  档位制(未建→t1 dim/t2 hidden·建 lv1→t1 lit) + bandId 走 band 路径(zone/alertFactor/hunts·turn0) ✓');
 
 // ============================================
 // 10. poiBlockReason（暗点「怎样才能去」一句话·作者 2026-06-14）：可去→null；能力门→「需要『X』」。

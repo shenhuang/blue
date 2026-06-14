@@ -279,7 +279,7 @@ L('\n========== 9. scanMemory round-trip ==========');
   const s = pingSonar(mk({ depth: 50 }));
   const back = deserializeGameState(serializeGameState(s));
   assert(back !== null, '9: 反序列化成功');
-  assert(back!.version === 4, '9: SAVE_VERSION 仍 4（未 bump）');
+  assert(back!.version === 5, '9: SAVE_VERSION（#131 已 bump 至 5·scanMemory 本身不影响）');
   assert(
     sameSet(sortedKeys(back!.run!.scanMemory ?? {}), sortedKeys(s.run!.scanMemory ?? {})),
     '9: scanMemory 原样 round-trip（普通对象、无需迁移）',
@@ -365,11 +365,11 @@ L('\n========== 11. 不可信扫描（S2）==========');
 
   // (c) effectiveFalseEchoSanity：缺省＝基线（守 sensors 回归）/ 深 band 抬高（越深越易骗）/ subhadal 回落 / 封顶
   assert(effectiveFalseEchoSanity(run({})) === SONAR_FALSE_ECHO_SANITY, '11c: 缺省 band → 恰好基线（零行为变化）');
-  const thrThroat = effectiveFalseEchoSanity(run({ dec: getBand('band.trench_throat')!.sonarDeception }));
+  const thrAbyssal = effectiveFalseEchoSanity(run({ dec: getBand('band.abyssal')!.sonarDeception }));
   const thrHadal = effectiveFalseEchoSanity(run({ dec: getBand('band.hadal')!.sonarDeception }));
   const thrSub = effectiveFalseEchoSanity(run({ dec: getBand('band.subhadal')!.sonarDeception }));
-  assert(thrThroat > SONAR_FALSE_ECHO_SANITY && thrHadal > thrThroat, '11c: 越深越易骗（throat < hadal）');
-  assert(thrSub < thrThroat, '11c: subhadal 失真回落＝『把戏都停了』（< throat，越深越骗的梯度在最底反转）');
+  assert(thrAbyssal > SONAR_FALSE_ECHO_SANITY && thrHadal > thrAbyssal, '11c: 越深越易骗（abyssal < hadal）');
+  assert(thrSub < thrAbyssal, '11c: subhadal 失真回落＝『把戏都停了』（< abyssal，越深越骗的梯度在最底反转）');
   assert(effectiveFalseEchoSanity(run({ dec: 99 })) === SONAR_FALSE_ECHO_SANITY_BAND_MAX, '11c: 深 band 失真有封顶（高 san 仍留一线可信）');
 
   // (d) 低 san 伪接触：低 san + 深 band → 幻影 blip；高 san → 无（大致为真）；锚在真实接触上
@@ -408,11 +408,11 @@ L('\n========== 11. 不可信扫描（S2）==========');
   assert(fp(genHadal(5, 0.32)) === fp(genHadal(5, 0.32)), '11f: 欺骗确定性（同 seed 两次一致·FNV 哈希不耗 rng）');
 
   // (g) 数据守则：band.sonarDeception 非单调（throat→hadal 升、subhadal 回落）；浅 band 不设
-  assert(getBand('band.reef_deep')!.sonarDeception === undefined, '11g: reef_deep 不设欺骗（浅段相对老实）');
-  assert(getBand('band.trench_mouth')!.sonarDeception === undefined, '11g: trench_mouth 不设欺骗');
+  assert(getBand('band.home.t1')!.sonarDeception === undefined, '11g: 浅柱档（home.t1）不设欺骗（浅段相对老实）');
+  assert(getBand('band.trench.t1')!.sonarDeception === undefined, '11g: 海沟柱浅档（trench.t1）不设欺骗');
   assert(
-    (getBand('band.subhadal')!.sonarDeception ?? 0) < (getBand('band.trench_throat')!.sonarDeception ?? 0),
-    '11g: subhadal 欺骗 < throat（越深越骗的梯度在渊外反转＝诱饵）',
+    (getBand('band.subhadal')!.sonarDeception ?? 0) < (getBand('band.abyssal')!.sonarDeception ?? 0),
+    '11g: subhadal 欺骗 < abyssal（越深越骗的梯度在渊外反转＝诱饵）',
   );
 
   L('  spoof/evade 表象 + 深 band 失真阈值(封顶/回落) + 低 san 伪接触/乱码 + mapgen 欺骗(门控/豁免/确定性) ✓');
@@ -484,7 +484,7 @@ L('\n========== 14. 声呐开/关窗口（§4 重做）==========');
 
   // (f) 存档 round-trip：sonarOn/sonarNext 普通布尔·保真·不 bump SAVE_VERSION
   const rt = deserializeGameState(serializeGameState(movedOff));
-  assert(rt!.version === 4, '14f: SAVE_VERSION 仍 4（未 bump）');
+  assert(rt!.version === 5, '14f: SAVE_VERSION（#131 已 bump 至 5·sonarOn 本身不影响）');
   assert(rt!.run!.sensors.sonarOn === false && rt!.run!.sensors.sonarNext === false, '14f: sonarOn/sonarNext round-trip 保真');
   L('  缺省开 / 切换只改下回合 / 移动落定 / 暴露按状态(on>off) / 本回合反悔扫一记 / 存档 round-trip ✓');
 }

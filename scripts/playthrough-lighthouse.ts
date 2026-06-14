@@ -7,7 +7,7 @@
 //
 // 灯塔此刻 inert（游戏流程还没调用这些）；本脚本单测引擎工具，为 Phase C reveal/reach 打底。
 // 信标(beacon)轨已删（作者 2026-06-14）：reveal 半径恒为区域配置·升级不再扩圈。
-// 主建造 fixture＝船坞（dockyard·homeOnly·单级）；需要两级链的门控子用例借探深轨（probe_hadal·引擎不查放置）。
+// 主建造 fixture＝船坞（dockyard·homeOnly·单级）；需要两级链的门控子用例借派生探深轨（probe.trench·引擎不查放置·#131）。
 // 跑法： npx tsx scripts/playthrough-lighthouse.ts
 
 import {
@@ -43,11 +43,11 @@ function assert(cond: unknown, msg: string): asserts cond {
 const HOME = 'lighthouse.home';
 // 主建造 fixture：船坞（lhtrack.dockyard·homeOnly·单级·requiresLighthouseLevel 1）。
 const DOCK = 'lighthouse.dockyard.lv1'; // coral×6 + old_fishing_net×3 + 20g → effect extraConsumableSlot 1
-// 两级链门控（needsPrev / 续级 lv2）借探深轨（lhtrack.probe_hadal·lv1→lv2）——
-// 引擎 canBuildAt/buildAtLighthouse 不查 homeOnly/onlyLighthouse 放置（那是 UI 侧过滤），
-// 故在 home 上跑它只为验「同轨须先建低一级 + 续级」的纯逻辑（与原 beacon lv1/lv2 等价）。
-const PROBE1 = 'lighthouse.probe_hadal.lv1'; // brass×4 + eel×2 + 160g（setsFlag flag.probe.hadal）
-const PROBE2 = 'lighthouse.probe_hadal.lv2'; // brass×5 + eel×3 + 200g, requiresLighthouseLevel 1
+// 两级链门控（needsPrev / 续级 lv2）借**派生探深轨**（lhtrack.probe.trench·#131 由 depth_columns.json 派生·lv1…lv6）——
+// 引擎 canBuildAt/buildAtLighthouse 不查 onlyLighthouse 放置（那是 UI 侧过滤·见 LighthouseBuildPanel），
+// 故在 home 上跑它只为验「同轨须先建低一级 + 续级」的纯逻辑（与原 beacon / probe_hadal 链等价）。
+const PROBE1 = 'lighthouse.probe.trench.lv1'; // 派生·brass×2 + 60g（effects 空＝纯门控·无 setsFlag）
+const PROBE2 = 'lighthouse.probe.trench.lv2'; // 派生·brass×3 + 90g, requiresLighthouseLevel 1
 
 function stateWith(inv: InventoryItem[], gold: number): GameState {
   const base = createInitialGameState();
@@ -148,10 +148,10 @@ assert(!canBuildAt(s3.profile, h, DOCK).ok && (canBuildAt(s3.profile, h, DOCK) a
 // 引擎不查放置门，故在 home 上建探深只为走 lv1→lv2 的级链逻辑（与原 beacon lv1/lv2 等价）。
 let sChain = stateWith(
   [
-    { itemId: 'item.brass_fitting', qty: 9 },
-    { itemId: 'item.eel_skin', qty: 5 },
+    { itemId: 'item.brass_fitting', qty: 5 },
+    { itemId: 'item.eel_skin', qty: 2 },
   ],
-  400,
+  200,
 );
 sChain = buildAtLighthouse(sChain, HOME, PROBE1);
 const hc1 = sChain.profile.lighthouses.find((l) => l.id === HOME)!;
@@ -159,14 +159,14 @@ assert(hc1.builtUpgrades.has(PROBE1), '探深 lv1 应建上');
 assert(canBuildAt(sChain.profile, hc1, PROBE2).ok, '建 lv1 后 lv2 应可建（home level 1 满足 requiresLighthouseLevel 1）');
 sChain = buildAtLighthouse(sChain, HOME, PROBE2);
 const hc2 = sChain.profile.lighthouses.find((l) => l.id === HOME)!;
-// lv1 扣 brass×4+eel×2、lv2 扣 brass×5+eel×3 → 共 brass 9（剩 0）/ eel 5（剩 0）。
+// 派生 trench 探深 lv1 扣 brass×2、lv2 扣 brass×3 → 共 brass 5（剩 0）；eel 是账单外料（探深不吃·应不动·仍剩 2）。
 assert(
   hc2.builtUpgrades.has(PROBE2) &&
     countInInventory(sChain.profile.inventory, 'item.brass_fitting') === 0 &&
-    countInInventory(sChain.profile.inventory, 'item.eel_skin') === 0,
-  'lv2 应建上、brass/eel 扣净清空（lv1+lv2 共 brass 9 / eel 5）',
+    countInInventory(sChain.profile.inventory, 'item.eel_skin') === 2,
+  'lv2 应建上、brass 扣净清空（lv1+lv2 共 brass 5）、账单外 eel 不动（仍 2）',
 );
-assert(getBuiltLevelInTrack(hc2, getLighthouseTracks().find((t) => t.id === 'lhtrack.probe_hadal')!) === 2, '探深轨进度应为 2');
+assert(getBuiltLevelInTrack(hc2, getLighthouseTracks().find((t) => t.id === 'lhtrack.probe.trench')!) === 2, '派生探深轨进度应为 2');
 L('  扣材料+金币正确 / 账单外料不动 / 只写目标灯塔 / 续级 / no-op / alreadyBuilt ✓');
 
 // ============================================
@@ -226,7 +226,7 @@ L('  船坞设施 → +1 消耗品槽（getLighthouseBonuses + getRunBonuses 桥
 L('\n========== 7. dev 测试建造（0 成本·#110 口径）==========');
 {
   // 空账户（无材料无金币）也能直建——跳过材料/金币/前置/灯塔等级。
-  // 借探深两级轨直跳 lv2（前置也不查）＝验「dev 跳过 needsPrev」（信标轨已删·改用 probe_hadal）。
+  // 借派生探深两级轨直跳 lv2（前置也不查）＝验「dev 跳过 needsPrev」（信标轨已删·改用派生 probe.trench·#131）。
   let sDev = stateWith([], 0);
   sDev = devBuildAtLighthouse(sDev, HOME, PROBE2); // 直跳 lv2=前置也不查
   const homeDev = sDev.profile.lighthouses.find((l) => l.id === HOME)!;

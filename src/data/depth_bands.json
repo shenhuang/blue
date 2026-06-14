@@ -1,60 +1,6 @@
 {
-  "_doc": "深度 band 全局阶梯（深水区 Phase 1）。每个 band 引用一个 zone 提供内容，用自己的绝对 depthRange 覆盖该 zone 的 depthRange（band 决定下到多深、zone 决定那里有什么）。软门控：不带硬解锁 flag——能否在这深度活下来由装备（声呐解锁+电池/升级，都吃深料）和后续强敌决定。深 band 更暗（visibility）→灯打不透→被迫用更耗电的声呐→电量压力间接抬升（不在耗电上加深度税）。order 升序＝越来越深、可续写更深 band（架构不硬编码地板）。trench_* 借蓝洞群的 maze mapgen 形状，但事件走 band 专属 tags（twilight/midnight）覆盖 zoneTagsByDepth＝专属事件池、与蓝洞内容隔离（深水区内容期）。专属 trench/abyss zone 仍可后续再拆。alertFactor（深水区 C）＝探测压力倍率：深度因子在 60m 饱和后更深 band 靠它继续越深越凶（reef_deep 缺省 1 / trench_mouth 1.3 / trench_throat 1.6），只乘暴露增益不动消退（摸黑/浅水逃生阀门买不断）。maxRoomFeatures（声呐与房间 S1）＝本 band 事件房间的多 feature 上限：深 band 设 2–3，事件房间偶尔升级成 2–3 feature 的「大房间」（大房间稀有），深段内容铺在其中、配合声呐扫描逐点点亮的探索质感；缺省（reef_deep 等）单事件＝旧图不变。sonarDeception（声呐与房间 S2）＝不可信声呐失真强度 0..1：mapgen 据此给部分内部节点掷 spoofsSonar（声呐图上假装成朝上的出口＝节点版 mimic）/evadesSonar（无回波），并抬高低 san 假回波/伪接触阈值（深 band 更易骗）。**非单调**：竖井喉 0.2→深渊 0.28→超渊 0.32 越深越骗，到渊外 subhadal 回落 0.06——『那些骗你的把戏都停了，因为它不必再骗』（越深越欺骗的梯度在最底反转成诱饵），再到无名渊 nameless 0.04（更不必骗——它扫回来的就是你自己的形状，谎不必撒了）。缺省（reef_deep/trench_mouth）0＝声呐相对老实、确定性哈希不耗 rng、零旧图改动。hunts（猎手 SPEC Phase 1）＝本 band 启用「有位置的逼近猎手」：高警觉时不再当场伏击，而是一只猎手在你声呐量程外现身、逐回合沿图逼近、追到你才触发现有 ambushEncounters（复用现有捕食者·不加新敌），配合声呐『知道它在哪』/灯『只知道有东西在接近』的感知分层。Phase 1 开在深 band（trench+·越深越会 evadesSonar 躲扫描）；缺省/false＝走旧 alert→伏击瞬时路径（向后兼容）。",
+  "_doc": "深度 band 注册表。#131 探深深度柱重构后，**手写 band 只剩 abyssal/hadal/subhadal/nameless 这四条『另一个世界』预留 band**——深脊柱浅段（reef_deep/trench_mouth/trench_throat）与四章节 band（ch1_*）已删，改由 depth_columns.json 各柱每级**派生** band（engine/columns.ts::columnBands·id=band.<短名>.t<tier>·并进 bands.ts 注册表）。这四条预留 band 暂无任何深度柱档抵达（海沟柱止于 ~108m·见 depth_columns.json）；它们是深水区 Phase 3『另一个世界』的脚手架（叙事 + sonarDeception 非单调梯度 + hunts），由专门 session 接入下行入口（d_reveal 别擅自动·见 deep_game_vision / 深水区 SPEC）。order 已重编为各自的顶深（108/140/180/230），使 getBands() 全局按深度升序（柱 band order=顶深·与之衔接：trench 柱 t6 order=100 → abyssal 108 → …）。band 旋钮语义见 types/bands.ts。sonarDeception 非单调：深渊 0.28→超渊 0.32 越深越骗，到渊外 subhadal 回落 0.06（『骗你的把戏都停了』）、无名渊 0.04（『扫回来的就是你自己的形状』）。",
   "bands": [
-    {
-      "id": "band.reef_deep",
-      "name": "灯塔礁·深槽",
-      "zoneId": "zone.old_lighthouse_reef",
-      "depthRange": [
-        45,
-        60
-      ],
-      "order": 1,
-      "visibility": "murky",
-      "blurb": "礁体侧面那道深槽的底。水冷下来，悬浮物把灯光散成一团白——还看得见，只是看不远。",
-      "danger": "悬浮物里灯只够看清面前一臂。声呐能扫远些，但回波信不信得过另说。"
-    },
-    {
-      "id": "band.trench_mouth",
-      "name": "竖井·口",
-      "zoneId": "zone.blue_caves",
-      "depthRange": [
-        60,
-        82
-      ],
-      "order": 2,
-      "visibility": "dark",
-      "alertFactor": 1.3,
-      "tags": [
-        "cave",
-        "twilight"
-      ],
-      "maxRoomFeatures": 2,
-      "hunts": true,
-      "blurb": "蓝洞群最里头，岩壁裂开一道一直向下的竖井。没人量过底。当地人说，从这儿下去的，水声是反着回来的。",
-      "danger": "黑水——没有声呐你会瞎着下去；灯打不透，举着只是费电。够不够强，下去才知道。"
-    },
-    {
-      "id": "band.trench_throat",
-      "name": "竖井·喉",
-      "zoneId": "zone.blue_caves",
-      "depthRange": [
-        82,
-        108
-      ],
-      "order": 3,
-      "visibility": "dark",
-      "alertFactor": 1.6,
-      "tags": [
-        "cave",
-        "midnight"
-      ],
-      "maxRoomFeatures": 2,
-      "sonarDeception": 0.2,
-      "hunts": true,
-      "blurb": "竖井在这里先收窄又骤然张开。越往下，声呐的回波越不像话——它扫出来的东西，和你点灯凑近看到的，对不上。",
-      "danger": "比上面更黑、更深。电量、理智、回波——到这里没有一样是你信得过的。"
-    },
     {
       "id": "band.abyssal",
       "name": "深渊·界",
@@ -63,7 +9,7 @@
         108,
         140
       ],
-      "order": 4,
+      "order": 108,
       "visibility": "dark",
       "alertFactor": 2.0,
       "tags": [
@@ -84,7 +30,7 @@
         140,
         180
       ],
-      "order": 5,
+      "order": 140,
       "visibility": "dark",
       "alertFactor": 2.5,
       "tags": [
@@ -105,7 +51,7 @@
         180,
         230
       ],
-      "order": 6,
+      "order": 180,
       "visibility": "dark",
       "alertFactor": 3.0,
       "tags": [
@@ -126,7 +72,7 @@
         230,
         290
       ],
-      "order": 7,
+      "order": 230,
       "visibility": "dark",
       "alertFactor": 3.5,
       "tags": [
@@ -138,57 +84,6 @@
       "hunts": true,
       "blurb": "渊外之外，连名字都用完了。这一层海图上没有，渊外那些『下去的理由』也停了——它不再递给你什么，因为往下的那个，已经不全是你，也不全是别的什么。声呐扫回来的是你的形状，黑里答你的是你的声音，你的记号在你没去过的前头等着你。到了这里，『你』和『它』，是同一个正在往下的东西。",
       "danger": "比渊外更里。没有要躲的怪物，也没有要拆穿的谎——要认清的是你自己：哪一半还想上去，哪一半已经不想。分得清的，才回得来。"
-    },
-    {
-      "id": "band.ch1_wreck",
-      "name": "温带商船残骸",
-      "zoneId": "zone.wreck_graveyard",
-      "depthRange": [
-        18,
-        50
-      ],
-      "order": 11,
-      "visibility": "murky",
-      "blurb": "点亮的残骸前哨脚下，那片沉船的墓园。水不深，悬浮的锈屑把灯光磨得发毛——你已经来过，认得路。",
-      "danger": "沉船的影子里不止一种比你想象中大的东西。来过不等于安全。"
-    },
-    {
-      "id": "band.ch1_midwater",
-      "name": "远洋中层",
-      "zoneId": "zone.open_midwater",
-      "depthRange": [
-        55,
-        85
-      ],
-      "order": 12,
-      "blurb": "离开任何岩壁的开阔蓝水。前哨的灯在身后，前方只有上下都望不到底的蓝——没有参照物，但你回得去。",
-      "danger": "开阔水里没有可躲的缝。被盯上了，只能靠速度。"
-    },
-    {
-      "id": "band.ch1_vent",
-      "name": "海沟热液场",
-      "zoneId": "zone.vent_trench",
-      "depthRange": [
-        85,
-        118
-      ],
-      "order": 13,
-      "visibility": "murky",
-      "blurb": "热液场的井与廊。黑烟柱在远处一根根立着，水是温的，灯照不透那团矿物的浑浊。前哨就架在井口。",
-      "danger": "热液口的浑浊里，盲鳗循着你的动静摸过来。"
-    },
-    {
-      "id": "band.ch1_trench",
-      "name": "蓝洞竖井",
-      "zoneId": "zone.blue_caves",
-      "depthRange": [
-        60,
-        82
-      ],
-      "order": 14,
-      "visibility": "dark",
-      "blurb": "海沟前哨脚下，那道一直往下的竖井。灯打进去就被黑吞掉，水声反着回来——你已经下来过，认得这股冷。",
-      "danger": "黑水竖井：没有声呐会瞎着下；灯照不透，只够看清面前一臂。"
     }
   ]
 }

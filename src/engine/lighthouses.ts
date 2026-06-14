@@ -27,9 +27,13 @@ import { appendLog, removeFromInventory, HOME_LIGHTHOUSE_ID } from './state';
 import { materialShortfall, describeUpgradeCost, getUpgradeBonuses } from './upgrades';
 import { ch1AnchorFlag, TUTORIAL_COMPLETE_FLAG, type Ch1Anchor } from './story';
 import { regionRadius } from './regions';
+import { columnProbeTracks } from './columns';
 
 const file = lighthouseData as unknown as LighthouseUpgradesFile;
-const TRACKS: LighthouseTrack[] = file.tracks;
+// 设施轨两来源（#131）：lighthouse_upgrades.json 手写轨（船坞/能源/勘测…）+ 各深度柱派生的「探深」轨
+// （columnProbeTracks·onlyLighthouse=宿主灯塔·各级 cost=该 tier 账单·effects 空＝纯门控）。合并后
+// INDEX/canBuildAt/buildAtLighthouse/getBuiltLevelInTrack/设施面板全部零改即认派生 probe 升级。
+const TRACKS: LighthouseTrack[] = [...file.tracks, ...columnProbeTracks()];
 const INDEX = new Map<string, { track: LighthouseTrack; def: LighthouseUpgradeDef }>();
 for (const track of TRACKS) {
   for (const def of track.upgrades) INDEX.set(def.id, { track, def });
@@ -425,11 +429,12 @@ export function restoreLighthouse(state: GameState, ruinId: string): GameState {
 // ============================================================
 // 复用灯塔网（点亮即 push 一座 Lighthouse、沿用 Phase C reveal/reach），但建造是**多阶段、跨 run 持久**：
 // 进度＝profile.flags 的阶段标记（outpostStageFlag），半亮扛过死亡、**不动存档形状**（作者 2026-06-04 未发布不迁移）。
-// 半亮（≥ OUTPOST_USABLE_STAGE）即可作蛙跳出潜点（dive.ts::startDiveFromOutpost 读 outpostStage 缩短下一更深 band 的预耗氧）。
+// 半亮（≥ OUTPOST_USABLE_STAGE）＝中间阶段已给部分收益（如 mimic「无灯之光」诱饵的软门控触发·chart.ts shouldLureMimic）。
+// #131 后老蛙跳已删——前哨建满 promote 成灯塔后，深入下潜走该灯塔的深度柱（depth_columns.json），不再由前哨直接起跳。
 
 /** 前哨建造的总阶段数（点亮）。OutpostDef.stages 长度应等于此。 */
 export const OUTPOST_MAX_STAGE = 3;
-/** 前哨可作蛙跳出潜点的最低阶段（半亮即起跳＝中间阶段已给部分收益）。 */
+/** 前哨「半亮」的最低阶段（中间阶段已给部分收益·如 mimic 诱饵软门控）。 */
 export const OUTPOST_USABLE_STAGE = 2;
 
 export function getOutposts(): OutpostDef[] {
@@ -458,10 +463,9 @@ export function isOutpostLit(profile: PlayerProfile, outpostId: string): boolean
 }
 
 // ── 章节哨站（章节哨站批·#118 §10 2026-06-12）──────────────────────────────
-// 章节前哨＝OutpostDef.requiresAnchor 已设的前哨（坐标落一章锚点②③④三区）。两条解耦约定：
-//   1. 解锁门：对应锚点节拍（ch1AnchorFlag）置位前为「暗」（已知但不可建），置位后转「可建」。
-//   2. 章节网：与 blue_caves 深 band 线性脊柱解耦——deepestOutpostLaunch 跳过章节哨站
-//      （不参与深脊柱自动起跳链）；章节蛙跳走显式 launchOutpostId（dive-start.ts），落本区 band。
+// 章节前哨＝OutpostDef.requiresAnchor/requiresFlag 已设的前哨（坐标落一章锚点②③④三区）。解锁门约定：
+//   解锁门：对应锚点节拍（ch1AnchorFlag）置位前为「暗」（已知但不可建），置位后转「可建」。
+// （#131 后老蛙跳已删——前哨建满 promote 成灯塔后，深入下潜走该灯塔的深度柱·见 depth_columns.json。）
 // flag 字符串单一来源在 story.ts（quirk #118）——这里只读 ch1AnchorFlag 的输出、不手拼 'story.*'。
 
 /** 是否章节前哨（requiresAnchor 或 requiresFlag 已设）。深脊柱前哨两者皆缺省 → false，行为逐字节不变。 */
@@ -483,16 +487,6 @@ export function outpostUnlocked(profile: PlayerProfile, outpostId: string): bool
   }
   if (def.requiresFlag !== undefined) return profile.flags.has(def.requiresFlag); // 非锚点章节门（海沟·剧情节拍待接）
   return true;
-}
-
-/** band 对应的章节哨站（若该 band 是某章节前哨服务的本区 band）。无 → undefined（深 band / 非章节）。 */
-export function chapterOutpostForBand(bandId: string): OutpostDef | undefined {
-  return OUTPOSTS.find((o) => isChapterOutpost(o) && o.bandId === bandId);
-}
-
-/** band 是否为章节区 band（有章节哨站服务它）。深脊柱 band → false。 */
-export function isChapterBand(bandId: string): boolean {
-  return chapterOutpostForBand(bandId) !== undefined;
 }
 
 /**

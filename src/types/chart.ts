@@ -77,6 +77,15 @@ export interface ChartPoi {
    * band 引用悬空由 check-dive-refs 焊成 regress 红（step ④ 接）。
    */
   bandId?: string;
+  /**
+   * 探深「深度柱」深入潜点（#131）：columnId+depthTier 一起设 ⇒ 本 POI 是某根深度柱的第 depthTier 档。
+   * 可见性走**档位制**（不走发现/揭示圈/天气）：poiRevealState 直接由 columnBuiltLevel(columnId) vs depthTier
+   * 派生（≥→lit / ==+1→dim / else hidden）；dim 的 poiBlockReason＝「再推一级探深」。这类 POI 由
+   * engine/columns.ts::buildColumnPois 从 depth_columns.json 派生注入（非手写）·摆宿主灯塔揭示圈内。
+   * bandId 同时设（=该档派生 band）⇒ 走 band 绝对 depthRange 下潜路径。
+   */
+  columnId?: string;
+  depthTier?: number;
   /** true = 持久 anchor（永远在）；false = roaming（每次回港刷新） */
   persistent: boolean;
   /** 抵达能力门控：需要某全局升级（hasUpgrade）。未满足 → 海图上灰显可见但不能出海。 */

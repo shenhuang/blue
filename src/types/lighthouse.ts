@@ -120,20 +120,18 @@ export interface OutpostStageDef {
 export interface OutpostDef {
   id: string;
   name: string;
-  /** 本前哨所在的 band（决定蛙跳出潜深度 = 该 band 底；只服务 order 更深的 band）。 */
-  bandId: string;
+  // 注：旧 `bandId`（蛙跳出潜 band）已删（#131 探深深度柱重构·老蛙跳废弃）——前哨建满 promote 成灯塔后，
+  // 深入下潜走该灯塔的**深度柱**（depth_columns.json·lighthouseId 指向 result.id），不再由前哨直接蛙跳。
   /**
    * 章节哨站解锁门（章节哨站批·#118 §10 2026-06-12）：设了 = 本哨站是**章节前哨**，
    * 在对应一章锚点节拍（ch1AnchorFlag(requiresAnchor)）置位前为「暗」（已知但不可建·见 outpostUnlocked），
    * 锚点完成后才转「可建」。值为 Ch1Anchor 字符串（'wreck'|'midwater'|'vent'；reef 由 home 灯塔覆盖不设哨站）。
-   * **同时把本哨站标记为「章节网」**——与 blue_caves 深 band 线性脊柱解耦：deepestOutpostLaunch
-   * 跳过章节哨站（不参与深脊柱自动起跳链），章节蛙跳走显式 launchOutpostId（startDiveFromOutpost）。
-   * 缺省（深脊柱前哨 reef_deep/trench_deep/… 不设）→ 无门、行为逐字节不变。
+   * 缺省 → 非章节前哨（无门）。#131 后所有前哨都是章节前哨（深脊柱前哨已删）。
    */
   requiresAnchor?: string;
   /**
    * 章节前哨解锁门（非锚点版·区域揭示配置化 SPEC）：设了 = 本哨站也是**章节前哨**
-   * （isChapterOutpost/isChapterBand/isOutpostDiscovered/decoupling 同 requiresAnchor），
+   * （isChapterOutpost/isOutpostDiscovered 同 requiresAnchor），
    * 但解锁门是任意一个剧情 flag（不占用 story.ts 的 4 个 canon anchor·守 quirk #117/#118）。
    * 海沟区用它：剧情节拍待作者接（占位 flag），dev 一键解锁（devUnlockChapterRegion）置该 flag。
    * requiresAnchor 与 requiresFlag 二选一（前者优先）；都缺省 → 深脊柱前哨·无门。

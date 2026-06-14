@@ -1,0 +1,299 @@
+{
+  "_doc": "探深「深度柱」配置（#131·单一来源·data-driven）。每座灯塔一根向下的柱：建到第 K 级 probe（探深 Lv.K）→ 深度档 1…K 可下潜(lit)、第 K+1 档暗点现身(dim·看得到去不了)、更深 hidden（depthTierRevealState·一级露一档）。每根柱＝engine/columns.ts 派生出：① 一组 band（每 tier 一个·id=band.<短名>.t<tier>·绝对 depthRange 覆盖 zone·并进 bands.ts 注册表）；② 一条 probe 升级轨（id=lhtrack.probe.<短名>·onlyLighthouse=lighthouseId·各级 cost=该 tier 账单·并进 lighthouses.ts 注册表·设施面板/canBuildAt/buildAtLighthouse 零改消费）；③ 海图深入 POI（id=poi.dive.<短名>.t<tier>·摆宿主灯塔揭示圈内·revealState 由 columnBuiltLevel vs tier 派生）。**可拓展＝硬要求**：新灯塔（鲸落营地/后续章节）只加一条 column 即有自己的柱，不碰引擎。tier 旋钮语义同 DepthBand（types/bands.ts）。最深留后续 Phase：各柱止于「能见底」中段（海沟 6 级止于 ~108m）；abyssal/hadal/nameless『另一个世界』在 depth_bands.json 作预留 band、暂无柱档抵达（专门 Phase·见 deep_game_vision）。**数值为占位起手值**（从旧 band 深度/探深料价推导·作者之后直接改数字调手感·结构不动·check-dive-refs 守 tier 连续单调/账单在场/派生 id 不撞）。",
+  "columns": [
+    {
+      "id": "col.home",
+      "lighthouseId": "lighthouse.home",
+      "zoneId": "zone.old_lighthouse_reef",
+      "name": "灯塔礁",
+      "blurb": "家灯塔脚下，礁体侧面那道一直沉下去的深槽。",
+      "tiers": [
+        {
+          "tier": 1,
+          "depthRange": [30, 45],
+          "label": "礁壁·上槽",
+          "visibility": "murky",
+          "blurb": "礁壁外侧的第一道台阶。水凉下来，悬浮物把灯散成白雾——还看得见，只是看不远。",
+          "cost": { "materials": [{ "itemId": "item.brass_fitting", "qty": 1 }], "gold": 30 }
+        },
+        {
+          "tier": 2,
+          "depthRange": [45, 60],
+          "label": "礁壁·深槽",
+          "visibility": "murky",
+          "alertFactor": 1.1,
+          "blurb": "深槽的底。冷，白雾更厚，礁体在头顶合拢成一道窄缝。",
+          "danger": "悬浮物里灯只够看清面前一臂。声呐能扫远些，但回波信不信得过另说。",
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 2 },
+              { "itemId": "item.crab_chitin", "qty": 1 }
+            ],
+            "gold": 55
+          }
+        }
+      ]
+    },
+    {
+      "id": "col.wreck",
+      "lighthouseId": "lighthouse.ch1_wreck_outpost",
+      "zoneId": "zone.wreck_graveyard",
+      "name": "残骸",
+      "blurb": "残骸前哨脚下那片沉船的墓园。",
+      "tiers": [
+        {
+          "tier": 1,
+          "depthRange": [18, 30],
+          "label": "船舱·上层",
+          "visibility": "murky",
+          "blurb": "侧躺商船的上层甲板。锈屑把灯磨得发毛，鱼群在断裂的舷窗间进出。",
+          "cost": { "materials": [{ "itemId": "item.coral_shard", "qty": 3 }], "gold": 40 }
+        },
+        {
+          "tier": 2,
+          "depthRange": [30, 42],
+          "label": "船舱·中层",
+          "visibility": "murky",
+          "blurb": "舱室一层层往下塌。过道里淤着沙，关着的门后面什么都可能有。",
+          "cost": {
+            "materials": [
+              { "itemId": "item.brass_fitting", "qty": 2 },
+              { "itemId": "item.crab_chitin", "qty": 1 }
+            ],
+            "gold": 70
+          }
+        },
+        {
+          "tier": 3,
+          "depthRange": [42, 55],
+          "label": "船舱·龙骨",
+          "visibility": "dark",
+          "alertFactor": 1.2,
+          "blurb": "压在大陆架上的龙骨。这里灯打不透，沉船的影子里不止一种比你想象中大的东西。",
+          "danger": "来过不等于安全。龙骨下面的黑里有东西循着你的动静摸过来。",
+          "cost": {
+            "materials": [
+              { "itemId": "item.crab_chitin", "qty": 2 },
+              { "itemId": "item.eel_skin", "qty": 1 }
+            ],
+            "gold": 100
+          }
+        }
+      ]
+    },
+    {
+      "id": "col.midwater",
+      "lighthouseId": "lighthouse.ch1_midwater_outpost",
+      "zoneId": "zone.open_midwater",
+      "name": "中层",
+      "blurb": "离开任何岩壁的开阔蓝水。前哨的灯在身后，前方上下都望不到底。",
+      "tiers": [
+        {
+          "tier": 1,
+          "depthRange": [55, 63],
+          "label": "中层·散射层",
+          "blurb": "深海散射层。声呐返回一整道平台，靠近它就退——是亿万小生物叠成的假底。",
+          "cost": { "materials": [{ "itemId": "item.coral_shard", "qty": 3 }], "gold": 50 }
+        },
+        {
+          "tier": 2,
+          "depthRange": [63, 71],
+          "label": "中层·温跃",
+          "visibility": "murky",
+          "blurb": "温跃层。水的两侧形状都扭曲，穿越的瞬间冷了四度。",
+          "cost": { "materials": [{ "itemId": "item.brass_fitting", "qty": 2 }], "gold": 80 }
+        },
+        {
+          "tier": 3,
+          "depthRange": [71, 79],
+          "label": "中层·暮光",
+          "visibility": "murky",
+          "alertFactor": 1.2,
+          "blurb": "光开始用完。上方还剩一点蓝，下方已是匀质的灰——没有参照物，但你回得去。",
+          "cost": { "materials": [{ "itemId": "item.crab_chitin", "qty": 3 }], "gold": 110 }
+        },
+        {
+          "tier": 4,
+          "depthRange": [79, 87],
+          "label": "中层·无生水",
+          "visibility": "dark",
+          "alertFactor": 1.3,
+          "maxRoomFeatures": 2,
+          "blurb": "氧最少层。不闻不见，但深度计和气量都对不上。开阔水里没有可躲的缝。",
+          "danger": "被盯上了，只能靠速度——这里没有岩壁让你贴。",
+          "cost": { "materials": [{ "itemId": "item.eel_skin", "qty": 2 }], "gold": 140 }
+        }
+      ]
+    },
+    {
+      "id": "col.vent",
+      "lighthouseId": "lighthouse.ch1_vent_outpost",
+      "zoneId": "zone.vent_trench",
+      "name": "热液",
+      "blurb": "热液场的井与廊。黑烟柱在远处一根根立着，水是温的，灯照不透那团矿物的浑浊。",
+      "tiers": [
+        {
+          "tier": 1,
+          "depthRange": [85, 93],
+          "label": "热液·井缘",
+          "visibility": "murky",
+          "current": "mild",
+          "blurb": "热液井的边缘。雪人蟹举着白毛的螯肢在热流里扫动，毛里养着化能细菌。",
+          "cost": { "materials": [{ "itemId": "item.brass_fitting", "qty": 2 }], "gold": 70 }
+        },
+        {
+          "tier": 2,
+          "depthRange": [93, 101],
+          "label": "热液·烟柱林",
+          "visibility": "murky",
+          "current": "mild",
+          "alertFactor": 1.2,
+          "blurb": "黑烟柱成片立着，水温忽高忽低。硫磺加划火柴的气味从换气湿气里渗进来。",
+          "cost": { "materials": [{ "itemId": "item.eel_skin", "qty": 2 }], "gold": 100 }
+        },
+        {
+          "tier": 3,
+          "depthRange": [101, 109],
+          "label": "热液·管虫林",
+          "visibility": "dark",
+          "current": "mild",
+          "alertFactor": 1.3,
+          "maxRoomFeatures": 2,
+          "blurb": "两米高的白管红羽冠——进去了才发现已经在里面。灯吃不透这团浑。",
+          "cost": {
+            "materials": [
+              { "itemId": "item.lantern_gland", "qty": 1 },
+              { "itemId": "item.eel_skin", "qty": 1 }
+            ],
+            "gold": 140
+          }
+        },
+        {
+          "tier": 4,
+          "depthRange": [109, 117],
+          "label": "热液·裂口",
+          "visibility": "dark",
+          "current": "strong",
+          "alertFactor": 1.5,
+          "maxRoomFeatures": 2,
+          "sonarDeception": 0.1,
+          "hunts": true,
+          "blurb": "玄武岩地板裂开一道开合的口，喷热水柱，节律性，像在呼吸。急流一直在拽你。",
+          "danger": "急流、热水、循着体温摸过来的东西。这个深度，回波也开始不老实了。",
+          "cost": {
+            "materials": [
+              { "itemId": "item.cave_octopus_beak", "qty": 1 },
+              { "itemId": "item.eel_skin", "qty": 2 }
+            ],
+            "gold": 180
+          }
+        }
+      ]
+    },
+    {
+      "id": "col.trench",
+      "lighthouseId": "lighthouse.ch1_trench_outpost",
+      "zoneId": "zone.blue_caves",
+      "name": "海沟",
+      "blurb": "海沟前哨脚下，那道一直往下的竖井。灯打进去就被黑吞掉，水声反着回来。",
+      "tiers": [
+        {
+          "tier": 1,
+          "depthRange": [60, 68],
+          "label": "竖井·口",
+          "visibility": "dark",
+          "tags": ["cave", "twilight"],
+          "alertFactor": 1.2,
+          "maxRoomFeatures": 2,
+          "blurb": "竖井的口沿。岩壁裂开一道一直向下的缝，没人量过底。",
+          "danger": "黑水——没有声呐你会瞎着下去；灯打不透，举着只是费电。",
+          "cost": { "materials": [{ "itemId": "item.brass_fitting", "qty": 2 }], "gold": 60 }
+        },
+        {
+          "tier": 2,
+          "depthRange": [68, 76],
+          "label": "竖井·上喉",
+          "visibility": "dark",
+          "tags": ["cave", "twilight"],
+          "alertFactor": 1.3,
+          "maxRoomFeatures": 2,
+          "blurb": "竖井在这里先收窄。水声反着回来，越往下越不像话。",
+          "cost": { "materials": [{ "itemId": "item.brass_fitting", "qty": 3 }], "gold": 90 }
+        },
+        {
+          "tier": 3,
+          "depthRange": [76, 84],
+          "label": "竖井·喉",
+          "visibility": "dark",
+          "tags": ["cave", "twilight"],
+          "alertFactor": 1.4,
+          "maxRoomFeatures": 2,
+          "sonarDeception": 0.1,
+          "hunts": true,
+          "blurb": "喉部骤然张开又收紧。声呐扫出来的东西，和你点灯凑近看到的，对不上。",
+          "danger": "电量、理智、回波——到这里没有一样是你信得过的。",
+          "cost": { "materials": [{ "itemId": "item.eel_skin", "qty": 2 }], "gold": 120 }
+        },
+        {
+          "tier": 4,
+          "depthRange": [84, 92],
+          "label": "竖井·下喉",
+          "visibility": "dark",
+          "tags": ["cave", "midnight"],
+          "alertFactor": 1.5,
+          "maxRoomFeatures": 2,
+          "sonarDeception": 0.15,
+          "hunts": true,
+          "blurb": "过了喉就只剩往下的黑。灯圈缩成一臂，黑里有东西在你扫不到的地方挪。",
+          "cost": {
+            "materials": [
+              { "itemId": "item.lantern_gland", "qty": 1 },
+              { "itemId": "item.eel_skin", "qty": 2 }
+            ],
+            "gold": 160
+          }
+        },
+        {
+          "tier": 5,
+          "depthRange": [92, 100],
+          "label": "竖井·深段",
+          "visibility": "dark",
+          "tags": ["cave", "midnight"],
+          "alertFactor": 1.6,
+          "maxRoomFeatures": 3,
+          "sonarDeception": 0.18,
+          "hunts": true,
+          "blurb": "石壁开始退。水成了纯粹的、向下的黑，连『下到多深』都开始没有意义。",
+          "danger": "下得来，未必上得去。",
+          "cost": {
+            "materials": [
+              { "itemId": "item.cave_octopus_beak", "qty": 1 },
+              { "itemId": "item.eel_skin", "qty": 3 }
+            ],
+            "gold": 200
+          }
+        },
+        {
+          "tier": 6,
+          "depthRange": [100, 108],
+          "label": "竖井·见底",
+          "visibility": "dark",
+          "tags": ["cave", "midnight"],
+          "alertFactor": 1.8,
+          "maxRoomFeatures": 3,
+          "sonarDeception": 0.2,
+          "hunts": true,
+          "blurb": "声呐还能勉强探到一道底——再往下，就是没有底、没有壁的地方了。这根柱到此为止。",
+          "danger": "比最深更深的还在下面，只是这根柱探不到。别把『见底』当成『到底』。",
+          "cost": {
+            "materials": [
+              { "itemId": "item.cave_octopus_beak", "qty": 2 },
+              { "itemId": "item.lantern_gland", "qty": 2 }
+            ],
+            "gold": 250
+          }
+        }
+      ]
+    }
+  ]
+}

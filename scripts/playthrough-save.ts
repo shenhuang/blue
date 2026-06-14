@@ -164,7 +164,7 @@ L('  损坏 JSON → null ✓');
 // 3. 版本不等于当前 SAVE_VERSION（更高 / 更低 / 缺失）→ null（未发布不迁移 · quirk #99）
 const future = JSON.stringify({ ...JSON.parse(raw), version: 999 });
 assert(deserializeGameState(future) === null, '更高 version 应拒绝（返回 null）');
-for (const oldV of [0, 1, 2, 3]) {
+for (const oldV of [0, 1, 2, 3, 4]) {
   const oldObj = JSON.parse(raw);
   oldObj.version = oldV;
   assert(
@@ -205,7 +205,7 @@ L('  非浏览器环境 loadGame() → null ✓');
   // (c) 合法当前版本存档 → 正常读取、不删
   store[SAVE_KEY] = raw;
   const ok = loadGame();
-  assert(ok && ok.version === 4, '当前版本存档应正常读取');
+  assert(ok && ok.version === 5, '当前版本存档应正常读取');
   assert(SAVE_KEY in store, '合法存档不应被删除');
   delete (globalThis as { localStorage?: unknown }).localStorage;
 }

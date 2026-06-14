@@ -12,4 +12,5 @@ export * from './upgrades';
 export * from './lighthouse';
 export * from './chart';
 export * from './bands';
+export * from './columns';
 export * from './changelog';

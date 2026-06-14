@@ -13,7 +13,10 @@ import type {
 } from '@/types';
 import { POWER_MAX, deriveSensorTuning } from './clarity';
 
-const SAVE_VERSION = 4;
+// 5（#131 探深深度柱重构）：门控模型从「flag.probe.* 解锁」改档位制、旧 probe 升级 id 改 lighthouse.probe.<柱>.lv<级>、
+// 深脊柱 band/前哨删——旧档残留 flag.probe.* / 旧 probe builtUpgrades / 删除前哨的阶段 flag 都已无意义。
+// 未发布不写迁移（quirk #99）：版本不符 → 启动即弃旧档、从头开始。
+const SAVE_VERSION = 5;
 
 /** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile 用。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';

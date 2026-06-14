@@ -322,7 +322,7 @@ export interface RunState {
    */
   diveModifier?: PoiModifier;
   /**
-   * 本次蛙跳下潜所在 band 的探测压力倍率（深水区 C）：startDiveFromOutpost 从 band.alertFactor 落到 run，
+   * 本次蛙跳下潜所在 band 的探测压力倍率（深水区 C）：diveIntoBand（经 startDiveFromPoi） 从 band.alertFactor 落到 run，
    * clarity.ts::alertDelta 乘进暴露增益＝更深 band 在深度因子饱和后仍「越深越凶」。
    * createNewRun 种 1（无加压）＝POI 下潜默认；旧档由 hydrateGameState 单点补 1。派生自 band，
    * 未发布不 bump SAVE_VERSION（JSON 自动 round-trip）。
@@ -335,14 +335,14 @@ export interface RunState {
    */
   scanMemory: Record<string, number>;
   /**
-   * 本次蛙跳下潜所在 band 的不可信声呐失真强度（声呐与房间 SPEC §5/§7 S2）：startDiveFromOutpost 从
+   * 本次蛙跳下潜所在 band 的不可信声呐失真强度（声呐与房间 SPEC §5/§7 S2）：diveIntoBand（经 startDiveFromPoi） 从
    * band.sonarDeception 落到 run，clarity.ts::effectiveFalseEchoSanity 据此抬高低 san 假回波/伪接触/读数乱码阈值
    * （深 band 更易骗，subhadal 回落＝『把戏都停了』）。createNewRun 种 0（声呐相对老实）＝POI 下潜 / 浅水默认；
    * 旧档由 hydrateGameState 单点补 0。派生自 band，未发布不 bump SAVE_VERSION（JSON 自动 round-trip）。
    */
   sonarDeception: number;
   /**
-   * 本次下潜是否启用「猎手」（猎手 SPEC Phase 1·§2.6 范围门控）：startDiveFromOutpost 从 DepthBand.hunts 落到 run。
+   * 本次下潜是否启用「猎手」（猎手 SPEC Phase 1·§2.6 范围门控）：diveIntoBand（经 startDiveFromPoi） 从 DepthBand.hunts 落到 run。
    * 真 → moveToNode 走有位置的逼近猎手（出现→逼近→接触触发现有伏击）；假（createNewRun 种 false＝
    * POI 下潜/浅水默认·旧档由 hydrateGameState 单点补 false）→ 走旧 alert→maybeApproachEncounter 瞬时
    * 伏击（逐字节不变·守 playthrough-stealth）。派生自 band，不 bump SAVE_VERSION。

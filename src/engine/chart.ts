@@ -23,6 +23,7 @@ import {
   LIGHT_RADIUS_PER_BONUS,
 } from './lighthouses';
 import { flagGatedRegions } from './regions';
+import { buildColumnPois, columnBuiltLevel, depthTierRevealState } from './columns';
 
 /**
  * 归一化海图距离 → "distance 档"的换算系数（reach，SPEC §4/§9 tunable）。
@@ -207,6 +208,12 @@ function climateOcclusion(profile: PlayerProfile, poi: ChartPoi): 'none' | 'dim'
  */
 export function poiRevealState(profile: PlayerProfile, poi: ChartPoi): PoiRevealState {
   if (poi.mimic) return 'lit'; // 无灯之光：海图上「亮且可去」的诱饵
+  // 探深「深度柱」深入潜点（#131）：可见性走**档位制**——该柱已建探深级数 vs 本档 depthTier
+  // （≥→lit / ==+1→dim / else hidden·一级露一档）。不走发现/揭示圈/天气（柱潜点摆宿主灯塔圈内、
+  // 灯塔在即随柱浮现；它该不该亮只看探深建到第几级）。
+  if (poi.columnId !== undefined && poi.depthTier !== undefined) {
+    return depthTierRevealState(columnBuiltLevel(profile, poi.columnId), poi.depthTier);
+  }
   if (!flagsSatisfied(profile, poi.requiresFlags)) return 'hidden';
   if (!isPoiLit(profile, poi)) {
     // 勘测暗圈（Req A）：在勘测圈内（revealRadius 外）→ dim（可见不可去）。
@@ -271,6 +278,10 @@ export function isPoiDepartable(profile: PlayerProfile, poi: ChartPoi): boolean 
  */
 export function poiBlockReason(profile: PlayerProfile, poi: ChartPoi): string | null {
   if (isPoiDepartable(profile, poi)) return null;
+  // 探深「深度柱」暗档（#131）：dim 只因「探深还没建到这一级」——给一句可执行的话。
+  if (poi.columnId !== undefined && poi.depthTier !== undefined) {
+    return '把这座灯塔的探深再推一级（建下一级探深），才下得到这一档';
+  }
   // 不在任何「可去」圈内 → 勘测暗点（hidden 已被 poiRevealState 滤掉·能 visible 说明落在勘测圈内）。
   if (!isPoiLit(profile, poi)) {
     return '把更近的灯塔/前哨点亮才能去（现只勘测到）';
@@ -344,6 +355,10 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
     const st = poiRevealState(profile, poi);
     if (st !== 'hidden') pois.push({ ...poi, revealState: st });
   }
+
+  // 探深「深度柱」深入潜点（#131）：每座已建灯塔的柱按探深级数派生 lit/dim 档（hidden 不入）。
+  // buildColumnPois 已带 revealState（档位制·见 columns.ts/poiRevealState）；宿主灯塔未建的柱不出潜点。
+  for (const p of buildColumnPois(profile)) pois.push(p);
 
   // 深水区 Phase 3：mimic「无灯之光」假 POI（§3.5）。软门控——你在深处立了脚后才被引诱。
   // 恒 lit（诱饵）：isPoiLit 恒真 · isPoiExplainedByLighthouse 恒假 → UI 给「不在你网里」的宏观 tell。
