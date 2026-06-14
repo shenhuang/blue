@@ -19,6 +19,7 @@ import {
   describePoi,
   describeCaveShape,
 } from '../src/engine/chart';
+import { regionForOwner, regionConfigErrors, flagGatedRegions } from '../src/engine/regions';
 import { generateDiveMap, analyzeMap, caveShapeBucket } from '../src/engine/mapgen';
 import { startDiveFromPoi, currentMoveCost } from '../src/engine/dive';
 import { tickTurns, visibilitySanityDrain } from '../src/engine/events';
@@ -75,14 +76,15 @@ function withHomeDockyard(profile: PlayerProfile): PlayerProfile {
  * 用于测 roaming 多样性 / 区域内 anchor 的下潜机制（不被「教学后只家区」门控挡住）。
  */
 function fullyRevealedProfile(runsCompleted = 0): PlayerProfile {
-  const base = profileWith(['flag.tutorial_complete'], [], runsCompleted);
+  // 鲸落区是 flag-gated（owner-less·§10）：由 story.ch1.whalefall_found 揭示·不靠灯塔——
+  // 「全区揭示」档把它一并种上（其余区靠下面 owner 前哨灯塔揭示）。
+  const base = profileWith(['flag.tutorial_complete', 'story.ch1.whalefall_found'], [], runsCompleted);
   // v4 横向布局坐标（与 data/lighthouse_upgrades.json result + chart_regions owner 一致）。
   const outpostLighthouses: Lighthouse[] = [
     { id: 'lighthouse.ch1_wreck_outpost', name: '残骸前哨', mapX: 0.3, mapY: 0.69, level: 1, builtUpgrades: new Set() },
     { id: 'lighthouse.ch1_midwater_outpost', name: '中层浮标', mapX: 0.5, mapY: 0.52, level: 1, builtUpgrades: new Set() },
     { id: 'lighthouse.ch1_vent_outpost', name: '热液井台', mapX: 0.75, mapY: 0.61, level: 1, builtUpgrades: new Set() },
     { id: 'lighthouse.ch1_trench_outpost', name: '海沟前哨', mapX: 0.93, mapY: 0.5, level: 1, builtUpgrades: new Set() },
-    { id: 'lighthouse.ch1_whalefall_outpost', name: '鲸落营地', mapX: 0.59, mapY: 0.24, level: 1, builtUpgrades: new Set() },
   ];
   // 维护记录＝当前 run → 零衰减 → 各前哨满半径揭示（否则 submerged 前哨无 maintainedRun 会算成高衰减、半径缩水）。
   const outpostState = {
@@ -90,9 +92,36 @@ function fullyRevealedProfile(runsCompleted = 0): PlayerProfile {
     'outpost.ch1_midwater': { maintainedRun: runsCompleted },
     'outpost.ch1_vent': { maintainedRun: runsCompleted },
     'outpost.ch1_trench': { maintainedRun: runsCompleted },
-    'outpost.ch1_whalefall': { maintainedRun: runsCompleted },
   };
   return { ...base, lighthouses: [...base.lighthouses, ...outpostLighthouses], outpostState };
+}
+
+// ============================================
+// 0. flag-gated 揭示区（owner-less·§10 鲸落区·「按条件揭示隐藏区」通用原语）
+// ============================================
+L('========== 0. flag-gated 揭示区（鲸落·owner-less·found 门控） ==========');
+{
+  // 不变量：每区恰好 owner 或 revealFlag 其一·flag-gated 必带 center（regions.ts 加载分类·此处焊成 regress 门）
+  assert(regionConfigErrors().length === 0, `区域配置不变量违例：${regionConfigErrors().join('; ')}`);
+  // 鲸落区＝flag-gated（无 owner 灯塔·占位前哨已移除）
+  const wf = flagGatedRegions().find((r) => r.id === 'whalefall');
+  assert(wf, 'whalefall 应是 flag-gated 区（flagGatedRegions 应含它）');
+  assert(
+    wf!.revealFlag === 'story.ch1.whalefall_found' && !!wf!.center,
+    'whalefall flag-gated 区应带 revealFlag(story.ch1.whalefall_found) + center',
+  );
+  assert(!regionForOwner('lighthouse.ch1_whalefall_outpost'), 'whalefall 不再 owner-anchored（占位前哨灯塔已移除）');
+  // 圈内一点：found flag 前后的点亮态（owner-less flag-gated 揭示·诚实轴：found 后才可见）
+  const probe: ChartPoi = {
+    id: 'probe.whalefall', zoneId: 'zone.open_midwater', name: '探针', blurb: '',
+    distance: 0, mapX: wf!.center!.x, mapY: wf!.center!.y, persistent: false,
+  };
+  assert(!isPoiLit(profileWith(['flag.tutorial_complete']), probe), '鲸落区未 found 时·圈内点不亮（flag-gated 门未开）');
+  assert(
+    isPoiLit(profileWith(['flag.tutorial_complete', 'story.ch1.whalefall_found']), probe),
+    'found 后·鲸落区圈内点亮（flag-gated 揭示·isLit 纳入·北极星：mimic 仍唯一谎点）',
+  );
+  L('  不变量 + flag-gated 揭示 + found 门控 ✓');
 }
 
 // ============================================

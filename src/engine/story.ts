@@ -63,6 +63,61 @@ export function ch1EndingFlag(ending: Ch1Ending): string {
  */
 export const TUTORIAL_COMPLETE_FLAG = 'flag.tutorial_complete';
 
+/**
+ * 海沟章节前哨解锁占位 flag（outpost.ch1_trench 的 requiresFlag·区域揭示 SPEC §5）：
+ * 作者之后接剧情节拍置位。登记进单一来源＝lighthouse_upgrades.json 里那条字面量从此受
+ * playthrough-story §4「data story.* 字面量 ⊆ allStoryFlags()」守门（此前是手拼裸字符串·无人守）。
+ */
+export const TRENCH_FOUND_FLAG = 'story.ch1.trench_found';
+
+// ---------------------------------------------------------------------------
+// 鲸落支线（非主线·§10 鲸落区细化·CHANGELOG #120 续）
+// ---------------------------------------------------------------------------
+// 中层区下潜目击巨型生物：每次目击置一个**计数位** flag；满 SIGHTINGS_FOR_SEARCH(3)
+// 时由当次目击事件**显式**置 WHALE_SEARCH_READY_FLAG（把阈值物化成真 flag——门保持
+// flag-AND、不引「count ≥ N」条件 DSL；变化全在「谁来置 flag」的触发侧·见 2026-06-14
+// 架构讨论决策①②）。残骸区另有一处**独立**目击（WHALE_SIGHTING_WRECK_FLAG·不计入
+// 计数·独立剧情·§10）。找到鲸落区后置 WHALEFALL_FOUND_FLAG（= chart_regions 鲸落区的
+// revealFlag·owner-less flag-gated 揭示）。全部 flag 只在本模块生成（单一来源·quirk
+// #118·playthrough-story §4 守「data 里出现的 story.* 字面量 ⊆ allStoryFlags()」）。
+
+/** 触发「找寻」所需的中层目击次数（§10 作者拍·满 3 次）。 */
+export const SIGHTINGS_FOR_SEARCH = 3;
+
+/** 中层目击计数位 flag（n = 1..SIGHTINGS_FOR_SEARCH·离散 flag·随 profile.flags(Set) 往返·确定性）。 */
+export function whaleSightingFlag(n: number): string {
+  return `story.ch1.whale_sighting.${n}`;
+}
+
+/** 残骸区独立目击 flag（独立剧情·**不计入**中层计数·§10）。 */
+export const WHALE_SIGHTING_WRECK_FLAG = 'story.ch1.whale_sighting.wreck';
+
+/** 「找寻」就绪 flag（满 SIGHTINGS_FOR_SEARCH 次中层目击时由当次事件物化置位·探索潜点发现门）。 */
+export const WHALE_SEARCH_READY_FLAG = 'story.ch1.whale_search_ready';
+
+/** 找到鲸落区 flag（= chart_regions 鲸落区 revealFlag·flag-gated region 揭示门）。 */
+export const WHALEFALL_FOUND_FLAG = 'story.ch1.whalefall_found';
+
+/**
+ * story.ts 生成的**全部** story.* flag 枚举（单一来源）。playthrough-story §4 据此守门
+ * 「任何 data 文件里出现的 story.* 字面量都必须 ∈ 本集合」——新增任何 story flag 生成器
+ * 务必在此登记，否则用到它的 data 会在 regress 红（这是把「门=flag·派生进 story.ts」
+ * 焊成会失败的检查的关键·CLAUDE.md 顶部「约定落成机制」）。
+ */
+export function allStoryFlags(): string[] {
+  return [
+    CH1_HOOK_FLAG,
+    ...CH1_ANCHORS.map((a) => ch1AnchorFlag(a)),
+    ch1EndingFlag('fulfilled'),
+    ch1EndingFlag('blank'),
+    TRENCH_FOUND_FLAG,
+    ...Array.from({ length: SIGHTINGS_FOR_SEARCH }, (_, i) => whaleSightingFlag(i + 1)),
+    WHALE_SIGHTING_WRECK_FLAG,
+    WHALE_SEARCH_READY_FLAG,
+    WHALEFALL_FOUND_FLAG,
+  ];
+}
+
 // ---------------------------------------------------------------------------
 // 派生（纯函数·只读 profile.flags）
 // ---------------------------------------------------------------------------
@@ -99,6 +154,33 @@ export function ch1Story(profile: PlayerProfile): Ch1Story {
     nextAnchor,
     endings: { fulfilled, blank: flags.has(ch1EndingFlag('blank')) },
     complete: fulfilled,
+  };
+}
+
+/** 鲸落支线状态（全部从 profile.flags 派生·无自有存储·非主线）。 */
+export interface Ch1WhaleStory {
+  /** 已置位的中层目击计数（0..SIGHTINGS_FOR_SEARCH）。 */
+  sightings: number;
+  /** 「找寻」是否就绪（探索潜点出现的门·WHALE_SEARCH_READY_FLAG 置位）。 */
+  searchReady: boolean;
+  /** 残骸区独立目击是否已发生（独立剧情·不计入计数）。 */
+  wreckSeen: boolean;
+  /** 是否已找到鲸落区（flag-gated region 揭示·WHALEFALL_FOUND_FLAG 置位）。 */
+  found: boolean;
+}
+
+/** 从 profile.flags 派生鲸落支线状态（单一来源）。 */
+export function ch1WhaleStory(profile: PlayerProfile): Ch1WhaleStory {
+  const flags = profile.flags;
+  let sightings = 0;
+  for (let n = 1; n <= SIGHTINGS_FOR_SEARCH; n++) {
+    if (flags.has(whaleSightingFlag(n))) sightings++;
+  }
+  return {
+    sightings,
+    searchReady: flags.has(WHALE_SEARCH_READY_FLAG),
+    wreckSeen: flags.has(WHALE_SIGHTING_WRECK_FLAG),
+    found: flags.has(WHALEFALL_FOUND_FLAG),
   };
 }
 

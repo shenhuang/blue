@@ -1,5 +1,5 @@
 {
-  "_doc": "揭示区配置（区域揭示配置化 SPEC·单一来源）。每个区=一座 owner 灯塔的揭示圈：owner 灯塔在 profile.lighthouses 中存在即本区揭示（圈出现），半径=radius（替代旧全局 BASE_LIGHT_RADIUS=0.72 巨值，那导致大圈盖满全图相互重叠）。引擎(engine/regions.ts→revealRadius)读 radius；UI(SeaChartView)读 palette/shape/label。owner 灯塔 id 全局唯一→跨图(ch1/ch2/外传)按 owner 索引、Ch.2 只需加一个 mapId 段。palette token 对应 CSS .reveal-<palette>。shape: circle=离岸整圆 / coast=海岸半圆(家灯塔·clip 左半)。坐标=owner 灯塔的 mapX/mapY（home 见 engine/state.ts·章节前哨见 lighthouse_upgrades.json result）；半径在这里。作者在场微调（改半径/坐标一个数即可，POI 须落在其区圈内才被揭示）。v4 布局（2026-06-14 作者拍·横向 depth 从左到右）：家(大·青)→残骸(中·绿)→中层(大·蓝)→热液(中·琥珀)→海沟(小·深蓝·最右最深)；鲸落(最小·紫·中层旁·非主线·目击解锁)。",
+  "_doc": "揭示区配置（区域揭示配置化 SPEC·单一来源）。每个区=一座 owner 灯塔的揭示圈：owner 灯塔在 profile.lighthouses 中存在即本区揭示（圈出现），半径=radius（替代旧全局 BASE_LIGHT_RADIUS=0.72 巨值，那导致大圈盖满全图相互重叠）。引擎(engine/regions.ts→revealRadius)读 radius；UI(SeaChartView)读 palette/shape/label。owner 灯塔 id 全局唯一→跨图(ch1/ch2/外传)按 owner 索引、Ch.2 只需加一个 mapId 段。palette token 对应 CSS .reveal-<palette>。shape: circle=离岸整圆 / coast=海岸半圆(家灯塔·clip 左半)。坐标=owner 灯塔的 mapX/mapY（home 见 engine/state.ts·章节前哨见 lighthouse_upgrades.json result）；半径在这里。作者在场微调（改半径/坐标一个数即可，POI 须落在其区圈内才被揭示）。v4 布局（2026-06-14 作者拍·横向 depth 从左到右）：家(大·青)→残骸(中·绿)→中层(大·蓝)→热液(中·琥珀)→海沟(小·深蓝·最右最深)；鲸落(最小·紫·中层旁·非主线)＝**flag-gated owner-less 区**：无 owner 灯塔，改用 revealFlag(story.ch1.whalefall_found·中层目击×3→找寻→找到才揭示)+显式 center 坐标(无灯塔→无衰减)。这是「按条件揭示的隐藏区」通用原语，触发可换成任何置 flag 的方式(剧情/NPC/捡道具)；详见 types/chart.ts ChartRegionDef 注释。",
   "ch1": {
     "regions": [
       { "id": "reef", "label": "珊瑚区", "owner": "lighthouse.home", "palette": "cyan", "shape": "coast", "radius": 0.26 },
@@ -7,7 +7,7 @@
       { "id": "midwater", "label": "中层区", "owner": "lighthouse.ch1_midwater_outpost", "palette": "blue", "shape": "circle", "radius": 0.2 },
       { "id": "vent", "label": "热液区", "owner": "lighthouse.ch1_vent_outpost", "palette": "amber", "shape": "circle", "radius": 0.14 },
       { "id": "trench", "label": "海沟区", "owner": "lighthouse.ch1_trench_outpost", "palette": "navy", "shape": "circle", "radius": 0.11 },
-      { "id": "whalefall", "label": "鲸落区", "owner": "lighthouse.ch1_whalefall_outpost", "palette": "violet", "shape": "circle", "radius": 0.08 }
+      { "id": "whalefall", "label": "鲸落区", "revealFlag": "story.ch1.whalefall_found", "center": { "x": 0.59, "y": 0.24 }, "palette": "violet", "shape": "circle", "radius": 0.08 }
     ]
   }
 }

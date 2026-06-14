@@ -11,7 +11,7 @@
 //
 // 跑法： npx tsx scripts/playthrough-story.ts （regress.mjs 按 playthrough*.ts 自动注册）
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -25,10 +25,17 @@ import {
   CH1_ANCHORS,
   CH1_HOOK_FLAG,
   TUTORIAL_COMPLETE_FLAG,
+  SIGHTINGS_FOR_SEARCH,
+  WHALE_SEARCH_READY_FLAG,
+  WHALE_SIGHTING_WRECK_FLAG,
+  WHALEFALL_FOUND_FLAG,
   ch1AnchorFlag,
   ch1EndingFlag,
   ch1Story,
+  ch1WhaleStory,
   chapterUnlocked,
+  whaleSightingFlag,
+  allStoryFlags,
 } from '../src/engine/story';
 import { resolveOption } from '../src/engine/events';
 import { getEventById } from '../src/engine/zones';
@@ -341,26 +348,34 @@ L('§5 St1 锚点链（POI 强制开场·任意顺序·vent 门·守门）');
     );
   }
 
-  // —— (b) ch1/midwater/vent 事件 JSON 字面量守门（story.* 只许生成器输出·canon 导师） ——
-  const legalStoryFlags = new Set<string>([
-    CH1_HOOK_FLAG,
-    ...CH1_ANCHORS.map((a) => ch1AnchorFlag(a)),
-    ch1EndingFlag('fulfilled'),
-    ch1EndingFlag('blank'),
-  ]);
+  // —— (b) story.* 字面量守门：全 data 文件 ⊆ allStoryFlags()（「门=flag·派生进 story.ts」焊成机制） ——
+  // 2026-06-14 架构讨论：解锁的「门」就是 flag 存在性，差异只在「谁来置 flag」的触发侧（剧情节拍 /
+  // NPC 对话 / 下潜捡到道具 / 目击计数…）。把这条约定焊成会 fail 的检查＝任何 data JSON 里出现的
+  // story.* 字面量，都必须由 engine/story.ts 生成并登记进 allStoryFlags() 单一来源枚举。这把旧版
+  // 「只扫 3 个事件文件的 setProfileFlags」扩成「全 src/data·任何位置（revealFlag / requiresFlag /
+  // requiresFlags / setProfileFlags …）」——chart_regions 的鲸落 revealFlag、lighthouse_upgrades 的
+  // 海沟 requiresFlag 这类此前无人守的裸字面量从此都被拦（quirk #118 单一来源的机制化兑现）。
+  const legalStoryFlags = new Set(allStoryFlags());
+  const walkData = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((d) => {
+      const p = resolve(dir, d.name);
+      return d.isDirectory() ? walkData(p) : p.endsWith('.json') ? [p] : [];
+    });
+  const STORY_LIT = /"(story\.[A-Za-z0-9_.]+)"/g;
+  for (const file of walkData(resolve(ROOT, 'src/data'))) {
+    const raw = readFileSync(file, 'utf-8');
+    const rel = file.slice(Math.max(0, file.indexOf('src/data')));
+    for (const m of raw.matchAll(STORY_LIT)) {
+      assert(
+        legalStoryFlags.has(m[1]),
+        `§5 ${rel} 出现未登记 story flag「${m[1]}」——story.* 必须由 engine/story.ts 生成并登记进 allStoryFlags()（门=flag·单一来源·quirk #118）`,
+      );
+    }
+  }
+  // canon（失联者=导师·剧情 SPEC §2）：教学/锚点事件文本禁「父亲」回潮。
   for (const file of ['ch1.json', 'midwater.json', 'vent.json']) {
     const raw = readFileSync(resolve(ROOT, `src/data/events/${file}`), 'utf-8');
     assert(!raw.includes('父亲'), `§5 ${file} 不应出现「父亲」（canon=导师·quirk #118）`);
-    const parsed = JSON.parse(raw) as { events: { id: string; options: { id: string; outcome?: { setProfileFlags?: string[] }; check?: { onSuccess: { setProfileFlags?: string[] }; onFailure: { setProfileFlags?: string[] } } }[] }[] };
-    for (const ev of parsed.events) {
-      const outs = ev.options.flatMap((o) => [o.outcome, o.check?.onSuccess, o.check?.onFailure]);
-      for (const out of outs) {
-        for (const f of out?.setProfileFlags ?? []) {
-          if (!f.startsWith('story.')) continue;
-          assert(legalStoryFlags.has(f), `§5 ${file}:${ev.id} 手拼了非法 story flag「${f}」（quirk #118）`);
-        }
-      }
-    }
   }
 
   // —— (c) 接线面：startDiveFromPoi 强制开场 + 任意顺序 + vent 门 + 已做锚点回流=普通下潜 ——
@@ -437,7 +452,70 @@ L('§5 St1 锚点链（POI 强制开场·任意顺序·vent 门·守门）');
   L('  POI 强制开场/任意顺序/vent 门/回流/落账/守门 ✓');
 }
 
+// ═══════════════════════════════════════════════════════════════
+// §6 鲸落支线派生（非主线·§10·ch1WhaleStory 计数/找寻/found/残骸独立目击·flag 单一来源）
+// ═══════════════════════════════════════════════════════════════
+L('§6 鲸落支线派生（ch1WhaleStory）');
+
+{
+  // 空档
+  const empty = ch1WhaleStory(profileWith([]));
+  assert(
+    empty.sightings === 0 && !empty.searchReady && !empty.found && !empty.wreckSeen,
+    '§6 空档：无目击/未就绪/未找到/无独立目击',
+  );
+
+  // 中层目击计数（离散 flag·按数量派生）
+  const two = ch1WhaleStory(profileWith([whaleSightingFlag(1), whaleSightingFlag(2)]));
+  assert(
+    two.sightings === 2 && !two.searchReady,
+    '§6 两次中层目击：sightings=2·searchReady 仍假（阈值由事件物化置位·不靠计数自动推·门=flag）',
+  );
+
+  // 找寻就绪＝阈值 flag 物化（满 SIGHTINGS_FOR_SEARCH 时由当次目击事件置 WHALE_SEARCH_READY_FLAG）
+  const ready = ch1WhaleStory(
+    profileWith([whaleSightingFlag(1), whaleSightingFlag(2), whaleSightingFlag(3), WHALE_SEARCH_READY_FLAG]),
+  );
+  assert(
+    ready.sightings === SIGHTINGS_FOR_SEARCH && ready.searchReady,
+    '§6 满 3 次 + 物化 ready flag → searchReady（探索潜点发现门）',
+  );
+
+  // 残骸独立目击：不计入中层计数（独立剧情·§10）
+  const wreck = ch1WhaleStory(profileWith([WHALE_SIGHTING_WRECK_FLAG]));
+  assert(wreck.wreckSeen && wreck.sightings === 0, '§6 残骸独立目击：wreckSeen 真·不计入中层 sightings');
+
+  // found（= chart_regions 鲸落区 revealFlag）
+  assert(ch1WhaleStory(profileWith([WHALEFALL_FOUND_FLAG])).found, '§6 WHALEFALL_FOUND_FLAG → found');
+
+  // 命名口径 + 单一来源登记（防 refactor 漂移）
+  assert(whaleSightingFlag(2) === 'story.ch1.whale_sighting.2', '§6 目击计数 flag 口径 story.ch1.whale_sighting.N');
+  assert(
+    WHALEFALL_FOUND_FLAG === 'story.ch1.whalefall_found',
+    '§6 found flag 口径 story.ch1.whalefall_found（= chart_regions 鲸落区 revealFlag·同一字符串）',
+  );
+  assert(
+    allStoryFlags().includes(WHALEFALL_FOUND_FLAG) && allStoryFlags().includes('story.ch1.trench_found'),
+    '§6 allStoryFlags 应含鲸落 found + 海沟占位 flag（单一来源登记·§5 守门据此）',
+  );
+
+  // 存档 round-trip：whale flags 随 profile.flags(Set) 往返后派生逐字节一致
+  let state: GameState = createInitialGameState();
+  const wflags = [
+    whaleSightingFlag(1), whaleSightingFlag(2), whaleSightingFlag(3),
+    WHALE_SEARCH_READY_FLAG, WHALEFALL_FOUND_FLAG, WHALE_SIGHTING_WRECK_FLAG,
+  ];
+  state = { ...state, profile: { ...state.profile, flags: new Set(wflags) } };
+  const back = deserializeGameState(serializeGameState(state));
+  assert(back, '§6 deserialize 不应为 null');
+  assert(
+    JSON.stringify(ch1WhaleStory(back!.profile)) === JSON.stringify(ch1WhaleStory(state.profile)),
+    '§6 round-trip 后鲸落派生逐字节一致',
+  );
+  L('  计数/找寻/独立目击/found/口径/round-trip ✓');
+}
+
 console.log(log.join('\n'));
 console.log(
-  '\n✓ playthrough 完成：剧情脊柱 §1 派生 / §2 港口路径 / §3 round-trip / §4 守门 / §5 St1 锚点链 全部通过',
+  '\n✓ playthrough 完成：剧情脊柱 §1 派生 / §2 港口路径 / §3 round-trip / §4 守门 / §5 St1 锚点链 / §6 鲸落支线 全部通过',
 );

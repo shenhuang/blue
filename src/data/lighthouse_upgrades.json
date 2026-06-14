@@ -822,37 +822,6 @@
         "level": 1,
         "region": "blue_caves"
       }
-    },
-    {
-      "id": "outpost.ch1_whalefall",
-      "name": "鲸落营地",
-      "bandId": "band.ch1_whalefall",
-      "requiresFlag": "story.ch1.whalefall_found",
-      "submerged": true,
-      "stages": [
-        {
-          "label": "在鲸骨架间清出锚位（珊瑚碎片×3 ＋ 60 金）",
-          "cost": { "materials": [ { "itemId": "item.coral_shard", "qty": 3 } ], "gold": 60 },
-          "narrative": "你在那副比船还大的骨架之间清出锚位。骨上爬满管虫与盲虾，谁也不在意你。第一批桩子打进去了。"
-        },
-        {
-          "label": "架起营地与系留（蛛蟹甲壳×3·黄铜配件×2 ＋ 100 金）",
-          "cost": { "materials": [ { "itemId": "item.crab_chitin", "qty": 3 }, { "itemId": "item.brass_fitting", "qty": 2 } ], "gold": 100 },
-          "narrative": "营地在鲸落上方撑住了。脚下整副巨骨各自养着一窝生灵——你像住进了一座还在被吃掉的城。"
-        },
-        {
-          "label": "通电点亮（冷光腺×2·章鱼角喙×2 ＋ 150 金）",
-          "cost": { "materials": [ { "itemId": "item.lantern_gland", "qty": 2 }, { "itemId": "item.cave_octopus_beak", "qty": 2 } ], "gold": 150 }
-        }
-      ],
-      "result": {
-        "id": "lighthouse.ch1_whalefall_outpost",
-        "name": "鲸落营地",
-        "mapX": 0.59,
-        "mapY": 0.24,
-        "level": 1,
-        "region": "open_midwater"
-      }
     }
   ]
 }

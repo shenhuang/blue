@@ -50,7 +50,7 @@ import { listRecoverableCorpses } from '@/engine/death';
 import { LighthouseBuildPanel } from './LighthouseBuildPanel';
 import { ChartViewport, type ChartContentBox } from './ChartViewport';
 import { HOME_LIGHTHOUSE_ID } from '@/engine/state';
-import { regionForOwner } from '@/engine/regions';
+import { regionForOwner, flagGatedRegions } from '@/engine/regions';
 import { DEV_TOOLS } from './devMode';
 import { ItemCell, EmptyCell } from './ItemCell';
 
@@ -416,6 +416,26 @@ export function SeaChartView({ state, onStateChange }: Props) {
                     <span className="chart-light-name">{lh.name}</span>
                   </button>
                 </div>
+              );
+            })}
+
+            {/* flag-gated 揭示区（owner-less·鲸落区起·区域揭示配置化 SPEC §10）：revealFlag 满足才画——
+                圈心=显式 center、半径=region.radius（无灯塔→无衰减）。与 owner 灯塔圈同款渲染（reveal-<palette>），
+                但不带灯塔标记/popup（区不是哨站·§10「没有真正的哨站」）。圈内 POI 由 isLit 正常揭示。 */}
+            {flagGatedRegions().map((region) => {
+              if (!region.center || !region.revealFlag || !state.profile.flags.has(region.revealFlag)) return null;
+              return (
+                <span
+                  key={`region-${region.id}`}
+                  className={`chart-light-radius chart-reveal-circle reveal-${region.palette}${region.shape === 'coast' ? ' reveal-coast' : ''}`}
+                  aria-hidden="true"
+                  style={{
+                    left: `${region.center.x * 100}%`,
+                    top: `${region.center.y * 100}%`,
+                    width: `${region.radius * 2 * 100}%`,
+                    height: `${region.radius * 2 * 100}%`,
+                  }}
+                />
               );
             })}
 

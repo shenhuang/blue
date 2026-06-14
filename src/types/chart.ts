@@ -129,19 +129,32 @@ export interface SeaChart {
 // owner 灯塔在 profile.lighthouses 中存在＝本区揭示（圈出现）。每个区＝一座 owner 灯塔的揭示圈。
 
 /** 揭示区调色板 token（CSS 类 .reveal-<palette>·作者 2026-06-13 配色）。 */
-export type RegionPalette = 'cyan' | 'green' | 'blue' | 'amber' | 'navy' | 'ruin';
+export type RegionPalette = 'cyan' | 'green' | 'blue' | 'amber' | 'navy' | 'violet' | 'ruin';
 
 /** 揭示区形状：circle=离岸整圆 / coast=海岸半圆（clip 左半·家灯塔从海岸鼓进水里）。 */
 export type RegionShape = 'circle' | 'coast';
 
-/** 一个揭示区的配置。owner 灯塔点亮（push 进 profile.lighthouses）即本区揭示。 */
+/**
+ * 一个揭示区的配置。揭示来源**两选一**（不变量·engine/regions.ts 加载时分类·
+ * playthrough-chart 断言 regionConfigErrors() 为空＝焊成 regress 门）：
+ *   - owner 灯塔锚定（reef/wreck/midwater/vent/trench）：owner 灯塔在 profile.lighthouses
+ *     中存在＝本区揭示，圈心＝该灯塔 mapX/mapY、半径随前哨衰减（effectiveRevealRadius）。
+ *   - flag-gated（owner-less·鲸落区起）：profile.flags 含 revealFlag＝本区揭示，圈心＝显式
+ *     center、半径＝radius（无灯塔→无衰减）。这是「按条件揭示的隐藏区」**通用原语**——条件
+ *     是 flag，触发可以是任何置 flag 的东西（剧情节拍 / NPC 对话 / 下潜捡到道具 / 目击
+ *     计数…见 2026-06-14 架构讨论）。诚实轴不破：圈内 POI 走 isLit 正常揭示·mimic 仍唯一谎点。
+ */
 export interface ChartRegionDef {
-  /** 区 id（'reef'|'trench'|'wreck'|'midwater'|'vent'…）。 */
+  /** 区 id（'reef'|'trench'|'wreck'|'midwater'|'vent'|'whalefall'…）。 */
   id: string;
   /** UI 标签（'珊瑚区' 等）。 */
   label: string;
-  /** owner 灯塔 id（全局唯一）。该灯塔存在＝本区揭示·圈出现·半径＝本区 radius。 */
-  owner: string;
+  /** owner 灯塔 id（全局唯一）。该灯塔存在＝本区揭示·圈心＝灯塔坐标。与 revealFlag 二选一。 */
+  owner?: string;
+  /** flag-gated 揭示门：profile.flags 含此 flag＝本区揭示（owner-less）。与 owner 二选一。 */
+  revealFlag?: string;
+  /** flag-gated 区的圈心（归一化坐标·owner-less 区必填——无 owner 灯塔可取坐标）。 */
+  center?: { x: number; y: number };
   palette: RegionPalette;
   shape: RegionShape;
   /** 归一化揭示半径（世界单位·替代旧全局 BASE_LIGHT_RADIUS 巨值）。 */

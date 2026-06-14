@@ -22,6 +22,7 @@ import {
   LIGHT_RADIUS_PER_BONUS,
 } from './lighthouses';
 import { effectiveRevealRadius } from './outposts';
+import { flagGatedRegions } from './regions';
 
 /**
  * 归一化海图距离 → "distance 档"的换算系数（reach，SPEC §4/§9 tunable）。
@@ -130,6 +131,15 @@ function isLit(profile: PlayerProfile, mapX?: number, mapY?: number): boolean {
   for (const lh of profile.lighthouses) {
     // 有效半径＝随前哨衰减收缩（深水区 Phase 2b 真 reveal dimming）；home/废墟/水上灯塔无衰减＝原样。
     if (distanceBetween(lh.mapX, lh.mapY, mapX, mapY) <= effectiveRevealRadius(profile, lh)) return true;
+  }
+  // flag-gated 揭示区（owner-less·鲸落区起）：revealFlag 满足时，它的 center+radius 圈也是一个
+  // 揭示源——圈内 POI 随 found flag 正常点亮（无灯塔→无衰减·半径取 region.radius）。
+  // isPoiExplainedByLighthouse 已 delegate 本函数 ⇒ 这类 POI 自动「有合法来源」、不误触 mimic
+  // 「亮而无主」宏观 tell（守诚实轴·mimic 仍唯一谎点）。这是「按条件揭示隐藏区」通用原语的消费点。
+  for (const region of flagGatedRegions()) {
+    if (!region.center || !region.revealFlag) continue;
+    if (!profile.flags.has(region.revealFlag)) continue;
+    if (distanceBetween(region.center.x, region.center.y, mapX, mapY) <= region.radius) return true;
   }
   return false;
 }
