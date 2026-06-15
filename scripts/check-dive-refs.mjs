@@ -119,7 +119,10 @@ for (const c of columns) {
 
 // (i) 残留手写 ChartPoi.bandId 仍可解析（现应无 poi.deep.*；派生 POI 不在 JSON 里·防回流悬空）。
 const allBandIds = new Set([...bandIds, ...derivedBandIds]);
-const authoredPois = [...(chartPois.anchors ?? []), ...(chartPois.roamingTemplates ?? [])];
+// chart_pois 现按 mapId 分段（对齐 chart_regions）——flatten 所有段（跳过 _doc 等字符串）。
+const authoredPois = Object.values(chartPois)
+  .filter((seg) => seg && typeof seg === 'object' && !Array.isArray(seg))
+  .flatMap((seg) => [...(seg.anchors ?? []), ...(seg.roamingTemplates ?? [])]);
 for (const p of authoredPois) {
   if (typeof p.bandId === 'string' && !allBandIds.has(p.bandId)) {
     errors.push(`[poi-band] 手写 POI ${p.id ?? p.templateId}：bandId ${p.bandId} 不在 depth_bands.json / 派生 band`);

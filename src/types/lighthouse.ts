@@ -174,6 +174,8 @@ export interface LighthouseUpgradesFile {
   ruins?: LighthouseRuinDef[];
   /** 可分阶段建造的深水前哨（深水区 Phase 2a 跨 run 前哨脊柱；缺省空）。 */
   outposts?: OutpostDef[];
+  /** 家灯塔定义（海图坐标 + 名/级·single source·engine/state.ts 消费）。所有 beacon 位置全在本文件＝编辑器统一读写。 */
+  home?: { id: string; name: string; mapX: number; mapY: number; level: number };
 }
 
 /** 聚合某座灯塔已建设施的派生加成（Phase C 读取消费）。 */

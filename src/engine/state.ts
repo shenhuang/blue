@@ -12,6 +12,7 @@ import type {
   Lighthouse,
 } from '@/types';
 import { POWER_MAX, deriveSensorTuning } from './clarity';
+import lighthouseData from '@/data/lighthouse_upgrades.json';
 
 // 5（#131 探深深度柱重构）：门控模型从「flag.probe.* 解锁」改档位制、旧 probe 升级 id 改 lighthouse.probe.<柱>.lv<级>、
 // 深脊柱 band/前哨删——旧档残留 flag.probe.* / 旧 probe builtUpgrades / 删除前哨的阶段 flag 都已无意义。
@@ -25,11 +26,16 @@ const SAVE_VERSION = 6;
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
 
 /**
- * 家灯塔的海图「声明坐标」（静态·单一来源）：createHomeLighthouse 与 chart owner 坐标 resolve
- * （engine/lighthouses.ts::ownerAnchorPos）共用——前哨的声明坐标在 lighthouse_upgrades.json result，
- * 家的在这里。改港口位置只动这一处。
+ * 家灯塔定义（海图坐标 + 名/级）单一来源＝lighthouse_upgrades.json 顶层 `home`——与前哨/废墟同文件
+ * ＝**所有 beacon 全是数据**（编辑器统一读写）。改港口位置只动那一处 JSON。
  */
-export const HOME_LIGHTHOUSE_POS = { mapX: 0.06, mapY: 0.5 } as const;
+const HOME_DEF = (lighthouseData as { home: { id: string; name: string; mapX: number; mapY: number; level: number } }).home;
+
+/**
+ * 家灯塔的海图「声明坐标」（静态·单一来源＝上面的 `home`）：createHomeLighthouse 与 chart owner 坐标
+ * resolve（engine/lighthouses.ts::ownerAnchorPos）共用——前哨声明坐标在同文件 result，家在 `home`。
+ */
+export const HOME_LIGHTHOUSE_POS: { mapX: number; mapY: number } = { mapX: HOME_DEF.mapX, mapY: HOME_DEF.mapY };
 
 /**
  * 构造家灯塔——现有岸边港口（鸢尾湾，Aldo 是守灯人）的灯塔化身。
@@ -40,10 +46,10 @@ export const HOME_LIGHTHOUSE_POS = { mapX: 0.06, mapY: 0.5 } as const;
 export function createHomeLighthouse(): Lighthouse {
   return {
     id: HOME_LIGHTHOUSE_ID,
-    name: '旧灯塔',
-    mapX: HOME_LIGHTHOUSE_POS.mapX,
-    mapY: HOME_LIGHTHOUSE_POS.mapY,
-    level: 1,
+    name: HOME_DEF.name,
+    mapX: HOME_DEF.mapX,
+    mapY: HOME_DEF.mapY,
+    level: HOME_DEF.level,
     builtUpgrades: new Set(),
   };
 }

@@ -1,5 +1,12 @@
 {
-  "_doc": "灯塔设施升级（每灯塔，建成写进 lighthouse.builtUpgrades）。账单 = 材料＋金币双资源（同全局升级，基建地图 §2.3/§3.3）。Phase C：reveal/reach 已实装（chart.ts/dive.ts 消费 getLighthouseBonuses）；dockyard 迁来（lhtrack.dockyard，homeOnly，给 extraConsumableSlot + 远海 POI 的 requiresLighthouseUpgrade 门控）；新增 ruins[]（修复废弃灯塔 → push 新灯塔）。数值为占位，待平衡（SPEC §9）。",
+  "_doc": "灯塔设施升级（每灯塔，建成写进 lighthouse.builtUpgrades）。账单 = 材料＋金币双资源（同全局升级，基建地图 §2.3/§3.3）。Phase C：reveal/reach 已实装（chart.ts/dive.ts 消费 getLighthouseBonuses）；dockyard 迁来（lhtrack.dockyard，homeOnly，给 extraConsumableSlot + 远海 POI 的 requiresLighthouseUpgrade 门控）；新增 ruins[]（修复废弃灯塔 → push 新灯塔）。数值为占位，待平衡（SPEC §9）。**所有 beacon 位置全在本文件**（编辑器统一读写）：家＝顶层 `home`（state.ts 消费），前哨＝`outposts[].result`，废弃灯塔＝`ruins[].result`。",
+  "home": {
+    "id": "lighthouse.home",
+    "name": "旧灯塔",
+    "mapX": 0.06,
+    "mapY": 0.5,
+    "level": 1
+  },
   "tracks": [
     {
       "id": "lhtrack.dockyard",
@@ -229,8 +236,8 @@
       "result": {
         "id": "lighthouse.ch1_wreck_outpost",
         "name": "残骸前哨",
-        "mapX": 0.3,
-        "mapY": 0.69,
+        "mapX": 0.288,
+        "mapY": 0.781,
         "level": 1,
         "region": "wreck_graveyard"
       }
@@ -283,8 +290,8 @@
       "result": {
         "id": "lighthouse.ch1_midwater_outpost",
         "name": "中层浮标",
-        "mapX": 0.5,
-        "mapY": 0.52,
+        "mapX": 0.566,
+        "mapY": 0.513,
         "level": 1,
         "region": "open_midwater"
       }
@@ -346,8 +353,8 @@
       "result": {
         "id": "lighthouse.ch1_vent_outpost",
         "name": "热液井台",
-        "mapX": 0.75,
-        "mapY": 0.61,
+        "mapX": 0.876,
+        "mapY": 0.727,
         "level": 1,
         "region": "vent_trench"
       }
@@ -408,8 +415,8 @@
       "result": {
         "id": "lighthouse.ch1_trench_outpost",
         "name": "海沟前哨",
-        "mapX": 0.93,
-        "mapY": 0.5,
+        "mapX": 1.065,
+        "mapY": 0.563,
         "level": 1,
         "region": "blue_caves"
       }

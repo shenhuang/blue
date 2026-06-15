@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
     "composite": true,
+    // composite 必须 emit（声明），但 emit 落根目录会生成 vite.config.js 盖住 vite.config.ts
+    // （vite 优先加载 .js）→ ?editor 的 dev 保存中间件不生效。把 emit 重定向进 node_modules（gitignore·
+    // 不进版本库·不盖 .ts）。vite build 直接读 .ts·这份 emit 只是 tsc -b 的副产物。
+    "outDir": "./node_modules/.cache/tsc-node",
     "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",

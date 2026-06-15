@@ -22,7 +22,8 @@ import {
   describePoi,
   describeCaveShape,
 } from '../src/engine/chart';
-import { regionForOwner, regionConfigErrors, flagGatedRegions } from '../src/engine/regions';
+import { regionForOwner, regionConfigErrors, flagGatedRegions, regionRadius } from '../src/engine/regions';
+import { ownerAnchorPos } from '../src/engine/lighthouses';
 import { generateDiveMap, analyzeMap, caveShapeBucket } from '../src/engine/mapgen';
 import { startDiveFromPoi, currentMoveCost } from '../src/engine/dive';
 import { tickTurns, visibilitySanityDrain } from '../src/engine/events';
@@ -127,48 +128,62 @@ L('========== 0. flag-gated 揭示区（鲸落·owner-less·found 门控） ====
 //   - owner 必须是真实 region owner（regionForOwner 命中）——挡 owner 拼写漂移；
 //   - resolve 后绝对坐标 == 设计值——挡相对偏移写反符号（坐标值无别处断言覆盖）。
 // ============================================
-L('\n========== 0b. owner 归属守门 + 坐标 round-trip ==========');
+L('\n========== 0b. owner 归属守门 + owner POI 落在 owner radius 内 ==========');
 {
-  type RawPoi = { id?: string; templateId?: string; owner?: string; absolute?: boolean };
+  type RawPoi = { id?: string; templateId?: string; owner?: string; absolute?: boolean; mapX?: number; mapY?: number };
   const raw = JSON.parse(
     readFileSync(new URL('../src/data/chart_pois.json', import.meta.url), 'utf-8'),
-  ) as { anchors: RawPoi[]; roamingTemplates: RawPoi[] };
-  const authored: { id: string; owner?: string; absolute?: boolean }[] = [
-    ...raw.anchors.map((a) => ({ id: a.id ?? '?', owner: a.owner, absolute: a.absolute })),
-    ...raw.roamingTemplates.map((t) => ({ id: t.templateId ?? '?', owner: t.owner, absolute: t.absolute })),
+  ) as Record<string, { anchors?: RawPoi[]; roamingTemplates?: RawPoi[] } | string>;
+  // chart_pois 现按 mapId 分段（对齐 chart_regions）——flatten 所有段（跳过 _doc 等字符串）。
+  const rawAnchors: RawPoi[] = [];
+  const rawRoaming: RawPoi[] = [];
+  for (const k of Object.keys(raw)) {
+    const seg = raw[k];
+    if (typeof seg !== 'object' || seg === null) continue;
+    rawAnchors.push(...(seg.anchors ?? []));
+    rawRoaming.push(...(seg.roamingTemplates ?? []));
+  }
+  const authored = [
+    ...rawAnchors.map((a) => ({ id: a.id ?? '?', owner: a.owner, absolute: a.absolute, mapX: a.mapX, mapY: a.mapY })),
+    ...rawRoaming.map((t) => ({ id: t.templateId ?? '?', owner: t.owner, absolute: t.absolute, mapX: t.mapX, mapY: t.mapY })),
   ];
   for (const p of authored) {
+    // (a) owner 必填（除非 absolute:true）——挡自动内容生成漏进绝对坐标 lane。
     assert(
       typeof p.owner === 'string' || p.absolute === true,
       `0b: authored POI「${p.id}」必须有 owner，或显式 absolute:true（绝对坐标 lane opt-in·防自动生成漏入）`,
     );
-    if (typeof p.owner === 'string') {
-      assert(
-        regionForOwner(p.owner) !== undefined,
-        `0b: POI「${p.id}」owner=${p.owner} 不是已配置的 region owner（chart_regions.json）`,
-      );
-    }
-  }
-  L(`  ${authored.length} 个 authored POI owner 归属合法（或 absolute opt-in）✓`);
-  // 坐标 round-trip：全区揭示档下，resolve 后绝对坐标 == 已知设计值（每个 owner 取一点 + 边缘点）。
-  const full = generateChart({ profile: fullyRevealedProfile() });
-  const wantAbs: [string, number, number][] = [
-    ['poi.anchor.east_reef', 0.13, 0.5], // home
-    ['poi.anchor.wreck_graveyard', 0.3, 0.66], // wreck
-    ['poi.anchor.ch1_open_midwater', 0.5, 0.52], // midwater
-    ['poi.anchor.ch1_vent_field', 0.75, 0.61], // vent
-    ['poi.anchor.blue_caves', 0.92, 0.46], // trench
-    ['poi.anchor.flat_gallery', 0.95, 0.41], // trench·边缘点（偏移 0.02,-0.09）
-  ];
-  for (const [id, x, y] of wantAbs) {
-    const poi = full.pois.find((p) => p.id === id);
-    assert(poi, `0b: 全区揭示档应含 ${id}`);
+    if (typeof p.owner !== 'string') continue;
+    // (b) owner 须真实 region owner（挡拼写漂移）。
     assert(
-      Math.abs((poi!.mapX ?? NaN) - x) < 1e-9 && Math.abs((poi!.mapY ?? NaN) - y) < 1e-9,
-      `0b: ${id} resolve 后坐标应=(${x},${y})，实际 (${poi!.mapX},${poi!.mapY})`,
+      regionForOwner(p.owner) !== undefined,
+      `0b: POI「${p.id}」owner=${p.owner} 不是已配置的 region owner（chart_regions.json）`,
+    );
+    // (c) owner POI 落在 owner radius 内＝该 beacon 的「地盘」：#135 后 radius 不门控点亮、改门控「范围」——
+    //     owned POI（及将来 schedule 生成的 POI）须落在 owner 圈内。**拖拽编辑器不失效**（不写死坐标·
+    //     只要不拖出圈就绿）；越界＝红（拖回或调大半径）。偏移幅度 = resolve 后距 owner 的距离。
+    const offMag = Math.hypot(p.mapX ?? 0, p.mapY ?? 0);
+    const r = regionRadius(p.owner);
+    assert(
+      offMag <= r + 1e-9,
+      `0b: POI「${p.id}」距 owner ${offMag.toFixed(3)} > owner radius ${r}（owned POI 须落在 owner 圈内·拖回或调大半径）`,
     );
   }
-  L(`  ${wantAbs.length} 个锚点坐标 round-trip（相对偏移 + owner 声明坐标 = 设计绝对值）✓`);
+  L(`  ${authored.length} 个 authored POI：owner 合法 + 落在各自 owner radius 内 ✓`);
+  // (d) resolve 管线正确性（不写死坐标·拖动不失效）：generateChart resolve 出的 owner POI 绝对坐标
+  //     必须 == owner 声明坐标(ownerAnchorPos) + 原始偏移（挡 resolveOwnerCoords/ownerAnchorPos 接错·
+  //     如误用活灯塔坐标 / 反号 / flatten 丢段）。取边缘点横岩廊（owner=trench·偏移最大轴）做 spot。
+  const full = generateChart({ profile: fullyRevealedProfile() });
+  const spot = rawAnchors.find((a) => a.id === 'poi.anchor.flat_gallery')!;
+  const spotPoi = full.pois.find((p) => p.id === 'poi.anchor.flat_gallery');
+  const base = ownerAnchorPos(spot.owner!);
+  assert(spotPoi && base, '0b: spot 锚点(横岩廊) + 其 owner 声明坐标应都在');
+  assert(
+    Math.abs((spotPoi!.mapX ?? NaN) - (base!.mapX + (spot.mapX ?? 0))) < 1e-9 &&
+      Math.abs((spotPoi!.mapY ?? NaN) - (base!.mapY + (spot.mapY ?? 0))) < 1e-9,
+    `0b: resolve 管线应 == owner 声明坐标 + 偏移（spot=横岩廊·实际 ${spotPoi!.mapX},${spotPoi!.mapY}）`,
+  );
+  L('  resolve 管线正确性（owner 声明坐标 + 偏移·spot=横岩廊）✓');
 }
 
 // ============================================

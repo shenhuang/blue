@@ -83,6 +83,9 @@ tasks.push({ name: 'check-dive-refs', cmd: ['node', join('scripts', 'check-dive-
 // 海图 UI SSR smoke
 tasks.push({ name: 'smoke-chart-ui', cmd: [tsx, join('scripts', 'smoke-chart-ui.tsx')] });
 
+// 海图编辑器（dev 工具）SSR smoke（守数据 shape 演进别静默打挂编辑器）
+tasks.push({ name: 'smoke-map-editor', cmd: [tsx, join('scripts', 'smoke-map-editor.tsx')] });
+
 // 全部 playthrough*.ts —— 各自独立进程，可并行（#22 安全）
 const playthroughs = readdirSync(join(ROOT, 'scripts'))
   .filter((f) => /^playthrough.*\.ts$/.test(f))
@@ -151,7 +154,7 @@ function sweepViteTimestampJunk() {
     const junkDir = join(ROOT, '.git', '.sandbox-junk');
     if (!existsSync(junkDir)) mkdirSync(junkDir);
     for (const f of readdirSync(ROOT)) {
-      if (/^vite\.config\.js\.timestamp-.*\.mjs$/.test(f)) {
+      if (/^vite\.config\.(js|ts)\.timestamp-.*\.mjs$/.test(f)) {
         try {
           renameSync(join(ROOT, f), join(junkDir, f));
         } catch {

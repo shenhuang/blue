@@ -123,31 +123,51 @@ export function SeaChartView({ state, onStateChange }: Props) {
   // 世界内容包围盒（区域揭示·随解锁外扩）：可见 POI + 各灯塔点亮圈（中心 ± 有效半径）。
   // memo 同 chartSig（解锁/点亮即重算）→ ChartViewport 据 fitKey 变化 autozoom 到新边界。
   const contentBox = useMemo<ChartContentBox>(() => {
-    let minX = 1;
-    let minY = 1;
-    let maxX = 0;
-    let maxY = 0;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
     const grow = (x: number, y: number) => {
       minX = Math.min(minX, x);
       minY = Math.min(minY, y);
       maxX = Math.max(maxX, x);
       maxY = Math.max(maxY, y);
     };
+    // 海岸线在世界 x=0；取景左界固定钉在它左边一点点（COAST_VIEW_X·与家位置/半径无关＝干净的「固定细线」，
+    // 作者「海岸区强制算分界线左边一点就可以了」）。可调。
+    const COAST_VIEW_X = -0.02;
+    // 各灯塔的揭示圈（中心 ± 有效半径）——含圈、不只中心（作者 2026-06-16：半径已小〔#125 起 0.1–0.26〕，
+    // 框住圈不再撑出大片空水域；且编辑器〔?editor〕能把灯塔/点拖出旧 [0,1] 框→fit 必须动态含圈、右/下不钳死）。
+    // **海岸区（家·shape:coast）例外**：贴岸半圆、左半伸进陆地——左界直接走 COAST_VIEW_X、纵向只算中心，
+    // 免得它的大圈把 fit 往左（陆地）和纵向撑出去、海岸那侧露太多空白。
     for (const lh of state.profile.lighthouses) {
-      // 只取灯塔中心、不含巨大揭示半径——让 fit 贴合 POI/灯塔点，揭示圈渐变铺出框外（不撑出大片空水域·作者 2026-06-13）。
-      grow(lh.mapX, lh.mapY);
+      const region = regionForOwner(lh.id);
+      if (region?.shape === 'coast') {
+        grow(COAST_VIEW_X, lh.mapY);
+      } else {
+        const r = revealRadius(lh);
+        grow(lh.mapX - r, lh.mapY - r);
+        grow(lh.mapX + r, lh.mapY + r);
+      }
+    }
+    // flag-gated 揭示区（鲸落·已 found 才可见）的圈也算进 fit。
+    for (const rg of flagGatedRegions()) {
+      if (!rg.center || !rg.revealFlag || !state.profile.flags.has(rg.revealFlag)) continue;
+      grow(rg.center.x - rg.radius, rg.center.y - rg.radius);
+      grow(rg.center.x + rg.radius, rg.center.y + rg.radius);
     }
     for (const p of chart.pois) {
       const { x, y } = poiPos(p);
       grow(x, y);
     }
     if (minX > maxX) return { minX: 0, minY: 0, maxX: 1, maxY: 1 }; // 空 → 全图兜底
-    // 钳进世界 [0,1]（海岸线在 x=0；圈左半伸进陆地不计入边界）。
+    // 下界＝海岸线 x=0 / 世界顶 y=0（圈/点的左半·上半伸进陆地，不框进去）；**右/下不再钳死 1**——
+    // 容得下编辑器拖远的灯塔/点/圈（世界往右与上下「无限」、左有界）。ChartViewport 的 RING + spanX 上限仍兜底。
     return {
-      minX: Math.max(0, minX),
+      minX: Math.max(COAST_VIEW_X, minX), // 左界＝海岸线左边一点（固定细线·见 COAST_VIEW_X）
       minY: Math.max(0, minY),
-      maxX: Math.min(1, maxX),
-      maxY: Math.min(1, maxY),
+      maxX,
+      maxY,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chartSig, chart]);

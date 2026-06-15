@@ -52,12 +52,33 @@ interface RoamingTemplate {
   modifier?: PoiModifier;
 }
 
-interface ChartPoiFile {
+/** 一张地图（mapId）的 POI 段。 */
+interface ChartPoiMap {
   anchors: ChartPoi[];
   roamingTemplates: RoamingTemplate[];
 }
+/**
+ * chart_pois.json 现按 mapId 分段（ch1/ch2/…·对齐 chart_regions.json）。owner 全局唯一 → 跨图
+ * 按 owner flatten 消费（同 regions.ts 套路）：所有段的 POI 并进一个池，点亮判定按 owner 是否在
+ * profile.lighthouses 自然分流（别的章节灯塔没建＝其 POI 隐藏）。`_doc` 等字符串字段跳过。
+ */
+type ChartPoiFile = { [mapId: string]: ChartPoiMap | string };
 
 const FILE = chartData as unknown as ChartPoiFile;
+
+function flattenChartPois(file: ChartPoiFile): { anchors: ChartPoi[]; roamingTemplates: RoamingTemplate[] } {
+  const anchors: ChartPoi[] = [];
+  const roamingTemplates: RoamingTemplate[] = [];
+  for (const key of Object.keys(file)) {
+    const seg = file[key];
+    if (typeof seg === 'string' || key.startsWith('_')) continue;
+    anchors.push(...(seg.anchors ?? []));
+    roamingTemplates.push(...(seg.roamingTemplates ?? []));
+  }
+  return { anchors, roamingTemplates };
+}
+/** 全地图 flatten 后的 POI 池（generateChart 消费·owner 分流）。 */
+const POIS = flattenChartPois(FILE);
 
 /** 每次出海海图上展示的 roaming 机会点数量 */
 const ROAMING_COUNT = 2;
@@ -319,7 +340,7 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
 
   // owner 坐标 resolve（owner-anchored）：owner POI 的 mapX/mapY 是相对 owner 声明坐标的偏移 →
   // 加 ownerAnchorPos 得绝对坐标（此后逻辑一律用绝对值）。无 owner 的（绝对 lane）原样。
-  const anchors = FILE.anchors.map(resolveOwnerCoords);
+  const anchors = POIS.anchors.map(resolveOwnerCoords);
 
   // anchor：已发现且在揭示圈内的都进，带三态标签（锚点永不被天气藏＝进度安全·见 climateOcclusion）。
   // 中途点亮灯塔→新进范围的锚点这里立刻进（SeaChartView chartSig 已含灯塔有效半径→重算）＝即时浮现。
@@ -330,7 +351,7 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
 
   // roaming：从"已发现 + 已点亮（圈内）"模板取 roamingKey 最大的 ROAMING_COUNT 个（pool-independent·见 roamingKey）。
   // 天气遮蔽不再在此整点剔除，而是 per-poi 落进 poiRevealState（dim＝显示但去不了 / hidden＝彻底盖住·§10 C③）。
-  const visibleTemplates = FILE.roamingTemplates
+  const visibleTemplates = POIS.roamingTemplates
     .map(resolveOwnerCoords)
     .filter((t) => flagsSatisfied(profile, t.requiresFlags) && isLit(profile, t));
   const picked = [...visibleTemplates]

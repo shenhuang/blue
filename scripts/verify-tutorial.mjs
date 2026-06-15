@@ -289,8 +289,10 @@ err(openChart, '教学完成后 briefing 应有 open_chart 选项（海图取代
 
 // —— 6b'. 海图 POI 数据：引用完整性 + 关键点位/门控 ——
 log.push('\n--- 海图 POI 数据 ---');
-const anchors = chartPois.anchors ?? [];
-const templates = chartPois.roamingTemplates ?? [];
+// chart_pois 现按 mapId 分段（对齐 chart_regions）——flatten 所有段（跳过 _doc 等字符串）。
+const _poiSegs = Object.values(chartPois).filter((s) => s && typeof s === 'object' && !Array.isArray(s));
+const anchors = _poiSegs.flatMap((s) => s.anchors ?? []);
+const templates = _poiSegs.flatMap((s) => s.roamingTemplates ?? []);
 for (const p of [...anchors, ...templates]) {
   const tag = p.id ?? p.templateId;
   err(ZONE_IDS.has(p.zoneId), `海图 POI ${tag}: zoneId ${p.zoneId} 不存在`);

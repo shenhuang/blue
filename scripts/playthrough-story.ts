@@ -327,10 +327,13 @@ L('§5 St1 锚点链（POI 强制开场·任意顺序·vent 门·守门）');
 
 {
   // —— (a) 数据面守门：chart_pois story 字段 ↔ story.ts 生成器 ——
-  const poisJson = JSON.parse(readFileSync(resolve(ROOT, 'src/data/chart_pois.json'), 'utf-8'));
-  const storyPois = (poisJson.anchors as { id: string; story?: { anchor: string; eventId: string }; requiresFlags?: string[] }[]).filter(
-    (p) => p.story,
-  );
+  const poisJson = JSON.parse(readFileSync(resolve(ROOT, 'src/data/chart_pois.json'), 'utf-8')) as Record<string, unknown>;
+  // chart_pois 现按 mapId 分段（对齐 chart_regions）——flatten 所有段的 anchors（跳过 _doc 等字符串）。
+  type StoryAnchor = { id: string; story?: { anchor: string; eventId: string }; requiresFlags?: string[] };
+  const allAnchors = Object.values(poisJson)
+    .filter((s) => !!s && typeof s === 'object' && !Array.isArray(s))
+    .flatMap((s) => ((s as { anchors?: StoryAnchor[] }).anchors ?? []));
+  const storyPois = allAnchors.filter((p) => p.story);
   assert(storyPois.length === 4, `§5 海图应有恰好 4 个一章锚点 POI，实际 ${storyPois.length}`);
   const anchorsSeen = new Set(storyPois.map((p) => p.story!.anchor));
   for (const a of CH1_ANCHORS) {

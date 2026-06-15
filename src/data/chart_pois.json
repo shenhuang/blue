@@ -1,228 +1,316 @@
 {
   "_doc": "港口海图 POI 数据。anchors = 持久点（永远在；通常每 zone 一个，但同 zone 可挂多个出潜口——如横岩廊=蓝洞群的平廊侧口·#114 续）；roamingTemplates = 机会点模板，generateChart 按 runsCompleted 种子抽取若干并生成运行时 id。两级门控：requiresFlags=发现（不满足则不出现），requiresUpgrade=抵达能力（不满足则灰显可见但不能出海）。modifier.depthOffset/depthRange/layerCount/depthCurve 已实装（后三者=GenOpts 薄投影·平廊三件套：窄 span+长图+剖面 k），current/visibility 暂为叙事+接口。**#131 探深深度柱重构**：旧 poi.deep.*（深脊柱 + 章节蛙跳深入潜点）已删——深入潜点改由 depth_columns.json 各柱**派生**（engine/columns.ts::buildColumnPois·id=poi.dive.<短名>.t<tier>·摆宿主灯塔揭示圈内·可见性走档位制·不在本文件手写）。本文件只留 zone 锚点（含 St1 一章 story 锚点）+ roaming 机会点。**owner 归属 + 相对坐标（owner-anchored 重构）**：每个 anchor/roamingTemplate 带 owner（所属灯塔 id）；mapX/mapY 是**相对 owner 声明坐标的偏移**（generateChart 用 engine/lighthouses.ts::ownerAnchorPos resolve 成绝对坐标·声明坐标静态可查→剧情点 beacon 建成前也能定位）。点亮判定＝owner 灯塔在 profile.lighthouses 里即出现（不走几何·见 chart.ts isLit）。story 锚点也带 owner（坐标基准 + 区域标签），但恒显恒可达、不被 owner 门控（避免「建 beacon 要先潜、潜要先有 beacon」死锁）。owner-less + 绝对坐标的特例须显式 absolute:true（守门：authored POI 无 owner 必须 absolute·防自动内容生成漏进这条 lane）。新增节点：归某座灯塔就填 owner + 相对偏移；要无主绝对点就 absolute:true + 绝对 mapX/mapY。owner 声明坐标：home 见 engine/state.ts(HOME_LIGHTHOUSE_POS)，前哨见 lighthouse_upgrades.json result。",
-  "anchors": [
-    {
-      "id": "poi.anchor.east_reef",
-      "zoneId": "zone.east_reef",
-      "name": "东礁·资格区",
-      "blurb": "你第一次下水的地方。浅、平、平淡——但鱼群还在，珊瑚还在。再走一趟也没什么不好。",
-      "distance": 0,
-      "owner": "lighthouse.home",
-      "mapX": 0.07,
-      "mapY": 0,
-      "persistent": true,
-      "requiresFlags": ["flag.tutorial_complete"]
-    },
-    {
-      "id": "poi.anchor.old_lighthouse_reef",
-      "zoneId": "zone.old_lighthouse_reef",
-      "name": "旧灯塔礁",
-      "blurb": "灯塔废弃二十年。岩礁下面据说还压着些船难的残骸。要更大的船才出得了这么远。",
-      "distance": 1,
-      "owner": "lighthouse.home",
-      "mapX": 0.12,
-      "mapY": 0.12,
-      "persistent": true,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "requiresLighthouseUpgrade": "lighthouse.dockyard.lv1"
-    },
-    {
-      "id": "poi.anchor.blue_caves",
-      "zoneId": "zone.blue_caves",
-      "name": "蓝洞群",
-      "blurb": "进了洞就不能想上就上——头上是岩，要么从另一头出来。氧气备足，看见亮的地方就往亮处走。",
-      "distance": 1,
-      "owner": "lighthouse.ch1_trench_outpost",
-      "mapX": -0.01,
-      "mapY": -0.04,
-      "persistent": true,
-      "requiresFlags": ["flag.tutorial_complete"]
-    },
-    {
-      "id": "poi.anchor.flat_gallery",
-      "zoneId": "zone.blue_caves",
-      "name": "横岩廊",
-      "blurb": "这洞几乎不往下走——一直往里。水浅，气省，省到你容易忘了：来路有多长，回头的路就有多长。老规矩，气用掉三分之一就掉头。",
-      "distance": 1,
-      "owner": "lighthouse.ch1_trench_outpost",
-      "mapX": 0.02,
-      "mapY": -0.09,
-      "persistent": true,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "modifier": { "depthRange": [16, 30], "layerCount": 10, "depthCurve": 2.4, "visibility": "murky" }
-    },
-    {
-      "id": "poi.anchor.wreck_graveyard",
-      "zoneId": "zone.wreck_graveyard",
-      "name": "沉船墓园",
-      "blurb": "开阔水域，想上就能上，氧气自己算。下面什么都有——商船、渔船，还有上一代没回来的那两具。",
-      "distance": 2,
-      "owner": "lighthouse.ch1_wreck_outpost",
-      "mapX": 0,
-      "mapY": -0.03,
-      "persistent": true,
-      "requiresFlags": ["flag.tutorial_complete"]
-    },
-    {
-      "id": "poi.anchor.ch1_coral_grove",
-      "zoneId": "zone.old_lighthouse_reef",
-      "name": "漆号珊瑚丛",
-      "blurb": "日志第一条坐标。礁盘背流的一侧——导师队标记样地用的漆号，褪了十年，应该还认得出来。",
-      "distance": 0,
-      "owner": "lighthouse.home",
-      "mapX": 0.04,
-      "mapY": -0.12,
-      "persistent": true,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "modifier": { "depthRange": [10, 22] },
-      "story": { "anchor": "reef", "eventId": "ch1.anchor_reef" }
-    },
-    {
-      "id": "poi.anchor.ch1_temperate_wreck",
-      "zoneId": "zone.wreck_graveyard",
-      "name": "温带商船残骸",
-      "blurb": "日志第二条坐标。一艘侧躺在大陆架上的温带商船——导师队进去过，日志在那里断了一页。",
-      "distance": 2,
-      "owner": "lighthouse.ch1_wreck_outpost",
-      "mapX": 0.04,
-      "mapY": 0.03,
-      "persistent": true,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "story": { "anchor": "wreck", "eventId": "ch1.anchor_wreck" }
-    },
-    {
-      "id": "poi.anchor.ch1_open_midwater",
-      "zoneId": "zone.open_midwater",
-      "name": "远洋中层",
-      "blurb": "日志第三条坐标落在没有底的地方。中层水，上蓝下黑，没有参照物。日志说他们在这里追过一种「会折光的薄膜」。",
-      "distance": 2,
-      "owner": "lighthouse.ch1_midwater_outpost",
-      "mapX": 0,
-      "mapY": 0,
-      "persistent": true,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "story": { "anchor": "midwater", "eventId": "ch1.anchor_midwater" }
-    },
-    {
-      "id": "poi.anchor.ch1_vent_field",
-      "zoneId": "zone.vent_trench",
-      "name": "海沟热液场",
-      "blurb": "日志最后一条坐标。海沟底的热液口，黑烟成柱。剩下的页都粘着——能读的最后一行写：往烟柱后面看。",
-      "distance": 3,
-      "owner": "lighthouse.ch1_vent_outpost",
-      "mapX": 0,
-      "mapY": 0,
-      "persistent": true,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "story": { "anchor": "vent", "eventId": "ch1.anchor_vent" }
-    }
-  ],
-  "roamingTemplates": [
-    {
-      "templateId": "roam.wreck_north_collapse",
-      "zoneId": "zone.wreck_graveyard",
-      "name": "塌口北缘",
-      "blurb": "墓园北边大陆架塌得最深的一道口子。洋流在这里打转，沙位天天不一样。东西多，但回不回得来是另一回事。",
-      "distance": 2,
-      "owner": "lighthouse.ch1_wreck_outpost",
-      "mapX": 0.06,
-      "mapY": -0.03,
-      "weight": 2,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "requiresLighthouseUpgrade": "lighthouse.dockyard.lv1",
-      "modifier": { "depthOffset": 8, "current": "strong" }
-    },
-    {
-      "templateId": "roam.lighthouse_trench",
-      "zoneId": "zone.old_lighthouse_reef",
-      "name": "灯塔礁深槽",
-      "blurb": "礁体侧面裂开的一道深槽，比礁顶冷得多。Mira 说底下沉过一条运瓷器的船。",
-      "distance": 2,
-      "owner": "lighthouse.home",
-      "mapX": 0.16,
-      "mapY": 0.08,
-      "weight": 2,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "requiresLighthouseUpgrade": "lighthouse.dockyard.lv1",
-      "modifier": { "depthOffset": 10 }
-    },
-    {
-      "templateId": "roam.bluecaves_dark_mouth",
-      "zoneId": "zone.blue_caves",
-      "name": "蓝洞暗河口",
-      "blurb": "洞群更里面的一处岔口，光进不去。当地人说水声在那儿是反着的。",
-      "distance": 2,
-      "owner": "lighthouse.ch1_trench_outpost",
-      "mapX": -0.03,
-      "mapY": 0.05,
-      "weight": 2,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "modifier": { "depthOffset": 6, "visibility": "dark" }
-    },
-    {
-      "templateId": "roam.wreck_murk",
-      "zoneId": "zone.wreck_graveyard",
-      "name": "墓园雾区",
-      "blurb": "悬浮物把光散成一团白。看不远，但浅，洋流也温和——适合稳稳捞一趟。",
-      "distance": 1,
-      "owner": "lighthouse.ch1_wreck_outpost",
-      "mapX": -0.04,
-      "mapY": 0.03,
-      "weight": 3,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "modifier": { "visibility": "murky", "current": "mild" }
-    },
-    {
-      "templateId": "roam.east_ebb_shallows",
-      "zoneId": "zone.east_reef",
-      "name": "东礁退潮浅滩",
-      "blurb": "退潮把礁盘露出来一截，水浅得能看见底。洋流推着你走，省点力气。",
-      "distance": 0,
-      "owner": "lighthouse.home",
-      "mapX": 0.09,
-      "mapY": -0.06,
-      "weight": 3,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "modifier": { "current": "mild" }
-    },
-    {
-      "templateId": "roam.midwater_thermocline_step",
-      "zoneId": "zone.open_midwater",
-      "name": "温跃断层",
-      "blurb": "中层里一道温度的坎，上下差着七八度。水到这里发糊，鱼群贴着坎游，不肯往下。",
-      "distance": 2,
-      "owner": "lighthouse.ch1_midwater_outpost",
-      "mapX": -0.04,
-      "mapY": 0.06,
-      "weight": 2,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "modifier": { "depthRange": [60, 84], "visibility": "murky" }
-    },
-    {
-      "templateId": "roam.midwater_drift_band",
-      "zoneId": "zone.open_midwater",
-      "name": "暗流斜带",
-      "blurb": "一股斜着穿过中层的流，没有底也没有壁，只有水推着你偏。省力，但容易把人带远——回头的气要算清。",
-      "distance": 2,
-      "owner": "lighthouse.ch1_midwater_outpost",
-      "mapX": 0.06,
-      "mapY": -0.06,
-      "weight": 2,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "modifier": { "current": "strong" }
-    },
-    {
-      "templateId": "roam.vent_cold_seep",
-      "zoneId": "zone.vent_trench",
-      "name": "冷泉洼",
-      "blurb": "热液场边上一处不冒烟的洼地，水反倒是凉的，底上结着一层白霜似的东西。东西沉得久，气味也淡。",
-      "distance": 3,
-      "owner": "lighthouse.ch1_vent_outpost",
-      "mapX": -0.05,
-      "mapY": 0.05,
-      "weight": 1,
-      "requiresFlags": ["flag.tutorial_complete"],
-      "modifier": { "depthRange": [92, 116], "visibility": "dark" }
-    }
-  ]
+  "ch1": {
+    "anchors": [
+      {
+        "id": "poi.anchor.east_reef",
+        "zoneId": "zone.east_reef",
+        "name": "东礁·资格区",
+        "blurb": "你第一次下水的地方。浅、平、平淡——但鱼群还在，珊瑚还在。再走一趟也没什么不好。",
+        "distance": 0,
+        "owner": "lighthouse.home",
+        "mapX": 0.07,
+        "mapY": 0,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ]
+      },
+      {
+        "id": "poi.anchor.old_lighthouse_reef",
+        "zoneId": "zone.old_lighthouse_reef",
+        "name": "旧灯塔礁",
+        "blurb": "灯塔废弃二十年。岩礁下面据说还压着些船难的残骸。要更大的船才出得了这么远。",
+        "distance": 1,
+        "owner": "lighthouse.home",
+        "mapX": 0.12,
+        "mapY": 0.12,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "requiresLighthouseUpgrade": "lighthouse.dockyard.lv1"
+      },
+      {
+        "id": "poi.anchor.blue_caves",
+        "zoneId": "zone.blue_caves",
+        "name": "蓝洞群",
+        "blurb": "进了洞就不能想上就上——头上是岩，要么从另一头出来。氧气备足，看见亮的地方就往亮处走。",
+        "distance": 1,
+        "owner": "lighthouse.ch1_trench_outpost",
+        "mapX": -0.01,
+        "mapY": -0.04,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ]
+      },
+      {
+        "id": "poi.anchor.flat_gallery",
+        "zoneId": "zone.blue_caves",
+        "name": "横岩廊",
+        "blurb": "这洞几乎不往下走——一直往里。水浅，气省，省到你容易忘了：来路有多长，回头的路就有多长。老规矩，气用掉三分之一就掉头。",
+        "distance": 1,
+        "owner": "lighthouse.ch1_trench_outpost",
+        "mapX": 0.02,
+        "mapY": -0.09,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "depthRange": [
+            16,
+            30
+          ],
+          "layerCount": 10,
+          "depthCurve": 2.4,
+          "visibility": "murky"
+        }
+      },
+      {
+        "id": "poi.anchor.wreck_graveyard",
+        "zoneId": "zone.wreck_graveyard",
+        "name": "沉船墓园",
+        "blurb": "开阔水域，想上就能上，氧气自己算。下面什么都有——商船、渔船，还有上一代没回来的那两具。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_wreck_outpost",
+        "mapX": 0,
+        "mapY": -0.03,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ]
+      },
+      {
+        "id": "poi.anchor.ch1_coral_grove",
+        "zoneId": "zone.old_lighthouse_reef",
+        "name": "漆号珊瑚丛",
+        "blurb": "日志第一条坐标。礁盘背流的一侧——导师队标记样地用的漆号，褪了十年，应该还认得出来。",
+        "distance": 0,
+        "owner": "lighthouse.home",
+        "mapX": 0.04,
+        "mapY": -0.12,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "depthRange": [
+            10,
+            22
+          ]
+        },
+        "story": {
+          "anchor": "reef",
+          "eventId": "ch1.anchor_reef"
+        }
+      },
+      {
+        "id": "poi.anchor.ch1_temperate_wreck",
+        "zoneId": "zone.wreck_graveyard",
+        "name": "温带商船残骸",
+        "blurb": "日志第二条坐标。一艘侧躺在大陆架上的温带商船——导师队进去过，日志在那里断了一页。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_wreck_outpost",
+        "mapX": 0.04,
+        "mapY": 0.03,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "story": {
+          "anchor": "wreck",
+          "eventId": "ch1.anchor_wreck"
+        }
+      },
+      {
+        "id": "poi.anchor.ch1_open_midwater",
+        "zoneId": "zone.open_midwater",
+        "name": "远洋中层",
+        "blurb": "日志第三条坐标落在没有底的地方。中层水，上蓝下黑，没有参照物。日志说他们在这里追过一种「会折光的薄膜」。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_midwater_outpost",
+        "mapX": 0,
+        "mapY": 0,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "story": {
+          "anchor": "midwater",
+          "eventId": "ch1.anchor_midwater"
+        }
+      },
+      {
+        "id": "poi.anchor.ch1_vent_field",
+        "zoneId": "zone.vent_trench",
+        "name": "海沟热液场",
+        "blurb": "日志最后一条坐标。海沟底的热液口，黑烟成柱。剩下的页都粘着——能读的最后一行写：往烟柱后面看。",
+        "distance": 3,
+        "owner": "lighthouse.ch1_vent_outpost",
+        "mapX": 0,
+        "mapY": 0,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "story": {
+          "anchor": "vent",
+          "eventId": "ch1.anchor_vent"
+        }
+      }
+    ],
+    "roamingTemplates": [
+      {
+        "templateId": "roam.wreck_north_collapse",
+        "zoneId": "zone.wreck_graveyard",
+        "name": "塌口北缘",
+        "blurb": "墓园北边大陆架塌得最深的一道口子。洋流在这里打转，沙位天天不一样。东西多，但回不回得来是另一回事。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_wreck_outpost",
+        "mapX": 0.06,
+        "mapY": -0.03,
+        "weight": 2,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "requiresLighthouseUpgrade": "lighthouse.dockyard.lv1",
+        "modifier": {
+          "depthOffset": 8,
+          "current": "strong"
+        }
+      },
+      {
+        "templateId": "roam.lighthouse_trench",
+        "zoneId": "zone.old_lighthouse_reef",
+        "name": "灯塔礁深槽",
+        "blurb": "礁体侧面裂开的一道深槽，比礁顶冷得多。Mira 说底下沉过一条运瓷器的船。",
+        "distance": 2,
+        "owner": "lighthouse.home",
+        "mapX": 0.16,
+        "mapY": 0.08,
+        "weight": 2,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "requiresLighthouseUpgrade": "lighthouse.dockyard.lv1",
+        "modifier": {
+          "depthOffset": 10
+        }
+      },
+      {
+        "templateId": "roam.bluecaves_dark_mouth",
+        "zoneId": "zone.blue_caves",
+        "name": "蓝洞暗河口",
+        "blurb": "洞群更里面的一处岔口，光进不去。当地人说水声在那儿是反着的。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_trench_outpost",
+        "mapX": -0.03,
+        "mapY": 0.05,
+        "weight": 2,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "depthOffset": 6,
+          "visibility": "dark"
+        }
+      },
+      {
+        "templateId": "roam.wreck_murk",
+        "zoneId": "zone.wreck_graveyard",
+        "name": "墓园雾区",
+        "blurb": "悬浮物把光散成一团白。看不远，但浅，洋流也温和——适合稳稳捞一趟。",
+        "distance": 1,
+        "owner": "lighthouse.ch1_wreck_outpost",
+        "mapX": -0.04,
+        "mapY": 0.03,
+        "weight": 3,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "visibility": "murky",
+          "current": "mild"
+        }
+      },
+      {
+        "templateId": "roam.east_ebb_shallows",
+        "zoneId": "zone.east_reef",
+        "name": "东礁退潮浅滩",
+        "blurb": "退潮把礁盘露出来一截，水浅得能看见底。洋流推着你走，省点力气。",
+        "distance": 0,
+        "owner": "lighthouse.home",
+        "mapX": 0.09,
+        "mapY": -0.06,
+        "weight": 3,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "current": "mild"
+        }
+      },
+      {
+        "templateId": "roam.midwater_thermocline_step",
+        "zoneId": "zone.open_midwater",
+        "name": "温跃断层",
+        "blurb": "中层里一道温度的坎，上下差着七八度。水到这里发糊，鱼群贴着坎游，不肯往下。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_midwater_outpost",
+        "mapX": -0.04,
+        "mapY": 0.06,
+        "weight": 2,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "depthRange": [
+            60,
+            84
+          ],
+          "visibility": "murky"
+        }
+      },
+      {
+        "templateId": "roam.midwater_drift_band",
+        "zoneId": "zone.open_midwater",
+        "name": "暗流斜带",
+        "blurb": "一股斜着穿过中层的流，没有底也没有壁，只有水推着你偏。省力，但容易把人带远——回头的气要算清。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_midwater_outpost",
+        "mapX": 0.06,
+        "mapY": -0.06,
+        "weight": 2,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "current": "strong"
+        }
+      },
+      {
+        "templateId": "roam.vent_cold_seep",
+        "zoneId": "zone.vent_trench",
+        "name": "冷泉洼",
+        "blurb": "热液场边上一处不冒烟的洼地，水反倒是凉的，底上结着一层白霜似的东西。东西沉得久，气味也淡。",
+        "distance": 3,
+        "owner": "lighthouse.ch1_vent_outpost",
+        "mapX": -0.05,
+        "mapY": 0.05,
+        "weight": 1,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "depthRange": [
+            92,
+            116
+          ],
+          "visibility": "dark"
+        }
+      }
+    ]
+  }
 }
