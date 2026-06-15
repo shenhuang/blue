@@ -7,6 +7,7 @@
 //
 // 跑法： npx tsx scripts/playthrough-chart.ts
 
+import { readFileSync } from 'node:fs';
 import { createInitialGameState, createNewRun, HOME_LIGHTHOUSE_ID } from '../src/engine/state';
 import {
   generateChart,
@@ -118,6 +119,56 @@ L('========== 0. flag-gated 揭示区（鲸落·owner-less·found 门控） ====
     'found 后·鲸落区圈内点亮（flag-gated 揭示·isLit 纳入·北极星：mimic 仍唯一谎点）',
   );
   L('  不变量 + flag-gated 揭示 + found 门控 ✓');
+}
+
+// ============================================
+// 0b. owner 归属守门 + 坐标 round-trip（owner-anchored 重构·机制门·CLAUDE.md「约定落成机制」）
+//   - authored POI 必须有 owner，除非显式 absolute:true（绝对坐标 lane 须手工 opt-in）——挡自动内容生成漏入；
+//   - owner 必须是真实 region owner（regionForOwner 命中）——挡 owner 拼写漂移；
+//   - resolve 后绝对坐标 == 设计值——挡相对偏移写反符号（坐标值无别处断言覆盖）。
+// ============================================
+L('\n========== 0b. owner 归属守门 + 坐标 round-trip ==========');
+{
+  type RawPoi = { id?: string; templateId?: string; owner?: string; absolute?: boolean };
+  const raw = JSON.parse(
+    readFileSync(new URL('../src/data/chart_pois.json', import.meta.url), 'utf-8'),
+  ) as { anchors: RawPoi[]; roamingTemplates: RawPoi[] };
+  const authored: { id: string; owner?: string; absolute?: boolean }[] = [
+    ...raw.anchors.map((a) => ({ id: a.id ?? '?', owner: a.owner, absolute: a.absolute })),
+    ...raw.roamingTemplates.map((t) => ({ id: t.templateId ?? '?', owner: t.owner, absolute: t.absolute })),
+  ];
+  for (const p of authored) {
+    assert(
+      typeof p.owner === 'string' || p.absolute === true,
+      `0b: authored POI「${p.id}」必须有 owner，或显式 absolute:true（绝对坐标 lane opt-in·防自动生成漏入）`,
+    );
+    if (typeof p.owner === 'string') {
+      assert(
+        regionForOwner(p.owner) !== undefined,
+        `0b: POI「${p.id}」owner=${p.owner} 不是已配置的 region owner（chart_regions.json）`,
+      );
+    }
+  }
+  L(`  ${authored.length} 个 authored POI owner 归属合法（或 absolute opt-in）✓`);
+  // 坐标 round-trip：全区揭示档下，resolve 后绝对坐标 == 已知设计值（每个 owner 取一点 + 边缘点）。
+  const full = generateChart({ profile: fullyRevealedProfile() });
+  const wantAbs: [string, number, number][] = [
+    ['poi.anchor.east_reef', 0.13, 0.5], // home
+    ['poi.anchor.wreck_graveyard', 0.3, 0.66], // wreck
+    ['poi.anchor.ch1_open_midwater', 0.5, 0.52], // midwater
+    ['poi.anchor.ch1_vent_field', 0.75, 0.61], // vent
+    ['poi.anchor.blue_caves', 0.92, 0.46], // trench
+    ['poi.anchor.flat_gallery', 0.95, 0.41], // trench·边缘点（偏移 0.02,-0.09）
+  ];
+  for (const [id, x, y] of wantAbs) {
+    const poi = full.pois.find((p) => p.id === id);
+    assert(poi, `0b: 全区揭示档应含 ${id}`);
+    assert(
+      Math.abs((poi!.mapX ?? NaN) - x) < 1e-9 && Math.abs((poi!.mapY ?? NaN) - y) < 1e-9,
+      `0b: ${id} resolve 后坐标应=(${x},${y})，实际 (${poi!.mapX},${poi!.mapY})`,
+    );
+  }
+  L(`  ${wantAbs.length} 个锚点坐标 round-trip（相对偏移 + owner 声明坐标 = 设计绝对值）✓`);
 }
 
 // ============================================

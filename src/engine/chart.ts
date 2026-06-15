@@ -18,6 +18,7 @@ import {
   getOutposts,
   outpostStage,
   revealRadius,
+  ownerAnchorPos,
   OUTPOST_USABLE_STAGE,
 } from './lighthouses';
 import { flagGatedRegions } from './regions';
@@ -37,6 +38,11 @@ interface RoamingTemplate {
   name: string;
   blurb: string;
   distance: number;
+  /** 显式归属（owner 灯塔 id·同 ChartPoi.owner）：有 owner ⇒ mapX/mapY 为相对偏移 + owner-gated 点亮。 */
+  owner?: string;
+  /** owner-less「绝对坐标」lane 显式 opt-in（同 ChartPoi.absolute·守门用）。 */
+  absolute?: boolean;
+  /** 有 owner 时为相对 owner 的偏移（generateChart resolve 成绝对）；否则为绝对坐标。 */
   mapX?: number;
   mapY?: number;
   weight?: number;
@@ -55,6 +61,19 @@ const FILE = chartData as unknown as ChartPoiFile;
 
 /** 每次出海海图上展示的 roaming 机会点数量 */
 const ROAMING_COUNT = 2;
+
+/**
+ * owner POI 坐标 resolve（owner-anchored 重构）：有 owner ⇒ mapX/mapY 是相对 owner 声明坐标的偏移，
+ * 加 ownerAnchorPos(owner) 得绝对坐标（之后 isLit / poiRevealState / effectiveDistance / UI 一律用绝对值）。
+ * 用 owner 的**静态声明坐标**（不查 profile.lighthouses）⇒ 即便 owner beacon 还没建，剧情 POI 也能定位渲染。
+ * 无 owner（绝对坐标 lane / mimic）⇒ 原样返回（mapX/mapY 已是绝对）；owner 不在声明表 ⇒ 原样不崩（守门拦）。
+ */
+function resolveOwnerCoords<T extends { owner?: string; mapX?: number; mapY?: number }>(node: T): T {
+  if (node.owner === undefined) return node;
+  const base = ownerAnchorPos(node.owner);
+  if (!base) return node;
+  return { ...node, mapX: base.mapX + (node.mapX ?? 0), mapY: base.mapY + (node.mapY ?? 0) };
+}
 
 /**
  * 确定性海况种子（声呐与房间 §6.5）：FNV-1a on `salt:runsCompleted`，不碰 roaming 的 LCG（互不串）。
@@ -122,10 +141,15 @@ function makeMimicPoi(): ChartPoi {
 }
 
 /**
- * 给定坐标是否被某座已拥有灯塔点亮（落在其 revealRadius 内）。
- * 无坐标 → 默认点亮（不因缺坐标而隐藏，向后兼容）。
+ * 给定 POI 是否被"点亮"（海图揭示门）。两条互斥路径：
+ *   - 有 owner（owner-anchored·绝大多数 POI）：owner 灯塔在 profile.lighthouses 里即点亮——显式归属、
+ *     不走几何（区域揭示 owner→存在性）。owner POI 坐标已由 generateChart resolve 成绝对，但这里不依赖它。
+ *   - 无 owner（owner-less·mimic / 绝对坐标特例 / flag-gated 鲸落）：原几何（落某灯塔 revealRadius 内）
+ *     + flag-gated 揭示圈路径；无坐标 → 默认点亮（向后兼容）。
  */
-function isLit(profile: PlayerProfile, mapX?: number, mapY?: number): boolean {
+function isLit(profile: PlayerProfile, poi: { owner?: string; mapX?: number; mapY?: number }): boolean {
+  if (poi.owner !== undefined) return profile.lighthouses.some((l) => l.id === poi.owner);
+  const { mapX, mapY } = poi;
   if (mapX === undefined || mapY === undefined) return true;
   for (const lh of profile.lighthouses) {
     // 点亮半径（衰减已删·#125）：灯塔的点亮范围＝固定 revealRadius（不再随 run 收缩）。
@@ -149,7 +173,7 @@ export function isPoiLit(profile: PlayerProfile, poi: ChartPoi): boolean {
   // St1 一章锚点（#117）：日志抄来的坐标＝**已知点**，不走灯塔「发现」轴——教学尾
   // 「四个坐标圈上海图」与海图解锁是同一个动作，你不需要网照到它才知道它在哪。
   if (poi.story) return true;
-  return isLit(profile, poi.mapX, poi.mapY);
+  return isLit(profile, poi);
 }
 
 /**
@@ -162,7 +186,7 @@ export function isPoiExplainedByLighthouse(profile: PlayerProfile, poi: ChartPoi
   // St1 一章锚点（#117）：亮的来源是「你自己抄的坐标」——有解释，别让剧情锚点误穿
   // mimic 的「亮而无主」宏观 tell（海图诚实轴）。
   if (poi.story) return true;
-  return isLit(profile, poi.mapX, poi.mapY);
+  return isLit(profile, poi);
 }
 
 /**
@@ -293,18 +317,22 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
 
   const pois: ChartPoi[] = [];
 
+  // owner 坐标 resolve（owner-anchored）：owner POI 的 mapX/mapY 是相对 owner 声明坐标的偏移 →
+  // 加 ownerAnchorPos 得绝对坐标（此后逻辑一律用绝对值）。无 owner 的（绝对 lane）原样。
+  const anchors = FILE.anchors.map(resolveOwnerCoords);
+
   // anchor：已发现且在揭示圈内的都进，带三态标签（锚点永不被天气藏＝进度安全·见 climateOcclusion）。
   // 中途点亮灯塔→新进范围的锚点这里立刻进（SeaChartView chartSig 已含灯塔有效半径→重算）＝即时浮现。
-  for (const a of FILE.anchors) {
+  for (const a of anchors) {
     const st = poiRevealState(profile, a);
     if (st !== 'hidden') pois.push({ ...a, revealState: st });
   }
 
   // roaming：从"已发现 + 已点亮（圈内）"模板取 roamingKey 最大的 ROAMING_COUNT 个（pool-independent·见 roamingKey）。
   // 天气遮蔽不再在此整点剔除，而是 per-poi 落进 poiRevealState（dim＝显示但去不了 / hidden＝彻底盖住·§10 C③）。
-  const visibleTemplates = FILE.roamingTemplates.filter(
-    (t) => flagsSatisfied(profile, t.requiresFlags) && isLit(profile, t.mapX, t.mapY),
-  );
+  const visibleTemplates = FILE.roamingTemplates
+    .map(resolveOwnerCoords)
+    .filter((t) => flagsSatisfied(profile, t.requiresFlags) && isLit(profile, t));
   const picked = [...visibleTemplates]
     .sort((a, b) => roamingKey(profile.runsCompleted, b) - roamingKey(profile.runsCompleted, a))
     .slice(0, ROAMING_COUNT);
@@ -315,6 +343,7 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
       name: t.name,
       blurb: t.blurb,
       distance: t.distance,
+      owner: t.owner,
       mapX: t.mapX,
       mapY: t.mapY,
       modifier: t.modifier,

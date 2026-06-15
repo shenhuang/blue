@@ -62,8 +62,23 @@ export interface ChartPoi {
   /** 距离档位（0 = 近岸；越大 = 路上越久）。驱动「远 = 多耗氧 / 多 turn」接口。 */
   distance: number;
   /**
-   * 海图 2D 视图上的归一化坐标（0–1，左→右 ≈ 离岸越远 / 越深，上下铺开）。
-   * SeaChartView 据此摆放标记点。可选——缺省时视图按 distance 兜底推算。
+   * 显式归属（owner 灯塔 id·区域揭示 owner-anchored）：设了 ⇒ 本 POI 属于该灯塔的揭示区——
+   *   ① mapX/mapY 解释为**相对 owner 灯塔的偏移**（generateChart 用 owner 的「声明坐标」resolve 成绝对坐标）；
+   *   ② 点亮判定走「owner 灯塔是否在 profile.lighthouses 里」而非几何（见 chart.ts isLit）。
+   * 缺省 ⇒ owner-less：mapX/mapY 为绝对坐标、走几何点亮（mimic / 将来手工特例·须配 absolute:true）。
+   * 注：story 锚点也带 owner（坐标基准 + 区域标签），但可达性仍由 story 短路恒可达、不被 owner 门控（见 isPoiLit）。
+   */
+  owner?: string;
+  /**
+   * owner-less「绝对坐标」lane 的显式 opt-in（保留未来手工特例 + 守门用）：true ⇒ 本 POI 有意无 owner、
+   * 用绝对 mapX/mapY + 几何点亮。守门规则（playthrough-chart）：authored POI 必须有 owner，除非 absolute===true——
+   * 自动内容生成不会登记 absolute ⇒ 漏不进这条 lane（守「自动内容只产 owner-bound 节点」）。
+   */
+  absolute?: boolean;
+  /**
+   * 海图 2D 视图上的归一化坐标（0–1，左→右 ≈ 离岸越远 / 越深，上下铺开）。SeaChartView 据此摆放标记点。
+   * 可选——缺省时视图按 distance 兜底推算。**有 owner 时为相对 owner 的偏移**，generateChart resolve 后变绝对坐标
+   * （此后 isLit / poiRevealState / effectiveDistance / UI 一律用绝对坐标，逻辑一行不改）。
    */
   mapX?: number;
   mapY?: number;

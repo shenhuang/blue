@@ -25,6 +25,13 @@ const SAVE_VERSION = 6;
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
 
 /**
+ * 家灯塔的海图「声明坐标」（静态·单一来源）：createHomeLighthouse 与 chart owner 坐标 resolve
+ * （engine/lighthouses.ts::ownerAnchorPos）共用——前哨的声明坐标在 lighthouse_upgrades.json result，
+ * 家的在这里。改港口位置只动这一处。
+ */
+export const HOME_LIGHTHOUSE_POS = { mapX: 0.06, mapY: 0.5 } as const;
+
+/**
  * 构造家灯塔——现有岸边港口（鸢尾湾，Aldo 是守灯人）的灯塔化身。
  * 坐标取海图最左的港口位（POI 在 mapX 0.18+，港口在更左）。
  * name 暂沿用 SPEC 锁定的「旧灯塔」；与出海点「旧灯塔礁」zone 同源 lore 但是不同地点——
@@ -34,8 +41,8 @@ export function createHomeLighthouse(): Lighthouse {
   return {
     id: HOME_LIGHTHOUSE_ID,
     name: '旧灯塔',
-    mapX: 0.06,
-    mapY: 0.5,
+    mapX: HOME_LIGHTHOUSE_POS.mapX,
+    mapY: HOME_LIGHTHOUSE_POS.mapY,
     level: 1,
     builtUpgrades: new Set(),
   };

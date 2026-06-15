@@ -23,7 +23,7 @@ import type {
   PlayerProfile,
 } from '@/types';
 import lighthouseData from '@/data/lighthouse_upgrades.json';
-import { appendLog, removeFromInventory, HOME_LIGHTHOUSE_ID } from './state';
+import { appendLog, removeFromInventory, HOME_LIGHTHOUSE_ID, HOME_LIGHTHOUSE_POS } from './state';
 import { materialShortfall, describeUpgradeCost, getUpgradeBonuses } from './upgrades';
 import { ch1AnchorFlag, TUTORIAL_COMPLETE_FLAG, type Ch1Anchor } from './story';
 import { regionRadius } from './regions';
@@ -328,6 +328,23 @@ export function nearestLighthouse(
     if (!best || distance < best.distance) best = { lighthouse: lh, distance };
   }
   return best;
+}
+
+/**
+ * owner 灯塔的海图「声明坐标」（静态·与该灯塔是否已建进 profile.lighthouses 无关）：
+ * 家＝state.ts 常量；前哨/废墟＝各自 result。chart.ts 据此把 owner POI 的相对偏移 resolve 成绝对坐标——
+ * 故剧情 POI 在 owner beacon 建成前也能定位渲染（声明坐标≡活灯塔坐标·灯塔从不移动）。
+ * **坐标解析的单一来源**；点亮判定另查 profile.lighthouses（owner 在不在），两件事分开。未知 owner → undefined。
+ */
+export function ownerAnchorPos(ownerId: string): { mapX: number; mapY: number } | undefined {
+  if (ownerId === HOME_LIGHTHOUSE_ID) {
+    return { mapX: HOME_LIGHTHOUSE_POS.mapX, mapY: HOME_LIGHTHOUSE_POS.mapY };
+  }
+  const outpost = OUTPOSTS.find((o) => o.result.id === ownerId);
+  if (outpost) return { mapX: outpost.result.mapX, mapY: outpost.result.mapY };
+  const ruin = RUINS.find((r) => r.result.id === ownerId);
+  if (ruin) return { mapX: ruin.result.mapX, mapY: ruin.result.mapY };
+  return undefined;
 }
 
 // ============================================================
