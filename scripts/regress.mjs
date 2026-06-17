@@ -86,6 +86,9 @@ tasks.push({ name: 'smoke-chart-ui', cmd: [tsx, join('scripts', 'smoke-chart-ui.
 // 海图编辑器（dev 工具）SSR smoke（守数据 shape 演进别静默打挂编辑器）
 tasks.push({ name: 'smoke-map-editor', cmd: [tsx, join('scripts', 'smoke-map-editor.tsx')] });
 
+// 剧情编辑器（dev 工具·?storyeditor）SSR smoke（守事件 schema / EVENT_DB 演进别静默打挂编辑器）
+tasks.push({ name: 'smoke-story-editor', cmd: [tsx, join('scripts', 'smoke-story-editor.tsx')] });
+
 // 全部 playthrough*.ts —— 各自独立进程，可并行（#22 安全）
 const playthroughs = readdirSync(join(ROOT, 'scripts'))
   .filter((f) => /^playthrough.*\.ts$/.test(f))

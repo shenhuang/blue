@@ -185,7 +185,7 @@ export function withSeededRandom<T>(seed: number | undefined, fn: () => T): T {
 // Condition 人类可读化
 // ---------------------------------------------------------------------------
 
-function describeCondition(c: Condition): string {
+export function describeCondition(c: Condition): string {
   switch (c.kind) {
     case 'hasEquipment':
       return `需要装备槽位 ${c.slot}`;
@@ -336,11 +336,29 @@ function diffLore(before: Set<string>, after: Set<string>): string[] {
 // 主执行函数
 // ---------------------------------------------------------------------------
 
-export function runEventScenario(input: ScenarioInput): ScenarioResult {
+/**
+ * 构造一个「落在指定事件、状态已按 input 覆写」的 GameState——给剧情编辑器做「像游戏内」实时回放的起点。
+ * events 覆盖优先（测内存里未保存的编辑）。事件不存在 → null。
+ */
+export function buildScenarioState(
+  input: ScenarioInput,
+  opts?: { events?: Map<string, DiveEvent> },
+): GameState | null {
+  const ev = opts?.events?.get(input.eventId) ?? getEventById(input.eventId);
+  if (!ev) return null;
+  return buildInitialState(input, ev);
+}
+
+export function runEventScenario(
+  input: ScenarioInput,
+  opts?: { events?: Map<string, DiveEvent> },
+): ScenarioResult {
   const errors: string[] = [];
+  // 内存事件覆盖优先（剧情编辑器测未保存的编辑）；缺省走 EVENT_DB。
+  const resolve = (id: string): DiveEvent | undefined => opts?.events?.get(id) ?? getEventById(id);
 
   // ----- 起步事件存在性 -----
-  const startEvent = getEventById(input.eventId);
+  const startEvent = resolve(input.eventId);
   if (!startEvent) {
     return {
       input,
@@ -388,7 +406,7 @@ export function runEventScenario(input: ScenarioInput): ScenarioResult {
   withSeededRandom(input.seed, () => {
     for (let stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
       if (currentEventId === null) break;
-      const ev = getEventById(currentEventId);
+      const ev = resolve(currentEventId);
       if (!ev) {
         errors.push(`step ${stepIndex}: 事件 "${currentEventId}" 未找到`);
         break;
