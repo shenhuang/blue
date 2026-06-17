@@ -24,7 +24,7 @@ import {
   TUTORIAL_COMPLETE_FLAG,
 } from '../src/engine/story';
 import { buildEventPool, getZone, getEventById } from '../src/engine/zones';
-import { resolveOption } from '../src/engine/events';
+import { resolveOption, isOptionVisible } from '../src/engine/events';
 import { isPoiLit, generateChart } from '../src/engine/chart';
 import { startDiveFromPoi } from '../src/engine/dive';
 import { getColumnForLighthouse } from '../src/engine/columns';
@@ -180,6 +180,21 @@ L('§3 找寻潜点（search_ready 门 + 强制开场 + found 置位）');
   const searchEv = getEventById('whalefall.search')!;
   const descend = searchEv.options.find((o) => o.outcome?.triggerEventId === 'whalefall.found');
   assert(descend, '§3 search 应有选项 triggerEventId=whalefall.found');
+
+  // 声呐选项门控（强制开场事件·没声呐的人不该看到「先打声呐」）：visibleIf hasUpgrade upgrade.sonar.lv1
+  // （= sonarUnlocked 的真来源·unlockSonar effect）·不满足→隐藏（hiddenIfFails 缺省=隐藏·同 hasEquipment 装备门先例）。
+  const sonarOpt = searchEv.options.find((o) => o.id === 'sonar_ahead')!;
+  const vi = sonarOpt.visibleIf;
+  assert(vi && vi.kind === 'hasUpgrade' && vi.upgradeId === 'upgrade.sonar.lv1', '§3 sonar_ahead 应 visibleIf hasUpgrade upgrade.sonar.lv1');
+  const noSonar: GameState = { ...createInitialGameState(), profile: profileWith([]) };
+  const withSonar: GameState = {
+    ...createInitialGameState(),
+    profile: { ...profileWith([]), unlockedUpgrades: new Set(['upgrade.sonar.lv1']) },
+  };
+  assert(!isOptionVisible(noSonar, sonarOpt), '§3 无声呐 → sonar_ahead 隐藏（不给没声呐的人「先打声呐」）');
+  assert(isOptionVisible(withSonar, sonarOpt), '§3 有声呐 → sonar_ahead 可见');
+  // 下沉/先不下去两条路 found 前都不需声呐（found 对无声呐玩家仍可达）。
+  assert(searchEv.options.some((o) => o.id === 'descend_toward_it') && searchEv.options.some((o) => o.id === 'turn_back_search'), '§3 search 留有不依赖声呐的到达/退出路径');
   const foundEv = getEventById('whalefall.found')!;
   let foundSet = false;
   for (const opt of foundEv.options) {
