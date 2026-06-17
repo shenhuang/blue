@@ -96,6 +96,21 @@
       "generation": "random",
       "canFreeAscend": true,
       "ambushEncounters": ["combat.wreck_spider_crab_solo", "combat.drowned_lantern_solo"]
+    },
+    {
+      "id": "zone.whalefall",
+      "name": "鲸落",
+      "description": "中层那头巨兽沉下去的地方。一架越来越小的骨头半埋在海床里，周围一圈被一具尸体喂肥的生命，按各自的节奏拆解它、住进它、从它身上活下去。死的是一个，靠它活的是一整片。",
+      "depthRange": [80, 110],
+      "layerCount": 6,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["whalefall"] }
+      ],
+      "requiresFlags": ["flag.tutorial_complete"],
+      "generation": "random",
+      "canFreeAscend": true,
+      "ambushEncounters": []
     }
   ]
 }

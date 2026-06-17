@@ -105,6 +105,12 @@ export function PortView({ state, onStateChange, onOpenService, dialog, onDialog
           >
             潜水志 · 图鉴
           </button>
+          <button
+            className="btn port-chart-btn"
+            onClick={() => onOpenService('lore')}
+          >
+            潜水志 · 见闻
+          </button>
         </div>
       ) : (
         <DialogPanel

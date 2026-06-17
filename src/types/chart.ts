@@ -128,6 +128,15 @@ export interface ChartPoi {
    */
   story?: { anchor: string; eventId: string };
   /**
+   * 通用脚本剧情潜点的「强制开场事件」（#137 鲸落找寻潜点·沿 mimic/story 锚点「入潜强制开场」模板）：
+   * 设了 openEventId ⇒ 本 POI 入潜强制此事件作为开场，直到 openEventFlag 置位（一次性·dive-start.ts）。
+   * 区别于 `story`：**不占** engine/story.ts 的 4 个 canon anchor 名额（playthrough-story 守「恰好 4 锚点」），
+   * 用于 owner-less / 非锚点的剧情潜点（如鲸落找寻＝openEventFlag: whalefall_found·找到即不再强制）。
+   * 置位归事件 setProfileFlags（quirk #118·dive-start 只读 flag 不写）。
+   */
+  openEventId?: string;
+  openEventFlag?: string;
+  /**
    * 运行时揭示态（generateChart 派生写入·区域揭示三态·§10）。只有进了 chart.pois 的点带它（'lit'|'dim'）；
    * 'hidden' 点不入结果。纯派生、不入存档（同 roaming 的运行时 id 一样按 profile 重算）。
    */

@@ -420,6 +420,61 @@
         "level": 1,
         "region": "blue_caves"
       }
+    },
+    {
+      "id": "outpost.ch1_whalefall",
+      "name": "鲸落营地",
+      "requiresFlag": "story.ch1.whalefall_found",
+      "discoveredFlag": "story.ch1.whalefall_found",
+      "submerged": true,
+      "stages": [
+        {
+          "label": "在骨架旁清出一块落脚的硬地（珊瑚碎片×2 ＋ 40 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.coral_shard",
+                "qty": 2
+              }
+            ],
+            "gold": 40
+          },
+          "narrative": "你在那架越来越小的骨头旁边，清出一块还硬实的海床当营基。周围的东西都在忙各自的事，没谁在意又多来了一个。"
+        },
+        {
+          "label": "撑起补给浮台与系留（黄铜配件×2 ＋ 70 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 2
+              }
+            ],
+            "gold": 70
+          },
+          "narrative": "一个小小的补给浮台在尸体上方悬住了。换气、充电、歇口气——这片最热闹的死地里，你也有了个落脚处。"
+        },
+        {
+          "label": "通电点亮（冷光腺×2 ＋ 100 金）",
+          "cost": {
+            "materials": [
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 2
+              }
+            ],
+            "gold": 100
+          }
+        }
+      ],
+      "result": {
+        "id": "lighthouse.ch1_whalefall_outpost",
+        "name": "鲸落营地",
+        "mapX": 0.62,
+        "mapY": 0.27,
+        "level": 1,
+        "region": "whalefall"
+      }
     }
   ]
 }

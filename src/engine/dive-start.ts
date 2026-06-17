@@ -285,6 +285,16 @@ export function startDiveFromPoi(
       };
     }
   }
+
+  // 通用脚本剧情潜点的「强制开场」（#137 鲸落找寻潜点·镜像上方 mimic/story 锚点模板，但不占 4 锚点名额）：
+  // POI 带 openEventId ⇒ 入潜强制此事件作为开场，直到 openEventFlag 置位（一次性·置位归事件 setProfileFlags·
+  // 这里只读 flag 不写）。owner-less / 非锚点剧情潜点用它（找寻＝openEventFlag: whalefall_found·找到即不再强制）。
+  if (poi.openEventId && (!poi.openEventFlag || !s.profile.flags.has(poi.openEventFlag))) {
+    s = {
+      ...s,
+      phase: { kind: 'dive', subPhase: { kind: 'event', eventId: poi.openEventId } },
+    };
+  }
   return s;
 }
 

@@ -494,7 +494,7 @@ for (let r = 0; r < 40; r++) {
 assert(weathers.size >= 2 && tides.size === 2, `7: 海况随回合变（天气 ${weathers.size} 种 / 潮汐 ${tides.size} 态）`);
 assert(fogRun >= 0 && calmRun >= 0, '7: 40 run 内浓雾与非浓雾都出现');
 // (c) 浓雾遮一处 roaming（晴/雾 2 → 浓雾 1）；锚点 4 个不受影响；conditions 落返回结构
-// 全区揭示档（9 锚点全在范围内）→ 才能验「天气不遮锚点」（区域门控≠天气遮蔽，两轴分开）。
+// 全区揭示档（12 锚点全在范围内·含鲸落 found 后的 3 个生态点·#137）→ 才能验「天气不遮锚点」（区域门控≠天气遮蔽，两轴分开）。
 const fogChart = generateChart({ profile: fullyRevealedProfile(fogRun) });
 const calmChart = generateChart({ profile: fullyRevealedProfile(calmRun) });
 const fogRoam = fogChart.pois.filter((p) => !p.persistent && !p.mimic).length;
@@ -506,8 +506,8 @@ assert(fogRoam <= 2, `7: 浓雾机会点 ≤2（实际 ${fogRoam}）`);
 const anchorCount = (c: { pois: { persistent: boolean; columnId?: string }[] }) =>
   c.pois.filter((p) => p.persistent && p.columnId === undefined).length;
 assert(
-  anchorCount(fogChart) === 9 && anchorCount(calmChart) === 9,
-  '7: 锚点不受天气遮蔽（9 个都在·守进度安全·#117 一章四锚点入列）',
+  anchorCount(fogChart) === 12 && anchorCount(calmChart) === 12,
+  `7: 锚点不受天气遮蔽（期望 12·实际 fog ${anchorCount(fogChart)}/calm ${anchorCount(calmChart)}·含鲸落 found 后 3 生态点·#137·守进度安全·#117 四锚点入列）`,
 );
 assert(fogChart.conditions.weather === 'fog' && calmChart.conditions.weather !== 'fog', '7: SeaChart.conditions 落返回结构');
 L(`  海况确定性 + 随回合变 + 浓雾遮一处（run ${fogRun} 雾→${fogRoam} / run ${calmRun} ${calmChart.conditions.weather}→${calmRoam}）+ 锚点不受影响 ✓`);

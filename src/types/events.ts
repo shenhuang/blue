@@ -21,7 +21,8 @@ export type ZoneTag =
   | 'tutorial'
   // St1 一章锚点专属 zone 的事件池（剧情 SPEC §4.1·#117）：
   | 'midwater' // 远洋中层（开阔无底蓝水·锚点③）
-  | 'vent'; // 海沟热液场（黑烟柱·锚点④）
+  | 'vent' // 海沟热液场（黑烟柱·锚点④）
+  | 'whalefall'; // 鲸落（碎屑→机会种→食骨蠕虫的死亡生态·非主线·St1 支线·#137）
 
 /** 一个下潜事件 */
 export interface DiveEvent {

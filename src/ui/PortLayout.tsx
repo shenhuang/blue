@@ -23,6 +23,7 @@ import { SeaChartView } from './SeaChartView';
 import { MiraShopView } from './MiraShopView';
 import { UpgradePanel } from './UpgradePanel';
 import { BestiaryView } from './BestiaryView';
+import { LoreView } from './LoreView';
 import { portRightPane, type PortServiceMode } from './portFocus';
 
 // PortServiceMode 定义迁至 ./portFocus（与「右栏↔对话互斥」决策同源）；此处 re-export 兼容旧 import 路径。
@@ -80,6 +81,8 @@ export function PortLayout({ state, onStateChange }: Props) {
       <MiraShopView state={state} onStateChange={onStateChange} />
     ) : rightPane === 'bestiary' ? (
       <BestiaryView state={state} onClose={() => setUpgradeMode(null)} />
+    ) : rightPane === 'lore' ? (
+      <LoreView state={state} onClose={() => setUpgradeMode(null)} />
     ) : rightPane ? (
       <UpgradePanel
         state={state}
