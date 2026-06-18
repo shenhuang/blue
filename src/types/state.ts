@@ -460,7 +460,6 @@ export interface FeatureChoice {
 export interface RunOutcome {
   survived: boolean;
   maxDepthReached: number;
-  eventsTriggered: number;
   /** 上岸时即时入袋的金币（事件给的 goldDelta + run.gold）。 */
   goldEarned: number;
   /** 战利品的"潜在变卖价值"——按 Mira 的收购价估的，需要回港找她兑现。0 = 没东西可卖。 */

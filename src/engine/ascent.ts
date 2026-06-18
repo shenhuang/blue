@@ -174,7 +174,6 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
       outcome: {
         survived: true,
         maxDepthReached: run.currentDepth, // 注意：在这里 run 还是上浮前的 depth
-        eventsTriggered: new Set(run.visitedNodeIds).size,
         goldEarned: run.gold, // 上岸时实际入袋（事件给的金币）；战利品要回港找 Mira 兑
         lootValue,
         loot: run.inventory,
