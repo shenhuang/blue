@@ -145,6 +145,8 @@ export default function App() {
 
   return (
     <div className={appClass}>
+      {/* 强制竖屏（SPEC §6.4）：浏览器真锁不可靠 → 仅手机横屏时由 CSS .orientation-gate 显形盖屏提示。 */}
+      <div className="orientation-gate">请将设备竖屏游玩</div>
       {/* 港口族：主从布局——主界面/对话常驻左栏，海图/装备/商店/行会作为右栏服务面板（窄屏覆盖）。 */}
       {isPort && <PortLayout state={state} onStateChange={setState} />}
 

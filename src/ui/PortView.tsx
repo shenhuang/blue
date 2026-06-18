@@ -95,22 +95,11 @@ export function PortView({ state, onStateChange, onOpenService, dialog, onDialog
           )}
           <button
             className="btn port-upgrade-btn"
-            onClick={() => onOpenService('gear')}
+            onClick={() => onOpenService('locker')}
           >
-            改装装备（材料 ＋ 金币）
+            物品栏
           </button>
-          <button
-            className="btn port-chart-btn"
-            onClick={() => onOpenService('bestiary')}
-          >
-            潜水志 · 图鉴
-          </button>
-          <button
-            className="btn port-chart-btn"
-            onClick={() => onOpenService('lore')}
-          >
-            潜水志 · 见闻
-          </button>
+          {/* 潜水志·图鉴 / 见闻 已收进物品栏（LockerView 的 图鉴 / 见闻 tab·作者 2026-06-17）——主界面不再单列。 */}
         </div>
       ) : (
         <DialogPanel

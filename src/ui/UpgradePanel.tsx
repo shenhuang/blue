@@ -61,11 +61,7 @@ export function UpgradePanel({ state, onStateChange, onClose, lineFilter, title,
       className="under-port-header"
       title={title ?? '改装装备'}
       sub={sub ?? <>银行 {state.profile.bankedGold} 金币 · 用带回的材料改装随身装备</>}
-      foot={
-        <button className="btn" onClick={onClose}>
-          返回
-        </button>
-      }
+      onClose={onClose}
     >
       {DEV_TOOLS && (
         <button className="btn small upgrade-dev-unlock" onClick={handleDevUnlockAll}>

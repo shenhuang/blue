@@ -14,8 +14,9 @@
 // 边界：本模块只「决定显示哪个右栏」，不构造 phase（守 check-boundaries 规则二）；真正的
 //   phase 切换仍由 PortView 调 engine/transitions.ts 的具名转移（toPort / toChart / toShop）。
 
-/** 港口右栏服务面板的本地 UI 态（非 phase·不入存档）：改装装备 / 打捞行会 / 潜水志图鉴 / 见闻志。 */
-export type PortServiceMode = 'gear' | 'salvage' | 'bestiary' | 'lore';
+/** 港口右栏服务面板的本地 UI 态（非 phase·不入存档）：物品栏 / 改装装备 / 打捞行会 / 潜水志图鉴 / 见闻志。
+ *  'locker'＝物品栏（占原「改装装备」入口位·装备 tab 内嵌 gear 升级面板·物品栏与装备 SPEC §2）。 */
+export type PortServiceMode = 'gear' | 'salvage' | 'bestiary' | 'lore' | 'locker';
 
 /** 港口右栏最终显示什么：海图 / 商店（引擎 phase）· gear/salvage/bestiary（本地服务态）· 或不显示。 */
 export type PortRightPane = 'chart' | 'shop' | PortServiceMode | null;

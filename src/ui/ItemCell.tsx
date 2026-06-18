@@ -40,7 +40,10 @@ export function ItemCell({
       {note && <span className="item-cell-note">{note}</span>}
     </>
   );
-  const cls = `item-cell ${variant ?? ''}`;
+  // 稀有度边框＝物品格的内禀属性（按 def.rarity 自动上色·common 用默认 border）——所有用 ItemCell 的地方
+  // （商店 / 战利品 / 出售 / 行前装包 / 物品栏）都一致，不靠各调用方手动传（作者 2026-06-18）。
+  // variant 紧跟 item-cell（保持 `item-cell <variant>` 相邻 → smoke K2 断言 short 态）；rarity 垫在后面。
+  const cls = ['item-cell', variant, `rarity-${def?.rarity ?? 'common'}`].filter(Boolean).join(' ');
   if (!onClick) {
     // 纯陈列（储物柜一览等）：非交互元素，不走 disabled 变灰。
     return (

@@ -26,11 +26,7 @@ export function LoreView({ state, onClose }: Props) {
     <PanelShell
       title="潜水志 · 见闻"
       sub={<>已记录 {seen.length} 则</>}
-      foot={
-        <button type="button" className="btn" onClick={onClose}>
-          返回
-        </button>
-      }
+      onClose={onClose}
     >
       {seen.length === 0 ? (
         <p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>

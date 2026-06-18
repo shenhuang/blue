@@ -58,11 +58,7 @@ export function LighthouseBuildPanel({ state, onStateChange, onClose, focusLight
       className="lighthouse-build"
       title="设施升级"
       sub={<>银行 {state.profile.bankedGold} 金币 · 低频声呐升级</>}
-      foot={
-        <button className="btn" onClick={onClose}>
-          返回
-        </button>
-      }
+      onClose={onClose}
     >
       {state.profile.lighthouses
         .filter((lh) => !focusLighthouseId || lh.id === focusLighthouseId)

@@ -110,11 +110,7 @@ export function MiraShopView({ state, onStateChange }: Props) {
             金 ・ 仓库 {state.profile.inventory.length} 项
           </>
         }
-        foot={
-          <button className="btn" onClick={handleLeave}>
-            离开柜台
-          </button>
-        }
+        onClose={handleLeave}
       >
       {/* 交易系统（作者 2026-06-10 续拍「上=她的货点击买·下=我的柜点击卖」）：
           两块同构格子＋中间一条反馈（买/卖 flash + 钱不够红字差额）。

@@ -22,6 +22,7 @@ import { PortEventView } from './PortEventView';
 import { SeaChartView } from './SeaChartView';
 import { MiraShopView } from './MiraShopView';
 import { UpgradePanel } from './UpgradePanel';
+import { LockerView } from './LockerView';
 import { BestiaryView } from './BestiaryView';
 import { LoreView } from './LoreView';
 import { portRightPane, type PortServiceMode } from './portFocus';
@@ -79,6 +80,8 @@ export function PortLayout({ state, onStateChange }: Props) {
       <SeaChartView state={state} onStateChange={onStateChange} />
     ) : rightPane === 'shop' ? (
       <MiraShopView state={state} onStateChange={onStateChange} />
+    ) : rightPane === 'locker' ? (
+      <LockerView state={state} onStateChange={onStateChange} onClose={() => setUpgradeMode(null)} />
     ) : rightPane === 'bestiary' ? (
       <BestiaryView state={state} onClose={() => setUpgradeMode(null)} />
     ) : rightPane === 'lore' ? (

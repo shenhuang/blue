@@ -66,11 +66,7 @@ export function BestiaryView({ state, onClose }: Props) {
     <PanelShell
       title="潜水志 · 图鉴"
       sub={<>已记录 {seen.length} 种</>}
-      foot={
-        <button type="button" className="btn" onClick={onClose}>
-          返回
-        </button>
-      }
+      onClose={onClose}
     >
       {seen.length === 0 ? (
         <p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>

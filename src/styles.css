@@ -283,8 +283,18 @@ html, body, #root {
 }
 
 .panel-shell-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border);
+}
+.panel-shell-titles {
+  min-width: 0;
+}
+.panel-shell-close {
+  flex-shrink: 0;
 }
 
 .panel-shell-title {
@@ -527,25 +537,32 @@ html, body, #root {
   flex-direction: column;
 }
 
-/* 下潜手机抽屉按钮：桌面隐藏（左栏常显），窄屏显示（下方 @media）。 */
-.dive-header-toggle {
-  display: none;
-}
 
 @media (max-width: 1199px) {
   /* 窄屏：开了右栏服务面板＝全屏覆盖（藏左栏主界面·接近改前·作者要求手机直接覆盖当前窗口）。 */
   .port-layout.has-panel .port-pane-left {
     display: none;
   }
-  /* 下潜：状态/声呐栏收进抽屉，默认收起，左上角按钮开合。
-     战斗/上浮的 .dive-pinned 不带 .dive-header＝不进抽屉、状态栏照常 sticky 钉顶（作者：战斗状态锁顶·只滑事件）。 */
-  .dive-header-toggle {
-    display: inline-block;
-    width: auto;
-    margin: 0 0 8px;
+  /* 下潜 HUD（SPEC §6）：状态条常显；声呐图 / 战利品面板点开＝整块 .dive-header fixed 全屏覆盖，
+     状态条 + 开关留顶上（flex 列）、面板填满其余可滚。战斗/上浮的 .dive-pinned 不带 .dive-header＝不受影响。 */
+  .dive-header.has-dive-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: var(--bg);
   }
-  .dive-header:not(.mobile-open) .dive-header-body {
-    display: none;
+  .dive-header.has-dive-panel .dive-panel {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    margin-top: 0;
+  }
+  .dive-header.has-dive-panel .dive-panel-head {
+    display: flex;
   }
 }
 
@@ -998,11 +1015,25 @@ html, body, #root {
 .dive-sensor-bar {
   margin: 8px 0 0;
 }
-.sonar-collapse {
+/* 下潜面板开关条 + 面板（SPEC §6）：声呐图 / 战利品互斥；桌面内联（默认声呐图开），移动端 @media 全屏覆盖。 */
+.dive-panel-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.dive-panel {
   margin-top: 12px;
 }
-.sonar-collapse-toggle {
-  width: 100%;
+.dive-panel-head {
+  display: none; /* 桌面内联不需要标题/关闭条；移动全屏覆盖时由 @media 打开 */
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.panel-toggle.on {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .sensor-controls {
   display: flex;
@@ -2144,6 +2175,121 @@ html, body, #root {
   100% { transform: scale(1); }
 }
 .item-grid.live .item-cell { animation: item-pop 0.35s ease-out; }
+
+/* === 物品网格翻页 + 战利品 + 稀有度边框 + 竖屏遮罩（物品栏/装备 SPEC §6）=== */
+.item-grid-pager {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.item-grid-empty {
+  margin: 8px 0;
+  opacity: 0.7;
+  font-size: 0.85em;
+}
+.item-grid-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.item-grid-page {
+  font-size: 0.8em;
+  opacity: 0.8;
+  min-width: 3em;
+  text-align: center;
+}
+.loot-panel-head {
+  font-size: 0.85em;
+  opacity: 0.85;
+  margin-bottom: 8px;
+}
+
+/* 稀有度边框（数据驱动·ItemRarity）：common 用默认 border，其余上色。 */
+.item-cell.rarity-uncommon { border-color: #4a90d9; }
+.item-cell.rarity-rare { border-color: #9b6dd0; }
+.item-cell.rarity-legendary { border-color: #e0a84a; }
+
+/* 港口物品栏 / 储物柜（物品栏与装备 SPEC §2·P1）：tab 栏 + 内容（装备 tab 内嵌改装面板）。 */
+/* 左 tab 竖排 + 右内容（物品栏现走 PanelShell 壳·标题/✕ 由壳统一）：tab 列固定宽靠左、内容吃满其余。 */
+.locker-main {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.locker-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.locker-body {
+  flex: 1;
+  min-width: 0;
+}
+.locker-tab.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.locker-gear {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.locker-gear-upgrade {
+  align-self: flex-start;
+}
+/* 日志记录详情（点开单条见闻 / 图鉴返回·物品栏与装备 SPEC §3）。 */
+.record-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.record-detail .btn.small {
+  align-self: flex-start;
+}
+.record-title {
+  margin: 4px 0 0;
+  font-size: 1rem;
+}
+/* 统一右上角 ✕ 关闭图标（物品栏头部 / 详情全覆盖·作者 2026-06-18）。 */
+.icon-close {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  width: 30px;
+  height: 30px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.icon-close:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* 物品栏详情＝整页替换（走 PanelShell·关闭＝其头部右上 ✕）——不再用 .locker-covered 自叠 ✕（已并入 PanelShell·2026-06-18）。 */
+
+/* 强制竖屏（SPEC §6.4）：浏览器真锁不可靠 → 仅「真·触屏设备」的横屏盖一层提示遮罩。
+   用 hover:none + pointer:coarse 限定触屏（手机/平板）——桌面无论窗口多窄/开不开 devtools 都不触发
+   （曾用 max-width:1023px 会误伤窄窗桌面、把游戏整个盖住）。 */
+.orientation-gate { display: none; }
+@media (orientation: landscape) and (hover: none) and (pointer: coarse) {
+  .orientation-gate {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    background: var(--bg);
+    color: inherit;
+    font-size: 1.1rem;
+    line-height: 1.6;
+  }
+}
 
 /* Mira 买入反馈（作者 2026-06-10「点了毫无反应」根治）：金币数字跳动 + 钱不够红字差额。
    金币数字现住 PanelShell 头部 sub（quirk #112），跳动动画类不变。 */
