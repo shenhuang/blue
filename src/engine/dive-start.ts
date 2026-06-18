@@ -225,7 +225,7 @@ export function startDiveFromPoi(
   // 随身加成 = 全局升级 ＋ 家灯塔「船坞」设施（dockyard 迁灯塔后由 getRunBonuses 并回，见 lighthouses.ts）
   // RunStartBonuses 字段全是 createNewRun bonuses 的超集，直接整个传（含深水区 Phase 0 升级轨，避免逐字段抄漏）。
   const bonuses = getRunBonuses(state.profile);
-  let run = createNewRun({ zoneId: poi.zoneId, bonuses });
+  let run = createNewRun({ zoneId: poi.zoneId, bonuses, equipment: state.profile.equipment });
 
   // 出发前选带（#108·作者拍板「不全带·死了就没」）：勾选的消耗品仓库 → run 背包。
   const carry = applyCarryItems(state.profile, run, opts?.carryItems ?? []);
@@ -341,7 +341,7 @@ function diveIntoBand(
     seedKey: string;
   },
 ): GameState {
-  let run = createNewRun({ zoneId: band.zoneId, bonuses: opts.bonuses });
+  let run = createNewRun({ zoneId: band.zoneId, bonuses: opts.bonuses, equipment: state.profile.equipment });
 
   // 出发前选带（#108·与 startDiveFromPoi 同一套）：勾选的消耗品仓库 → run 背包。
   const carry = applyCarryItems(state.profile, run, opts.carryItems ?? []);

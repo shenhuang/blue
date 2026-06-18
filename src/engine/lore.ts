@@ -12,6 +12,13 @@ export interface LoreEntryDef {
   body: string;
   /** 分组标签（如「鲸落」）·UI 可据此聚类·缺省＝无组。 */
   group?: string;
+  /**
+   * 条目类型（缺省＝'lore'）：
+   * - 'lore'    ＝ 见闻志（深海生物·事件·环境）→ 日志 tab「见闻」区。
+   * - 'journal' ＝ 可收集日志页（航海日志·导师笔记碎片…）→ 日志 tab「航海志」区，按 group 分册。
+   * 两类共用同一 lore store（profile.loreEntries Set）·视图按 kind 过滤·无需新存档字段。
+   */
+  kind?: 'lore' | 'journal';
 }
 
 const LORE_DB = new Map<string, LoreEntryDef>();

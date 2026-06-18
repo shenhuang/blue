@@ -65,6 +65,12 @@ export interface PlayerProfile {
    * 缺省（旧档/未设）→ 开（读点一律 `?? true`）。additive·JSON 原生 round-trip·不 bump SAVE_VERSION。后续「装备/行前装包」里也能调。
    */
   sonarOn?: boolean;
+  /**
+   * 持久装备配置（玩家穿戴的 5 件·跨 run 保留·港口物品栏读此·Otto 升级写此·P3）。
+   * 新 run 起手从这里 copy 进 RunState.equipment。
+   * additive·缺省补 createStarterLoadout()·不 bump SAVE_VERSION（#99 纯加字段）。
+   */
+  equipment?: EquipmentLoadout;
 }
 
 /** 死亡记录，用于尸体回收 */

@@ -10,7 +10,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createInitialGameState, createNewRun } from '../src/engine/state';
 import { devRevealOutpost } from '../src/engine/lighthouses';
-import { SeaChartView, OutpostPopup } from '../src/ui/SeaChartView';
+import { SeaChartView, OutpostPopup, ChartInfo } from '../src/ui/SeaChartView';
 import { PortView } from '../src/ui/PortView';
 import { NodeSelectView } from '../src/ui/NodeSelectView';
 import {
@@ -30,7 +30,8 @@ import { FuneralView } from '../src/ui/CorpseView';
 import { UpgradePanel } from '../src/ui/UpgradePanel';
 import { MiraShopView } from '../src/ui/MiraShopView';
 import { LighthouseBuildPanel } from '../src/ui/LighthouseBuildPanel';
-import type { GameState, InventoryItem, NodeChoice, FeatureChoice, DiveMap } from '../src/types';
+import type { GameState, InventoryItem, NodeChoice, FeatureChoice, DiveMap, ChartPoi } from '../src/types';
+import { generateChart, isPoiDepartable } from '../src/engine/chart';
 
 const log: string[] = [];
 const L = (s: string) => log.push(s);
@@ -549,16 +550,42 @@ function stateWithDeath(upgrades: string[]): GameState {
     },
   };
 }
-// 有 Lv.2 + 蓝洞群有可回收尸体 → 出现选目标 UI + 列出死者
+// 有 Lv.2 + 蓝洞群有可回收尸体 → none 步骤仍渲染「出海」（门没锁）；target 步骤渲染选目标 UI + 死者名。
+// #140: 锁定目标移入 departStep='target'（就地分步）——不再在 SeaChartView SSR 初始输出出现，直接测 ChartInfo。
 const F2 = stateWithDeath(['upgrade.salvage_guild.lv1', 'upgrade.salvage_guild.lv2']);
-const htmlF2 = renderToStaticMarkup(<SeaChartView state={F2} onStateChange={noop} />);
-assert(htmlF2.includes('锁定目标'), 'F: Lv.2 + 有可回收尸体应出现选目标 UI');
-assert(htmlF2.includes('Marek'), 'F: 目标下拉应列出死者名');
-// 无 Lv.2 → 不出现选目标 UI
+const htmlF2none = renderToStaticMarkup(<SeaChartView state={F2} onStateChange={noop} />);
+assert(htmlF2none.includes('出海'), 'F: Lv.2 + 尸体·none 步骤→出海按钮可见（门开）');
+assert(!htmlF2none.includes('锁定目标'), 'F: 锁定目标仅在 target 步骤展示·none 初始不出现');
+// 直接测 ChartInfo target 步骤——选目标 UI + 死者名
+const f2Chart = generateChart({ profile: F2.profile }).pois;
+const f2Poi = (f2Chart.find((p) => isPoiDepartable(F2.profile, p) && p.zoneId === 'zone.east_reef')
+  ?? f2Chart.find((p) => isPoiDepartable(F2.profile, p)))!;
+const noopF = () => {};
+const htmlF2target = renderToStaticMarkup(
+  <ChartInfo
+    poi={f2Poi}
+    state={F2}
+    canSelectTarget={true}
+    target=""
+    setTarget={noopF}
+    departStep="target"
+    setDepartStep={noopF as (s: 'none' | 'pack' | 'target') => void}
+    carry={{}}
+    carryables={[]}
+    carryPicks={[]}
+    carryCapacity={8}
+    slotsUsed={0}
+    stepCarry={noopF as (id: string, d: number, m: number) => void}
+    onDepart={noopF as (poi: ChartPoi, t?: string) => void}
+  />,
+);
+assert(htmlF2target.includes('锁定目标') || htmlF2target.includes('选定目标'), 'F: target 步骤→选目标 UI 可见');
+assert(htmlF2target.includes('Marek'), 'F: target 步骤→目标下拉列出死者名');
+// 无 Lv.2 → canSelectTarget=false → target 步骤下不显示尸体选择器（不会走到 target step）
 const F0 = stateWithDeath([]);
-const htmlF0 = renderToStaticMarkup(<SeaChartView state={F0} onStateChange={noop} />);
-assert(!htmlF0.includes('锁定目标'), 'F: 没有 Lv.2 不应出现选目标 UI');
-L('  Lv.2 出现选目标(列死者) / 无 Lv.2 不出现 ✓');
+const htmlF0none = renderToStaticMarkup(<SeaChartView state={F0} onStateChange={noop} />);
+assert(!htmlF0none.includes('锁定目标') && !htmlF0none.includes('选定目标'), 'F: 无 Lv.2 → none 步骤不出现选目标 UI');
+L('  Lv.2 none→出海按钮(门开) · target步骤→选目标+死者名 · 无Lv.2→不出现 ✓');
 
 // ============================================
 // G. NodeSelectView · 地标（气穴 / 扎营点）标签
@@ -818,26 +845,52 @@ assert(htmlO3.includes('不是你点的光'), 'O3: 选中 mimic → 渲染宏观
 L('  无灯之光 注入 / 软门控 / 选中显宏观 tell ✓');
 
 // ============================================
-// P. 行前装包 + 投放诱饵（猎手 SPEC §4·#108；2026-06-10 作者改拍「格子化」）：
-//   P1 SeaChartView：仓库有消耗品 → 「行前装包」背包格（上限可见·空格占位）+ 储物柜格；没有 → 不渲染（零噪音）。
+// P. 行前装包 + 投放诱饵（猎手 SPEC §4·#108；#140 就地分步向导·2026-06-18）：
+//   P1 SeaChartView（departStep='none'·默认）：出海按钮可见；行前装包不在初始渲染中（SSR 无交互）。
+//   P1pack ChartInfo（departStep='pack'）：行前装包面板可见·背包格·储物柜格（声诱标 ×2）。
+//   P1none ChartInfo（departStep='none'）：出海按钮可见；行前装包不渲染。
 //   P2 NodeSelectView：huntEnabled + 背包有 decoy → 「投放」按钮；水里有有效诱饵 → 状态行；
 //      非 huntEnabled（浅水旧路径）→ 不渲染按钮（诱饵只对有位置的猎手起效）。
 // ============================================
 L('\n========== P. 行前装包 + 投放诱饵 (§4) ==========');
-// P1：仓库有 decoy → 装包面板＝背包格（0/8 起·8 个空格）+ 储物柜格（声诱标 ×2）；空仓库 → 无此面板
-const P1 = {
-  ...stateWith(['flag.tutorial_complete'], []),
-};
-P1.profile = { ...P1.profile, inventory: [{ itemId: 'item.decoy_sound', qty: 2 }] };
-const htmlP1 = renderToStaticMarkup(<SeaChartView state={P1} onStateChange={noop} />);
-assert(htmlP1.includes('行前装包'), 'P1: 仓库有消耗品 → 渲染「行前装包」面板');
-assert(htmlP1.includes('声诱标') && htmlP1.includes('×2'), 'P1: 储物柜格列出消耗品名 + 数量角标');
-assert(htmlP1.includes('0/8 格') && htmlP1.includes('item-cell empty'), 'P1: 背包上限可见（0/8 格）+ 空格占位');
-assert(htmlP1.includes('点击放进背包'), 'P1: 储物柜格可点（title 提示放进背包）');
-const htmlP1b = renderToStaticMarkup(
+const P1state = { ...stateWith(['flag.tutorial_complete'], []) };
+P1state.profile = { ...P1state.profile, inventory: [{ itemId: 'item.decoy_sound', qty: 2 }] };
+// P1 初始渲染（none step）：出海按钮可见·行前装包尚未展开
+const htmlP1none = renderToStaticMarkup(<SeaChartView state={P1state} onStateChange={noop} />);
+assert(htmlP1none.includes('出海'), 'P1 none: departStep=none → 出海按钮可见');
+assert(!htmlP1none.includes('行前装包'), 'P1 none: departStep=none → 行前装包尚未展开（就地分步·需点出海）');
+// P1pack：直接渲染 ChartInfo pack 步骤——仓库有 decoy → 装包面板（背包格 + 储物柜格）
+const p1Poi = stateWith(['flag.tutorial_complete'], []);
+const firstPoi = generateChart({ profile: p1Poi.profile }).pois.find((p) => isPoiDepartable(p1Poi.profile, p))!;
+const noop2 = () => {};
+const htmlP1pack = renderToStaticMarkup(
+  <ChartInfo
+    poi={firstPoi}
+    state={P1state}
+    canSelectTarget={false}
+    target=""
+    setTarget={noop2}
+    departStep="pack"
+    setDepartStep={noop2 as (s: 'none' | 'pack' | 'target') => void}
+    carry={{}}
+    carryables={[{ itemId: 'item.decoy_sound', qty: 2 }]}
+    carryPicks={[]}
+    carryCapacity={8}
+    slotsUsed={0}
+    stepCarry={noop2 as (id: string, d: number, m: number) => void}
+    onDepart={noop2 as (poi: ChartPoi, t?: string) => void}
+  />,
+);
+assert(htmlP1pack.includes('行前装包'), 'P1pack: departStep=pack → 行前装包标题可见');
+assert(htmlP1pack.includes('声诱标') && htmlP1pack.includes('×2'), 'P1pack: 储物柜格列出消耗品名 + 数量角标');
+assert(htmlP1pack.includes('0/8 格') && htmlP1pack.includes('item-cell empty'), 'P1pack: 背包上限可见（0/8 格）+ 空格占位');
+assert(htmlP1pack.includes('点击放进背包'), 'P1pack: 储物柜格可点（title 提示放进背包）');
+// P1 空仓库 none：无消耗品 → none 步骤只显出海按钮（始终如此）
+const htmlP1empty = renderToStaticMarkup(
   <SeaChartView state={stateWith(['flag.tutorial_complete'], [])} onStateChange={noop} />,
 );
-assert(!htmlP1b.includes('行前装包'), 'P1: 仓库无消耗品 → 不渲染装包面板（零噪音）');
+assert(htmlP1empty.includes('出海') && !htmlP1empty.includes('行前装包'), 'P1 none 空仓库: 出海按钮·无装包');
+
 // P2：dive 中（huntEnabled）背包有 decoy → 投放按钮；放出的诱饵还有效 → 状态行
 const pBase = sonarState({ scanMemory: {} });
 const P2: GameState = {

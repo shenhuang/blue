@@ -6,23 +6,22 @@ import { allLoreEntries, getLoreEntry } from '@/engine/lore';
 import { ItemGrid } from './ItemGrid';
 import { ItemCell } from './ItemCell';
 import { BestiaryView } from './BestiaryView';
-import { UpgradePanel } from './UpgradePanel';
 import { PanelShell } from './PanelShell';
 
 // 港口物品栏 / 储物柜（物品栏与装备 SPEC §2）：左侧 tab 选分类、右侧＝该类内容。展示外壳·按 tab 委托各 store：
 //   消耗品 / 材料 / 其它 → profile.inventory（仓库·§1.1·共享 ItemGrid 翻页 + 稀有度边框）
-//   装备 → 当前装备格子；**点开某件装备 → 它对应的改装升级界面**（作者 2026-06-18·逐件入口）。
-//   日志 → 记录格子：图鉴一格（点开整本 BestiaryView）+ 每条已解锁见闻各一格（点开看 title+body）。
-// 详情（日志记录 / 装备升级）= **全覆盖**整个物品栏·统一右上角 ✕ 返回（作者 2026-06-18）。currency 不开 tab。
+//   装备 → profile.equipment（当前穿戴配置）；展示 + Lv；**升级归 Otto NPC（P3）**·点槽暂无操作。
+//   日志 → 图鉴一格（→BestiaryView）+ 航海志区（kind='journal'·按 group 分册）+ 见闻区（kind='lore'）。
+// 详情（日志记录）= **全覆盖**整个物品栏·统一右上角 ✕ 返回（作者 2026-06-18）。currency 不开 tab。
 
 type LockerTab = 'consumable' | 'material' | 'gear' | 'journal' | 'other';
 type EquipSlot = 'tank' | 'suit' | 'light' | 'tool' | 'charm';
-// 详情态（盖住整个物品栏·右上 ✕ 返回）：图鉴 / 单条见闻 / 某件装备的升级 / none＝看分类格子。
+// 详情态（盖住整个物品栏·右上 ✕ 返回）：图鉴 / 单条见闻/日志 / none＝看分类格子。
+// 装备升级移交 Otto（P3）·gear 详情暂移除。
 type Detail =
   | { kind: 'none' }
   | { kind: 'bestiary' }
-  | { kind: 'lore'; id: string }
-  | { kind: 'gear'; slot: EquipSlot };
+  | { kind: 'lore'; id: string };
 
 const TABS: { id: LockerTab; label: string }[] = [
   { id: 'consumable', label: '消耗品' },
@@ -34,19 +33,16 @@ const TABS: { id: LockerTab; label: string }[] = [
 
 const EQUIP_SLOTS: EquipSlot[] = ['tank', 'suit', 'light', 'tool', 'charm'];
 
-// 装备槽 → 对应升级线（暂用现有 upgrades.json 线·SPEC §4.3 草案映射·开放问题 #5）：逐件点装备 → 打开它的升级线。
-// 注：tool↔声呐、charm 无线 都是占位猜测（潜水刀≠声呐设备）——真正的「逐件等级 + 槽↔线」定案见 §4 P3。
-const SLOT_LINE: Record<EquipSlot, string | null> = {
-  tank: 'line.tankhouse',
-  light: 'line.dive_kit',
-  suit: 'line.evasion_rig',
-  tool: 'line.sonar_rig',
-  charm: null,
+const SLOT_LABEL: Record<EquipSlot, string> = {
+  tank: '气瓶',
+  suit: '潜水服',
+  light: '灯具',
+  tool: '工具',
+  charm: '护符',
 };
 
 export function LockerView({
   state,
-  onStateChange,
   onClose,
 }: {
   state: GameState;
@@ -56,7 +52,8 @@ export function LockerView({
   const [tab, setTab] = useState<LockerTab>('consumable');
   const [detail, setDetail] = useState<Detail>({ kind: 'none' });
   const inv = state.profile.inventory;
-  const loadout = createStarterLoadout();
+  // 装备来源：读 profile.equipment（持久穿戴配置·hydrateGameState 保证非 undefined·UI 层加 ?? 防旧档边角）
+  const loadout = state.profile.equipment ?? createStarterLoadout();
   const catOf = (itemId: string) => getItemDef(itemId)?.category;
   const gridItems =
     tab === 'consumable'
@@ -67,10 +64,14 @@ export function LockerView({
             const c = catOf(i.itemId);
             return c !== 'consumable' && c !== 'material';
           });
+
   const unlockedLore = allLoreEntries().filter((e) => state.profile.loreEntries.has(e.id));
+  // 按 kind 分区（缺省 kind='lore'）
+  const journalEntries = unlockedLore.filter((e) => e.kind === 'journal');
+  const loreEntries = unlockedLore.filter((e) => !e.kind || e.kind === 'lore');
   const close = () => setDetail({ kind: 'none' });
 
-  // 详情＝整页替换（盖住物品栏）：图鉴 / 单条见闻 / 某件装备升级，统一走 PanelShell 头部右上角 ✕ 返回（close）。
+  // 详情＝整页替换（盖住物品栏）：图鉴 / 单条见闻/日志，统一走 PanelShell 头部右上角 ✕ 返回（close）。
   if (detail.kind !== 'none') {
     if (detail.kind === 'bestiary') return <BestiaryView state={state} onClose={close} />;
     if (detail.kind === 'lore') {
@@ -83,31 +84,16 @@ export function LockerView({
         </PanelShell>
       );
     }
-    const inst = loadout[detail.slot];
-    const name = inst ? (getItemDef(inst.itemId)?.name ?? inst.itemId) : detail.slot;
-    const line = SLOT_LINE[detail.slot];
-    return line ? (
-      <UpgradePanel
-        state={state}
-        onStateChange={onStateChange}
-        onClose={close}
-        lineFilter={(id) => id === line}
-        title={`改装 · ${name}`}
-      />
-    ) : (
-      <PanelShell title={`改装 · ${name}`} onClose={close}>
-        <p>「{name}」暂无可用改装。</p>
-      </PanelShell>
-    );
   }
 
   function body() {
     if (tab === 'gear') {
+      // 展示当前穿戴配置；升级入口在 Otto NPC（P3）—— 此处点击暂无操作，只看。
       return (
         <div className="item-grid">
           {EQUIP_SLOTS.map((slot) => {
             const inst = loadout[slot];
-            if (!inst) return null; // 空槽（charm）暂不显
+            if (!inst) return null; // 空槽（charm 暂空）不显
             const def = getItemDef(inst.itemId);
             return (
               <ItemCell
@@ -115,7 +101,7 @@ export function LockerView({
                 def={def}
                 itemId={inst.itemId}
                 note={`Lv.${inst.level}`}
-                onClick={() => setDetail({ kind: 'gear', slot })}
+                title={`${SLOT_LABEL[slot]}：${def?.name ?? inst.itemId}（升级请找 Otto）`}
               />
             );
           })}
@@ -123,8 +109,17 @@ export function LockerView({
       );
     }
     if (tab === 'journal') {
+      // 日志 tab：图鉴一格 + 航海志区（kind='journal'·按 group 分册）+ 见闻区（kind='lore'）
+      // 按 group 归并航海志（同 group = 同一册的不同页）
+      const journalGroups = new Map<string, typeof journalEntries>();
+      for (const e of journalEntries) {
+        const g = e.group ?? '__ungrouped__';
+        if (!journalGroups.has(g)) journalGroups.set(g, []);
+        journalGroups.get(g)!.push(e);
+      }
       return (
         <div className="item-grid">
+          {/* 图鉴（固定一格·点开整本） */}
           <ItemCell
             key="__bestiary__"
             itemId="图鉴"
@@ -132,7 +127,23 @@ export function LockerView({
             onClick={() => setDetail({ kind: 'bestiary' })}
             title="生态图鉴：见过的深海生物"
           />
-          {unlockedLore.map((e) => (
+          {/* 航海志（按 group 分册·每册展示成一格；点击查看最近一页或第一页） */}
+          {journalEntries.length > 0 &&
+            [...journalGroups.entries()].map(([group, pages]) => {
+              const latest = pages[pages.length - 1];
+              return (
+                <ItemCell
+                  key={`__journal__${group}`}
+                  itemId={group === '__ungrouped__' ? latest.title : group}
+                  def={undefined}
+                  note={pages.length > 1 ? `${pages.length} 页` : undefined}
+                  onClick={() => setDetail({ kind: 'lore', id: latest.id })}
+                  title={`${group === '__ungrouped__' ? latest.title : group}（${pages.length} 页）`}
+                />
+              );
+            })}
+          {/* 见闻（kind='lore'·每条一格） */}
+          {loreEntries.map((e) => (
             <ItemCell
               key={e.id}
               itemId={e.title}

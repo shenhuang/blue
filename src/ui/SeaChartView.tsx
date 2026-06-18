@@ -183,9 +183,13 @@ export function SeaChartView({ state, onStateChange }: Props) {
   // 破「同一时间只一个 POI 点亮」·作者 2026-06-14 #4）。初次进图由 useState(defaultId) 给默认选中。
   const selected = chart.pois.find((p) => p.id === selectedId) ?? null;
 
-  // 切换点位时清掉"锁定目标"（lift 到此处，便于 useEffect 重置）
+  // 切换点位时清掉"锁定目标"和"出发步骤"（lift 到此处，便于 useEffect 重置）
   const [target, setTarget] = useState<string>('');
-  useEffect(() => setTarget(''), [selected?.id]);
+  // departStep: 就地分步向导（#140·作者 2026-06-18）：
+  //   none=POI信息+出海按钮 → pack=行前装包+→/下潜 → target=锁定目标+下潜
+  //   切 POI 时自动回 none（不做 PanelShell 全覆盖·不做取消按钮·点别的 POI 自动重置）。
+  const [departStep, setDepartStep] = useState<'none' | 'pack' | 'target'>('none');
+  useEffect(() => { setTarget(''); setDepartStep('none'); }, [selected?.id]);
 
   // 行前装包（猎手 SPEC §4 data 面·作者拍板「出发前选带·死了就没」·#108；2026-06-10 作者改拍
   // 「格子化」：背包格上限可见 + 储物柜格点击互转）：itemId → 勾选数量。
@@ -526,63 +530,8 @@ export function SeaChartView({ state, onStateChange }: Props) {
             <span><i className="chart-swatch locked" />还到不了</span>
           </div>
 
-          {/* 行前装包（猎手 SPEC §4 data 面·#108；2026-06-10 作者改拍「格子化」）：
-              背包格＝出发后的 run 背包（上限可见·与 applyCarryItems 截断线同源）；储物柜格＝仓库消耗品。
-              点储物柜格放进背包一件、点背包格放回——默认全不带；死了进尸体（可回收）、生还自动归库。 */}
-          {carryables.length > 0 && (
-            <div className="chart-carry">
-              <h3 className="chart-carry-title">
-                行前装包 <span className="dim">背包 {slotsUsed}/{carryCapacity} 格</span>
-              </h3>
-              <p className="dim chart-carry-hint">
-                点储物柜里的东西放进背包，点背包里的放回。带下去的，死了就留在尸体上；活着回来自动归库。
-              </p>
-              <div className="item-grid chart-carry-bag">
-                {carryPicks.flatMap((p) =>
-                  Array.from({ length: p.qty }, (_, i) => (
-                    <ItemCell
-                      key={`${p.itemId}-${i}`}
-                      def={getItemDef(p.itemId)}
-                      itemId={p.itemId}
-                      title={`${getItemDef(p.itemId)?.name ?? p.itemId}——点击放回储物柜`}
-                      onClick={() => stepCarry(p.itemId, -1, Infinity)}
-                    />
-                  )),
-                )}
-                {Array.from({ length: Math.max(0, carryCapacity - slotsUsed) }, (_, i) => (
-                  <EmptyCell key={`empty-${i}`} />
-                ))}
-              </div>
-              <h4 className="chart-carry-subtitle dim">储物柜（消耗品）</h4>
-              <div className="item-grid chart-carry-locker">
-                {carryables.map((it) => {
-                  const def = getItemDef(it.itemId);
-                  const picked = carry[it.itemId] ?? 0;
-                  const remaining = it.qty - picked;
-                  const per = def?.slotsRequired ?? 1;
-                  const bagFull = slotsUsed + per > carryCapacity;
-                  if (remaining <= 0) return null;
-                  return (
-                    <ItemCell
-                      key={it.itemId}
-                      def={def}
-                      itemId={it.itemId}
-                      qty={remaining}
-                      disabled={bagFull}
-                      title={
-                        bagFull
-                          ? '背包满了——先点背包里的东西放回来'
-                          : `${def?.name ?? it.itemId}——点击放进背包`
-                      }
-                      onClick={() => stepCarry(it.itemId, +1, it.qty)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* popup（点灯塔/前哨标记）或 POI 详情（点 POI），二者互斥。 */}
+          {/* popup（点灯塔/前哨标记）或 POI 详情（点 POI），二者互斥。
+              行前装包已移入 ChartInfo departStep='pack' 步骤（#140·就地分步向导）。 */}
           {mapPopup ? (
             mapPopup.kind === 'home' ? (
               <HomePopup
@@ -604,6 +553,14 @@ export function SeaChartView({ state, onStateChange }: Props) {
               canSelectTarget={canSelectTarget}
               target={target}
               setTarget={setTarget}
+              departStep={departStep}
+              setDepartStep={setDepartStep}
+              carry={carry}
+              carryables={carryables}
+              carryPicks={carryPicks}
+              carryCapacity={carryCapacity}
+              slotsUsed={slotsUsed}
+              stepCarry={stepCarry}
               onDepart={handleDepart}
             />
           ) : null}
@@ -619,12 +576,37 @@ export function SeaChartView({ state, onStateChange }: Props) {
   );
 }
 
-function ChartInfo({
+/** 就地分步向导（#140·2026-06-18·作者拍板）的 Props——carry 相关打包成一组便于传递与测试 */
+export interface ChartInfoCarry {
+  carry: Record<string, number>;
+  carryables: InventoryItem[];
+  carryPicks: InventoryItem[];
+  carryCapacity: number;
+  slotsUsed: number;
+  stepCarry: (itemId: string, delta: number, max: number) => void;
+}
+
+/**
+ * POI 详情 + 就地分步出发向导（#140·2026-06-18 作者拍板）。
+ * - `none`  : POI 信息（名/区/tag/blurb）+ **出海** 按钮 → departStep='pack'
+ * - `pack`  : 行前装包（背包格+储物柜格·共享 carry 态）+ →（有打捞目标可选时）或 **下潜**
+ * - `target`: 锁定目标 <select> + ← 回 pack + **下潜**
+ * 导出为具名函数，便于 smoke-chart-ui.tsx 直接渲染测试（不需额外 test-only prop）。
+ */
+export function ChartInfo({
   poi,
   state,
   canSelectTarget,
   target,
   setTarget,
+  departStep,
+  setDepartStep,
+  carry,
+  carryables,
+  carryPicks,
+  carryCapacity,
+  slotsUsed,
+  stepCarry,
   onDepart,
 }: {
   poi: ChartPoi;
@@ -632,18 +614,125 @@ function ChartInfo({
   canSelectTarget: boolean;
   target: string;
   setTarget: (v: string) => void;
+  departStep: 'none' | 'pack' | 'target';
+  setDepartStep: (s: 'none' | 'pack' | 'target') => void;
   onDepart: (poi: ChartPoi, targetCorpseId?: string) => void;
-}) {
+} & ChartInfoCarry) {
   const zone = getZone(poi.zoneId);
   const mods = describeModifier(poi.modifier);
-  // 洞型情报（#114·真话·与 mapgen 同源）：只有 maze zone 的 POI 出这条
   const caveShape = describeCaveShape(poi);
   const corpses = canSelectTarget ? listRecoverableCorpses(state.profile.deaths, poi.zoneId) : [];
-  // 三态：lit 才可出海；dim（深度柱档 / 能力门 / 天气遮）显示但去不了——poiBlockReason 给「怎样才能去」。
   const departable = isPoiDepartable(state.profile, poi);
   const blockReason = poiBlockReason(state.profile, poi);
-  const showPicker = departable && corpses.length > 0;
+  // 「→」（进 target 步）只在有打捞目标可选时出现
+  const hasCorpseChoice = departable && corpses.length > 0;
 
+  // ── step: target ────────────────────────────────────────────────
+  if (departStep === 'target') {
+    return (
+      <div className="chart-info">
+        <div className="chart-info-head">
+          <h3 className="chart-info-name">{poi.name}</h3>
+          <span className="dim chart-info-zone">锁定打捞目标</span>
+        </div>
+        <label className="chart-poi-target">
+          <span className="dim">选定目标（打捞行会）</span>
+          <select
+            className="chart-target-select"
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+          >
+            <option value="">不锁定 · 随缘</option>
+            {corpses.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.diverName} · {d.depthAtDeath}m · {d.cause}（{d.inventorySnapshot.length} 件）
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="chart-info-actions">
+          <button className="btn small secondary" onClick={() => setDepartStep('pack')}>← 装包</button>
+          <button className="btn small" onClick={() => onDepart(poi, target || undefined)}>
+            {target ? '下潜（带目标）' : '下潜'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── step: pack ──────────────────────────────────────────────────
+  if (departStep === 'pack') {
+    return (
+      <div className="chart-info">
+        <div className="chart-info-head">
+          <h3 className="chart-info-name">{poi.name}</h3>
+          <span className="dim chart-info-zone">
+            行前装包 <span className="dim">背包 {slotsUsed}/{carryCapacity} 格</span>
+          </span>
+        </div>
+        {carryables.length > 0 ? (
+          <>
+            <p className="dim chart-carry-hint">
+              点储物柜里的东西放进背包，点背包里的放回。带下去的，死了就留在尸体上；活着回来自动归库。
+            </p>
+            <div className="item-grid chart-carry-bag">
+              {carryPicks.flatMap((p) =>
+                Array.from({ length: p.qty }, (_, i) => (
+                  <ItemCell
+                    key={`${p.itemId}-${i}`}
+                    def={getItemDef(p.itemId)}
+                    itemId={p.itemId}
+                    title={`${getItemDef(p.itemId)?.name ?? p.itemId}——点击放回储物柜`}
+                    onClick={() => stepCarry(p.itemId, -1, Infinity)}
+                  />
+                )),
+              )}
+              {Array.from({ length: Math.max(0, carryCapacity - slotsUsed) }, (_, i) => (
+                <EmptyCell key={`empty-${i}`} />
+              ))}
+            </div>
+            <h4 className="chart-carry-subtitle dim">储物柜（消耗品）</h4>
+            <div className="item-grid chart-carry-locker">
+              {carryables.map((it) => {
+                const def = getItemDef(it.itemId);
+                const picked = carry[it.itemId] ?? 0;
+                const remaining = it.qty - picked;
+                const per = def?.slotsRequired ?? 1;
+                const bagFull = slotsUsed + per > carryCapacity;
+                if (remaining <= 0) return null;
+                return (
+                  <ItemCell
+                    key={it.itemId}
+                    def={def}
+                    itemId={it.itemId}
+                    qty={remaining}
+                    disabled={bagFull}
+                    title={
+                      bagFull
+                        ? '背包满了——先点背包里的东西放回来'
+                        : `${def?.name ?? it.itemId}——点击放进背包`
+                    }
+                    onClick={() => stepCarry(it.itemId, +1, it.qty)}
+                  />
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <p className="dim">仓库没有可携带的消耗品。</p>
+        )}
+        <div className="chart-info-actions">
+          {hasCorpseChoice ? (
+            <button className="btn small" onClick={() => setDepartStep('target')}>→ 锁定目标</button>
+          ) : (
+            <button className="btn small" onClick={() => onDepart(poi, undefined)}>下潜</button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── step: none（默认·POI 信息）───────────────────────────────────
   return (
     <div className={`chart-info ${departable ? '' : 'locked'}`}>
       <div className="chart-info-head">
@@ -671,28 +760,8 @@ function ChartInfo({
         </p>
       )}
 
-      {showPicker && (
-        <label className="chart-poi-target">
-          <span className="dim">锁定目标（打捞行会）</span>
-          <select
-            className="chart-target-select"
-            value={target}
-            onChange={(e) => setTarget(e.target.value)}
-          >
-            <option value="">不锁定 · 随缘</option>
-            {corpses.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.diverName} · {d.depthAtDeath}m · {d.cause}（{d.inventorySnapshot.length} 件）
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-
       {departable ? (
-        <button className="btn small" onClick={() => onDepart(poi, target || undefined)}>
-          {showPicker && target ? '出海（带着目标）' : '出海'}
-        </button>
+        <button className="btn small" onClick={() => setDepartStep('pack')}>出海</button>
       ) : (
         <button className="btn small" disabled title={blockReason ?? undefined}>
           {blockReason ?? '去不了'}

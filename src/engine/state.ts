@@ -67,6 +67,7 @@ export function createInitialProfile(): PlayerProfile {
     shopStock: {},
     lighthouses: [createHomeLighthouse()],
     outpostState: {},
+    equipment: createStarterLoadout(),
   };
 }
 
@@ -145,6 +146,8 @@ export function createInitialStats(): Stats {
 export function createNewRun(opts: {
   zoneId: string;
   inventoryCapacity?: number;
+  /** 来自 profile.equipment 的持久装备配置（Otto P3·缺省＝导师起始件）。 */
+  equipment?: EquipmentLoadout;
   /**
    * 从港口升级派生的全局加成（可选；脚本/测试可省略）。
    * 字段全可选，故可直接把 getRunBonuses() 的结果整个传进来（结构兼容、避免逐字段抄漏，见 dive.ts/dialog.ts）。
@@ -203,7 +206,7 @@ export function createNewRun(opts: {
     stats,
     staminaMax,
     oxygenMax,
-    equipment: createStarterLoadout(),
+    equipment: opts.equipment ?? createStarterLoadout(),
     inventory: [],
     inventoryCapacity: (opts.inventoryCapacity ?? RUN_INVENTORY_CAPACITY) + slotBonus,
     gold: 0,
@@ -316,6 +319,7 @@ export function hydrateGameState(state: GameState): GameState {
     ...state.profile,
     shopStock: state.profile.shopStock ?? {},
     outpostState: state.profile.outpostState ?? {},
+    equipment: state.profile.equipment ?? createStarterLoadout(),
   };
   if (!state.run) return { ...state, profile };
   const run = state.run;
