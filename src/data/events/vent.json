@@ -3,8 +3,13 @@
   "events": [
     {
       "id": "vent.the_smokers",
-      "depthRange": [85, 118],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        85,
+        118
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 3,
       "cooldown": 6,
       "title": "黑烟柱",
@@ -20,12 +25,17 @@
             "onSuccess": {
               "text": "你侧着身子推进，看着温度读数一格格爬，在报警线前一臂停住。\n喷口水几百度，三米外就剩温的——海水把暴烈稀释成一条窄窄的生存带，管虫就全挤在那条带上活。\n道理都对。你退出来的时候，热流在面罩上留了一层很快散掉的雾。",
               "oxygenTurnCost": 1,
-              "deltas": { "sanity": 4 }
+              "deltas": {
+                "sanity": 4
+              }
             },
             "onFailure": {
               "text": "你贴得太近了。一股横向的热流没在任何仪表上预告，推着你斜斜擦过烟柱边缘。\n你蹬开的时候手套蹭过滚烫的矿壳——隔着料子也烫得你缩手。报警器响了一声，又安静下去，像什么都没发生过。",
               "oxygenTurnCost": 2,
-              "deltas": { "stamina": -7, "sanity": -3 }
+              "deltas": {
+                "stamina": -7,
+                "sanity": -3
+              }
             }
           }
         },
@@ -35,7 +45,9 @@
           "outcome": {
             "text": "你在两根烟柱之间找了条缝。热流一阵一阵从侧面推你，像穿过一排看不见的门。\n穿出来回头看，烟柱密得认不出你走的是哪条缝。这种近路，省的是气，花的是别的。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -4 }
+            "deltas": {
+              "sanity": -4
+            }
           }
         },
         {
@@ -50,8 +62,13 @@
     },
     {
       "id": "vent.the_anglers",
-      "depthRange": [85, 118],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        85,
+        118
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 2,
       "cooldown": 8,
       "oncePerRun": true,
@@ -68,12 +85,16 @@
             "onSuccess": {
               "text": "你贴着一根烟柱的影子停稳，数。\n五盏。间距在变——你刚才数的时候它们恰好排成一线，现在散了。其中一盏「灯」底下垂着须，须梢一抖一抖：鮟鱇在钓它的晚饭，和列队没有任何关系。\n是巧合。烟柱的影子把巧合裁成了队形。你把这句话在心里说了两遍。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -3 }
+              "deltas": {
+                "sanity": -3
+              }
             },
             "onFailure": {
               "text": "你数。五盏。你再数，五盏——位置全换了，间距还是那么匀。\n第三遍数到一半，最远那盏灭了，紧接着离你最近的地方亮起一盏。同样的高度。同样的冷白。\n你没有数第四遍。你退出了它们的视野——如果它们有视野的话。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -8 }
+              "deltas": {
+                "sanity": -8
+              }
             }
           }
         },
@@ -83,7 +104,9 @@
           "outcome": {
             "text": "你关了灯，让自己也成为这片黑里的一点不发光的东西。\n烟柱的影子一根接一根地借给你。那几点冷光留在原处，匀速地亮、灭，没有跟来。\n你重新开灯的时候，手指比平时多按了一秒。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         },
         {
@@ -95,12 +118,16 @@
           }
         }
       ]
-    }
-  ,
+    },
     {
       "id": "vent.yeti_field",
-      "depthRange": [85, 118],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        85,
+        118
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 3,
       "cooldown": 6,
       "title": "白色的爪",
@@ -121,7 +148,9 @@
           "outcome": {
             "text": "你停下来看了一会儿。它们在扫流，让毛里的细菌多接触热液。\n整片蟹群的动作有细微的不同步——不是随机的，某种方式上是有节律的，像一片很慢的、很白的浪。\n你没必要理解那个节律。但你还是看了挺久。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 3 }
+            "deltas": {
+              "sanity": 3
+            }
           }
         },
         {
@@ -136,8 +165,13 @@
     },
     {
       "id": "vent.the_chemistry",
-      "depthRange": [85, 118],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        85,
+        118
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 2,
       "cooldown": 9,
       "title": "味道不对",
@@ -153,12 +187,16 @@
             "onSuccess": {
               "text": "你停下来，手压调节器摸了一遍密封。没有裂缝，气流正常，吸力对。\n是热液场的化学物质渗进了水里，水渗进了换气的湿气，最后到了你能尝到的地方。不是你的设备，是这里的水本来就有味道。\n你又吸了一口，这次知道是什么味了，就没那么难受。",
               "oxygenTurnCost": 1,
-              "deltas": { "sanity": 3 }
+              "deltas": {
+                "sanity": 3
+              }
             },
             "onFailure": {
               "text": "你检查了一遍，检查不出问题，但问题还在。味道还在。\n你把「它会消失的」在心里说了几遍，让自己信。",
               "oxygenTurnCost": 1,
-              "deltas": { "sanity": -5 }
+              "deltas": {
+                "sanity": -5
+              }
             }
           }
         },
@@ -182,8 +220,13 @@
     },
     {
       "id": "vent.tube_forest",
-      "depthRange": [85, 118],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        85,
+        118
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 3,
       "cooldown": 7,
       "title": "红羽",
@@ -204,7 +247,9 @@
           "outcome": {
             "text": "你上浮半米，刚好到管顶的位置。从上往下看，是一片摇动的红，红羽一起向你收拢，再开，你的灯是这里唯一让它们有反应的东西。\n从这个角度看是一片海葵，不是一片管虫。边界是一回事。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 3 }
+            "deltas": {
+              "sanity": 3
+            }
           }
         },
         {
@@ -219,8 +264,13 @@
     },
     {
       "id": "vent.pressure_seam",
-      "depthRange": [88, 118],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        88,
+        118
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 2,
       "cooldown": 11,
       "oncePerRun": true,
@@ -237,12 +287,17 @@
             "onSuccess": {
               "text": "你数了四次——开三秒，关两秒，开三秒，关两秒。\n下次关的时候你全力蹬过去，两秒的窗口正好够你跨过去。热量还留在水里，你的手套出来的时候有点烫，但你在另一边了。",
               "oxygenTurnCost": 2,
-              "deltas": { "stamina": -5 }
+              "deltas": {
+                "stamina": -5
+              }
             },
             "onFailure": {
               "text": "你算错了节律——或者节律本来就在变。你踩着时机蹬过去，热水柱在你跨越中途开了，整个右侧被推歪。你蹬出去了，比计划浅了三米，气也比计划多烧了两口。",
               "oxygenTurnCost": 3,
-              "deltas": { "stamina": -9, "sanity": -3 }
+              "deltas": {
+                "stamina": -9,
+                "sanity": -3
+              }
             }
           }
         },
@@ -266,8 +321,13 @@
     },
     {
       "id": "vent.warmth_threshold",
-      "depthRange": [85, 118],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        85,
+        118
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 2,
       "cooldown": 10,
       "oncePerRun": true,
@@ -281,7 +341,9 @@
           "outcome": {
             "text": "你退回去。冷水熟悉，是你潜水开始以来的水。\n你回头看热液场的边界，那边的管虫没有注意到你来了还是走了。它们已经在那边活了几百年，在四度的水什么都没有之前就在了。\n哪边更对，不是你能定的事。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 2 }
+            "deltas": {
+              "sanity": 2
+            }
           }
         },
         {
@@ -293,12 +355,16 @@
             "onSuccess": {
               "text": "你把自己钉在热流和冷水的交界处，一边肩膀暖，另一边冷。\n五分钟，你记住了是哪边是哪边，记住了分界的位置，然后选了一边走进去，继续。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -3 }
+              "deltas": {
+                "sanity": -3
+              }
             },
             "onFailure": {
               "text": "你站在线上，感觉到一边暖一边冷。\n八分钟之后你意识到你还在线上，没有走。气量少了比计划更多。你有一种感觉：在分界线上是一个好地方，你不需要理由，你只是不想选一边。\n你花了一点力气才让自己往任意一个方向走。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -7 }
+              "deltas": {
+                "sanity": -7
+              }
             }
           }
         },
@@ -314,8 +380,13 @@
     },
     {
       "id": "vent.the_interval",
-      "depthRange": [88, 118],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        88,
+        118
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 2,
       "cooldown": 13,
       "oncePerRun": true,
@@ -332,12 +403,16 @@
             "onSuccess": {
               "text": "你数到四十。每次都是十七秒，一次不差。\n你把这个数字写进本子，接受它，然后继续走。地热时序可以非常规律——这就是规律长什么样。\n你不需要那个数字是有意义的，它只需要是事实就够了。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": 2 }
+              "deltas": {
+                "sanity": 2
+              }
             },
             "onFailure": {
               "text": "你数到大约三十次，丢了数。你不确定你是在数喷发次数还是在数秒，你不确定那是十七还是你记下的是你自己的心跳。\n再数了两次，你停了下来：它还是十七秒，或者你把自己数成了十七秒，这两件事你分不出来了。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -6 }
+              "deltas": {
+                "sanity": -6
+              }
             }
           }
         },
@@ -347,7 +422,10 @@
           "outcome": {
             "text": "你把手伸进喷发的边缘。热化学液体烫了你的手套，你缩回来。\n下一次喷发：十七秒之后，不是十七秒减去你介入的时间，是十七秒之后。\n它没有把你计算进去。它没有注意到你。",
             "oxygenTurnCost": 2,
-            "deltas": { "stamina": -4, "sanity": -3 }
+            "deltas": {
+              "stamina": -4,
+              "sanity": -3
+            }
           }
         },
         {
@@ -356,15 +434,22 @@
           "outcome": {
             "text": "你停止计数，走开。\n之后的潜水里你开始不自觉地给别的东西计时——移动的步数，两次呼吸之间的秒数，某个陌生东西闪光的频率。\n十七秒这个数字留在你记着节律的那部分脑子里，没有离开。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         }
       ]
     },
     {
       "id": "vent.shrimp_cloud",
-      "depthRange": [85, 118],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        85,
+        118
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 3,
       "cooldown": 8,
       "title": "云",
@@ -377,7 +462,9 @@
           "outcome": {
             "text": "你关灯。黑下去，虾群在你感觉不到的距离里重新布阵。\n你还是三十七度，你的体温没办法关掉。但没有光，你至少少了一个向量，变成只有热、没有方向的信号。\n你在黑里等了三十秒，开灯，虾群退回烟柱了。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         },
         {
@@ -389,12 +476,16 @@
             "onSuccess": {
               "text": "你不动。虾群靠近，在你手套外面几厘米处停住。几百只，触须在你的水流里颤着。\n它们把你当成一个奇怪的小型热液口——暖，但会动，但现在不动了。\n一只碰了你的手套，整群瞬间散掉，退回烟柱。你不是热液口。你会动。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": 3 }
+              "deltas": {
+                "sanity": 3
+              }
             },
             "onFailure": {
               "text": "你不动。虾群靠近，靠得比你预想的更近——你的头灯把几千只虾的白色身体照成了一个包围你的云。\n你不确定自己在里面还是外面。你动了一下，它们散，你停下来，它们回来。\n你用力往外蹬，散了一片，然后从剩下的里面游出来。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -6 }
+              "deltas": {
+                "sanity": -6
+              }
             }
           }
         },
@@ -410,8 +501,13 @@
     },
     {
       "id": "vent.bacterial_mat",
-      "depthRange": [85, 118],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        85,
+        118
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 3,
       "cooldown": 7,
       "title": "白垫",
@@ -424,7 +520,9 @@
           "outcome": {
             "text": "你捏了一小块，席给了，没有抵制。你封好袋挂在腰带上。\n上去之后会有人告诉你里面是什么菌种，做什么化学反应。在这里你只知道它是开始，是比管虫更早的那个建设者。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 3 }
+            "deltas": {
+              "sanity": 3
+            }
           }
         },
         {
@@ -433,7 +531,9 @@
           "outcome": {
             "text": "你踩进去，蹬穿了几厘米的菌席。热液场的上升流接住了被踢起来的菌云，推散它。\n你穿过去，回头看：席还在，踩乱了，但还在，菌群在你的身后慢慢重新铺平。",
             "oxygenTurnCost": 2,
-            "deltas": { "stamina": -4 }
+            "deltas": {
+              "stamina": -4
+            }
           }
         },
         {
@@ -448,8 +548,13 @@
     },
     {
       "id": "vent.the_pale",
-      "depthRange": [88, 118],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        88,
+        118
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 2,
       "cooldown": 11,
       "oncePerRun": true,
@@ -466,12 +571,16 @@
             "onSuccess": {
               "text": "你游到了两米距离。\n是一只极度褪色的章鱼，白得没有一点花纹，臂上的吸盘也是白的，安静地扣在烟囱侧壁上。它的瞳孔是水平缝，跟着你移动。\n它知道你在这里。它只是决定不走。\n你退了出来。什么都没有人能解释它为什么不走，所以你也不解释。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -3 }
+              "deltas": {
+                "sanity": -3
+              }
             },
             "onFailure": {
               "text": "你游进去。那片白越来越大，灯越来越亮，它还是不动——静止到你开始觉得是你的灯光让它显现的，把灯关了它就不在了。\n你把灯关了一秒。你没有听到什么，但你把灯关了一秒。\n开灯，它还在。你在它身侧两米，你们彼此看着对方。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -9 }
+              "deltas": {
+                "sanity": -9
+              }
             }
           }
         },
@@ -481,7 +590,9 @@
           "outcome": {
             "text": "你拉高亮度，把灯柱全砸在那片白上。\n它动了——不是逃，是在白色的身体上开出了一个很短暂的、花纹的影子，像是在你最亮的光里才勉强被世界注意到了一秒，然后那个影子消失了，它又变回白色的、不动的、在那里的样子。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -4 }
+            "deltas": {
+              "sanity": -4
+            }
           }
         },
         {
@@ -496,8 +607,13 @@
     },
     {
       "id": "vent.sub_floor",
-      "depthRange": [125, 165],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        125,
+        165
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 2,
       "cooldown": 12,
       "oncePerRun": true,
@@ -514,12 +630,16 @@
             "onSuccess": {
               "text": "你把灯贴到裂缝里，离得很近。是多毛虫，白色的，细长的，每一条安在岩石气孔的内壁里，用热液流加热的岩石做土壤，住在里面，不在上面。你把这个记进本子：热液场亚地表种群，住在石头里。道理成立，但道理上成立的事情和把灯伸进去亲眼看到的，是不一样的重量。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -3 }
+              "deltas": {
+                "sanity": -3
+              }
             },
             "onFailure": {
               "text": "你把灯伸进去，光打在裂缝内壁上。你分不清你在看什么：是白色的活的东西，是岩石本身的花纹，还是高压和热液扭曲了你的眼睛。你把灯拉出来，裂缝还在，你不再伸进去，不再看。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -11 }
+              "deltas": {
+                "sanity": -11
+              }
             }
           }
         },
@@ -529,7 +649,9 @@
           "outcome": {
             "text": "你伸手——指尖碰到了裂缝边的热液，高温，你立刻缩了回来。不是致命的，只是烫，但你没有再伸。裂缝里的白色东西还在动，没有注意到你的手。",
             "oxygenTurnCost": 1,
-            "deltas": { "stamina": -4 }
+            "deltas": {
+              "stamina": -4
+            }
           }
         },
         {
@@ -544,8 +666,13 @@
     },
     {
       "id": "vent.mineral_column",
-      "depthRange": [125, 155],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        125,
+        155
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 3,
       "cooldown": 8,
       "title": "在生长的",
@@ -558,7 +685,9 @@
           "outcome": {
             "text": "你打开记录仪，把角度、高度、偏斜方向、沉积速率全记下来，一分钟，四行笔记，三张照片。这是你今天做的最有用的一件事，你在做的时候知道这件事，知道让你的手变得很稳。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": 3 }
+            "deltas": {
+              "sanity": 3
+            }
           }
         },
         {
@@ -567,7 +696,9 @@
           "outcome": {
             "text": "你用刀背在烟囱底部刮了一下。矿物粉尘散进热液流里，消失了，什么都留不住。样品袋里只有几粒不确定是什么的颗粒和一点还是热的水，这个烟囱比它显得的还要脆、还要属于这里、还要不属于你。",
             "oxygenTurnCost": 2,
-            "deltas": { "stamina": -3 }
+            "deltas": {
+              "stamina": -3
+            }
           }
         },
         {
@@ -582,8 +713,13 @@
     },
     {
       "id": "vent.eelpout",
-      "depthRange": [125, 165],
-      "zoneTags": ["vent"],
+      "depthRange": [
+        125,
+        165
+      ],
+      "zoneTags": [
+        "vent"
+      ],
       "weight": 2,
       "cooldown": 11,
       "title": "只有眼睛在跟",
@@ -599,12 +735,16 @@
             "onSuccess": {
               "text": "你慢慢绕到它右侧。眼睛全程跟着你，转，转，再转，最后两只眼睛都在它身体的同一侧了，脖子扭到了一个你不确定脊椎动物能到的角度，它还在看你。你绕回正面，眼睛转回来，身体始终没动。你走了，它送你到你看不见它的地方。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -4 }
+              "deltas": {
+                "sanity": -4
+              }
             },
             "onFailure": {
               "text": "你开始绕——眼睛跟过来了，然后你脑子里有什么开始连线：这条鱼、这个深度、你在这里的时间、你之前看到的那些东西，一张图在连，你不想连它，它在自己连。你停止了绕，正面对它两秒，然后走了，不知道自己连没连到什么。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -9 }
+              "deltas": {
+                "sanity": -9
+              }
             }
           }
         },
@@ -614,7 +754,9 @@
           "outcome": {
             "text": "你正面游过去，走过，走过之后你回头看了一眼——它的眼睛还对着你，两只，白色扁脸里很大的两只，一直到你游出了它的视线，它还是朝着你走的方向看。你不知道它是在看你还是在看你走完之后的那片水。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         },
         {
@@ -623,7 +765,180 @@
           "outcome": {
             "text": "你慢慢靠过去，到了二十厘米。你能看清它的皮肤：白色的，哑光的，没有花纹，像用高压和冷水做出来的质地。它还是不动，眼睛还是盯着你，你们互相看了半分钟，然后你先退了。它没有跟来，也没有走，还是在那里。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -3 }
+            "deltas": {
+              "sanity": -3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "vent.the_breath",
+      "depthRange": [
+        178,
+        220
+      ],
+      "zoneTags": [
+        "vent"
+      ],
+      "weight": 2,
+      "cooldown": 12,
+      "oncePerRun": true,
+      "title": "呼吸的口",
+      "body": "地板上的裂口在开合。\n八秒张开，八秒合拢，从张到合再张，节律稳定，不差一秒。热水柱在张开的时候喷出来，合上的时候停，再张，再喷。\n你数了四个周期之后意识到你在跟着它呼吸。你的换气也是八秒进，八秒出，你在跟一道裂缝同步，你不知道从哪一拍开始的。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "break_sync",
+          "label": "刻意打乱自己的节奏，和它不同步",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你强迫自己打乱呼吸——五秒进，十秒出，任意的，不规则的，就是不是八秒。花了一分钟把自己的节奏弄乱，再重新建立一个新的。裂口还在开合，你不再跟着了，你只是在旁边路过一个有裂缝的地方。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -3
+              }
+            },
+            "onFailure": {
+              "text": "你试图打乱，但八秒是对的，八秒感觉是对的，乱掉了反而不对。你在裂口旁边停了很久，同步，不同步，再同步——直到你往前走，走到声呐扫不到裂口的地方，节奏才算是你自己的了。",
+              "oxygenTurnCost": 3,
+              "deltas": {
+                "sanity": -9
+              }
+            }
+          }
+        },
+        {
+          "id": "accept_the_rhythm",
+          "label": "按这个节奏走，它帮你控制换气",
+          "outcome": {
+            "text": "你跟着它走，八秒进，八秒出。你的气消耗得很均匀，比平时还均匀，节律稳定就是稳定。你走出了裂口的范围，保持着八秒的节奏又多走了十分钟，然后才让它自然散掉，换回你自己的速度。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": 2
+            }
+          }
+        },
+        {
+          "id": "move_away_fast",
+          "label": "往前走，尽快离开这段",
+          "outcome": {
+            "text": "你加速走，不数拍子，只走，走出裂口的声呐范围，走到你只听得到自己换气的地方。你自己的换气是不规则的，还是你自己的。",
+            "oxygenTurnCost": 2,
+            "deltas": {
+              "stamina": -3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "vent.chimney_fall",
+      "depthRange": [
+        175,
+        215
+      ],
+      "zoneTags": [
+        "vent"
+      ],
+      "weight": 2,
+      "cooldown": 11,
+      "title": "倒的",
+      "body": "一根两米高的黑色烟囱柱开始倒了。\n没有声音。非常缓慢，以这个深度应有的速度，慢慢地，不可挽回地向右侧倾。你离它大约四米，在它的右侧。\n它继续倒，你在它的路上。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "dodge_left",
+          "label": "往左后侧闪，让它落在你右边",
+          "outcome": {
+            "text": "你往左后方推，让开，柱子从你右边一米的地方沉下去，落地，慢，没有声音。硫磺云散开，遮了几秒钟的灯，然后散了，地上留着柱子，完整的，什么都没碎，只是换了个方向。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "stamina": -2
+            }
+          }
+        },
+        {
+          "id": "brace_it",
+          "label": "试图撑住它",
+          "outcome": {
+            "text": "你往前去，两手撑住柱子的侧面，二百多度，你的手套开始发热，柱子的重量在慢慢压你，你把它往左推，它偏了方向，落在你左边三米。你的手套热了很久，手里留着矿物粉末。",
+            "oxygenTurnCost": 2,
+            "deltas": {
+              "stamina": -4
+            }
+          }
+        },
+        {
+          "id": "back_up_wait",
+          "label": "往后退，等它落完",
+          "outcome": {
+            "text": "你往后退了四米，停着，看它倒。它倒得非常慢，你看了完整的全程：从垂直到四十五度到水平，最后落地，硫磺云漫开，十秒后你继续往下走，绕过它，地上多了一根柱子。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "vent.pale_heat",
+      "depthRange": [
+        180,
+        222
+      ],
+      "zoneTags": [
+        "vent"
+      ],
+      "weight": 2,
+      "cooldown": 12,
+      "oncePerRun": true,
+      "title": "一样的温度",
+      "body": "这里的水和你皮肤一样热。\n不是温的，不是暖的——就是一样的温度，皮肤里外没有差，你感觉不到你在水里，因为水和你不分。潜水衣这层隔着，但脸上能感觉到，脖子能感觉到，气被加热后进来也是一样的温度。\n你分不清哪里是你，哪里不是。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "focus_on_gear",
+          "label": "看仪表，用数据重新定义自己的边界",
+          "check": {
+            "stat": "sanity",
+            "dc": 53,
+            "onSuccess": {
+              "text": "深度计，气量计，声呐屏幕——这些是你的，只有你的，是你带下来的，不是水的，水里没有这些。你把注意力钉在数据上，数据是确定的，你在数据背后，你是读数据的那个，不是数据也不是水。热水层过去了，水冷了一度，分清了。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -3
+              }
+            },
+            "onFailure": {
+              "text": "你看仪表，仪表在水里，仪表也是一样的温度，你分不清你是在看仪表还是你就是仪表，分不清读数是你的还是水的。你在这团温度里游了很久，游到水终于冷下来，冷了之后你才确认你还在你自己里面。",
+              "oxygenTurnCost": 3,
+              "deltas": {
+                "sanity": -10
+              }
+            }
+          }
+        },
+        {
+          "id": "move_one_finger",
+          "label": "动一根手指，确认你能自己动",
+          "outcome": {
+            "text": "你动了右手食指，弯了又伸，你控制了它，它只是你的手指。你把这个动作重复了三遍，然后动整只手，然后游了一步，你能游，你是你，你在移动。你出了这段水，水冷了，你还在动。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": 1
+            }
+          }
+        },
+        {
+          "id": "keep_swimming",
+          "label": "继续游，不停下来想这个",
+          "outcome": {
+            "text": "你继续游，什么都没分清，只是游。游了大约三分钟，水冷了，体温差回来了，你的皮肤重新知道外面是水，不是你。游的时候不去想它，游完了之后也不想，有些东西想完没有结论就不要想。",
+            "oxygenTurnCost": 2,
+            "deltas": {
+              "sanity": -2
+            }
           }
         }
       ]

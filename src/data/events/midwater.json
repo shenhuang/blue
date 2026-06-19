@@ -3,8 +3,13 @@
   "events": [
     {
       "id": "midwater.krill_column",
-      "depthRange": [55, 85],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        55,
+        85
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 3,
       "cooldown": 6,
       "title": "成柱的虾",
@@ -17,7 +22,9 @@
           "outcome": {
             "text": "你悬停在柱外两个身位，看灯笼鱼一层层把光壳啃出新的形状。\n中层的大事件，教科书里叫垂直迁移，亲眼看叫别的——叫你今天没白下来。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 5 }
+            "deltas": {
+              "sanity": 5
+            }
           }
         },
         {
@@ -28,12 +35,17 @@
             "dc": 45,
             "onSuccess": {
               "text": "你压低头灯扎进去。几秒钟的密集敲击落在装具上，像穿过一场往上下的雨。\n穿出来的时候，肩上还粘着十几只发光的小东西，一蹬腿就散了。确实省了路。",
-              "deltas": { "stamina": -4 }
+              "deltas": {
+                "stamina": -4
+              }
             },
             "onFailure": {
               "text": "柱心比看上去稠得多。虾群糊住面罩，灯只照出一拳远，上下左右都是一样的银。\n你凭气泡的方向才钻出来——出口不在你以为的那一侧。",
               "oxygenTurnCost": 2,
-              "deltas": { "stamina": -8, "sanity": -4 }
+              "deltas": {
+                "stamina": -8,
+                "sanity": -4
+              }
             }
           }
         },
@@ -49,8 +61,13 @@
     },
     {
       "id": "midwater.the_long_blue",
-      "depthRange": [55, 85],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        55,
+        85
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 2,
       "cooldown": 8,
       "oncePerRun": true,
@@ -63,7 +80,9 @@
           "label": "看气泡——它们往哪边走，哪边就是上",
           "outcome": {
             "text": "你呼出一口气，看着那串银亮的珠子稳稳地朝一个方向爬。\n上。世界回到原位：上面是上，下面是下，你悬在中间，没动。\n中层教给人的第一课：别信眼睛，信物理。",
-            "deltas": { "sanity": 3 }
+            "deltas": {
+              "sanity": 3
+            }
           }
         },
         {
@@ -75,12 +94,16 @@
             "onSuccess": {
               "text": "你游了十几桨，银光大了一圈——一条旗鱼，远得很，正用你看不懂的速度横穿中层。\n它根本没注意你。你停下来，看它把那点银拉成一道线，消失。\n距离感回来了：它很远。一直都很远。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": 2 }
+              "deltas": {
+                "sanity": 2
+              }
             },
             "onFailure": {
               "text": "你游。银光不变大，也不变小。\n你又游。深度计的数字动了——往下。你明明在平游。\n你停住，盯着气压表把呼吸数回来。等你抬头，银光没了。这段路的气，白烧了。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -6 }
+              "deltas": {
+                "sanity": -6
+              }
             }
           }
         },
@@ -93,12 +116,16 @@
           }
         }
       ]
-    }
-  ,
+    },
     {
       "id": "midwater.false_bottom",
-      "depthRange": [55, 85],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        55,
+        85
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 2,
       "cooldown": 10,
       "oncePerRun": true,
@@ -115,12 +142,16 @@
             "onSuccess": {
               "text": "你跟了十米。平台开始散——不是退走，是散成了无数个小点，每个点都在动，在发光。\n你的灯照进那片点里：灯笼鱼，几千条，鱼鳔里的气泡把声呐骗成了一层假底。它们就是底，而底从来就不是底。\n你在原地悬停了一阵，数着那些小灯穿过你旁边往上去。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": 3 }
+              "deltas": {
+                "sanity": 3
+              }
             },
             "onFailure": {
               "text": "你跟下去。底还在退，深度计的数字还在涨。\n你在七十八米停住，不是因为想明白了——是因为表盘让你停。\n退回来的路上，你不去看那道一直跟着你的回波。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -6 }
+              "deltas": {
+                "sanity": -6
+              }
             }
           }
         },
@@ -130,7 +161,9 @@
           "outcome": {
             "text": "你停住，再打一记声呐。\n那道平台在移动——整体，同时，所有边缘同步往外扩，然后收回来，扩，再收。呼吸的节奏。\n不是底。是很多很多会呼吸的东西叠在一起，让你的声呐以为那是石头。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 2 }
+            "deltas": {
+              "sanity": 2
+            }
           }
         },
         {
@@ -145,8 +178,13 @@
     },
     {
       "id": "midwater.the_skin",
-      "depthRange": [55, 85],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        55,
+        85
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 3,
       "cooldown": 7,
       "title": "水的皮",
@@ -159,7 +197,9 @@
           "outcome": {
             "text": "你推进那层皮。一秒钟，所有东西都扭曲了——你对面的礁影，你自己的手，全部拉成了不对的形状。\n然后你穿过去了，水温一下子掉了四度，磨砂玻璃变成了你身后的一层晃动。你站在冷水里，回头看暖水，发现两边的景象都在对方眼里歪着。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         },
         {
@@ -182,8 +222,13 @@
     },
     {
       "id": "midwater.the_chain",
-      "depthRange": [60, 85],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        60,
+        85
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 2,
       "cooldown": 12,
       "oncePerRun": true,
@@ -200,12 +245,16 @@
             "onSuccess": {
               "text": "你跟了有一分钟。线越来越宽——不是线，是链，节肢组成的锁链，每一节都是一只独立的、扁平的小东西，合在一起拖成几十米长，在水里共用同一条神经。\n管水母。你在课本上见过，没想到是这个尺寸。它不在意你。它根本不知道「在意」是什么。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": 4 }
+              "deltas": {
+                "sanity": 4
+              }
             },
             "onFailure": {
               "text": "你跟。线变宽，颜色变杂，动的节律越来越难猜。\n你开始注意到它的另一侧也在动——你把它认成了背景，其实那也是它，它比你能看到的更大。\n你停下来。两头都没找到，中间还是数不清的节。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -7 }
+              "deltas": {
+                "sanity": -7
+              }
             }
           }
         },
@@ -229,8 +278,13 @@
     },
     {
       "id": "midwater.creep",
-      "depthRange": [55, 85],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        55,
+        85
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 2,
       "cooldown": 9,
       "title": "沉",
@@ -246,12 +300,16 @@
             "onSuccess": {
               "text": "你停桨，浮力，对了三个表。\n深了六米，气少了你以为的两倍——不是泄漏，是你在下沉时呼吸不自觉加深了。中层就是这样：没有礁可以参照，你就用消耗来计时，而消耗骗人。\n你调回上来，记住了这一格的代价。",
               "oxygenTurnCost": 1,
-              "deltas": { "sanity": 2 }
+              "deltas": {
+                "sanity": 2
+              }
             },
             "onFailure": {
               "text": "你看表。数字在表盘上，对不起来——不是仪器坏了，是你脑子里的「应该在哪儿」和「实际在哪儿」对不上。\n你花了比应该多一倍的时间才捋清楚，气损在这段捋清楚的过程里。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 }
+              "deltas": {
+                "sanity": -5
+              }
             }
           }
         },
@@ -269,15 +327,22 @@
           "outcome": {
             "text": "你主动上来两米。两米的参照让你知道了刚才在哪、现在在哪。\n你在中层待得够久了，知道「不知道自己在哪」才是中层的正常。主动给自己一个坐标，不丢人。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 1 }
+            "deltas": {
+              "sanity": 1
+            }
           }
         }
       ]
     },
     {
       "id": "midwater.marine_snow",
-      "depthRange": [55, 85],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        55,
+        85
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 2,
       "cooldown": 10,
       "oncePerRun": true,
@@ -291,7 +356,9 @@
           "outcome": {
             "text": "你充了浮力，钉在这一层，屏住呼吸。\n海雪停了，或者说你和它们一起停了，分不出来是谁在动。\n你呼出一口气，气泡往上走，你往下沉了一厘米，海雪又开始飘，方向没变过。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 2 }
+            "deltas": {
+              "sanity": 2
+            }
           }
         },
         {
@@ -303,12 +370,16 @@
             "onSuccess": {
               "text": "你选了一片，盯了十秒。它不动。\n你向下游了三桨，那片雪相对你往上走了——是你在动，不是它。\n你用了一分钟确认这件事，然后接受了它，继续走，带着一个新的参照系：中层里，你永远是在动的那个。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": 3 }
+              "deltas": {
+                "sanity": 3
+              }
             },
             "onFailure": {
               "text": "你盯住一片，追了两桨。它跑了，或者你把它跟丢了——这里所有的碎屑看起来都一样。\n你抬头想找一个新的，发现上下左右都在飘，方向混了。气泡去了那个方向，表说你没动，你眼睛里全是往反方向飘的雪。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 }
+              "deltas": {
+                "sanity": -5
+              }
             }
           }
         },
@@ -324,8 +395,13 @@
     },
     {
       "id": "midwater.biolum_field",
-      "depthRange": [55, 85],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        55,
+        85
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 2,
       "cooldown": 12,
       "oncePerRun": true,
@@ -339,7 +415,9 @@
           "outcome": {
             "text": "你屏气，不动。那道形状悬在你手边，慢慢暗下去，用了比你预计更长的时间。\n最后它灭了。\n你在黑里等了另外一分钟，没有动，什么都没有亮。也许是水流，也许是你来之前有别的东西在这里游过。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         },
         {
@@ -351,12 +429,16 @@
             "onSuccess": {
               "text": "你划了一个圆。\n圆亮了，持续了几秒，熄灭——是你自己的轨迹，完整的，干净的，和你划的完全对应。\n刚才的那道形状，应该也只是这样：你的手，你的水流，你在中层留下的一点涟漪。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": 3 }
+              "deltas": {
+                "sanity": 3
+              }
             },
             "onFailure": {
               "text": "你划了一个圆。它亮了——圆的，对的，是你画的那个。\n然后在它旁边，又有东西亮了一下，不是圆，不是你划的形状，位置也不对。\n你把手收回来，看着那道形状慢慢熄灭，没有动，没有再划。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -6 }
+              "deltas": {
+                "sanity": -6
+              }
             }
           }
         },
@@ -366,15 +448,22 @@
           "outcome": {
             "text": "你用力划，身后的水全部亮起来，你游出了一道三十米长的发光轨迹。\n你在轨迹末端停下来，回头看：一道逐渐熄灭的亮线，弯弯的，是你走过的路的形状。\n你整趟潜水都在这里留痕，你一直都不知道。",
             "oxygenTurnCost": 2,
-            "deltas": { "stamina": -4 }
+            "deltas": {
+              "stamina": -4
+            }
           }
         }
       ]
     },
     {
       "id": "midwater.the_transit",
-      "depthRange": [60, 85],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        60,
+        85
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 2,
       "cooldown": 11,
       "oncePerRun": true,
@@ -388,7 +477,9 @@
           "outcome": {
             "text": "你转了过去。黑水，没有形状，没有水流。\n你的灯照进那片黑里，照不到任何东西，也照不到底。\n你等了一分钟，什么都没有再过去。你决定这件事不算发生过。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -3 }
+            "deltas": {
+              "sanity": -3
+            }
           }
         },
         {
@@ -400,12 +491,16 @@
             "onSuccess": {
               "text": "你关灯，什么都黑掉了。\n你数了三十秒，听着自己的呼吸和调节器。什么都没有——没有声音，没有水流，没有东西从你旁边经过的压力差。\n你开灯。空水，仪表正常。不管是什么，它有别的地方要去，那个地方不在你这里。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": 2 }
+              "deltas": {
+                "sanity": 2
+              }
             },
             "onFailure": {
               "text": "你关灯。\n三秒后你听到一个声音，或者你以为你听到了，或者你的大脑在黑暗里替你补了一个你觉得应该在那里的声音。\n你把灯开回来的速度比你计划的要快。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -8 }
+              "deltas": {
+                "sanity": -8
+              }
             }
           }
         },
@@ -421,8 +516,13 @@
     },
     {
       "id": "midwater.omz",
-      "depthRange": [55, 80],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        55,
+        80
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 2,
       "cooldown": 9,
       "title": "无生之水",
@@ -435,7 +535,9 @@
           "outcome": {
             "text": "气量，正常。深度，正常。气体配比，正常。\n仪器全部告诉你你没问题。水告诉你别的，仪器是对的。\n你记下深度，记下「无生命层」这几个字，继续走。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 2 }
+            "deltas": {
+              "sanity": 2
+            }
           }
         },
         {
@@ -444,7 +546,9 @@
           "outcome": {
             "text": "你用力，快速穿过。\n你身后，鱼又回来了。这个层只有大约二十米厚——比你待的时间更窄。\n你回头看了一眼：上方的鱼，下方的鱼，中间那片干净的水，把两群东西隔开。",
             "oxygenTurnCost": 2,
-            "deltas": { "stamina": -5 }
+            "deltas": {
+              "stamina": -5
+            }
           }
         },
         {
@@ -459,8 +563,13 @@
     },
     {
       "id": "midwater.the_count",
-      "depthRange": [90, 130],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        90,
+        130
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 2,
       "cooldown": 11,
       "title": "数着的",
@@ -476,12 +585,16 @@
             "onSuccess": {
               "text": "你往回找。四十七之前是四十六，四十六之前是四十五——你的呼吸。你在数呼吸，某个你不记得做过决定的时刻，你把呼吸数当了锚。四十七口呼吸是正常的，这个深度这段时间里应有的消耗，差不多。你继续数，这次是有意识地数，数到了一百，然后停了。",
               "oxygenTurnCost": 1,
-              "deltas": { "sanity": -2 }
+              "deltas": {
+                "sanity": -2
+              }
             },
             "onFailure": {
               "text": "你往回找，找不到。四十七之前只有黑暗，只有你已经游过的水，没有一个你开始数的时刻。你意识到这个数字是你在这里做出来的唯一的东西，是有意义的，是在增加的。四十八。四十九。你停不下来了，你知道你停不下来了。",
               "oxygenTurnCost": 1,
-              "deltas": { "sanity": -9 }
+              "deltas": {
+                "sanity": -9
+              }
             }
           }
         },
@@ -491,7 +604,9 @@
           "outcome": {
             "text": "你告诉自己：停。然后停了。这比你想象的容易——或者比你想象的难，你不确定，因为你记不住你刚才费了多大劲停的，只知道你停了。四十七是一个悬在原处没有完成的数字，你不管它了。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 2 }
+            "deltas": {
+              "sanity": 2
+            }
           }
         },
         {
@@ -506,8 +621,13 @@
     },
     {
       "id": "midwater.viperfish",
-      "depthRange": [90, 130],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        90,
+        130
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 2,
       "cooldown": 12,
       "oncePerRun": true,
@@ -524,12 +644,16 @@
             "onSuccess": {
               "text": "你屏住一切——浮力，呼吸，想法。它在你面前停了大约三分钟，然后非常缓慢地转身，走了，两排牙消失在灯圈最远处。你不知道你通过了什么评估，或者没通过什么。你等它的光彻底看不见了，再动。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -3 }
+              "deltas": {
+                "sanity": -3
+              }
             },
             "onFailure": {
               "text": "你试着不动。你的调节器在这里很响——你以前没注意过它这么响，它一直这么响，只是这几分钟里你注意到了。鱼还在，换气在响，七分钟后你先走了，大弧绕过它，没有回头。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -9 }
+              "deltas": {
+                "sanity": -9
+              }
             }
           }
         },
@@ -539,7 +663,9 @@
           "outcome": {
             "text": "你轻轻往后，一米，两米，三米。它没有跟来。你把三米的水放在你们之间，等了一分钟，然后绕了一个大弧从它旁边穿过去。绕过去之后你没有回头。两排牙不会因为你看不见就变少。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         },
         {
@@ -548,15 +674,22 @@
           "outcome": {
             "text": "你把灯拉满，正打在它脸上。它退了一步，不是急的，是慢的，退了一步，然后两排发光的牙在强光里消失进黑暗里去了。你的灯里什么都没有了。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -4 }
+            "deltas": {
+              "sanity": -4
+            }
           }
         }
       ]
     },
     {
       "id": "midwater.the_still",
-      "depthRange": [95, 140],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        95,
+        140
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 2,
       "cooldown": 12,
       "oncePerRun": true,
@@ -573,12 +706,16 @@
             "onSuccess": {
               "text": "深度对，流速读零，气量正常减少——说明时间在走，你一直在这里，一切都在正常运转，只是水不动。有这样的水团，某些热盐环流的节点上静止的水团，你读过资料，道理对得上。你往前游，第一步就出了这片静水，水流又回来了，海雪又回来了。你没有回头确认这件事有多奇怪。",
               "oxygenTurnCost": 1,
-              "deltas": { "sanity": -3 }
+              "deltas": {
+                "sanity": -3
+              }
             },
             "onFailure": {
               "text": "你检查了三遍，每一遍都是正常，然后你开始给「正常」找解释，解释这片静水的成因，然后找解释的解释，然后你意识到你在七分钟里一直在这么干。你继续走，走出了静水，什么都正常了，没有一个解释跟着你出来。",
               "oxygenTurnCost": 1,
-              "deltas": { "sanity": -9 }
+              "deltas": {
+                "sanity": -9
+              }
             }
           }
         },
@@ -588,7 +725,9 @@
           "outcome": {
             "text": "你也停了，完全停——不划水，浮力自动稳，你和这片水一起静止。等了两分钟，第三分钟，有什么东西从你右侧过去，磷虾大小，也在动。静止的不止是水，你只是最后一个加入的。你继续走了，静水也继续了，两件事各自进行。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": 2 }
+            "deltas": {
+              "sanity": 2
+            }
           }
         },
         {
@@ -597,15 +736,22 @@
           "outcome": {
             "text": "你用力划，靠消耗确认自己在移动。后来有流了，有东西飘了，中层又是中层了。你没有回头看静水在哪里结束，或者你是否真的穿出去了，或者后面还是一样的静。",
             "oxygenTurnCost": 1,
-            "deltas": { "stamina": -4 }
+            "deltas": {
+              "stamina": -4
+            }
           }
         }
       ]
     },
     {
       "id": "midwater.the_direction",
-      "depthRange": [95, 135],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        95,
+        135
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 2,
       "cooldown": 11,
       "title": "气泡朝右走",
@@ -621,12 +767,16 @@
             "onSuccess": {
               "text": "深度，航向，流速，气量。你把四个表都看过了，四个表都说没事。气泡可能有它自己的道理，那道理不在你的仪器里。你继续走，让它们朝右走，不管它们了。",
               "oxygenTurnCost": 1,
-              "deltas": { "sanity": 2 }
+              "deltas": {
+                "sanity": 2
+              }
             },
             "onFailure": {
               "text": "你查了一遍，又查了一遍。第二遍开始你发现你在找你想看到的那个数字，气量那栏比你记忆里少了几分钟，那几分钟你用在了哪里，你算不出来。你停止了查，继续往前，气泡还是朝右。",
               "oxygenTurnCost": 1,
-              "deltas": { "sanity": -7 }
+              "deltas": {
+                "sanity": -7
+              }
             }
           }
         },
@@ -650,8 +800,13 @@
     },
     {
       "id": "midwater.the_lantern",
-      "depthRange": [55, 80],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        55,
+        80
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 3,
       "cooldown": 8,
       "title": "自带灯的鱼",
@@ -664,7 +819,9 @@
           "outcome": {
             "text": "你关灯，游进那片小小的蓝白里。\n它们不躲你，或者说，在这个深度它们把你当成中层里又一个会动的大东西，没有意见。你在它们中间游了半分钟，每条鱼肚子下的那排灯朝上，朝下，又朝上——一起的。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": 5 }
+            "deltas": {
+              "sanity": 5
+            }
           }
         },
         {
@@ -681,6 +838,175 @@
           "outcome": {
             "text": "你停桨。它们穿过你，或者说从你旁边绕过，反正你最后只是站在中层里，看一片会走路的小光往一个方向消失进黑里去。\n你不知道那个方向叫什么。",
             "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "midwater.dead_layer",
+      "depthRange": [
+        125,
+        155
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
+      "weight": 2,
+      "cooldown": 11,
+      "title": "死水层",
+      "body": "这里什么都没有。\n不是什么都少，是什么都没有。中层一直有东西漂，有磷虾，有海雪，有你不知道叫什么的点点东西透着光游过——这里什么都没有。\n灯扫出去是空的水。\n你知道这叫什么。书上叫无氧最小带，叫死水层，叫生物死去的地方。书上没写穿过它是这种感觉：像穿过什么东西留下的空间。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "keep_moving",
+          "label": "继续往下，穿过去",
+          "outcome": {
+            "text": "你往前游，灯里什么都没有，一分钟，两分钟。然后有什么东西从右边漂过——一条鱼，死的，向下漂，往更深处去。你在死鱼身边穿过，继续往下，往还有活的东西的地方。",
+            "oxygenTurnCost": 2
+          }
+        },
+        {
+          "id": "check_gas",
+          "label": "先检查气量和仪表，再决定",
+          "outcome": {
+            "text": "气量正常，仪表正常，深度正常。这里什么都不正常，但你能控制的那些部分都是正常的。你继续走，穿过了死水层，下方有什么东西发着光，很淡，但有。",
+            "oxygenTurnCost": 1
+          }
+        },
+        {
+          "id": "go_back_up",
+          "label": "往上退，回到有生物的水里",
+          "outcome": {
+            "text": "你往上走了五米，有磷虾了，有海雪了，水里重新有东西在漂。你在那里停了一分钟，然后重新往下走，穿过死水层，用更快的速度。",
+            "oxygenTurnCost": 2,
+            "deltas": {
+              "stamina": -2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "midwater.the_trigger",
+      "depthRange": [
+        155,
+        188
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
+      "weight": 2,
+      "cooldown": 12,
+      "oncePerRun": true,
+      "title": "引线",
+      "body": "你动了一下，周围的水亮了。\n不是你的灯——是水，水里的东西，大约手臂距离之内的一切同时亮起来，蓝绿色，持续大约一秒，然后灭。\n你不动了。灭了。\n你抬手，又亮了。放下手，灭。\n你是什么东西的引线。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "hold_completely_still",
+          "label": "一动不动，等它自己结束",
+          "check": {
+            "stat": "sanity",
+            "dc": 52,
+            "onSuccess": {
+              "text": "你停着，让浮力自动稳，不动手脚，不调节，只呼吸。大约三分钟后，水的亮度开始下降，减弱，最后和别的中层一样。你重新动了，没有再亮。你不知道你等掉了什么，但它不见了。",
+              "oxygenTurnCost": 3,
+              "deltas": {
+                "sanity": -3
+              }
+            },
+            "onFailure": {
+              "text": "你试着不动，试了大约一分钟，然后你的手抖了一下——一闪，又亮。你抖第二下，又亮。你停不住这个，你的身体不肯停，你的身体觉得要动，动了就亮，就亮，一直亮，直到你用力往前游，用速度穿出去，水里的光最后跟着你后面闪了很长一段才停。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -10
+              }
+            }
+          }
+        },
+        {
+          "id": "move_slow",
+          "label": "非常慢地动，尽量不触发",
+          "outcome": {
+            "text": "你极慢地挪，一厘米一厘米，用最小的动作控制方向。周围偶尔亮，一小片，一闪，不是整个水爆。你用这个速度穿了大约四分钟，最后还是在水里流动了一下，亮了大片，然后到了另一片水，亮停了。",
+            "oxygenTurnCost": 3,
+            "deltas": {
+              "sanity": -3
+            }
+          }
+        },
+        {
+          "id": "swim_fast_through",
+          "label": "用力游，快速穿出去",
+          "outcome": {
+            "text": "你用力游，整片水跟着你爆亮，你在一条发光的隧道里穿，越游越快，光追着你，你比光快，出来了，光在身后灭了，你还在游，又多游了十米才停下来，耗掉了多余的力气。",
+            "oxygenTurnCost": 2,
+            "deltas": {
+              "stamina": -4,
+              "sanity": -2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "midwater.the_parallel",
+      "depthRange": [
+        182,
+        210
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
+      "weight": 1,
+      "cooldown": 15,
+      "oncePerRun": true,
+      "title": "平行的",
+      "body": "声呐左侧十八米有东西。\n你扫了三遍，三遍都是它，十八米，你这个深度，和你同一个方向，速度和你一样。\n你把灯往左打，照不到那里——十八米以外灯没用。\n它在声呐里，和你平行着走。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "hold_still",
+          "label": "停下来，看它是否也停",
+          "check": {
+            "stat": "sanity",
+            "dc": 55,
+            "onSuccess": {
+              "text": "你停了，它也停了，两秒延迟之后，同步停下来。你等了三分钟，它没动。你重新动，它动——四秒之后，和你同速，十八米外，同方向。你继续走，它继续走，你到了更深的水，声呐不再报它，只有你。",
+              "oxygenTurnCost": 3,
+              "deltas": {
+                "sanity": -4
+              }
+            },
+            "onFailure": {
+              "text": "你停了，它也停了。你等了三分钟，它不动。你重新动，它跟着动。停了多少次你记不清了，直到你意识到你已经在原地停了快十分钟，气量少了，它还在那里，十八米外，一直在。你往下走，它跟着走。声呐一直报到你觉得声呐不可信为止。",
+              "oxygenTurnCost": 4,
+              "deltas": {
+                "sanity": -11
+              }
+            }
+          }
+        },
+        {
+          "id": "veer_toward_it",
+          "label": "向左偏，试图缩短距离",
+          "outcome": {
+            "text": "你向左偏，向它游，你游了十八米——它不在那里。十八米的水，什么都没有。你继续扫，声呐报在你左边三十米。你向左游，三十米的水，什么都没有。你停了，声呐不再报它。你直着往下走，没有再向左看。",
+            "oxygenTurnCost": 3,
+            "deltas": {
+              "sanity": -4
+            }
+          }
+        },
+        {
+          "id": "ignore_sonar",
+          "label": "关掉声呐，只靠灯往下走",
+          "outcome": {
+            "text": "你关掉声呐。灯里什么都没有，十八米以外的事不知道了，也许还在，也许不在，没有声呐就不知道了。你往下走，灯照的地方是空的，干净的水，你先信这个。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -2
+            }
           }
         }
       ]

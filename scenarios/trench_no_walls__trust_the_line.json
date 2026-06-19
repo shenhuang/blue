@@ -1,0 +1,15 @@
+{
+  "_comment": "无壁海沟·信任绳索（uncanny·185-265m·sanity80·氧-1）",
+  "eventId": "trench.no_walls",
+  "depth": 220,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "stats": { "sanity": 80 },
+  "choices": ["trust_the_line"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": { "oxygen": -1 }
+  }
+}
