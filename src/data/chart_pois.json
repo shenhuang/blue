@@ -375,6 +375,66 @@
           ],
           "visibility": "dark"
         }
+      },
+      {
+        "templateId": "roam.east_seagrass_bed",
+        "zoneId": "zone.east_reef",
+        "owner": "lighthouse.home",
+        "name": "海草床",
+        "blurb": "礁盘内侧一片海草，齐腰高，顺流倒成一个方向。底下是软泥，落脚踩不实，掉进去的东西要伸手摸。",
+        "distance": 0,
+        "mapX": 0.05,
+        "mapY": 0.04,
+        "weight": 2,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "visibility": "murky",
+          "current": "mild"
+        }
+      },
+      {
+        "templateId": "roam.vent_dead_chimneys",
+        "zoneId": "zone.vent_trench",
+        "owner": "lighthouse.ch1_vent_outpost",
+        "name": "死烟囱",
+        "blurb": "一片不再冒烟的烟囱，矿物结的柱子还立着，脆，碰一下掉一层渣。烟一停，靠烟过活的那群也散了，只剩空壳子。",
+        "distance": 3,
+        "mapX": 0.06,
+        "mapY": -0.05,
+        "weight": 1,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "depthRange": [
+            98,
+            116
+          ],
+          "visibility": "dark"
+        }
+      },
+      {
+        "templateId": "roam.vent_heat_seam",
+        "zoneId": "zone.vent_trench",
+        "owner": "lighthouse.ch1_vent_outpost",
+        "name": "渗热缝",
+        "blurb": "海沟底一道裂缝，不堆烟囱，只渗热水。缝口的水一直在抖，看什么都隔着一层晃。离得近，调节器里就有矿物味。",
+        "distance": 3,
+        "mapX": -0.06,
+        "mapY": -0.06,
+        "weight": 1,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "depthRange": [
+            104,
+            118
+          ],
+          "current": "strong"
+        }
       }
     ]
   }

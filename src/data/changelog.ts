@@ -14,6 +14,13 @@ import type { ChangelogEntry } from '@/types';
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-06-20',
+    title: '礁与热液场边 · 三处新机会点',
+    changes: [
+      '海图补了三处顺路的机会点：东礁一片软泥海草床（水发糊、有缓流），热液场边一座熄了火的矿物烟囱群（暗下来了），还有一道渗着温水的海沟裂缝（流急）。都不碰主线——下去之前照例把回头的气算清。',
+    ],
+  },
+  {
     date: '2026-06-14',
     title: '更深的水 · 新去处与新遭遇',
     changes: [
