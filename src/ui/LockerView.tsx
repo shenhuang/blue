@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import type { GameState } from '@/types';
 import { getItemDef, documentLoreId, itemOpensChart, itemMarkedPois } from '@/engine/items';
-import { createStarterLoadout } from '@/engine/state';
 import { resolveMarkedPois } from '@/engine/chart';
 import { allLoreEntries, getLoreEntry } from '@/engine/lore';
 import { ItemGrid } from './ItemGrid';
 import { ItemCell } from './ItemCell';
 import { BestiaryView } from './BestiaryView';
 import { PanelShell } from './PanelShell';
+import { EquipmentDoll } from './EquipmentDoll';
 
 // 港口物品栏 / 储物柜（物品栏与装备 SPEC §2）：左侧 tab 选分类、右侧＝该类内容。展示外壳·按 tab 委托各 store：
 //   消耗品 / 材料 → profile.inventory 按 category（仓库·§1.1·共享 ItemGrid 翻页 + 稀有度边框）
@@ -21,7 +21,6 @@ import { PanelShell } from './PanelShell';
 // 详情（见闻 / 剧情道具）= **全覆盖**整个物品栏·统一右上角 ✕ 返回（作者 2026-06-18）。currency 不开 tab。
 
 type LockerTab = 'consumable' | 'material' | 'gear' | 'journal' | 'other';
-type EquipSlot = 'tank' | 'suit' | 'light' | 'tool' | 'ranged' | 'charm';
 // 详情态（盖住整个物品栏·右上 ✕ 返回）：图鉴 / 单条见闻 / 剧情道具 / none＝看分类格子。
 // 装备升级移交 Otto（P3）·gear 详情暂移除。
 type Detail =
@@ -38,19 +37,9 @@ const TABS: { id: LockerTab; label: string }[] = [
   { id: 'other', label: '其它' },
 ];
 
-const EQUIP_SLOTS: EquipSlot[] = ['tank', 'suit', 'light', 'tool', 'ranged', 'charm'];
-
-const SLOT_LABEL: Record<EquipSlot, string> = {
-  tank: '气瓶',
-  suit: '潜水服',
-  light: '灯具',
-  tool: '近战', // 近战武器（潜水刀）·内部 key 仍 'tool'
-  ranged: '远程', // 远程武器（暂空）
-  charm: '护符',
-};
-
 export function LockerView({
   state,
+  onStateChange,
   onClose,
   onOpenChart,
   onOpenChartAt,
@@ -72,8 +61,6 @@ export function LockerView({
   const [tab, setTab] = useState<LockerTab>(initialTab);
   const [detail, setDetail] = useState<Detail>(initialDetail ?? { kind: 'none' });
   const inv = state.profile.inventory;
-  // 装备来源：读 profile.equipment（持久穿戴配置·hydrateGameState 保证非 undefined·UI 层加 ?? 防旧档边角）
-  const loadout = state.profile.equipment ?? createStarterLoadout();
   const catOf = (itemId: string) => getItemDef(itemId)?.category;
   // 持有的剧情道具（category='story' 且**非海图信物**·文献+信物 如 航海日志/指南针→进「剧情」tab）。
   // 浮标＝海图工具（itemOpensChart）·归「其它」·不在此（作者 2026-06-18「海图属于其它」）。
@@ -186,27 +173,11 @@ export function LockerView({
 
   function body() {
     if (tab === 'gear') {
-      // 上＝当前穿戴配置（profile.equipment·按槽）；下＝仓库里未装备的装备件（备件·只读·换装/升级＝Otto P3）。
-      // 装备（含备件）一律归这里，不落「其它」（作者 2026-06-18）。
+      // 装备＝纸娃娃（Otto 改装·EquipmentDoll·9 槽·SPEC §4）＋ 仓库里未装备的装备件（备件·只读·换装 P3 段2）。
       const ownedGear = inv.filter((i) => i.qty > 0 && catOf(i.itemId) === 'equipment');
       return (
         <>
-          <div className="item-grid">
-            {EQUIP_SLOTS.map((slot) => {
-              const inst = loadout[slot];
-              if (!inst) return null; // 空槽（远程/charm 暂空）不显
-              const def = getItemDef(inst.itemId);
-              return (
-                <ItemCell
-                  key={slot}
-                  def={def}
-                  itemId={inst.itemId}
-                  note={`Lv.${inst.level}`}
-                  title={`${SLOT_LABEL[slot]}：${def?.name ?? inst.itemId}（升级请找 Otto）`}
-                />
-              );
-            })}
-          </div>
+          <EquipmentDoll state={state} onStateChange={onStateChange} />
           {ownedGear.length > 0 && (
             <>
               <h4 className="dim locker-subhead">未装备</h4>
@@ -219,7 +190,7 @@ export function LockerView({
                       def={def}
                       itemId={i.itemId}
                       qty={i.qty > 1 ? i.qty : undefined}
-                      title={`${def?.name ?? i.itemId}（换装见 Otto · P3）`}
+                      title={`${def?.name ?? i.itemId}（换装见 Otto · P3 段2）`}
                     />
                   );
                 })}

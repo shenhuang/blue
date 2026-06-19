@@ -2253,6 +2253,103 @@ html, body, #root {
 .locker-gear-upgrade {
   align-self: flex-start;
 }
+/* 装备纸娃娃（EquipmentDoll·SPEC §4·作者 2026-06-19 模板）：左列4 / 中人像占位 / 右列2（下沉对齐潜水灯·声呐）/ 底饰品3·等大方格。 */
+.equip-doll-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.equip-doll {
+  display: grid;
+  grid-template-columns: 72px 1fr 72px;
+  gap: 10px;
+  align-items: start;
+}
+.equip-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.equip-col.right {
+  align-self: end; /* 武器主/副下沉·与潜水灯/声呐水平对齐（作者拍） */
+}
+.equip-fig {
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  min-height: 312px; /* = 左列 4×72 + 3×8 gap·中间留人像图位（之后放图） */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  font-size: 0.8rem;
+}
+.equip-acc {
+  display: flex;
+  gap: 8px;
+}
+.equip-slot {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.7rem;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+}
+.equip-slot:hover { border-color: var(--accent); }
+.equip-slot.eq { border-color: var(--accent); } /* 已装备＝边框圈出（作者：用框、不用角标） */
+.equip-slot.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.equip-slot.empty, .equip-slot.lock { border-style: dashed; opacity: 0.5; }
+.equip-slot-name { opacity: 0.7; font-size: 0.66rem; }
+.equip-slot-item {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.equip-slot-lv { font-size: 0.62rem; opacity: 0.6; font-variant-numeric: tabular-nums; }
+/* 选中槽的详情 + Otto 改装（纸娃娃下方·inline）。 */
+.equip-detail {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.equip-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.equip-detail-name { font-size: 0.92rem; }
+.equip-upgrade {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+.equip-upgrade-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.8rem;
+}
+.equip-upgrade-cost { font-size: 0.72rem; }
 /* 日志记录详情（点开单条见闻 / 图鉴返回·物品栏与装备 SPEC §3）。 */
 .record-detail {
   display: flex;
