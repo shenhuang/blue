@@ -1,5 +1,5 @@
 {
-  "_doc": "鲸落支线事件库（St1·非主线·#137·剧情 SPEC 行155「死亡喂养生态」承重节拍·区域揭示 SPEC §10）。三段：①中层目击链（whalefall.sighting_1/2/3·zoneTags[midwater]·链式 forbiddenFlags 自己的计数位 + prereqFlags 前一位·第3个额外置 whale_search_ready·目击=progress 故计数 flag 落在每个选项 outcome 的 setProfileFlags·见 engine/events.ts 无 onEnter 钩）；残骸区独立目击（whalefall.sighting_wreck·zoneTags[wreck]·置 whale_sighting.wreck·不计数·独立剧情）。②找寻/找到脚本对（whalefall.search→whalefall.found·weight 0 无 zoneTags=永不入池·只经找寻潜点 openEventId 强制开场·found 置 whalefall_found〔接 chart_regions flag-gated 揭示·step①〕+ endDive forceAscend）。③鲸落三相生态（whalefall.mobile_scavengers/enrichment/chemosynthetic·zoneTags[whalefall]·真实鲸落演替：移动食腐→机会种富集→化能自养食骨蠕虫·chemosynthetic 携图鉴 capstone lore＝intangible 独特奖励）。全 loot-free（守协议）·叙述永不交底（巨兽永不全见·#54）·无脚本死（每条诚实退路）·不碰失联真相/断片说（#117）·zoneTag 语义匹配。所有 story.* flag 由 engine/story.ts 生成（whaleSightingFlag/WHALE_*·playthrough-story §5b 守 data 字面量 ⊆ allStoryFlags()）。lore.whalefall.* 显示文案见 src/data/lore.json（图鉴 LoreView）。文案 [待过稿]（quirk #117·机制+草稿先行·作者逐拍）。",
+  "_doc": "鲸落支线事件库（St1·非主线·#137·剧情 SPEC 行155「死亡喂养生态」承重节拍·区域揭示 SPEC §10）。三段：①中层目击链（whalefall.sighting_1/2/3·zoneTags[midwater]·链式 forbiddenFlags 自己的计数位 + prereqFlags 前一位·第3个额外置 whale_search_ready·目击=progress 故计数 flag 落在每个选项 outcome 的 setProfileFlags·见 engine/events.ts 无 onEnter 钩）；残骸区独立目击（whalefall.sighting_wreck·zoneTags[wreck]·置 whale_sighting.wreck·不计数·独立剧情）。②找寻/找到脚本对（whalefall.search→whalefall.found·weight 0 无 zoneTags=永不入池·只经找寻潜点 openEventId 强制开场·found 置 whalefall_found〔接 chart_regions flag-gated 揭示·step①〕+ endDive forceAscend）。③鲸落三相生态（whalefall.mobile_scavengers/enrichment/chemosynthetic·zoneTags[whalefall]·真实鲸落演替：移动食腐→机会种富集→化能自养食骨蠕虫·chemosynthetic 携图鉴 capstone lore＝intangible 独特奖励）。目击/生态三相仍 loot-free；唯 whalefall.found capstone 发 item.whalefall_log（鲸落手记·eternal·物品即解锁→marksPois 三生态点·见 engine/chart.ts::documentKnowsPoi·作者 2026-06-19 取消旧「全 loot-free」约定）·叙述永不交底（巨兽永不全见·#54）·无脚本死（每条诚实退路）·不碰失联真相/断片说（#117）·zoneTag 语义匹配。所有 story.* flag 由 engine/story.ts 生成（whaleSightingFlag/WHALE_*·playthrough-story §5b 守 data 字面量 ⊆ allStoryFlags()）。lore.whalefall.* 显示文案见 src/data/lore.json（图鉴 LoreView）。文案 [待过稿]（quirk #117·机制+草稿先行·作者逐拍）。",
   "events": [
     {
       "id": "whalefall.sighting_1",
@@ -272,6 +272,7 @@
             "oxygenTurnCost": 1,
             "deltas": { "sanity": 2 },
             "loreEntry": "lore.whalefall.found",
+            "loot": [{ "itemId": "item.whalefall_log", "qty": [1, 1] }],
             "setProfileFlags": ["story.ch1.whalefall_found"],
             "endDive": "forceAscend"
           }
@@ -284,6 +285,7 @@
             "oxygenTurnCost": 2,
             "deltas": { "sanity": -3 },
             "loreEntry": "lore.whalefall.found",
+            "loot": [{ "itemId": "item.whalefall_log", "qty": [1, 1] }],
             "setProfileFlags": ["story.ch1.whalefall_found"],
             "endDive": "forceAscend"
           }

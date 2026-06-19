@@ -131,6 +131,25 @@
       }
     },
     {
+      "id": "item.whalefall_log",
+      "name": "鲸落手记",
+      "category": "story",
+      "rarity": "uncommon",
+      "description": "你从那片海床回来后趁记忆还热写下的一页：落点的水深、绕着尸体打转的洋流、那股甜里带腥的味道。页脚是你亲手钉死的坐标，旁边是你给那地方起的名字。带着它，你随时回得去。",
+      "weight": 0.3,
+      "sellPrice": 0,
+      "decay": "eternal",
+      "story": {
+        "unlocksLoreEntry": "lore.whalefall.found",
+        "setsFlag": ["story.ch1.whalefall_found"],
+        "marksPois": [
+          "poi.anchor.whalefall_scavengers",
+          "poi.anchor.whalefall_enrichment",
+          "poi.anchor.whalefall_bones"
+        ]
+      }
+    },
+    {
       "id": "item.lobster",
       "name": "龙虾",
       "category": "material",

@@ -7,7 +7,7 @@
 
 import type { GameState, InventoryItem, MaterialTier, PlayerProfile } from '@/types';
 import { pickReturnTrigger } from './portEvents';
-import { mergeIntoInventory, removeFromInventory } from './state';
+import { acquireIntoProfile, removeFromInventory } from './state';
 import { allItems, getItemDef } from './items';
 
 export interface ReturnToPortResult {
@@ -33,14 +33,12 @@ export function handleReturnToPort(state: GameState): ReturnToPortResult {
     };
   }
   const trigger = pickReturnTrigger(state);
-  const mergedInventory = mergeIntoInventory(
-    state.profile.inventory,
-    state.run.inventory,
-  );
+  // 物品入袋统一入口：合并 run.inventory 并兑现被获得物品的 story.setsFlag（acquireIntoProfile·见 state.ts）。
+  const acquired = acquireIntoProfile(state.profile, state.run.inventory);
   const next: GameState = {
     ...state,
     // 回港即补满 Mira 备货（清空 shopStock → getShopStock 懒默认成满货）：soft per-run 限量
-    profile: { ...state.profile, inventory: mergedInventory, shopStock: {} },
+    profile: { ...acquired, shopStock: {} },
     run: null,
     phase: trigger
       ? { kind: 'portEvent', eventId: trigger }
@@ -220,8 +218,7 @@ export function buyFromMira(state: GameState, itemId: string, qty: number): Game
   return {
     ...state,
     profile: {
-      ...state.profile,
-      inventory: mergeIntoInventory(state.profile.inventory, [{ itemId, qty: buyQty }]),
+      ...acquireIntoProfile(state.profile, [{ itemId, qty: buyQty }]),
       bankedGold: state.profile.bankedGold - unitPrice * buyQty,
       shopStock: newStock,
     },
@@ -236,11 +233,6 @@ export function buyFromMira(state: GameState, itemId: string, qty: number): Game
  */
 export function devGrantItem(state: GameState, itemId: string, qty = 1): GameState {
   if (qty <= 0 || !getItemDef(itemId)) return state;
-  return {
-    ...state,
-    profile: {
-      ...state.profile,
-      inventory: mergeIntoInventory(state.profile.inventory, [{ itemId, qty }]),
-    },
-  };
+  // 走物品入袋统一入口 ⇒ 作弊发物也兑现 story.setsFlag（鲸落手记 → 解锁鲸落区·作者 2026-06-19）。
+  return { ...state, profile: acquireIntoProfile(state.profile, [{ itemId, qty }]) };
 }

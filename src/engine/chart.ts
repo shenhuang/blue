@@ -23,6 +23,7 @@ import {
 } from './lighthouses';
 import { flagGatedRegions } from './regions';
 import { buildColumnPois, columnBuiltLevel, depthTierRevealState } from './columns';
+import { poisKnownFromItems } from './items';
 
 /**
  * 归一化海图距离 → "distance 档"的换算系数（reach，SPEC §4/§9 tunable）。
@@ -129,6 +130,17 @@ function flagsSatisfied(profile: PlayerProfile, requiresFlags?: string[]): boole
   return requiresFlags.every((f) => profile.flags.has(f));
 }
 
+/**
+ * 该 POI 是否被玩家持有的「文献坐标」道具标记（物品即解锁·marksPois ⇒ reveal·作者 2026-06-19）。
+ * true ⇒ 你抄到 / 带着这个坐标，知道它在哪：poiRevealState 据此**绕过发现门**（requiresFlags + isPoiLit）；
+ * isPoiLit / isPoiExplainedByLighthouse 也视其为「已知 / 有合法来源」——避免文献揭示的点被误判成 mimic
+ * 「亮而无主」（守诚实轴·mimic 仍唯一谎点）。仍受能力门 / 天气（知道 ≠ 去得了 → 落 lit/dim）。
+ * 承接并推广 #117「story 锚点＝日志已知坐标」：导师日志 / 鲸落手记等任意带 marksPois 的道具皆走此径。
+ */
+function documentKnowsPoi(profile: PlayerProfile, poi: ChartPoi): boolean {
+  return poisKnownFromItems(profile).has(poi.id);
+}
+
 /** 深水区 Phase 3 mimic 假 POI 的运行时 id + 它引向的兑现事件。 */
 export const MIMIC_POI_ID = 'poi.mimic.false_beacon';
 export const MIMIC_DIVE_EVENT_ID = 'mimic.false_beacon';
@@ -194,6 +206,9 @@ export function isPoiLit(profile: PlayerProfile, poi: ChartPoi): boolean {
   // St1 一章锚点（#117）：日志抄来的坐标＝**已知点**，不走灯塔「发现」轴——教学尾
   // 「四个坐标圈上海图」与海图解锁是同一个动作，你不需要网照到它才知道它在哪。
   if (poi.story) return true;
+  // 文献坐标（物品即解锁·marksPois ⇒ reveal·作者 2026-06-19）：持有标记此点的道具＝已知点，同 story 短路
+  // 绕灯塔「发现」轴（导师日志 / 鲸落手记…）。承接 #117 到任意 marksPois 道具。
+  if (documentKnowsPoi(profile, poi)) return true;
   return isLit(profile, poi);
 }
 
@@ -207,6 +222,9 @@ export function isPoiExplainedByLighthouse(profile: PlayerProfile, poi: ChartPoi
   // St1 一章锚点（#117）：亮的来源是「你自己抄的坐标」——有解释，别让剧情锚点误穿
   // mimic 的「亮而无主」宏观 tell（海图诚实轴）。
   if (poi.story) return true;
+  // 文献坐标（物品即解锁·#2026-06-19）：亮的来源是「你带着的那张纸」——有合法解释，别让文献揭示的点
+  // （如鲸落手记标的生态点）误穿 mimic「亮而无主」tell。
+  if (documentKnowsPoi(profile, poi)) return true;
   return isLit(profile, poi);
 }
 
@@ -239,8 +257,13 @@ export function poiRevealState(profile: PlayerProfile, poi: ChartPoi): PoiReveal
   if (poi.columnId !== undefined && poi.depthTier !== undefined) {
     return depthTierRevealState(columnBuiltLevel(profile, poi.columnId), poi.depthTier);
   }
-  if (!flagsSatisfied(profile, poi.requiresFlags)) return 'hidden';
-  if (!isPoiLit(profile, poi)) return 'hidden'; // 圈外不出现（reveal-gated·A①·勘测圈已删→非点亮一律 hidden）
+  // 发现门（位置是否已知）：持有标记此点的文献（物品即解锁·marksPois ⇒ reveal）⇒ 已知·绕发现门；
+  // 否则走常规发现（requiresFlags 发现 flag + isPoiLit 灯塔网/揭示圈/story 已知点）。文献短路只绕「发现」，
+  // 不绕下面的能力门/天气（知道 ≠ 去得了）——缺设施/装备的已知点照样落 dim（resolveMarkedPois 据此给「去不了」原因）。
+  if (!documentKnowsPoi(profile, poi)) {
+    if (!flagsSatisfied(profile, poi.requiresFlags)) return 'hidden';
+    if (!isPoiLit(profile, poi)) return 'hidden'; // 圈外不出现（reveal-gated·A①·勘测圈已删→非点亮一律 hidden）
+  }
   const occ = climateOcclusion(profile, poi);
   if (occ !== 'none') return occ;
   return poiLockReason(profile, poi) === null ? 'lit' : 'dim';

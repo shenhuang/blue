@@ -12,6 +12,7 @@ import type {
   Lighthouse,
 } from '@/types';
 import { POWER_MAX, deriveSensorTuning } from './clarity';
+import { itemSetsFlags } from './items';
 import lighthouseData from '@/data/lighthouse_upgrades.json';
 
 // 5（#131 探深深度柱重构）：门控模型从「flag.probe.* 解锁」改档位制、旧 probe 升级 id 改 lighthouse.probe.<柱>.lv<级>、
@@ -82,6 +83,30 @@ export function mergeIntoInventory(
     result = addToInventory(result, item.itemId, item.qty);
   }
   return result;
+}
+
+/**
+ * 把若干物品并入 profile.inventory 的**统一入口**（物品入袋单点·作者 2026-06-19）。除合并库存外，
+ * 还兑现被获得物品的 `story.setsFlag`——把它携带的 story flag 并入 profile.flags（sticky·幂等）。
+ * 语义＝「持有那张纸＝你做过那件事」：不论从哪条路拿到带 setsFlag 的道具（回港 loot 并入 / Mira 回购 /
+ * devGrantItem 作弊发物·见 engine/port.ts 三处调用）解锁逻辑都生效（如鲸落手记 → story.ch1.whalefall_found
+ * → 鲸落区圈 + 营地可建 + 找寻点握手）。纯函数·只「加」语义（扣减走 removeFromInventory·flag sticky 不撤）。
+ */
+export function acquireIntoProfile(
+  profile: PlayerProfile,
+  add: InventoryItem[],
+): PlayerProfile {
+  const inventory = mergeIntoInventory(profile.inventory, add);
+  let flags: Set<string> | null = null; // copy-on-write：无新 flag 时复用原 Set（不白拷）
+  for (const item of add) {
+    if (item.qty <= 0) continue;
+    for (const f of itemSetsFlags(item.itemId)) {
+      if (profile.flags.has(f)) continue;
+      if (!flags) flags = new Set(profile.flags);
+      flags.add(f);
+    }
+  }
+  return { ...profile, inventory, flags: flags ?? profile.flags };
 }
 
 /** 数某个物品在 inventory 里的数量（没有则 0）；纯函数。升级账单 / Mira 回购都用它。 */

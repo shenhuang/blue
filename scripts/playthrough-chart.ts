@@ -170,6 +170,26 @@ L('\n========== 0b. owner 归属守门 + owner POI 落在 owner radius 内 =====
     );
   }
   L(`  ${authored.length} 个 authored POI：owner 合法 + 落在各自 owner radius 内 ✓`);
+
+  // (c2) 文献坐标守门（物品即解锁·marksPois ⇒ reveal·作者 2026-06-19·CLAUDE.md「约定落成机制」）：
+  //   每个 item.story.marksPois 必须命中一个 authored anchor id——拼错＝文献静默不揭示＝软锁，焊成 regress 红。
+  //   导师日志（4 锚点）/ 鲸落手记（3 生态点）都过此门。引擎 reveal 路径见 engine/chart.ts::documentKnowsPoi。
+  const itemsRaw = JSON.parse(
+    readFileSync(new URL('../src/data/items.json', import.meta.url), 'utf-8'),
+  ) as { items: Array<{ id: string; story?: { marksPois?: string[] } }> };
+  const anchorIds = new Set(rawAnchors.map((a) => a.id).filter((x): x is string => typeof x === 'string'));
+  let markedRefs = 0;
+  for (const it of itemsRaw.items) {
+    for (const poiId of it.story?.marksPois ?? []) {
+      markedRefs++;
+      assert(
+        anchorIds.has(poiId),
+        `0b: 道具「${it.id}」marksPois 引用了不存在的 anchor「${poiId}」（文献坐标须命中 authored anchor·拼错＝静默不揭示＝软锁）`,
+      );
+    }
+  }
+  L(`  文献坐标 marksPois（${markedRefs} 个引用）⊆ authored anchor ids（物品即解锁守门）✓`);
+
   // (d) resolve 管线正确性（不写死坐标·拖动不失效）：generateChart resolve 出的 owner POI 绝对坐标
   //     必须 == owner 声明坐标(ownerAnchorPos) + 原始偏移（挡 resolveOwnerCoords/ownerAnchorPos 接错·
   //     如误用活灯塔坐标 / 反号 / flatten 丢段）。取边缘点横岩廊（owner=trench·偏移最大轴）做 spot。

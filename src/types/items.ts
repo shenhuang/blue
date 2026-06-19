@@ -80,8 +80,21 @@ export interface ItemDef {
      * 该道具标记的海图坐标（POI id 列表·「文献坐标」功能·作者 2026-06-18）：物品详情陈列这些点，
      * 已可下潜的点可点击→跳海图并选中它。旧海图标记一章四锚点；后续藏宝图/带坐标的日志复用同一字段。
      * 数据驱动·引擎 resolveMarkedPois 对照当前海图给出名字/可达性，UI 据此渲染。
+     * **物品即解锁**（作者 2026-06-19）：持有标记某点的道具＝已知该坐标，引擎 poiRevealState 据此揭示它
+     * （绕发现门 requiresFlags + 灯塔/揭示圈·仍受能力/天气门）——单一真相＝你手里有没有写着坐标的那张纸。
+     * 见 engine/items.ts::poisKnownFromItems + engine/chart.ts::documentKnowsPoi。marksPois 的 id 必须命中
+     * authored anchor（playthrough-chart 守成 regress 门·拼错＝静默不揭示＝软锁）。
      */
     marksPois?: string[];
+    /**
+     * 获得此道具（进 profile.inventory）时一并置位的 story flag（物品即里程碑·作者 2026-06-19）：
+     * 「持有那张纸＝你做过那件事」。在 engine/state.ts::acquireIntoProfile 单点兑现 ⇒ 不论从哪条路拿到
+     * （回港 loot 并入 / Mira 回购 / devGrantItem 作弊发物）都解锁。sticky·幂等（扣道具不撤 flag）。
+     * 用于「带坐标的文献顺带解锁其区域基建」：如鲸落手记 setsFlag `story.ch1.whalefall_found` ⇒
+     * 同时揭示坐标（documentKnowsPoi·marksPois）+ 开鲸落区圈/营地可建/找寻点握手（flag 侧）。
+     * flag 必须 ⊆ allStoryFlags()（playthrough-story §5b 扫全 src/data·已自动守门·quirk #118）。
+     */
+    setsFlag?: string[];
   };
 }
 
