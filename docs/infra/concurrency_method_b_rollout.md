@@ -38,17 +38,23 @@ npm run weekend:worktree    # 建分支(若无)+挂 worktree+symlink node_module
 
 `npm run handoff` 的 1c 块会列出这棵 worktree（quirk #130 既有机制·自报并行线）。
 
-## 4. 自动化 3 任务接入（**作者逐步改·每步确认·提案 §6**）
+### 3.1 相对路径指针（关键·`setup-weekend-worktree.mjs` 已自动）
 
-通用改法：把「在共享 main 树上 `git checkout auto/weekend` 再提交」换成「在 `.worktrees/weekend`（已永久钉 auto/weekend）里 `cd` 进去跑+提交」——**不再 checkout 主树、不再翻 HEAD**。该树已带 `.blue-writer=weekend`，`check-branch` 自动放行；提交套路（`gc.auto 0` / 显式 `git add` 单文件 / `mv` 收容锁）全不变。
+Cowork 每个 session 在沙箱把 Blue 挂到**不同**绝对路径（`/sessions/<session-id>/mnt/Blue`），而 `git worktree add` 默认把**绝对**路径写进 `.worktrees/weekend/.git` 和 `.git/worktrees/weekend/gitdir` → 换个 session / 沙箱就解析不到、worktree 里跑 git 直接 `fatal: not a git repository`。`setup-weekend-worktree.mjs` 已自动把这两个指针改成**相对**路径（`gitdir: ../../.git/worktrees/weekend` 与 `../../../.worktrees/weekend/.git`）→ Mac + 任意 Cowork 沙箱都解析得通。**红线**：旧 git（含沙箱 git 2.34；相对反向 gitdir 是 git 2.48 才支持）会把相对指针误判成「指向不存在位置」→ `git worktree prune` 会**误删**这棵 worktree。所以 **绝不在沙箱 / 旧 git 里 `git worktree prune`**（周末/夜间流程 `gc.auto 0`·不自动 prune·安全；作者 Mac 现代 git 一切正常）。手工修复某棵 worktree 的绝对指针＝把上述两文件写成相对即可。
 
-| 任务 | 现状 | 改成 |
-|---|---|---|
-| `deep-echo-weekend-content`（周六日） | 在共享树写内容·全绿门·不 commit | `cd .worktrees/weekend` 里写+全绿门+（可选）commit；不碰 main 树 |
-| `deep-echo-weekend-poi`（周一·06-19 当事者） | 共享树 `checkout auto/weekend` 再 commit | `cd .worktrees/weekend` 直接 commit（已在 auto/weekend·无 checkout=无 HEAD 翻） |
-| `nightly-blue-verify-publish`（每日 ~1am） | verify 后 `git branch -f main auto/weekend` 再 push | verify 在 `.worktrees/weekend`（设 `BLUE_WRITER=nightly` 跳过分支门）；合并仍从 main 树 `git branch -f main auto/weekend`（移 ref 不动树·quirk #104b）再 push（**不变**） |
+## 4. 自动化 3 任务接入（**作者改 prompt·每步确认·提案 §6**）
 
-沙箱里这些任务仍按 `blue-regress-sandbox` 记忆装 Linux esbuild/rollup 到 /tmp、用 `ESBUILD_BINARY_PATH`/`NODE_PATH` 指 worktree 的 node_modules 跑 build；typecheck/纯 node check 直接能跑。
+3 个任务的 prompt 在 app 内部目录 `~/Claude/Scheduled/<id>/SKILL.md`（Cowork 的 Edit 工具够不到·`update_scheduled_task` 只能整段替换）。改法＝在每个 prompt **最前面粘贴**下面对应的「覆盖块」（盖掉旧的 `git checkout auto/weekend` / `branch -f` 逻辑·其余正文一字不动·worktree 缺失时正文旧逻辑自动兜底）。3 个都停着·改完逐个 enable 前各自 dry-run 一次。
+
+**通用原理**：weekend 内容由 worktree（永久钉 auto/weekend）承载、主树恒在 main → 不再 `checkout auto/weekend`（它被 worktree 占用·checkout 会失败）、不再翻 HEAD。提交套路（`gc.auto 0` / 显式单文件 `git add` / `mv` 收容锁 / 不 push）不变；沙箱 build 仍按 `blue-regress-sandbox` 记忆装 Linux esbuild/rollup 到 /tmp、`ESBUILD_BINARY_PATH`/`NODE_PATH` 指 worktree node_modules（typecheck / 纯 node check 直接能跑）。
+
+### 4a. `deep-echo-weekend-content` 与 `deep-echo-weekend-poi`（粘在 prompt 最前）
+
+> 【方案 B 工作树·最优先·覆盖下方旧 `git checkout` 分支步骤·quirk #138】本任务在周末专属 worktree 里跑、与交互 session 的 main 树物理隔离（各自独立 HEAD/index）——消除「被并发翻分支落错 main」（2026-06-19 那次）和「撞 `.git/index.lock`」。做法：起手 `cd <你的 Blue 挂载路径>/.worktrees/weekend`（永久钉 `auto/weekend`·自带 `.blue-writer=weekend`·分支门放行），确认 `git --no-optional-locks rev-parse --abbrev-ref HEAD` ＝ `auto/weekend`，**直接在此干活 + commit，跳过下方所有 `git checkout auto/weekend`**（无需切分支·无 HEAD 翻动）。**绝不在沙箱 `git worktree prune`**（旧 git 会误删·§3.1）。worktree 缺失才回落正文旧逻辑，或回主树根 `npm run weekend:worktree` 重建（作者 Mac 本机·沙箱会硬停）。
+
+### 4b. `nightly-blue-verify-publish`（粘在 STEPS / step 2 之前）
+
+> 【方案 B 工作树·覆盖 step 2 的 checkout + ref-move 合并法·quirk #138】若 `.worktrees/weekend` 存在（weekend 内容由它承载·主树恒在 main），step 2「WEEKEND MERGE」改为：**(a)** 不再 `git checkout auto/weekend`（它被 worktree 占用·checkout 必失败）；要在分支上验证就 `cd <Blue>/.worktrees/weekend`（设 `BLUE_WRITER=nightly` 跳过分支门）跑 step 3 的 gate。**(b)** 需把 main 的新 commit 带进分支时，在 worktree 里 `git rebase main`（冲突→`git rebase --abort` + 报告「needs manual merge」+ 不动 main）。**(c)** GREEN 合并**取代** `git branch -f main auto/weekend && git checkout main`（main 在主树被 checkout·`branch -f` 会被拒）——回主树（恒在 main）确认 `git merge-base --is-ancestor main auto/weekend` 为真后跑 `git merge --ff-only auto/weekend`（只加文件·沙箱安全·非 force·把 worktree 攒的 weekend 内容快进进 main）。其余（`.deploy-token` token push / 不 force / never ship from auto/weekend / 只在真有改动才发布 / 刷 tracking ref 防幻影 ahead）全不变。**绝不在沙箱 `git worktree prune`**（§3.1）。
 
 > 改这 3 个 prompt 是无人值守 + 上生产那一环。`check-branch`（#138）已是护栏：万一某条改漏导致落错分支，门会红、夜间 verify 也会拦——但仍请逐条改、改完各自 dry-run 再开启用。
 
