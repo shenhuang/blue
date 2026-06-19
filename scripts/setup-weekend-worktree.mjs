@@ -65,6 +65,23 @@ if (existsSync(WT)) {
   console.log(`✓ 已挂 worktree ${WT_REL} → ${BRANCH}。`);
 }
 
+// 指针改相对路径——**关键**：Cowork 每个 session 在沙箱里把 ~/Desktop/Blue 挂到不同的绝对路径
+// （/sessions/<session-id>/mnt/Blue），git worktree add 默认写**绝对**路径 → 在别的 session / 沙箱里
+// 解析不到、worktree 里跑 git 直接 fatal。只有**相对**指针在 Mac + 任意沙箱都通。沙箱 git 2.34 无
+// `--relative-paths`（2.48 才有）→ 手写两个指针文件最稳·幂等。见 quirk #138 / concurrency_method_b_rollout.md。
+// 注意：旧 git（含沙箱 2.34）对**反向** gitdir 的相对路径不认 → `git worktree prune` 会误判可删；
+// 别在沙箱/旧 git 里跑 `git worktree prune`（周末流程 gc.auto 0·不自动 prune·安全）。
+try {
+  writeFileSync(join(WT, '.git'), 'gitdir: ../../.git/worktrees/weekend\n');
+  writeFileSync(join(ROOT, '.git', 'worktrees', 'weekend', 'gitdir'), '../../../.worktrees/weekend/.git\n');
+  console.log('✓ worktree 指针已改相对路径（Mac + 任意 Cowork 沙箱通用）。');
+} catch (e) {
+  console.warn(
+    `⚠ 改相对指针失败：${String(e.message || e).split('\n')[0]}\n` +
+      `  worktree 仍可在 Mac 本机用·但 Cowork 沙箱 session 里可能跑不了 git（绝对路径解析不到）。`,
+  );
+}
+
 // 3. node_modules：symlink 复用 main 树的（macOS-native·同主机安全·省一次 install）
 const wtNodeModules = join(WT, 'node_modules');
 if (!existsSync(wtNodeModules)) {
