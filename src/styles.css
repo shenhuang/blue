@@ -2126,12 +2126,10 @@ html, body, #root {
 }
 
 .item-cell {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 72px;
-  padding: 6px 4px;
+  display: block;
+  width: 84px;
+  height: 84px;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 4px;
   background: transparent;
@@ -2140,6 +2138,7 @@ html, body, #root {
   font-size: 0.72rem;
   line-height: 1.2;
   position: relative;
+  overflow: hidden;
   text-align: center;
 }
 
@@ -2152,16 +2151,22 @@ html, body, #root {
   opacity: 0.35;
 }
 
+/* 图标占满整格（big square·占位空框·将来 data-cat 上图直接铺满）。 */
 .item-cell-icon {
-  width: 34px;
-  height: 34px;
-  border: 1px dashed var(--border);
-  border-radius: 3px;
+  position: absolute;
+  inset: 0;
   background: rgba(255, 255, 255, 0.03);
 }
 
+/* 名字＝压在格子底部的半透明条·居中（作者 2026-06-19）·盖在图标上仍可读。 */
 .item-cell-name {
-  max-width: 100%;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 3px 4px;
+  text-align: center;
+  background: rgba(10, 16, 24, 0.68);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2176,9 +2181,13 @@ html, body, #root {
   opacity: 0.85;
 }
 
+/* 备注（商店价格 / 库存等）＝左上角小字（数量在右上角·名字在底部）。 */
 .item-cell-note {
+  position: absolute;
+  top: 2px;
+  left: 4px;
   font-size: 0.66rem;
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 .item-cell.short .item-cell-note { color: var(--danger); opacity: 1; }
@@ -2223,8 +2232,8 @@ html, body, #root {
 .item-cell.rarity-uncommon { border-color: #4a90d9; }
 .item-cell.rarity-rare { border-color: #9b6dd0; }
 .item-cell.rarity-legendary { border-color: #e0a84a; }
-/* 已装备框（物品栏装备 tab·作者 2026-06-19「正在装备的有框」）：accent 边框 + 环·盖过稀有度边色。 */
-.item-cell.equipped { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+/* 已装备框（物品栏装备 tab·作者 2026-06-19「正在装备的有框·框在物品边缘」）：2px accent 边框（border-box·尺寸不变）。 */
+.item-cell.equipped { border: 2px solid var(--accent); }
 
 /* 港口物品栏 / 储物柜（物品栏与装备 SPEC §2·P1）：tab 栏 + 内容（装备 tab 内嵌改装面板）。 */
 /* 左 tab 竖排 + 右内容（物品栏现走 PanelShell 壳·标题/✕ 由壳统一）：tab 列固定宽靠左、内容吃满其余。 */
