@@ -28,7 +28,12 @@
       "equipment": {
         "slot": "tank",
         "baseLevel": 1,
-        "effects": [{ "kind": "oxygenMaxBonus", "value": 60 }]
+        "effects": [{ "kind": "oxygenMaxBonus", "value": 60 }],
+        "upgradeSteps": [
+          { "materials": [{ "itemId": "item.shark_tooth", "qty": 2 }], "gold": 40, "statDeltas": [{ "kind": "oxygenMaxBonus", "value": 10 }] },
+          { "materials": [{ "itemId": "item.shark_tooth", "qty": 3 }, { "itemId": "item.brass_fitting", "qty": 2 }], "gold": 80, "statDeltas": [{ "kind": "oxygenMaxBonus", "value": 12 }] },
+          { "materials": [{ "itemId": "item.crab_chitin", "qty": 3 }, { "itemId": "item.brass_fitting", "qty": 2 }], "gold": 140, "statDeltas": [{ "kind": "oxygenMaxBonus", "value": 15 }] }
+        ]
       }
     },
     {

@@ -9,6 +9,8 @@
 // Phase B 灯塔 inert：下面这些函数已就位 + 有回归，但游戏流程还没调用它们；
 // 设施效果（LighthouseBonuses）由 Phase C 的 chart.ts（reveal）/ dive.ts（reach distance）消费。
 
+import { getEquipmentStats, emptyEquipmentStats } from './equipment';
+
 import type {
   GameState,
   Lighthouse,
@@ -288,9 +290,11 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
   const g = getUpgradeBonuses(profile);
   const home = getHomeLighthouse(profile);
   const homeSlot = home ? getLighthouseBonuses(home).extraConsumableSlot : 0;
+  // 段1：并入穿戴件升级增量（Otto·equipment.ts 单点）——starter 全 Lv.1 时为 0、对既有基线零扰动。
+  const eq = profile.equipment ? getEquipmentStats(profile.equipment) : emptyEquipmentStats();
   return {
-    oxygenMaxBonus: g.oxygenMaxBonus,
-    staminaMaxBonus: g.staminaMaxBonus,
+    oxygenMaxBonus: g.oxygenMaxBonus + eq.oxygenMaxBonus,
+    staminaMaxBonus: g.staminaMaxBonus + eq.staminaMaxBonus,
     extraConsumableSlot: g.extraConsumableSlot + homeSlot,
     sonarUnlocked: g.sonarUnlocked,
     powerMaxBonus: g.powerMaxBonus,

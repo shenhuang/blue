@@ -80,9 +80,12 @@ const DEFAULT_SLOTS_LOADOUT: { [K in EquipmentSlot]: EquipmentSlotForm } = {
   tank: { itemId: 'item.tank.bluefin_mk1', level: 1 },
   suit: { itemId: 'item.suit.thermal_basic', level: 1 },
   light: { itemId: 'item.light.hand_torch', level: 1 },
+  sonar: { itemId: '', level: 1 },
   tool: { itemId: 'item.dive_knife.standard', level: 1 },
   ranged: { itemId: '', level: 1 },
   charm: { itemId: '', level: 1 },
+  charm2: { itemId: '', level: 1 },
+  charm3: { itemId: '', level: 1 },
 };
 
 export function emptyCombatFormState(combatId = ''): CombatScenarioFormState {
@@ -96,7 +99,7 @@ export function emptyCombatFormState(combatId = ''): CombatScenarioFormState {
     zoneId: '',
     depth: '',
     equipment: { ...DEFAULT_SLOTS_LOADOUT },
-    equipmentOverride: { tank: false, suit: false, light: false, tool: false, ranged: false, charm: false },
+    equipmentOverride: { tank: false, suit: false, light: false, sonar: false, tool: false, ranged: false, charm: false, charm2: false, charm3: false },
     inventory: [],
     unlockedUpgrades: '',
     seed: '',

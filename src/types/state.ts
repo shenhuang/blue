@@ -373,14 +373,17 @@ export interface RunState {
   injuries: ActiveInjury[];
 }
 
-/** 装备配置（武器拆 tool=近战 / ranged=远程 两槽·作者 2026-06-18） */
+/** 装备配置（9 槽纸娃娃·作者 2026-06-19·见 types/items.ts EquipmentSlot 注释） */
 export interface EquipmentLoadout {
   tank: EquipmentInstance | null;
   suit: EquipmentInstance | null;
   light: EquipmentInstance | null;
-  tool: EquipmentInstance | null; // 近战武器（潜水刀）·历史 key 名
-  ranged: EquipmentInstance | null; // 远程武器（暂空·未来鱼枪/发射器）
-  charm: EquipmentInstance | null;
+  sonar: EquipmentInstance | null; // 声呐（独立槽·新增 2026-06-19·段2 接传感器线）
+  tool: EquipmentInstance | null; // 武器·主（近战·潜水刀·历史 key 名）
+  ranged: EquipmentInstance | null; // 武器·副（双持占主+副两格·单手只占主）
+  charm: EquipmentInstance | null; // 饰品 1
+  charm2: EquipmentInstance | null; // 饰品 2（升级「饰品槽」解锁）
+  charm3: EquipmentInstance | null; // 饰品 3（升级「饰品槽」解锁）
 }
 
 /** 装备实例（带等级，未来可加词缀） */

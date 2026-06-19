@@ -154,9 +154,12 @@ export function createStarterLoadout(): EquipmentLoadout {
     tank: { itemId: 'item.tank.bluefin_mk1', slot: 'tank', level: 1 },
     suit: { itemId: 'item.suit.thermal_basic', slot: 'suit', level: 1 },
     light: { itemId: 'item.light.hand_torch', slot: 'light', level: 1 },
-    tool: { itemId: 'item.dive_knife.standard', slot: 'tool', level: 1 }, // 近战武器（潜水刀）
-    ranged: null, // 远程武器（暂空·未来鱼枪/发射器）
-    charm: null,
+    tool: { itemId: 'item.dive_knife.standard', slot: 'tool', level: 1 }, // 武器·主（近战·潜水刀）
+    ranged: null, // 武器·副（暂空·未来鱼枪/发射器）
+    sonar: null, // 声呐（起手没有·canon 后续解锁/获取·段2 接线）
+    charm: null, // 饰品 1
+    charm2: null, // 饰品 2（升级「饰品槽」解锁）
+    charm3: null, // 饰品 3（升级「饰品槽」解锁）
   };
 }
 

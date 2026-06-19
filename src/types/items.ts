@@ -7,10 +7,23 @@ export type ItemCategory =
   | 'story'
   | 'currency';
 
-// 装备槽。武器拆近战/远程两槽（作者 2026-06-18）：
-//   tool   ＝ 近战武器槽（潜水刀·历史 key 名沿用·事件 hasEquipment{slot:'tool'} 的「用刀」选项都认它）
-//   ranged ＝ 远程武器槽（未来鱼枪/发射器…·暂空·与近战互不影响「用刀」事件门控）
-export type EquipmentSlot = 'tank' | 'suit' | 'light' | 'tool' | 'ranged' | 'charm';
+// 装备槽（9 槽纸娃娃·作者 2026-06-19）。历史 key 名沿用以最小化改动面：
+//   tool   ＝ 武器·主（近战·潜水刀·事件 hasEquipment{slot:'tool'} 的「用刀」选项都认它）
+//   ranged ＝ 武器·副（双持武器占主+副两格·单手只占主）
+//   charm/charm2/charm3 ＝ 饰品 1/2/3（升级「饰品槽」依次解锁第 2、3 槽·最多同时戴 3）
+//   sonar  ＝ 声呐（独立槽·新增）
+// 中文 UI 标签（潜水衣/气瓶/潜水灯/声呐/武器主/武器副/饰品）在 ui 层映射，不进引擎键名。
+// 备注：tankhouse(气瓶库=beacon 基础氧气) 与 salvage_guild(打捞行会=Mira) 不是装备、不进纸娃娃。
+export type EquipmentSlot =
+  | 'tank'
+  | 'suit'
+  | 'light'
+  | 'sonar'
+  | 'tool'
+  | 'ranged'
+  | 'charm'
+  | 'charm2'
+  | 'charm3';
 
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
 
@@ -101,8 +114,26 @@ export interface ItemDef {
 export interface EquipmentMeta {
   slot: EquipmentSlot;
   baseLevel: number;
-  /** 装备基础属性效果 */
+  /** 装备基础属性效果（Lv.1 基线） */
   effects: EquipmentEffect[];
+  /**
+   * 逐件升级步（Otto 改装·作者 2026-06-19·物品栏与装备 SPEC §4）。
+   * steps[k] = 从 Lv.(k+1) → Lv.(k+2) 的账单 + 该级**增量** statDeltas（叠加在 effects 之上）。
+   * 当前等级实力 = effects + Σ(steps[0..level-2].statDeltas)，由 engine/equipment.ts::getEquipmentStats 单点算。
+   * 缺省/空 = 不可升级（恒 Lv.1）。maxLevel = baseLevel + upgradeSteps.length。
+   */
+  upgradeSteps?: UpgradeStep[];
+}
+
+/**
+ * 一步逐件升级（账单 + 该级增量效果）。materials/gold 复用升级账单格式
+ * （与 upgrades.json 的 cost 同形，便于段2 端口数值）。
+ */
+export interface UpgradeStep {
+  materials: { itemId: string; qty: number }[];
+  gold: number;
+  /** 升到该级时**叠加**的属性增量（与 EquipmentMeta.effects 同 kind·getEquipmentStats 累加）。 */
+  statDeltas: EquipmentEffect[];
 }
 
 export type EquipmentEffect =

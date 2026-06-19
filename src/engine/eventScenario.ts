@@ -246,14 +246,8 @@ function inferZoneId(ev: DiveEvent): string {
 function buildEquipment(override: Partial<EquipmentLoadout> | undefined): EquipmentLoadout {
   const base = createStarterLoadout();
   if (!override) return base;
-  return {
-    tank: override.tank !== undefined ? override.tank : base.tank,
-    suit: override.suit !== undefined ? override.suit : base.suit,
-    light: override.light !== undefined ? override.light : base.light,
-    tool: override.tool !== undefined ? override.tool : base.tool,
-    ranged: override.ranged !== undefined ? override.ranged : base.ranged,
-    charm: override.charm !== undefined ? override.charm : base.charm,
-  };
+  // 9 槽起改用 spread：base 含全 9 槽、override 只含已覆写键（不含显式 undefined）＝加新槽不必动这里。
+  return { ...base, ...override };
 }
 
 function buildInitialState(input: ScenarioInput, ev: DiveEvent): GameState {
