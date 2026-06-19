@@ -47,3 +47,9 @@ docs/NEXT_SESSION_PROMPT.md
 
 # local project-instructions for Claude sessions (kept local by author decision — never publish)
 /CLAUDE.md
+
+# per-working-tree writer identity for the branch-guard (concurrency 方案 A·quirk #104) — never commit
+.blue-writer
+
+# 方案 B 周末引擎独立 worktree（挂 auto/weekend·物理隔离·mount 内·sandbox 可见）— never commit
+/.worktrees/

@@ -12,6 +12,10 @@
     "regress": "node scripts/regress.mjs",
     "regress:quick": "node scripts/regress.mjs --only typecheck",
     "handoff": "node scripts/handoff.mjs",
+    "check:branch": "node scripts/check-branch.mjs",
+    "weekend:start": "node scripts/set-writer.mjs weekend",
+    "main:resume": "node scripts/set-writer.mjs interactive",
+    "weekend:worktree": "node scripts/setup-weekend-worktree.mjs",
     "gen:enemies": "node scripts/gen-enemy-registry.mjs",
     "check:enemies": "node scripts/gen-enemy-registry.mjs --check",
     "check:dive": "node scripts/check-dive-refs.mjs"

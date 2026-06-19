@@ -68,6 +68,9 @@ tasks.push({ name: 'build', cmd: [vite, 'build', '--outDir', buildOut, '--logLev
 // 端到端教学验证（纯 node，不走 tsx）
 tasks.push({ name: 'verify-tutorial', cmd: ['node', join('scripts', 'verify-tutorial.mjs')] });
 
+// 写手↔分支一致性（纯 node·把并发隔离方案 A「谁在哪条分支提交」做成会红的门，见 scripts/check-branch.mjs·quirk #104）
+tasks.push({ name: 'check-branch', cmd: ['node', join('scripts', 'check-branch.mjs')] });
+
 // 架构边界：engine ↛ ui + src/ui 禁 phase 字面量（纯 node，把解耦约定做成会红的门，见 scripts/check-boundaries.mjs）
 tasks.push({ name: 'check-boundaries', cmd: ['node', join('scripts', 'check-boundaries.mjs')] });
 
