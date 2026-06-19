@@ -215,6 +215,21 @@ html, body, #root {
   gap: 16px;
 }
 
+/* 港口常驻底部出口（作者 2026-06-19「物品栏/海图固定显示·海图置底」）：sticky 钉在可视区底部，
+ * NPC 卡片区随页滚动、卡片再多也挤不掉这两个出口。不开自定义 overflow 容器（守 check-boundaries 规则三）。 */
+.port-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px 0 4px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+
 .npc-card {
   background: var(--bg-elev);
   border: 1px solid var(--border);

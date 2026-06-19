@@ -68,44 +68,46 @@ export function PortView({ state, onStateChange, onOpenService, dialog, onDialog
       </header>
 
       {!dialog ? (
-        <div className="port-npcs">
-          <NpcCard
-            name={aldo.name}
-            role="守灯人"
-            description={aldo.shortDescription}
-            onTalk={() => startDialogWith(aldo)}
-          />
-          {mira ? (
+        <>
+          {/* NPC 卡片区＝随页滚动（卡片多了不挤掉底部操作）；出口按钮在下方 .port-actions 常驻。 */}
+          <div className="port-npcs">
             <NpcCard
-              name={mira.name}
-              role="打捞商"
-              description={mira.shortDescription}
-              onTalk={() => startDialogWith(mira)}
-              extraAction={{ label: '直接找她卖东西', onClick: openMiraShop }}
-              extraAction2={{ label: '打捞行会（升级服务）', onClick: () => onOpenService('salvage') }}
+              name={aldo.name}
+              role="守灯人"
+              description={aldo.shortDescription}
+              onTalk={() => startDialogWith(aldo)}
             />
-          ) : (
-            <NpcCard name="Mira" role="打捞商" description="柜台还没开。" disabled />
-          )}
-          <NpcCard
-            name="Otto"
-            role="气瓶师"
-            description="气瓶师，手也巧——把料交给他，他改装你身上的家伙。"
-            extraAction={{ label: '改装装备', onClick: () => onOpenService('upgrade') }}
-          />
-          {chartUnlocked && (
-            <button className="btn port-chart-btn" onClick={openChart}>
-              摊开海图（出海）
+            {mira ? (
+              <NpcCard
+                name={mira.name}
+                role="打捞商"
+                description={mira.shortDescription}
+                onTalk={() => startDialogWith(mira)}
+                extraAction={{ label: '直接找她卖东西', onClick: openMiraShop }}
+                extraAction2={{ label: '打捞行会（升级服务）', onClick: () => onOpenService('salvage') }}
+              />
+            ) : (
+              <NpcCard name="Mira" role="打捞商" description="柜台还没开。" disabled />
+            )}
+            <NpcCard
+              name="Otto"
+              role="气瓶师"
+              description="气瓶师，手也巧——把料交给他，他改装你身上的家伙。"
+              extraAction={{ label: '改装装备', onClick: () => onOpenService('upgrade') }}
+            />
+          </div>
+          {/* 常驻底部出口（作者 2026-06-19「物品栏/海图固定显示·海图置底」）：sticky 钉视区底·NPC 区随页滚。 */}
+          <div className="port-actions">
+            <button className="btn port-upgrade-btn" onClick={() => onOpenService('locker')}>
+              物品栏
             </button>
-          )}
-          <button
-            className="btn port-upgrade-btn"
-            onClick={() => onOpenService('locker')}
-          >
-            物品栏
-          </button>
-          {/* 潜水志·图鉴 / 见闻 已收进物品栏（LockerView 的 图鉴 / 见闻 tab·作者 2026-06-17）——主界面不再单列。 */}
-        </div>
+            {chartUnlocked && (
+              <button className="btn port-chart-btn" onClick={openChart}>
+                摊开海图（出海）
+              </button>
+            )}
+          </div>
+        </>
       ) : (
         <DialogPanel
           node={dialog}
