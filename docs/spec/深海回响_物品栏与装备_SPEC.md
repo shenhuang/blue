@@ -1,6 +1,7 @@
 # 深海回响 · 物品栏与装备 SPEC
 
 > 状态：草案 v0.1（2026-06-17 起草 · 待作者定稿）
+> **实装状态（2026-06-19·#144·以本注 + CHANGELOG #144 为准·下方 §4/§9 草案设计已被这些拍板覆盖）**：§9 五问 + 槽模型**定案**＝**9 槽**〔潜水衣 / 气瓶 / 潜水灯 / 声呐 / 武器·主 / 武器·副 / 饰品×3〕——**去掉护甲**；**气瓶库＝beacon 基础氧气、打捞行会＝Mira·两者非装备**（§4.3 旧映射作废）；饰品 3 槽渐解锁；声呐独立槽。B→C 合并走**分段 A**：实力单一来源＝穿戴件·`engine/equipment.ts::getEquipmentStats` 单点。**段1（地基+UI）已实装**：纸娃娃 `ui/EquipmentDoll.tsx`＝Otto 改装（`PortServiceMode 'upgrade'`）；物品栏「装备」tab 平铺所有装备（已装备 `ItemCell variant 'equipped'` 加框）；`UpgradeStep`+`upgradeSteps`+逐件升级账单；气瓶试点；无 SAVE bump。**段2 待做（需作者在场）**：把 §4.4 的 stat 迁移做实——声呐/潜水灯/规避三线（喂传感器+猎手管线）搬进 sonar/light/suit 件 `upgradeSteps`、`getRunBonuses` 改读 `getEquipmentStats`、退役 `upgrades.json` 这三线、**SAVE 6→7**、数值对账（**quirk #140 双计陷阱**：移来源必同时删旧来源）。
 > 关联：QUIRKS #94/#95（engine↛ui + 禁 phase 字面量边界）、#96（handoff 再生定位）、#99（存档不迁移·弃旧档）、#104（并发隔离）、#131（深度柱）、#137（lore 见闻志）；`portFocus.ts` 单决策点；`upgrades.json` 升级线；潜水 HUD：`DiveHeader` / `SonarScanPanel` / 港口 `has-panel` 全屏覆盖样式；剧情 SPEC §2（导师起始装备 canon）。
 > 一句话：把港口右栏「改装装备」那个位置升级成一个统一的 **储物柜 / 物品栏**——左 tab、右内容。它是一个 **展示外壳**，按 tab 委托给各自子系统，**不是**把所有东西塞进一个数组。
 
