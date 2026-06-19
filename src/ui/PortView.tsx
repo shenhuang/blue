@@ -87,7 +87,12 @@ export function PortView({ state, onStateChange, onOpenService, dialog, onDialog
           ) : (
             <NpcCard name="Mira" role="打捞商" description="柜台还没开。" disabled />
           )}
-          <NpcCard name="Otto" role="气瓶师" description="正在给气瓶上压力，没抬头。" disabled />
+          <NpcCard
+            name="Otto"
+            role="气瓶师"
+            description="气瓶师，手也巧——把料交给他，他改装你身上的家伙。"
+            extraAction={{ label: '改装装备', onClick: () => onOpenService('upgrade') }}
+          />
           {chartUnlocked && (
             <button className="btn port-chart-btn" onClick={openChart}>
               摊开海图（出海）

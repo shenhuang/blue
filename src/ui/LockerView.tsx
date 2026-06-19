@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { GameState } from '@/types';
+import type { GameState, EquipmentInstance } from '@/types';
 import { getItemDef, documentLoreId, itemOpensChart, itemMarkedPois } from '@/engine/items';
 import { resolveMarkedPois } from '@/engine/chart';
 import { allLoreEntries, getLoreEntry } from '@/engine/lore';
@@ -7,7 +7,7 @@ import { ItemGrid } from './ItemGrid';
 import { ItemCell } from './ItemCell';
 import { BestiaryView } from './BestiaryView';
 import { PanelShell } from './PanelShell';
-import { EquipmentDoll } from './EquipmentDoll';
+import { createStarterLoadout } from '@/engine/state';
 
 // 港口物品栏 / 储物柜（物品栏与装备 SPEC §2）：左侧 tab 选分类、右侧＝该类内容。展示外壳·按 tab 委托各 store：
 //   消耗品 / 材料 → profile.inventory 按 category（仓库·§1.1·共享 ItemGrid 翻页 + 稀有度边框）
@@ -39,7 +39,6 @@ const TABS: { id: LockerTab; label: string }[] = [
 
 export function LockerView({
   state,
-  onStateChange,
   onClose,
   onOpenChart,
   onOpenChartAt,
@@ -61,6 +60,7 @@ export function LockerView({
   const [tab, setTab] = useState<LockerTab>(initialTab);
   const [detail, setDetail] = useState<Detail>(initialDetail ?? { kind: 'none' });
   const inv = state.profile.inventory;
+  const loadout = state.profile.equipment ?? createStarterLoadout();
   const catOf = (itemId: string) => getItemDef(itemId)?.category;
   // 持有的剧情道具（category='story' 且**非海图信物**·文献+信物 如 航海日志/指南针→进「剧情」tab）。
   // 浮标＝海图工具（itemOpensChart）·归「其它」·不在此（作者 2026-06-18「海图属于其它」）。
@@ -173,31 +173,42 @@ export function LockerView({
 
   function body() {
     if (tab === 'gear') {
-      // 装备＝纸娃娃（Otto 改装·EquipmentDoll·9 槽·SPEC §4）＋ 仓库里未装备的装备件（备件·只读·换装 P3 段2）。
-      const ownedGear = inv.filter((i) => i.qty > 0 && catOf(i.itemId) === 'equipment');
+      // 装备＝平铺所有装备（和普通物品同款格子·作者 2026-06-19）：当前穿戴的加框（variant 'equipped'），
+      // 其余＝仓库备件（未装备）。升级 / 换装在 Otto（PortServiceMode 'upgrade'·纸娃娃 EquipmentDoll），不在此。
+      const wornIds = Object.values(loadout)
+        .filter((i): i is EquipmentInstance => !!i)
+        .map((i) => i.itemId);
+      const spares = inv.filter((i) => i.qty > 0 && catOf(i.itemId) === 'equipment');
+      if (wornIds.length === 0 && spares.length === 0) {
+        return <ItemGrid items={[]} rows={4} emptyText="还没有装备。" />;
+      }
       return (
-        <>
-          <EquipmentDoll state={state} onStateChange={onStateChange} />
-          {ownedGear.length > 0 && (
-            <>
-              <h4 className="dim locker-subhead">未装备</h4>
-              <div className="item-grid">
-                {ownedGear.map((i) => {
-                  const def = getItemDef(i.itemId);
-                  return (
-                    <ItemCell
-                      key={i.itemId}
-                      def={def}
-                      itemId={i.itemId}
-                      qty={i.qty > 1 ? i.qty : undefined}
-                      title={`${def?.name ?? i.itemId}（换装见 Otto · P3 段2）`}
-                    />
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </>
+        <div className="item-grid">
+          {wornIds.map((itemId, idx) => {
+            const def = getItemDef(itemId);
+            return (
+              <ItemCell
+                key={`worn-${idx}-${itemId}`}
+                def={def}
+                itemId={itemId}
+                variant="equipped"
+                title={`${def?.name ?? itemId}（已装备 · 改装见 Otto）`}
+              />
+            );
+          })}
+          {spares.map((i) => {
+            const def = getItemDef(i.itemId);
+            return (
+              <ItemCell
+                key={i.itemId}
+                def={def}
+                itemId={i.itemId}
+                qty={i.qty > 1 ? i.qty : undefined}
+                title={`${def?.name ?? i.itemId}（未装备 · 换装见 Otto · P3 段2）`}
+              />
+            );
+          })}
+        </div>
       );
     }
     if (tab === 'journal') {

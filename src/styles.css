@@ -2223,6 +2223,8 @@ html, body, #root {
 .item-cell.rarity-uncommon { border-color: #4a90d9; }
 .item-cell.rarity-rare { border-color: #9b6dd0; }
 .item-cell.rarity-legendary { border-color: #e0a84a; }
+/* 已装备框（物品栏装备 tab·作者 2026-06-19「正在装备的有框」）：accent 边框 + 环·盖过稀有度边色。 */
+.item-cell.equipped { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 
 /* 港口物品栏 / 储物柜（物品栏与装备 SPEC §2·P1）：tab 栏 + 内容（装备 tab 内嵌改装面板）。 */
 /* 左 tab 竖排 + 右内容（物品栏现走 PanelShell 壳·标题/✕ 由壳统一）：tab 列固定宽靠左、内容吃满其余。 */

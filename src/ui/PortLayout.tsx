@@ -24,6 +24,8 @@ import { SeaChartView } from './SeaChartView';
 import { MiraShopView } from './MiraShopView';
 import { UpgradePanel } from './UpgradePanel';
 import { LockerView } from './LockerView';
+import { EquipmentDoll } from './EquipmentDoll';
+import { PanelShell } from './PanelShell';
 import { BestiaryView } from './BestiaryView';
 import { LoreView } from './LoreView';
 import { portRightPane, type PortServiceMode } from './portFocus';
@@ -40,7 +42,7 @@ interface Props {
 }
 
 export function PortLayout({ state, onStateChange }: Props) {
-  // 升级服务面板（港口本地 UI 态·非 phase）：'gear'＝改装装备；'salvage'＝打捞行会；'bestiary'＝图鉴；null＝不开。
+  // 升级服务面板（港口本地 UI 态·非 phase）：'upgrade'＝Otto 改装（纸娃娃）；'locker'＝物品栏；'salvage'＝打捞行会；'bestiary'＝图鉴；null＝不开。
   const [upgradeMode, setUpgradeMode] = useState<PortServiceMode | null>(null);
 
   // 港口左栏对话态上提到本组件（原属 PortView·2026-06-14 修「面板与对话同屏」上提）——
@@ -117,6 +119,10 @@ export function PortLayout({ state, onStateChange }: Props) {
       <BestiaryView state={state} onClose={() => setUpgradeMode(null)} />
     ) : rightPane === 'lore' ? (
       <LoreView state={state} onClose={() => setUpgradeMode(null)} />
+    ) : rightPane === 'upgrade' ? (
+      <PanelShell title="Otto · 改装" onClose={() => setUpgradeMode(null)}>
+        <EquipmentDoll state={state} onStateChange={onStateChange} />
+      </PanelShell>
     ) : rightPane ? (
       <UpgradePanel
         state={state}
