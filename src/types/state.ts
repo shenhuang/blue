@@ -105,7 +105,7 @@ export type ClarityTier = 'full' | 'sonar' | 'none';
 /**
  * 微观双传感器状态（深水区 Phase 0a）。灯＝近距真相 + 解锁信息、暴露(signature)高；
  * 声呐＝远距不可信回波、暴露低、费电。关灯关声呐＝致盲但最隐蔽（主动感知是双向的）。
- * 声呐能力本身是后期解锁（sonarUnlocked，门控在深料升级 upgrade.sonar.lv1）——
+ * 声呐能力本身是后期解锁（sonarUnlocked，段2：收集材料后找 Otto 打造声呐件即解锁·hasSonarEquipped）——
  * 早期＝仅有灯，黑水区天然探索受限，玩家先经历"黑暗中无声呐"（作者 2026-06-02）。
  */
 export interface SensorState {

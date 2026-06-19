@@ -92,6 +92,9 @@ tasks.push({ name: 'smoke-map-editor', cmd: [tsx, join('scripts', 'smoke-map-edi
 // 剧情编辑器（dev 工具·?storyeditor）SSR smoke（守事件 schema / EVENT_DB 演进别静默打挂编辑器）
 tasks.push({ name: 'smoke-story-editor', cmd: [tsx, join('scripts', 'smoke-story-editor.tsx')] });
 
+// 装备纸娃娃（Otto 改装 / 下潜查看装备）SSR smoke（守装备 schema / 9 槽位演进别静默打挂）
+tasks.push({ name: 'smoke-equipment-ui', cmd: [tsx, join('scripts', 'smoke-equipment-ui.tsx')] });
+
 // 全部 playthrough*.ts —— 各自独立进程，可并行（#22 安全）
 const playthroughs = readdirSync(join(ROOT, 'scripts'))
   .filter((f) => /^playthrough.*\.ts$/.test(f))

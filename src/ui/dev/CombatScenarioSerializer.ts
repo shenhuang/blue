@@ -21,7 +21,7 @@ import type {
   Stats,
   Stat,
 } from '@/types';
-import type { EquipmentSlot } from '@/types/items';
+import { EQUIPMENT_SLOTS, type EquipmentSlot } from '@/types/items';
 
 // ---------------------------------------------------------------------------
 // FormState
@@ -236,7 +236,7 @@ export function combatScenarioInputToForm(input: CombatScenarioInput): CombatSce
     base.inventory = input.inventory.map((i) => ({ itemId: i.itemId, qty: i.qty }));
   }
   if (input.equipment) {
-    const slots: EquipmentSlot[] = ['tank', 'suit', 'light', 'tool', 'charm'];
+    const slots = EQUIPMENT_SLOTS;
     for (const slot of slots) {
       const v = input.equipment[slot];
       if (v === undefined) continue;

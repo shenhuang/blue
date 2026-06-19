@@ -25,6 +25,22 @@ export type EquipmentSlot =
   | 'charm2'
   | 'charm3';
 
+/**
+ * 全部装备槽的**单一来源**（9 槽·作者 2026-06-19）。需要「遍历所有槽」的地方（dev 面板 /
+ * 两个 serializer …）一律 import 此处，别再手写 `['tank','suit','light','tool','charm']`——
+ * 那种散落数组会随加槽漂移（CLAUDE.md「想守住的约定落成机制、别落散文」）。住在本类型旁＝
+ * 改 union 一眼看到要同步的数组，且本文件零依赖（serializer 引它不破「纯数据层无引擎依赖」）。
+ * 下面的穷尽性断言把约定焊成 typecheck 门：往 EquipmentSlot 加了新成员却忘补进数组，
+ * `_slotsExhaustive` 立刻编译失败（Exclude 不为 never）；写错槽名则被 `satisfies` 挡下。
+ */
+export const EQUIPMENT_SLOTS = [
+  'tank', 'suit', 'light', 'sonar', 'tool', 'ranged', 'charm', 'charm2', 'charm3',
+] as const satisfies readonly EquipmentSlot[];
+
+type _SlotsExhaustive = Exclude<EquipmentSlot, (typeof EQUIPMENT_SLOTS)[number]> extends never ? true : never;
+const _slotsExhaustive: _SlotsExhaustive = true;
+void _slotsExhaustive;
+
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
 
 /** 物品在海底的衰减档位 —— 决定多少次 run 后会消失 */
@@ -123,6 +139,12 @@ export interface EquipmentMeta {
    * 缺省/空 = 不可升级（恒 Lv.1）。maxLevel = baseLevel + upgradeSteps.length。
    */
   upgradeSteps?: UpgradeStep[];
+  /**
+   * Otto 打造账单（段2·作者 2026-06-19）：该件**从空槽打造出来**（null→Lv.baseLevel）要吃的料 + 金。
+   * 有此字段＝该件可由 Otto 用材料打造进空槽（声呐＝收集材料后花钱打造）；缺省＝不可打造（起手件 / Mira 购买件）。
+   * 与 upgradeSteps 互补：craftCost 管「从无到有」、upgradeSteps 管「逐级变强」。账单形状同 UpgradeStep（便于端口数值）。
+   */
+  craftCost?: { materials: { itemId: string; qty: number }[]; gold: number };
 }
 
 /**
@@ -142,7 +164,15 @@ export type EquipmentEffect =
   | { kind: 'physicalArmor'; value: number }
   | { kind: 'sanityResist'; value: number }
   | { kind: 'lightRadius'; value: number }
-  | { kind: 'unlocksAction'; actionId: string };
+  | { kind: 'unlocksAction'; actionId: string }
+  // 声呐件专属（段2·作者 2026-06-19）：声呐从「升级线」迁成「Otto 打造的装备件」。
+  // 数值 kind 名沿用 UpgradeEffect 同名字段＝逐级数值 1:1 端口（对账逐项相等·见 deriveSensorTuning）。
+  // unlockSonar＝Lv.1 base（装上即解锁声呐能力·声明用·getEquipmentStats 不读 base·解锁由「声呐槽是否有件」派生）。
+  | { kind: 'unlockSonar'; value: boolean }
+  | { kind: 'sonarPingCostReduction'; value: number }
+  | { kind: 'sonarRobustness'; value: number }
+  | { kind: 'sonarRangeBonus'; value: number }
+  | { kind: 'sonarScanRangeBonus'; value: number };
 
 export interface ConsumableMeta {
   /** 在哪些场景可用 */

@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
-import { createInitialGameState } from '../src/engine/state';
+import { createInitialGameState, createStarterLoadout } from '../src/engine/state';
 import {
   whaleSightingFlag,
   WHALE_SEARCH_READY_FLAG,
@@ -182,18 +182,25 @@ L('§3 找寻潜点（search_ready 门 + 强制开场 + found 置位）');
   const descend = searchEv.options.find((o) => o.outcome?.triggerEventId === 'whalefall.found');
   assert(descend, '§3 search 应有选项 triggerEventId=whalefall.found');
 
-  // 声呐选项门控（强制开场事件·没声呐的人不该看到「先打声呐」）：visibleIf hasUpgrade upgrade.sonar.lv1
-  // （= sonarUnlocked 的真来源·unlockSonar effect）·不满足→隐藏（hiddenIfFails 缺省=隐藏·同 hasEquipment 装备门先例）。
+  // 声呐选项门控（强制开场事件·没声呐的人不该看到「先打声呐」）：visibleIf hasEquipment slot:'sonar'
+  // 段2：声呐从「升级 unlockSonar」迁成「Otto 打造的装备件」→ 门改认「下潜带着声呐件」（run.equipment.sonar 非空·#144 thread）。
+  // 不满足→隐藏（hiddenIfFails 缺省=隐藏·同其它 hasEquipment 装备门先例）。
   const sonarOpt = searchEv.options.find((o) => o.id === 'sonar_ahead')!;
   const vi = sonarOpt.visibleIf;
-  assert(vi && vi.kind === 'hasUpgrade' && vi.upgradeId === 'upgrade.sonar.lv1', '§3 sonar_ahead 应 visibleIf hasUpgrade upgrade.sonar.lv1');
-  const noSonar: GameState = { ...createInitialGameState(), profile: profileWith([]) };
-  const withSonar: GameState = {
-    ...createInitialGameState(),
-    profile: { ...profileWith([]), unlockedUpgrades: new Set(['upgrade.sonar.lv1']) },
-  };
-  assert(!isOptionVisible(noSonar, sonarOpt), '§3 无声呐 → sonar_ahead 隐藏（不给没声呐的人「先打声呐」）');
-  assert(isOptionVisible(withSonar, sonarOpt), '§3 有声呐 → sonar_ahead 可见');
+  assert(vi && vi.kind === 'hasEquipment' && vi.slot === 'sonar', '§3 sonar_ahead 应 visibleIf hasEquipment slot:sonar');
+  // dived（上方）＝无声呐起手 profile 的下潜态（run.equipment.sonar=null）；另起一潜带 Lv.1 声呐件。
+  const withSonarDive = startDiveFromPoi(
+    {
+      ...base,
+      profile: {
+        ...profileWith([TUTORIAL_COMPLETE_FLAG, WHALE_SEARCH_READY_FLAG], [MIDWATER_LH]),
+        equipment: { ...createStarterLoadout(), sonar: { itemId: 'item.sonar.handheld', slot: 'sonar' as const, level: 1 } },
+      },
+    },
+    search,
+  );
+  assert(!isOptionVisible(dived, sonarOpt), '§3 无声呐件 → sonar_ahead 隐藏（不给没声呐的人「先打声呐」）');
+  assert(isOptionVisible(withSonarDive, sonarOpt), '§3 带声呐件 → sonar_ahead 可见');
   // 下沉/先不下去两条路 found 前都不需声呐（found 对无声呐玩家仍可达）。
   assert(searchEv.options.some((o) => o.id === 'descend_toward_it') && searchEv.options.some((o) => o.id === 'turn_back_search'), '§3 search 留有不依赖声呐的到达/退出路径');
   const foundEv = getEventById('whalefall.found')!;

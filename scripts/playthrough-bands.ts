@@ -16,7 +16,7 @@
 //
 // 跑法： npx tsx scripts/playthrough-bands.ts
 
-import { createInitialGameState } from '../src/engine/state';
+import { createInitialGameState, createStarterLoadout } from '../src/engine/state';
 import { getBands, getBand, bandDiveModifier } from '../src/engine/bands';
 import { columnBands } from '../src/engine/columns';
 import { startDiveFromPoi } from '../src/engine/dive';
@@ -29,7 +29,7 @@ import {
   alertDepthFactor,
   alertDelta,
   ALERT_DEPTH_FULL,
-  POWER_MAX,
+  SONAR_PING_COST,
 } from '../src/engine/clarity';
 import type { GameState, ChartPoi, DepthBand } from '../src/types';
 
@@ -122,31 +122,38 @@ assert(s.run!.turn === 0, `4: 从第一回合起算 → turn 0（实 ${s.run!.tu
 L('  zoneId / 黑水 modifier / bandAlertFactor / sonarDeception / huntEnabled / 深度窗口 / 满氧 turn0 ✓');
 
 // ============================================================
-// 5. 软门控：深黑 band + 无声呐 → 瞎；买了声呐 → run 解锁
+// 5. 软门控：深黑 band + 无声呐 → 瞎；装上声呐件 → run 解锁
 // ============================================================
 L('\n========== 5. 软门控（装备＝钥匙）==========');
 assert(s.run!.sensors.sonarUnlocked === false, '5: 新存档没声呐');
 assert(lampEffective(s.run!) === false, '5: 黑水灯打不透（lampEffective false）');
 assert(clarity(s.run!) === 'none', '5: 黑水 + 无声呐 → clarity none（装备不够就瞎着下）');
+// 段2：声呐＝Otto 打造的装备件——装上 item.sonar.handheld（hasSonarEquipped）即解锁，不再走 upgrade.sonar.lv1。
 const withSonar: GameState = {
   ...base,
-  profile: { ...base.profile, unlockedUpgrades: new Set([...base.profile.unlockedUpgrades, 'upgrade.sonar.lv1']) },
+  profile: {
+    ...base.profile,
+    equipment: { ...(base.profile.equipment ?? createStarterLoadout()), sonar: { itemId: 'item.sonar.handheld', slot: 'sonar', level: 1 } },
+  },
 };
 const s2 = startDiveFromPoi(withSonar, divePoiForBand(deepBand));
-assert(s2.run!.sensors.sonarUnlocked === true, '5: 买了声呐 → 深入下潜的 run 解锁（getRunBonuses 直通，软门控的钥匙）');
-L('  无声呐瞎着下 / 买声呐解锁 ✓');
+assert(s2.run!.sensors.sonarUnlocked === true, '5: 装上声呐件 → 深入下潜的 run 解锁（getRunBonuses 直通·hasSonarEquipped·软门控的钥匙）');
+L('  无声呐瞎着下 / 装声呐件解锁 ✓');
 
 // ============================================================
-// 6. Phase 0 升级轨直通深入下潜（装备成长进深潜）
+// 6. 装备成长直通深入下潜（升级增量进 run·dive_kit 电池线已退役→改用声呐件示范）
 // ============================================================
-L('\n========== 6. 升级轨直通深入下潜 ==========');
-const withBattery: GameState = {
+L('\n========== 6. 装备成长直通深入下潜 ==========');
+const withSonarLv2: GameState = {
   ...base,
-  profile: { ...base.profile, unlockedUpgrades: new Set(['upgrade.dive_kit.lv1']) },
+  profile: {
+    ...base.profile,
+    equipment: { ...(base.profile.equipment ?? createStarterLoadout()), sonar: { itemId: 'item.sonar.handheld', slot: 'sonar', level: 2 } },
+  },
 };
-const s3 = startDiveFromPoi(withBattery, divePoiForBand(deepBand));
-assert(s3.run!.powerMax === POWER_MAX + 20, `6: 深入下潜带 Phase 0 升级轨（电池 ${POWER_MAX}+20）`);
-L('  电池升级直接进深潜 run ✓');
+const s3 = startDiveFromPoi(withSonarLv2, divePoiForBand(deepBand));
+assert(s3.run!.sensorTuning.pingCost === SONAR_PING_COST - 2, `6: 声呐件 Lv.2（ping 省2）升级增量直通深入下潜 run（${SONAR_PING_COST}-2）`);
+L('  声呐件升级增量直接进深潜 run ✓');
 
 // ============================================================
 // 7. alertDepthFactor 去掉写死 60：深 band 饱和、不报错

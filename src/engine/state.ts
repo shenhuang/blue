@@ -21,7 +21,7 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // 5→6（#131 §10 收尾·2026-06-14）：深度柱级数/深度改定案（midwater↔trench 级数 4/6→6/4·vent 深度变·
 // 海沟 t4 电梯 capstone）⇒ 派生 probe 升级 id 空间变形（midwater lv5/6 新增·trench lv5/6 作废）
 // ⇒ #130 期本地档已不兼容、下次启动自动弃、从头开始。
-const SAVE_VERSION = 6;
+const SAVE_VERSION = 7;
 
 /** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile 用。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';

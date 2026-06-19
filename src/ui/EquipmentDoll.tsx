@@ -3,7 +3,16 @@ import type { GameState } from '@/types';
 import type { EquipmentSlot, EquipmentEffect } from '@/types/items';
 import { getItemDef } from '@/engine/items';
 import { createStarterLoadout } from '@/engine/state';
-import { canUpgradeEquipment, nextUpgradeStep, equipmentMaxLevel, upgradeEquipment } from '@/engine/equipment';
+import {
+  canUpgradeEquipment,
+  nextUpgradeStep,
+  equipmentMaxLevel,
+  upgradeEquipment,
+  craftableEquipmentForSlot,
+  canCraftEquipment,
+  craftEquipment,
+  unlockedAccessorySlots,
+} from '@/engine/equipment';
 
 // 装备纸娃娃（物品栏与装备 SPEC §4·作者 2026-06-19 模板）：中间人像（占位·之后放图），
 // 左列 4（潜水衣/气瓶/潜水灯/声呐）· 右列 2（武器主/副·下沉与潜水灯/声呐对齐）· 底排 3 饰品（升级解锁）。
@@ -27,9 +36,6 @@ const SLOT_LABEL: Record<EquipmentSlot, string> = {
   charm3: '饰品 3',
 };
 
-// 段1 占位：先开第 1 个饰品槽，charm2/charm3 锁（「升级饰品槽」解锁机制留后续）。
-const UNLOCKED_ACC_SLOTS = 1;
-
 function describeEffect(e: EquipmentEffect): string {
   switch (e.kind) {
     case 'oxygenMaxBonus':
@@ -44,6 +50,16 @@ function describeEffect(e: EquipmentEffect): string {
       return `光照半径 +${e.value}`;
     case 'unlocksAction':
       return '解锁动作';
+    case 'unlockSonar':
+      return '解锁声呐';
+    case 'sonarPingCostReduction':
+      return `ping 耗电 −${e.value}`;
+    case 'sonarRobustness':
+      return `声呐抗欺骗 +${e.value}`;
+    case 'sonarRangeBonus':
+      return `声呐射程 +${e.value}`;
+    case 'sonarScanRangeBonus':
+      return `声呐扫描范围 +${e.value}`;
   }
 }
 
@@ -51,19 +67,23 @@ export function EquipmentDoll({
   state,
   onStateChange,
   readOnly = false,
+  initialSlot = 'tank',
 }: {
   state: GameState;
   /** 港口 Otto 改装写回；下潜「查看装备」不传（readOnly）。 */
   onStateChange?: (s: GameState) => void;
   /** true＝只看（下潜查看装备）·无改装钮。 */
   readOnly?: boolean;
+  /** 初始选中槽（缺省气瓶——有 upgradeSteps 试点）。Otto 可聚焦某槽 / 测试用。 */
+  initialSlot?: EquipmentSlot;
 }) {
   const loadout = state.profile.equipment ?? createStarterLoadout();
-  const [sel, setSel] = useState<EquipmentSlot>('tank');
+  const [sel, setSel] = useState<EquipmentSlot>(initialSlot);
 
+  // 饰品槽解锁数走引擎单一来源（占位恒 1·来源作者待定）——别在 UI 写死。
   function isLocked(slot: EquipmentSlot): boolean {
     const accIdx = ACC_SLOTS.indexOf(slot);
-    return accIdx >= 0 && accIdx >= UNLOCKED_ACC_SLOTS;
+    return accIdx >= 0 && accIdx >= unlockedAccessorySlots(state.profile);
   }
 
   function slotCell(slot: EquipmentSlot) {
@@ -104,13 +124,40 @@ export function EquipmentDoll({
       );
     }
     if (!inst) {
+      // 空槽：若该槽有「可打造件」（equipment.craftCost·如声呐）→ Otto 改装界面给「打造」入口（null→Lv.baseLevel）。
+      const craftable = !readOnly && onStateChange ? craftableEquipmentForSlot(sel) : undefined;
+      const craftCost = craftable?.equipment?.craftCost;
+      const craftAvail =
+        craftable && onStateChange
+          ? canCraftEquipment(loadout, state.profile.inventory, state.profile.bankedGold, craftable.id)
+          : null;
       return (
         <div className="equip-detail">
           <div className="equip-detail-head">
             <span className="equip-detail-name">{label}</span>
             <span className="dim">空槽</span>
           </div>
-          <p className="dim">{sel === 'ranged' ? '空着——可再带一把单手武器；双持武器会占主+副两格。' : '这个槽还空着。'}</p>
+          {craftable && craftCost ? (
+            <>
+              {craftable.description && <p className="dim">{craftable.description}</p>}
+              <div className="equip-upgrade">
+                <div className="equip-upgrade-info">
+                  <span>Otto 打造 · {craftable.name}</span>
+                  <span className="dim equip-upgrade-cost">{describeCost(craftCost)}</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn small"
+                  disabled={!craftAvail?.ok}
+                  onClick={() => onStateChange && onStateChange(craftEquipment(state, craftable.id))}
+                >
+                  打造
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="dim">{sel === 'ranged' ? '空着——可再带一把单手武器；双持武器会占主+副两格。' : '这个槽还空着。'}</p>
+          )}
         </div>
       );
     }
@@ -130,7 +177,7 @@ export function EquipmentDoll({
             <div className="equip-upgrade-info">
               <span>改装 → Lv.{inst.level + 1}</span>
               <span className="dim">{step.statDeltas.map(describeEffect).join('、') || '—'}</span>
-              <span className="dim equip-upgrade-cost">{describeStepCost(step)}</span>
+              <span className="dim equip-upgrade-cost">{describeCost(step)}</span>
             </div>
             <button
               type="button"
@@ -147,10 +194,11 @@ export function EquipmentDoll({
     );
   }
 
-  function describeStepCost(step: NonNullable<ReturnType<typeof nextUpgradeStep>>): string {
-    const mats = step.materials.map((m) => `${getItemDef(m.itemId)?.name ?? m.itemId}×${m.qty}`).join('、');
-    if (step.gold <= 0) return mats || '免费';
-    return mats ? `${mats} ＋ ${step.gold} 金` : `${step.gold} 金`;
+  // 账单文案（升级步 / 打造账单共用·都是 { materials, gold } 形状）。
+  function describeCost(cost: { materials: { itemId: string; qty: number }[]; gold: number }): string {
+    const mats = cost.materials.map((m) => `${getItemDef(m.itemId)?.name ?? m.itemId}×${m.qty}`).join('、');
+    if (cost.gold <= 0) return mats || '免费';
+    return mats ? `${mats} ＋ ${cost.gold} 金` : `${cost.gold} 金`;
   }
 
   return (

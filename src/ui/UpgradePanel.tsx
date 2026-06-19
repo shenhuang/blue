@@ -229,35 +229,11 @@ function renderEffect(e: UpgradeEffect): string {
       return e.value ? '出海前可选目标尸体' : '';
     case 'currentSweepImmune':
       return e.value ? '海流不再冲走物品' : '';
-    case 'unlockSonar':
-      return e.value ? '解锁声呐：黑水里可发脉冲探路' : '';
-    // 深水区 Phase 0 升级轨
-    case 'powerMaxBonus':
-      return `电池总量 +${e.value}`;
-    case 'sonarPingCostReduction':
-      return `声呐 ping 耗电 −${e.value}`;
-    case 'lampEfficiency':
-      return `黑/浊水灯耗电 −${Math.round(e.value * 100)}%`;
-    case 'sonarRobustness':
-      return '声呐更抗欺骗：理智更低些才开始失真';
-    case 'lampRobustness':
-      return '灯更抗幻觉：理智更低些灯才开始骗你';
-    case 'signatureReduction':
-      return `更隐蔽：被探测 −${e.value}（点灯/ping 仍会暴露）`;
-    // 深水区 Phase 1 续·节点级 clarity 范围/分辨
-    case 'lampRangeBonus':
-      return `灯探得更深 +${e.value}m（陡降里看清更远）`;
-    case 'sonarRangeBonus':
-      return `声呐探得更深 +${e.value}m`;
-    case 'sonarScanRangeBonus':
-      return `声呐听得更远 +${e.value} 跳（更早察觉跟上来的猎手）`;
+    // 段2（作者 2026-06-19）：传感器升级 kind 已从 UpgradeEffect 删除（声呐迁 Otto 打造的装备件·标签在
+    //   EquipmentDoll；灯/规避回基线）——unlockSonar/powerMaxBonus/lamp*/sonar*/signatureReduction/soundAbsorb/camo
+    //   的标签随之删。roomFeatureChanceBonus（salvage_guild lv4·仍为全局升级线）保留。
     case 'roomFeatureChanceBonus':
       return `更会翻找大洞室：开阔水域更常藏着多处可探（深处的「大房间」出现率 +${Math.round(e.value * 100)}%）`;
-    // 猎手 SPEC §3 升级规避：玩家侧规避标签
-    case 'soundAbsorbBonus':
-      return `吸声涂层：更难被「循声」的猎手锁定（约 ${Math.round(e.value * 100)}% 概率甩脱声感猎手·最深处仍找得到你）`;
-    case 'camoBonus':
-      return `主动迷彩：更难被「循光」的猎手锁定（约 ${Math.round(e.value * 100)}% 概率甩脱光感猎手·最深处仍找得到你）`;
     case 'unlockShopItem':
       return `解锁商店：${itemLabel(e.itemId)}`;
   }

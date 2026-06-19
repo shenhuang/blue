@@ -5,14 +5,23 @@ import { sonarPingCost, sonarStandingOn, sonarStandingNext } from '@/engine/clar
 import { StatusBar } from './StatusBar';
 import { SonarScanPanel } from './SonarScanPanel';
 import { LootPanel } from './LootPanel';
+import { EquipmentDoll } from './EquipmentDoll';
 
-// 下潜内常驻头部（作者拍板：像状态栏一样**不随子阶段消失**）：属性栏 + 灯/声呐开关 + 互斥面板（声呐图 / 战利品）。
+// 下潜内常驻头部（作者拍板：像状态栏一样**不随子阶段消失**）：属性栏 + 灯/声呐开关 + 互斥面板（声呐图 / 战利品 / 装备）。
 // 在 NodeSelect / Event / Rest / Corpse 各子阶段共用（替代各视图原来的裸 <StatusBar>）。
 //
-// 移动端 HUD（SPEC §6·作者 2026-06-17）：状态条**常显**（不收进图标）；声呐图 / 战利品做成**互斥**面板
+// 移动端 HUD（SPEC §6·作者 2026-06-17）：状态条**常显**（不收进图标）；声呐图 / 战利品 / 装备做成**互斥**面板
 //   （openPanel 单态·开一个收起另一个）——移动端点开＝全屏覆盖（CSS .dive-header.has-dive-panel·状态条留顶上），
 //   桌面内联（声呐图默认开·保留旧「常驻声呐图」体验·再点收起）。声呐控制仍只一个开/关（关着点开＝本回合立即扫一次·#5）。
-type PanelKind = 'none' | 'sonar' | 'loot';
+//   「装备」＝下潜侧只读看纸娃娃（EquipmentDoll readOnly·改装去港口 Otto·C 段 2026-06-19）。
+type PanelKind = 'none' | 'sonar' | 'loot' | 'equipment';
+
+// 展开面板的标题（互斥面板共用一个头部·按当前面板取名）。加面板＝在此补一条，别散在三目里。
+const PANEL_LABEL: Record<Exclude<PanelKind, 'none'>, string> = {
+  sonar: '声呐图',
+  loot: '战利品',
+  equipment: '装备',
+};
 
 // 用户显式选择（跨子阶段沿用·每个 dive 子阶段各自挂一个 DiveHeader、换阶段重挂载）：null = 还没点过 → 用上下文默认。
 // 用「上下文默认」而非写死的模块默认＝避免被前一次「无声呐」的下潜把默认锁成 none（也让桌面/SSR 恒显声呐图）。纯 UI·不入存档。
@@ -111,13 +120,21 @@ export function DiveHeader({ state, onStateChange, choices = [], pendingNodeId =
           >
             战利品
           </button>
+          <button
+            type="button"
+            className={`btn small panel-toggle ${activePanel === 'equipment' ? 'on' : ''}`}
+            aria-expanded={activePanel === 'equipment'}
+            onClick={() => showPanel('equipment')}
+          >
+            装备
+          </button>
         </div>
       </div>
       {/* 当前展开的面板（pinned·跨子阶段沿用）：移动端 .has-dive-panel 把整块 fixed 全屏覆盖、状态条留顶上。 */}
       {activePanel !== 'none' && (
         <div className="dive-panel">
           <div className="dive-panel-head">
-            <span>{activePanel === 'sonar' ? '声呐图' : '战利品'}</span>
+            <span>{PANEL_LABEL[activePanel]}</span>
             <button type="button" className="btn small" onClick={() => showPanel('none')} aria-label="关闭">
               关闭 ✕
             </button>
@@ -130,8 +147,10 @@ export function DiveHeader({ state, onStateChange, choices = [], pendingNodeId =
               pendingNodeId={pendingNodeId}
               onPendingChange={onPendingChange}
             />
-          ) : (
+          ) : activePanel === 'loot' ? (
             <LootPanel state={state} />
+          ) : (
+            <EquipmentDoll state={state} readOnly />
           )}
         </div>
       )}

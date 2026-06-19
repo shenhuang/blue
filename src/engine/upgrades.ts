@@ -188,19 +188,7 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
     revealCorpseHint: false,
     preDiveCorpseSelect: false,
     currentSweepImmune: false,
-    sonarUnlocked: false,
-    powerMaxBonus: 0,
-    sonarPingCostReduction: 0,
-    lampEfficiency: 0,
-    sonarRobustness: 0,
-    lampRobustness: 0,
-    signatureReduction: 0,
-    lampRangeBonus: 0,
-    sonarRangeBonus: 0,
-    sonarScanRangeBonus: 0,
     roomFeatureChanceBonus: 0,
-    soundAbsorbBonus: 0,
-    camoBonus: 0,
     unlockedZones: new Set(),
     unlockedShopItems: new Set(),
   };
@@ -232,49 +220,11 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
         case 'currentSweepImmune':
           bonuses.currentSweepImmune = bonuses.currentSweepImmune || e.value;
           break;
-        case 'unlockSonar':
-          bonuses.sonarUnlocked = bonuses.sonarUnlocked || e.value;
-          break;
-        // 深水区 Phase 0 升级轨：sum 聚合（地板/上限在 clarity.ts::deriveSensorTuning 出海时统一夹紧）。
-        case 'powerMaxBonus':
-          bonuses.powerMaxBonus += e.value;
-          break;
-        case 'sonarPingCostReduction':
-          bonuses.sonarPingCostReduction += e.value;
-          break;
-        case 'lampEfficiency':
-          bonuses.lampEfficiency += e.value;
-          break;
-        case 'sonarRobustness':
-          bonuses.sonarRobustness += e.value;
-          break;
-        case 'lampRobustness':
-          bonuses.lampRobustness += e.value;
-          break;
-        case 'signatureReduction':
-          bonuses.signatureReduction += e.value;
-          break;
-        // 深水区 Phase 1 续·节点级 clarity 范围/分辨（sum 聚合，上限在 deriveSensorTuning）。
-        case 'lampRangeBonus':
-          bonuses.lampRangeBonus += e.value;
-          break;
-        case 'sonarRangeBonus':
-          bonuses.sonarRangeBonus += e.value;
-          break;
-        // 猎手听觉量程跳数（升级轴，sum 聚合，上限在 deriveSensorTuning）。
-        case 'sonarScanRangeBonus':
-          bonuses.sonarScanRangeBonus += e.value;
-          break;
-        // 声呐与房间 §6/§8.3 续：大房间出现率（sum 聚合，上限在 deriveSensorTuning）。
+        // 声呐与房间 §6/§8.3 续：大房间出现率（salvage_guild lv4·sum 聚合，上限在 deriveSensorTuning）。
+        // 段2：其余传感器 kind（unlockSonar/powerMaxBonus/lamp*/sonar*/signatureReduction/soundAbsorb/camo）
+        //   已随三传感器线退役从 UpgradeEffect 删除——声呐迁装备件、灯/规避回基线。
         case 'roomFeatureChanceBonus':
           bonuses.roomFeatureChanceBonus += e.value;
-          break;
-        // 猎手 SPEC §3 升级规避：玩家侧规避（sum 聚合·上限在 clarity.ts::deriveSensorTuning）。
-        case 'soundAbsorbBonus':
-          bonuses.soundAbsorbBonus += e.value;
-          break;
-        case 'camoBonus':
-          bonuses.camoBonus += e.value;
           break;
         case 'unlockZone':
           bonuses.unlockedZones.add(e.zoneId);

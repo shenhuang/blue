@@ -2,6 +2,7 @@
 // 数据驱动：所有事件由 JSON 配置，引擎在运行时按 depth/sanity/flags 过滤抽取
 
 import type { Stat } from './state';
+import type { EquipmentSlot } from './items';
 
 export type Tone = 'realistic' | 'uncanny' | 'cosmic';
 
@@ -129,7 +130,7 @@ export interface LootRoll {
 
 /** 显示条件（visibleIf） */
 export type Condition =
-  | { kind: 'hasEquipment'; slot: 'tank' | 'suit' | 'light' | 'tool' | 'charm' }
+  | { kind: 'hasEquipment'; slot: EquipmentSlot }
   | { kind: 'hasItem'; itemId: string; minQty?: number }
   | { kind: 'statAtLeast'; stat: Stat; value: number }
   | { kind: 'statAtMost'; stat: Stat; value: number }

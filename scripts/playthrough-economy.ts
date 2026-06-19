@@ -315,6 +315,12 @@ assert(
   'listMiraBuyables 应列出 decoy 货架',
 );
 assert(shelfList.some((b) => b.itemId === 'item.med_kit'), 'listMiraBuyables 应列出 med_kit');
+// 段2（作者 2026-06-19）：手电（基础潜水灯）上「基础装备件」货架——Mira 可购（不升级·见段2 装备模型：
+//   灯/规避＝固定属性买/换件、声呐＝Otto 打造）·买价沿同一套 offer×markup·shop UI 据 listMiraBuyables 渲染。
+assert(isBuyableFromMira('item.light.hand_torch'), '段2: 手电上基础装备货架（Mira 可购基础灯）');
+assert(miraBuyPriceFor('item.light.hand_torch') === Math.floor(25 * 0.8) * MIRA_BUY_MARKUP, '段2: 手电买价 = offer×markup（sellPrice 25 → 20×2 = 40）');
+assert(maxShopStockFor('item.light.hand_torch') === 1, '段2: 手电备货上限 1（补一支基础灯）');
+assert(shelfList.some((b) => b.itemId === 'item.light.hand_torch'), '段2: listMiraBuyables 应列出手电（shop UI 据此显示）');
 state = buyFromMira(state, 'item.decoy_sound', 2);
 assert(countInInventory(state.profile.inventory, 'item.decoy_sound') === 2, '买 2 枚声诱标进仓库');
 assert(getShopStock(state.profile, 'item.decoy_sound') === 0, '货架剩 0（限量生效）');

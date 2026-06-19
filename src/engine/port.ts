@@ -141,6 +141,17 @@ const SHOP_STOCK_CONSUMABLES: Record<string, number> = {
   'item.med_kit': 2,
 };
 
+/**
+ * Mira 柜台的「基础装备件」货架（段2·作者 2026-06-19）：itemId → 每次回港备货上限。
+ * 与消耗品货架平行——花金币买**基础装备件**（手电＝基础潜水灯·Mira 购买、不升级·见段2 装备模型：
+ * 灯/规避＝固定属性买/换件、声呐＝Otto 打造、唯它逐级升）。买价/限量同一套（miraOfferFor × markup·回港补满）。
+ * 注：买到的件进仓库（未装备备件·LockerView 未装备区）；「从仓库装到槽」的换装流程尚未实装（#141 未装备区只读），
+ *   故现阶段意义＝「补一支基础灯」+ 为「Mira 卖基础 gear」模型铺路（加可买基础件＝往这表加一行·数据驱动）。
+ */
+const SHOP_STOCK_EQUIPMENT: Record<string, number> = {
+  'item.light.hand_torch': 1,
+};
+
 /** 取某材料的 tier（非 material / 无 tier → undefined）。 */
 function tierOf(itemId: string): MaterialTier | undefined {
   const def = getItemDef(itemId);
@@ -151,6 +162,7 @@ function tierOf(itemId: string): MaterialTier | undefined {
 /** Mira 是否出售此物品：material 且 tier 在 SHOP_STOCK_BY_TIER 表里（T1/T2），或消耗品货架上的（decoy 等）。 */
 export function isBuyableFromMira(itemId: string): boolean {
   if (SHOP_STOCK_CONSUMABLES[itemId] !== undefined) return true;
+  if (SHOP_STOCK_EQUIPMENT[itemId] !== undefined) return true;
   const tier = tierOf(itemId);
   return tier !== undefined && SHOP_STOCK_BY_TIER[tier] !== undefined;
 }
@@ -165,6 +177,8 @@ export function miraBuyPriceFor(itemId: string): number {
 export function maxShopStockFor(itemId: string): number {
   const fromShelf = SHOP_STOCK_CONSUMABLES[itemId];
   if (fromShelf !== undefined) return fromShelf;
+  const fromGear = SHOP_STOCK_EQUIPMENT[itemId];
+  if (fromGear !== undefined) return fromGear;
   const tier = tierOf(itemId);
   if (tier === undefined) return 0;
   return SHOP_STOCK_BY_TIER[tier] ?? 0;

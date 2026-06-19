@@ -663,24 +663,12 @@ const htmlJ1 = renderToStaticMarkup(<UpgradePanel state={J1} onStateChange={noop
 assert(htmlJ1.includes('珊瑚碎片×5'), 'J1: 账单应列出材料名×需求量');
 assert(htmlJ1.includes('＋ 30 金'), 'J1: 账单应列出金币价（salvage_guild.lv1 = 30 金）');
 assert(htmlJ1.includes('upgrade-buy">改装'), 'J1: 账单满足应出现可点（非 disabled）"改装"按钮（面板渲染全部升级线，其它行显示不足是正常的）');
-// J4. 深水区 Phase 0 升级轨：新「潜水装备」线 + 声呐 lv2 + 传感器效果标签都渲染（UI 数据路径，quirk #38/#58）
-assert(htmlJ1.includes('潜水装备'), 'J4: 应渲染新「潜水装备」升级线');
-assert(htmlJ1.includes('加大电池组') && htmlJ1.includes('电池总量 +20'), 'J4: 渲染电池升级 + powerMaxBonus 效果标签');
-assert(htmlJ1.includes('声呐组件 Lv.2'), 'J4: 渲染声呐 lv2（前置未满足仍列出，状态=需要前一级）');
-assert(htmlJ1.includes('更隐蔽') && (htmlJ1.includes('抗欺骗') || htmlJ1.includes('抗幻觉')), 'J4: 渲染隐蔽 + 抗欺骗/抗幻觉 传感器效果标签');
-// J5. 深水区 Phase 1 续·节点级 clarity 范围/分辨升级（dive_kit lv4 灯 reach + sonar lv3 声呐 reach，新 effect 标签，quirk #38/#62）
-assert(htmlJ1.includes('远摄灯组') && htmlJ1.includes('灯探得更深'), 'J5: 渲染 dive_kit lv4「远摄灯组」+ lampRangeBonus 效果标签');
-assert(htmlJ1.includes('声呐组件 Lv.3') && htmlJ1.includes('声呐探得更深'), 'J5: 渲染 sonar lv3 + sonarRangeBonus 效果标签');
-// J6. 声呐与房间 §8.1：声呐扫描范围主升级轴（sonar lv4/lv5，新 sonarScanRangeBonus 效果标签）
-assert(htmlJ1.includes('声呐组件 Lv.4') && htmlJ1.includes('声呐组件 Lv.5'), 'J6: 渲染 sonar lv4/lv5（扫描范围轴）');
-assert(htmlJ1.includes('声呐听得更远'), 'J6: 渲染 sonarScanRangeBonus 效果标签（听得更远·更早察觉猎手）');
-// J7. 声呐与房间 §6/§8.3 续：房间 feature 出现率升级（salvage_guild lv4·新 roomFeatureChanceBonus 效果标签）
+// J4–J6 / J8（旧 dive_kit「潜水装备」/ sonar_rig 升级线 / evasion_rig「规避装备」渲染断言）已随段2
+//   「三传感器线退役」删除：声呐改 Otto 打造的**装备件**（EquipmentDoll·smoke-equipment-ui 守渲染）、
+//   灯/电池/规避效果回退基线（可日后做成灯/服档位件加回）。UpgradePanel 现只剩打捞行会 + 气瓶库两线。
+// J7. 声呐与房间 §6/§8.3 续：房间 feature 出现率升级（salvage_guild lv4·新 roomFeatureChanceBonus 效果标签·仍为全局升级线）
 assert(htmlJ1.includes('打捞行会 Lv.4'), 'J7: 渲染 salvage_guild lv4（房间出现率轴）');
 assert(htmlJ1.includes('更会翻找大洞室'), 'J7: 渲染 roomFeatureChanceBonus 效果标签');
-// J8. 猎手 SPEC §3 升级规避：规避装备线（evasion_rig·新 soundAbsorbBonus/camoBonus 效果标签）
-assert(htmlJ1.includes('规避装备'), 'J8: 渲染新「规避装备」升级线');
-assert(htmlJ1.includes('吸声涂层') && htmlJ1.includes('甩脱声感猎手'), 'J8: 渲染 evasion_rig lv1 + soundAbsorbBonus 效果标签');
-assert(htmlJ1.includes('主动迷彩') && htmlJ1.includes('甩脱光感猎手'), 'J8: 渲染 evasion_rig lv2 + camoBonus 效果标签');
 // J2. 空仓 + 满金 → "材料不足" + 缺口"（有 0）"
 const J2 = upgradeState([], 9999);
 const htmlJ2 = renderToStaticMarkup(<UpgradePanel state={J2} onStateChange={noop} onClose={noop} />);

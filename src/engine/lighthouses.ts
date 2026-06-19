@@ -9,7 +9,7 @@
 // Phase B 灯塔 inert：下面这些函数已就位 + 有回归，但游戏流程还没调用它们；
 // 设施效果（LighthouseBonuses）由 Phase C 的 chart.ts（reveal）/ dive.ts（reach distance）消费。
 
-import { getEquipmentStats, emptyEquipmentStats } from './equipment';
+import { getEquipmentStats, emptyEquipmentStats, hasSonarEquipped } from './equipment';
 
 import type {
   GameState,
@@ -260,7 +260,7 @@ export interface RunStartBonuses {
   oxygenMaxBonus: number;
   staminaMaxBonus: number;
   extraConsumableSlot: number;
-  /** 声呐能力是否已解锁（深水区 Phase 0a：来自全局升级 upgrade.sonar.lv1）。 */
+  /** 声呐能力是否已解锁（段2：声呐＝Otto 打造的装备件·由 hasSonarEquipped 派生·见 getRunBonuses）。 */
   sonarUnlocked: boolean;
   // 深水区 Phase 0 升级轨（全局升级派生，前哨灯塔暂不贡献）：createNewRun 据此种 powerMax / sensorTuning。
   powerMaxBonus: number;
@@ -292,23 +292,31 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
   const homeSlot = home ? getLighthouseBonuses(home).extraConsumableSlot : 0;
   // 段1：并入穿戴件升级增量（Otto·equipment.ts 单点）——starter 全 Lv.1 时为 0、对既有基线零扰动。
   const eq = profile.equipment ? getEquipmentStats(profile.equipment) : emptyEquipmentStats();
+  // 段2（作者 2026-06-19）：三传感器线退役后，传感器加成来源重排——
+  //   · 声呐五项（sonarUnlocked / pingCost / robustness / rangeBonus / scanRangeBonus）：改读 eq（Otto 打造的声呐件），
+  //     不再读 g（sonar_rig 已删·UpgradeBonuses 也删了这些字段）。sonarUnlocked＝声呐槽是否装着件（hasSonarEquipped 单一来源）。
+  //   · 灯/电池/规避（powerMax / lampEfficiency / lampRobustness / signatureReduction / lampRangeBonus / soundAbsorb / camo）：
+  //     dive_kit/evasion_rig 删后**无升级来源** → 恒基线 0（deriveSensorTuning 默认）。机制保留·可日后做成「灯/服档位件」
+  //     用 EquipmentEffect base effects 喂回。注：powerMaxBonus 仍是 RunStartBonuses 字段——dive-start 把前哨在线补给的
+  //     rechargeBonus 加在它上面（故保留字段、这里给 0 起点）。防双计（quirk #140）：来源唯一、删旧增新同步。
+  const sonarPresent = profile.equipment ? hasSonarEquipped(profile.equipment) : false;
   return {
     oxygenMaxBonus: g.oxygenMaxBonus + eq.oxygenMaxBonus,
     staminaMaxBonus: g.staminaMaxBonus + eq.staminaMaxBonus,
     extraConsumableSlot: g.extraConsumableSlot + homeSlot,
-    sonarUnlocked: g.sonarUnlocked,
-    powerMaxBonus: g.powerMaxBonus,
-    sonarPingCostReduction: g.sonarPingCostReduction,
-    lampEfficiency: g.lampEfficiency,
-    sonarRobustness: g.sonarRobustness,
-    lampRobustness: g.lampRobustness,
-    signatureReduction: g.signatureReduction,
-    lampRangeBonus: g.lampRangeBonus,
-    sonarRangeBonus: g.sonarRangeBonus,
-    sonarScanRangeBonus: g.sonarScanRangeBonus,
+    sonarUnlocked: sonarPresent,
+    powerMaxBonus: 0,
+    sonarPingCostReduction: eq.sonarPingCostReduction,
+    lampEfficiency: 0,
+    sonarRobustness: eq.sonarRobustness,
+    lampRobustness: 0,
+    signatureReduction: 0,
+    lampRangeBonus: 0,
+    sonarRangeBonus: eq.sonarRangeBonus,
+    sonarScanRangeBonus: eq.sonarScanRangeBonus,
     roomFeatureChanceBonus: g.roomFeatureChanceBonus,
-    soundAbsorbBonus: g.soundAbsorbBonus,
-    camoBonus: g.camoBonus,
+    soundAbsorbBonus: 0,
+    camoBonus: 0,
   };
 }
 

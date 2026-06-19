@@ -21,7 +21,7 @@ import type {
   Stats,
   Stat,
 } from '@/types';
-import type { EquipmentSlot } from '@/types/items';
+import { EQUIPMENT_SLOTS, type EquipmentSlot } from '@/types/items';
 
 // ---------------------------------------------------------------------------
 // FormState：面板的内部表单状态（UI 友好的字段）
@@ -127,7 +127,7 @@ function parseCsv(s: string): string[] {
 function buildEquipmentOverride(
   form: ScenarioFormState,
 ): Partial<EquipmentLoadout> | undefined {
-  const slots: EquipmentSlot[] = ['tank', 'suit', 'light', 'tool', 'charm'];
+  const slots = EQUIPMENT_SLOTS;
   const result: Partial<EquipmentLoadout> = {};
   let any = false;
   for (const slot of slots) {
@@ -246,7 +246,7 @@ export function scenarioInputToForm(input: ScenarioInput): ScenarioFormState {
     base.inventory = input.inventory.map((it) => ({ itemId: it.itemId, qty: it.qty }));
   }
   if (input.equipment) {
-    const slots: EquipmentSlot[] = ['tank', 'suit', 'light', 'tool', 'charm'];
+    const slots = EQUIPMENT_SLOTS;
     for (const slot of slots) {
       const v = input.equipment[slot];
       if (v === undefined) continue;

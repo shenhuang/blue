@@ -279,7 +279,7 @@ L('\n========== 9. scanMemory round-trip ==========');
   const s = pingSonar(mk({ depth: 50 }));
   const back = deserializeGameState(serializeGameState(s));
   assert(back !== null, '9: 反序列化成功');
-  assert(back!.version === 6, '9: SAVE_VERSION（#131 §10 已 bump 至 6·scanMemory 本身不影响）');
+  assert(back!.version === 7, '9: SAVE_VERSION（段2 已 bump 至 7·scanMemory 本身不影响）');
   assert(
     sameSet(sortedKeys(back!.run!.scanMemory ?? {}), sortedKeys(s.run!.scanMemory ?? {})),
     '9: scanMemory 原样 round-trip（普通对象、无需迁移）',
@@ -482,7 +482,7 @@ L('\n========== 14. 声呐开/关窗口（§4 重做）==========');
 
   // (f) 存档 round-trip：sonarOn/sonarNext 普通布尔·保真·不 bump SAVE_VERSION
   const rt = deserializeGameState(serializeGameState(movedOff));
-  assert(rt!.version === 6, '14f: SAVE_VERSION（#131 §10 已 bump 至 6·sonarOn 本身不影响）');
+  assert(rt!.version === 7, '14f: SAVE_VERSION（段2 已 bump 至 7·sonarOn 本身不影响）');
   assert(rt!.run!.sensors.sonarOn === false && rt!.run!.sensors.sonarNext === false, '14f: sonarOn/sonarNext round-trip 保真');
   L('  缺省开 / 切换只改下回合 / 移动落定 / 暴露按状态(on>off) / 本回合反悔扫一记 / 存档 round-trip ✓');
 }

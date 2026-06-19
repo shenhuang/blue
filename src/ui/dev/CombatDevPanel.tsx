@@ -30,7 +30,7 @@ import {
 } from '@/engine/combatScenario';
 import { createInitialGameState } from '@/engine/state';
 import type { Stat } from '@/types';
-import type { EquipmentSlot } from '@/types/items';
+import { EQUIPMENT_SLOTS, type EquipmentSlot } from '@/types/items';
 
 import {
   emptyCombatFormState,
@@ -57,7 +57,7 @@ export interface CombatDevPanelProps {
 }
 
 const STAT_KEYS: Stat[] = ['stamina', 'oxygen', 'sanity', 'nitrogen'];
-const SLOT_KEYS: EquipmentSlot[] = ['tank', 'suit', 'light', 'tool', 'charm'];
+const SLOT_KEYS = EQUIPMENT_SLOTS;
 
 export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
   // 数据：缓存一次

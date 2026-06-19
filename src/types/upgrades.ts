@@ -13,24 +13,13 @@ export type UpgradeEffect =
   | { kind: 'revealCorpseHint'; value: boolean }
   | { kind: 'preDiveCorpseSelect'; value: boolean }
   | { kind: 'currentSweepImmune'; value: boolean }
-  | { kind: 'unlockSonar'; value: boolean }
-  // 深水区 Phase 0 升级轨：让 0a/0b 造的传感器随材料经济成长（聚合进 run.sensorTuning / powerMax，见 clarity.ts）。
-  | { kind: 'powerMaxBonus'; value: number } // 电池总量 +value
-  | { kind: 'sonarPingCostReduction'; value: number } // 声呐 ping 耗电 −value（有地板）
-  | { kind: 'lampEfficiency'; value: number } // 灯耗电乘子 −value（更省电，有地板）
-  | { kind: 'sonarRobustness'; value: number } // 声呐假回波 san 阈值 −value（更抗欺骗，有地板）
-  | { kind: 'lampRobustness'; value: number } // 灯幻觉 san 阈值 −value（灯更晚崩，有地板）
-  | { kind: 'signatureReduction'; value: number } // signature 减免 +value（更隐蔽，有上限）
-  // 深水区 Phase 1 续·节点级 clarity 范围/分辨：灯/声呐 reach（够到的深度差）随升级扩，有上限。
-  | { kind: 'lampRangeBonus'; value: number } // 灯 reach +value m（节点级 clarity，有上限）
-  | { kind: 'sonarRangeBonus'; value: number } // 声呐 reach +value m（节点级 clarity·深度差，有上限）
-  // 猎手听觉量程跳数 +value（声呐能「听」得更远），有上限 SONAR_SCAN_RANGE_MAX。
-  | { kind: 'sonarScanRangeBonus'; value: number }
-  // 声呐与房间 §6/§8.3 续：大房间（多事件房间）出现率 +value（更会在大洞室里翻找·band maxRoomFeatures 仍是天花板），有上限。
+  // 段2（作者 2026-06-19）：三传感器线（sonar_rig/dive_kit/evasion_rig）退役 → 它们独有的 effect kind 全删：
+  //   unlockSonar / powerMaxBonus / sonarPingCostReduction / lampEfficiency / sonarRobustness / lampRobustness /
+  //   signatureReduction / lampRangeBonus / sonarRangeBonus / sonarScanRangeBonus / soundAbsorbBonus / camoBonus。
+  //   声呐迁成 Otto 打造的装备件（EquipmentEffect 同名数值 kind·types/items.ts）；灯/规避效果回基线，可日后做成
+  //   灯/服档位件用 EquipmentEffect base effects 加回（deriveSensorTuning 旋钮仍在·clarity.ts::SensorUpgradeBonus）。
+  // 声呐与房间 §6/§8.3 续：大房间（多事件房间）出现率 +value（salvage_guild lv4·仍为全局升级线·band maxRoomFeatures 仍是天花板），有上限。
   | { kind: 'roomFeatureChanceBonus'; value: number }
-  // 猎手 SPEC §3 升级规避：玩家侧规避——压低你对某感官猎手的特征 → 它这一记丢锁（对称于它 evadesScan 躲你；有上限/深处仍找得到你）。
-  | { kind: 'soundAbsorbBonus'; value: number } // T1 吸声：规避声感猎手（0..STEALTH_BONUS_MAX）
-  | { kind: 'camoBonus'; value: number } // T2 主动迷彩：规避光感猎手（0..STEALTH_BONUS_MAX）
   | { kind: 'unlockShopItem'; itemId: string };
 
 /** 一条升级要求的某种材料及数量（qty 量级 ∈ [1,10]） */
@@ -81,33 +70,12 @@ export interface UpgradeBonuses {
   revealCorpseHint: boolean;
   preDiveCorpseSelect: boolean;
   currentSweepImmune: boolean;
-  /** 声呐能力是否已解锁（深水区 Phase 0a：门控在深料升级 upgrade.sonar.lv1）。 */
-  sonarUnlocked: boolean;
-  // 深水区 Phase 0 升级轨（sum 聚合）：经 getRunBonuses → createNewRun → run.powerMax / run.sensorTuning。
-  /** 电池总量加成（+到 POWER_MAX）。 */
-  powerMaxBonus: number;
-  /** 声呐 ping 耗电减免（从 SONAR_PING_COST 减，有地板）。 */
-  sonarPingCostReduction: number;
-  /** 灯耗电乘子减免（从 1 减，更省电，有地板）。 */
-  lampEfficiency: number;
-  /** 声呐抗欺骗（从假回波 san 阈值减，有地板）。 */
-  sonarRobustness: number;
-  /** 灯抗欺骗（从灯幻觉 san 阈值减，有地板）。 */
-  lampRobustness: number;
-  /** 隐蔽（signature 减免，有上限）。 */
-  signatureReduction: number;
-  /** 灯 reach 加成（节点级 clarity·范围/分辨，深水区 Phase 1 续；有上限）。 */
-  lampRangeBonus: number;
-  /** 声呐 reach 加成（节点级 clarity·深度差；有上限）。 */
-  sonarRangeBonus: number;
-  /** 声呐量程跳数加成（猎手听觉量程；有上限 SONAR_SCAN_RANGE_MAX）。 */
-  sonarScanRangeBonus: number;
-  /** 大房间（多事件房间）出现率加成（声呐与房间 §6/§8.3 续；有上限 ROOM_FEATURE_CHANCE_MAX·band cap 仍是天花板）。 */
+  // 段2（作者 2026-06-19）：传感器派生字段（sonarUnlocked / powerMaxBonus / sonarPingCostReduction /
+  //   lampEfficiency / sonarRobustness / lampRobustness / signatureReduction / lampRangeBonus /
+  //   sonarRangeBonus / sonarScanRangeBonus / soundAbsorbBonus / camoBonus）已随三传感器线退役删除——
+  //   声呐迁装备件（hasSonarEquipped / getEquipmentStats）·灯/规避回基线·getRunBonuses 不再从这里取它们。
+  /** 大房间（多事件房间）出现率加成（声呐与房间 §6/§8.3 续；salvage_guild lv4·有上限 ROOM_FEATURE_CHANCE_MAX·band cap 仍是天花板）。 */
   roomFeatureChanceBonus: number;
-  /** 猎手规避 T1 吸声（规避声感猎手·sum，有上限 STEALTH_BONUS_MAX）。 */
-  soundAbsorbBonus: number;
-  /** 猎手规避 T2 主动迷彩（规避光感猎手·sum，有上限 STEALTH_BONUS_MAX）。 */
-  camoBonus: number;
   unlockedZones: Set<string>;
   unlockedShopItems: Set<string>;
 }

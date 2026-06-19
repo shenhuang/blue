@@ -25,7 +25,7 @@ import {
   type EventListEntry,
 } from '@/engine/eventScenario';
 import type { Stat } from '@/types';
-import type { EquipmentSlot } from '@/types/items';
+import { EQUIPMENT_SLOTS, type EquipmentSlot } from '@/types/items';
 import { createInitialGameState } from '@/engine/state';
 
 import {
@@ -53,7 +53,7 @@ export interface EventDevPanelProps {
 
 const ALL_ZONE_TAGS = ['tutorial', 'reef', 'cave', 'wreck', 'shallow', 'deep'] as const;
 const STAT_KEYS: Stat[] = ['stamina', 'oxygen', 'sanity', 'nitrogen'];
-const SLOT_KEYS: EquipmentSlot[] = ['tank', 'suit', 'light', 'tool', 'charm'];
+const SLOT_KEYS = EQUIPMENT_SLOTS;
 
 export function EventDevPanel({ onClose }: EventDevPanelProps) {
   // —— 事件列表（cache 一次；EVENT_DB 在 module load 时就装好了）

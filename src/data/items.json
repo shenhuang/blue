@@ -60,11 +60,32 @@
       "rarity": "common",
       "description": "黄铜外壳的老式探照灯。光柱在水里是一道实体的剑。",
       "weight": 1,
-      "sellPrice": 0,
+      "sellPrice": 25,
       "equipment": {
         "slot": "light",
         "baseLevel": 1,
         "effects": [{ "kind": "lightRadius", "value": 2 }]
+      }
+    },
+    {
+      "id": "item.sonar.handheld",
+      "name": "声呐组件",
+      "category": "equipment",
+      "rarity": "uncommon",
+      "description": "组起一台手持声呐。关灯时可发脉冲探测前方——但回波远不如灯下所见可靠。黑水区从此能摸着探路。",
+      "weight": 2,
+      "sellPrice": 0,
+      "equipment": {
+        "slot": "sonar",
+        "baseLevel": 1,
+        "effects": [{ "kind": "unlockSonar", "value": true }],
+        "craftCost": { "materials": [{ "itemId": "item.lantern_gland", "qty": 1 }, { "itemId": "item.eel_skin", "qty": 2 }, { "itemId": "item.cave_octopus_beak", "qty": 2 }], "gold": 120 },
+        "upgradeSteps": [
+          { "materials": [{ "itemId": "item.lantern_gland", "qty": 1 }, { "itemId": "item.eel_skin", "qty": 3 }], "gold": 160, "statDeltas": [{ "kind": "sonarPingCostReduction", "value": 2 }, { "kind": "sonarRobustness", "value": 20 }] },
+          { "materials": [{ "itemId": "item.eel_skin", "qty": 3 }, { "itemId": "item.cave_octopus_beak", "qty": 2 }], "gold": 200, "statDeltas": [{ "kind": "sonarRangeBonus", "value": 8 }] },
+          { "materials": [{ "itemId": "item.eel_skin", "qty": 3 }, { "itemId": "item.cave_octopus_beak", "qty": 3 }], "gold": 240, "statDeltas": [{ "kind": "sonarScanRangeBonus", "value": 1 }] },
+          { "materials": [{ "itemId": "item.lantern_gland", "qty": 2 }, { "itemId": "item.cave_octopus_beak", "qty": 3 }], "gold": 320, "statDeltas": [{ "kind": "sonarScanRangeBonus", "value": 2 }] }
+        ]
       }
     },
     {

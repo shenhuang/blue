@@ -236,7 +236,7 @@
         {
           "id": "sonar_ahead",
           "label": "先打声呐，看下面有什么",
-          "visibleIf": { "kind": "hasUpgrade", "upgradeId": "upgrade.sonar.lv1" },
+          "visibleIf": { "kind": "hasEquipment", "slot": "sonar" },
           "outcome": {
             "text": "你朝下打了一记声呐。回波回来一个大东西的轮廓，伏在海床上，不动——比回波该有的样子更软，边缘毛糙，像声呐打在一团正在散开的东西上。\n你收起声呐，继续往那个轮廓沉。",
             "oxygenTurnCost": 2,
