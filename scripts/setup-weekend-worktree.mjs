@@ -40,8 +40,9 @@ function git(args, opts = {}) {
   }).trim();
 }
 function gitOk(args) {
+  // 只问退出码、不读输出——别走 git()（它对 stdout 做 .trim()，stdio:'ignore' 时返回 null→.trim() 抛错→误判失败）。
   try {
-    git(args, { stdio: ['ignore', 'ignore', 'ignore'] });
+    execFileSync('git', ['--no-optional-locks', ...args], { cwd: ROOT, stdio: 'ignore' });
     return true;
   } catch {
     return false;
