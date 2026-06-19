@@ -60,7 +60,7 @@ export function LockerView({
   state: GameState;
   onStateChange: (s: GameState) => void;
   onClose: () => void;
-  /** 摊开整张海图（旧海图详情的「摊开整张海图」按钮·受 tutorial_complete 门控）；未提供＝海图未解锁。 */
+  /** 摊开海图（旧海图详情的「摊开海图」按钮·受 tutorial_complete 门控）；未提供＝海图未解锁。 */
   onOpenChart?: () => void;
   /** 跳到海图并选中某坐标（「文献坐标」功能·点详情里某个可达坐标·受同一门控）；未提供＝坐标不可点。 */
   onOpenChartAt?: (poiId: string) => void;
@@ -143,25 +143,39 @@ export function LockerView({
           )}
           {marked.length > 0 && (
             <div className="locker-coords">
-              <h4 className="dim locker-subhead">海图坐标</h4>
-              {marked.map((m) => (
-                <div key={m.id} className="locker-coord-row">
-                  <span className="locker-coord-name">{m.name}</span>{' '}
-                  {m.departable && onOpenChartAt ? (
-                    <button className="btn small" onClick={() => onOpenChartAt(m.id)}>
-                      在海图上查看
-                    </button>
-                  ) : (
-                    <span className="dim">{m.blockReason ?? '还去不了'}</span>
-                  )}
-                </div>
-              ))}
+              <h4 className="dim locker-subhead">最后是 {marked.length} 个坐标：</h4>
+              {marked.map((m) => {
+                // 可达坐标＝整行可点·直接跳海图选中（onOpenChartAt）；去不了＝纯陈列 + 一句原因。
+                const canGo = m.departable && !!onOpenChartAt;
+                const inner = (
+                  <>
+                    <span className="locker-coord-num">{m.displayCoord ?? '坐标不明'}</span>
+                    {m.onChart && <span className="locker-coord-name dim">{m.name}</span>}
+                    {!canGo && <span className="dim">{m.blockReason ?? '还去不了'}</span>}
+                  </>
+                );
+                return canGo ? (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className="locker-coord-row clickable"
+                    onClick={() => onOpenChartAt!(m.id)}
+                    title={`前往 ${m.name}`}
+                  >
+                    {inner}
+                  </button>
+                ) : (
+                  <div key={m.id} className="locker-coord-row">
+                    {inner}
+                  </div>
+                );
+              })}
             </div>
           )}
           {itemOpensChart(detail.itemId) && onOpenChart && (
             <div className="chart-info-actions">
               <button className="btn small secondary" onClick={onOpenChart}>
-                摊开整张海图
+                摊开海图
               </button>
             </div>
           )}

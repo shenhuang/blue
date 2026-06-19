@@ -260,7 +260,8 @@
           "outcome": {
             "text": "你合上两本日志，吹掉海图上的橡皮屑。\n海的味道还在指尖。",
             "applyFlags": ["flag.tutorial_complete"],
-            "loreEntry": "lore.ch1.captains_page"
+            "loot": [{ "itemId": "item.mentor_logbook", "qty": [1, 1] }],
+            "loreEntry": ["lore.ch1.captains_page", "lore.ch1.mentor_logbook"]
           }
         }
       ]
@@ -281,7 +282,9 @@
           "label": "圈下四个坐标，合上日志。",
           "outcome": {
             "text": "你合上日志，吹掉海图上的橡皮屑。\n海的味道还在指尖。",
-            "applyFlags": ["flag.tutorial_complete"]
+            "applyFlags": ["flag.tutorial_complete"],
+            "loot": [{ "itemId": "item.mentor_logbook", "qty": [1, 1] }],
+            "loreEntry": "lore.ch1.mentor_logbook"
           }
         }
       ]

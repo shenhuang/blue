@@ -1480,6 +1480,21 @@ html, body, #root {
   text-align: center;
 }
 
+/* 结算页战利品（#142·作者「全都一起显示·多了会换行」）：「带回」小标题 + 物品栏同款格子（ItemCell·.item-grid 自动换行·不另写 chip）。 */
+.resolution-loot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 20px;
+  text-align: left;
+}
+.resolution-loot-beat {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
 .gameover h2 {
   color: var(--danger);
 }
@@ -2250,6 +2265,41 @@ html, body, #root {
 .record-title {
   margin: 4px 0 0;
   font-size: 1rem;
+}
+/* 文献坐标（导师日志/藏宝图…「页脚坐标」列表·#142）：每条一行·坐标数字为主、名字次之·窄屏自动换行。 */
+.locker-coords {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.locker-coord-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+/* 可达坐标＝整行可点（直接跳海图选中·作者 #142「点坐标直接跳过去」）：按钮重置成行样式 + hover 提示。 */
+button.locker-coord-row {
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+button.locker-coord-row:hover {
+  background: var(--bg-elev-2);
+}
+.locker-coord-num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+.locker-coord-name {
+  font-size: 0.9rem;
 }
 /* 统一右上角 ✕ 关闭图标（物品栏头部 / 详情全覆盖·作者 2026-06-18）。 */
 .icon-close {

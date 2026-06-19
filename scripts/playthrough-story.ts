@@ -153,6 +153,12 @@ L('§2 ending_log 港口路径（无 run → flag 直进 profile）');
 
   assert(state.profile.flags.has(TUTORIAL_COMPLETE_FLAG), '§2 无 run 路径 applyFlags 应直落 profile.flags');
   assert(state.profile.loreEntries.has('lore.ch1.captains_page'), '§2 lore.ch1.captains_page 应入档');
+  // #142：ending_log 港口发物（无 run → loot 进 profile.inventory）+ loreEntry 数组一拍解锁两条
+  assert(
+    state.profile.inventory.some((i) => i.itemId === 'item.mentor_logbook'),
+    '§2 导师日志（mentor_logbook）应进 profile.inventory（港口 loot 路径·#142）',
+  );
+  assert(state.profile.loreEntries.has('lore.ch1.mentor_logbook'), '§2 导师日志 lore 应一并解锁（loreEntry 数组）');
   const st = ch1Story(state.profile);
   assert(st.hooked && st.tutorialComplete && st.nextAnchor === 'reef', '§2 派生：钩+教学完成+下一步=锚点①');
   assert(chapterUnlocked(state.profile, 'ch1') && !chapterUnlocked(state.profile, 'ch2'), '§2 ch1 开 ch2 关');
@@ -213,6 +219,13 @@ L('§2b ending_safe 上浮一路（flag 触发·无剧情物）');
   };
   assert(state.profile.flags.has(TUTORIAL_COMPLETE_FLAG), '§2b 上浮一路也置 tutorial_complete（海图解锁）');
   assert(chapterUnlocked(state.profile, 'ch1'), '§2b ch1 解锁');
+  // #142：上浮一路也在 ending_safe 拿到导师日志（含四坐标）——两路都得到日志（一致性）；但不解锁船长 lore（上验）
+  assert(
+    state.profile.inventory.some((i) => i.itemId === 'item.mentor_logbook'),
+    '§2b ending_safe 也发导师日志进 profile.inventory（两路一致·#142）',
+  );
+  assert(state.profile.loreEntries.has('lore.ch1.mentor_logbook'), '§2b 导师日志 lore 解锁');
+  assert(!state.profile.loreEntries.has('lore.ch1.captains_page'), '§2b 上浮一路仍不解锁船长日志 lore（没下去看）');
   // 防重播 + 已完成不再触发
   assert(pickFlagTrigger(state.profile.flags) === null, '§2b 完成后 flag 触发不再重复（event_done + tutorial_complete 双守）');
   L('  flag 触发 ending_safe + 完成 + 防重播 + 不解锁船长 lore ✓');

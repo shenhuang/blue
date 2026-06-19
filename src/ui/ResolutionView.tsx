@@ -1,5 +1,6 @@
-import type { GameState, RunOutcome } from '@/types';
+import type { GameState, RunOutcome, InventoryItem } from '@/types';
 import { getItemDef } from '@/engine/items';
+import { ItemCell } from './ItemCell';
 
 interface Props {
   state: GameState;
@@ -7,7 +8,19 @@ interface Props {
   onReturn: () => void;
 }
 
+/** 一组获得物的陈列——与物品栏同款格子（ItemCell·稀有度边框·多了自动换行·作者 #142）。 */
+function LootItems({ items }: { items: InventoryItem[] }) {
+  return (
+    <div className="item-grid">
+      {items.map((i) => (
+        <ItemCell key={i.itemId} def={getItemDef(i.itemId)} itemId={i.itemId} qty={i.qty} />
+      ))}
+    </div>
+  );
+}
+
 export function ResolutionView({ outcome, onReturn }: Props) {
+  // 结算战利品：本次带回的物品全都一起陈列（不按来源分组·作者 #142），与物品栏同款格子·多了自动换行。
   return (
     <div className="resolution">
       <h2>{outcome.survived ? '回到水面' : '未能归来'}</h2>
@@ -19,14 +32,14 @@ export function ResolutionView({ outcome, onReturn }: Props) {
         )}
         {outcome.cause && <div className="cause">{outcome.cause}</div>}
       </div>
+
       {outcome.loot.length > 0 && (
-        <div className="resolution-loot dim">
-          带回：
-          {outcome.loot
-            .map((i) => `${getItemDef(i.itemId)?.name ?? i.itemId}×${i.qty}`)
-            .join('、')}
+        <div className="resolution-loot">
+          <h4 className="resolution-loot-beat">带回</h4>
+          <LootItems items={outcome.loot} />
         </div>
       )}
+
       <button className="btn" onClick={onReturn}>
         回到港口
       </button>

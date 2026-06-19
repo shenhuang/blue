@@ -403,6 +403,20 @@ export interface MarkedPoiInfo {
   blockReason: string | null;
   /** 是否已在当前海图上生成（未点亮/章节未解锁的点 → false，名字回退为 id）。 */
   onChart: boolean;
+  /**
+   * 坐标显示串（如「47.3, 78.1」）——从该 POI **解析后的绝对** mapX/mapY 派生（formatChartCoord·单一来源）。
+   * 缺坐标（不在海图上 / 该 POI 未声明 mapX/mapY）→ null。导师日志等「页脚坐标」据此陈列。
+   */
+  displayCoord: string | null;
+}
+
+/**
+ * 海图归一化坐标（~0–1·owner-anchored resolve 后的绝对值）→ 人类可读坐标串。
+ * 「文献坐标」显示的**单一换算来源**（作者 2026-06-18「数字换算你定·但绝对值一改这里要一起改」）：
+ * 放大成两位制网格参考，读起来像海图上铅笔写的坐标。改格式 / 精度只动这里。
+ */
+export function formatChartCoord(mapX: number, mapY: number): string {
+  return `${(mapX * 100).toFixed(1)}, ${(mapY * 100).toFixed(1)}`;
 }
 
 /**
@@ -414,13 +428,18 @@ export function resolveMarkedPois(profile: PlayerProfile, poiIds: string[]): Mar
   const chart = generateChart({ profile });
   return poiIds.map((id) => {
     const poi = chart.pois.find((p) => p.id === id);
-    if (!poi) return { id, name: id, departable: false, blockReason: '还不在你的海图上', onChart: false };
+    if (!poi)
+      return { id, name: id, departable: false, blockReason: '还不在你的海图上', onChart: false, displayCoord: null };
+    // poi.mapX/mapY 已是 generateChart resolve 后的绝对坐标（owner-anchored·见 resolveOwnerCoords）。
+    const displayCoord =
+      poi.mapX != null && poi.mapY != null ? formatChartCoord(poi.mapX, poi.mapY) : null;
     return {
       id,
       name: poi.name,
       departable: isPoiDepartable(profile, poi),
       blockReason: poiBlockReason(profile, poi),
       onChart: true,
+      displayCoord,
     };
   });
 }

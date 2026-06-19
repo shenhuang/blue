@@ -133,20 +133,20 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
   }
 
   // ---- 战利品 ----
-  if (outcome.loot && s.run) {
-    let inv = s.run.inventory;
+  // 有 run = dive 期间 → run.inventory（上岸结算）；无 run = 港口事件（如教学收尾发导师日志）→ profile.inventory（持久）。
+  if (outcome.loot) {
+    let inv = s.run ? s.run.inventory : s.profile.inventory;
     for (const roll of outcome.loot) {
       const chance = roll.chance ?? 1;
       if (Math.random() <= chance) {
         const min = roll.qty[0];
         const max = roll.qty[1];
         const qty = min + Math.floor(Math.random() * (max - min + 1));
-        if (qty > 0) {
-          inv = addToInventory(inv, roll.itemId, qty);
-        }
+        if (qty > 0) inv = addToInventory(inv, roll.itemId, qty);
       }
     }
-    s = { ...s, run: { ...s.run, inventory: inv } };
+    if (s.run) s = { ...s, run: { ...s.run, inventory: inv } };
+    else s = { ...s, profile: { ...s.profile, inventory: inv } };
   }
 
   // ---- Flags ----
@@ -190,10 +190,12 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
     }
   }
 
-  // ---- Lore ----
+  // ---- Lore ----（单条或多条·如教学收尾「两本日志」一拍解锁两条）
   if (outcome.loreEntry) {
     const entries = new Set(s.profile.loreEntries);
-    entries.add(outcome.loreEntry);
+    for (const id of Array.isArray(outcome.loreEntry) ? outcome.loreEntry : [outcome.loreEntry]) {
+      entries.add(id);
+    }
     s = { ...s, profile: { ...s.profile, loreEntries: entries } };
   }
 

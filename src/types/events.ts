@@ -96,7 +96,8 @@ export interface Outcome {
   triggerCombatId?: string; // 引发战斗
   endDive?: 'forceAscend' | 'death';
   goldDelta?: number;
-  loreEntry?: string;
+  /** 解锁见闻：单条或多条（一拍解锁多条·如教学收尾「两本日志」同时解锁船长日志页 + 导师日志）。 */
+  loreEntry?: string | string[];
   /**
    * 修复废弃灯塔（基建地图 Phase C）：引用一个 LighthouseRuinDef.id。
    * applyOutcome 会权威地校验账单（按 profile 银行材料＋金币）并 push 新灯塔到 profile.lighthouses。
