@@ -129,7 +129,8 @@ export function createStarterLoadout(): EquipmentLoadout {
     tank: { itemId: 'item.tank.bluefin_mk1', slot: 'tank', level: 1 },
     suit: { itemId: 'item.suit.thermal_basic', slot: 'suit', level: 1 },
     light: { itemId: 'item.light.hand_torch', slot: 'light', level: 1 },
-    tool: { itemId: 'item.dive_knife.standard', slot: 'tool', level: 1 },
+    tool: { itemId: 'item.dive_knife.standard', slot: 'tool', level: 1 }, // 近战武器（潜水刀）
+    ranged: null, // 远程武器（暂空·未来鱼枪/发射器）
     charm: null,
   };
 }
@@ -319,7 +320,11 @@ export function hydrateGameState(state: GameState): GameState {
     ...state.profile,
     shopStock: state.profile.shopStock ?? {},
     outpostState: state.profile.outpostState ?? {},
-    equipment: state.profile.equipment ?? createStarterLoadout(),
+    // 装备：缺则种起始件；已有则与起始件合并补齐「新增槽」（如 ranged·作者 2026-06-18 拆武器槽）——
+    // 已穿戴槽以存档为准、缺的新槽取起始默认（null）·additive·不 bump SAVE_VERSION（#99）·旧档不作废。
+    equipment: state.profile.equipment
+      ? { ...createStarterLoadout(), ...state.profile.equipment }
+      : createStarterLoadout(),
   };
   if (!state.run) return { ...state, profile };
   const run = state.run;

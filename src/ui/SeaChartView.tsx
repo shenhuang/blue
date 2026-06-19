@@ -44,6 +44,11 @@ type MapPopup = { kind: 'home' } | { kind: 'outpost'; id: string };
 interface Props {
   state: GameState;
   onStateChange: (s: GameState) => void;
+  /**
+   * 进图时聚焦/选中的 POI id（「文献坐标」功能·作者 2026-06-18）：从物品栏「旧海图/藏宝图」点某个坐标
+   * 进来时带它，初始选中该点（信息面板直接显示它）。缺省＝按 defaultId 选第一个可出海点。
+   */
+  focusPoiId?: string;
 }
 
 /**
@@ -98,7 +103,7 @@ function conditionLine(c: { tide: 'flood' | 'ebb'; weather: 'clear' | 'mist' | '
   return `${tide} · ${weather}${fog}`;
 }
 
-export function SeaChartView({ state, onStateChange }: Props) {
+export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
   // 海图派生自 profile。除 runsCompleted（roaming 种子）外，还要在**中途点亮/升级灯塔**时重算——
   // 否则新进入灯塔范围的 POI 要等下个 run 才浮现（§6.5「即时新 POI 浮现」，#80 尾巴）。
   // 签名捕捉一切影响 reveal/可见性的 profile 态：灯塔（坐标 + 设施 + 衰减后有效半径）+ flags（requiresFlags / mimic 引诱门）。
@@ -178,7 +183,11 @@ export function SeaChartView({ state, onStateChange }: Props) {
   // 默认选中第一个"可出海"的点，保证信息面板有内容、出海按钮可见
   const defaultId =
     chart.pois.find((p) => isPoiDepartable(state.profile, p))?.id ?? chart.pois[0]?.id ?? '';
-  const [selectedId, setSelectedId] = useState<string>(defaultId);
+  // 「文献坐标」进图（#140 续·作者 2026-06-18）：带 focusPoiId 且该点在图上 → 初始选中它（直达该坐标）；
+  // 否则按 defaultId 选第一个可出海点。仅初始化时取一次（进图即定）。
+  const [selectedId, setSelectedId] = useState<string>(
+    focusPoiId && chart.pois.some((p) => p.id === focusPoiId) ? focusPoiId : defaultId,
+  );
   // selectedId='' （点灯塔/前哨时清空·互斥）→ **不回退 defaultId**（否则资格区等默认点仍高亮·
   // 破「同一时间只一个 POI 点亮」·作者 2026-06-14 #4）。初次进图由 useState(defaultId) 给默认选中。
   const selected = chart.pois.find((p) => p.id === selectedId) ?? null;

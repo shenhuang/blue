@@ -150,6 +150,19 @@ for (const f of readdirSync(EVENTS_DIR).filter((n) => n.endsWith('.json'))) {
   walkAdvance(ev, `events/${f}`);
 }
 
+// (k) 道具「文献坐标」marksPois 必指向在册 authored POI（#140 续·文献坐标功能·防 typo 静默成「不在你的海图上」）。
+const authoredPoiIds = new Set(authoredPois.map((p) => p.id).filter(Boolean));
+const itemsFile = readJson('items.json');
+for (const it of itemsFile.items ?? []) {
+  for (const pid of it.story?.marksPois ?? []) {
+    if (!authoredPoiIds.has(pid)) {
+      errors.push(
+        `[marksPois] 道具 ${it.id}：marksPois ${pid} 不是在册 authored POI（chart_pois.json anchors）`,
+      );
+    }
+  }
+}
+
 // —— 汇报 ——
 if (errors.length) {
   console.error(`✗ check-dive-refs：${errors.length} 处问题`);

@@ -251,6 +251,7 @@ function buildEquipment(override: Partial<EquipmentLoadout> | undefined): Equipm
     suit: override.suit !== undefined ? override.suit : base.suit,
     light: override.light !== undefined ? override.light : base.light,
     tool: override.tool !== undefined ? override.tool : base.tool,
+    ranged: override.ranged !== undefined ? override.ranged : base.ranged,
     charm: override.charm !== undefined ? override.charm : base.charm,
   };
 }

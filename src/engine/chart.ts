@@ -393,6 +393,38 @@ export function getPoiById(chart: SeaChart, poiId: string): ChartPoi | undefined
   return chart.pois.find((p) => p.id === poiId);
 }
 
+/** 道具携带的一个海图坐标（「文献坐标」功能·作者 2026-06-18）的解析结果。 */
+export interface MarkedPoiInfo {
+  id: string;
+  name: string;
+  /** 是否已可下潜（点亮且无能力/天气门挡）→ UI 给可点击的「前往」。 */
+  departable: boolean;
+  /** 去不了时的一句话原因（poiBlockReason）；可去＝null。 */
+  blockReason: string | null;
+  /** 是否已在当前海图上生成（未点亮/章节未解锁的点 → false，名字回退为 id）。 */
+  onChart: boolean;
+}
+
+/**
+ * 解析道具 `story.marksPois` 携带的海图坐标（「文献坐标」功能·作者 2026-06-18·旧海图/藏宝图复用）：
+ * 对照当前海图给出每个点的名字 + 可达性 + 去不了原因。物品栏「文献」详情据此陈列；可达的点可点击→跳海图选中。
+ * 纯读·一次性 generateChart 后查表（坐标点数量级小）。
+ */
+export function resolveMarkedPois(profile: PlayerProfile, poiIds: string[]): MarkedPoiInfo[] {
+  const chart = generateChart({ profile });
+  return poiIds.map((id) => {
+    const poi = chart.pois.find((p) => p.id === id);
+    if (!poi) return { id, name: id, departable: false, blockReason: '还不在你的海图上', onChart: false };
+    return {
+      id,
+      name: poi.name,
+      departable: isPoiDepartable(profile, poi),
+      blockReason: poiBlockReason(profile, poi),
+      onChart: true,
+    };
+  });
+}
+
 /** 人类可读的修正摘要（UI 标签 / CLI 日志用）。无修正返回空数组。 */
 export function describeModifier(mod?: PoiModifier): string[] {
   if (!mod) return [];

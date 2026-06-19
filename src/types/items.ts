@@ -7,7 +7,10 @@ export type ItemCategory =
   | 'story'
   | 'currency';
 
-export type EquipmentSlot = 'tank' | 'suit' | 'light' | 'tool' | 'charm';
+// 装备槽。武器拆近战/远程两槽（作者 2026-06-18）：
+//   tool   ＝ 近战武器槽（潜水刀·历史 key 名沿用·事件 hasEquipment{slot:'tool'} 的「用刀」选项都认它）
+//   ranged ＝ 远程武器槽（未来鱼枪/发射器…·暂空·与近战互不影响「用刀」事件门控）
+export type EquipmentSlot = 'tank' | 'suit' | 'light' | 'tool' | 'ranged' | 'charm';
 
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
 
@@ -67,6 +70,18 @@ export interface ItemDef {
   story?: {
     triggersEventId?: string;
     unlocksLoreEntry?: string;
+    /**
+     * 在港口物品栏点击此道具＝摊开海图（与「摊开海图」按钮同效·受同一 tutorial_complete 门控）。
+     * 用于「旧海图」（item.old_chart·从沉船带回的旧海图＝解锁海图的信物·归「其它」tab·作者 2026-06-18）。
+     * 数据驱动·无硬编码 id。
+     */
+    opensChart?: boolean;
+    /**
+     * 该道具标记的海图坐标（POI id 列表·「文献坐标」功能·作者 2026-06-18）：物品详情陈列这些点，
+     * 已可下潜的点可点击→跳海图并选中它。旧海图标记一章四锚点；后续藏宝图/带坐标的日志复用同一字段。
+     * 数据驱动·引擎 resolveMarkedPois 对照当前海图给出名字/可达性，UI 据此渲染。
+     */
+    marksPois?: string[];
   };
 }
 

@@ -16,7 +16,8 @@
 
 import { useState, useEffect } from 'react';
 import type { GameState, DialogNode } from '@/types';
-import { toPort } from '@/engine/transitions';
+import { toPort, toChart } from '@/engine/transitions';
+import { DEV_TOOLS } from './devMode';
 import { PortView } from './PortView';
 import { PortEventView } from './PortEventView';
 import { SeaChartView } from './SeaChartView';
@@ -47,11 +48,17 @@ export function PortLayout({ state, onStateChange }: Props) {
   // PortView 退化为受控：读 dialog、改动一律回调 onDialogChange。
   const [dialog, setDialog] = useState<DialogNode | null>(null);
 
-  // 离开 port（去 chart/shop/portEvent/下潜）即清本地态：服务面板 + 对话都收，免得回港残留弹出旧界面。
+  // 「文献坐标」进图聚焦的 POI（#140 续·作者 2026-06-18）：从物品栏旧海图/藏宝图点某坐标进来时设，
+  // 开图后 SeaChartView 初始选中它。进图（phase→chart）后下面的 useEffect 即清——SeaChartView 已在挂载时
+  // 取走 focusPoiId（useState 初值），之后清不影响其选中；保证下次普通摊图不残留旧聚焦。null＝不聚焦。
+  const [chartFocus, setChartFocus] = useState<string | null>(null);
+
+  // 离开 port（去 chart/shop/portEvent/下潜）即清本地态：服务面板 + 对话 + 文献聚焦都收，免得回港残留旧界面/旧聚焦。
   useEffect(() => {
     if (state.phase.kind !== 'port') {
       setUpgradeMode(null);
       setDialog(null);
+      setChartFocus(null);
     }
   }, [state.phase.kind]);
 
@@ -75,13 +82,37 @@ export function PortLayout({ state, onStateChange }: Props) {
     dialogActive: dialog !== null || state.phase.kind === 'portEvent',
   });
 
+  // 海图是否解锁（与 PortView.chartUnlocked 同口径·flag.tutorial_complete 或 dev）——
+  // 公会浮标「摊开海图」沿用此门·绝不绕过教学门（见 LockerView onOpenChart）。
+  const chartUnlocked = state.profile.flags.has('flag.tutorial_complete') || DEV_TOOLS;
+
   const right =
     rightPane === 'chart' ? (
-      <SeaChartView state={state} onStateChange={onStateChange} />
+      <SeaChartView state={state} onStateChange={onStateChange} focusPoiId={chartFocus ?? undefined} />
     ) : rightPane === 'shop' ? (
       <MiraShopView state={state} onStateChange={onStateChange} />
     ) : rightPane === 'locker' ? (
-      <LockerView state={state} onStateChange={onStateChange} onClose={() => setUpgradeMode(null)} />
+      <LockerView
+        state={state}
+        onStateChange={onStateChange}
+        onClose={() => setUpgradeMode(null)}
+        onOpenChart={
+          chartUnlocked
+            ? () => {
+                setChartFocus(null);
+                onStateChange(toChart(state));
+              }
+            : undefined
+        }
+        onOpenChartAt={
+          chartUnlocked
+            ? (poiId: string) => {
+                setChartFocus(poiId);
+                onStateChange(toChart(state));
+              }
+            : undefined
+        }
+      />
     ) : rightPane === 'bestiary' ? (
       <BestiaryView state={state} onClose={() => setUpgradeMode(null)} />
     ) : rightPane === 'lore' ? (

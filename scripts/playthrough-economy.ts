@@ -62,7 +62,7 @@ for (const [id, expected] of priceTable) {
   assert(got === expected, `${id} Mira 收购价对不上：${got} ≠ ${expected}`);
 }
 L('  剧情物 / 无价物不收：');
-const refused = ['item.captain_log', 'item.marker_buoy'];
+const refused = ['item.captain_log', 'item.old_chart'];
 for (const id of refused) {
   const ok = isSellableToMira(id);
   L(`    ${id.padEnd(24)} isSellable=${ok}`);

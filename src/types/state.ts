@@ -373,12 +373,13 @@ export interface RunState {
   injuries: ActiveInjury[];
 }
 
-/** 装备配置 */
+/** 装备配置（武器拆 tool=近战 / ranged=远程 两槽·作者 2026-06-18） */
 export interface EquipmentLoadout {
   tank: EquipmentInstance | null;
   suit: EquipmentInstance | null;
   light: EquipmentInstance | null;
-  tool: EquipmentInstance | null;
+  tool: EquipmentInstance | null; // 近战武器（潜水刀）·历史 key 名
+  ranged: EquipmentInstance | null; // 远程武器（暂空·未来鱼枪/发射器）
   charm: EquipmentInstance | null;
 }
 

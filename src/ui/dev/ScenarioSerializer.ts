@@ -83,6 +83,7 @@ const DEFAULT_SLOTS_LOADOUT: { [K in EquipmentSlot]: EquipmentSlotForm } = {
   suit: { itemId: 'item.suit.thermal_basic', level: 1 },
   light: { itemId: 'item.light.hand_torch', level: 1 },
   tool: { itemId: 'item.dive_knife.standard', level: 1 },
+  ranged: { itemId: '', level: 1 },
   charm: { itemId: '', level: 1 },
 };
 
@@ -95,7 +96,7 @@ export function emptyFormState(eventId = ''): ScenarioFormState {
     zoneId: '',
     depth: '',
     equipment: { ...DEFAULT_SLOTS_LOADOUT },
-    equipmentOverride: { tank: false, suit: false, light: false, tool: false, charm: false },
+    equipmentOverride: { tank: false, suit: false, light: false, tool: false, ranged: false, charm: false },
     inventory: [],
     profileFlags: '',
     runFlags: '',

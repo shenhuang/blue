@@ -30,8 +30,10 @@ import { FuneralView } from '../src/ui/CorpseView';
 import { UpgradePanel } from '../src/ui/UpgradePanel';
 import { MiraShopView } from '../src/ui/MiraShopView';
 import { LighthouseBuildPanel } from '../src/ui/LighthouseBuildPanel';
+import { LockerView } from '../src/ui/LockerView';
 import type { GameState, InventoryItem, NodeChoice, FeatureChoice, DiveMap, ChartPoi } from '../src/types';
-import { generateChart, isPoiDepartable } from '../src/engine/chart';
+import { generateChart, isPoiDepartable, resolveMarkedPois } from '../src/engine/chart';
+import { itemMarkedPois } from '../src/engine/items';
 
 const log: string[] = [];
 const L = (s: string) => log.push(s);
@@ -1109,6 +1111,87 @@ const htmlSLit = renderToStaticMarkup(
 assert(!htmlSLit.includes('从此处下潜'), 'S: 章节前哨蛙跳已删（改深入 POI·作者 06-14）→ popup 不再出「从此处下潜」');
 assert(htmlSLit.includes('灯亮着'), 'S: 点亮态状态显示「灯亮着」');
 L('  章节前哨 popup 锁态(暗·待解锁)/点亮(已点亮·无蛙跳·改深入 POI) ✓');
+
+// ============================================
+// T. LockerView · 剧情/其它/装备归类 + 文献正文 + 文献坐标（#140 续·作者 2026-06-18）
+//   剧情（tab id 'journal'·label「剧情」）＝图鉴 + 见闻 + 剧情道具（category='story' 且非海图信物：航海日志/指南针）。
+//   其它＝杂项 + **海图信物 旧海图**（story+opensChart→点开看详情：坐标列表 + 摊开整张海图）；装备件归装备 tab。
+//   文献正文：道具 unlocksLoreEntry 已读 → 详情显 lore 正文（航海日志）。
+//   文献坐标：道具 story.marksPois → 详情陈列坐标（可达的可点→onOpenChartAt 跳海图选中·旧海图标记一章四锚点）。
+//   initialTab / initialDetail 钩子直渲 tab/详情（SSR 无法点击切换）。
+// ============================================
+L('\n========== T. LockerView 剧情/其它/文献正文+坐标 (#140 续) ==========');
+const TLock = { ...stateWith(['flag.tutorial_complete'], []) };
+TLock.profile = {
+  ...TLock.profile,
+  loreEntries: new Set(['lore.ch1.captains_page']), // 已读船长日志 → 文献正文可显
+  inventory: [
+    { itemId: 'item.captain_log', qty: 1 },  // 文献（→剧情·点开显 lore 正文）
+    { itemId: 'item.rusty_compass', qty: 1 }, // 信物（→剧情）
+    { itemId: 'item.old_chart', qty: 1 },     // 海图信物·opensChart+marksPois（→其它·点开看坐标/摊图）
+    { itemId: 'item.dive_knife.standard', qty: 1 }, // 装备备件（→装备 tab）
+  ],
+};
+// 剧情 tab：文献 + 指南针；旧海图不在
+const htmlTStory = renderToStaticMarkup(
+  <LockerView state={TLock} onStateChange={noop} onClose={noop} initialTab="journal" />,
+);
+assert(htmlTStory.includes('航海日志') && htmlTStory.includes('锈蚀的指南针'), 'T: 文献+信物在「剧情」tab');
+assert(!htmlTStory.includes('旧海图'), 'T: 海图信物「旧海图」不在「剧情」（归其它）');
+// 其它 tab：旧海图在场（点开看详情）；文献/指南针/装备备件不在
+const htmlTOther = renderToStaticMarkup(
+  <LockerView state={TLock} onStateChange={noop} onClose={noop} initialTab="other" />,
+);
+assert(htmlTOther.includes('旧海图'), 'T: 海图信物「旧海图」在「其它」tab');
+assert(
+  !htmlTOther.includes('航海日志') && !htmlTOther.includes('锈蚀的指南针') && !htmlTOther.includes('潜水刀'),
+  'T: 剧情道具/装备备件不在「其它」',
+);
+// 装备 tab：未装备备件（潜水刀）
+const htmlTGear = renderToStaticMarkup(
+  <LockerView state={TLock} onStateChange={noop} onClose={noop} initialTab="gear" />,
+);
+assert(htmlTGear.includes('潜水刀') && htmlTGear.includes('未装备'), 'T: 装备备件（潜水刀）在「装备」·未装备区');
+// 文献坐标：旧海图详情（initialDetail）→ 坐标区 + 摊开整张海图（onOpenChart 解锁后）
+const htmlTChartDetail = renderToStaticMarkup(
+  <LockerView
+    state={TLock}
+    onStateChange={noop}
+    onClose={noop}
+    onOpenChart={noop}
+    onOpenChartAt={noop}
+    initialDetail={{ kind: 'storyitem', itemId: 'item.old_chart' }}
+  />,
+);
+assert(htmlTChartDetail.includes('海图坐标'), 'T: 旧海图详情陈列「海图坐标」（marksPois）');
+assert(htmlTChartDetail.includes('摊开整张海图'), 'T: 旧海图详情有「摊开整张海图」（opensChart + onOpenChart）');
+// 海图未解锁（不传 onOpenChart）：详情不出「摊开整张海图」（不绕教学门）
+const htmlTChartLocked = renderToStaticMarkup(
+  <LockerView
+    state={TLock}
+    onStateChange={noop}
+    onClose={noop}
+    initialDetail={{ kind: 'storyitem', itemId: 'item.old_chart' }}
+  />,
+);
+assert(!htmlTChartLocked.includes('摊开整张海图'), 'T: 海图未解锁→旧海图详情无「摊开整张海图」（不绕教学门）');
+// 文献正文：航海日志详情→船长日志 lore 正文
+const htmlTLogDetail = renderToStaticMarkup(
+  <LockerView
+    state={TLock}
+    onStateChange={noop}
+    onClose={noop}
+    initialDetail={{ kind: 'storyitem', itemId: 'item.captain_log' }}
+  />,
+);
+assert(htmlTLogDetail.includes('第七次见到它'), 'T: 航海日志详情显示船长日志正文（lore.ch1.captains_page 已登记）');
+// 引擎：旧海图标记 4 个坐标·resolveMarkedPois 解析
+assert(itemMarkedPois('item.old_chart').length === 4, 'T: 旧海图 marksPois = 4 锚点');
+assert(
+  resolveMarkedPois(TLock.profile, itemMarkedPois('item.old_chart')).length === 4,
+  'T: resolveMarkedPois 解析 4 条坐标',
+);
+L('  剧情/其它/装备归类 · 文献正文可读 · 旧海图坐标列表+摊图门控 · resolveMarkedPois ✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 海图 UI 冒烟测试通过');

@@ -63,14 +63,23 @@
       }
     },
     {
-      "id": "item.marker_buoy",
-      "name": "公会浮标",
+      "id": "item.old_chart",
+      "name": "旧海图",
       "category": "story",
       "rarity": "common",
-      "description": "红白相间的圆筒，公会用来标记水下位置。需要送回 Aldo。",
+      "description": "从东礁沉船带回来的一张旧海图，封在铜筒里。纸已经脆了，封蜡剥落，但海岸线和水深还认得出。你照着导师日志页脚的坐标，在上面圈下了能去的几个点。",
       "weight": 2,
       "sellPrice": 0,
-      "decay": "eternal"
+      "decay": "eternal",
+      "story": {
+        "opensChart": true,
+        "marksPois": [
+          "poi.anchor.ch1_coral_grove",
+          "poi.anchor.ch1_temperate_wreck",
+          "poi.anchor.ch1_open_midwater",
+          "poi.anchor.ch1_vent_field"
+        ]
+      }
     },
     {
       "id": "item.shark_tooth",
