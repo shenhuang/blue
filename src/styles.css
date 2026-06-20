@@ -2420,10 +2420,14 @@ html, body, #root {
   flex: 0 1 auto;
   align-self: flex-start;
 }
-/* 建造态（从基线·单框「建造获得的内容」·作者 2026-06-20·#6）：只一个框·不撑满。 */
-.equip-stat-compare.build .equip-stat-col {
-  flex: 0 1 auto;
-  align-self: flex-start;
+/* 建造态（从基线·单框「建造获得的内容」·作者 2026-06-20·#6/#7）：右侧用隐形箭头 + 空框占位，
+   让建造框宽度与对比框的左框严格一致（mirror 对比布局·只右半隐形·不再用 flex:0 1 auto 收成内容宽）。 */
+.equip-stat-arrow.ghost {
+  visibility: hidden;
+}
+.equip-stat-col.ghost {
+  border-color: transparent;
+  background: transparent;
 }
 .equip-stat-col-label {
   font-size: 11px;

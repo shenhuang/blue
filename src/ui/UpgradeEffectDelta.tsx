@@ -68,6 +68,9 @@ export function UpgradeEffectDelta({
             <span key={u} className="equip-stat-line">{u}</span>
           ))}
         </div>
+        {/* 右侧隐形占位（箭头 + 空框）：让建造单框宽度与对比框的左框严格一致（mirror 对比布局·右半隐形·作者 2026-06-20·#7）。 */}
+        <div className="equip-stat-arrow ghost" aria-hidden="true">→</div>
+        <div className="equip-stat-col ghost" aria-hidden="true" />
       </div>
     );
   }
