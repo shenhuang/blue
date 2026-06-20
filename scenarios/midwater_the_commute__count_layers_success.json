@@ -1,0 +1,23 @@
+{
+  "_comment": "中层·昼夜垂直迁移·数层带成功（体力 vs 42·高体力·体力-2 氧-2）",
+  "eventId": "midwater.the_commute",
+  "depth": 130,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "stamina": 80
+  },
+  "choices": [
+    "count_layers"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "statsDelta": {
+      "stamina": -2,
+      "oxygen": -2
+    }
+  }
+}

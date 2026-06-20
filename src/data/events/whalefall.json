@@ -3,12 +3,19 @@
   "events": [
     {
       "id": "whalefall.sighting_1",
-      "depthRange": [55, 85],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        55,
+        85
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 4,
       "cooldown": 10,
       "oncePerRun": true,
-      "forbiddenFlags": ["story.ch1.whale_sighting.1"],
+      "forbiddenFlags": [
+        "story.ch1.whale_sighting.1"
+      ],
       "title": "更黑的一块",
       "body": "你下方的蓝里，有一块比别处更黑。\n不是礁，不是云影——这里没有底，没有云。那块黑在动，很慢，整体地移，边缘你看不到，因为它比你的灯远得多，也比你的灯大得多。\n水推了你一下。它过去之后，蓝又是均匀的蓝。",
       "tone": "uncanny",
@@ -19,8 +26,12 @@
           "outcome": {
             "text": "你不动，看着那块更黑的蓝从下方移过去，用了很久。\n你一直没看见它的头，也没看见它的尾——它始终是「中间」。它没有注意你；在它那个尺度上，你不构成被注意的理由。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -3 },
-            "setProfileFlags": ["story.ch1.whale_sighting.1"]
+            "deltas": {
+              "sanity": -3
+            },
+            "setProfileFlags": [
+              "story.ch1.whale_sighting.1"
+            ]
           }
         },
         {
@@ -32,14 +43,22 @@
             "onSuccess": {
               "text": "你压深几米。那块黑没有变清楚，只是变大——你越靠近，越看不到它的边，到某一刻你明白你不是在接近一个东西，是在接近一面墙，一面活的、缓慢移动的墙。\n你按表把自己拉回原来的深度。它继续走它的。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -4 },
-              "setProfileFlags": ["story.ch1.whale_sighting.1"]
+              "deltas": {
+                "sanity": -4
+              },
+              "setProfileFlags": [
+                "story.ch1.whale_sighting.1"
+              ]
             },
             "onFailure": {
               "text": "你追下去。它不变近也不变远——它移动的速度和你以为的不一样，你算错了它的尺度，于是算错了它的速度。气在这段错算里烧掉一截。\n等你停下来，它已经走了，下方又是空的蓝。",
               "oxygenTurnCost": 4,
-              "deltas": { "sanity": -8 },
-              "setProfileFlags": ["story.ch1.whale_sighting.1"]
+              "deltas": {
+                "sanity": -8
+              },
+              "setProfileFlags": [
+                "story.ch1.whale_sighting.1"
+              ]
             }
           }
         },
@@ -49,22 +68,35 @@
           "outcome": {
             "text": "你把方位记进写字板：「大型生物，下方，正西。」\n写完你盯着这行字看了一会儿——你见过鲸。鲸不是这个尺寸。你把这条记录留着，继续走。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -1 },
+            "deltas": {
+              "sanity": -1
+            },
             "loreEntry": "lore.whalefall.sighting_1",
-            "setProfileFlags": ["story.ch1.whale_sighting.1"]
+            "setProfileFlags": [
+              "story.ch1.whale_sighting.1"
+            ]
           }
         }
       ]
     },
     {
       "id": "whalefall.sighting_2",
-      "depthRange": [58, 85],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        58,
+        85
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 4,
       "cooldown": 10,
       "oncePerRun": true,
-      "prereqFlags": ["story.ch1.whale_sighting.1"],
-      "forbiddenFlags": ["story.ch1.whale_sighting.2"],
+      "prereqFlags": [
+        "story.ch1.whale_sighting.1"
+      ],
+      "forbiddenFlags": [
+        "story.ch1.whale_sighting.2"
+      ],
       "title": "侧面",
       "body": "这一次它从你侧面过，近些。\n你看见的是一段——一道弧形的侧壁，灰白带着深疤，疤里嵌着东西：藤壶、一片片淡色的须、几条贴着它游的小鱼。它身上已经住着一整窝活物，跟着它一起在中层里走。\n它划水的频率慢得不像在使劲，像它根本不需要使劲。一只眼从你视野下缘移过去，没有为你停。",
       "tone": "uncanny",
@@ -75,9 +107,13 @@
           "outcome": {
             "text": "你停住一切，让它从你面前走过。\n它身上那窝活物你越看越清：附在它身上的、跟着它讨生活的、在它疤里安家的——它还活着，就已经是一片游动的礁了。你忽然替它身上那些小东西想了一个问题：等它停下来的那天，它们去哪儿。\n你没有答案。你把这个念头记下来。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -3 },
+            "deltas": {
+              "sanity": -3
+            },
             "loreEntry": "lore.whalefall.sighting_2",
-            "setProfileFlags": ["story.ch1.whale_sighting.2"]
+            "setProfileFlags": [
+              "story.ch1.whale_sighting.2"
+            ]
           }
         },
         {
@@ -89,14 +125,23 @@
             "onSuccess": {
               "text": "你贴近到一个你事后觉得不该贴近的距离。那些须是活的，那些小鱼在它的疤里进进出出，像在自己的巷子里。\n它的皮肤离你两臂，缓慢起伏，温度从那边传过来，比周围的水高一点。你退开。你刚才摸到的不是一头鱼，是一座还在走动的、温的山。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -5 },
-              "setProfileFlags": ["story.ch1.whale_sighting.2"]
+              "deltas": {
+                "sanity": -5
+              },
+              "setProfileFlags": [
+                "story.ch1.whale_sighting.2"
+              ]
             },
             "onFailure": {
               "text": "你靠得太近。它没有攻击——比攻击更糟，它只是动了一下，一个对它而言极小的动作，那股水把你卷开了五六米，翻了个跟头才稳住。\n它毫不知情地继续走。你花了一会儿才把上下分清楚。",
               "oxygenTurnCost": 4,
-              "deltas": { "sanity": -8, "stamina": -4 },
-              "setProfileFlags": ["story.ch1.whale_sighting.2"]
+              "deltas": {
+                "sanity": -8,
+                "stamina": -4
+              },
+              "setProfileFlags": [
+                "story.ch1.whale_sighting.2"
+              ]
             }
           }
         },
@@ -106,21 +151,34 @@
           "outcome": {
             "text": "你往后让，把整片水让给它。\n它带着身上那一窝慢慢走远，深一点，再深一点。你注意到它在往下走，不急，但一直在往下。你把这个也记下了。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 },
-            "setProfileFlags": ["story.ch1.whale_sighting.2"]
+            "deltas": {
+              "sanity": -2
+            },
+            "setProfileFlags": [
+              "story.ch1.whale_sighting.2"
+            ]
           }
         }
       ]
     },
     {
       "id": "whalefall.sighting_3",
-      "depthRange": [60, 85],
-      "zoneTags": ["midwater"],
+      "depthRange": [
+        60,
+        85
+      ],
+      "zoneTags": [
+        "midwater"
+      ],
       "weight": 4,
       "cooldown": 10,
       "oncePerRun": true,
-      "prereqFlags": ["story.ch1.whale_sighting.2"],
-      "forbiddenFlags": ["story.ch1.whale_sighting.3"],
+      "prereqFlags": [
+        "story.ch1.whale_sighting.2"
+      ],
+      "forbiddenFlags": [
+        "story.ch1.whale_sighting.3"
+      ],
       "title": "下沉",
       "body": "你又遇见它，这一回它在往下走，只往下。\n划水停了。它不再使劲维持深度，把自己交给了重量，一寸一寸地朝黑里沉。身上那窝活物有的开始离开，有的没有。它没有挣扎——这不是出事，这是它在做最后一件它知道怎么做的事。\n它沉的方向很稳。你能看出它要去哪儿：下面，那片你的灯照不到的海床。",
       "tone": "cosmic",
@@ -131,9 +189,14 @@
           "outcome": {
             "text": "你停在原地，看它沉下去，直到它比你的灯更黑，直到它成为下方那片黑本身的一部分，再也分不出来。\n你记住了这个方位，这个深度，它消失的那条线。它没有死在你看得见的地方——它是去赴一个约，那个约在更下面。你知道它去了哪儿。你也知道，你能跟去。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -4 },
+            "deltas": {
+              "sanity": -4
+            },
             "loreEntry": "lore.whalefall.sighting_3",
-            "setProfileFlags": ["story.ch1.whale_sighting.3", "story.ch1.whale_search_ready"]
+            "setProfileFlags": [
+              "story.ch1.whale_sighting.3",
+              "story.ch1.whale_search_ready"
+            ]
           }
         },
         {
@@ -145,15 +208,26 @@
             "onSuccess": {
               "text": "你跟着它沉了一段，沉到你自己的余量允许的最深处，把它去的方向钉死在写字板上。\n然后你停了——你不能跟它去那么深，今天不能。你看它继续沉，独自，稳稳地，去那个你现在知道了坐标的地方。你转身上升的时候，身上发冷，不全是因为水温。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -5 },
+              "deltas": {
+                "sanity": -5
+              },
               "loreEntry": "lore.whalefall.sighting_3",
-              "setProfileFlags": ["story.ch1.whale_sighting.3", "story.ch1.whale_search_ready"]
+              "setProfileFlags": [
+                "story.ch1.whale_sighting.3",
+                "story.ch1.whale_search_ready"
+              ]
             },
             "onFailure": {
               "text": "你跟得太深，太急。某一刻你发现自己也在不使劲地往下沉，跟它一样，把自己交给了重量——你猛地充浮力，蹬水，把自己抢回来。\n它没有回头。它继续沉，你记下了它去的大致方向，代价是你这一程的余量和一身冷汗。",
               "oxygenTurnCost": 4,
-              "deltas": { "sanity": -9, "stamina": -4 },
-              "setProfileFlags": ["story.ch1.whale_sighting.3", "story.ch1.whale_search_ready"]
+              "deltas": {
+                "sanity": -9,
+                "stamina": -4
+              },
+              "setProfileFlags": [
+                "story.ch1.whale_sighting.3",
+                "story.ch1.whale_search_ready"
+              ]
             }
           }
         },
@@ -163,20 +237,32 @@
           "outcome": {
             "text": "你不跟。你把它沉下去的那条线记准——方位、深度、它交出自己的那一刻——然后回航。\n你带回去的不是一具尸体，是一个坐标。下面有样东西在等着被找到，你现在知道大概在哪儿。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -3 },
-            "setProfileFlags": ["story.ch1.whale_sighting.3", "story.ch1.whale_search_ready"]
+            "deltas": {
+              "sanity": -3
+            },
+            "setProfileFlags": [
+              "story.ch1.whale_sighting.3",
+              "story.ch1.whale_search_ready"
+            ]
           }
         }
       ]
     },
     {
       "id": "whalefall.sighting_wreck",
-      "depthRange": [34, 50],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        34,
+        50
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 3,
       "cooldown": 8,
       "oncePerRun": true,
-      "forbiddenFlags": ["story.ch1.whale_sighting.wreck"],
+      "forbiddenFlags": [
+        "story.ch1.whale_sighting.wreck"
+      ],
       "title": "塌口外的影",
       "body": "你升到墓园上方那道塌口的边缘——沙子塌进蓝里的地方，所有沉船的船首都指着这儿。\n塌口外，深水里，有一块更黑的影从远处横过。太远了，看不清，但你认得那种「大」——不是一条鱼该有的大，是你只在更外面的水里见过的那种大。\n那些船首指的方向，和那块影走的方向，是同一个。",
       "tone": "cosmic",
@@ -190,15 +276,23 @@
             "onSuccess": {
               "text": "你扒着塌口的缘，盯住那块远影。它走它的，不进来——它属于塌口外面那片更深的水，墓园只是它路过的边。\n你忽然懂了这片墓园为什么都朝着一个方向：不是洋流。是这些沉了的东西，到最后，都顺着同一道坡，往同一个深处去。和那块影一个去向。你把这件事记下，没敢深想。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 },
+              "deltas": {
+                "sanity": -5
+              },
               "loreEntry": "lore.whalefall.sighting_wreck",
-              "setProfileFlags": ["story.ch1.whale_sighting.wreck"]
+              "setProfileFlags": [
+                "story.ch1.whale_sighting.wreck"
+              ]
             },
             "onFailure": {
               "text": "你盯着那块影看得太久。它没有靠近，可你越看越觉得整片墓园都在往塌口那边轻轻地滑——船，沙，还有你。\n你抓住一截断龙骨稳住自己，回过神时已经比刚才低了几米。那块影早不见了，只剩所有船首，还指着它去的方向。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -10 },
-              "setProfileFlags": ["story.ch1.whale_sighting.wreck"]
+              "deltas": {
+                "sanity": -10
+              },
+              "setProfileFlags": [
+                "story.ch1.whale_sighting.wreck"
+              ]
             }
           }
         },
@@ -208,15 +302,22 @@
           "outcome": {
             "text": "你退离那道往深里塌的缘，回到浅处的残骸间。\n那块影你只看了一眼，但它会留在你今晚的脑子里：墓园外面，更深的地方，有更大的东西，也在往下去。这片海里，所有东西最后都朝下走。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -3 },
-            "setProfileFlags": ["story.ch1.whale_sighting.wreck"]
+            "deltas": {
+              "sanity": -3
+            },
+            "setProfileFlags": [
+              "story.ch1.whale_sighting.wreck"
+            ]
           }
         }
       ]
     },
     {
       "id": "whalefall.search",
-      "depthRange": [0, 0],
+      "depthRange": [
+        0,
+        0
+      ],
       "zoneTags": [],
       "weight": 0,
       "title": "顺着那条线下去",
@@ -229,18 +330,25 @@
           "outcome": {
             "text": "你把自己交给下沉，跟着那股越来越浓的味道走。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -3 },
+            "deltas": {
+              "sanity": -3
+            },
             "triggerEventId": "whalefall.found"
           }
         },
         {
           "id": "sonar_ahead",
           "label": "先打声呐，看下面有什么",
-          "visibleIf": { "kind": "hasEquipment", "slot": "sonar" },
+          "visibleIf": {
+            "kind": "hasEquipment",
+            "slot": "sonar"
+          },
           "outcome": {
             "text": "你朝下打了一记声呐。回波回来一个大东西的轮廓，伏在海床上，不动——比回波该有的样子更软，边缘毛糙，像声呐打在一团正在散开的东西上。\n你收起声呐，继续往那个轮廓沉。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -4 },
+            "deltas": {
+              "sanity": -4
+            },
             "triggerEventId": "whalefall.found"
           }
         },
@@ -257,7 +365,10 @@
     },
     {
       "id": "whalefall.found",
-      "depthRange": [0, 0],
+      "depthRange": [
+        0,
+        0
+      ],
       "zoneTags": [],
       "weight": 0,
       "title": "鲸落",
@@ -270,10 +381,22 @@
           "outcome": {
             "text": "你悬在它上方，把这一切看进眼里：一个尽头，同时是几百样东西的开头。\n你把坐标记死，给这个地方起了个名字，写在写字板上。回去的路很长，你一路都在想中层里那窝跟着它走的小东西——它们当时担心的那个问题，现在有答案了。答案就在你脚下，正热闹着。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 2 },
+            "deltas": {
+              "sanity": 2
+            },
             "loreEntry": "lore.whalefall.found",
-            "loot": [{ "itemId": "item.whalefall_log", "qty": [1, 1] }],
-            "setProfileFlags": ["story.ch1.whalefall_found"],
+            "loot": [
+              {
+                "itemId": "item.whalefall_log",
+                "qty": [
+                  1,
+                  1
+                ]
+              }
+            ],
+            "setProfileFlags": [
+              "story.ch1.whalefall_found"
+            ],
             "endDive": "forceAscend"
           }
         },
@@ -283,10 +406,22 @@
           "outcome": {
             "text": "你沉到它身边。近了才看清那层「在动的沙」是什么——是数不清的、各管各的小生命，每一个都在它身上取一点、还一点。没有一样在哀悼它。哀悼是你带下来的东西，这里用不上。\n你在它的阴影里待了一会儿，比你计划的久。然后你记下坐标，上浮。你会再来——这地方往后还会变，你想看它变成什么。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -3 },
+            "deltas": {
+              "sanity": -3
+            },
             "loreEntry": "lore.whalefall.found",
-            "loot": [{ "itemId": "item.whalefall_log", "qty": [1, 1] }],
-            "setProfileFlags": ["story.ch1.whalefall_found"],
+            "loot": [
+              {
+                "itemId": "item.whalefall_log",
+                "qty": [
+                  1,
+                  1
+                ]
+              }
+            ],
+            "setProfileFlags": [
+              "story.ch1.whalefall_found"
+            ],
             "endDive": "forceAscend"
           }
         }
@@ -294,8 +429,13 @@
     },
     {
       "id": "whalefall.mobile_scavengers",
-      "depthRange": [80, 110],
-      "zoneTags": ["whalefall"],
+      "depthRange": [
+        80,
+        110
+      ],
+      "zoneTags": [
+        "whalefall"
+      ],
       "weight": 3,
       "cooldown": 6,
       "title": "先到的",
@@ -308,7 +448,9 @@
           "outcome": {
             "text": "你看了很久。它们有一种不慌的秩序——不是谁让谁，是肉太多，多到不必抢。盲鳗负责里头，睡鲨负责大块，端足类负责把剩下的抹平。\n几个月，也许一年，它们能把这座山吃到只剩骨头。你今天看到的是第一道工序。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": 3 },
+            "deltas": {
+              "sanity": 3
+            },
             "loreEntry": "lore.whalefall.mobile_scavengers"
           }
         },
@@ -321,12 +463,17 @@
             "onSuccess": {
               "text": "你贴着那座软塌的侧壁游，从盲鳗和端足类中间穿过去。它们绕开你，不是怕，是你挡了它们的活路，它们绕过去接着干。\n你穿出来的时候，装具上沾了一层腥滑的东西。你是这片热闹里唯一不吃它的客人。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -2 }
+              "deltas": {
+                "sanity": -2
+              }
             },
             "onFailure": {
               "text": "你穿进去才发现端足类有多密。它们不咬你，可它们糊住你的面镜，你的灯只剩一拳远，四面八方都是细小的撞击和蠕动。\n你凭气泡的方向钻出来，出口不在你以为的那侧。出来后你抹了半天面镜。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -6, "stamina": -3 }
+              "deltas": {
+                "sanity": -6,
+                "stamina": -3
+              }
             }
           }
         },
@@ -342,8 +489,13 @@
     },
     {
       "id": "whalefall.enrichment",
-      "depthRange": [80, 110],
-      "zoneTags": ["whalefall"],
+      "depthRange": [
+        80,
+        110
+      ],
+      "zoneTags": [
+        "whalefall"
+      ],
       "weight": 3,
       "cooldown": 6,
       "oncePerRun": true,
@@ -357,7 +509,9 @@
           "outcome": {
             "text": "你贴着泥面慢慢移，看那一圈生命怎么排布——离尸体越近的越耐脏、越凶猛，往外一圈圈淡下去，到某条线外，又是原来那种空荡荡的海床。\n这条线就是这具尸体的影响力边界。它死了一年，还在划着自己的地盘。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": 2 },
+            "deltas": {
+              "sanity": 2
+            },
             "loreEntry": "lore.whalefall.enrichment"
           }
         },
@@ -381,8 +535,13 @@
     },
     {
       "id": "whalefall.chemosynthetic",
-      "depthRange": [80, 110],
-      "zoneTags": ["whalefall"],
+      "depthRange": [
+        80,
+        110
+      ],
+      "zoneTags": [
+        "whalefall"
+      ],
       "weight": 3,
       "cooldown": 8,
       "oncePerRun": true,
@@ -399,13 +558,17 @@
             "onSuccess": {
               "text": "你把灯贴上去，看那些红须随水轻摆，看白菌毯在骨头上慢慢铺。它们不靠太阳——太阳的光从来没到过这里。它们把一头死了的巨兽，和一架冷骨头，过成了一座小小的、烧着化学的火。\n你在热液口见过同样的把戏：生命不一定要光，生命只要一个能拆开的化学键。原来死亡也能给出这样一个键。你把这一幕看进去，看得很深。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -3 },
+              "deltas": {
+                "sanity": -3
+              },
               "loreEntry": "lore.whalefall.osedax"
             },
             "onFailure": {
               "text": "你贴得很近，近到那股从骨缝里渗出来的味道盖过了一切——甜的、硫的、说不清的，是化学在你鼻子里直接发生。\n你撑了一会儿，退开。那架骨头不在乎你撑不撑得住；它正被慢慢拆开，拆成下一样东西的养分，这件事不需要你看着也照样进行。",
               "oxygenTurnCost": 4,
-              "deltas": { "sanity": -8 },
+              "deltas": {
+                "sanity": -8
+              },
               "loreEntry": "lore.whalefall.osedax"
             }
           }
@@ -416,7 +579,9 @@
           "outcome": {
             "text": "你在骨架边上悬着，关掉多余的动作。\n红须摆，菌毯亮着一种很淡的白，沉积一点点把骨头往下收。再过些年，连骨头都会没，这片海床会忘了这儿曾经落下过一座山。但忘之前，它先把这座山，分给了所有来得及赶到的东西。\n你上升的时候，心里那点重量轻了一些。你说不清为什么。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": 4 }
+            "deltas": {
+              "sanity": 4
+            }
           }
         },
         {
@@ -424,6 +589,236 @@
           "label": "不惊动这片，绕开骨架",
           "outcome": {
             "text": "你绕开那架长着红须的骨头，远远地走。\n那是它最后的形状了，也是它最长久的形状——肉是别人的几个月，骨头是别人的几十年。你把灯收回来，把这片黑还给它。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "whalefall.the_sleeper",
+      "depthRange": [
+        80,
+        110
+      ],
+      "zoneTags": [
+        "whalefall"
+      ],
+      "weight": 2,
+      "cooldown": 10,
+      "oncePerRun": true,
+      "title": "转圈的",
+      "body": "你灯能照到的最外圈，有一条鲨鱼在转圈。\n太大——比你见过的每一条都大，头顶你的灯，慢慢地压在水里，动得像这里的水比别处稠。不是在巡逻，不是在等吃。这个尺寸的东西不需要等，它可以随时把想要的东西算进去。\n它就是在转圈。它不急。它已经在这里很久了，在你来之前就在了，走了还会继续在这里。\n一头鲸的死，能养一条鲨鱼好几年。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "drift_alongside",
+          "label": "慢慢跟着它转的外圈走——蹭着它的方向",
+          "check": {
+            "stat": "stamina",
+            "dc": 44,
+            "onSuccess": {
+              "text": "你跟着它的速度放慢，把自己的位置保持在外圈。它没有注意你——或者它注意到了，只是不在乎，两者对你来说结果一样。你跟了它大半圈，你先离开了，它继续转。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -2
+              }
+            },
+            "onFailure": {
+              "text": "你跟了一段，脚蹼踢了一下，水流扰了。它头慢慢转过来，两只眼睛从那张宽脸的两侧看过来，速度还是那么慢，但方向对着你了。你停住了，等了十秒，它才重新掉转，继续转它的圈。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -7,
+                "stamina": -3
+              }
+            }
+          }
+        },
+        {
+          "id": "watch_one_circuit",
+          "label": "悬住，看它走完一整圈",
+          "outcome": {
+            "text": "你数了大概四分钟，它才走完一圈。它一圈有多大，你到了这里才知道。圈里所有的东西都是它的，按它的节奏转，在它允许的范围内工作。你是那一圈边缘多余的一个观察者。",
+            "oxygenTurnCost": 2,
+            "deltas": {
+              "sanity": -3
+            }
+          }
+        },
+        {
+          "id": "light_off",
+          "label": "关灯——在黑暗里等它转走",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "黑暗里你把它算进去：声呐里有一道弧形回波，从你右侧慢慢扫过，然后前方，然后左侧，然后从你身后走了。你重新开灯，外圈空了。它去了你的灯照不到的地方。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": 2
+              }
+            },
+            "onFailure": {
+              "text": "黑暗里你什么都没有了，只有呼吸声和调节器。然后你听到了水流，从你右侧扫过，它转圈压出来的洋流，三四米外的位置，你数到了脉冲的节律，然后你开了灯，比你计划的早开了。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -8
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "whalefall.the_outline",
+      "depthRange": [
+        80,
+        110
+      ],
+      "zoneTags": [
+        "whalefall"
+      ],
+      "weight": 2,
+      "cooldown": 10,
+      "oncePerRun": true,
+      "title": "骨架还是鲸",
+      "body": "肉差不多干净了。剩骨头，半埋在泥里，有些肋骨已经被食骨虫覆了一层红须。\n但你的眼睛不肯把这当骨头看。你的眼睛一直在读这个排列——肋骨的弧线，脊柱的残段，头骨大概在那个位置，尾椎散开的地方还认得出尾的形状。你的眼睛坚持说这是一头鲸。\n它已经不是了。可是骨头排成的样子，还是鲸的样子。你没法让你的眼睛停止这件事。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "swim_the_length",
+          "label": "从头骨消失的地方游到尾脊残端——量它有多长",
+          "outcome": {
+            "text": "你从头位游到尾位。比你想的长。你估了一下，二十多米，可能更长，有几段肋骨已经被移走了，你的眼睛在中间自动补了那段。你游回来，数气量，决定继续走。你的眼睛在你回头的时候还在看那个排列，还是读出了鲸。",
+            "oxygenTurnCost": 2,
+            "deltas": {
+              "sanity": -3
+            }
+          }
+        },
+        {
+          "id": "read_the_ribs",
+          "label": "从脊柱往外数肋骨——数它有多大",
+          "check": {
+            "stat": "stamina",
+            "dc": 42,
+            "onSuccess": {
+              "text": "你数了两侧。左侧十四根，右侧十二根——有两根右肋不见了，被先到的那批从关节处咬走了。你写进本子。剩下的骨头比你写下来的多，骨头是什么，你写进去的是一头鲸活着时候的形状。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -2
+              }
+            },
+            "onFailure": {
+              "text": "你数到第九根的时候，脑子替你补了一根消失的肋骨，你数了那根，然后下一根，然后你意识到你刚才在数一根不存在的骨头。你从头再数，又数乱了，因为有些骨头消失了，有些移位了。你放弃数了，但那个排列还是读成鲸。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -6,
+                "stamina": -2
+              }
+            }
+          }
+        },
+        {
+          "id": "keep_distance",
+          "label": "从外圈绕过去，不靠近",
+          "outcome": {
+            "text": "你绕着走。即便在外圈，你的眼睛还是在读那个形状。骨头之间的空隙是它的肺腔，那道弧是脊柱，那一片散开的是尾椎。你绕出视野之后，那个读法还停了一会儿。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "whalefall.the_plume",
+      "depthRange": [
+        80,
+        110
+      ],
+      "zoneTags": [
+        "whalefall"
+      ],
+      "weight": 3,
+      "cooldown": 8,
+      "title": "闻到之前",
+      "body": "几分钟前水就不对了。\n你说不清楚——颗粒方向微微偏了一度，水里有一点什么，厚的，说不清楚的，你调节器呼出来的气里有一层你以前没有在中层水里闻到过的气味。\n然后尸体出现在你灯下：正在被工作的，活物密密麻麻。你被气味梯度领过来的，领了好几分钟，领着你朝它走，你没有决定这件事。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "trace_back",
+          "label": "往来路游回一段，标记气味梯度从哪里开始变",
+          "outcome": {
+            "text": "你原路回去了大概二十米，颗粒又是均匀的方向了，水的密度又是正常的。你记下来：梯度从这里开始，到尸体，大概二十米的扩散半径。你回到尸体边，那气味更浓了，继续领着你靠近。那些正在工作的东西闻到它比你早得多。",
+            "oxygenTurnCost": 2,
+            "deltas": {
+              "sanity": 2
+            },
+            "loreEntry": "lore.whalefall.the_plume"
+          }
+        },
+        {
+          "id": "lean_in",
+          "label": "靠近，仔细看这里正在干活的东西",
+          "outcome": {
+            "text": "你靠近了，把灯打进那片忙碌里。每一种东西都走自己的路线，占自己的资源：端足类在最外层，盲鳗在最里面，睡鲨在外圈转，蟹在骨和肉之间的间隙里钻。你只要在这个系统里找到自己的位置，就能分到一份。你没有，你在外面看。",
+            "oxygenTurnCost": 1
+          }
+        },
+        {
+          "id": "check_bearing",
+          "label": "查一下来路的方向——看你偏了多少",
+          "outcome": {
+            "text": "你的指南针说你偏了大概三十度。你被气味拉偏了三十度，走了大概五分钟，你的航行记录上这五分钟是折向的，朝着这里的，不是你本来要去的方向。你把来路记进本子，重新校了方向。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "whalefall.the_years",
+      "depthRange": [
+        80,
+        110
+      ],
+      "zoneTags": [
+        "whalefall"
+      ],
+      "weight": 2,
+      "cooldown": 10,
+      "oncePerRun": true,
+      "title": "两种时间",
+      "body": "你在这里二十分钟了。\n骨架上的食骨蠕虫需要十年才能把骨里的油耗光，它们现在还在长，说明它们来了至少几年。肉被吃干净之前，先到的那批在这里花了一两年。这头鲸活着的时候，大概活了六十年，才沉下来。\n你气瓶里的时间，和这里流动的时间，不是同一种时间。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "do_the_math",
+          "label": "把年份写进本子，试着排一个时间线",
+          "outcome": {
+            "text": "你写：鲸，约六十年。沉底，一年。先到的那批，一两年。现在，食骨蠕虫阶段，至少三到五年，可能更长。你气瓶里剩下：大概三十五分钟。\n你把这个对比写在一行里，然后合上本子。纸上的空间不够用来表达这条线两端的距离。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -2
+            }
+          }
+        },
+        {
+          "id": "let_it_be",
+          "label": "不算了——让这个尺度是它自己就好",
+          "outcome": {
+            "text": "你没有试图把它装进你能理解的东西里。那个时间线在这里，食骨蠕虫在骨头上继续工作，它们会在这里再工作十年，这跟你的二十分钟都是真的，它们只是不适合放在一起比。你继续走，带着这件事，没有解决它。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": 3
+            }
+          }
+        },
+        {
+          "id": "count_your_gas",
+          "label": "看气表，按自己的时间决定下一步",
+          "outcome": {
+            "text": "气表还有很多，你决定再待几分钟。你用你的时间在这里待着，这里的时间继续按它自己的节律走。两种时间同时在这里发生，你只带走了其中一种的一小段。",
             "oxygenTurnCost": 1
           }
         }

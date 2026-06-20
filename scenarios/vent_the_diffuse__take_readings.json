@@ -1,0 +1,19 @@
+{
+  "_comment": "热液·弥散渗流·取数据（无检定·cosmic·氧-2 理智-2）",
+  "eventId": "vent.the_diffuse",
+  "depth": 150,
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "choices": [
+    "take_readings"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -2
+    }
+  }
+}

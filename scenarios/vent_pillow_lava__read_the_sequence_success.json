@@ -1,0 +1,25 @@
+{
+  "_comment": "热液·枕状熔岩·读地层成功（体力 vs 40·高体力·氧-2·lore 枕状熔岩地质）",
+  "eventId": "vent.pillow_lava",
+  "depth": 140,
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "stats": {
+    "stamina": 80
+  },
+  "choices": [
+    "read_the_sequence"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "loreAdded": [
+      "lore.vent.pillow_lava"
+    ],
+    "statsDelta": {
+      "oxygen": -2
+    }
+  }
+}
