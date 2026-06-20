@@ -1,0 +1,11 @@
+{
+  "mainBranch": "main",
+  "branchPrefix": "feat/",
+  "worktreeRoot": ".worktrees",
+  "gate": {
+    "full": "npm run regress",
+    "sandbox": "npm run regress -- --only typecheck,check"
+  },
+  "reuseNodeModules": true,
+  "lockStaleMinutes": 30
+}

@@ -1,0 +1,6 @@
+#!/bin/sh
+# psm 车道边界门（方案 C）。fail-open：缺 node/脚本绝不挡提交。
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+[ -f "$root/scripts/psm.mjs" ] || exit 0
+command -v node >/dev/null 2>&1 || exit 0
+exec node "$root/scripts/psm.mjs" hook pre-commit
