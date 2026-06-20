@@ -11,6 +11,7 @@
       "equipment": {
         "slot": "tool",
         "baseLevel": 1,
+        "modSlot": true,
         "effects": [
           {
             "kind": "unlocksAction",
@@ -136,6 +137,99 @@
       "grantsCapability": [
         "mine"
       ]
+    },
+    {
+      "id": "item.weapon.rescue_axe",
+      "name": "HD-3 救援斧",
+      "category": "equipment",
+      "rarity": "uncommon",
+      "description": "消防救援用的重型短斧，钢头开刃、另一侧是撬口。劈得开舱门，也劈得开冲上来的东西——但沉，挥一下要用上半个身子。",
+      "weight": 5,
+      "sellPrice": 60,
+      "equipment": {
+        "slot": "tool",
+        "baseLevel": 1,
+        "modSlot": true,
+        "effects": [
+          {
+            "kind": "weaponDamage",
+            "value": 4
+          },
+          {
+            "kind": "unlocksAction",
+            "actionId": "action.axe_chop"
+          },
+          {
+            "kind": "unlocksAction",
+            "actionId": "action.axe_pry"
+          }
+        ]
+      }
+    },
+    {
+      "id": "item.weapon.pneumatic_pistol",
+      "name": "AP-12 气动短枪",
+      "category": "equipment",
+      "rarity": "uncommon",
+      "description": "压缩气驱动的短管手枪，打一枚气动弹。声不算大，水里中距离能咬下一口肉——只是弹匣装不了几发。",
+      "weight": 3,
+      "sellPrice": 75,
+      "equipment": {
+        "slot": "ranged",
+        "baseLevel": 1,
+        "effects": [
+          {
+            "kind": "weaponDamage",
+            "value": 3
+          },
+          {
+            "kind": "unlocksAction",
+            "actionId": "action.fire_pneumatic"
+          }
+        ]
+      }
+    },
+    {
+      "id": "item.weapon.harpoon_rifle",
+      "name": "PR-40 鱼叉步枪",
+      "category": "equipment",
+      "rarity": "rare",
+      "description": "长管鱼叉发射器，一杆能贯穿厚皮的大家伙。后坐和炸响会把整片水里的东西都惊起来——你最好一击就够。",
+      "weight": 6,
+      "sellPrice": 120,
+      "equipment": {
+        "slot": "ranged",
+        "baseLevel": 1,
+        "effects": [
+          {
+            "kind": "weaponDamage",
+            "value": 6
+          },
+          {
+            "kind": "unlocksAction",
+            "actionId": "action.fire_harpoon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "item.shield.basic",
+      "name": "防护盾",
+      "category": "equipment",
+      "rarity": "common",
+      "description": "一面带握把的硬质护盾，挡在身前能卸掉啃咬的力道。占着副手——拿了它就腾不出手开枪。",
+      "weight": 4,
+      "sellPrice": 50,
+      "equipment": {
+        "slot": "ranged",
+        "baseLevel": 1,
+        "effects": [
+          {
+            "kind": "physicalArmor",
+            "value": 3
+          }
+        ]
+      }
     },
     {
       "id": "item.tank.bluefin_mk1",
@@ -840,6 +934,101 @@
         "effectOnUse": {
           "text": "冷光在水里炸开一小片惨白。"
         }
+      }
+    },
+    {
+      "id": "item.ammo.pneumatic",
+      "name": "气动弹",
+      "category": "consumable",
+      "rarity": "common",
+      "description": "AP-12 气动短枪用的弹，一匣装 8 发。港口能补。",
+      "weight": 0.1,
+      "sellPrice": 4,
+      "decay": "consumable",
+      "stackSize": 8,
+      "consumable": {
+        "usableIn": [
+          "combat"
+        ],
+        "effectOnUse": {}
+      }
+    },
+    {
+      "id": "item.ammo.harpoon",
+      "name": "鱼叉弹",
+      "category": "consumable",
+      "rarity": "common",
+      "description": "PR-40 鱼叉步枪用的钢叉，一匣装 30 发。港口能补。",
+      "weight": 0.2,
+      "sellPrice": 3,
+      "decay": "consumable",
+      "stackSize": 30,
+      "consumable": {
+        "usableIn": [
+          "combat"
+        ],
+        "effectOnUse": {}
+      }
+    },
+    {
+      "id": "item.mod.poison_sac",
+      "name": "毒囊",
+      "category": "weaponMod",
+      "rarity": "uncommon",
+      "description": "从某种刺胞动物身上取下的毒囊，绑在刃口上。命中时有几率把毒挤进伤口——它会一点点烂下去。",
+      "weight": 0.3,
+      "sellPrice": 35,
+      "decay": "consumable",
+      "weaponMod": {
+        "effect": "poison",
+        "chance": 0.4,
+        "dmgPerTurn": 2,
+        "turns": 3
+      }
+    },
+    {
+      "id": "item.mod.barb_kit",
+      "name": "倒刺套件",
+      "category": "weaponMod",
+      "rarity": "uncommon",
+      "description": "一排倒钩焊上刃背，拔出来时连肉带皮一起撕。命中时有几率造成持续撕裂——比寻常伤口淌得久。",
+      "weight": 0.3,
+      "sellPrice": 35,
+      "decay": "durable",
+      "weaponMod": {
+        "effect": "barb",
+        "chance": 0.35,
+        "dmgPerTurn": 3,
+        "turns": 3
+      }
+    },
+    {
+      "id": "item.mod.silent_wrap",
+      "name": "静音套",
+      "category": "weaponMod",
+      "rarity": "uncommon",
+      "description": "缠在握柄与刃根的吸声蒙皮，吞掉挥击搅起的水声。近战时不再惊动旁边的东西。",
+      "weight": 0.3,
+      "sellPrice": 40,
+      "decay": "durable",
+      "weaponMod": {
+        "effect": "silent"
+      }
+    },
+    {
+      "id": "item.mod.shock_core",
+      "name": "放电芯",
+      "category": "weaponMod",
+      "rarity": "rare",
+      "description": "一枚小型蓄电芯，接在刃上。命中的一瞬放一道电——费电，但额外咬下一口。电量见底就只是块铁。",
+      "weight": 0.3,
+      "sellPrice": 50,
+      "decay": "durable",
+      "weaponMod": {
+        "effect": "shock",
+        "chance": 1,
+        "bonusDamage": 6,
+        "powerCost": 10
       }
     },
     {

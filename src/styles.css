@@ -2313,6 +2313,54 @@ html, body, #root {
   flex-direction: column;
   gap: 10px;
 }
+/* 负重档位条（武器系统·作者 2026-06-20）：数值 + 档位文字·颜色随档位（绿/黄/橙/红）。 */
+.equip-weight {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+.equip-weight-label { opacity: 0.7; }
+.equip-weight-val { font-weight: 600; font-variant-numeric: tabular-nums; }
+.equip-weight-tier { font-weight: 600; }
+.equip-weight-warn { opacity: 0.85; font-size: 0.78rem; }
+.equip-weight.wt-light { border-color: #3f7d4f; }
+.equip-weight.wt-light .equip-weight-tier { color: #6fcf86; }
+.equip-weight.wt-medium { border-color: #8a7d3a; }
+.equip-weight.wt-medium .equip-weight-tier { color: #e0c75a; }
+.equip-weight.wt-heavy { border-color: #9a6a32; }
+.equip-weight.wt-heavy .equip-weight-tier { color: #f0a35a; }
+.equip-weight.wt-overloaded { border-color: #a33; background: rgba(170, 51, 51, 0.12); }
+.equip-weight.wt-overloaded .equip-weight-tier,
+.equip-weight.wt-overloaded .equip-weight-warn { color: #f06a6a; }
+/* 武器改装组件区（武器系统·作者 2026-06-20）。 */
+.equip-mod-section {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.equip-mod-head { display: flex; justify-content: space-between; align-items: baseline; }
+.equip-mod-title { font-weight: 600; font-size: 0.85rem; }
+.equip-mod-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.equip-mod-name { font-size: 0.85rem; }
+.equip-mod-btn {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  background: transparent;
+  color: inherit;
+}
+.equip-mod-btn:disabled { opacity: 0.45; cursor: default; }
+.equip-mod-note { font-size: 0.76rem; }
+.equip-mod-dev { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
 .equip-doll {
   display: grid;
   grid-template-columns: 72px 1fr 72px;

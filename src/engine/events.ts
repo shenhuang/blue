@@ -13,6 +13,7 @@ import type {
 } from '@/types';
 import { addToInventory, appendLog, clampStats } from './state';
 import { getItemDef } from './items';
+import { equipmentUnlocksAction } from './equipment';
 import { EQUIPMENT_SLOTS } from '@/types/items';
 import { restoreLighthouse, advanceOutpost } from './lighthouses';
 import { lampPowerDrain, alertDelta, ALERT_MAX } from './clarity';
@@ -44,7 +45,10 @@ export function evalCondition(state: GameState, c: Condition): boolean {
   const profile = state.profile;
   switch (c.kind) {
     case 'hasEquipment':
-      return run !== null && run.equipment[c.slot] !== null;
+      if (run === null || run.equipment[c.slot] === null) return false;
+      // actionId（可选·武器解锁行动门·武器系统 2026-06-20）：进一步要求该槽的件解锁了指定行动
+      // （持救援斧解锁 action.axe_pry ⇒ 才显示「撬门/破障」选项）。无 actionId ＝ 旧语义（槽非空即可·逐字节不变）。
+      return c.actionId === undefined || equipmentUnlocksAction(run.equipment, c.slot, c.actionId);
     case 'hasItem':
       return ownedQty(state, c.itemId) >= (c.minQty ?? 1);
     case 'notHasItem':

@@ -130,7 +130,13 @@ export interface LootRoll {
 
 /** 显示条件（visibleIf） */
 export type Condition =
-  | { kind: 'hasEquipment'; slot: EquipmentSlot }
+  /**
+   * 装备槽门控。slot 单独给＝该槽非空即满足（旧语义·逐字节不变）。
+   * 可选 actionId（武器解锁行动门·作者 2026-06-20）：进一步要求该槽装的件**解锁了指定行动**
+   * （equipment.effects 含 `{kind:'unlocksAction', actionId}`·见 engine/equipment.ts::equipmentUnlocksAction）。
+   * 让「撬开舱门 / 破障」类事件选项只在持救援斧（解锁 action.axe_pry）时可见——数据驱动·不硬编码物品 id。
+   */
+  | { kind: 'hasEquipment'; slot: EquipmentSlot; actionId?: string }
   | { kind: 'hasItem'; itemId: string; minQty?: number }
   | { kind: 'notHasItem'; itemId: string; minQty?: number }
   | { kind: 'statAtLeast'; stat: Stat; value: number }

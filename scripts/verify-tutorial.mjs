@@ -72,7 +72,7 @@ function warn(cond, msg) { if (!cond) warnings.push(msg); }
 // —— 1. 物品 ——
 for (const item of items) {
   err(typeof item.id === 'string' && item.id, `item missing id`);
-  err(['equipment', 'consumable', 'material', 'story', 'other', 'currency'].includes(item.category),
+  err(['equipment', 'consumable', 'material', 'story', 'weaponMod', 'other', 'currency'].includes(item.category),
     `${item.id}: bad category`);
 }
 

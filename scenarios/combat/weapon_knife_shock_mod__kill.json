@@ -1,0 +1,20 @@
+{
+  "_comment": "武器系统·放电芯 mod（作者 2026-06-20）：主手刀装 shock_core·命中附加伤害并扣电（起手电量 40·足）。knife_slash 连击击杀（轻装·只测 mod 附伤路径不串其它机制）。seed=3 确定性。比无 mod 同敌更快击杀。",
+  "combatId": "combat.reef_grouper_solo",
+  "seed": 3,
+  "equipment": { "tool": { "itemId": "item.dive_knife.standard", "slot": "tool", "level": 1, "mod": "item.mod.shock_core" } },
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 2,
+    "survived": true,
+    "finalPhase": "dive",
+    "enemiesAlive": 0,
+    "lootGained": { "item.grouper_maw": 1 }
+  }
+}

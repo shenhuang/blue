@@ -1,0 +1,20 @@
+{
+  "_comment": "武器系统·倒刺套件 mod（作者 2026-06-20）：主手刀装 barb_kit·命中概率施加撕裂(bleeding DoT·每回合掉血)。seed=2 下首击触发撕裂·DoT 在敌人回合末持续掉血、加速击杀（比无 mod 同敌 4 turns 更快）。验证敌人 DoT 状态机端到端（中毒/撕裂走 EnemyStatus·非玩家 run.injuries）。",
+  "combatId": "combat.reef_grouper_solo",
+  "seed": 2,
+  "equipment": { "tool": { "itemId": "item.dive_knife.standard", "slot": "tool", "level": 1, "mod": "item.mod.barb_kit" } },
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 3,
+    "survived": true,
+    "finalPhase": "dive",
+    "enemiesAlive": 0,
+    "lootGained": { "item.grouper_maw": 1 }
+  }
+}

@@ -21,6 +21,7 @@
       "hostility": "territorial",
       "initialStance": "alerted",
       "aiPattern": "aggressor",
+      "hitBonus": 0.1,
       "attacks": [
         {
           "id": "octopus.coil",

@@ -20,6 +20,20 @@ export function allItems(): ItemDef[] {
   return ITEMS;
 }
 
+/**
+ * 某物品 qty 件占用的背包格数（**单一来源**·dive-start::applyCarryItems / carry 容量 / UI 行前装包共用·作者 2026-06-20）。
+ * - 可叠道具（`stackSize` 设了·弹药）：按 ceil(qty / stackSize)「弹匣数」——一匣（≤stackSize 发）占一格，
+ *   可带多匣（多格），但一匣不无限（作者：手枪 8 / 步枪 30）。
+ * - 其余：slotsRequired×qty（旧口径·逐字节不变——非弹药道具行为不变）。
+ * 散在 dive-start / SeaChartView 的 `slotsRequired×qty` 收口到这里，加可叠道具只改此处（维护性）。
+ */
+export function slotsForItem(itemId: string, qty: number): number {
+  if (qty <= 0) return 0;
+  const def = getItemDef(itemId);
+  if (def?.stackSize && def.stackSize > 0) return Math.ceil(qty / def.stackSize);
+  return (def?.slotsRequired ?? 1) * qty;
+}
+
 // 「可读文献」单一来源规则（#140 续·作者 2026-06-18「提供文字信息的道具应在日志里」）：
 // 一件道具是「文献」当且仅当它通过 story.unlocksLoreEntry 关联一条见闻——这类道具携带可读文本
 // （航海日志 / 怀表刻字 / 泡水的日志…），在港口物品栏的「日志 tab · 航海志」里陈列、点开读文。

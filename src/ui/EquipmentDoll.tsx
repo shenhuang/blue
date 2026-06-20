@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { GameState, EquipmentInstance } from '@/types';
 import type { EquipmentSlot, EquipmentEffect } from '@/types/items';
-import { getItemDef } from '@/engine/items';
+import { getItemDef, allItems } from '@/engine/items';
 import { createStarterLoadout } from '@/engine/state';
 import {
   nextUpgradeStep,
@@ -10,10 +10,19 @@ import {
   craftableEquipmentForSlot,
   craftEquipment,
   isSlotUnlocked,
+  totalLoadoutWeight,
+  loadoutWeightTier,
+  installMod,
+  canInstallMod,
+  devUpgradeEquipment,
+  devCraftEquipment,
+  devInstallMod,
+  type WeightTier,
 } from '@/engine/equipment';
 import { UpgradeCostView } from './UpgradeCost';
 import { UpgradeEffectDelta, emptyEffectSet, type EffectSet } from './UpgradeEffectDelta';
 import { PanelShell } from './PanelShell';
+import { DEV_TOOLS } from './devMode';
 
 // 装备纸娃娃（物品栏与装备 SPEC §4·作者 2026-06-19 模板·2026-06-20 换装+独立框重构）：中间人像（占位·之后放图），
 // 左列 4（潜水衣/气瓶/潜水灯/声呐）· 右列 2（武器主/副·下沉与潜水灯/声呐对齐）· 底排 3 饰品（升级解锁）。
@@ -37,6 +46,14 @@ const SLOT_LABEL: Record<EquipmentSlot, string> = {
   charm: '饰品 1',
   charm2: '饰品 2',
   charm3: '饰品 3',
+};
+
+// 负重档位文字（武器系统·作者 2026-06-20）：颜色由 CSS .wt-<tier> 渲染（绿/黄/橙/红）。
+const WEIGHT_TIER_LABEL: Record<WeightTier, string> = {
+  light: '轻装',
+  medium: '中装',
+  heavy: '重装',
+  overloaded: '过载',
 };
 
 function describeEffect(e: EquipmentEffect): string {
@@ -186,8 +203,20 @@ export function EquipmentDoll({
     );
   }
 
+  const totalWeight = totalLoadoutWeight(loadout);
+  const wTier = loadoutWeightTier(loadout);
+
   return (
     <div className="equip-doll-wrap">
+      <div
+        className={`equip-weight wt-${wTier}`}
+        title="负重越重，行动越费力、命中越钝；过载则无法出发与行动。"
+      >
+        <span className="equip-weight-label">负重</span>
+        <span className="equip-weight-val">{totalWeight}</span>
+        <span className="equip-weight-tier">{WEIGHT_TIER_LABEL[wTier]}</span>
+        {wTier === 'overloaded' && <span className="equip-weight-warn">— 卸下些装备才能出发</span>}
+      </div>
       <div className="equip-doll">
         <div className="equip-col left">{LEFT_SLOTS.map(slotCell)}</div>
         <div className="equip-fig" aria-hidden="true">
@@ -243,6 +272,84 @@ function StatList({ itemId, level }: { itemId: string; level: number }) {
       {[...stats.entries()].map(([k, v]) => (
         <span key={k} className="equip-stat-line">{describeStat(k, v)}</span>
       ))}
+    </div>
+  );
+}
+
+/**
+ * 武器改装组件区（武器系统·作者 2026-06-20）：仅当该槽武器 equipment.modSlot===true 时渲染。
+ * 列出仓库里的 weaponMod 组件 + 安装按钮（调 engine/equipment::installMod·消耗组件·旧件不返还）。
+ * 当前仅近战 tool 槽支持（canInstallMod 把关·非 tool 槽不渲染本区）。
+ */
+function ModSection({
+  state,
+  slot,
+  onStateChange,
+}: {
+  state: GameState;
+  slot: EquipmentSlot;
+  onStateChange: (s: GameState) => void;
+}) {
+  const loadout = state.profile.equipment ?? createStarterLoadout();
+  const inst = loadout[slot];
+  const eq = inst ? getItemDef(inst.itemId)?.equipment : undefined;
+  if (!inst || !eq?.modSlot) return null;
+  const current = inst.mod ? getItemDef(inst.mod) : undefined;
+  const ownedMods = state.profile.inventory.filter(
+    (i) => i.qty > 0 && getItemDef(i.itemId)?.category === 'weaponMod',
+  );
+  return (
+    <div className="equip-mod-section">
+      <div className="equip-mod-head">
+        <span className="equip-mod-title">改装组件</span>
+        <span className="dim">{current ? current.name : '未安装'}</span>
+      </div>
+      {current?.description && <p className="dim">{current.description}</p>}
+      {ownedMods.length === 0 ? (
+        !current && <p className="dim">没有可装的改装组件（港口可购买）。</p>
+      ) : (
+        ownedMods.map((m) => {
+          const md = getItemDef(m.itemId);
+          const can = canInstallMod(state.profile, slot, m.itemId).ok;
+          const isCurrent = inst.mod === m.itemId;
+          return (
+            <div key={m.itemId} className="equip-mod-row">
+              <span className="equip-mod-name">
+                {md?.name ?? m.itemId} <span className="dim">×{m.qty}</span>
+              </span>
+              <button
+                type="button"
+                className="equip-mod-btn"
+                disabled={!can || isCurrent}
+                title={md?.description}
+                onClick={() => onStateChange(installMod(state, slot, m.itemId))}
+              >
+                {isCurrent ? '已装' : current ? '替换' : '安装'}
+              </button>
+            </div>
+          );
+        })
+      )}
+      {current && <p className="dim equip-mod-note">已装组件不可拆回——替换会丢弃旧件。</p>}
+      {DEV_TOOLS && (
+        <div className="equip-mod-dev">
+          <span className="dim">dev · 0 成本装任意组件：</span>
+          {allItems()
+            .filter((it) => it.category === 'weaponMod')
+            .map((it) => (
+              <button
+                key={it.id}
+                type="button"
+                className="btn small upgrade-dev-unlock"
+                disabled={inst.mod === it.id}
+                title={it.description}
+                onClick={() => onStateChange(devInstallMod(state, slot, it.id))}
+              >
+                {it.name}
+              </button>
+            ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -311,6 +418,14 @@ export function EquipmentUpgradeBox({
           actionLabel="打造"
           onConfirm={() => onStateChange(craftEquipment(state, craftable.id))}
         />
+        {DEV_TOOLS && (
+          <button
+            className="btn small upgrade-dev-unlock"
+            onClick={() => onStateChange(devCraftEquipment(state, craftable.id))}
+          >
+            测试打造（0 成本）
+          </button>
+        )}
       </div>
     );
   }
@@ -339,6 +454,14 @@ export function EquipmentUpgradeBox({
             actionLabel="改装"
             onConfirm={() => onStateChange(upgradeEquipment(state, slot))}
           />
+          {DEV_TOOLS && (
+            <button
+              className="btn small upgrade-dev-unlock"
+              onClick={() => onStateChange(devUpgradeEquipment(state, slot))}
+            >
+              测试升级（0 成本）
+            </button>
+          )}
         </>
       ) : (
         <>
@@ -346,6 +469,7 @@ export function EquipmentUpgradeBox({
           <p className="dim equip-maxed">已满级。</p>
         </>
       )}
+      <ModSection state={state} slot={slot} onStateChange={onStateChange} />
     </div>
   );
 }

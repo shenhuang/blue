@@ -139,6 +139,9 @@ const SHOP_STOCK_CONSUMABLES: Record<string, number> = {
   'item.decoy_sound': 2,
   'item.decoy_light': 2,
   'item.med_kit': 2,
+  // 弹药（武器系统·作者 2026-06-20）：按发补货；携带占格按弹匣 stackSize（items.ts::slotsForItem）。数值＝提案可调。
+  'item.ammo.pneumatic': 16,
+  'item.ammo.harpoon': 60,
 };
 
 /**
@@ -159,6 +162,22 @@ const SHOP_STOCK_EQUIPMENT: Record<string, number> = {
   'item.suit.camo': 1,
   'item.charm.quiet_pendant': 1,
   'item.charm.spare_cell': 1,
+  // 武器 / 盾（武器系统·作者 2026-06-20）：买进仓库当备件·换装上槽（无 upgradeSteps＝固定件·守 quirk #142）。
+  'item.weapon.rescue_axe': 1,
+  'item.weapon.pneumatic_pistol': 1,
+  'item.weapon.harpoon_rifle': 1,
+  'item.shield.basic': 1,
+};
+
+/**
+ * 武器改装组件货架（武器系统·作者 2026-06-20）：itemId → 每次回港备货上限。
+ * 买进仓库·Otto 装上有 modSlot 的武器（engine/equipment.ts::installMod）。数值＝提案可调。
+ */
+const SHOP_STOCK_MODS: Record<string, number> = {
+  'item.mod.poison_sac': 2,
+  'item.mod.barb_kit': 2,
+  'item.mod.silent_wrap': 1,
+  'item.mod.shock_core': 1,
 };
 
 /** 取某材料的 tier（非 material / 无 tier → undefined）。 */
@@ -172,6 +191,7 @@ function tierOf(itemId: string): MaterialTier | undefined {
 export function isBuyableFromMira(itemId: string): boolean {
   if (SHOP_STOCK_CONSUMABLES[itemId] !== undefined) return true;
   if (SHOP_STOCK_EQUIPMENT[itemId] !== undefined) return true;
+  if (SHOP_STOCK_MODS[itemId] !== undefined) return true;
   const tier = tierOf(itemId);
   return tier !== undefined && SHOP_STOCK_BY_TIER[tier] !== undefined;
 }
@@ -188,6 +208,8 @@ export function maxShopStockFor(itemId: string): number {
   if (fromShelf !== undefined) return fromShelf;
   const fromGear = SHOP_STOCK_EQUIPMENT[itemId];
   if (fromGear !== undefined) return fromGear;
+  const fromMod = SHOP_STOCK_MODS[itemId];
+  if (fromMod !== undefined) return fromMod;
   const tier = tierOf(itemId);
   if (tier === undefined) return 0;
   return SHOP_STOCK_BY_TIER[tier] ?? 0;

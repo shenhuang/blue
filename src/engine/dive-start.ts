@@ -23,7 +23,8 @@ import {
   addToInventory,
   RUN_INVENTORY_CAPACITY,
 } from './state';
-import { getItemDef } from './items';
+import { getItemDef, slotsForItem } from './items';
+import { isOverloaded } from './equipment';
 import { getRunBonuses } from './lighthouses';
 import type { RunStartBonuses } from './lighthouses';
 import { effectiveOutpostBonuses } from './outposts';
@@ -159,16 +160,18 @@ export function applyCarryItems(
   if (picks.length === 0) return { profile, run };
   let profileInv = profile.inventory;
   let runInv = run.inventory;
-  let slotsUsed = runInv.reduce((a, i) => a + (getItemDef(i.itemId)?.slotsRequired ?? 1) * i.qty, 0);
+  // 占格 stack-aware（弹药一匣占一格·加发可能不增格·单一来源 items.ts::slotsForItem）：
+  // 用「加上 q 后该物品新占格 − 原占格」算边际成本，对非弹药＝slotsRequired×q（逐字节不变）。
+  const usedSlots = () => runInv.reduce((a, i) => a + slotsForItem(i.itemId, i.qty), 0);
   let moved = false;
   for (const p of picks) {
     const def = getItemDef(p.itemId);
     if (!def || def.category !== 'consumable') continue;
-    const per = def.slotsRequired ?? 1;
     let q = Math.min(p.qty, countInInventory(profileInv, p.itemId));
-    while (q > 0 && slotsUsed + per * q > run.inventoryCapacity) q--;
+    const existing = countInInventory(runInv, p.itemId);
+    const baseSlots = usedSlots() - slotsForItem(p.itemId, existing);
+    while (q > 0 && baseSlots + slotsForItem(p.itemId, existing + q) > run.inventoryCapacity) q--;
     if (q <= 0) continue;
-    slotsUsed += per * q;
     profileInv = removeFromInventory(profileInv, p.itemId, q);
     runInv = addToInventory(runInv, p.itemId, q);
     moved = true;
@@ -191,6 +194,12 @@ export function startDiveFromPoi(
   poi: ChartPoi,
   opts?: { targetCorpseId?: string; carryItems?: InventoryItem[] },
 ): GameState {
+  // 负重过载门（武器系统·作者 2026-06-20）：穿戴件总重越界 → 拦出发（逃生阀门＝卸装即走）。
+  // 单点判据 isOverloaded（与战斗全行动封锁同源）；UI 出发按钮也据此禁用（防御性双保险）。起手装＝轻·不受影响。
+  if (state.profile.equipment && isOverloaded(state.profile.equipment)) {
+    return appendLog(state, { tone: 'system', text: '负重过载——你几乎浮不起来。卸下些装备再出发。' });
+  }
+
   // 深入潜点（灯塔/蛙跳重构 step ②·#125）：POI 带 bandId ⇒ 走 band 绝对 depthRange 路径（与旧前哨蛙跳
   // 同源 diveIntoBand），预耗氧从 POI 起潜深度（band 顶）纯推·launchDepth=0·不查 deepestOutpostLaunch
   // 的前哨态。mimic / story 锚点不带 bandId、仍走下方 zone 路径；坏数据（bandId 悬空）→ 落回 zone

@@ -125,6 +125,11 @@ interface Accum {
    * 数据驱动：从 ItemDef.grantsCapability 查找，无需硬编码能力→道具映射。
    */
   capabilityEquip: Map<string, { slot?: EquipSlot; itemId: string }>;
+  /**
+   * hasEquipment.actionId 门控：slot → 解锁该行动的 fixture 道具 itemId（如 tool → 救援斧解锁 action.axe_pry）。
+   * 数据驱动（扫 ItemDef.equipment.effects 的 unlocksAction·无硬编码武器 id）。组装时覆写该槽起手占位件。
+   */
+  actionUnlockEquip: Map<EquipSlot, string>;
 }
 
 function newAccum(): Accum {
@@ -138,6 +143,7 @@ function newAccum(): Accum {
     upgrades: new Set(),
     depthFloor: null,
     capabilityEquip: new Map(),
+    actionUnlockEquip: new Map(),
   };
 }
 
@@ -174,6 +180,15 @@ function collect(cond: Condition, acc: Accum): void {
       return;
     case 'hasEquipment':
       acc.equipSlots.add(cond.slot);
+      // actionId（武器解锁行动门）：找一件「该槽 + 解锁该行动」的道具放进 fixture（如救援斧解锁 axe_pry）。
+      if (cond.actionId) {
+        const unlocker = allItems().find(
+          (it) =>
+            it.equipment?.slot === cond.slot &&
+            it.equipment.effects.some((e) => e.kind === 'unlocksAction' && e.actionId === cond.actionId),
+        );
+        if (unlocker) acc.actionUnlockEquip.set(cond.slot, unlocker.id);
+      }
       return;
     case 'hasCapability': {
       // 数据驱动：扫 ItemDef.grantsCapability，取第一个声明该能力的道具作 fixture 来源。
@@ -363,6 +378,10 @@ export function satisfyEvent(eventId: string, opts: SatisfyOptions = {}): Satisf
   }
   // 用胜者 itemId 覆写占位件（背包道具已由 acc.items 处理）
   for (const [slot, { itemId }] of slotWinnerItem) {
+    equipment[slot] = { itemId, slot, level: 1 } as EquipmentInstance;
+  }
+  // hasEquipment.actionId：强制该槽装上「解锁所需行动」的件（武器系统 2026-06-20·覆写起手占位 / 能力胜者）。
+  for (const [slot, itemId] of acc.actionUnlockEquip) {
     equipment[slot] = { itemId, slot, level: 1 } as EquipmentInstance;
   }
   const inventory = [...acc.items].map(([itemId, qty]) => ({ itemId, qty }));

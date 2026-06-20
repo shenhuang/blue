@@ -21,6 +21,7 @@
       "hostility": "predatory",
       "initialStance": "alerted",
       "aiPattern": "flanker",
+      "hitBonus": 0.15,
       "scent": true,
       "attacks": [
         {

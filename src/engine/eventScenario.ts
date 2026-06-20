@@ -188,7 +188,7 @@ export function withSeededRandom<T>(seed: number | undefined, fn: () => T): T {
 export function describeCondition(c: Condition): string {
   switch (c.kind) {
     case 'hasEquipment':
-      return `需要装备槽位 ${c.slot}`;
+      return c.actionId ? `需要装备槽位 ${c.slot}（解锁 ${c.actionId}）` : `需要装备槽位 ${c.slot}`;
     case 'hasItem':
       return `需要物品 ${c.itemId}${c.minQty ? ` × ${c.minQty}` : ''}`;
     case 'notHasItem':

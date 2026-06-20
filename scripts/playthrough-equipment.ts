@@ -25,10 +25,23 @@ import {
   canUnequipSlot,
   unequipItem,
   weaponDamageForSlot,
+  totalLoadoutWeight,
+  weightTier,
+  loadoutWeightTier,
+  weightStaminaMult,
+  weightHitMod,
+  isOverloaded,
+  equipmentUnlocksAction,
+  canInstallMod,
+  installMod,
+  installedModMeta,
+  devUpgradeEquipment,
+  devCraftEquipment,
+  devInstallMod,
 } from '../src/engine/equipment';
 import { getRunBonuses } from '../src/engine/lighthouses';
 import { isBuyableFromMira } from '../src/engine/port';
-import { allItems } from '../src/engine/items';
+import { allItems, slotsForItem } from '../src/engine/items';
 import type { GameState, EquipmentLoadout } from '../src/types';
 
 const log: string[] = [];
@@ -216,6 +229,116 @@ for (const def of allItems()) {
   }
 }
 L('§10 不变量：可买备件 ⊆ 无 upgradeSteps ✓');
+
+// ── §11 武器系统：负重档位 / 弹匣占格 / 改装组件 / 武器解锁行动（作者 2026-06-20）──
+// §11a 负重档位（轻＝中性基线·越重越钝·过载拦行动/出发）
+const starterW = totalLoadoutWeight(createStarterLoadout());
+assert(starterW === 8, `starter 总负重 = 8（刀1+服2+瓶4+灯1·实得 ${starterW}）`);
+assert(
+  weightTier(8) === 'light' && weightTier(9) === 'medium' && weightTier(15) === 'heavy' && weightTier(21) === 'overloaded',
+  '档位阈值 8轻 / 9中 / 15重 / 21过载',
+);
+assert(loadoutWeightTier(createStarterLoadout()) === 'light', 'starter ＝ 轻装');
+assert(weightStaminaMult(createStarterLoadout()) === 1, '轻装体力倍率 ×1（既有战斗 baseline 不变）');
+assert(weightHitMod(createStarterLoadout()) === 0, '轻装命中补正 0（既有命中不变）');
+const heavyLo: EquipmentLoadout = {
+  ...createStarterLoadout(),
+  suit: { itemId: 'item.suit.reinforced', slot: 'suit', level: 1 },
+  sonar: { itemId: 'item.sonar.handheld', slot: 'sonar', level: 1 },
+  tool: { itemId: 'item.weapon.rescue_axe', slot: 'tool', level: 1 },
+  ranged: { itemId: 'item.weapon.harpoon_rifle', slot: 'ranged', level: 1 },
+};
+assert(totalLoadoutWeight(heavyLo) === 21, `重载总重 21（瓶4+服3+灯1+呐2+斧5+叉6·实得 ${totalLoadoutWeight(heavyLo)}）`);
+assert(isOverloaded(heavyLo) && !isOverloaded(createStarterLoadout()), '21 过载·starter 非过载');
+const midLo: EquipmentLoadout = { ...createStarterLoadout(), tool: { itemId: 'item.weapon.rescue_axe', slot: 'tool', level: 1 } };
+assert(
+  loadoutWeightTier(midLo) === 'medium' && weightStaminaMult(midLo) === 1.5 && weightHitMod(midLo) < 0,
+  '持斧（12）＝中装·体力 ×1.5·命中补正<0',
+);
+L('§11a 负重档位：起手轻/换斧中/重载过载 + 倍率/命中补正 ✓');
+
+// §11b 弹匣占格（slotsForItem·stack-aware·一匣占一格·可带多匣）
+assert(
+  slotsForItem('item.ammo.pneumatic', 8) === 1 && slotsForItem('item.ammo.pneumatic', 9) === 2 && slotsForItem('item.ammo.pneumatic', 16) === 2,
+  '气动弹 8/匣：8→1格·9→2格·16→2格',
+);
+assert(
+  slotsForItem('item.ammo.harpoon', 30) === 1 && slotsForItem('item.ammo.harpoon', 31) === 2,
+  '鱼叉弹 30/匣：30→1格·31→2格',
+);
+assert(slotsForItem('item.med_kit', 3) === 3, '非弹药按 slotsRequired×qty（急救包 3→3格·逐字节不变）');
+L('§11b 弹匣占格 stack-aware（弹药按匣·余者按件）✓');
+
+// §11c 武器解锁行动（unlocksAction 严格门·持刀/斧/枪/盾各自）+ 盾被动护甲
+assert(equipmentUnlocksAction(createStarterLoadout(), 'tool', 'action.knife_slash'), '起手刀解锁挥砍');
+assert(!equipmentUnlocksAction(createStarterLoadout(), 'tool', 'action.axe_chop'), '起手刀不解锁斧法');
+assert(
+  equipmentUnlocksAction(midLo, 'tool', 'action.axe_chop') && equipmentUnlocksAction(midLo, 'tool', 'action.axe_pry'),
+  '救援斧解锁斧劈 + 撬门（事件 hasEquipment.actionId 用）',
+);
+const pistolLo: EquipmentLoadout = { ...createStarterLoadout(), ranged: { itemId: 'item.weapon.pneumatic_pistol', slot: 'ranged', level: 1 } };
+assert(
+  equipmentUnlocksAction(pistolLo, 'ranged', 'action.fire_pneumatic') && !equipmentUnlocksAction(pistolLo, 'ranged', 'action.fire_harpoon'),
+  '气动短枪只解锁自家射击（不串别的枪）',
+);
+const shieldLo: EquipmentLoadout = { ...createStarterLoadout(), ranged: { itemId: 'item.shield.basic', slot: 'ranged', level: 1 } };
+assert(
+  !equipmentUnlocksAction(shieldLo, 'ranged', 'action.fire_pneumatic') && !equipmentUnlocksAction(shieldLo, 'ranged', 'action.fire_harpoon'),
+  '盾不解锁任何攻击',
+);
+assert(getEquipmentStats(shieldLo).physicalArmor === 1 + 3, '盾被动护甲叠加（防寒服1 + 盾3 = 4）');
+L('§11c 武器解锁行动（刀/斧/枪/盾各自）+ 盾被动护甲 ✓');
+
+// §11d 改装组件：装 / 替换（旧件不返还）/ modSlot 门 / tool 限制 / 持有门
+function modState(): GameState {
+  const base = createInitialGameState();
+  return {
+    ...base,
+    profile: {
+      ...base.profile,
+      inventory: [{ itemId: 'item.mod.poison_sac', qty: 1 }, { itemId: 'item.mod.shock_core', qty: 1 }],
+      equipment: createStarterLoadout(),
+    },
+  };
+}
+let m: GameState = modState();
+assert(canInstallMod(m.profile, 'tool', 'item.mod.poison_sac').ok, '刀有 modSlot + 持有毒囊 → 可装');
+m = installMod(m, 'tool', 'item.mod.poison_sac');
+assert(m.profile.equipment!.tool!.mod === 'item.mod.poison_sac', '毒囊已装上刀');
+assert((m.profile.inventory.find((i) => i.itemId === 'item.mod.poison_sac')?.qty ?? 0) === 0, '毒囊消耗（库存 -1·条目清空）');
+assert(installedModMeta(m.profile.equipment!, 'tool')?.effect === 'poison', 'installedModMeta 读出 poison');
+m = installMod(m, 'tool', 'item.mod.shock_core');
+assert(m.profile.equipment!.tool!.mod === 'item.mod.shock_core', '替换为放电芯');
+assert(!m.profile.inventory.some((i) => i.itemId === 'item.mod.poison_sac' && i.qty > 0), '旧毒囊不返还（替换丢弃）');
+const drillProfile = { ...modState().profile, equipment: { ...createStarterLoadout(), tool: { itemId: 'item.rock_drill', slot: 'tool' as const, level: 1 } } };
+assert(!canInstallMod(drillProfile, 'tool', 'item.mod.poison_sac').ok, '岩凿无 modSlot → 不可装');
+assert(!canInstallMod(modState().profile, 'ranged', 'item.mod.poison_sac').ok, '非 tool 槽 → 不可装（当前限制）');
+assert(!canInstallMod(createInitialGameState().profile, 'tool', 'item.mod.poison_sac').ok, '不持有组件 → 不可装');
+L('§11d 改装组件：装/替换(旧件不返还)/modSlot门/tool限制/持有门 ✓');
+
+// §11e 新武器 / 弹药 / 改装件港口可买（成仓库备件·§10 不变量已覆盖「可买装备 ⊆ 无 upgradeSteps」）
+for (const id of [
+  'item.weapon.rescue_axe', 'item.weapon.pneumatic_pistol', 'item.weapon.harpoon_rifle', 'item.shield.basic',
+  'item.ammo.pneumatic', 'item.ammo.harpoon', 'item.mod.poison_sac', 'item.mod.barb_kit', 'item.mod.silent_wrap', 'item.mod.shock_core',
+]) {
+  assert(isBuyableFromMira(id), `${id} 港口可买`);
+}
+L('§11e 新武器/弹药/改装件港口可买 ✓');
+
+// §11f Dev 免费升级 / 打造 / 改装（?dev·0 成本·镜像 lighthouses devBuildAtLighthouse·真路径零触碰）
+let d: GameState = {
+  ...createInitialGameState(),
+  profile: { ...createInitialGameState().profile, equipment: createStarterLoadout() },
+};
+d = devUpgradeEquipment(d, 'tool');
+assert(d.profile.equipment!.tool!.level === 2, 'dev 升级：刀 Lv2（0 成本·无料无金）');
+assert(d.profile.equipment!.sonar === null, '起手 sonar 空');
+d = devCraftEquipment(d, 'item.sonar.handheld');
+assert(d.profile.equipment!.sonar?.itemId === 'item.sonar.handheld', 'dev 打造：声呐入空槽（0 成本·无料）');
+assert(!d.profile.inventory.some((i) => i.itemId === 'item.mod.shock_core' && i.qty > 0), '不持有放电芯');
+d = devInstallMod(d, 'tool', 'item.mod.shock_core');
+assert(d.profile.equipment!.tool!.mod === 'item.mod.shock_core', 'dev 改装：放电芯装上刀（0 成本·免件免持有）');
+L('§11f dev 免费升级/打造/改装（0 成本·镜像设施）✓');
 
 console.log(log.join('\n'));
 console.log('playthrough-equipment ✓ 全绿');

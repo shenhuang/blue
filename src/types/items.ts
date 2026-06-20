@@ -5,6 +5,7 @@ export type ItemCategory =
   | 'consumable'
   | 'material'
   | 'story'
+  | 'weaponMod'  // 武器改装组件（装入有 modSlot 的武器·见 engine/equipment.ts::installMod·命中时 combat 读 inst.mod 应用效果）
   | 'other'     // 杂项：非消耗/材料/装备/剧情的可点击道具（如清单·海图信物等）
   | 'currency';
 
@@ -75,7 +76,14 @@ export interface ItemDef {
   description: string;
   /** 占用背包格子数（默认 1） */
   slotsRequired?: number;
-  /** 负重（影响上浮速度与氧气消耗） */
+  /**
+   * 弹匣/堆叠上限（一格最多装几发/几个·作者 2026-06-20）：仅用于「按堆叠占格」的可叠道具（弹药）。
+   * 设了它＝占格按 ceil(qty / stackSize)「弹匣数」算（一匣占一格·可带多匣·但一匣不无限）；缺省＝按
+   * slotsRequired×qty 旧口径（逐字节不变）。单一来源 engine/state.ts::slotsForItem，dive-start/UI 共用。
+   * 例：AP-12 气动弹 stackSize 8、PR-40 鱼叉弹 stackSize 30。
+   */
+  stackSize?: number;
+  /** 负重（影响上浮速度与氧气消耗·负重档位见 engine/equipment.ts::weightTier） */
   weight?: number;
   /** 出售价格（金币） */
   sellPrice?: number;
@@ -108,6 +116,9 @@ export interface ItemDef {
 
   /** 消耗品才有 */
   consumable?: ConsumableMeta;
+
+  /** 武器改装组件才有（category==='weaponMod'）：命中时的效果参数·数值全在此处供作者调（见 engine/combat.ts 应用）。 */
+  weaponMod?: WeaponModMeta;
 
   /** 剧情物品的 hook */
   story?: {
@@ -166,6 +177,13 @@ export interface EquipmentMeta {
    * 与 upgradeSteps 互补：craftCost 管「从无到有」、upgradeSteps 管「逐级变强」。账单形状同 UpgradeStep（便于端口数值）。
    */
   craftCost?: { materials: { itemId: string; qty: number }[]; gold: number };
+  /**
+   * 该武器是否接受改装组件（武器改装槽·作者 2026-06-20）：true ＝ 可由 Otto/港口把一件
+   * category==='weaponMod' 的组件装进 EquipmentInstance.mod（见 engine/equipment.ts::installMod）。
+   * 命中时 combat 读 inst.mod 按 id 分支应用效果（毒囊/倒刺/静音套/放电芯）。缺省＝不可改装。
+   * 当前仅近战（tool 槽）支持全部组件；ranged/未来武器的专属组件后续再设计（SPEC 范围外）。
+   */
+  modSlot?: boolean;
 }
 
 /**
@@ -206,6 +224,29 @@ export type EquipmentEffect =
   | { kind: 'powerMaxBonus'; value: number }
   // 武器件伤害（C·作者 2026-06-20）：combat 玩家攻击 dmg += Σ weaponDamage（roll 后·armor 前·见 engine/combat.ts）。
   | { kind: 'weaponDamage'; value: number };
+
+/**
+ * 武器改装组件的命中效果（武器改装槽 SPEC·作者 2026-06-20）。装在有 modSlot 的武器上，玩家命中后
+ * engine/combat.ts 按 `effect` 分支应用。数值全在 data（items.json）＝作者可直接调（不碰引擎逻辑）。
+ *   - poison：概率给敌人挂「中毒」DoT（每回合 dmgPerTurn·持续 turns）。
+ *   - barb  ：概率给敌人挂「撕裂(流血)」DoT（更重·dmgPerTurn 更高）。
+ *   - silent：近战攻击不触发 signature 上升（战斗内＝该击 noise 归零·不惊动其它敌人）。无数值。
+ *   - shock ：命中时若电量够则扣 powerCost、该击附加 bonusDamage（电量不足＝不触发·无副作用）。
+ * 注意：敌人的中毒/撕裂走 EnemyStatus DoT（敌人没有玩家那套 run.injuries·那是玩家专属·check-boundaries 规则四）。
+ */
+export interface WeaponModMeta {
+  effect: 'poison' | 'barb' | 'silent' | 'shock';
+  /** 命中触发概率 0–1（poison/barb/shock·缺省 1＝必触发）。 */
+  chance?: number;
+  /** 敌人 DoT 每回合伤害（poison/barb）。 */
+  dmgPerTurn?: number;
+  /** 敌人 DoT 持续回合（poison/barb）。 */
+  turns?: number;
+  /** 该击附加的即时伤害（shock）。 */
+  bonusDamage?: number;
+  /** 触发消耗的电量（shock）。 */
+  powerCost?: number;
+}
 
 export interface ConsumableMeta {
   /** 在哪些场景可用 */

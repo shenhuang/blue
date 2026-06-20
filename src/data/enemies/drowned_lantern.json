@@ -21,6 +21,7 @@
       "hostility": "predatory",
       "initialStance": "alerted",
       "aiPattern": "caster",
+      "hitBonus": 0.1,
       "attacks": [
         {
           "id": "lantern.pulse",

@@ -392,6 +392,12 @@ export interface EquipmentInstance {
   slot: EquipmentSlot;
   level: number;
   affixes?: string[]; // 词缀 id（M5+）
+  /**
+   * 装入的改装组件 itemId（武器改装槽·作者 2026-06-20）：仅当该件 equipment.modSlot===true 时有意义。
+   * 命中后 combat 读它按 id 分支应用效果（见 engine/combat.ts）。装/换由 engine/equipment.ts::installMod
+   * 单点写（消耗组件·旧 mod 不返还）。additive·缺省 undefined＝无改装·JSON 原生 round-trip·不 bump SAVE_VERSION（#99）。
+   */
+  mod?: string;
 }
 
 /** 背包物品 */

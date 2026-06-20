@@ -11,6 +11,7 @@ import type {
   CombatEncounterDef,
   PlayerStatus,
   EnemyInstance,
+  EnemyStatus,
   EnemyDef,
   EnemyAttack,
   Stats,
@@ -18,7 +19,15 @@ import type {
 import actionData from '@/data/actions.json';
 import { ENEMY_FILE_MODULES } from '@/data/enemies/registry.generated';
 import { appendLog, addToInventory, removeFromInventory, clampStats } from './state';
-import { getEquipmentStats, weaponDamageForSlot } from './equipment';
+import {
+  getEquipmentStats,
+  weaponDamageForSlot,
+  weightStaminaMult,
+  weightHitMod,
+  isOverloaded,
+  equipmentUnlocksAction,
+  installedModMeta,
+} from './equipment';
 import { executeDeath } from './death';
 import { getItemDef } from './items';
 import { computeModifiers, effectiveStaminaMax } from './modifiers';
@@ -29,6 +38,11 @@ import { resolveEncounterMember, enemySeenFlag } from './enemyLibrary';
 
 const ACTIONS: Map<string, CombatAction> = new Map();
 for (const a of (actionData as { actions: CombatAction[] }).actions) ACTIONS.set(a.id, a);
+
+// 敌人基础命中率（负重战斗·作者 2026-06-20）：轻档（weightHitMod=0）下 enemyHitChance = 1.0 + hitBonus ≥ 1.0
+// ⇒ 必中、且 enemyHitChance≥1 时**不掷骰**（见 enemyAttackPlayer）——与旧「敌攻必中」逐字节一致，既有 combat
+// baseline 不动；负重越重双方命中越降（weightHitMod<0 才让命中 <1 触发掷骰），叠加各敌种自己的 hitBonus。
+const ENEMY_BASE_HIT = 1.0;
 
 // 敌人库 SPEC 支柱三：从生成的注册表（src/data/enemies/registry.generated.ts·目录自动加载）灌入。
 // 新增纯数据敌人＝丢一个 JSON + `npm run gen:enemies`，本文件零改动（registry 过期由 regress 门拦）。
@@ -146,8 +160,10 @@ export interface ActionAvailability {
  */
 function actionCosts(run: RunState, action: CombatAction): { stamina: number; oxygen: number } {
   const mods = computeModifiers(run);
+  // 负重档位体力倍率（武器系统·作者 2026-06-20）：与负伤 staminaCostMult 相乘。轻档 ×1 ⇒ ceil(整数×1×1) 逐字节不变。
+  const wMult = weightStaminaMult(run.equipment);
   return {
-    stamina: Math.ceil(action.costStamina * mods.staminaCostMult),
+    stamina: Math.ceil(action.costStamina * mods.staminaCostMult * wMult),
     oxygen: Math.ceil(action.costOxygenTurns * mods.o2CostMult),
   };
 }
@@ -155,6 +171,12 @@ function actionCosts(run: RunState, action: CombatAction): { stamina: number; ox
 export function checkActionAvailability(state: GameState, action: CombatAction): ActionAvailability {
   const run = state.run;
   if (!run) return { available: false, reason: '无 run state' };
+
+  // 负重过载（武器系统·作者 2026-06-20）：过载档全行动封锁（「负重过载，无法行动」）。出发门已拦过载下潜，
+  // 故实战几乎触不到（run.equipment 一潜固定）；此为防御性双保险。轻档不触发。
+  if (isOverloaded(run.equipment)) {
+    return { available: false, reason: '负重过载，无法行动' };
+  }
 
   const costs = actionCosts(run, action);
   if (run.stats.stamina < costs.stamina) {
@@ -164,8 +186,14 @@ export function checkActionAvailability(state: GameState, action: CombatAction):
     return { available: false, reason: `氧气不足（需 ${costs.oxygen} 回合）` };
   }
   if (action.requiresEquipment) {
-    if (!run.equipment[action.requiresEquipment]) {
-      return { available: false, reason: `需要装备：${action.requiresEquipment}` };
+    const slot = action.requiresEquipment;
+    if (!run.equipment[slot]) {
+      return { available: false, reason: `需要装备：${slot}` };
+    }
+    // 武器解锁行动门（严格·作者 2026-06-20）：该槽的件必须解锁本行动——持刀只出刀法、持斧只出斧法、
+    // 持枪只出对应射击、盾不解锁任何攻击。起手刀解锁 knife_slash/knife_stab ⇒ 既有战斗逐字节不变。
+    if (!equipmentUnlocksAction(run.equipment, slot, action.id)) {
+      return { available: false, reason: '当前武器不支持此动作' };
     }
   }
   if (action.requiresItemId) {
@@ -337,8 +365,8 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
   const def = ENEMY_DEFS.get(target.defId);
   if (!def) return state;
 
-  // 命中判定（基础 85%，减去敌人 evasion）
-  const hitChance = Math.max(0.4, 0.95 - def.evasion * 0.04);
+  // 命中判定（基础 85%，减去敌人 evasion；负重档位 weightHitMod 调·武器系统 2026-06-20·轻档 +0 ⇒ 逐字节不变）
+  const hitChance = Math.max(0.4, 0.95 - def.evasion * 0.04) + (state.run ? weightHitMod(state.run.equipment) : 0);
   if (Math.random() > hitChance) {
     return pushCombatLog(state, { actor: 'player', text: `${action.name}：${def.name} 闪开了。` });
   }
@@ -347,6 +375,17 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
   const weaponSlot = action.requiresEquipment;
   const weaponBonus = weaponSlot && state.run ? weaponDamageForSlot(state.run.equipment, weaponSlot) : 0;
   let dmg = randRange(eff.damage) + weaponBonus;
+  // 武器改装组件（武器系统·作者 2026-06-20）：仅装了 mod 的武器才进分支 ⇒ 无 mod 战斗零额外 RNG（既有 baseline 不变）。
+  const modMeta = weaponSlot && state.run ? installedModMeta(state.run.equipment, weaponSlot) : undefined;
+  let powerSpent = 0;
+  if (modMeta?.effect === 'shock' && state.run) {
+    // 放电芯：电量够 + 命中触发（chance≥1 不掷骰）→ 该击附加 bonusDamage、扣电（电量不足＝不触发·无副作用）。
+    const cost = modMeta.powerCost ?? 0;
+    if (state.run.power >= cost && rollChance(modMeta.chance)) {
+      dmg += modMeta.bonusDamage ?? 0;
+      powerSpent = cost;
+    }
+  }
   // ambush 暴击
   const ambushing = combat.playerStatuses.find((s) => s.kind === 'ambushing');
   if (ambushing) {
@@ -383,8 +422,35 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
     text: `${action.name}：你击中 ${def.name}，造成 ${dmg} 点伤害。${target.hp - dmg <= 0 ? `${def.name} 失去战斗力。` : ''}`,
   });
 
-  // 噪声触发其他敌人警戒
-  if ((eff.noise ?? 0) >= 1) {
+  // 放电芯扣电（命中触发后结算·run.power 单点扣·非 Stats clamp 范畴）。
+  if (powerSpent > 0 && s.run) {
+    s = { ...s, run: { ...s.run, power: Math.max(0, s.run.power - powerSpent) } };
+  }
+
+  // 毒囊 / 倒刺套件（武器系统·作者 2026-06-20）：命中且触发 → 给**该目标**挂 DoT 敌人状态
+  // （中毒 poisoned / 撕裂 bleeding·每回合 dmgPerTurn·敌人回合末结算·见 runEnemyTurn）。注意：敌人的
+  // 中毒/撕裂走 EnemyStatus DoT，与玩家专属的负伤系统（injuries.ts·check-boundaries 规则四守的那套）无关。仅装了 mod 才进此分支。
+  if (modMeta && (modMeta.effect === 'poison' || modMeta.effect === 'barb') && rollChance(modMeta.chance)) {
+    const kind: EnemyStatus['kind'] = modMeta.effect === 'poison' ? 'poisoned' : 'bleeding';
+    const dpt = modMeta.dmgPerTurn ?? 0;
+    const turns = modMeta.turns ?? 1;
+    s = setCombat(s, (c) => ({
+      ...c,
+      enemies: c.enemies.map((e) =>
+        e.instanceId === target.instanceId && e.hp > 0
+          ? { ...e, statuses: [...e.statuses.filter((st) => st.kind !== kind), { kind, remainingTurns: turns, dmgPerTurn: dpt }] }
+          : e,
+      ),
+    }));
+    s = pushCombatLog(s, {
+      actor: 'system',
+      text: modMeta.effect === 'poison' ? `毒液渗进伤口——${def.name} 开始溃烂。` : `倒刺撕开一道长口子——${def.name} 血流不止。`,
+    });
+  }
+
+  // 噪声触发其他敌人警戒（静音套：近战不触发 signature 上升＝该击噪声归零·武器系统 2026-06-20）
+  const silent = modMeta?.effect === 'silent';
+  if (!silent && (eff.noise ?? 0) >= 1) {
     s = setCombat(s, (c) => ({
       ...c,
       enemies: c.enemies.map((e) => ({
@@ -492,6 +558,15 @@ function randRange([min, max]: [number, number]): number {
   return min + Math.floor(Math.random() * (max - min + 1));
 }
 
+/**
+ * 概率触发（武器改装组件用）：chance 缺省 / ≥1 ⇒ 必触发且**不掷骰**（零 RNG 消耗·守既有 baseline）；
+ * <1 才 Math.random() 掷一次。仅在装了 mod 的攻击里调用 ⇒ 无 mod 战斗零额外 RNG。
+ */
+function rollChance(chance?: number): boolean {
+  if (chance === undefined || chance >= 1) return true;
+  return Math.random() < chance;
+}
+
 // ——— 敌人回合 ———
 
 function runEnemyTurn(state: GameState): GameState {
@@ -544,6 +619,24 @@ function runEnemyTurn(state: GameState): GameState {
     s = enemyAttackPlayer(s, e);
   }
 
+  // 持续伤害（DoT·撕裂/中毒·武器改装 2026-06-20）：敌人回合末按各状态 dmgPerTurn 掉血（先于衰减）。
+  // 仅 dmgPerTurn>0 的状态生效 ⇒ 既有 bleeding 标记（缺省 0）逐字节不变。DoT 致死＝hp→0，胜负在下个
+  // 玩家行动结算点判定（与「最后一只逃跑 hp=0」同口径·不在敌人回合内提前 finalize·守既有时序）。
+  {
+    const cur = s.phase.kind === 'combat' ? s.phase.combat.enemies : [];
+    for (const e of cur) {
+      if (e.hp <= 0) continue;
+      const dot = e.statuses.reduce((a, st) => a + (st.dmgPerTurn ?? 0), 0);
+      if (dot <= 0) continue;
+      const dname = ENEMY_DEFS.get(e.defId)?.name ?? '它';
+      s = setCombat(s, (c) => ({
+        ...c,
+        enemies: c.enemies.map((x) => (x.instanceId === e.instanceId ? { ...x, hp: Math.max(0, x.hp - dot) } : x)),
+      }));
+      s = pushCombatLog(s, { actor: 'system', text: `${dname} 因持续伤势失去 ${dot} 点生命。` });
+    }
+  }
+
   // 状态衰减
   s = setCombat(s, (c) => ({
     ...c,
@@ -573,6 +666,14 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
     if (r <= 0) { chosen = attacks[i]; break; }
   }
   chosen ??= attacks[0];
+
+  // 敌人命中判定（负重战斗·武器系统 2026-06-20）：ENEMY_BASE_HIT(1.0) + 该敌 hitBonus + 负重 weightHitMod。
+  // ≥1.0 ⇒ 必中且**不掷骰**（轻档 weightHitMod=0 + hitBonus≥0 ⇒ 既有敌攻逐字节不变·守 seeded baseline）；
+  // <1.0 才掷一次骰，失手＝0 伤、不触发负伤（守「仅命中才结算」）。hitBonus 让暗伏/突袭型在你笨重时仍咬得准。
+  const enemyHit = ENEMY_BASE_HIT + (def.hitBonus ?? 0) + weightHitMod(state.run.equipment);
+  if (enemyHit < 1 && Math.random() >= enemyHit) {
+    return pushCombatLog(state, { actor: 'enemy', text: `${def.name} 的${chosen.name}落空了。` });
+  }
 
   // 计算伤害
   let dmg = randRange(chosen.damage);
@@ -677,6 +778,13 @@ export function listAvailableActions(state: GameState): Array<{ action: CombatAc
       (a: CombatAction) =>
         !a.requiresItemId ||
         (state.run?.inventory.find((i) => i.itemId === a.requiresItemId)?.qty ?? 0) > 0,
+    )
+    // 武器行动只在「装着解锁它的武器」时上清单（武器系统 2026-06-20）：持斧才见斧法、持枪才见射击、
+    // 盾不解锁任何攻击；没带的武器不摆灰按钮（同道具行动「没货不上清单」口径）。起手刀解锁刀法 ⇒ 既有清单不变。
+    .filter(
+      (a: CombatAction) =>
+        !a.requiresEquipment ||
+        (state.run != null && equipmentUnlocksAction(state.run.equipment, a.requiresEquipment, a.id)),
     )
     .map((a: CombatAction) => ({ action: a, availability: checkActionAvailability(state, a) }));
 }

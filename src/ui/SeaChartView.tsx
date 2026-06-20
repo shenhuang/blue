@@ -29,7 +29,8 @@ import {
 import { outpostEnergy } from '@/engine/outposts';
 import { getZone } from '@/engine/zones';
 import { getUpgradeBonuses } from '@/engine/upgrades';
-import { getItemDef } from '@/engine/items';
+import { getItemDef, slotsForItem } from '@/engine/items';
+import { isOverloaded } from '@/engine/equipment';
 import { listRecoverableCorpses } from '@/engine/death';
 import { LighthouseBuildPanel } from './LighthouseBuildPanel';
 import { ChartViewport, type ChartContentBox } from './ChartViewport';
@@ -210,12 +211,9 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
   const carryPicks: InventoryItem[] = Object.entries(carry)
     .filter(([, q]) => q > 0)
     .map(([itemId, qty]) => ({ itemId, qty }));
-  // 容量与占格：与 createNewRun/applyCarryItems 同源（carryCapacityFor·slotsRequired），UI 画的格数＝真截断线。
+  // 容量与占格：与 createNewRun/applyCarryItems 同源（carryCapacityFor + items.ts::slotsForItem·弹药 stack-aware），UI 画的格数＝真截断线。
   const carryCapacity = carryCapacityFor(state.profile);
-  const slotsUsed = carryPicks.reduce(
-    (a, p) => a + (getItemDef(p.itemId)?.slotsRequired ?? 1) * p.qty,
-    0,
-  );
+  const slotsUsed = carryPicks.reduce((a, p) => a + slotsForItem(p.itemId, p.qty), 0);
   const stepCarry = (itemId: string, delta: number, max: number) =>
     setCarry((c) => ({ ...c, [itemId]: Math.max(0, Math.min(max, (c[itemId] ?? 0) + delta)) }));
 
@@ -631,8 +629,11 @@ export function ChartInfo({
   const mods = describeModifier(poi.modifier);
   const caveShape = describeCaveShape(poi);
   const corpses = canSelectTarget ? listRecoverableCorpses(state.profile.deaths, poi.zoneId) : [];
-  const departable = isPoiDepartable(state.profile, poi);
-  const blockReason = poiBlockReason(state.profile, poi);
+  // 负重过载（武器系统·作者 2026-06-20）：全 POI 统一拦——过载无法出发（与战斗全行动封锁同源 isOverloaded）。
+  // 引擎 startDiveFromPoi 亦有同判据兜底（防御性双保险）。起手装＝轻·不受影响。
+  const overloaded = state.profile.equipment ? isOverloaded(state.profile.equipment) : false;
+  const departable = isPoiDepartable(state.profile, poi) && !overloaded;
+  const blockReason = overloaded ? '负重过载——卸下些装备再出发' : poiBlockReason(state.profile, poi);
   // 「→」（进 target 步）只在有打捞目标可选时出现
   const hasCorpseChoice = departable && corpses.length > 0;
 
@@ -685,17 +686,36 @@ export function ChartInfo({
               点储物柜里的东西放进背包，点背包里的放回。带下去的，死了就留在尸体上；活着回来自动归库。
             </p>
             <div className="item-grid chart-carry-bag">
-              {carryPicks.flatMap((p) =>
-                Array.from({ length: p.qty }, (_, i) => (
+              {carryPicks.flatMap((p) => {
+                const def = getItemDef(p.itemId);
+                const stack = def?.stackSize;
+                // 弹药：一匣（≤stackSize 发）占一格·渲染成弹匣格（最后一匣可能不满）；其余道具：一件一格（旧口径不变）。
+                if (stack && stack > 0) {
+                  const mags = Math.ceil(p.qty / stack);
+                  return Array.from({ length: mags }, (_, i) => {
+                    const rounds = i < mags - 1 ? stack : p.qty - stack * (mags - 1);
+                    return (
+                      <ItemCell
+                        key={`${p.itemId}-${i}`}
+                        def={def}
+                        itemId={p.itemId}
+                        qty={rounds}
+                        title={`${def?.name ?? p.itemId}（${rounds} 发）——点击放回一发`}
+                        onClick={() => stepCarry(p.itemId, -1, Infinity)}
+                      />
+                    );
+                  });
+                }
+                return Array.from({ length: p.qty }, (_, i) => (
                   <ItemCell
                     key={`${p.itemId}-${i}`}
-                    def={getItemDef(p.itemId)}
+                    def={def}
                     itemId={p.itemId}
-                    title={`${getItemDef(p.itemId)?.name ?? p.itemId}——点击放回储物柜`}
+                    title={`${def?.name ?? p.itemId}——点击放回储物柜`}
                     onClick={() => stepCarry(p.itemId, -1, Infinity)}
                   />
-                )),
-              )}
+                ));
+              })}
               {Array.from({ length: Math.max(0, carryCapacity - slotsUsed) }, (_, i) => (
                 <EmptyCell key={`empty-${i}`} />
               ))}
@@ -706,8 +726,9 @@ export function ChartInfo({
                 const def = getItemDef(it.itemId);
                 const picked = carry[it.itemId] ?? 0;
                 const remaining = it.qty - picked;
-                const per = def?.slotsRequired ?? 1;
-                const bagFull = slotsUsed + per > carryCapacity;
+                // 加 1 件的边际占格（弹药 stack-aware：填进未满弹匣＝0 格·满了才 +1 格；其余道具恒 +slotsRequired）。
+                const marginal = slotsForItem(it.itemId, picked + 1) - slotsForItem(it.itemId, picked);
+                const bagFull = slotsUsed + marginal > carryCapacity;
                 if (remaining <= 0) return null;
                 return (
                   <ItemCell

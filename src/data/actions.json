@@ -32,6 +32,55 @@
       }
     },
     {
+      "id": "action.axe_chop",
+      "name": "救援斧劈砍",
+      "description": "抡起重斧的一记下劈。高伤、沉、响——挥空了很吃力。",
+      "costStamina": 9,
+      "costOxygenTurns": 1,
+      "requiresEquipment": "tool",
+      "targeting": "single",
+      "effect": {
+        "kind": "attack",
+        "damage": [12, 18],
+        "damageType": "physical",
+        "noise": 2
+      }
+    },
+    {
+      "id": "action.fire_pneumatic",
+      "name": "气动短枪射击",
+      "description": "AP-12 打出一发气动弹。中距中伤，声不大。每次消耗 1 发气动弹。",
+      "costStamina": 3,
+      "costOxygenTurns": 1,
+      "requiresEquipment": "ranged",
+      "requiresItemId": "item.ammo.pneumatic",
+      "consumesItem": true,
+      "targeting": "single",
+      "effect": {
+        "kind": "attack",
+        "damage": [10, 16],
+        "damageType": "physical",
+        "noise": 1
+      }
+    },
+    {
+      "id": "action.fire_harpoon",
+      "name": "鱼叉步枪射击",
+      "description": "PR-40 射出一支钢叉。高伤、贯穿——但炸响会惊动整片水。每次消耗 1 发鱼叉弹。",
+      "costStamina": 5,
+      "costOxygenTurns": 1,
+      "requiresEquipment": "ranged",
+      "requiresItemId": "item.ammo.harpoon",
+      "consumesItem": true,
+      "targeting": "single",
+      "effect": {
+        "kind": "attack",
+        "damage": [18, 26],
+        "damageType": "physical",
+        "noise": 3
+      }
+    },
+    {
       "id": "action.fist",
       "name": "拳脚扭打",
       "description": "最后手段。低伤，可能被反咬。",

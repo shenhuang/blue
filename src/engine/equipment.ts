@@ -15,7 +15,7 @@
 // 边界：纯叶子——只 import 类型 + state.ts（库存/日志工具）+ items.ts（getItemDef）。engine↛ui 干净。
 
 import type { GameState, EquipmentLoadout, EquipmentInstance, PlayerProfile } from '@/types';
-import type { EquipmentEffect, UpgradeStep, EquipmentSlot, ItemDef } from '@/types/items';
+import type { EquipmentEffect, UpgradeStep, EquipmentSlot, ItemDef, WeaponModMeta } from '@/types/items';
 import { getItemDef, allItems, itemSetsFlags } from './items';
 import { appendLog, countInInventory, removeFromInventory, addToInventory } from './state';
 
@@ -375,4 +375,188 @@ function describeCraftCost(cost: { materials: { itemId: string; qty: number }[];
   const mats = cost.materials.map((m) => `${getItemDef(m.itemId)?.name ?? m.itemId}×${m.qty}`).join('、');
   if (cost.gold <= 0) return mats || '免费';
   return mats ? `${mats} ＋ ${cost.gold} 金` : `${cost.gold} 金`;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 负重档位（武器系统·作者 2026-06-20）
+// ════════════════════════════════════════════════════════════════════════════
+// 整套穿戴件总负重 → 档位 → 战斗修正（体力消耗倍率·命中率补正）+ 出发过载门。阈值/数值＝提案可调。
+// **轻装＝中性基线**（命中最高·体力 ×1·作者 2026-06-20 拍板）：起手装＝8＝轻 ⇒ 全部既有战斗 baseline
+// 逐字节不变（新机制只在更重负载下生效）；越重越钝（双方命中都降、行动更费力）；过载＝无法行动 + 拦出发
+// （逃生阀门＝卸装即走）。作者答疑：「light 会增加自己和敌人的命中率」——轻档双方都最准、越重越钝（命中补正
+// 同一加数同时作用玩家与敌人·见 engine/combat.ts），叠加各敌种自己的 hitBonus（有些更善于黑暗中偷袭）。
+
+export type WeightTier = 'light' | 'medium' | 'heavy' | 'overloaded';
+
+/** 档位阈值（含上界）：0–8 轻 / 9–14 中 / 15–20 重 / 21+ 过载。数值＝提案可调。 */
+export function weightTier(weight: number): WeightTier {
+  if (weight <= 8) return 'light';
+  if (weight <= 14) return 'medium';
+  if (weight <= 20) return 'heavy';
+  return 'overloaded';
+}
+
+/** 整套穿戴件总负重（缺 weight 的件按 0）。遍历 Object.values＝加新槽自动纳入（维护性）。 */
+export function totalLoadoutWeight(loadout: EquipmentLoadout): number {
+  let w = 0;
+  for (const inst of Object.values(loadout) as (EquipmentInstance | null)[]) {
+    if (!inst) continue;
+    w += getItemDef(inst.itemId)?.weight ?? 0;
+  }
+  return w;
+}
+
+/** 当前负载档位（loadout → 总重 → 档位·单点）。 */
+export function loadoutWeightTier(loadout: EquipmentLoadout): WeightTier {
+  return weightTier(totalLoadoutWeight(loadout));
+}
+
+const WEIGHT_STAMINA_MULT: Record<WeightTier, number> = {
+  light: 1, medium: 1.5, heavy: 2, overloaded: 2,
+};
+/** 行动体力消耗倍率（combat actionCosts 乘进·与负伤 staminaCostMult 相乘·轻＝×1 基线不变）。 */
+export function weightStaminaMult(loadout: EquipmentLoadout): number {
+  return WEIGHT_STAMINA_MULT[loadoutWeightTier(loadout)];
+}
+
+const WEIGHT_HIT_MOD: Record<WeightTier, number> = {
+  light: 0, medium: -0.07, heavy: -0.15, overloaded: -0.25,
+};
+/** 命中率补正（玩家与敌人同此加数·轻＝0 基线·越重双方越钝·combat 命中判定读）。 */
+export function weightHitMod(loadout: EquipmentLoadout): number {
+  return WEIGHT_HIT_MOD[loadoutWeightTier(loadout)];
+}
+
+/** 是否过载（出发门控 + 战斗全行动封锁的单一判据）。 */
+export function isOverloaded(loadout: EquipmentLoadout): boolean {
+  return loadoutWeightTier(loadout) === 'overloaded';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 武器解锁行动（unlocksAction·combat 可用性 + 事件 hasEquipment.actionId 共用单点）
+// ════════════════════════════════════════════════════════════════════════════
+/**
+ * 某槽装的件是否解锁了指定行动（读 equipment.effects 的 unlocksAction effect）。数据驱动·零硬编码武器 id。
+ *   - combat：带 requiresEquipment 的攻击行动**严格**按此门控——持刀只出刀法、持斧只出斧法、持枪只出对应射击、
+ *     盾不解锁任何攻击。起手刀解锁 knife_slash/knife_stab ⇒ 既有战斗逐字节不变。
+ *   - 事件：hasEquipment{slot, actionId} 据此判「持救援斧（解锁 action.axe_pry）才有的撬门/破障选项」。
+ */
+export function equipmentUnlocksAction(
+  loadout: EquipmentLoadout,
+  slot: EquipmentSlot,
+  actionId: string,
+): boolean {
+  const inst = loadout[slot];
+  const eq = inst ? getItemDef(inst.itemId)?.equipment : undefined;
+  if (!eq) return false;
+  return eq.effects.some((e) => e.kind === 'unlocksAction' && e.actionId === actionId);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 武器改装组件（装/读·命中效果由 combat 应用·作者 2026-06-20）
+// ════════════════════════════════════════════════════════════════════════════
+/** 取已装在某槽武器上的改装组件 meta（无武器/无改装/未注册 → undefined）。combat 命中后读它按 effect 分支。 */
+export function installedModMeta(loadout: EquipmentLoadout, slot: EquipmentSlot): WeaponModMeta | undefined {
+  const inst = loadout[slot];
+  if (!inst?.mod) return undefined;
+  return getItemDef(inst.mod)?.weaponMod;
+}
+
+export type ModInstallAvailability =
+  | { ok: true }
+  | { ok: false; reason: 'slotUnsupported' | 'noWeapon' | 'noModSlot' | 'notAMod' | 'notOwned' };
+
+/**
+ * 能否把 modItemId 装到 slot 的武器上：
+ *   - 当前仅近战 tool 槽支持（ranged/未来武器专属组件后续再设计·SPEC 范围外）；
+ *   - slot 有武器件、且该件 equipment.modSlot===true；
+ *   - modItemId 是 category==='weaponMod' 组件、且库存（profile.inventory）有 ≥1。
+ */
+export function canInstallMod(
+  profile: PlayerProfile,
+  slot: EquipmentSlot,
+  modItemId: string,
+): ModInstallAvailability {
+  if (slot !== 'tool') return { ok: false, reason: 'slotUnsupported' };
+  const inst = profile.equipment?.[slot];
+  const eq = inst ? getItemDef(inst.itemId)?.equipment : undefined;
+  if (!inst || !eq) return { ok: false, reason: 'noWeapon' };
+  if (!eq.modSlot) return { ok: false, reason: 'noModSlot' };
+  if (getItemDef(modItemId)?.category !== 'weaponMod') return { ok: false, reason: 'notAMod' };
+  if (countInInventory(profile.inventory, modItemId) <= 0) return { ok: false, reason: 'notOwned' };
+  return { ok: true };
+}
+
+/**
+ * 应用一次改装：扣组件、写 profile.equipment[slot].mod = modItemId（旧 mod 不返还·SPEC）。持久写 profile·不碰 run
+ * （run.equipment 出海时从 profile copy）。不可装 → no-op（容错口径同 equip/upgrade/craft）。
+ */
+export function installMod(state: GameState, slot: EquipmentSlot, modItemId: string): GameState {
+  const profile = state.profile;
+  if (!canInstallMod(profile, slot, modItemId).ok) return state;
+  const loadout = profile.equipment!;
+  const inst = loadout[slot]!;
+  const inventory = removeFromInventory(profile.inventory, modItemId, 1);
+  const next: GameState = {
+    ...state,
+    profile: { ...profile, inventory, equipment: { ...loadout, [slot]: { ...inst, mod: modItemId } } },
+  };
+  const wname = getItemDef(inst.itemId)?.name ?? inst.itemId;
+  const mname = getItemDef(modItemId)?.name ?? modItemId;
+  return appendLog(next, { tone: 'system', text: `改装：${wname} 装上${mname}。` });
+}
+
+// ── Dev 免费升级 / 打造 / 改装（?dev 门后·镜像 lighthouses.ts::devBuildAtLighthouse「0 成本」）─────────
+// 与设施「测试建造（0 成本）」同口径：跳过材料/金币/持有，真路径（upgrade/craft/install）零触碰，UI 仅
+// DEV_TOOLS 渲染（普通玩家恒 false）。便于 dev 一键测武器系统（升级/打造/各改装件），不必先刷料。
+
+/** dev：免料把某槽件升一级（封顶 maxLevel）。无件 / 已满级 → no-op。 */
+export function devUpgradeEquipment(state: GameState, slot: keyof EquipmentLoadout): GameState {
+  const loadout = state.profile.equipment;
+  const inst = loadout?.[slot];
+  if (!loadout || !inst) return state;
+  if (inst.level >= equipmentMaxLevel(inst.itemId)) return state;
+  const next: GameState = {
+    ...state,
+    profile: { ...state.profile, equipment: { ...loadout, [slot]: { ...inst, level: inst.level + 1 } } },
+  };
+  const name = getItemDef(inst.itemId)?.name ?? inst.itemId;
+  return appendLog(next, { tone: 'system', text: `测试升级（dev·0 成本）：${name} → Lv.${inst.level + 1}。` });
+}
+
+/** dev：免料把可打造件打造进空槽（兑现 setsFlag·同 craftEquipment 口径）。槽非空 / 不可打造 → no-op。 */
+export function devCraftEquipment(state: GameState, itemId: string): GameState {
+  const loadout = state.profile.equipment;
+  const eq = getItemDef(itemId)?.equipment;
+  if (!loadout || !eq?.craftCost) return state;
+  if (loadout[eq.slot]) return state;
+  const inst: EquipmentInstance = { itemId, slot: eq.slot, level: eq.baseLevel };
+  let next: GameState = {
+    ...state,
+    profile: { ...state.profile, equipment: { ...loadout, [eq.slot]: inst } },
+  };
+  const setFlags = itemSetsFlags(itemId);
+  if (setFlags.length > 0) {
+    const flags = new Set(next.profile.flags);
+    for (const f of setFlags) flags.add(f);
+    next = { ...next, profile: { ...next.profile, flags } };
+  }
+  const name = getItemDef(itemId)?.name ?? itemId;
+  return appendLog(next, { tone: 'system', text: `测试打造（dev·0 成本）：${name}。` });
+}
+
+/** dev：免件把改装组件装上某槽武器（跳过持有/消耗·仅校验该件有 modSlot + modItemId 是 weaponMod）。 */
+export function devInstallMod(state: GameState, slot: EquipmentSlot, modItemId: string): GameState {
+  const loadout = state.profile.equipment;
+  const inst = loadout?.[slot];
+  const eq = inst ? getItemDef(inst.itemId)?.equipment : undefined;
+  if (!loadout || !inst || !eq?.modSlot) return state;
+  if (getItemDef(modItemId)?.category !== 'weaponMod') return state;
+  const next: GameState = {
+    ...state,
+    profile: { ...state.profile, equipment: { ...loadout, [slot]: { ...inst, mod: modItemId } } },
+  };
+  const wname = getItemDef(inst.itemId)?.name ?? inst.itemId;
+  const mname = getItemDef(modItemId)?.name ?? modItemId;
+  return appendLog(next, { tone: 'system', text: `测试改装（dev·0 成本）：${wname} 装上${mname}。` });
 }

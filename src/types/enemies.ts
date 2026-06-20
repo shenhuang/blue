@@ -93,6 +93,13 @@ export interface EnemyDef {
   aiPattern: AiPattern;
 
   /**
+   * 命中率补正（负重战斗·作者 2026-06-20）：加到该敌种的基础命中率上（见 engine/combat.ts::enemyHitChance）。
+   * 「每个敌人补正不同·有些更善于在黑暗中偷袭」——暗伏/突袭型给正值（更准）、笨重/被动型给负值或 0。
+   * 缺省 0＝按基础命中（仅受负重档位 weightHitMod 影响）。范围建议 −0.15..+0.20·数值=提案可调。
+   */
+  hitBonus?: number;
+
+  /**
    * 嗅觉系敌种（负伤 SPEC §6.1 scent 第三感官·鲨/梭鱼类天然候选 true·管水母类 false/缺省）。
    * 玩家流血·重（modifiers.scentTrail）时对它光声纪律全部失效：迷彩/关灯/闭声呐照常只管 light/sound，
    * scent 通道直接判「已锁定」（stalker.ts 旁路·sensesBy 矩阵不重写）；战斗里 unaware 直接 alerted。
@@ -179,8 +186,14 @@ export interface EnemyInstance {
 }
 
 export interface EnemyStatus {
-  kind: 'stunned' | 'bleeding' | 'frightened' | 'distracted' | 'enthralled';
+  kind: 'stunned' | 'bleeding' | 'poisoned' | 'frightened' | 'distracted' | 'enthralled';
   remainingTurns: number;
+  /**
+   * 每回合持续伤害（DoT·武器改装组件 SPEC·作者 2026-06-20）：bleeding（倒刺套件·撕裂）/
+   * poisoned（毒囊·中毒）在敌人回合末按此值掉 hp。缺省/0＝纯状态无持续伤（旧 'bleeding' 标记
+   * 逐字节不变·不掉血）。注意：负伤系统（run.injuries）是玩家专属，敌人的「中毒/撕裂」走这条状态 DoT。
+   */
+  dmgPerTurn?: number;
 }
 
 /** 战场 EnemyParty */
