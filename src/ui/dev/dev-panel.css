@@ -628,3 +628,253 @@
   letter-spacing: 0.04em;
   font-size: 11px;
 }
+
+/* ============================================================
+ * StatsDevPanel —— 内容分布统计（BI 风格·ZONE/TONE 两页签）
+ * 选择器 .dev-bi-* 前缀·复用 styles.css 主题变量
+ * ============================================================ */
+.dev-bi-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 20px 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* —— 页签（segmented control） —— */
+.dev-bi-tabs {
+  display: inline-flex;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 2px;
+  gap: 2px;
+}
+.dev-bi-tabs button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding: 5px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.dev-bi-tabs button.on {
+  background: var(--accent);
+  color: #06121a;
+  font-weight: 600;
+}
+
+/* —— 卡片 / 标题 —— */
+.dev-bi-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px 16px;
+}
+.dev-bi-grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+.dev-bi-h {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.dev-bi-h-sub {
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-faint);
+}
+.dev-bi-h-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dev-bi-note {
+  margin-top: 10px;
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+.dev-bi-empty {
+  font-size: 12px;
+  color: var(--text-faint);
+  padding: 8px 0;
+}
+
+/* —— KPI —— */
+.dev-bi-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+.dev-bi-kpi {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 7px;
+  padding: 12px 14px;
+}
+.dev-bi-kpi-gap { border-left-color: #c2603f; }
+.dev-bi-kpi-thin { border-left-color: #b08a3a; }
+.dev-bi-kpi-num {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.dev-bi-kpi-gap .dev-bi-kpi-num { color: #e08a6a; }
+.dev-bi-kpi-thin .dev-bi-kpi-num { color: #d8b25e; }
+.dev-bi-kpi-label {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* —— 排行条 —— */
+.dev-bi-bars { display: flex; flex-direction: column; gap: 7px; }
+.dev-bi-bar-row {
+  display: grid;
+  grid-template-columns: 84px 1fr 64px;
+  align-items: center;
+  gap: 10px;
+}
+.dev-bi-bar-label { font-size: 12px; color: var(--text-muted); text-align: right; }
+.dev-bi-bar-track {
+  height: 16px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.dev-bi-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  opacity: 0.85;
+  border-radius: 3px;
+}
+.dev-bi-bar-val {
+  font-size: 12px;
+  text-align: right;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.dev-bi-bar-val em { font-style: normal; color: var(--text-faint); font-size: 10px; margin-left: 5px; }
+
+/* —— 表格（建议补的池） —— */
+.dev-bi-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.dev-bi-table th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.dev-bi-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+.dev-bi-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.dev-bi-tag {
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid;
+}
+.dev-bi-tag-gap { color: #e08a6a; border-color: #c2603f; }
+.dev-bi-tag-thin { color: #d8b25e; border-color: #b08a3a; }
+
+/* —— 热力矩阵 —— */
+.dev-bi-matrix-wrap { overflow-x: auto; }
+.dev-bi-matrix { border-collapse: collapse; font-size: 12px; }
+.dev-bi-matrix th, .dev-bi-matrix td { border: 1px solid var(--border); text-align: center; }
+.dev-bi-cell, .dev-bi-colh, .dev-bi-coltot { width: 36px; min-width: 36px; height: 28px; }
+.dev-bi-corner, .dev-bi-rowh {
+  padding: 0 10px;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--text-muted);
+  background: var(--bg-elev);
+  position: sticky;
+  left: 0;
+}
+.dev-bi-colh { color: var(--text-faint); background: var(--bg-elev); font-weight: 500; }
+.dev-bi-cell { color: var(--text); font-variant-numeric: tabular-nums; }
+.dev-bi-rowtot, .dev-bi-coltot, .dev-bi-grand {
+  color: var(--text-muted);
+  font-weight: 600;
+  background: var(--bg-elev);
+  padding: 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+.dev-bi-grand { color: var(--accent); }
+
+/* —— 色阶图例 —— */
+.dev-bi-legend { display: flex; align-items: center; gap: 6px; }
+.dev-bi-legend-cap { font-size: 10px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.dev-bi-legend-grad {
+  width: 120px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  background: linear-gradient(90deg, rgba(94,196,214,0.1), rgba(94,196,214,0.8));
+}
+
+/* —— 占比构成条（单条 100%） —— */
+.dev-bi-stackbar {
+  display: flex;
+  width: 100%;
+  height: 26px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.dev-bi-stackbar-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #06121a;
+  min-width: 0;
+}
+
+/* —— 堆叠行（tone×深度 / tone×zone） —— */
+.dev-bi-stacks { display: flex; flex-direction: column; gap: 6px; }
+.dev-bi-stack-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 34px;
+  align-items: center;
+  gap: 10px;
+}
+.dev-bi-stack-label { font-size: 11px; color: var(--text-muted); text-align: right; }
+.dev-bi-stack-track {
+  display: flex;
+  height: 15px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.dev-bi-seg { height: 100%; min-width: 0; }
+.dev-bi-stack-val { font-size: 11px; color: var(--text-faint); text-align: right; font-variant-numeric: tabular-nums; }
+
+/* —— 图例行 —— */
+.dev-bi-legendrow { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; }
+.dev-bi-legenditem { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+.dev-bi-legenditem em { font-style: normal; color: var(--text); font-variant-numeric: tabular-nums; }
+.dev-bi-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }

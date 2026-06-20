@@ -33,12 +33,17 @@ const MapDevPanel = DEV_TOOLS
       import('@/ui/dev/MapDevPanel').then((m) => ({ default: m.MapDevPanel })),
     )
   : null;
+const StatsDevPanel = DEV_TOOLS
+  ? lazy(() =>
+      import('@/ui/dev/StatsDevPanel').then((m) => ({ default: m.StatsDevPanel })),
+    )
+  : null;
 
-/** 当前打开的 dev 面板（事件 / 战斗 / 地图 / 无）。各面板互斥，一次只显示一个。 */
-type DevPanelKind = 'event' | 'combat' | 'map' | null;
+/** 当前打开的 dev 面板（事件 / 战斗 / 地图 / 统计 / 无）。各面板互斥，一次只显示一个。 */
+type DevPanelKind = 'event' | 'combat' | 'map' | 'stats' | null;
 
 /**
- * URL 直开 dev 面板：`?dev&panel=map|event|combat`（#107 续·作者手机验收用）。
+ * URL 直开 dev 面板：`?dev&panel=map|event|combat|stats`（#107 续·作者手机验收用）。
  * 手机没有 Shift 键、Shift+D/C/M 够不着面板——URL 参数是触屏唯一入口；仍在 ?dev 门后
  * （DEV_TOOLS false 时恒 null·普通访客零变化）。桌面快捷键照常可再切换/关闭；
  * 手机上关面板＝去掉 panel 参数刷新。
@@ -46,7 +51,7 @@ type DevPanelKind = 'event' | 'combat' | 'map' | null;
 function initialDevPanel(): DevPanelKind {
   if (!DEV_TOOLS || typeof window === 'undefined') return null;
   const p = new URLSearchParams(window.location.search).get('panel');
-  return p === 'map' || p === 'event' || p === 'combat' ? p : null;
+  return p === 'map' || p === 'event' || p === 'combat' || p === 'stats' ? p : null;
 }
 
 /**
@@ -77,8 +82,8 @@ export default function App() {
   // 更新日志弹窗开关：同样是本地 UI state，不进 GameState（quirk #23）
   const [changelogOpen, setChangelogOpen] = useState(false);
 
-  // Shift+D（事件）/ Shift+C（战斗）/ Shift+M（地图）切换 dev 面板；只在 dev 工具启用时（dev server 或 ?dev）注册监听
-  // 互斥规则：当前打开任一面板时，按任一快捷键 = 关闭；关闭时按 D/C/M = 打开对应面板。
+  // Shift+D（事件）/ Shift+C（战斗）/ Shift+M（地图）/ Shift+S（统计）切换 dev 面板；只在 dev 工具启用时（?dev）注册监听
+  // 互斥规则：当前打开任一面板时，按任一快捷键 = 关闭；关闭时按 D/C/M/S = 打开对应面板。
   useEffect(() => {
     if (!DEV_TOOLS) return;
     function onKey(e: KeyboardEvent) {
@@ -97,6 +102,9 @@ export default function App() {
       } else if (e.key === 'M' || e.key === 'm') {
         e.preventDefault();
         setDevPanel((cur) => (cur === null ? 'map' : null));
+      } else if (e.key === 'S' || e.key === 's') {
+        e.preventDefault();
+        setDevPanel((cur) => (cur === null ? 'stats' : null));
       }
     }
     window.addEventListener('keydown', onKey);
@@ -250,6 +258,11 @@ export default function App() {
       {DEV_TOOLS && devPanel === 'map' && MapDevPanel && (
         <Suspense fallback={null}>
           <MapDevPanel onClose={() => setDevPanel(null)} />
+        </Suspense>
+      )}
+      {DEV_TOOLS && devPanel === 'stats' && StatsDevPanel && (
+        <Suspense fallback={null}>
+          <StatsDevPanel onClose={() => setDevPanel(null)} />
         </Suspense>
       )}
     </div>

@@ -13,7 +13,7 @@
 // 边界：本文件在 src/ui，check-boundaries 规则二只禁在 UI 里手搓 phase 对象字面量——
 // 读 state.phase.kind 不受限；切 phase 一律走 EventView 内的 engine 转移。滚动用内联样式（规则三只扫 styles.css）。
 
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useMemo, useState, lazy, Suspense, type CSSProperties } from 'react';
 import type { GameState, EventOption } from '@/types';
 import { listAllEvents, describeCondition, buildScenarioState } from '@/engine/eventScenario';
 import { satisfyEvent, describeEventGate } from '@/engine/eventSatisfy';
@@ -21,6 +21,12 @@ import type { SatisfyResult } from '@/engine/eventSatisfy';
 import { eventArc, type EventArc, type ArcEdge } from '@/engine/eventGraph';
 import { getEventById } from '@/engine/zones';
 import { EventView } from './EventView';
+// 懒加载：StatsDevPanel 静态 import 会把 dev-panel.css 拉进 StoryEditor 模块图，而
+// scripts/smoke-story-editor.tsx 用 tsx（无 Vite·不认 .css）渲染 StoryEditor 会炸。lazy() 把它
+// 推迟到「内容统计」真打开时才 import（showStats 默认 false·smoke 初始渲染不触发）。对齐 App.tsx 套路。
+const StatsDevPanel = lazy(() =>
+  import('./dev/StatsDevPanel').then((m) => ({ default: m.StatsDevPanel })),
+);
 
 const STAT_LABEL: Record<string, string> = { sanity: '理智', stamina: '体力', oxygen: '氧气', nitrogen: '氮' };
 const TONE_COLOR: Record<string, string> = { realistic: '#7fc89a', uncanny: '#d7b46a', cosmic: '#c98bd0' };
@@ -48,6 +54,7 @@ export default function StoryEditor() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [live, setLive] = useState<GameState | null>(null);
   const [hallucinations, setHallucinations] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   // 弧头集合（只看弧头时用）
   const rootSet = useMemo(() => {
@@ -119,6 +126,7 @@ export default function StoryEditor() {
           <input type="checkbox" checked={hallucinations} onChange={(e) => setHallucinations(e.target.checked)} />
           幻觉模式（露 sanity≤50 选项）
         </label>
+        <button style={S.btn} onClick={() => setShowStats(true)}>内容统计</button>
         <span style={{ ...S.faint, opacity: 0.6 }}>编辑 / 保存：Phase 3</span>
       </header>
 
@@ -230,6 +238,11 @@ export default function StoryEditor() {
           </div>
         </aside>
       </div>
+      {showStats && (
+        <Suspense fallback={null}>
+          <StatsDevPanel onClose={() => setShowStats(false)} />
+        </Suspense>
+      )}
     </div>
   );
 }
