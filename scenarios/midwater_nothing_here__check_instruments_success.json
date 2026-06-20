@@ -1,0 +1,23 @@
+{
+  "_comment": "没有·检查仪器成功（cosmic·sanity95高通过·氧-2 理智-2）",
+  "eventId": "midwater.the_nothing_here",
+  "depth": 193,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "sanity": 95
+  },
+  "choices": [
+    "check_every_instrument"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -2
+    }
+  }
+}

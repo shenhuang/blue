@@ -1,0 +1,23 @@
+{
+  "_comment": "不可见的那道·绕找边界成功（uncanny·sanity90高通过·氧-3 理智-3）",
+  "eventId": "vent.the_scalding",
+  "depth": 210,
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "stats": {
+    "sanity": 90
+  },
+  "choices": [
+    "find_the_edges"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": -3
+    }
+  }
+}

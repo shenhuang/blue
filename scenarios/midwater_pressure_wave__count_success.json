@@ -1,0 +1,23 @@
+{
+  "_comment": "推了一下·数节律成功（uncanny·sanity95高通过·氧-3 理智-3）",
+  "eventId": "midwater.the_pressure_wave",
+  "depth": 195,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "sanity": 95
+  },
+  "choices": [
+    "hold_count_pulses"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": -3
+    }
+  }
+}

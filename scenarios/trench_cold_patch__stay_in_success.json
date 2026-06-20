@@ -1,0 +1,23 @@
+{
+  "_comment": "冷的那两步·停在里面成功（cosmic·sanity90高通过·氧-2 理智-3）",
+  "eventId": "trench.the_cold_patch",
+  "depth": 258,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "stats": {
+    "sanity": 90
+  },
+  "choices": [
+    "stay_in_cold"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -3
+    }
+  }
+}
