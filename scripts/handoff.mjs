@@ -20,6 +20,7 @@ import { dirname, resolve, join } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const N = parseInt(process.argv[2], 10) || 8;
+const CHANGELOG_TITLES_N = 12; // handoff 末尾只列最近这么多条 CHANGELOG「标题」（正文留盘·见 recentChangelogTitles·省上下文）
 
 function hr(title) {
   return `\n${'═'.repeat(64)}\n  ${title}\n${'═'.repeat(64)}`;
@@ -45,9 +46,25 @@ function readOr(rel, fallback) {
 function headLines(text, n) {
   return text.split('\n').slice(0, n).join('\n');
 }
-function tailLines(text, n) {
+// CHANGELOG 末尾 N 条只打「编号 + 加粗标题」一行——正文（巨型单行段落）留盘上、别每 session 灌全文。
+// 旧版 tailLines(…,30) 把最近十几条全文（~53KB·占 handoff 输出 95%）塞进每次定位＝brain rot 主源。
+// 要读某条全文：grep 编号 docs/archive/CHANGELOG.md。条数见 CHANGELOG_TITLES_N。
+function recentChangelogTitles(text, n) {
   const lines = text.split('\n');
-  return lines.slice(Math.max(0, lines.length - n)).join('\n');
+  const starts = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\d+\.\s/.test(lines[i])) starts.push(i);
+  }
+  const pick = starts.slice(Math.max(0, starts.length - n));
+  const out = pick.map((i) => {
+    const line = lines[i];
+    const num = (line.match(/^(\d+)\./) || [])[1] || '?';
+    const bold = line.match(/\*\*(.+?)\*\*/);
+    let title = bold ? bold[1] : line.replace(/^\d+\.\s*/, '');
+    if (title.length > 150) title = title.slice(0, 149) + '…';
+    return `${num}. ${title}`;
+  });
+  return out.length ? out.join('\n') : '(CHANGELOG 无可解析条目)';
 }
 // STATUS.md 顶部 blockquote：第一段连续 '>' 引用块（= 滚动的「最近 ~2 session + 当前状态」指针）。
 function topBlockquote(text) {
@@ -135,8 +152,10 @@ if (existsSync(nightlyDir)) {
 console.log(hr('STATUS.md 顶部（当前状态 + 最近 session）'));
 console.log(topBlockquote(readOr('docs/STATUS.md', '(无 docs/STATUS.md)')));
 
-// —— 4. CHANGELOG.md 末尾几条（新条目追加在末尾）——
-console.log(hr('CHANGELOG.md 末尾'));
-console.log(tailLines(readOr('docs/archive/CHANGELOG.md', '(无 docs/archive/CHANGELOG.md)'), 30));
+// —— 4. CHANGELOG.md 末尾标题（最近条目·只打加粗标题·正文留盘·省上下文）——
+console.log(hr(`CHANGELOG.md 末尾 ${CHANGELOG_TITLES_N} 条标题（正文见 docs/archive/CHANGELOG.md）`));
+console.log(
+  recentChangelogTitles(readOr('docs/archive/CHANGELOG.md', '(无 docs/archive/CHANGELOG.md)'), CHANGELOG_TITLES_N),
+);
 
 console.log('\n— 定位完毕。方向 / 下一步见 docs/NEXT_SESSION_PROMPT.md（人写·本地·不提交）。');
