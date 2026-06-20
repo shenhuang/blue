@@ -25,7 +25,7 @@ import type {
   PlayerProfile,
 } from '@/types';
 import lighthouseData from '@/data/lighthouse_upgrades.json';
-import { appendLog, removeFromInventory, HOME_LIGHTHOUSE_ID, HOME_LIGHTHOUSE_POS } from './state';
+import { appendLog, removeFromInventory, addToInventory, HOME_LIGHTHOUSE_ID, HOME_LIGHTHOUSE_POS } from './state';
 import { materialShortfall, describeUpgradeCost, getUpgradeBonuses } from './upgrades';
 import { ch1AnchorFlag, TUTORIAL_COMPLETE_FLAG, type Ch1Anchor } from './story';
 import { regionRadius } from './regions';
@@ -152,6 +152,9 @@ export function buildAtLighthouse(
   for (const m of def.cost.materials) {
     inventory = removeFromInventory(inventory, m.itemId, m.qty);
   }
+  // capstone 产出：建成授予关键道具（跨柱硬依赖载体·热液核心→海沟电梯·types/columns.ts::grantsItem）。
+  // 先扣 cost 后授予（同一 inventory·key item 与 cost id 不撞）；一次性建造 ⇒ 一次性授予。
+  if (def.grantsItem) inventory = addToInventory(inventory, def.grantsItem.itemId, def.grantsItem.qty);
 
   // 写入该灯塔的 builtUpgrades（不可变更新：只换这一座）
   const builtUpgrades = new Set(lighthouse.builtUpgrades);
@@ -209,8 +212,12 @@ export function devBuildAtLighthouse(
   const flags = entry.def.setsFlag
     ? new Set(state.profile.flags).add(entry.def.setsFlag)
     : state.profile.flags;
+  // capstone 产出（同真路径·dev 免料但仍授予 build 产物·便于 dev 测下游海沟电梯依赖）。
+  const inventory = entry.def.grantsItem
+    ? addToInventory(state.profile.inventory, entry.def.grantsItem.itemId, entry.def.grantsItem.qty)
+    : state.profile.inventory;
   return appendLog(
-    { ...state, profile: { ...state.profile, lighthouses, flags } },
+    { ...state, profile: { ...state.profile, lighthouses, flags, inventory } },
     { tone: 'system', text: `测试建造（dev·0 成本）：${lighthouse.name} · ${entry.def.name}。` },
   );
 }

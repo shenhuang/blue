@@ -1,5 +1,5 @@
 {
-  "_doc": "探深「深度柱」配置（#131·单一来源·data-driven·级数/深度收尾定案见 SPEC §10·2026-06-14 作者拍板·已实现）。每座灯塔一根向下的柱：建到第 K 级 probe（探深 Lv.K）→ 深度档 1…K 可下潜(lit)、第 K+1 档暗点现身(dim·看得到去不了)、更深 hidden（depthTierRevealState·一级露一档）。每根柱＝engine/columns.ts 派生出：① 一组 band（每 tier 一个·id=band.<短名>.t<tier>·绝对 depthRange 覆盖 zone·并进 bands.ts 注册表）；② 一条 probe 升级轨（id=lhtrack.probe.<短名>·onlyLighthouse=lighthouseId·各级 cost=该 tier 账单·并进 lighthouses.ts 注册表·设施面板/canBuildAt/buildAtLighthouse 零改消费）；③ 海图深入 POI（id=poi.dive.<短名>.t<tier>·摆宿主灯塔揭示圈内·revealState 由 columnBuiltLevel vs tier 派生）。**可拓展＝硬要求**：新灯塔（鲸落营地/后续章节）只加一条 column 即有自己的柱，不碰引擎。tier 旋钮语义同 DepthBand（types/bands.ts）。**级数+每级底深（SPEC §10 定案）**：家礁 2(40/60)·残骸 3(50/75/100)·中层 6(60/90/120/150/180/210·主探索区·内容最重·步长 30)·热液 4(75/125/175/225·步长 50·高风险更强材料)·海沟 4(90/180/270/电梯·步长 90·近一章结尾)。band 范围＝上一级底→本级底；**每柱 tier-1 顶深为占位入口**（home/wreck/trench 沿用旧入口·midwater/vent 取 底-步长·作者按手感调·结构不动·只动数字）。**海沟第 4 级＝科考站电梯 capstone**（capstone=true）：非普通刷怪 band·cost 含「科考站升级模块」item（item.station_module·由额外剧情得·建造门走料检查 canBuildAt·非 story flag 门）·setsFlag=story.ch1.station_found（建成即揭示 chart_regions 科考站 flag-gated 区·#124 原语）·只解锁「海沟科考站电梯入口」一个下潜点·名义探深 360m 但实际可达 ~310m（信息范围 vs 实际可达点分离＝灯塔=信息基建）·入口→科考站（一章收束剧情·占位+接口·后章回来往下接＝Phase 3 长出点）。abyssal/hadal/subhadal/nameless 预留 band 已删（作者：旧测试内容·SPEC §10）。**数值为占位起手值**·check-dive-refs 守 tier 连续单调/账单在场/派生 id 不撞。",
+  "_doc": "探深「深度柱」配置（#131·单一来源·data-driven·级数/深度收尾定案见 SPEC §10·2026-06-14 作者拍板·已实现）。每座灯塔一根向下的柱：建到第 K 级 probe（探深 Lv.K）→ 深度档 1…K 可下潜(lit)、第 K+1 档暗点现身(dim·看得到去不了)、更深 hidden（depthTierRevealState·一级露一档）。每根柱＝engine/columns.ts 派生出：① 一组 band（每 tier 一个·id=band.<短名>.t<tier>·绝对 depthRange 覆盖 zone·并进 bands.ts 注册表）；② 一条 probe 升级轨（id=lhtrack.probe.<短名>·onlyLighthouse=lighthouseId·各级 cost=该 tier 账单·并进 lighthouses.ts 注册表·设施面板/canBuildAt/buildAtLighthouse 零改消费）；③ 海图深入 POI（id=poi.dive.<短名>.t<tier>·摆宿主灯塔揭示圈内·revealState 由 columnBuiltLevel vs tier 派生）。**可拓展＝硬要求**：新灯塔（鲸落营地/后续章节）只加一条 column 即有自己的柱，不碰引擎。tier 旋钮语义同 DepthBand（types/bands.ts）。**级数+每级底深（SPEC §10 定案）**：家礁 2(40/60)·残骸 3(50/75/100)·中层 6(60/90/120/150/180/210·主探索区·内容最重·步长 30)·热液 4(75/125/175/225·步长 50·高风险更强材料)·海沟 4(90/180/270/电梯·步长 90·近一章结尾)。band 范围＝上一级底→本级底；**每柱 tier-1 顶深为占位入口**（home/wreck/trench 沿用旧入口·midwater/vent 取 底-步长·作者按手感调·结构不动·只动数字）。**海沟第 4 级＝科考站电梯 capstone**（capstone=true）：非普通刷怪 band·cost 含「科考站升级模块」item（item.station_module·**由热液柱 capstone 产出**＝grantsItem·跨柱硬依赖「必经热液」·check-dive-refs 守闭环·建造门走料检查 canBuildAt·非 story flag 门）·setsFlag=story.ch1.station_found（建成即揭示 chart_regions 科考站 flag-gated 区·#124 原语）·只解锁「海沟科考站电梯入口」一个下潜点·名义探深 360m 但实际可达 ~310m（信息范围 vs 实际可达点分离＝灯塔=信息基建）·入口→科考站（一章收束剧情·占位+接口·后章回来往下接＝Phase 3 长出点）。abyssal/hadal/subhadal/nameless 预留 band 已删（作者：旧测试内容·SPEC §10）。**数值为占位起手值**·check-dive-refs 守 tier 连续单调/账单在场/派生 id 不撞。",
   "columns": [
     {
       "id": "col.home",
@@ -215,6 +215,10 @@
           "maxRoomFeatures": 2,
           "sonarDeception": 0.12,
           "hunts": true,
+          "capstone": true,
+          "grantsItem": { "itemId": "item.station_module", "qty": 1 },
+          "setsFlag": "story.ch1.vent_intel",
+          "capstoneNote": "探针摸清了裂口的开合脉律。喷口最深处嵌着一截还在渗热的古机械——你撬下了那块模块。不属于这个时代，却和海沟那部停摆的电梯严丝合缝：同一批人，修过往下走的路。",
           "blurb": "玄武岩地板裂开一道开合的口，喷热水柱，节律性，像在呼吸。急流一直在拽你。",
           "danger": "急流、热水、循着体温摸过来的东西。这个深度，回波也开始不老实了。",
           "cost": {

@@ -101,11 +101,14 @@ function columnTrack(c: DepthColumn): LighthouseTrack {
     // 低频声呐是**纯门控**：没有被动加成（可见性靠 columnBuiltLevel vs tier 派生·不靠 effects）。
     effects: [],
     description: t.capstone
-      ? `探针到 ~${t.depthRange[1]}m。唯一找到的落脚处是「${t.label}」入口——再往下什么样，只有亲自去才知道。`
+      ? (t.capstoneNote ??
+          `探针到 ~${t.depthRange[1]}m。唯一找到的落脚处是「${t.label}」入口——再往下什么样，只有亲自去才知道。`)
       : `「${t.label}」（${t.depthRange[0]}–${t.depthRange[1]}m）的航路已经打通。声呐还能探到再往下一截——但那里暂时还落不了脚。`,
     requiresLighthouseLevel: 1,
     // capstone（科考站电梯）建成置 flag → 揭示 flag-gated 区（#124）；普通档无 setsFlag（纯门控·可见性靠档位派生）。
     ...(t.setsFlag ? { setsFlag: t.setsFlag } : {}),
+    // capstone 产出关键道具（热液核心→海沟电梯跨柱硬依赖·types/columns.ts::grantsItem）：透传给 buildAtLighthouse。
+    ...(t.grantsItem ? { grantsItem: t.grantsItem } : {}),
   }));
   return {
     id: columnProbeTrackId(c.id),

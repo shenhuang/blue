@@ -4,7 +4,7 @@
 // 设施效果（点亮半径 reveal / 出海拉近 reach）由 Phase C 的 chart.ts/dive.ts 消费；
 // 本阶段只把类型钉死 + 聚合成 LighthouseBonuses 供 Phase C 读取。
 
-import type { UpgradeCost } from './upgrades';
+import type { UpgradeCost, MaterialCost } from './upgrades';
 
 /**
  * 一座灯塔基地（持久，进存档）。家＝第一座灯塔（lighthouse.home，守灯人 Aldo 所在的港口）。
@@ -55,6 +55,12 @@ export interface LighthouseUpgradeDef {
    * 海图上 requiresFlags 含此 flag 的「深入 POI」随之在该灯塔揭示圈内浮现（升级即解锁·扫描即现）。
    */
   setsFlag?: string;
+  /**
+   * 建成时**授予**的关键道具（capstone 产出·buildAtLighthouse / devBuildAtLighthouse 应用 → addToInventory）。
+   * 深度柱派生（columns.ts::columnTrack）把 tier.grantsItem 透传到这里。跨柱硬依赖载体（热液核心→海沟电梯·
+   * 见 types/columns.ts::grantsItem）。
+   */
+  grantsItem?: MaterialCost;
 }
 
 /** 一条灯塔设施升级轨（如"信标光源"）。 */

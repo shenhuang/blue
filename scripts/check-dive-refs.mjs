@@ -13,6 +13,7 @@
 //   (g) 派生 band id 不撞     —— band.<短名>.t<tier> 不与 depth_bands.json 既有 id 冲突、彼此不重。
 //   (h) 派生 probe 升级 id 不撞 —— lighthouse.probe.<短名>.lv<tier> 不与 lighthouse_upgrades.json 既有 upgrade id 冲突。
 //   (i) 残留 bandId 可解析    —— 任何手写 ChartPoi.bandId（现应无·防回流）仍指向 depth_bands.json 注册 band。
+//   (l) capstone 产出/消费闭环 —— tier.grantsItem 合法且在册；capstone 消费的 key item（decay eternal·非卖品）必有 capstone 产出来源（跨柱硬依赖「必经」不断裂）。
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -163,6 +164,43 @@ for (const it of itemsFile.items ?? []) {
   }
 }
 
+// (l) capstone 产出/消费闭环（核心+情报·2026-06-20·「必经热液」落成机制）：
+//   · 任何 tier.grantsItem 必形如 {itemId, qty≥1} 且 itemId 是 items.json 在册道具；
+//   · capstone 消费的「key item」（decay 'eternal' 且 sellPrice 0＝非卖品关键道具）必有某 capstone 产出（grantsItem）来源——
+//     否则跨柱硬依赖断裂（如海沟电梯 cost 含 item.station_module 却无人产出 ⇒ 玩家永远建不了电梯·下不去深渊路）。
+const itemIndex = new Map((itemsFile.items ?? []).map((it) => [it.id, it]));
+const isKeyItem = (id) => {
+  const it = itemIndex.get(id);
+  return !!it && it.decay === 'eternal' && (it.sellPrice ?? 0) === 0;
+};
+const grantedByCapstone = new Set();
+for (const c of columns) {
+  for (const t of c.tiers ?? []) {
+    const g = t.grantsItem;
+    if (g === undefined) continue;
+    if (typeof g.itemId !== 'string' || typeof g.qty !== 'number' || g.qty < 1) {
+      errors.push(`[grant] 柱 ${c.id} t${t.tier}：grantsItem 非法（需 {itemId, qty≥1}）`);
+      continue;
+    }
+    if (!itemIndex.has(g.itemId)) {
+      errors.push(`[grant] 柱 ${c.id} t${t.tier}：grantsItem.itemId ${g.itemId} 不在 items.json`);
+    }
+    if (t.capstone === true) grantedByCapstone.add(g.itemId);
+  }
+}
+for (const c of columns) {
+  for (const t of c.tiers ?? []) {
+    if (t.capstone !== true) continue;
+    for (const m of t.cost?.materials ?? []) {
+      if (isKeyItem(m.itemId) && !grantedByCapstone.has(m.itemId)) {
+        errors.push(
+          `[capstone-dep] 柱 ${c.id} t${t.tier}：capstone 消费关键道具 ${m.itemId}，但无任何 capstone 产出它（跨柱硬依赖断裂·「必经」落空）`,
+        );
+      }
+    }
+  }
+}
+
 // —— 汇报 ——
 if (errors.length) {
   console.error(`✗ check-dive-refs：${errors.length} 处问题`);
@@ -171,5 +209,5 @@ if (errors.length) {
 }
 const tierCount = columns.reduce((a, c) => a + (c.tiers?.length ?? 0), 0);
 console.log(
-  `✓ check-dive-refs：${columns.length} 根深度柱 / ${tierCount} 档 · 宿主合法 · 一柱一灯塔 · tier 连续单调 · 账单在场 · zone 合法 · 派生 band/probe id 不撞`,
+  `✓ check-dive-refs：${columns.length} 根深度柱 / ${tierCount} 档 · 宿主合法 · 一柱一灯塔 · tier 连续单调 · 账单在场 · zone 合法 · 派生 band/probe id 不撞 · capstone 产出/消费闭环`,
 );

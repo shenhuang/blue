@@ -106,6 +106,14 @@ export const WHALEFALL_FOUND_FLAG = 'story.ch1.whalefall_found';
 export const STATION_FOUND_FLAG = 'story.ch1.station_found';
 
 /**
+ * 热液探深 capstone 情报里程碑（核心+情报·2026-06-20）：建热液探深第 4 级（裂口·capstone）即由 depth_columns
+ * vent t4 的 setsFlag 置位。语义＝在喷口深处撬下古文明「下行动力核心」（item.station_module·海沟电梯 cost 消费它
+ * ＝必经热液）时，一并读到那批古机械的记录 → 拼出通往更深处的一段情报（「灯塔＝信息基建」「真结局引大深渊情报」）。
+ * 现为里程碑 hook（Phase 3「另一个世界」在海沟电梯之下长出时消费·别擅自动 d_reveal·见 deep_game_vision）。
+ */
+export const VENT_INTEL_FLAG = 'story.ch1.vent_intel';
+
+/**
  * story.ts 生成的**全部** story.* flag 枚举（单一来源）。playthrough-story §4 据此守门
  * 「任何 data 文件里出现的 story.* 字面量都必须 ∈ 本集合」——新增任何 story flag 生成器
  * 务必在此登记，否则用到它的 data 会在 regress 红（这是把「门=flag·派生进 story.ts」
@@ -123,6 +131,7 @@ export function allStoryFlags(): string[] {
     WHALE_SEARCH_READY_FLAG,
     WHALEFALL_FOUND_FLAG,
     STATION_FOUND_FLAG,
+    VENT_INTEL_FLAG,
   ];
 }
 

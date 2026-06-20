@@ -9,7 +9,7 @@ import { createInitialGameState } from '../src/engine/state';
 import { getBand } from '../src/engine/bands';
 import { startDiveFromPoi } from '../src/engine/dive';
 import { canBuildAt, buildAtLighthouse } from '../src/engine/lighthouses';
-import { STATION_FOUND_FLAG } from '../src/engine/story';
+import { STATION_FOUND_FLAG, VENT_INTEL_FLAG } from '../src/engine/story';
 import {
   getColumns,
   getColumn,
@@ -297,6 +297,55 @@ L('\n========== 9. 海沟科考站电梯 capstone ==========');
   assert(poiCap && poiCap.revealState === 'lit', '9: 建电梯 → 海图电梯入口潜点 lit（唯一新解锁的下潜点）');
 }
 L('  capstone 标记/深度/setsFlag/module gate/建成端到端置 flag + 电梯入口 lit ✓');
+
+// ============================================================
+// 10. 热液 capstone 产出「下行动力核心」+ 情报 flag（核心+情报·2026-06-20）：
+//     建热液探深 t4（裂口·capstone）→ 授予 item.station_module（海沟电梯 cost 消费它＝必经热液）+ 置 VENT_INTEL_FLAG。
+//     跨柱硬依赖：海沟电梯（§9）消费的 key item 唯一来源 = 热液 capstone（check-dive-refs (l) 守结构·此处守行为）。
+// ============================================================
+L('\n========== 10. 热液 capstone 产出核心 + 情报 ==========');
+{
+  const ventCol = getColumn('col.vent')!;
+  const cap = ventCol.tiers[3];
+  assert(cap.capstone === true, '10: 热液 t4 标记 capstone');
+  assert(
+    cap.grantsItem?.itemId === 'item.station_module' && cap.grantsItem?.qty === 1,
+    '10: 热液 t4 产出下行核心 item.station_module ×1',
+  );
+  assert(cap.setsFlag === VENT_INTEL_FLAG, '10: 热液 t4 setsFlag = 大深渊情报里程碑');
+  // 派生 probe lv4 把 grantsItem + setsFlag 透传进去（columnTrack）。
+  const ventUp4 = columnProbeTracks().find((t) => t.id === 'lhtrack.probe.vent')!.upgrades[3];
+  assert(ventUp4.grantsItem?.itemId === 'item.station_module', '10: 派生 probe lv4 透传 grantsItem');
+  assert(ventUp4.setsFlag === VENT_INTEL_FLAG, '10: 派生 probe lv4 透传 setsFlag');
+
+  // 端到端：建到热液 lv3、给足 t4 料钱 → 建 capstone → 库存 +核心 + 置情报 flag。
+  const s3 = colState('col.vent', 3);
+  const ready = {
+    ...s3,
+    profile: {
+      ...s3.profile,
+      inventory: [
+        { itemId: 'item.cave_octopus_beak', qty: 5 },
+        { itemId: 'item.eel_skin', qty: 5 },
+      ],
+      bankedGold: 1000,
+    },
+  };
+  const host = ready.profile.lighthouses.find((l) => l.id === 'lighthouse.ch1_vent_outpost')!;
+  assert(canBuildAt(ready.profile, host, columnProbeUpgradeId('col.vent', 4)).ok, '10: 料钱足 → 热液 capstone 可建');
+  const built = buildAtLighthouse(ready, 'lighthouse.ch1_vent_outpost', columnProbeUpgradeId('col.vent', 4));
+  const got = built.profile.inventory.find((i) => i.itemId === 'item.station_module');
+  assert(got && got.qty === 1, '10: 建热液 capstone → 库存得下行核心 ×1（capstone 产出端到端）');
+  assert(built.profile.flags.has(VENT_INTEL_FLAG), '10: 建热液 capstone → 置大深渊情报 flag');
+
+  // 闭环：热液产出的核心 = 海沟电梯（§9）cost 消费的 key item → 不探热液到底就建不了电梯（必经）。
+  const trenchCap = getColumn('col.trench')!.tiers[3];
+  assert(
+    trenchCap.cost.materials.some((m) => m.itemId === cap.grantsItem!.itemId),
+    '10: 海沟电梯 cost 消费的正是热液 capstone 产出的核心（跨柱硬依赖闭环·必经热液）',
+  );
+}
+L('  热液 capstone 产出核心 ×1 + 情报 flag + 派生透传 + 跨柱依赖闭环（海沟电梯消费热液核心）✓');
 
 console.log(log.join('\n'));
 console.log('\n✓ 探深「深度柱」（#131·§10 定案）回归通过');

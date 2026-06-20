@@ -14,7 +14,7 @@
 // 最深留后续 Phase：各柱只下到「能见底」的中段（海沟 6 级止于 ~108m）；abyssal/hadal/nameless
 // 「另一个世界」是专门 Phase（depth_bands.json 保留这些 band 作预留·暂无柱档抵达·见 deep_game_vision）。
 
-import type { UpgradeCost } from './upgrades';
+import type { UpgradeCost, MaterialCost } from './upgrades';
 import type { Visibility, CurrentStrength } from './chart';
 import type { ZoneTag } from './events';
 
@@ -61,6 +61,19 @@ export interface DepthColumnTier {
    * 必须 ∈ story.ts allStoryFlags()（playthrough-story §4 守「data story.* 字面量 ⊆ allStoryFlags()」）。
    */
   setsFlag?: string;
+  /**
+   * 建该级 probe 升级时**授予**的关键道具（capstone 产出·buildAtLighthouse / devBuildAtLighthouse 应用
+   * def.grantsItem → addToInventory(profile.inventory)）。**跨柱硬依赖的载体**：热液 capstone 产出「下行动力核心」
+   * （item.station_module）→ 海沟电梯 capstone 的 cost 消费同一 item ⇒ 不把热液探到底就拿不到核心、建不了电梯、
+   * 下不去深渊路（「必经热液」）。该「capstone cost 消费的 key item 必有 capstone 产出来源」不变量由
+   * check-dive-refs 守门（断了即 regress 红·CLAUDE.md 顶部「约定落成机制」）。
+   */
+  grantsItem?: MaterialCost;
+  /**
+   * capstone 专属解锁文案（覆盖 columns.ts 默认「探针到 ~Xm·唯一落脚处是…入口」泛文案）。各 capstone 含义不同
+   * （海沟＝电梯入口／热液＝撬下古机械模块 + 读到更深处情报）时给各自的 note；缺省回退泛文案。
+   */
+  capstoneNote?: string;
   /**
    * 显式海图坐标（归一化·覆盖默认「宿主灯塔附近按 tier 扇开」的自动布点）。capstone（电梯）等需要摆到
    * 独立位置、脱离本柱密集簇时用——与对应 chart_regions flag-gated 区 center 对齐＝圈内含该点（不空圈）。
