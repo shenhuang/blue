@@ -65,6 +65,20 @@
       "text": "你在长椅另一头坐下。海面有风，雾往外退。\n\n「潮位正好。」Aldo 朝海图桌那边抬了抬下巴，「今天去哪，你自己挑——那些坐标，你现在比我熟。」\n\n他顿了顿。\n\n「带够气。回来吃饭。」",
       "choices": [
         {
+          "id": "coords_left",
+          "label": "还剩几处坐标。",
+          "next": "aldo.coords_left",
+          "visibleIf": {
+            "kind": "any",
+            "of": [
+              { "kind": "notHasFlag", "flag": "story.ch1.anchor.reef" },
+              { "kind": "notHasFlag", "flag": "story.ch1.anchor.wreck" },
+              { "kind": "notHasFlag", "flag": "story.ch1.anchor.midwater" },
+              { "kind": "notHasFlag", "flag": "story.ch1.anchor.vent" }
+            ]
+          }
+        },
+        {
           "id": "open_chart",
           "label": "（摊开海图，挑一个潜点）",
           "next": "end",
@@ -89,6 +103,40 @@
       "text": "Aldo 沉默了很久。\n\n「他是上一代最后一个还敢去深处的人。」\n\n他没说更多。",
       "choices": [
         {
+          "id": "to_sites",
+          "label": "（跟他提你找到的那些样地）",
+          "next": "aldo.mentor.sites",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              {
+                "kind": "any",
+                "of": [
+                  { "kind": "hasFlag", "flag": "story.ch1.anchor.reef" },
+                  { "kind": "hasFlag", "flag": "story.ch1.anchor.wreck" },
+                  { "kind": "hasFlag", "flag": "story.ch1.anchor.midwater" },
+                  { "kind": "hasFlag", "flag": "story.ch1.anchor.vent" }
+                ]
+              },
+              { "kind": "notHasFlag", "flag": "flag.aldo.sites_seen" }
+            ]
+          }
+        },
+        {
+          "id": "to_guilt",
+          "label": "（他像有话要说——等他开口）",
+          "next": "aldo.mentor.guilt",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "story.ch1.anchor.reef" },
+              { "kind": "hasFlag", "flag": "story.ch1.anchor.wreck" },
+              { "kind": "hasFlag", "flag": "story.ch1.anchor.midwater" },
+              { "kind": "notHasFlag", "flag": "flag.aldo.guilt_seen" }
+            ]
+          }
+        },
+        {
           "id": "back",
           "label": "（沉默地点头）",
           "next": "aldo.briefing",
@@ -111,6 +159,41 @@
           "label": "现在准备好了。",
           "next": "aldo.briefing"
         }
+      ]
+    },
+    "aldo.mentor.sites": {
+      "id": "aldo.mentor.sites",
+      "text": "你说出第一处样地的位置，他听着，没打断。\n等你说完，他才开口：「那几个漆号是他教你认的。一横两点，背流那侧。」他顿了顿，「你还记得。」\n他没夸你。可他往海那边看的时候，绷了十年的肩，松了一点。",
+      "onEnter": [
+        { "kind": "setFlag", "flag": "flag.aldo.sites_seen" }
+      ],
+      "choices": [
+        { "id": "back", "label": "（点头）", "next": "aldo.harbor_morning" }
+      ]
+    },
+    "aldo.mentor.guilt": {
+      "id": "aldo.mentor.guilt",
+      "text": "他先开的口。\n「那天你没上船。」不是问句。「我知道。装备是你来取的——晚了半天。」\n你没说话。十年了，第一次有人替你把这句说出来。\n「他选的人是你。你没上去，不是你的错。是海。」他看着海，「海不挑人，也不还人。」\n他停了很久。「可你现在要去把他找回来。我不拦了。把气带够。」",
+      "onEnter": [
+        { "kind": "setFlag", "flag": "flag.aldo.guilt_seen" }
+      ],
+      "choices": [
+        { "id": "back", "label": "（沉默地点头）", "next": "aldo.harbor_morning" }
+      ]
+    },
+    "aldo.coords_left": {
+      "id": "aldo.coords_left",
+      "text": "「日志上四个坐标，你去过几个心里有数。」他朝海图桌抬下巴，「剩下的，趁你还想去，去。别一口气贪到底。」",
+      "choices": [
+        {
+          "id": "open_chart",
+          "label": "（摊开海图，挑一个潜点）",
+          "next": "end",
+          "effects": [
+            { "kind": "openChart" }
+          ]
+        },
+        { "id": "back", "label": "（点头）", "next": "aldo.harbor_morning" }
       ]
     }
   }

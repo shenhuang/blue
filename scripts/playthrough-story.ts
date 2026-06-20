@@ -334,6 +334,83 @@ L('§4 canon/字面量守门');
 }
 
 // ═══════════════════════════════════════════════════════════════
+// §4b Aldo 进度对话门控（按锚点解锁 + 一次性退场）：sites/guilt 入口 gate ⊆ 锚点 flag·
+//     retire flag == 节点 onEnter 所置（看完即退场·自洽）；coords_left 主线引导＝any 未做锚点
+//     （四齐自动退场·无 retire）。flag 单一来源＝story.ts::ch1AnchorFlag（防手拼漂移）。
+// ═══════════════════════════════════════════════════════════════
+L('§4b Aldo 进度对话门控');
+
+{
+  type Cond = { kind: string; flag?: string; of?: Cond[] };
+  type Choice = { id: string; next: string; visibleIf?: Cond };
+  type Node = { id: string; onEnter?: { kind: string; flag?: string }[]; choices?: Choice[] };
+  const aldo = JSON.parse(readFileSync(resolve(ROOT, 'src/data/npcs/aldo.json'), 'utf-8')) as {
+    dialogs: Record<string, Node>;
+  };
+  const anchorFlags = CH1_ANCHORS.map((a) => ch1AnchorFlag(a));
+
+  // 把一棵 Condition 摊平成叶子 (kind, flag)（递归 all/any 的 of）
+  const flatten = (c: Cond | undefined): { kind: string; flag?: string }[] =>
+    !c ? [] : c.of ? c.of.flatMap(flatten) : [{ kind: c.kind, flag: c.flag }];
+
+  for (const id of ['aldo.mentor.sites', 'aldo.mentor.guilt', 'aldo.coords_left']) {
+    assert(aldo.dialogs[id], `§4b 进度节点 ${id} 应存在`);
+  }
+
+  const aboutChoices = aldo.dialogs['aldo.about_mentor'].choices ?? [];
+  const morningChoices = aldo.dialogs['aldo.harbor_morning'].choices ?? [];
+
+  // sites：入口 any[锚点 hasFlag] + notHasFlag(retire)；节点 onEnter 置同一 retire flag
+  const sites = aboutChoices.find((c) => c.next === 'aldo.mentor.sites');
+  assert(sites, '§4b about_mentor 应有通向 aldo.mentor.sites 的 choice');
+  const sitesConds = flatten(sites!.visibleIf);
+  const sitesRetire = sitesConds.find((c) => c.kind === 'notHasFlag')?.flag;
+  assert(sitesRetire, '§4b sites 入口应带 notHasFlag 退场门');
+  assert(
+    sitesConds.some((c) => c.kind === 'hasFlag' && anchorFlags.includes(c.flag!)),
+    '§4b sites 入口应 gate 在锚点 hasFlag 上（any 任一锚点·ch1AnchorFlag 单一来源）',
+  );
+  assert(
+    (aldo.dialogs['aldo.mentor.sites'].onEnter ?? []).some(
+      (e) => e.kind === 'setFlag' && e.flag === sitesRetire,
+    ),
+    '§4b aldo.mentor.sites 应 onEnter setFlag 它入口所 negate 的 retire flag（看完即退场·自洽）',
+  );
+
+  // guilt：入口 reef+wreck+midwater 三齐 + notHasFlag(retire)；节点 onEnter 置同一 retire flag
+  const guilt = aboutChoices.find((c) => c.next === 'aldo.mentor.guilt');
+  assert(guilt, '§4b about_mentor 应有通向 aldo.mentor.guilt 的 choice');
+  const guiltConds = flatten(guilt!.visibleIf);
+  const guiltRetire = guiltConds.find((c) => c.kind === 'notHasFlag')?.flag;
+  assert(guiltRetire, '§4b guilt 入口应带 notHasFlag 退场门');
+  for (const a of ['reef', 'wreck', 'midwater'] as const) {
+    assert(
+      guiltConds.some((c) => c.kind === 'hasFlag' && c.flag === ch1AnchorFlag(a)),
+      `§4b guilt 入口应要求锚点 ${a} 已做（前三齐·结局在望才开口）`,
+    );
+  }
+  assert(
+    (aldo.dialogs['aldo.mentor.guilt'].onEnter ?? []).some(
+      (e) => e.kind === 'setFlag' && e.flag === guiltRetire,
+    ),
+    '§4b aldo.mentor.guilt 应 onEnter setFlag 它入口所 negate 的 retire flag（自洽）',
+  );
+
+  // coords_left：主线引导＝any 未做锚点（四锚点全 notHasFlag·全做完自动退场）；无 retire（常驻）
+  const coords = morningChoices.find((c) => c.next === 'aldo.coords_left');
+  assert(coords, '§4b harbor_morning 应有通向 aldo.coords_left 的引导 choice');
+  assert(coords!.visibleIf?.kind === 'any', '§4b coords_left 引导应是 any[...]（任一未做即显·四齐退场）');
+  const coordsConds = flatten(coords!.visibleIf);
+  for (const f of anchorFlags) {
+    assert(
+      coordsConds.some((c) => c.kind === 'notHasFlag' && c.flag === f),
+      `§4b coords_left 应含 notHasFlag ${f}（四锚点齐才退场）`,
+    );
+  }
+  L('  sites/guilt 退场自洽 + coords_left 引导门 ✓');
+}
+
+// ═══════════════════════════════════════════════════════════════
 // §5 St1 锚点链接线（#117）：POI 强制开场 + 任意顺序 + vent 门 + 字面量守门
 // ═══════════════════════════════════════════════════════════════
 L('§5 St1 锚点链（POI 强制开场·任意顺序·vent 门·守门）');
