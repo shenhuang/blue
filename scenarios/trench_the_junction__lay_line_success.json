@@ -1,0 +1,23 @@
+{
+  "_comment": "岔口·右侧放线成功（stamina>=12·stamina-4·oxygen-3）",
+  "eventId": "trench.the_junction",
+  "seed": 1,
+  "zoneId": "zone.trench",
+  "depth": 70,
+  "stats": {
+    "sanity": 60,
+    "stamina": 80
+  },
+  "choices": [
+    "lay_line_right"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "stamina": -4,
+      "oxygen": -3
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "_comment": "对位伪装·停看：上亮下消（sanity+4·oxygen-2）",
+  "eventId": "midwater.the_countershade",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 100,
+  "stats": {
+    "sanity": 60
+  },
+  "choices": [
+    "stop_and_read"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": 4
+    }
+  }
+}

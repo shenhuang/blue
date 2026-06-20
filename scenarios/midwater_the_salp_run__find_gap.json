@@ -1,0 +1,21 @@
+{
+  "_comment": "樽海鞘帘·找缝隙（oxygen-2）",
+  "eventId": "midwater.the_salp_run",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 100,
+  "stats": {
+    "sanity": 60
+  },
+  "choices": [
+    "find_gap"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2
+    }
+  }
+}

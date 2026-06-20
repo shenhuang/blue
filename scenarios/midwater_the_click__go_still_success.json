@@ -1,0 +1,22 @@
+{
+  "_comment": "鲸声穿体·静止成功（sanity>=48·sanity-3）",
+  "eventId": "midwater.the_click",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 100,
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "go_still"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -3
+    }
+  }
+}

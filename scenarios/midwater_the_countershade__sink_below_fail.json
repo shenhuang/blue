@@ -1,0 +1,22 @@
+{
+  "_comment": "对位伪装·沉下看失败（sanity<46·sanity-4）",
+  "eventId": "midwater.the_countershade",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 100,
+  "stats": {
+    "sanity": 25
+  },
+  "choices": [
+    "sink_below"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": -4
+    }
+  }
+}

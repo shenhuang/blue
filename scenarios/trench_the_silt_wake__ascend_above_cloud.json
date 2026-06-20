@@ -1,0 +1,22 @@
+{
+  "_comment": "搅泥·浮出云顶（sanity-1·oxygen-2）",
+  "eventId": "trench.the_silt_wake",
+  "seed": 1,
+  "zoneId": "zone.trench",
+  "depth": 68,
+  "stats": {
+    "sanity": 60
+  },
+  "choices": [
+    "ascend_above_cloud"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -1
+    }
+  }
+}

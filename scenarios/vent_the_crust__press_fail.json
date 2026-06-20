@@ -1,0 +1,23 @@
+{
+  "_comment": "空心矿壳·下压失败（stamina<12·stamina-5·sanity-5）",
+  "eventId": "vent.the_crust",
+  "seed": 1,
+  "zoneId": "zone.hydrothermal_vent",
+  "depth": 185,
+  "stats": {
+    "sanity": 60,
+    "stamina": 5
+  },
+  "choices": [
+    "press_on_it"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -3
+    }
+  }
+}

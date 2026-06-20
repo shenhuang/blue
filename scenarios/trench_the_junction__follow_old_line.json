@@ -1,0 +1,22 @@
+{
+  "_comment": "岔口·跟旧线（sanity-2·oxygen-2）",
+  "eventId": "trench.the_junction",
+  "seed": 1,
+  "zoneId": "zone.trench",
+  "depth": 70,
+  "stats": {
+    "sanity": 60
+  },
+  "choices": [
+    "follow_old_line"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -2
+    }
+  }
+}
