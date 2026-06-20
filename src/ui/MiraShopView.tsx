@@ -23,10 +23,22 @@ interface Props {
   onStateChange: (s: GameState) => void;
 }
 
+type DevTab = 'equipment' | 'consumable' | 'material' | 'weaponMod' | 'story' | 'other' | 'currency';
+const DEV_TABS: { id: DevTab; label: string }[] = [
+  { id: 'equipment', label: '装备' },
+  { id: 'consumable', label: '消耗品' },
+  { id: 'material', label: '材料' },
+  { id: 'weaponMod', label: '武器改装' },
+  { id: 'story', label: '剧情' },
+  { id: 'other', label: '杂项' },
+  { id: 'currency', label: '货币' },
+];
+
 export function MiraShopView({ state, onStateChange }: Props) {
   // 交易反馈（作者 2026-06-10「点了毫无反应」根治）：flash＝最近一笔买/卖；goldShort＝钱不够红字差额。
   const [flash, setFlash] = useState<string | null>(null);
   const [goldShort, setGoldShort] = useState<{ itemId: string; lack: number } | null>(null);
+  const [devTab, setDevTab] = useState<DevTab>('equipment');
   const sellables = listMiraSellables(state.profile.inventory);
   const total = sellables.reduce((a, b) => a + b.total, 0);
 
@@ -159,22 +171,41 @@ export function MiraShopView({ state, onStateChange }: Props) {
         <section className="mira-section mira-dev-shelf">
           <h3>测试货架（dev · 0 元 · 无限）</h3>
           <p className="dim">全部商品、白拿、不动金币不动她的备货。仅 ?dev 可见——别在这儿找游戏平衡。</p>
-          <div className="item-grid live">
-            {allItems().map((def) => {
-              const owned = state.profile.inventory.find((i) => i.itemId === def.id)?.qty ?? 0;
-              return (
-                <ItemCell
-                  key={def.id}
-                  cellKey={`${def.id}:${owned}`}
-                  def={def}
-                  itemId={def.id}
-                  qty={owned}
-                  note="0 金 · ∞"
-                  title={`${def.name}——点击白拿 1（dev·已囤 ${owned}）`}
-                  onClick={() => handleDevGrant(def.id, 1)}
-                />
-              );
-            })}
+          <div className="locker-main">
+            <div className="locker-tabs">
+              {DEV_TABS.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className={`btn small locker-tab ${devTab === t.id ? 'on' : ''}`}
+                  aria-pressed={devTab === t.id}
+                  onClick={() => setDevTab(t.id)}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <div className="locker-body">
+              <div className="item-grid live">
+                {allItems()
+                  .filter((def) => (def.category ?? 'other') === devTab)
+                  .map((def) => {
+                    const owned = state.profile.inventory.find((i) => i.itemId === def.id)?.qty ?? 0;
+                    return (
+                      <ItemCell
+                        key={def.id}
+                        cellKey={`${def.id}:${owned}`}
+                        def={def}
+                        itemId={def.id}
+                        qty={owned}
+                        note="0 金 · ∞"
+                        title={`${def.name}——点击白拿 1（dev·已囤 ${owned}）`}
+                        onClick={() => handleDevGrant(def.id, 1)}
+                      />
+                    );
+                  })}
+              </div>
+            </div>
           </div>
         </section>
       )}
