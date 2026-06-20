@@ -161,6 +161,9 @@ function collect(cond: Condition, acc: Accum): void {
     case 'hasItem':
       acc.items.set(cond.itemId, Math.max(acc.items.get(cond.itemId) ?? 0, cond.minQty ?? 1));
       return;
+    case 'notHasItem':
+      // 反向约束：保证 NOT 持有——初始 fixture 背包为空即满足·无需主动加物（dialogs 不走 satisfyEvent·此为完整性）。
+      return;
     case 'hasEquipment':
       acc.equipSlots.add(cond.slot);
       return;

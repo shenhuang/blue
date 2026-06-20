@@ -30,17 +30,23 @@ export function getEvent(id: string): DiveEvent | undefined {
 
 // —— Condition 解析 ——
 
+/** 玩家持有某物的总数 = profile 仓库 + 当前 run 背包（港口无 run 时只算 profile）。hasItem/notHasItem 单点。 */
+function ownedQty(state: GameState, itemId: string): number {
+  const r = state.run?.inventory.find((i) => i.itemId === itemId)?.qty ?? 0;
+  const p = state.profile.inventory.find((i) => i.itemId === itemId)?.qty ?? 0;
+  return r + p;
+}
+
 export function evalCondition(state: GameState, c: Condition): boolean {
   const run = state.run;
   const profile = state.profile;
   switch (c.kind) {
     case 'hasEquipment':
       return run !== null && run.equipment[c.slot] !== null;
-    case 'hasItem': {
-      if (!run) return false;
-      const inv = run.inventory.find((i) => i.itemId === c.itemId);
-      return inv !== undefined && inv.qty >= (c.minQty ?? 1);
-    }
+    case 'hasItem':
+      return ownedQty(state, c.itemId) >= (c.minQty ?? 1);
+    case 'notHasItem':
+      return ownedQty(state, c.itemId) < (c.minQty ?? 1);
     case 'statAtLeast':
       return run !== null && run.stats[c.stat] >= c.value;
     case 'statAtMost':

@@ -191,6 +191,8 @@ export function describeCondition(c: Condition): string {
       return `需要装备槽位 ${c.slot}`;
     case 'hasItem':
       return `需要物品 ${c.itemId}${c.minQty ? ` × ${c.minQty}` : ''}`;
+    case 'notHasItem':
+      return `不能持有物品 ${c.itemId}${c.minQty ? ` × ${c.minQty}` : ''}`;
     case 'statAtLeast':
       return `需要 ${c.stat} ≥ ${c.value}`;
     case 'statAtMost':

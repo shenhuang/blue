@@ -132,6 +132,7 @@ export interface LootRoll {
 export type Condition =
   | { kind: 'hasEquipment'; slot: EquipmentSlot }
   | { kind: 'hasItem'; itemId: string; minQty?: number }
+  | { kind: 'notHasItem'; itemId: string; minQty?: number }
   | { kind: 'statAtLeast'; stat: Stat; value: number }
   | { kind: 'statAtMost'; stat: Stat; value: number }
   | { kind: 'hasFlag'; flag: string }

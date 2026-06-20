@@ -38,12 +38,12 @@ import {
   whaleSightingFlag,
   allStoryFlags,
 } from '../src/engine/story';
-import { resolveOption } from '../src/engine/events';
+import { resolveOption, evalCondition } from '../src/engine/events';
 import { getEventById } from '../src/engine/zones';
 import { pickFromInventory, pickFlagTrigger, eventDoneFlag } from '../src/engine/portEvents';
 import { startDiveFromPoi } from '../src/engine/dive';
 import { generateChart } from '../src/engine/chart';
-import { applyDialogEffects, getDialogNode } from '../src/engine/dialog';
+import { applyDialogEffects, getDialogNode, getNpc } from '../src/engine/dialog';
 import { allItems } from '../src/engine/items';
 import type { GameState, PlayerProfile } from '../src/types';
 
@@ -684,40 +684,58 @@ L('§4c Mira 进度对话门控');
 L('§4d Otto 进度对话门控');
 
 {
-  type Cond = { kind: string; flag?: string; of?: Cond[] };
+  type Cond = { kind: string; flag?: string; itemId?: string; of?: Cond[] };
   type Choice = { id: string; next: string; visibleIf?: Cond };
-  type Node = { id: string; onEnter?: { kind: string; flag?: string }[] };
+  type Node = { id: string; onEnter?: { kind: string; flag?: string; itemId?: string }[] };
   const otto = JSON.parse(readFileSync(resolve(ROOT, 'src/data/npcs/otto.json'), 'utf-8')) as {
     npc: { id: string; dialogRoot: { choices: Choice[] } };
     dialogs: Record<string, Node>;
   };
   assert(otto.npc.id === 'npc.otto', '§4d otto.json NPC id 应为 npc.otto');
 
-  const flatten = (c: Cond | undefined): { kind: string; flag?: string }[] =>
-    !c ? [] : c.of ? c.of.flatMap(flatten) : [{ kind: c.kind, flag: c.flag }];
+  const flatten = (c: Cond | undefined): { kind: string; flag?: string; itemId?: string }[] =>
+    !c ? [] : c.of ? c.of.flatMap(flatten) : [{ kind: c.kind, flag: c.flag, itemId: c.itemId }];
 
-  // 声呐提示：gate all[ tutorial_complete, notHasFlag(owns_sonar) ]
-  const sonarChoice = otto.npc.dialogRoot.choices.find((c) => c.next === 'otto.sonar_hint');
-  assert(sonarChoice, '§4d otto.root 应有通向 otto.sonar_hint 的 choice');
-  const sonarConds = flatten(sonarChoice!.visibleIf);
-  assert(
-    sonarConds.some((c) => c.kind === 'hasFlag' && c.flag === 'flag.tutorial_complete'),
-    '§4d 声呐提示入口应 gate 在 hasFlag(flag.tutorial_complete)',
-  );
-  assert(
-    sonarConds.some((c) => c.kind === 'notHasFlag' && c.flag === 'flag.owns_sonar'),
-    '§4d 声呐提示入口应 notHasFlag(flag.owns_sonar)——持有声呐后自动退场',
-  );
-  assert(otto.dialogs['otto.sonar_hint'], '§4d otto.sonar_hint 节点应存在');
-  assert(otto.dialogs['otto.upgrade_table'], '§4d otto.upgrade_table 节点应存在');
-
-  // 声呐提示发实物（A·#150）：otto.sonar_hint 的 onEnter 端到端把清单发进 profile.inventory。
-  // 走真引擎 applyDialogEffects（守 dialog.ts giveItem 接线 + onEnter 并列 + 物品存在），不止静态 JSON 形状。
   const SONAR_CHECKLIST = 'item.note.sonar_checklist';
   assert(
     allItems().some((i) => i.id === SONAR_CHECKLIST),
     `§4d items.json 应含 ${SONAR_CHECKLIST}（Otto 声呐清单实物）`,
   );
+
+  // 去重 key 在「是否持有清单」而非 flag——自愈旧档（#150 giveItem 实装前的存档 sonar_hinted 已置但无实物·
+  // flag-keyed 会把发清单的首问永久藏掉＝锁死）。两入口在 possession 上互斥（§4b 路由套路·key 换成物品）：
+  //   首问 sonar_query → sonar_hint（发清单）：all[ tutorial_complete, notHasFlag(owns_sonar), notHasItem(清单) ]
+  //   重访 sonar_progress → sonar_remind（催料·不发物）：all[ tutorial_complete, notHasFlag(owns_sonar), hasItem(清单) ]
+  const firstAsk = otto.npc.dialogRoot.choices.find((c) => c.next === 'otto.sonar_hint');
+  assert(firstAsk, '§4d otto.root 应有通向 otto.sonar_hint 的首问 choice');
+  const firstConds = flatten(firstAsk!.visibleIf);
+  assert(
+    firstConds.some((c) => c.kind === 'hasFlag' && c.flag === 'flag.tutorial_complete'),
+    '§4d 首问入口应 gate 在 hasFlag(flag.tutorial_complete)',
+  );
+  assert(
+    firstConds.some((c) => c.kind === 'notHasFlag' && c.flag === 'flag.owns_sonar'),
+    '§4d 首问入口应 notHasFlag(flag.owns_sonar)——持有声呐后退场',
+  );
+  assert(
+    firstConds.some((c) => c.kind === 'notHasItem' && c.itemId === SONAR_CHECKLIST),
+    '§4d 首问入口应 notHasItem(声呐清单)——已持有就不再发（去重）·无清单恒可拿（反锁死）',
+  );
+  assert(otto.dialogs['otto.sonar_hint'], '§4d otto.sonar_hint 节点应存在');
+  assert(otto.dialogs['otto.upgrade_table'], '§4d otto.upgrade_table 节点应存在');
+
+  const remindChoice = otto.npc.dialogRoot.choices.find((c) => c.next === 'otto.sonar_remind');
+  assert(remindChoice, '§4d otto.root 应有通向 otto.sonar_remind 的重访 choice');
+  const remindConds = flatten(remindChoice!.visibleIf);
+  assert(
+    remindConds.some((c) => c.kind === 'hasFlag' && c.flag === 'flag.tutorial_complete') &&
+      remindConds.some((c) => c.kind === 'notHasFlag' && c.flag === 'flag.owns_sonar') &&
+      remindConds.some((c) => c.kind === 'hasItem' && c.itemId === SONAR_CHECKLIST),
+    '§4d 重访入口应 gate all[tutorial_complete, notHasFlag(owns_sonar), hasItem(清单)]（与首问在 possession 上互斥）',
+  );
+  assert(otto.dialogs['otto.sonar_remind'], '§4d otto.sonar_remind 节点应存在');
+
+  // onEnter：首问端到端发清单（giveItem 接线·#150）；重访不发物（去重单点）。走真引擎 applyDialogEffects。
   const hintNode = getDialogNode('otto.sonar_hint');
   assert(hintNode, '§4d getDialogNode(otto.sonar_hint) 应取到节点');
   const afterHint = applyDialogEffects(createInitialGameState(), hintNode!.onEnter);
@@ -725,11 +743,42 @@ L('§4d Otto 进度对话门控');
     countInInventory(afterHint.profile.inventory, SONAR_CHECKLIST) >= 1,
     '§4d 进 otto.sonar_hint 后 profile.inventory 应含声呐清单（giveItem 接线生效）',
   );
+  const remindNode = getDialogNode('otto.sonar_remind');
+  assert(remindNode, '§4d getDialogNode(otto.sonar_remind) 应取到节点');
   assert(
-    afterHint.profile.flags.has('flag.otto.sonar_hinted'),
-    '§4d 进 otto.sonar_hint 后应置 flag.otto.sonar_hinted（与 giveItem 并列）',
+    !(remindNode!.onEnter ?? []).some((e) => e.kind === 'giveItem'),
+    '§4d otto.sonar_remind onEnter 不应有 giveItem（重访催料不叠发清单·去重单点）',
   );
-  L('  Otto 声呐提示门控 + owns_sonar 退场 + 清单发物 ✓');
+
+  // 行为端到端：走真引擎 evalCondition 判可见性（possession-keyed 路由 + 反锁死自愈）。
+  const ottoNpc = getNpc('npc.otto');
+  assert(ottoNpc, '§4d getNpc(npc.otto) 应取到 NpcDef');
+  const firstAskReal = ottoNpc!.dialogRoot.choices!.find((c) => c.next === 'otto.sonar_hint')!;
+  const remindReal = ottoNpc!.dialogRoot.choices!.find((c) => c.next === 'otto.sonar_remind')!;
+  const baseState: GameState = {
+    ...createInitialGameState(),
+    profile: profileWith([TUTORIAL_COMPLETE_FLAG]),
+  };
+  assert(
+    evalCondition(baseState, firstAskReal.visibleIf!) &&
+      !evalCondition(baseState, remindReal.visibleIf!),
+    '§4d 无清单时：首问可见、重访隐藏（拿得到清单）',
+  );
+  const heldState = applyDialogEffects(baseState, hintNode!.onEnter);
+  assert(
+    !evalCondition(heldState, firstAskReal.visibleIf!) &&
+      evalCondition(heldState, remindReal.visibleIf!),
+    '§4d 持清单后：首问隐藏（不叠发）、重访可见（催料）',
+  );
+  const legacyState: GameState = {
+    ...createInitialGameState(),
+    profile: profileWith([TUTORIAL_COMPLETE_FLAG, 'flag.otto.sonar_hinted']),
+  };
+  assert(
+    evalCondition(legacyState, firstAskReal.visibleIf!),
+    '§4d 旧档残留 sonar_hinted 但无清单时首问仍应可见（反锁死·possession-keyed 自愈）',
+  );
+  L('  Otto 声呐 possession-keyed：首发一次 + 重访催料去重 + 反锁死自愈 ✓');
 }
 
 console.log(log.join('\n'));
