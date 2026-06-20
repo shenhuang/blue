@@ -2591,6 +2591,35 @@ button.locker-coord-row:hover {
   font-variant-numeric: tabular-nums;
   animation: item-pop 0.35s ease-out;
 }
+.dev-gold-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 4px;
+}
+.dev-gold-current {
+  font-size: 0.95rem;
+  opacity: 0.85;
+}
+.dev-gold-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dev-gold-custom {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.dev-gold-input {
+  width: 140px;
+  padding: 4px 8px;
+  border: 1px solid var(--border, #444);
+  border-radius: 4px;
+  background: var(--bg2, #1a1a1a);
+  color: inherit;
+  font-size: 0.9rem;
+}
 .mira-short-notice {
   margin: 8px 0 0;
   font-size: 0.8rem;

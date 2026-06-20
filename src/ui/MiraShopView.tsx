@@ -1,7 +1,7 @@
 // Mira 的柜台 —— 把 profile.inventory 中可卖物品折成金币。
 // eternal / story 类的不收（保留给剧情）；sellPrice <= 0 的也不收。
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { GameState } from '@/types';
 import { getItemDef, allItems } from '@/engine/items';
 import {
@@ -39,6 +39,7 @@ export function MiraShopView({ state, onStateChange }: Props) {
   const [flash, setFlash] = useState<string | null>(null);
   const [goldShort, setGoldShort] = useState<{ itemId: string; lack: number } | null>(null);
   const [devTab, setDevTab] = useState<DevTab>('equipment');
+  const goldInputRef = useRef<HTMLInputElement>(null);
   const sellables = listMiraSellables(state.profile.inventory);
   const total = sellables.reduce((a, b) => a + b.total, 0);
 
@@ -92,6 +93,12 @@ export function MiraShopView({ state, onStateChange }: Props) {
       setGoldShort(null);
       onStateChange(next);
     }
+  }
+
+  function handleDevSetGold(next: number) {
+    const clamped = Math.max(0, Math.floor(next));
+    onStateChange({ ...state, profile: { ...state.profile, bankedGold: clamped } });
+    setFlash(`[dev] 银行金币 → ${clamped}`);
   }
 
   function handleLeave() {
@@ -186,25 +193,62 @@ export function MiraShopView({ state, onStateChange }: Props) {
               ))}
             </div>
             <div className="locker-body">
-              <div className="item-grid live">
-                {allItems()
-                  .filter((def) => (def.category ?? 'other') === devTab)
-                  .map((def) => {
-                    const owned = state.profile.inventory.find((i) => i.itemId === def.id)?.qty ?? 0;
-                    return (
-                      <ItemCell
-                        key={def.id}
-                        cellKey={`${def.id}:${owned}`}
-                        def={def}
-                        itemId={def.id}
-                        qty={owned}
-                        note="0 金 · ∞"
-                        title={`${def.name}——点击白拿 1（dev·已囤 ${owned}）`}
-                        onClick={() => handleDevGrant(def.id, 1)}
-                      />
-                    );
-                  })}
-              </div>
+              {devTab === 'currency' ? (
+                <div className="dev-gold-panel">
+                  <div className="dev-gold-current">
+                    银行现有 <span className="gold-figure" key={state.profile.bankedGold}>{state.profile.bankedGold}</span> 金
+                  </div>
+                  <div className="dev-gold-btns">
+                    {[100, 1000, 10000].map((n) => (
+                      <button key={n} type="button" className="btn small"
+                        onClick={() => handleDevSetGold(state.profile.bankedGold + n)}>
+                        +{n}
+                      </button>
+                    ))}
+                    <button type="button" className="btn small"
+                      onClick={() => handleDevSetGold(0)}>
+                      归零
+                    </button>
+                  </div>
+                  <div className="dev-gold-custom">
+                    <input
+                      ref={goldInputRef}
+                      type="number"
+                      min={0}
+                      step={1}
+                      placeholder="直接输入金额"
+                      className="dev-gold-input"
+                    />
+                    <button type="button" className="btn small"
+                      onClick={() => {
+                        const v = Number(goldInputRef.current?.value ?? '');
+                        if (!isNaN(v)) handleDevSetGold(v);
+                      }}>
+                      设为此值
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="item-grid live">
+                  {allItems()
+                    .filter((def) => (def.category ?? 'other') === devTab)
+                    .map((def) => {
+                      const owned = state.profile.inventory.find((i) => i.itemId === def.id)?.qty ?? 0;
+                      return (
+                        <ItemCell
+                          key={def.id}
+                          cellKey={`${def.id}:${owned}`}
+                          def={def}
+                          itemId={def.id}
+                          qty={owned}
+                          note="0 金 · ∞"
+                          title={`${def.name}——点击白拿 1（dev·已囤 ${owned}）`}
+                          onClick={() => handleDevGrant(def.id, 1)}
+                        />
+                      );
+                    })}
+                </div>
+              )}
             </div>
           </div>
         </section>
