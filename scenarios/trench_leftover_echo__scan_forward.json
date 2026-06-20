@@ -1,0 +1,22 @@
+{
+  "_comment": "留下来的回波·只扫前方（uncanny·108-155m·sanity -3·氧-2）",
+  "eventId": "trench.the_leftover_echo",
+  "depth": 130,
+  "seed": 1,
+  "zoneId": "zone.open_trench",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "only_scan_forward"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -3
+    }
+  }
+}

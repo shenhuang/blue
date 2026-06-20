@@ -1,0 +1,22 @@
+{
+  "_comment": "一道线·记深度继续（cosmic·115-160m·sanity -2·氧-1）",
+  "eventId": "trench.the_cut_line",
+  "depth": 135,
+  "seed": 1,
+  "zoneId": "zone.open_trench",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "note_depth_move_on"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -2
+    }
+  }
+}

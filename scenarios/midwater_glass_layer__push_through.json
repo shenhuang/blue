@@ -1,0 +1,22 @@
+{
+  "_comment": "玻璃层·穿过去（uncanny·183-208m·sanity -1·氧-1）",
+  "eventId": "midwater.the_glass_layer",
+  "depth": 195,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "push_through"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -1
+    }
+  }
+}
