@@ -228,12 +228,15 @@ log.push('\n========== 8. 段2：声呐＝Otto 打造的装备件 → 打造+升
 // 产出与旧 sonar_rig lv1-5 **逐项相等**（quirk #140 防双计：换源 + 退役旧线·数值不变）。dive_kit/evasion_rig 已删（灯/规避回基线）。
 state = createInitialGameState();
 state = { ...state, profile: { ...state.profile, equipment: createStarterLoadout() } };
-// 给足打造 + 升满声呐的全部料 + 金（= 旧 sonar_rig lv1-5 账单合并：lantern_gland 4 / eel_skin 11 / cave_octopus_beak 10 / 1040 金）
+// 给足打造 + 升满声呐的全部料 + 金（craft+Lv1-5 合并：lantern_gland 4 / eel_skin 11 / cave_octopus_beak 10 / iron_concretion 2 / quartz_crystal 1 / manganese_nodule 2 / 1040 金）
 state = withProfile(
   [
     { itemId: 'item.lantern_gland', qty: 5 },
     { itemId: 'item.eel_skin', qty: 11 },
     { itemId: 'item.cave_octopus_beak', qty: 12 },
+    { itemId: 'item.iron_concretion', qty: 2 },
+    { itemId: 'item.quartz_crystal', qty: 1 },
+    { itemId: 'item.manganese_nodule', qty: 2 },
   ],
   1200,
 );

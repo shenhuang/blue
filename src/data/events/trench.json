@@ -3,8 +3,13 @@
   "events": [
     {
       "id": "trench.the_return",
-      "depthRange": [60, 82],
-      "zoneTags": ["twilight"],
+      "depthRange": [
+        60,
+        82
+      ],
+      "zoneTags": [
+        "twilight"
+      ],
       "weight": 4,
       "cooldown": 6,
       "oncePerRun": true,
@@ -18,7 +23,9 @@
           "outcome": {
             "text": "你收拢手脚往下沉，去够那块平台。\n灯尖扫过——什么也没有，你的手按在一片不存在的东西上，扑了个空，又坠了两米才稳住。\n你回头再打一记声呐：平台又在你脚下几米，平平的，稳稳的，还是那么近。",
             "oxygenTurnCost": 3,
-            "deltas": { "sanity": -6 },
+            "deltas": {
+              "sanity": -6
+            },
             "loreEntry": "lore.trench.the_return"
           }
         },
@@ -31,13 +38,17 @@
             "onSuccess": {
               "text": "你逼自己一样一样数：冷水分层会把声音折弯，回波早回来一截，就扫出一道根本不存在的平台——书上写过这种事。\n道理都对。你认下灯里那片黑，扶着石壁继续往下，没再打第二记声呐。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 },
+              "deltas": {
+                "sanity": -5
+              },
               "loreEntry": "lore.trench.the_return"
             },
             "onFailure": {
               "text": "你越照那道声呐里的平台，越觉得它清楚——灯里明明是黑的，可你分明记得脚下踩到过它，硬的，平的。\n你不记得自己是什么时候把灯压下去的。等你回过神，深度表又掉了几米，声呐还在你脚下铺着那片不存在的底，等你踩。",
               "oxygenTurnCost": 5,
-              "deltas": { "sanity": -13 }
+              "deltas": {
+                "sanity": -13
+              }
             }
           }
         },
@@ -47,16 +58,22 @@
           "outcome": {
             "text": "你灭了声呐，伸手贴住石壁，一寸一寸往下探。\n没有回波，就没有平台，也没有底——只有石头在你掌心慢慢过。瞎，但至少没有一样东西在替你编一个站得住脚的地方。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -3 }
+            "deltas": {
+              "sanity": -3
+            }
           }
         }
       ]
     },
-
     {
       "id": "trench.second_diver",
-      "depthRange": [60, 82],
-      "zoneTags": ["twilight"],
+      "depthRange": [
+        60,
+        82
+      ],
+      "zoneTags": [
+        "twilight"
+      ],
       "weight": 4,
       "cooldown": 5,
       "title": "回波里的人",
@@ -69,7 +86,9 @@
           "outcome": {
             "text": "你又打一记。它没躲，回波清清楚楚——一个人形，手脚都全，停在你灯够不到的那一圈外。\n你每打一次，它就近一点点，每次都只近一点点。你停了手。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -6 },
+            "deltas": {
+              "sanity": -6
+            },
             "loreEntry": "lore.trench.the_company"
           }
         },
@@ -82,12 +101,16 @@
             "onSuccess": {
               "text": "你把灯死死对住声呐说有人的那个点。空的。水是空的。\n是声呐把你自己搅起的悬浮物扫成了个影子，是这种深度谁都会疑神疑鬼——你对自己说，没把灯移开，一直照到那东西在回波里散掉。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -4 }
+              "deltas": {
+                "sanity": -4
+              }
             },
             "onFailure": {
               "text": "灯柱里什么都没有，可声呐里它清楚得很，近得很，已经到了你灯边上。\n你猛地把灯甩过去——空的。甩回来——空的。它始终停在你灯刚扫过、此刻照不到的那个角度上，差一点，永远差那一点。\n你不敢再打声呐了。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -10 },
+              "deltas": {
+                "sanity": -10
+              },
               "loreEntry": "lore.trench.the_company"
             }
           }
@@ -98,16 +121,22 @@
           "outcome": {
             "text": "你关掉声呐。没有回波，就没有那个人。\n黑水里只剩你自己的呼吸——本来也只有你自己，你这么说服自己，往前游。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -3 }
+            "deltas": {
+              "sanity": -3
+            }
           }
         }
       ]
     },
-
     {
       "id": "trench.the_sounding",
-      "depthRange": [60, 82],
-      "zoneTags": ["twilight"],
+      "depthRange": [
+        60,
+        82
+      ],
+      "zoneTags": [
+        "twilight"
+      ],
       "weight": 5,
       "cooldown": 4,
       "title": "数不对的回声",
@@ -123,12 +152,17 @@
             "onSuccess": {
               "text": "你信那声近的，侧身往左挤。\n回波这一次没骗你——是条窄道，刮着你的气瓶，但通。也可能只是这一次没骗你。",
               "oxygenTurnCost": 1,
-              "deltas": { "sanity": -2 }
+              "deltas": {
+                "sanity": -2
+              }
             },
             "onFailure": {
               "text": "你往左挤，那堵『墙』却比回波说的远得多——你扑了个空，踉跄着撞到更后头才真有的石壁上，气瓶磕得当一声。\n近的不一定近。你记下这一条，如果还记得住的话。",
               "oxygenTurnCost": 2,
-              "deltas": { "stamina": -6, "sanity": -3 }
+              "deltas": {
+                "stamina": -6,
+                "sanity": -3
+              }
             }
           }
         },
@@ -138,7 +172,9 @@
           "outcome": {
             "text": "你选那条没有回声的，往下，往下。灯照不到底，声呐也不肯回话。\n你下了很久才碰到底——或者那只是你需要相信有个底。",
             "oxygenTurnCost": 3,
-            "deltas": { "sanity": -5 },
+            "deltas": {
+              "sanity": -5
+            },
             "loreEntry": "lore.trench.the_sounding"
           }
         },
@@ -148,16 +184,22 @@
           "outcome": {
             "text": "你灭了声呐，把手伸进两道岔口各探了探，凭石壁的走向选了一条。\n没有回波替你撒谎，也没有回波替你带路。慢，但每一下都是你自己的手量出来的。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         }
       ]
     },
-
     {
       "id": "trench.the_wall",
-      "depthRange": [82, 108],
-      "zoneTags": ["midnight"],
+      "depthRange": [
+        82,
+        108
+      ],
+      "zoneTags": [
+        "midnight"
+      ],
       "weight": 4,
       "cooldown": 6,
       "oncePerRun": true,
@@ -174,13 +216,17 @@
             "onSuccess": {
               "text": "你信灯。你朝那堵声呐里的墙游进去——穿过去了，水是通的，墙是假的。\n是回波在这种冷水里乱折，叠成一面根本不存在的墙，你查过资料。道理都对。\n你过了墙继续往下，没回头确认它还在不在声呐里。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 },
+              "deltas": {
+                "sanity": -5
+              },
               "loreEntry": "lore.trench.the_wall"
             },
             "onFailure": {
               "text": "你朝那堵『假』墙游过去——灯里明明是空的——可你的头盔结结实实撞上了什么，硬的，凉的，正好在声呐说有墙的地方。\n你伸手去摸，灯照过去，手是悬在空水里的。你又撞了一次。\n是有墙，还是没有墙；是灯在骗你，还是声呐在骗你，还是你自己——你分不出来。",
               "oxygenTurnCost": 5,
-              "deltas": { "sanity": -13 }
+              "deltas": {
+                "sanity": -13
+              }
             }
           }
         },
@@ -190,7 +236,9 @@
           "outcome": {
             "text": "你信声呐。有墙就是到头，你认了这个底，往上折返。\n也许是躲过了什么，也许是被一堵不存在的墙拦着、没敢往下。哪个是真的，你不会知道了。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -6 }
+            "deltas": {
+              "sanity": -6
+            }
           }
         },
         {
@@ -199,17 +247,23 @@
           "outcome": {
             "text": "你灭了声呐和灯，伸手往前探。\n指尖只有水，一直是水，竖井在你手底下继续往下。没有墙，也没有底。\n你摸着黑往下，谁也没骗你，谁也没拦你。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -4 },
+            "deltas": {
+              "sanity": -4
+            },
             "loreEntry": "lore.trench.the_wall"
           }
         }
       ]
     },
-
     {
       "id": "trench.the_answer",
-      "depthRange": [82, 108],
-      "zoneTags": ["midnight"],
+      "depthRange": [
+        82,
+        108
+      ],
+      "zoneTags": [
+        "midnight"
+      ],
       "weight": 4,
       "cooldown": 6,
       "oncePerRun": true,
@@ -226,13 +280,17 @@
             "onSuccess": {
               "text": "你又打一记，逼自己听明白：是这条竖井。声音在这种先收窄又骤张的石喉里会被拉长、压低，回得不像原样——是声学，不是别的。\n道理对。你把声呐关了，安安静静往下，不再跟那东西对话。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -6 },
+              "deltas": {
+                "sanity": -6
+              },
               "loreEntry": "lore.trench.the_answer"
             },
             "onFailure": {
               "text": "你又打一记。这回它应得快了，近了，调子跟你的几乎一样了，像学会了。\n你又打，它又应，一来一回，你竟分不清哪一声是你打的、哪一声是它回的。\n等你停手，黑水里还有一声在往下沉。那一声不是你打的。",
               "oxygenTurnCost": 5,
-              "deltas": { "sanity": -14 }
+              "deltas": {
+                "sanity": -14
+              }
             }
           }
         },
@@ -242,7 +300,9 @@
           "outcome": {
             "text": "你立刻关了声呐。不再打，就没有回的。\n黑水里你贴着石壁往下，把那半拍的尾音留在身后——如果它真在那儿，你不想再叫它应第二次。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -5 },
+            "deltas": {
+              "sanity": -5
+            },
             "loreEntry": "lore.trench.the_answer"
           }
         },
@@ -252,16 +312,22 @@
           "outcome": {
             "text": "你不再打声呐，只把灯举在前头，一寸一寸往下。\n灯够得到的，都是真的——你这么告诉自己——够不到的，你不去想。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -4 }
+            "deltas": {
+              "sanity": -4
+            }
           }
         }
       ]
     },
-
     {
       "id": "trench.no_echo",
-      "depthRange": [82, 108],
-      "zoneTags": ["midnight"],
+      "depthRange": [
+        82,
+        108
+      ],
+      "zoneTags": [
+        "midnight"
+      ],
       "weight": 5,
       "cooldown": 4,
       "title": "没有回的地方",
@@ -274,7 +340,9 @@
           "outcome": {
             "text": "你收了没用的声呐，把灯也压暗，让自己沉进那段连声音都不肯回来的黑里。\n下了很久。你没数着多少米——你不敢数。后来脚下有了底，或者是你撞上了别的什么。\n你活着上来了，这一次。",
             "oxygenTurnCost": 4,
-            "deltas": { "sanity": -8 },
+            "deltas": {
+              "sanity": -8
+            },
             "loreEntry": "lore.trench.the_quiet"
           }
         },
@@ -287,12 +355,17 @@
             "onSuccess": {
               "text": "你不往那个吞声音的正中间去，贴着竖井侧壁，一段一段打声呐探石头——石壁还肯回话。\n慢，费力，但每一脚都踩在回得来的地方。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -3 }
+              "deltas": {
+                "sanity": -3
+              }
             },
             "onFailure": {
               "text": "你想贴着壁下，可侧壁也一段段没了回声，你够不着、抓不住，滑了一截，半天才在更下面卡住。\n这地方连墙都开始不肯回话了。",
               "oxygenTurnCost": 3,
-              "deltas": { "stamina": -6, "sanity": -6 }
+              "deltas": {
+                "stamina": -6,
+                "sanity": -6
+              }
             }
           }
         },
@@ -302,16 +375,22 @@
           "outcome": {
             "text": "你不下去。有些地方连声音都回不来，你没打算做第一个试出来回不回得来的人。\n你认了路，往上。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -3 }
+            "deltas": {
+              "sanity": -3
+            }
           }
         }
       ]
     },
-
     {
       "id": "trench.the_moving_floor",
-      "depthRange": [60, 82],
-      "zoneTags": ["twilight"],
+      "depthRange": [
+        60,
+        82
+      ],
+      "zoneTags": [
+        "twilight"
+      ],
       "weight": 4,
       "cooldown": 6,
       "oncePerRun": true,
@@ -325,7 +404,9 @@
           "outcome": {
             "text": "你放松手脚，往那片『底』落下去。\n你没有落在任何东西上——那层鱼在你够到它的前一刻散开，让出一个正好你大小的洞，又在你头顶合拢。\n你悬在它们当中，上下都是缓缓游动的银鱼，没有底，从来没有过底。",
             "oxygenTurnCost": 3,
-            "deltas": { "sanity": -6 },
+            "deltas": {
+              "sanity": -6
+            },
             "loreEntry": "lore.trench.the_moving_floor"
           }
         },
@@ -338,13 +419,17 @@
             "onSuccess": {
               "text": "你逼自己一条一条地看：是灯笼鱼，成层地浮在这个深度，白天聚、夜里散，密到能把声呐骗成一整片海底——船上的老书里有这一页。\n道理都对。你认下灯里这层活物，从它们让开的缝里继续往下，没再回头看那片『底』升到了哪儿。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 },
+              "deltas": {
+                "sanity": -5
+              },
               "loreEntry": "lore.trench.the_moving_floor"
             },
             "onFailure": {
               "text": "你越看那层鱼，越觉得它们不像在游——像被什么托着，整整齐齐往上送。\n你想数清它们，数着数着，发现它们全停了，全朝着你。\n等你回过神，那片『底』已经漫过了你的脚，正不紧不慢地往上，把你往更深处让。",
               "oxygenTurnCost": 5,
-              "deltas": { "sanity": -13 }
+              "deltas": {
+                "sanity": -13
+              }
             }
           }
         },
@@ -354,16 +439,22 @@
           "outcome": {
             "text": "你灭了声呐，不去管它是底还是不是底。\n你贴着竖井的石壁往下，银鱼擦过你的手背、你的面镜，凉的，软的，活的，一路让着你。\n没有底。你早知道没有底——至少这一次，是你自己的手知道的。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -3 }
+            "deltas": {
+              "sanity": -3
+            }
           }
         }
       ]
     },
-
     {
       "id": "trench.the_old_ping",
-      "depthRange": [60, 82],
-      "zoneTags": ["twilight"],
+      "depthRange": [
+        60,
+        82
+      ],
+      "zoneTags": [
+        "twilight"
+      ],
       "weight": 4,
       "cooldown": 5,
       "title": "迟来的回",
@@ -376,7 +467,9 @@
           "outcome": {
             "text": "你又打几记，记着时辰等。\n一记比一记回得慢，回得老，尾巴拖得更长，糊得快听不出原是你的声音。\n到后来你分不清哪一声是刚打的，哪一声是很久以前那一记，绕了一大圈，这会儿才到。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -6 },
+            "deltas": {
+              "sanity": -6
+            },
             "loreEntry": "lore.trench.the_long_water"
           }
         },
@@ -389,12 +482,16 @@
             "onSuccess": {
               "text": "你逼自己想：低沉的声音在某一层水里能跑出很远很远，绕着那层来回折，过很久才漏回来一点——不是这一记没回，是它走了远路。书上管那叫声道。\n道理对。你把声呐收了，不再等回来的旧声音，自己往下。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -4 }
+              "deltas": {
+                "sanity": -4
+              }
             },
             "onFailure": {
               "text": "你想算清它走了多远才回来，可越算越不对——按这个迟法，它得绕到海的另一头再绕回来。\n你停了手。黑水里还在陆陆续续回着旧波，一记，又一记，都是你早先打的，排着队，迟迟地回家。\n你没再打。你怕这队里掺进一记，不是你打的。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -10 },
+              "deltas": {
+                "sanity": -10
+              },
               "loreEntry": "lore.trench.the_long_water"
             }
           }
@@ -405,16 +502,22 @@
           "outcome": {
             "text": "你收了声呐。不打，就没有回来的，也不必等。\n那些迟来的旧波，你留在身后——谁的也好，你的也好，与往下走的你无关了。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -3 }
+            "deltas": {
+              "sanity": -3
+            }
           }
         }
       ]
     },
-
     {
       "id": "trench.the_remembered",
-      "depthRange": [82, 108],
-      "zoneTags": ["midnight"],
+      "depthRange": [
+        82,
+        108
+      ],
+      "zoneTags": [
+        "midnight"
+      ],
       "weight": 4,
       "cooldown": 6,
       "oncePerRun": true,
@@ -428,7 +531,9 @@
           "outcome": {
             "text": "你信那张图，朝图上记着的岔口游过去。\n你结结实实撞上一面石壁——图上说那儿是空的。\n你扶着壁再打一记声呐校对。图变了：岔口挪到了别处，宽厅还在，只是换了个地方等你。它一直比你脚下的石头大一圈，宽一圈，多一条路。",
             "oxygenTurnCost": 3,
-            "deltas": { "sanity": -6 },
+            "deltas": {
+              "sanity": -6
+            },
             "loreEntry": "lore.trench.the_remembered"
           }
         },
@@ -441,13 +546,17 @@
             "onSuccess": {
               "text": "你把心里那张图划掉。声呐攒出来的东西，在这种水里本就靠不住——回波这一记长那一记短，拼出来的图自然是张错图，越攒越错。你查过这个理。\n道理都对。你只认灯尖那一小圈、手底下那一段石头，慢，但走的是真有的路。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 },
+              "deltas": {
+                "sanity": -5
+              },
               "loreEntry": "lore.trench.the_remembered"
             },
             "onFailure": {
               "text": "你想把那张图扔了，可它在你脑子里比眼前的石壁还清楚——你明明记得这儿是个宽厅，记得三条岔，记得哪条通上去。\n你顺着记忆里那条上行的岔游过去，游了很久，深度表一直在掉。\n你记得的那张图，每一处都对，只有一件事不对：它画的不是你正在的这条竖井。",
               "oxygenTurnCost": 5,
-              "deltas": { "sanity": -13 }
+              "deltas": {
+                "sanity": -13
+              }
             }
           }
         },
@@ -457,16 +566,22 @@
           "outcome": {
             "text": "你关了声呐，逼自己把那张攒了一路的图忘掉。\n没有图，就没有一处对不上的地方。只剩此刻手底下这一段石壁，和它通向的下一段。\n慢得像重新学着潜水。但每一段都是你刚摸过的，还没来得及记错。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -4 }
+            "deltas": {
+              "sanity": -4
+            }
           }
         }
       ]
     },
-
     {
       "id": "trench.the_guide_line",
-      "depthRange": [60, 82],
-      "zoneTags": ["twilight"],
+      "depthRange": [
+        60,
+        82
+      ],
+      "zoneTags": [
+        "twilight"
+      ],
       "weight": 3,
       "cooldown": 9,
       "title": "导引线",
@@ -482,12 +597,16 @@
             "onSuccess": {
               "text": "你跟下去，线牵着你走了三十米，然后停了——不是到了一个锚点，是切断的，平整的一刀，线就在这里结束。\n谁铺了这条线，在这里停下来了，往回了，或者别的什么。你靠着它走过的三十米，是有人替你担保过安全的三十米。\n你从切断的那头往下自己找路。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": 2 }
+              "deltas": {
+                "sanity": 2
+              }
             },
             "onFailure": {
               "text": "你跟。线带你往下，然后往侧边拐，再侧边，再侧边，方向全乱了。\n这不是下行的路——是有人在摸索、在标记、在试着搞清楚这个地方是什么形状，结果把线铺成了一个你读不懂的图。\n你停下来确认自己的航向：你偏了二十度。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -5 }
+              "deltas": {
+                "sanity": -5
+              }
             }
           }
         },
@@ -497,7 +616,9 @@
           "outcome": {
             "text": "三颗钉，间距合规，礁结扎紧，一看就是练过的人铺的。\n你沿线跟到它结束的地方，在末端再加了一颗钉、续了几米你自己的线。\n这条线有了两个人的重量。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": 3 }
+            "deltas": {
+              "sanity": 3
+            }
           }
         },
         {
@@ -510,11 +631,15 @@
         }
       ]
     },
-
     {
       "id": "trench.the_shelf",
-      "depthRange": [82, 108],
-      "zoneTags": ["midnight"],
+      "depthRange": [
+        82,
+        108
+      ],
+      "zoneTags": [
+        "midnight"
+      ],
       "weight": 2,
       "cooldown": 12,
       "oncePerRun": true,
@@ -531,12 +656,16 @@
             "onSuccess": {
               "text": "你把灯贴近台面，逐寸看。\n有划痕——细的，成组的，不是随机，是某种重复动作磨出来的规律。像装具，像硬边缘，像一个有外壳的东西反复在这里停靠过。\n你把这几行划痕照了相，继续往下，没有给它加解释。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -3 }
+              "deltas": {
+                "sanity": -3
+              }
             },
             "onFailure": {
               "text": "你把灯贴近，在台面上找。\n你看出了一个形状，或者以为你看出了——台面被磨出来的那个轮廓，比你多了两个额外的位置，对称，朝外，像某种装具，或者某种肢体。\n你不知道你是认出来了还是脑子在黑暗里给你填进去的。你离开了台面。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -8 }
+              "deltas": {
+                "sanity": -8
+              }
             }
           }
         },
@@ -546,7 +675,9 @@
           "outcome": {
             "text": "你坐在台面上。\n几乎合适——几乎。背碰墙的位置比磨光的那个印迹高了半拳，宽了一些。\n用这个台的东西和你的形状不一样，数值上的不一样，可以测量的那种。你坐了一分钟，然后起来继续往下，没有摸那个磨光的印迹。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -4 }
+            "deltas": {
+              "sanity": -4
+            }
           }
         },
         {
@@ -559,11 +690,15 @@
         }
       ]
     },
-
     {
       "id": "trench.the_opening",
-      "depthRange": [82, 108],
-      "zoneTags": ["midnight"],
+      "depthRange": [
+        82,
+        108
+      ],
+      "zoneTags": [
+        "midnight"
+      ],
       "weight": 5,
       "cooldown": 4,
       "title": "往下的口",
@@ -576,7 +711,9 @@
           "outcome": {
             "text": "你朝声呐里的口钻过去。\n头盔闷一声撞上石壁，正撞在声呐说有口的地方。你伸手摸，整面是石头，一道缝都没有。\n你退开。声呐里那道口又往前挪了挪，还开着，还在等你钻——总在你够不到、看不真的那一点远。",
             "oxygenTurnCost": 3,
-            "deltas": { "sanity": -6 },
+            "deltas": {
+              "sanity": -6
+            },
             "loreEntry": "lore.trench.the_opening"
           }
         },
@@ -589,13 +726,17 @@
             "onSuccess": {
               "text": "你不去够那道口，沿着灯照得到的石壁，一段一段摸真有的走向。\n回波在这种窄水里会乱叠，叠出一道根本不存在的开口，专挑你最想找到路的时候——你提醒自己。\n你绕开声呐画的那道口，从石壁真有的一处低矮缝隙钻了下去。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -4 },
+              "deltas": {
+                "sanity": -4
+              },
               "loreEntry": "lore.trench.the_opening"
             },
             "onFailure": {
               "text": "那道口在声呐里清清楚楚，明明就是路，你怎么会舍近求远。\n你一次次朝它钻，一次次撞在石头上，退开，它又开在前头。你记不清撞了几回，深度表却没动——你一直在原地，对着一堵墙上不存在的门。\n等你停下，气表比你以为的低了一大截。",
               "oxygenTurnCost": 5,
-              "deltas": { "sanity": -10 }
+              "deltas": {
+                "sanity": -10
+              }
             }
           }
         },
@@ -605,16 +746,22 @@
           "outcome": {
             "text": "你灭了声呐，省得它再给你画门。\n你把手贴在石壁上，一寸寸往下摸过去，找一道真能过人的缝。\n手底下的石头不会开口骗你。它要么是实的，要么有缝——慢，但摸到的都作得了数。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -3 }
+            "deltas": {
+              "sanity": -3
+            }
           }
         }
       ]
     },
-
     {
       "id": "trench.the_knot",
-      "depthRange": [108, 160],
-      "zoneTags": ["midnight"],
+      "depthRange": [
+        108,
+        160
+      ],
+      "zoneTags": [
+        "midnight"
+      ],
       "weight": 2,
       "cooldown": 11,
       "title": "结",
@@ -630,12 +777,16 @@
             "onSuccess": {
               "text": "你把结贴近灯，一寸一寸看。打法是你的打法，力度是你的力度，线被拉紧的角度和你惯用手的方向一样——不是别人的结，是你的打法，你不知道什么时候打的你的结。你在结下方二十厘米补了一个记号结，然后继续往下，不再往上摸那个不知道怎么在那里的第一个。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -3 }
+              "deltas": {
+                "sanity": -3
+              }
             },
             "onFailure": {
               "text": "你越看越像是你自己打的，你找不到任何一点它不是你打的证据，也找不到你打它的记忆。两件事同时成立：这是你打的，你没打过。你把结松开，重打了一遍，打成和它一模一样的，然后继续往下，一直用手摸着线，比你之前摸得要紧。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -9 }
+              "deltas": {
+                "sanity": -9
+              }
             }
           }
         },
@@ -653,16 +804,22 @@
           "outcome": {
             "text": "你解开了它。松开了，是正常的线，通畅的，什么都没留下，只是那个结不在了。你把线摸了一段，确认线是完整的，然后继续往下，线在你手里，没有结，没有比进来时多或少的什么。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 2 }
+            "deltas": {
+              "sanity": 2
+            }
           }
         }
       ]
     },
-
     {
       "id": "trench.the_narrowing",
-      "depthRange": [108, 160],
-      "zoneTags": ["midnight"],
+      "depthRange": [
+        108,
+        160
+      ],
+      "zoneTags": [
+        "midnight"
+      ],
       "weight": 2,
       "cooldown": 12,
       "oncePerRun": true,
@@ -679,12 +836,16 @@
             "onSuccess": {
               "text": "你转身，手摸着线，往回走，两侧的岩壁在你灯里跟着你退。你游了大约二十米，回头看——通道三米宽，和你第一次进来记忆里一样，也许比一样还宽一点。你继续往上走，不回头确认宽度，只确认线，只确认线还在你手里。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": 3 }
+              "deltas": {
+                "sanity": 3
+              }
             },
             "onFailure": {
               "text": "你试图转身，方向感出了问题——你不确定哪个方向是「回」。你转了一圈，转了半圈，用线确认了方向，摸着线走，走了很长一段时间，等到通道重新变宽，你才停下来数了几次呼吸。你还在线上，你还走在路上。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -11 }
+              "deltas": {
+                "sanity": -11
+              }
             }
           }
         },
@@ -694,7 +855,9 @@
           "outcome": {
             "text": "你伸开两臂，指尖碰到两侧。一米五，就是一米五，可以通过的宽度，只是比进来时少了一半。你记下了这个数字，然后继续往前，手轻轻触着一侧的壁，通道没有再收窄。",
             "oxygenTurnCost": 2,
-            "deltas": { "stamina": -3 }
+            "deltas": {
+              "stamina": -3
+            }
           }
         },
         {
@@ -707,11 +870,15 @@
         }
       ]
     },
-
     {
       "id": "trench.no_ceiling",
-      "depthRange": [115, 175],
-      "zoneTags": ["midnight"],
+      "depthRange": [
+        115,
+        175
+      ],
+      "zoneTags": [
+        "midnight"
+      ],
       "weight": 2,
       "cooldown": 11,
       "title": "找不到的顶",
@@ -724,7 +891,9 @@
           "outcome": {
             "text": "你往上游，一米，两米，五米，一直往上，等声呐给你一个回波。你游了十二米，回波来了——天花板在你头上两米，岩石，稳定，一直在那里。你不知道你在那十二米之前它去了哪里，你只知道你往上游了十二米，然后它在了。",
             "oxygenTurnCost": 3,
-            "deltas": { "sanity": -3 }
+            "deltas": {
+              "sanity": -3
+            }
           }
         },
         {
@@ -736,12 +905,16 @@
             "onSuccess": {
               "text": "你连 ping 了四次，等回波。第四次有了，很淡，模糊，像是天花板很远，或者信号绕了一段路才回来。你记下数据，继续往下，不往上爬确认——天花板在，不管数据是否正常，它在，你先信它在。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -2 }
+              "deltas": {
+                "sanity": -2
+              }
             },
             "onFailure": {
               "text": "你连 ping 了七次。第五次开始有一个很淡的回波，可能是天花板，可能是你需要它出现所以出现了。你把数据记下来，不确定你记下的是真实的还是你期望的。之后很长一段时间你都在往上 ping，一直 ping 到你开始往上走。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -7 }
+              "deltas": {
+                "sanity": -7
+              }
             }
           }
         },
@@ -751,7 +924,116 @@
           "outcome": {
             "text": "你不看上面。天花板的事是天花板的事，你的事是往下走。你关掉声呐向上的方向，只看下方，只看前方，继续走。没有天花板的数据，但你的导引线在，你的灯在，你在，这三件事已经够了。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "trench.nodule_field",
+      "depthRange": [
+        60,
+        108
+      ],
+      "zoneTags": [
+        "twilight",
+        "midnight"
+      ],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "结核坡",
+      "body": "海底是一片平坡，坡面上散着黑色球状的东西，比鹅卵石大一圈，摆得不整齐——不是石头，是结核，沉积在这里的时间比你的物种还长。\n你脚踩下去，泥地发软，结核往下陷了一点。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "collect_nodules",
+          "label": "用岩凿撬起几颗，装进袋里（氧气 -2）",
+          "visibleIf": {
+            "kind": "hasCapability",
+            "capability": "mine"
+          },
+          "outcome": {
+            "text": "凿头顶进泥地，把几颗结核撬出来——泥浆扑上来，什么都看不见了。你靠着手感把它们摸进袋里。\n表面粗糙，比看起来重。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              {
+                "itemId": "item.manganese_nodule",
+                "qty": [
+                  1,
+                  2
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "step_over",
+          "label": "踮着脚走过去，不踩烂它们",
+          "outcome": {
+            "text": "你小心地穿过这片坡。结核被灯光打出影子，黑圆圆的，像是有人刻意撒下来的。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "trench.abyssal_wall",
+      "depthRange": [
+        115,
+        175
+      ],
+      "zoneTags": [
+        "midnight"
+      ],
+      "weight": 4,
+      "cooldown": 6,
+      "title": "深渊岩壁",
+      "body": "海沟壁在灯光边缘若隐若现。\n靠近了，壁面上是一层致密的黑色片状结壳——不是藻，不是礁，是铁锰结壳，几百万年才长这厚，和岩石已经分不清楚了。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "peel_crust",
+          "label": "用岩凿剥一片下来（氧气 -3）",
+          "visibleIf": {
+            "kind": "hasCapability",
+            "capability": "mine"
+          },
+          "check": {
+            "stat": "stamina",
+            "dc": 16,
+            "onSuccess": {
+              "text": "凿头凿进去，结壳裂开一道白线——正面深黑，背面是原来的岩石灰，泾渭分明。\n你手里这片花了几百万年才厚成这样。",
+              "oxygenTurnCost": 3,
+              "loot": [
+                {
+                  "itemId": "item.abyssal_crust",
+                  "qty": [
+                    1,
+                    1
+                  ]
+                }
+              ]
+            },
+            "onFailure": {
+              "text": "凿头顶进去，结壳碎成粉了——太脆，整片都裂开了。\n你抓了抓碎渣，什么值钱的都没捞到。",
+              "oxygenTurnCost": 3,
+              "deltas": {
+                "stamina": -5
+              }
+            }
+          }
+        },
+        {
+          "id": "press_palm",
+          "label": "把手掌贴上去，感受它的温度",
+          "outcome": {
+            "text": "是凉的，和水一样凉，但硬得不一样——一种非常古老的硬。\n你隔着手套，不确定你感觉到的是什么。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -3
+            }
           }
         }
       ]

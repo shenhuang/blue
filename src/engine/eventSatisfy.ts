@@ -25,6 +25,7 @@ import type {
 import type { ScenarioInput } from './eventScenario';
 import { getEventById } from './zones';
 import { createStarterLoadout } from './state';
+import { allItems } from './items';
 
 type EquipSlot = keyof EquipmentLoadout; // 'tank' | 'suit' | 'light' | 'tool' | 'charm'
 
@@ -118,6 +119,12 @@ interface Accum {
   equipSlots: Set<EquipSlot>;
   upgrades: Set<string>;
   depthFloor: number | null;
+  /**
+   * hasCapability 门控：capability → 满足该能力的 fixture 道具来源。
+   * equipment 道具 → 放装备槽（slot+itemId）；非装备道具 → 放背包（itemId only，slot undefined）。
+   * 数据驱动：从 ItemDef.grantsCapability 查找，无需硬编码能力→道具映射。
+   */
+  capabilityEquip: Map<string, { slot?: EquipSlot; itemId: string }>;
 }
 
 function newAccum(): Accum {
@@ -130,6 +137,7 @@ function newAccum(): Accum {
     equipSlots: new Set(),
     upgrades: new Set(),
     depthFloor: null,
+    capabilityEquip: new Map(),
   };
 }
 
@@ -167,6 +175,17 @@ function collect(cond: Condition, acc: Accum): void {
     case 'hasEquipment':
       acc.equipSlots.add(cond.slot);
       return;
+    case 'hasCapability': {
+      // 数据驱动：扫 ItemDef.grantsCapability，取第一个声明该能力的道具作 fixture 来源。
+      const granting = allItems().find((i) => i.grantsCapability?.includes(cond.capability));
+      if (granting) {
+        const slot = granting.equipment?.slot as EquipSlot | undefined;
+        acc.capabilityEquip.set(cond.capability, { slot, itemId: granting.id });
+        if (slot) acc.equipSlots.add(slot); // 装备道具：该槽进 fixture（后被 capabilityEquip 精确覆写）
+        else acc.items.set(granting.id, Math.max(acc.items.get(granting.id) ?? 0, 1)); // 背包道具
+      }
+      return;
+    }
     case 'hasUpgrade':
       acc.upgrades.add(cond.upgradeId);
       return;
@@ -186,6 +205,16 @@ function collect(cond: Condition, acc: Accum): void {
       return;
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// 工具函数：检查 Condition 树是否引用了某个 capability
+// ---------------------------------------------------------------------------
+
+function capabilityInCondition(cond: Condition, cap: string): boolean {
+  if (cond.kind === 'hasCapability') return cond.capability === cap;
+  if (cond.kind === 'all' || cond.kind === 'any') return cond.of.some((c) => capabilityInCondition(c, cap));
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -311,6 +340,31 @@ export function satisfyEvent(eventId: string, opts: SatisfyOptions = {}): Satisf
   // ----- 装备 / 物品 / 升级 -----
   const equipment: Partial<EquipmentLoadout> = {};
   for (const slot of acc.equipSlots) equipment[slot] = equipInstanceForSlot(slot);
+
+  // hasCapability 装备道具：先按插入顺序确定每槽「胜者」（先入为主）；后来者若占同槽则是槽冲突——
+  // 两个选项各自需要同一槽里不同的道具→天生互斥，把依赖「败者」能力的选项加进 intentionallyHidden。
+  const slotWinnerItem = new Map<EquipSlot, { cap: string; itemId: string }>();
+  for (const [cap, { slot, itemId }] of acc.capabilityEquip) {
+    if (!slot) continue;
+    if (slotWinnerItem.has(slot)) {
+      // 槽冲突：当前 cap 是败者，找依赖它的选项标记为 intentionallyHidden。
+      // 这不是「impossible gate」（flag 既要又禁那种硬冲突），只是 fixture 单次只能装一件——
+      // 胜者选项已可见·败者选项放 intentionallyHidden·不进 conflicts（否则破 §1 断言）。
+      for (const opt of ev.options) {
+        if (opt.hallucination && !wantHalluc) continue;
+        if (!opt.visibleIf || intentionallyHidden.includes(opt.id)) continue;
+        if (capabilityInCondition(opt.visibleIf, cap)) {
+          intentionallyHidden.push(opt.id);
+        }
+      }
+    } else {
+      slotWinnerItem.set(slot, { cap, itemId });
+    }
+  }
+  // 用胜者 itemId 覆写占位件（背包道具已由 acc.items 处理）
+  for (const [slot, { itemId }] of slotWinnerItem) {
+    equipment[slot] = { itemId, slot, level: 1 } as EquipmentInstance;
+  }
   const inventory = [...acc.items].map(([itemId, qty]) => ({ itemId, qty }));
   const unlockedUpgrades = [...acc.upgrades];
 

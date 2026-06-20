@@ -12,15 +12,130 @@
         "slot": "tool",
         "baseLevel": 1,
         "effects": [
-          { "kind": "unlocksAction", "actionId": "action.knife_slash" },
-          { "kind": "unlocksAction", "actionId": "action.knife_stab" }
+          {
+            "kind": "unlocksAction",
+            "actionId": "action.knife_slash"
+          },
+          {
+            "kind": "unlocksAction",
+            "actionId": "action.knife_stab"
+          }
         ],
         "upgradeSteps": [
-          { "materials": [{ "itemId": "item.shark_tooth", "qty": 2 }], "gold": 50, "statDeltas": [{ "kind": "weaponDamage", "value": 2 }] },
-          { "materials": [{ "itemId": "item.crab_chitin", "qty": 2 }, { "itemId": "item.brass_fitting", "qty": 1 }], "gold": 100, "statDeltas": [{ "kind": "weaponDamage", "value": 3 }] },
-          { "materials": [{ "itemId": "item.brass_fitting", "qty": 3 }, { "itemId": "item.shark_tooth", "qty": 3 }], "gold": 160, "statDeltas": [{ "kind": "weaponDamage", "value": 4 }] }
+          {
+            "materials": [
+              {
+                "itemId": "item.shark_tooth",
+                "qty": 2
+              }
+            ],
+            "gold": 50,
+            "statDeltas": [
+              {
+                "kind": "weaponDamage",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "materials": [
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 2
+              },
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 1
+              }
+            ],
+            "gold": 100,
+            "statDeltas": [
+              {
+                "kind": "weaponDamage",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "materials": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 3
+              },
+              {
+                "itemId": "item.shark_tooth",
+                "qty": 3
+              }
+            ],
+            "gold": 160,
+            "statDeltas": [
+              {
+                "kind": "weaponDamage",
+                "value": 4
+              }
+            ]
+          }
         ]
-      }
+      },
+      "grantsCapability": [
+        "cut"
+      ]
+    },
+    {
+      "id": "item.rock_drill",
+      "name": "岩凿",
+      "category": "equipment",
+      "rarity": "uncommon",
+      "description": "合金凿头，专为从岩层、礁石裂缝、热液烟囱里取矿而造。水里挥舞起来不如刀——但潜水刀凿不动岩石。Otto 按件打造。",
+      "weight": 2,
+      "sellPrice": 0,
+      "equipment": {
+        "slot": "tool",
+        "baseLevel": 1,
+        "effects": [
+          {
+            "kind": "weaponDamage",
+            "value": 2
+          }
+        ],
+        "craftCost": {
+          "materials": [
+            {
+              "itemId": "item.brass_fitting",
+              "qty": 2
+            },
+            {
+              "itemId": "item.crab_chitin",
+              "qty": 2
+            }
+          ],
+          "gold": 80
+        },
+        "upgradeSteps": [
+          {
+            "materials": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 3
+              },
+              {
+                "itemId": "item.iron_concretion",
+                "qty": 2
+              }
+            ],
+            "gold": 120,
+            "statDeltas": [
+              {
+                "kind": "weaponDamage",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "grantsCapability": [
+        "mine"
+      ]
     },
     {
       "id": "item.tank.bluefin_mk1",
@@ -33,11 +148,66 @@
       "equipment": {
         "slot": "tank",
         "baseLevel": 1,
-        "effects": [{ "kind": "oxygenMaxBonus", "value": 60 }],
+        "effects": [
+          {
+            "kind": "oxygenMaxBonus",
+            "value": 60
+          }
+        ],
         "upgradeSteps": [
-          { "materials": [{ "itemId": "item.shark_tooth", "qty": 2 }], "gold": 40, "statDeltas": [{ "kind": "oxygenMaxBonus", "value": 10 }] },
-          { "materials": [{ "itemId": "item.shark_tooth", "qty": 3 }, { "itemId": "item.brass_fitting", "qty": 2 }], "gold": 80, "statDeltas": [{ "kind": "oxygenMaxBonus", "value": 12 }] },
-          { "materials": [{ "itemId": "item.crab_chitin", "qty": 3 }, { "itemId": "item.brass_fitting", "qty": 2 }], "gold": 140, "statDeltas": [{ "kind": "oxygenMaxBonus", "value": 15 }] }
+          {
+            "materials": [
+              {
+                "itemId": "item.shark_tooth",
+                "qty": 2
+              }
+            ],
+            "gold": 40,
+            "statDeltas": [
+              {
+                "kind": "oxygenMaxBonus",
+                "value": 10
+              }
+            ]
+          },
+          {
+            "materials": [
+              {
+                "itemId": "item.shark_tooth",
+                "qty": 3
+              },
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 2
+              }
+            ],
+            "gold": 80,
+            "statDeltas": [
+              {
+                "kind": "oxygenMaxBonus",
+                "value": 12
+              }
+            ]
+          },
+          {
+            "materials": [
+              {
+                "itemId": "item.crab_chitin",
+                "qty": 3
+              },
+              {
+                "itemId": "item.brass_fitting",
+                "qty": 2
+              }
+            ],
+            "gold": 140,
+            "statDeltas": [
+              {
+                "kind": "oxygenMaxBonus",
+                "value": 15
+              }
+            ]
+          }
         ]
       }
     },
@@ -53,7 +223,10 @@
         "slot": "suit",
         "baseLevel": 1,
         "effects": [
-          { "kind": "physicalArmor", "value": 1 }
+          {
+            "kind": "physicalArmor",
+            "value": 1
+          }
         ]
       }
     },
@@ -65,11 +238,20 @@
       "description": "黄铜外壳的老式探照灯。光柱在水里是一道实体的剑。",
       "weight": 1,
       "sellPrice": 25,
-      "story": { "setsFlag": ["flag.owns_light"] },
+      "story": {
+        "setsFlag": [
+          "flag.owns_light"
+        ]
+      },
       "equipment": {
         "slot": "light",
         "baseLevel": 1,
-        "effects": [{ "kind": "lightRadius", "value": 2 }]
+        "effects": [
+          {
+            "kind": "lightRadius",
+            "value": 2
+          }
+        ]
       }
     },
     {
@@ -80,17 +262,138 @@
       "description": "组起一台手持声呐。关灯时可发脉冲探测前方——但回波远不如灯下所见可靠。黑水区从此能摸着探路。",
       "weight": 2,
       "sellPrice": 0,
-      "story": { "setsFlag": ["flag.owns_sonar"] },
+      "story": {
+        "setsFlag": [
+          "flag.owns_sonar"
+        ]
+      },
       "equipment": {
         "slot": "sonar",
         "baseLevel": 1,
-        "effects": [{ "kind": "unlockSonar", "value": true }],
-        "craftCost": { "materials": [{ "itemId": "item.lantern_gland", "qty": 1 }, { "itemId": "item.eel_skin", "qty": 2 }, { "itemId": "item.cave_octopus_beak", "qty": 2 }], "gold": 120 },
+        "effects": [
+          {
+            "kind": "unlockSonar",
+            "value": true
+          }
+        ],
+        "craftCost": {
+          "materials": [
+            {
+              "itemId": "item.lantern_gland",
+              "qty": 1
+            },
+            {
+              "itemId": "item.eel_skin",
+              "qty": 2
+            },
+            {
+              "itemId": "item.cave_octopus_beak",
+              "qty": 2
+            },
+            {
+              "itemId": "item.iron_concretion",
+              "qty": 1
+            }
+          ],
+          "gold": 120
+        },
         "upgradeSteps": [
-          { "materials": [{ "itemId": "item.lantern_gland", "qty": 1 }, { "itemId": "item.eel_skin", "qty": 3 }], "gold": 160, "statDeltas": [{ "kind": "sonarPingCostReduction", "value": 2 }, { "kind": "sonarRobustness", "value": 20 }] },
-          { "materials": [{ "itemId": "item.eel_skin", "qty": 3 }, { "itemId": "item.cave_octopus_beak", "qty": 2 }], "gold": 200, "statDeltas": [{ "kind": "sonarRangeBonus", "value": 8 }] },
-          { "materials": [{ "itemId": "item.eel_skin", "qty": 3 }, { "itemId": "item.cave_octopus_beak", "qty": 3 }], "gold": 240, "statDeltas": [{ "kind": "sonarScanRangeBonus", "value": 1 }] },
-          { "materials": [{ "itemId": "item.lantern_gland", "qty": 2 }, { "itemId": "item.cave_octopus_beak", "qty": 3 }], "gold": 320, "statDeltas": [{ "kind": "sonarScanRangeBonus", "value": 2 }] }
+          {
+            "materials": [
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 1
+              },
+              {
+                "itemId": "item.eel_skin",
+                "qty": 3
+              }
+            ],
+            "gold": 160,
+            "statDeltas": [
+              {
+                "kind": "sonarPingCostReduction",
+                "value": 2
+              },
+              {
+                "kind": "sonarRobustness",
+                "value": 20
+              }
+            ]
+          },
+          {
+            "materials": [
+              {
+                "itemId": "item.eel_skin",
+                "qty": 3
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 2
+              },
+              {
+                "itemId": "item.quartz_crystal",
+                "qty": 1
+              }
+            ],
+            "gold": 200,
+            "statDeltas": [
+              {
+                "kind": "sonarRangeBonus",
+                "value": 8
+              }
+            ]
+          },
+          {
+            "materials": [
+              {
+                "itemId": "item.eel_skin",
+                "qty": 3
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 3
+              },
+              {
+                "itemId": "item.manganese_nodule",
+                "qty": 1
+              }
+            ],
+            "gold": 240,
+            "statDeltas": [
+              {
+                "kind": "sonarScanRangeBonus",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "materials": [
+              {
+                "itemId": "item.lantern_gland",
+                "qty": 2
+              },
+              {
+                "itemId": "item.cave_octopus_beak",
+                "qty": 3
+              },
+              {
+                "itemId": "item.manganese_nodule",
+                "qty": 1
+              },
+              {
+                "itemId": "item.iron_concretion",
+                "qty": 1
+              }
+            ],
+            "gold": 320,
+            "statDeltas": [
+              {
+                "kind": "sonarScanRangeBonus",
+                "value": 2
+              }
+            ]
+          }
         ]
       }
     },
@@ -106,8 +409,14 @@
         "slot": "light",
         "baseLevel": 1,
         "effects": [
-          { "kind": "lampRangeBonus", "value": 5 },
-          { "kind": "lightRadius", "value": 1 }
+          {
+            "kind": "lampRangeBonus",
+            "value": 5
+          },
+          {
+            "kind": "lightRadius",
+            "value": 1
+          }
         ]
       }
     },
@@ -123,8 +432,14 @@
         "slot": "light",
         "baseLevel": 1,
         "effects": [
-          { "kind": "lightRadius", "value": 4 },
-          { "kind": "lampRobustness", "value": 8 }
+          {
+            "kind": "lightRadius",
+            "value": 4
+          },
+          {
+            "kind": "lampRobustness",
+            "value": 8
+          }
         ]
       }
     },
@@ -140,8 +455,14 @@
         "slot": "light",
         "baseLevel": 1,
         "effects": [
-          { "kind": "lampEfficiency", "value": 0.3 },
-          { "kind": "powerMaxBonus", "value": 15 }
+          {
+            "kind": "lampEfficiency",
+            "value": 0.3
+          },
+          {
+            "kind": "powerMaxBonus",
+            "value": 15
+          }
         ]
       }
     },
@@ -157,7 +478,10 @@
         "slot": "suit",
         "baseLevel": 1,
         "effects": [
-          { "kind": "physicalArmor", "value": 3 }
+          {
+            "kind": "physicalArmor",
+            "value": 3
+          }
         ]
       }
     },
@@ -173,8 +497,14 @@
         "slot": "suit",
         "baseLevel": 1,
         "effects": [
-          { "kind": "soundAbsorbBonus", "value": 0.3 },
-          { "kind": "physicalArmor", "value": 1 }
+          {
+            "kind": "soundAbsorbBonus",
+            "value": 0.3
+          },
+          {
+            "kind": "physicalArmor",
+            "value": 1
+          }
         ]
       }
     },
@@ -190,8 +520,14 @@
         "slot": "suit",
         "baseLevel": 1,
         "effects": [
-          { "kind": "camoBonus", "value": 0.3 },
-          { "kind": "signatureReduction", "value": 1 }
+          {
+            "kind": "camoBonus",
+            "value": 0.3
+          },
+          {
+            "kind": "signatureReduction",
+            "value": 1
+          }
         ]
       }
     },
@@ -207,7 +543,10 @@
         "slot": "charm",
         "baseLevel": 1,
         "effects": [
-          { "kind": "signatureReduction", "value": 1 }
+          {
+            "kind": "signatureReduction",
+            "value": 1
+          }
         ]
       }
     },
@@ -223,7 +562,10 @@
         "slot": "charm",
         "baseLevel": 1,
         "effects": [
-          { "kind": "powerMaxBonus", "value": 15 }
+          {
+            "kind": "powerMaxBonus",
+            "value": 15
+          }
         ]
       }
     },
@@ -306,7 +648,9 @@
       "decay": "eternal",
       "story": {
         "unlocksLoreEntry": "lore.whalefall.found",
-        "setsFlag": ["story.ch1.whalefall_found"],
+        "setsFlag": [
+          "story.ch1.whalefall_found"
+        ],
         "marksPois": [
           "poi.anchor.whalefall_scavengers",
           "poi.anchor.whalefall_enrichment",
@@ -349,13 +693,16 @@
     },
     {
       "id": "item.note.sonar_checklist",
-      "name": "声呐零件清单",
-      "category": "story",
+      "name": "声呐材料单",
+      "category": "other",
       "rarity": "common",
-      "description": "灯腺、鳗鱼皮、章鱼喙。Otto 的字，方方正正。凑齐了拿回去找他。",
+      "description": "Otto 的字迹，方方正正。每行一样材料。找齐了，回来找他。",
       "weight": 0.1,
       "sellPrice": 0,
-      "decay": "eternal"
+      "decay": "eternal",
+      "story": {
+        "showsCraftCostOf": "item.sonar.handheld"
+      }
     },
     {
       "id": "item.rusty_compass",
@@ -438,15 +785,19 @@
       "sellPrice": 25,
       "decay": "consumable",
       "consumable": {
-        "usableIn": ["dive", "combat"],
+        "usableIn": [
+          "dive",
+          "combat"
+        ],
         "medkit": true,
         "effectOnUse": {
-          "deltas": { "stamina": 30 },
+          "deltas": {
+            "stamina": 30
+          },
           "text": "你撕开急救包，止血带勒紧，疼痛被推到一边。"
         }
       }
     },
-
     {
       "id": "item.decoy_sound",
       "name": "声诱标",
@@ -456,9 +807,14 @@
       "weight": 0.4,
       "sellPrice": 30,
       "decay": "consumable",
-      "decoy": { "kind": "sound" },
+      "decoy": {
+        "kind": "sound"
+      },
       "consumable": {
-        "usableIn": ["dive", "combat"],
+        "usableIn": [
+          "dive",
+          "combat"
+        ],
         "effectOnUse": {
           "text": "声标在水里低低地嗡起来。"
         }
@@ -473,15 +829,19 @@
       "weight": 0.3,
       "sellPrice": 30,
       "decay": "consumable",
-      "decoy": { "kind": "light" },
+      "decoy": {
+        "kind": "light"
+      },
       "consumable": {
-        "usableIn": ["dive", "combat"],
+        "usableIn": [
+          "dive",
+          "combat"
+        ],
         "effectOnUse": {
           "text": "冷光在水里炸开一小片惨白。"
         }
       }
     },
-
     {
       "id": "item.barracuda_jaw",
       "name": "梭鱼颌",
@@ -536,6 +896,72 @@
       "sellPrice": 0,
       "decay": "eternal",
       "tier": 5
+    },
+    {
+      "id": "item.quartz_crystal",
+      "name": "石英晶柱",
+      "category": "material",
+      "rarity": "common",
+      "description": "从礁石缝里凿出来的六棱透明柱体，断口整齐，像是让什么几何定律硬切的。Mira 说做声学元件的会收。",
+      "weight": 0.3,
+      "sellPrice": 8,
+      "decay": "durable",
+      "tier": 1
+    },
+    {
+      "id": "item.flint_nodule",
+      "name": "燧石结核",
+      "category": "material",
+      "rarity": "common",
+      "description": "礁石缝里夹着的圆钝黑石，刀尖能把它从裂缝里撬出来。断开之后里头是灰蓝色的，光滑，像玻璃。Mira 说做打火工具的肯收。",
+      "weight": 0.4,
+      "sellPrice": 6,
+      "decay": "durable",
+      "tier": 1
+    },
+    {
+      "id": "item.manganese_nodule",
+      "name": "锰结核",
+      "category": "material",
+      "rarity": "uncommon",
+      "description": "从深处泥地里凿起来的黑色球状结核，表面凹凸，比看起来沉。Mira 说这东西靠近上面不多见，也许不是本地长的。",
+      "weight": 0.5,
+      "sellPrice": 14,
+      "decay": "durable",
+      "tier": 2
+    },
+    {
+      "id": "item.iron_concretion",
+      "name": "铁质结核",
+      "category": "material",
+      "rarity": "common",
+      "description": "沉船铁构件上长出来的锈铁结核——海水把铁离子一层层沉积成这个形状，再久下去就是礁石的一部分了。Mira 说做精密铸件的肯用。",
+      "weight": 0.5,
+      "sellPrice": 10,
+      "decay": "durable",
+      "tier": 2
+    },
+    {
+      "id": "item.vent_sulfide",
+      "name": "热液硫化矿",
+      "category": "material",
+      "rarity": "uncommon",
+      "description": "从热液烟囱上凿下来的黑色块状硫化物，表面还带着地热的余温。成分复杂——铜、锌、铁硫化物混在一起，Mira 说冶金铺子会整块收走。",
+      "weight": 0.8,
+      "sellPrice": 18,
+      "decay": "durable",
+      "tier": 3
+    },
+    {
+      "id": "item.abyssal_crust",
+      "name": "铁锰结壳",
+      "category": "material",
+      "rarity": "rare",
+      "description": "从深渊岩壁上剥下来的片状结壳，正面深黑，背面是原来的岩石灰。这东西生长极慢——你手里这一片，花了几百万年才厚成这样。Mira 盯着它看了很久，没说什么。",
+      "weight": 0.6,
+      "sellPrice": 22,
+      "decay": "durable",
+      "tier": 4
     }
   ]
 }

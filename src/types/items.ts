@@ -5,6 +5,7 @@ export type ItemCategory =
   | 'consumable'
   | 'material'
   | 'story'
+  | 'other'     // 杂项：非消耗/材料/装备/剧情的可点击道具（如清单·海图信物等）
   | 'currency';
 
 // 装备槽（9 槽纸娃娃·作者 2026-06-19）。历史 key 名沿用以最小化改动面：
@@ -84,6 +85,19 @@ export interface ItemDef {
   tier?: MaterialTier;
 
   /**
+   * 该道具赋予的能力标签（通用·不限 category）。与 events.ts hasCapability 条件配套使用：
+   * hasCapability 同时扫装备槽（run.equipment）和当前潜水背包（run.inventory），任意来源匹配即满足。
+   *
+   * 设计意图：
+   *   - 「工具家族」：多把刀都声明 'cut'，事件统一问 hasCapability('cut')，无需枚举每种刀。
+   *   - 「背包工具」：相机/样本管等非装备道具也可声明能力（如 'photograph'），带下去就能用。
+   *   - 新能力加字面量即可，事件侧零改动；反过来也成立：新事件只需声明所需能力，不关心谁提供。
+   *
+   * 注意：这里是顶层字段（ItemDef 级），不是 EquipmentEffect——非装备道具同样可以声明能力。
+   */
+  grantsCapability?: string[];
+
+  /**
    * decoy 道具才有（猎手 SPEC §4）：投放后骗哪种感官。dive-stalker.ts::deployDecoy /
    * combat 的 use_decoy 行动按它接线；缺省＝不是 decoy。
    */
@@ -115,6 +129,13 @@ export interface ItemDef {
      * authored anchor（playthrough-chart 守成 regress 门·拼错＝静默不揭示＝软锁）。
      */
     marksPois?: string[];
+    /**
+     * 该道具展示另一件装备的「打造账单」（材料清单道具专用·作者 2026-06-20）：
+     * 值为目标装备 item id（如 `'item.sonar.handheld'`）。
+     * LockerView 点开此道具时渲染 UpgradeCostView(showOnly) 展示打造所需材料 + 持有量。
+     * 适用于 category='other' 的「清单类道具」——引擎不做任何处理，纯 UI 展示。
+     */
+    showsCraftCostOf?: string;
     /**
      * 获得此道具（进 profile.inventory）时一并置位的 story flag（物品即里程碑·作者 2026-06-19）：
      * 「持有那张纸＝你做过那件事」。在 engine/state.ts::acquireIntoProfile 单点兑现 ⇒ 不论从哪条路拿到

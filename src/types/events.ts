@@ -139,5 +139,12 @@ export type Condition =
   | { kind: 'notHasFlag'; flag: string }
   | { kind: 'hasUpgrade'; upgradeId: string }
   | { kind: 'depthAtLeast'; value: number }
+  /**
+   * 装备能力门控（工具能力·对应 EquipmentEffect grantsCapability）：
+   * 检查所有已装备槽中是否存在任意件带有指定 capability 的 grantsCapability effect。
+   * 'cut'  ＝ 持潜水刀才可用的「切割」选项；'mine' ＝ 持岩凿才可用的「采矿」选项。
+   * evalCondition 遍历 run.equipment 全槽·engine/events.ts。
+   */
+  | { kind: 'hasCapability'; capability: string }
   | { kind: 'all'; of: Condition[] }
   | { kind: 'any'; of: Condition[] };

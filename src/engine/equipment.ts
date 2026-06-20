@@ -76,7 +76,8 @@ function addEffects(acc: EquipmentStats, effects: EquipmentEffect[], isBase: boo
       case 'sonarRobustness': acc.sonarRobustness += e.value; break;
       case 'sonarRangeBonus': acc.sonarRangeBonus += e.value; break;
       case 'sonarScanRangeBonus': acc.sonarScanRangeBonus += e.value; break;
-      // 'unlocksAction' / 'unlockSonar'：非数值加成（声呐解锁由 hasSonarEquipped 派生）·跳过
+      // 'unlocksAction' / 'unlockSonar'：非数值加成·跳过（声呐解锁由 hasSonarEquipped 派生）。
+      // grantsCapability 已迁至 ItemDef 顶层字段·不再是 EquipmentEffect·不在此处理。
     }
   }
 }

@@ -30,17 +30,20 @@ export function UpgradeCostView({
   onConfirm,
   disabled = false,
   disabledLabel,
+  showOnly = false,
 }: {
   cost: UpgradeCostSpec;
   inventory: { itemId: string; qty: number }[];
   bankedGold: number;
-  /** 满足时按钮文字（如「改装」「打造」「建造」）。 */
-  actionLabel: string;
-  onConfirm: () => void;
+  /** 满足时按钮文字（如「改装」「打造」「建造」）；showOnly=true 时可不传。 */
+  actionLabel?: string;
+  onConfirm?: () => void;
   /** 账单之外的硬门（如已满级 / 需要前一级）——传 true＝按钮恒 disabled。 */
   disabled?: boolean;
   /** disabled 时的按钮文字（如「需要前一级」「灯塔等级不足」）；缺省回落 actionLabel。 */
   disabledLabel?: string;
+  /** 只读模式：只展示材料清单 + 持有量·不显示操作按钮（清单类道具详情页用）。 */
+  showOnly?: boolean;
 }) {
   const ownedOf = (id: string) => inventory.find((i) => i.itemId === id)?.qty ?? 0;
   const matShort = cost.materials.some((m) => ownedOf(m.itemId) < m.qty);
@@ -85,11 +88,13 @@ export function UpgradeCostView({
           </div>
         )}
       </div>
-      <div className="cost-foot">
-        <button type="button" className="btn small cost-confirm" disabled={blocked} onClick={onConfirm}>
-          {label}
-        </button>
-      </div>
+      {!showOnly && onConfirm && (
+        <div className="cost-foot">
+          <button type="button" className="btn small cost-confirm" disabled={blocked} onClick={onConfirm}>
+            {label}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

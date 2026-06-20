@@ -9,6 +9,7 @@ import { ItemCell } from './ItemCell';
 import { BestiaryView } from './BestiaryView';
 import { PanelShell } from './PanelShell';
 import { EquipmentDoll } from './EquipmentDoll';
+import { UpgradeCostView } from './UpgradeCost';
 
 // 港口物品栏 / 储物柜（物品栏与装备 SPEC §2）：左侧 tab 选分类、右侧＝该类内容。展示外壳·按 tab 委托各 store：
 //   消耗品 / 材料 → profile.inventory 按 category（仓库·§1.1·共享 ItemGrid 翻页 + 稀有度边框）
@@ -112,9 +113,31 @@ export function LockerView({
       );
     }
     if (detail.kind === 'storyitem') {
+      const def = getItemDef(detail.itemId);
+
+      // 材料清单道具（showsCraftCostOf）：展示目标装备的打造账单 + 持有量·无操作按钮。
+      if (def?.story?.showsCraftCostOf) {
+        const targetDef = getItemDef(def.story.showsCraftCostOf);
+        const craftCost = targetDef?.equipment?.craftCost;
+        return (
+          <PanelShell title={def.name ?? detail.itemId} onClose={close}>
+            <p className="dim">{def.description}</p>
+            {craftCost ? (
+              <UpgradeCostView
+                cost={craftCost}
+                inventory={inv}
+                bankedGold={state.profile.bankedGold}
+                showOnly
+              />
+            ) : (
+              <p className="dim">（目标账单找不到。）</p>
+            )}
+          </PanelShell>
+        );
+      }
+
       // 剧情道具读文：文献（有 unlocksLoreEntry）已读且见闻已登记→见闻正文（最全）；
       // 否则（信物如指南针/浮标·或文献未读/未登记）→ 道具描述（恒有·文献登记后自动变全）。
-      const def = getItemDef(detail.itemId);
       const loreId = documentLoreId(detail.itemId);
       const read = loreId ? state.profile.loreEntries.has(loreId) : false;
       const lore = read && loreId ? getLoreEntry(loreId) : undefined;
@@ -259,16 +282,18 @@ export function LockerView({
         <div className="item-grid">
           {gridItems.map((i) => {
             const def = getItemDef(i.itemId);
-            // 其它里的剧情道具＝海图信物（旧海图）→ 点开看详情（坐标列表 + 摊开整张海图）；杂项＝只展示。
+            // story 道具（海图信物）或有 showsCraftCostOf 的 other 道具→ 可点开看详情。
             const isStory = catOf(i.itemId) === 'story';
+            const isChecklist = !!def?.story?.showsCraftCostOf;
+            const isClickable = isStory || isChecklist;
             return (
               <ItemCell
                 key={i.itemId}
                 def={def}
                 itemId={i.itemId}
                 qty={i.qty > 1 ? i.qty : undefined}
-                onClick={isStory ? () => setDetail({ kind: 'storyitem', itemId: i.itemId }) : undefined}
-                title={isStory ? `${def?.name ?? i.itemId}——点开查看` : undefined}
+                onClick={isClickable ? () => setDetail({ kind: 'storyitem', itemId: i.itemId }) : undefined}
+                title={isClickable ? `${def?.name ?? i.itemId}——点开查看` : undefined}
               />
             );
           })}

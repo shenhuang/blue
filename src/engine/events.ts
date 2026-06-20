@@ -12,6 +12,8 @@ import type {
   Visibility,
 } from '@/types';
 import { addToInventory, appendLog, clampStats } from './state';
+import { getItemDef } from './items';
+import { EQUIPMENT_SLOTS } from '@/types/items';
 import { restoreLighthouse, advanceOutpost } from './lighthouses';
 import { lampPowerDrain, alertDelta, ALERT_MAX } from './clarity';
 import { effectiveStaminaMax } from './modifiers';
@@ -61,6 +63,22 @@ export function evalCondition(state: GameState, c: Condition): boolean {
       return profile.unlockedUpgrades.has(c.upgradeId);
     case 'depthAtLeast':
       return run !== null && run.currentDepth >= c.value;
+    case 'hasCapability': {
+      // 双源扫描：装备槽（run.equipment）+ 当前潜水背包（run.inventory）
+      // 任意来源的道具在 ItemDef.grantsCapability 中声明了该能力即满足。
+      if (!run) return false;
+      const cap = c.capability;
+      for (const slot of EQUIPMENT_SLOTS) {
+        const inst = run.equipment[slot];
+        if (!inst) continue;
+        if (getItemDef(inst.itemId)?.grantsCapability?.includes(cap)) return true;
+      }
+      for (const inv of run.inventory) {
+        if (inv.qty <= 0) continue;
+        if (getItemDef(inv.itemId)?.grantsCapability?.includes(cap)) return true;
+      }
+      return false;
+    }
     case 'all':
       return c.of.every((sub) => evalCondition(state, sub));
     case 'any':

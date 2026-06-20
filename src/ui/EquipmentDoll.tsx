@@ -82,6 +82,15 @@ function describeEffect(e: EquipmentEffect): string {
   }
 }
 
+/** 某能力标签的可读描述（ItemDef.grantsCapability 顶层字段·非 EquipmentEffect）。 */
+function describeCapability(cap: string): string {
+  switch (cap) {
+    case 'cut':  return '可切割材料';
+    case 'mine': return '可凿矿';
+    default:     return `能力：${cap}`;
+  }
+}
+
 // 某件的基础效果（陈列用·滤掉「解锁动作」噪声·留 unlockSonar/数值项）。
 function effectsOf(itemId: string): EquipmentEffect[] {
   const eq = getItemDef(itemId)?.equipment;
@@ -163,7 +172,12 @@ export function EquipmentDoll({
         </div>
         {inst && def?.description && <p className="dim">{def.description}</p>}
         {inst && (
-          <div className="equip-effects dim">{effectsOf(inst.itemId).map(describeEffect).join('、') || '—'}</div>
+          <div className="equip-effects dim">
+            {[
+              ...effectsOf(inst.itemId).map(describeEffect),
+              ...(getItemDef(inst.itemId)?.grantsCapability ?? []).map(describeCapability),
+            ].join('、') || '—'}
+          </div>
         )}
         {!inst && (
           <p className="dim">{sel === 'ranged' ? '空着——可再带一把单手武器；双持武器会占主+副两格。' : '这个槽还空着。'}</p>
