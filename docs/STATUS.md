@@ -1,8 +1,8 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
+> **2026-06-20 dev 测试货架按 category tab 分类（交互 session·#156·commit `94f5aa1`）**：`MiraShopView` dev 货架从平铺网格改为左侧竖排 tab（装备/消耗品/材料/武器改装/剧情/杂项/货币）+ 右侧过滤格子，与物品栏 `LockerView` 完全同款布局。零 engine/data 改动，复用现有 `.locker-*` 样式。无新 quirk。typecheck + 7 静态门绿。
 > **2026-06-20 武器系统：新武器/盾 + 弹药(弹匣占格) + 负重档位 + 武器改装(DoT/放电/静音) + 救援斧事件门 + dev 免费升级（交互 session·#155·接 #148·commit `065b191`·新 quirk #146）**：4 件新武器/盾（救援斧 tool·气动短枪/鱼叉步枪/盾 ranged·全 `unlocksAction` 严格门——持谁出谁的招·盾不解锁攻击）+ 2 弹药（stackSize 8/30·弹匣占格 `slotsForItem`·复用 requiresItemId 消耗·不加 requiresAmmo）+ 负重档位（轻/中/重/过载·`weightStaminaMult`/`weightHitMod`·过载拦出发与全行动）+ 武器改装槽（毒囊/倒刺 DoT·静音消噪·放电扣电附伤·`installMod`·敌人 DoT 走 EnemyStatus 非玩家负伤）+ 救援斧 `hasEquipment.actionId` 事件门（axe_pry token·文案待写）+ dev 免费升级/打造/改装（镜像设施 0 成本）。**命中模型轻档中性 ⇒ 18 个 combat baseline 逐字节不变**。regress **42/42 非 build + build 绿**。新 quirk #146。详见 CHANGELOG #155。
-> **2026-06-20 矿物材料 + 岩凿 + `grantsCapability`/`hasCapability` 能力机制 + 声呐材料单（交互 session·#154·接 #153·commit `f10878a`·新 quirk #144/#145）**：6 种矿物材料（T1-T4）+ 岩凿（tool 槽·`grantsCapability:['mine']`·可 Otto 升级）+ 6 个采矿事件（5 zone·mine/cut 门控）；`grantsCapability` 从 EquipmentEffect 迁至 `ItemDef` 顶层（任意道具可声明）；`hasCapability` 扫全部装备槽+inventory·`eventSatisfy` 数据驱动无硬编码映射；槽冲突（同槽两能力）→先入为主·败者 `intentionallyHidden`（quirk #145）；声呐升级 Lv3/4/5 加矿物；`ItemCategory 'other'` + `story.showsCraftCostOf` 清单道具模板（quirk #144）；声呐材料单改名/改分类→物品栏「其它」tab·点开显账单+持有量。regress **42/43 绿**。详见 CHANGELOG #154。
 ## 1. 一句话状态
 
 完整 meta-loop 跑通：**港口对话 → 海图选点 → 教学线性下潜 / 节点图随机下潜 → 事件 → 战斗 → 上浮 → 减压 → 死亡 → 葬礼 → 尸体回收 → 衰减 → 回港变卖/回购 → 材料 ＋ 金币 修缮升级**。元进度已从"建设值"换成"材料经济"（2026-06-01 基建地图 Phase A，见 §5 + quirk #50）。**多灯塔基地数据模型已就位**（Phase B，`profile.lighthouses` + home 灯塔 + `engine/lighthouses.ts`，但灯塔 inert——reveal/reach 留 Phase C；quirk #51）。
