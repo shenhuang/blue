@@ -25,6 +25,18 @@ import { eventDoneFlag, pickReturnTrigger } from '../src/engine/portEvents';
 import { CH1_HOOK_FLAG, ch1Story } from '../src/engine/story';
 import { handleReturnToPort } from '../src/engine/port';
 import type { GameState, DialogNode, DiveEvent } from '../src/types';
+import { makeLcg } from '../src/engine/rng';
+
+// ── 焊死 flaky（quirk #129）─────────────────────────────────────────────────
+// 本脚本走「真引擎」端到端：教学关含潜行检定（events.ts::performCheck → Math.random），
+// RUN 2 又走随机图（mapgen）。不种子化时 ~7% 检定失败 → 分支偏离上浮路径 →
+// 「应在上浮，实际 dive」偶发抛（旧 #18/#22「~12% flake」一直靠 runner 重试 2 次盖着，
+// 见 quirk #129）。用 eventScenario.ts::withSeededRandom 同一份 LCG（src/engine/rng.ts）
+// 全程定死随机：整条 playthrough 变确定性，golden seed 已验证落在「潜行成功 → 上浮」happy
+// path。内容改动若让该 seed 落到失败分支，regress 会**确定性**变红（而非 flaky）→ 调
+// PLAYTHROUGH_SEED 重选即可。调试：PT_SEED=<n> npx tsx scripts/playthrough.ts 临时换种子。
+const PLAYTHROUGH_SEED = Number(process.env.PT_SEED) || 20260620;
+Math.random = makeLcg(PLAYTHROUGH_SEED);
 
 let state: GameState = createInitialGameState();
 const log: string[] = [];

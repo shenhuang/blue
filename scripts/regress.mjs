@@ -8,7 +8,7 @@
 //
 // 设计要点：
 //   - 每个 playthrough 各起一个 tsx 子进程 → 全局 Math.random patch（#22）互不污染，可放心并行。
-//   - playthrough.ts ~12% flake（#18）自动重试。
+//   - 全部 playthrough 均已种子化（含 playthrough.ts·见其顶 PLAYTHROUGH_SEED·quirk #129）→ 确定性·无 flake·无需重试。
 //   - 默认串行约 30–60s 的活儿，并行后墙钟通常 < 15s。
 //
 // 用法：
@@ -104,9 +104,8 @@ const playthroughs = readdirSync(join(ROOT, 'scripts'))
   .sort();
 for (const f of playthroughs) {
   const name = basename(f, '.ts'); // e.g. playthrough-sonar
-  // playthrough.ts ~12% flake（#18）→ 多给两次重试
-  const retries = f === 'playthrough.ts' ? 2 : 0;
-  tasks.push({ name, cmd: [tsx, join('scripts', f)], retries });
+  // 全部 playthrough 已种子化（确定性·quirk #129）→ 不再重试：失败即真红，别拿 retry 盖回归。
+  tasks.push({ name, cmd: [tsx, join('scripts', f)] });
 }
 
 // ---- 过滤 ----
