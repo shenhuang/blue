@@ -1,0 +1,16 @@
+{
+  "_comment": "覆瓦的·停着看它吃完（uncanny·132-165m·sanity vs 50·sanity80 seed1 success → oxygen-2 sanity-3）。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "vent.the_scale_worm",
+  "depth": 150,
+  "seed": 1,
+  "sanity": 80,
+  "zoneId": "zone.vent_trench",
+  "choices": ["watch_it_feed"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2, "sanity": -3 }
+  }
+}

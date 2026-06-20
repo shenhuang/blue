@@ -1,0 +1,14 @@
+{
+  "_comment": "覆瓦的·从管虫林退出来（uncanny·132-165m·无 check → oxygen-1 sanity-2）。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "vent.the_scale_worm",
+  "depth": 150,
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "choices": ["back_away"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -1, "sanity": -2 }
+  }
+}

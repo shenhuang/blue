@@ -1,0 +1,15 @@
+{
+  "_comment": "褶皱·用手指摸弧面（uncanny·sanity vs 52·sanity80 seed1 success → oxygen-2 sanity-3）。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "trench.the_fold",
+  "depth": 260,
+  "seed": 1,
+  "sanity": 80,
+  "choices": ["touch_the_surface"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2, "sanity": -3 }
+  }
+}

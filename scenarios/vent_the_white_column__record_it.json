@@ -1,0 +1,18 @@
+{
+  "_comment": "白烟·记录（realistic·130-168m·无 check → oxygen-1 sanity+1）。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "vent.the_white_column",
+  "depth": 150,
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "choices": [
+    "record_it"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1
+    }
+  }
+}
