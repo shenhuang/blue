@@ -292,31 +292,31 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
   const homeSlot = home ? getLighthouseBonuses(home).extraConsumableSlot : 0;
   // 段1：并入穿戴件升级增量（Otto·equipment.ts 单点）——starter 全 Lv.1 时为 0、对既有基线零扰动。
   const eq = profile.equipment ? getEquipmentStats(profile.equipment) : emptyEquipmentStats();
-  // 段2（作者 2026-06-19）：三传感器线退役后，传感器加成来源重排——
-  //   · 声呐五项（sonarUnlocked / pingCost / robustness / rangeBonus / scanRangeBonus）：改读 eq（Otto 打造的声呐件），
-  //     不再读 g（sonar_rig 已删·UpgradeBonuses 也删了这些字段）。sonarUnlocked＝声呐槽是否装着件（hasSonarEquipped 单一来源）。
+  // 段2（2026-06-19）+ A 档位件（2026-06-20）：传感器加成全部来源＝穿戴件 eq（getEquipmentStats·单点）——
+  //   · 声呐五项（sonarUnlocked / pingCost / robustness / rangeBonus / scanRangeBonus）：读 eq（Otto 打造的声呐件·数值在 upgradeSteps）。
+  //     sonarUnlocked＝声呐槽是否装着件（hasSonarEquipped 单一来源）。
   //   · 灯/电池/规避（powerMax / lampEfficiency / lampRobustness / signatureReduction / lampRangeBonus / soundAbsorb / camo）：
-  //     dive_kit/evasion_rig 删后**无升级来源** → 恒基线 0（deriveSensorTuning 默认）。机制保留·可日后做成「灯/服档位件」
-  //     用 EquipmentEffect base effects 喂回。注：powerMaxBonus 仍是 RunStartBonuses 字段——dive-start 把前哨在线补给的
-  //     rechargeBonus 加在它上面（故保留字段、这里给 0 起点）。防双计（quirk #140）：来源唯一、删旧增新同步。
+  //     A 把退役的灯/电池/规避升级做回「固定属性档位件」（Mira 买·数值在 base effects）→ 改读 eq.*（替段2 的字面 0）。
+  //     注：powerMaxBonus 仍被 dive-start 的前哨在线补给 rechargeBonus 叠加（在此给 eq 起点·dive-start += recharge）。
+  //   防双计（quirk #140/#142）：传感器 bonus 唯一来源＝eq；氧/体地板唯一住 createNewRun（eq 不读其 base·见 equipment.ts）。
   const sonarPresent = profile.equipment ? hasSonarEquipped(profile.equipment) : false;
   return {
     oxygenMaxBonus: g.oxygenMaxBonus + eq.oxygenMaxBonus,
     staminaMaxBonus: g.staminaMaxBonus + eq.staminaMaxBonus,
     extraConsumableSlot: g.extraConsumableSlot + homeSlot,
     sonarUnlocked: sonarPresent,
-    powerMaxBonus: 0,
+    powerMaxBonus: eq.powerMaxBonus,
     sonarPingCostReduction: eq.sonarPingCostReduction,
-    lampEfficiency: 0,
+    lampEfficiency: eq.lampEfficiency,
     sonarRobustness: eq.sonarRobustness,
-    lampRobustness: 0,
-    signatureReduction: 0,
-    lampRangeBonus: 0,
+    lampRobustness: eq.lampRobustness,
+    signatureReduction: eq.signatureReduction,
+    lampRangeBonus: eq.lampRangeBonus,
     sonarRangeBonus: eq.sonarRangeBonus,
     sonarScanRangeBonus: eq.sonarScanRangeBonus,
     roomFeatureChanceBonus: g.roomFeatureChanceBonus,
-    soundAbsorbBonus: 0,
-    camoBonus: 0,
+    soundAbsorbBonus: eq.soundAbsorbBonus,
+    camoBonus: eq.camoBonus,
   };
 }
 

@@ -13,11 +13,14 @@ export function ItemGrid({
   items,
   rows = 3,
   emptyText = '空空如也。',
+  onItemClick,
 }: {
   items: InventoryItem[];
   /** 每页行数（每页容量 = 列数 × rows）。 */
   rows?: number;
   emptyText?: string;
+  /** 传入＝格子可点（物品栏装备 tab 点备件装备·作者 2026-06-20·#3）；缺省＝纯展示（其它处不变）。 */
+  onItemClick?: (itemId: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(4);
@@ -49,7 +52,13 @@ export function ItemGrid({
             {shown.map((it) => {
               const def = getItemDef(it.itemId);
               return (
-                <ItemCell key={it.itemId} def={def} itemId={it.itemId} qty={it.qty} />
+                <ItemCell
+                key={it.itemId}
+                def={def}
+                itemId={it.itemId}
+                qty={it.qty}
+                onClick={onItemClick ? () => onItemClick(it.itemId) : undefined}
+              />
               );
             })}
           </div>

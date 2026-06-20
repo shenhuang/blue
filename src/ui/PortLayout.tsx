@@ -24,8 +24,7 @@ import { SeaChartView } from './SeaChartView';
 import { MiraShopView } from './MiraShopView';
 import { UpgradePanel } from './UpgradePanel';
 import { LockerView } from './LockerView';
-import { EquipmentDoll } from './EquipmentDoll';
-import { PanelShell } from './PanelShell';
+import { OttoUpgradeView } from './EquipmentDoll';
 import { BestiaryView } from './BestiaryView';
 import { LoreView } from './LoreView';
 import { portRightPane, type PortServiceMode } from './portFocus';
@@ -120,9 +119,7 @@ export function PortLayout({ state, onStateChange }: Props) {
     ) : rightPane === 'lore' ? (
       <LoreView state={state} onClose={() => setUpgradeMode(null)} />
     ) : rightPane === 'upgrade' ? (
-      <PanelShell title="Otto · 改装" onClose={() => setUpgradeMode(null)}>
-        <EquipmentDoll state={state} onStateChange={onStateChange} />
-      </PanelShell>
+      <OttoUpgradeView state={state} onStateChange={onStateChange} onClose={() => setUpgradeMode(null)} />
     ) : rightPane ? (
       <UpgradePanel
         state={state}

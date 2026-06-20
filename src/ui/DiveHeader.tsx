@@ -150,7 +150,7 @@ export function DiveHeader({ state, onStateChange, choices = [], pendingNodeId =
           ) : activePanel === 'loot' ? (
             <LootPanel state={state} />
           ) : (
-            <EquipmentDoll state={state} readOnly />
+            <EquipmentDoll state={state} />
           )}
         </div>
       )}

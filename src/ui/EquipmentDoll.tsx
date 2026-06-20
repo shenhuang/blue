@@ -1,22 +1,25 @@
 import { useState } from 'react';
-import type { GameState } from '@/types';
+import type { GameState, EquipmentInstance } from '@/types';
 import type { EquipmentSlot, EquipmentEffect } from '@/types/items';
 import { getItemDef } from '@/engine/items';
 import { createStarterLoadout } from '@/engine/state';
 import {
-  canUpgradeEquipment,
   nextUpgradeStep,
   equipmentMaxLevel,
   upgradeEquipment,
   craftableEquipmentForSlot,
-  canCraftEquipment,
   craftEquipment,
-  unlockedAccessorySlots,
+  isSlotUnlocked,
 } from '@/engine/equipment';
+import { UpgradeCostView } from './UpgradeCost';
+import { UpgradeEffectDelta, emptyEffectSet, type EffectSet } from './UpgradeEffectDelta';
+import { PanelShell } from './PanelShell';
 
-// 装备纸娃娃（物品栏与装备 SPEC §4·作者 2026-06-19 模板）：中间人像（占位·之后放图），
+// 装备纸娃娃（物品栏与装备 SPEC §4·作者 2026-06-19 模板·2026-06-20 换装+独立框重构）：中间人像（占位·之后放图），
 // 左列 4（潜水衣/气瓶/潜水灯/声呐）· 右列 2（武器主/副·下沉与潜水灯/声呐对齐）· 底排 3 饰品（升级解锁）。
-// 同时是 Otto 改装界面（港口·可点槽升级）与下潜「查看装备」（readOnly·只看不改）。
+// 三态：① Otto（OttoUpgradeView·点槽选中→**旁边独立「改装」框** EquipmentUpgradeBox·两个独立框像物品栏/装备栏）
+//   ② 下潜 HUD（不传 onSlotClick·点槽选中显详情·只看·setSel 本地态不写存档）③ 物品栏「装备栏」（onSlotClick·点装备槽直接卸下·不渲染详情·
+//   装/换由 LockerView 的 flat grid 驱动）。selectedSlot＝受控高亮（Otto 把选中提到 OttoUpgradeView·配独立改装框）。
 // 等大方格 + 选中态 + 已装备/空/锁——守作者「界面工整」偏好。
 // 边界：src/ui·只读 state + 调 engine/equipment 纯函数（ui→engine 合法）·不构造 phase。
 
@@ -60,30 +63,54 @@ function describeEffect(e: EquipmentEffect): string {
       return `声呐射程 +${e.value}`;
     case 'sonarScanRangeBonus':
       return `声呐扫描范围 +${e.value}`;
+    case 'lampEfficiency':
+      return `灯省电 ${Math.round(e.value * 100)}%`;
+    case 'lampRobustness':
+      return `灯抗幻觉 +${e.value}`;
+    case 'lampRangeBonus':
+      return `灯照深度 +${e.value}`;
+    case 'signatureReduction':
+      return `暴露 −${e.value}`;
+    case 'soundAbsorbBonus':
+      return `吸声规避 +${Math.round(e.value * 100)}%`;
+    case 'camoBonus':
+      return `迷彩规避 +${Math.round(e.value * 100)}%`;
+    case 'powerMaxBonus':
+      return `电池上限 +${e.value}`;
+    case 'weaponDamage':
+      return `武器伤害 +${e.value}`;
   }
+}
+
+// 某件的基础效果（陈列用·滤掉「解锁动作」噪声·留 unlockSonar/数值项）。
+function effectsOf(itemId: string): EquipmentEffect[] {
+  const eq = getItemDef(itemId)?.equipment;
+  return (eq?.effects ?? []).filter((e) => e.kind !== 'unlocksAction');
 }
 
 export function EquipmentDoll({
   state,
-  onStateChange,
-  readOnly = false,
+  onSlotClick,
+  selectedSlot,
   initialSlot = 'tank',
 }: {
   state: GameState;
-  /** 港口 Otto 改装写回；下潜「查看装备」不传（readOnly）。 */
-  onStateChange?: (s: GameState) => void;
-  /** true＝只看（下潜查看装备）·无改装钮。 */
-  readOnly?: boolean;
-  /** 初始选中槽（缺省气瓶——有 upgradeSteps 试点）。Otto 可聚焦某槽 / 测试用。 */
+  /**
+   * 传入＝点槽即触发回调（物品栏「装备栏」点装备槽 unequip / Otto 点槽选中）：此态**不渲染详情面板**。
+   * 缺省＝点槽选中显详情（下潜 HUD 口径·setSel 本地态·不写存档）。
+   */
+  onSlotClick?: (slot: EquipmentSlot, inst: EquipmentInstance | null) => void;
+  /** 受控选中槽（Otto·配 onSlotClick 把选中提到 OttoUpgradeView→旁边独立改装框）；缺省＝内部 sel。 */
+  selectedSlot?: EquipmentSlot;
+  /** 初始选中槽（缺省气瓶——有 upgradeSteps 试点）。 */
   initialSlot?: EquipmentSlot;
 }) {
   const loadout = state.profile.equipment ?? createStarterLoadout();
   const [sel, setSel] = useState<EquipmentSlot>(initialSlot);
 
-  // 饰品槽解锁数走引擎单一来源（占位恒 1·来源作者待定）——别在 UI 写死。
+  // 饰品槽锁＝引擎单一来源 isSlotUnlocked（占位恒开第1饰品·D 二章）——别在 UI 重写。
   function isLocked(slot: EquipmentSlot): boolean {
-    const accIdx = ACC_SLOTS.indexOf(slot);
-    return accIdx >= 0 && accIdx >= unlockedAccessorySlots(state.profile);
+    return !isSlotUnlocked(state.profile, slot);
   }
 
   function slotCell(slot: EquipmentSlot) {
@@ -91,13 +118,17 @@ export function EquipmentDoll({
     const def = inst ? getItemDef(inst.itemId) : undefined;
     const locked = isLocked(slot);
     const stateCls = inst ? 'eq' : locked ? 'lock' : 'empty';
+    const handleClick = onSlotClick ? () => onSlotClick(slot, inst) : () => setSel(slot);
+    // 高亮：受控 selectedSlot 优先（Otto）；否则内部 sel（HUD·非 onSlotClick·物品栏装备栏 onSlotClick 不高亮）。
+    const highlightSlot = selectedSlot ?? (onSlotClick ? undefined : sel);
     return (
       <button
         key={slot}
         type="button"
-        className={`equip-slot ${stateCls} ${sel === slot ? 'sel' : ''}`}
-        aria-pressed={sel === slot}
-        onClick={() => setSel(slot)}
+        className={`equip-slot ${stateCls} ${highlightSlot === slot ? 'sel' : ''}`}
+        aria-pressed={highlightSlot === slot}
+        title={onSlotClick && inst ? `${def?.name ?? inst.itemId}（点击卸下）` : undefined}
+        onClick={handleClick}
       >
         <span className="equip-slot-name">{SLOT_LABEL[slot]}</span>
         <span className="equip-slot-item">
@@ -108,11 +139,11 @@ export function EquipmentDoll({
     );
   }
 
+  // 详情（只在非 onSlotClick·即 HUD 只读）：选中槽的信息 + 效果（不含升级·升级是独立框 EquipmentUpgradeBox）。
   function detail() {
     const inst = loadout[sel];
-    const locked = isLocked(sel);
     const label = SLOT_LABEL[sel];
-    if (locked) {
+    if (isLocked(sel)) {
       return (
         <div className="equip-detail">
           <div className="equip-detail-head">
@@ -123,82 +154,22 @@ export function EquipmentDoll({
         </div>
       );
     }
-    if (!inst) {
-      // 空槽：若该槽有「可打造件」（equipment.craftCost·如声呐）→ Otto 改装界面给「打造」入口（null→Lv.baseLevel）。
-      const craftable = !readOnly && onStateChange ? craftableEquipmentForSlot(sel) : undefined;
-      const craftCost = craftable?.equipment?.craftCost;
-      const craftAvail =
-        craftable && onStateChange
-          ? canCraftEquipment(loadout, state.profile.inventory, state.profile.bankedGold, craftable.id)
-          : null;
-      return (
-        <div className="equip-detail">
-          <div className="equip-detail-head">
-            <span className="equip-detail-name">{label}</span>
-            <span className="dim">空槽</span>
-          </div>
-          {craftable && craftCost ? (
-            <>
-              {craftable.description && <p className="dim">{craftable.description}</p>}
-              <div className="equip-upgrade">
-                <div className="equip-upgrade-info">
-                  <span>Otto 打造 · {craftable.name}</span>
-                  <span className="dim equip-upgrade-cost">{describeCost(craftCost)}</span>
-                </div>
-                <button
-                  type="button"
-                  className="btn small"
-                  disabled={!craftAvail?.ok}
-                  onClick={() => onStateChange && onStateChange(craftEquipment(state, craftable.id))}
-                >
-                  打造
-                </button>
-              </div>
-            </>
-          ) : (
-            <p className="dim">{sel === 'ranged' ? '空着——可再带一把单手武器；双持武器会占主+副两格。' : '这个槽还空着。'}</p>
-          )}
-        </div>
-      );
-    }
-    const def = getItemDef(inst.itemId);
-    const max = equipmentMaxLevel(inst.itemId);
-    const step = nextUpgradeStep(inst);
-    const avail = onStateChange ? canUpgradeEquipment(loadout, state.profile.inventory, state.profile.bankedGold, sel) : null;
+    const def = inst ? getItemDef(inst.itemId) : undefined;
     return (
       <div className="equip-detail">
         <div className="equip-detail-head">
-          <span className="equip-detail-name">{label} · {def?.name ?? inst.itemId}</span>
-          <span className="dim">Lv.{inst.level} / {max}</span>
+          <span className="equip-detail-name">{inst ? `${label} · ${def?.name ?? inst.itemId}` : label}</span>
+          <span className="dim">{inst ? `Lv.${inst.level} / ${equipmentMaxLevel(inst.itemId)}` : '空槽'}</span>
         </div>
-        {def?.description && <p className="dim">{def.description}</p>}
-        {!readOnly && step && (
-          <div className="equip-upgrade">
-            <div className="equip-upgrade-info">
-              <span>改装 → Lv.{inst.level + 1}</span>
-              <span className="dim">{step.statDeltas.map(describeEffect).join('、') || '—'}</span>
-              <span className="dim equip-upgrade-cost">{describeCost(step)}</span>
-            </div>
-            <button
-              type="button"
-              className="btn small"
-              disabled={!avail?.ok}
-              onClick={() => onStateChange && onStateChange(upgradeEquipment(state, sel))}
-            >
-              改装
-            </button>
-          </div>
+        {inst && def?.description && <p className="dim">{def.description}</p>}
+        {inst && (
+          <div className="equip-effects dim">{effectsOf(inst.itemId).map(describeEffect).join('、') || '—'}</div>
         )}
-        {!readOnly && !step && <p className="dim equip-maxed">已满级。</p>}
+        {!inst && (
+          <p className="dim">{sel === 'ranged' ? '空着——可再带一把单手武器；双持武器会占主+副两格。' : '这个槽还空着。'}</p>
+        )}
       </div>
     );
-  }
-
-  // 账单文案（升级步 / 打造账单共用·都是 { materials, gold } 形状）。
-  function describeCost(cost: { materials: { itemId: string; qty: number }[]; gold: number }): string {
-    const mats = cost.materials.map((m) => `${getItemDef(m.itemId)?.name ?? m.itemId}×${m.qty}`).join('、');
-    if (cost.gold <= 0) return mats || '免费';
-    return mats ? `${mats} ＋ ${cost.gold} 金` : `${cost.gold} 金`;
   }
 
   return (
@@ -211,7 +182,187 @@ export function EquipmentDoll({
         <div className="equip-col right">{RIGHT_SLOTS.map(slotCell)}</div>
       </div>
       <div className="equip-acc">{ACC_SLOTS.map(slotCell)}</div>
-      {detail()}
+      {/* onSlotClick 态（物品栏装备栏 / Otto 选槽）不渲染详情；HUD 只读显选中槽详情。 */}
+      {!onSlotClick && detail()}
     </div>
+  );
+}
+
+// 某件在某等级的有效数值（base effects ＋ 已应用升级增量·合并同 kind·非数值 unlocks 跳过）。
+// display 用（含氧 base 60·这与 getEquipmentStats 跳过氧 base〔防地板双计〕无关——那是 run-max 计算·这里是给玩家看的件数值）。
+function itemDisplayStats(itemId: string, level: number): Map<EquipmentEffect['kind'], number> {
+  const acc = new Map<EquipmentEffect['kind'], number>();
+  const eq = getItemDef(itemId)?.equipment;
+  if (!eq) return acc;
+  const add = (effects: EquipmentEffect[]) => {
+    for (const e of effects) {
+      if (e.kind === 'unlocksAction' || e.kind === 'unlockSonar') continue;
+      acc.set(e.kind, (acc.get(e.kind) ?? 0) + e.value);
+    }
+  };
+  add(eq.effects);
+  const applied = Math.max(0, Math.min(level - eq.baseLevel, eq.upgradeSteps?.length ?? 0));
+  for (let i = 0; i < applied; i++) add(eq.upgradeSteps![i].statDeltas);
+  return acc;
+}
+
+function describeStat(kind: EquipmentEffect['kind'], value: number): string {
+  return describeEffect({ kind, value } as EquipmentEffect);
+}
+
+// 某件在某等级的数值 → EffectSet（喂统一 UpgradeEffectDelta·作者 2026-06-20·#5）。装备无解锁项·unlocks 空。
+function equipEffectSet(itemId: string, level: number): EffectSet {
+  const stats = [...itemDisplayStats(itemId, level).entries()].map(([kind, value]) => ({
+    label: kind as string,
+    value,
+    render: (v: number) => describeStat(kind, v),
+  }));
+  return { stats, unlocks: [] };
+}
+
+// 单框数值列（打造预览 / 满级展示·无对比）。无数值（如声呐 Lv.1 base 只有 unlockSonar）→ 不渲染。
+function StatList({ itemId, level }: { itemId: string; level: number }) {
+  const stats = itemDisplayStats(itemId, level);
+  if (stats.size === 0) return null;
+  return (
+    <div className="equip-stat-col solo">
+      {[...stats.entries()].map(([k, v]) => (
+        <span key={k} className="equip-stat-line">{describeStat(k, v)}</span>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Otto 改装「升级独立框」（作者 2026-06-20·#4/#5）：某槽信息 + **改装前后数值对比**（StatCompare·当前→改装后·提升变绿↑）
+ * + 改装/打造账单（UpgradeCostView）。与纸娃娃分成两个独立框（doll 选槽 / 此框改装）——见 OttoUpgradeView。
+ */
+export function EquipmentUpgradeBox({
+  state,
+  slot,
+  onStateChange,
+}: {
+  state: GameState;
+  slot: EquipmentSlot;
+  onStateChange: (s: GameState) => void;
+}) {
+  const loadout = state.profile.equipment ?? createStarterLoadout();
+  const inst = loadout[slot];
+  const label = SLOT_LABEL[slot];
+  if (!isSlotUnlocked(state.profile, slot)) {
+    return (
+      <div className="equip-upgrade-box">
+        <div className="equip-detail-head">
+          <span className="equip-detail-name">{label}</span>
+          <span className="dim">未解锁</span>
+        </div>
+        <p className="dim">升级「饰品槽」解锁此饰品位。</p>
+      </div>
+    );
+  }
+  // 空槽：可打造件 → 打造预览（件名 + 该件数值 + 打造账单）；否则提示空着。
+  if (!inst) {
+    const craftable = craftableEquipmentForSlot(slot);
+    const craftCost = craftable?.equipment?.craftCost;
+    if (!craftable || !craftCost) {
+      return (
+        <div className="equip-upgrade-box">
+          <div className="equip-detail-head">
+            <span className="equip-detail-name">{label}</span>
+            <span className="dim">空槽</span>
+          </div>
+          <p className="dim">{slot === 'ranged' ? '空着——可再带一把单手武器；双持武器会占主+副两格。' : '这个槽还空着。'}</p>
+        </div>
+      );
+    }
+    return (
+      <div className="equip-upgrade-box">
+        <div className="equip-detail-head">
+          <span className="equip-detail-name">Otto 打造 · {craftable.name}</span>
+          <span className="dim">空槽</span>
+        </div>
+        {craftable.description && <p className="dim">{craftable.description}</p>}
+        <UpgradeEffectDelta
+          before={emptyEffectSet()}
+          after={equipEffectSet(craftable.id, craftable.equipment!.baseLevel)}
+          beforeLabel=""
+          afterLabel=""
+          build
+          buildLabel="打造"
+        />
+        <UpgradeCostView
+          cost={craftCost}
+          inventory={state.profile.inventory}
+          bankedGold={state.profile.bankedGold}
+          actionLabel="打造"
+          onConfirm={() => onStateChange(craftEquipment(state, craftable.id))}
+        />
+      </div>
+    );
+  }
+  // 有件：改装前后对比（有下一步）/ 已满级（仅当前数值）。
+  const def = getItemDef(inst.itemId);
+  const step = nextUpgradeStep(inst);
+  return (
+    <div className="equip-upgrade-box">
+      <div className="equip-detail-head">
+        <span className="equip-detail-name">{def?.name ?? inst.itemId}</span>
+        <span className="dim">Lv.{inst.level} / {equipmentMaxLevel(inst.itemId)}</span>
+      </div>
+      {def?.description && <p className="dim">{def.description}</p>}
+      {step ? (
+        <>
+          <UpgradeEffectDelta
+            before={equipEffectSet(inst.itemId, inst.level)}
+            after={equipEffectSet(inst.itemId, inst.level + 1)}
+            beforeLabel={`Lv.${inst.level}`}
+            afterLabel={`Lv.${inst.level + 1}`}
+          />
+          <UpgradeCostView
+            cost={step}
+            inventory={state.profile.inventory}
+            bankedGold={state.profile.bankedGold}
+            actionLabel="改装"
+            onConfirm={() => onStateChange(upgradeEquipment(state, slot))}
+          />
+        </>
+      ) : (
+        <>
+          <StatList itemId={inst.itemId} level={inst.level} />
+          <p className="dim equip-maxed">已满级。</p>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Otto 改装视图（作者 2026-06-20·#4·升级独立框）：纸娃娃壳（点槽选中·受控 selectedSlot）+ **旁边独立「改装」框**
+ * （EquipmentUpgradeBox·选中槽的改装/打造）。两个独立框（像物品栏/装备栏·像三个 NPC 卡各自独立）。
+ * 由 PortLayout rightPane==='upgrade' 渲染（返回 fragment·.port-pane-right 里壳 + 改装卡两个独立框）。
+ */
+export function OttoUpgradeView({
+  state,
+  onStateChange,
+  onClose,
+}: {
+  state: GameState;
+  onStateChange: (s: GameState) => void;
+  onClose: () => void;
+}) {
+  const [sel, setSel] = useState<EquipmentSlot>('tank');
+  return (
+    <>
+      <PanelShell title="Otto · 改装" onClose={onClose}>
+        <EquipmentDoll state={state} onSlotClick={(slot) => setSel(slot)} selectedSlot={sel} />
+      </PanelShell>
+      <div className="equip-doll-card">
+        <div className="equip-doll-card-head">
+          <span className="equip-doll-card-title">改装</span>
+          <span className="dim">点上面装备槽切换</span>
+        </div>
+        <EquipmentUpgradeBox state={state} slot={sel} onStateChange={onStateChange} />
+      </div>
+    </>
   );
 }

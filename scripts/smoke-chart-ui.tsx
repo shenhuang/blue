@@ -660,24 +660,24 @@ function upgradeState(inv: InventoryItem[], gold: number): GameState {
 // J1. 材料 + 金币都够 → 出现"修缮"按钮 + 账单列出材料名与金币
 const J1 = upgradeState([{ itemId: 'item.coral_shard', qty: 5 }, { itemId: 'item.brass_fitting', qty: 3 }], 50);
 const htmlJ1 = renderToStaticMarkup(<UpgradePanel state={J1} onStateChange={noop} onClose={noop} />);
-assert(htmlJ1.includes('珊瑚碎片×5'), 'J1: 账单应列出材料名×需求量');
-assert(htmlJ1.includes('＋ 30 金'), 'J1: 账单应列出金币价（salvage_guild.lv1 = 30 金）');
-assert(htmlJ1.includes('upgrade-buy">改装'), 'J1: 账单满足应出现可点（非 disabled）"改装"按钮（面板渲染全部升级线，其它行显示不足是正常的）');
+assert(htmlJ1.includes('珊瑚碎片') && htmlJ1.includes('5/5'), 'J1: 账单列材料名 + 已有/需求（珊瑚碎片 5/5·UpgradeCostView）');
+assert(htmlJ1.includes('50/30'), 'J1: 账单金币显已有/需求（50/30·salvage_guild.lv1 = 30 金）');
+assert(htmlJ1.includes('cost-confirm">改装'), 'J1: 账单满足应出现可点（非 disabled）"改装"按钮（UpgradeCostView·面板渲染全部线·其它行不足正常）');
 // J4–J6 / J8（旧 dive_kit「潜水装备」/ sonar_rig 升级线 / evasion_rig「规避装备」渲染断言）已随段2
 //   「三传感器线退役」删除：声呐改 Otto 打造的**装备件**（EquipmentDoll·smoke-equipment-ui 守渲染）、
 //   灯/电池/规避效果回退基线（可日后做成灯/服档位件加回）。UpgradePanel 现只剩打捞行会 + 气瓶库两线。
 // J7. 声呐与房间 §6/§8.3 续：房间 feature 出现率升级（salvage_guild lv4·新 roomFeatureChanceBonus 效果标签·仍为全局升级线）
 assert(htmlJ1.includes('打捞行会 Lv.4'), 'J7: 渲染 salvage_guild lv4（房间出现率轴）');
-assert(htmlJ1.includes('更会翻找大洞室'), 'J7: 渲染 roomFeatureChanceBonus 效果标签');
-// J2. 空仓 + 满金 → "材料不足" + 缺口"（有 0）"
+assert(htmlJ1.includes('大房间出现率'), 'J7: 渲染 roomFeatureChanceBonus 效果（统一前后对比·大房间出现率 +N%）');
+// J2. 空仓 + 满金 → 按钮"材料不足" + 缺口已有/需求"0/5"
 const J2 = upgradeState([], 9999);
 const htmlJ2 = renderToStaticMarkup(<UpgradePanel state={J2} onStateChange={noop} onClose={noop} />);
 assert(htmlJ2.includes('材料不足'), 'J2: 无材料应显示"材料不足"');
-assert(htmlJ2.includes('（有 0）'), 'J2: 缺口应高亮显示已有数');
-// J3. 材料够、金币不够 → "金币不足（还差 N）"
+assert(htmlJ2.includes('0/5'), 'J2: 缺口显已有/需求（珊瑚 0/5·不足标红）');
+// J3. 材料够、金币不够 → 按钮"金币不足" + 金币格"5/30"
 const J3 = upgradeState([{ itemId: 'item.coral_shard', qty: 5 }, { itemId: 'item.brass_fitting', qty: 3 }], 5);
 const htmlJ3 = renderToStaticMarkup(<UpgradePanel state={J3} onStateChange={noop} onClose={noop} />);
-assert(htmlJ3.includes('金币不足（还差 25）'), 'J3: 材料够金币差应显示差额 25（salvage lv1 = 30 金 − 5）');
+assert(htmlJ3.includes('金币不足') && htmlJ3.includes('5/30'), 'J3: 材料够金币差 → 按钮「金币不足」+ 金币格 5/30（salvage lv1 = 30 金）');
 L('  可买/材料不足/金币不足 三态 + 账单缺口高亮 ✓');
 
 // ============================================
@@ -749,7 +749,7 @@ const htmlM1 = renderToStaticMarkup(
 assert(htmlM1.includes('设施升级'), 'M: 应渲染设施升级标题（灯塔设施→设施升级·作者 06-14）');
 assert(htmlM1.includes('旧灯塔'), 'M: 应列出家灯塔');
 assert(htmlM1.includes('船坞'), 'M: home 应显示船坞轨（homeOnly）');
-assert(htmlM1.includes('upgrade-buy">建造'), 'M: 材料金币够 → 船坞应有可点"建造"按钮');
+assert(htmlM1.includes('cost-confirm">建造'), 'M: 材料金币够 → 船坞应有可点"建造"按钮（UpgradeCostView）');
 // M2/M3/M4：深水区 Phase 2b 能源设施轨的 outpostOnly / currentOnly 门控
 const homeOnlyPanel = renderToStaticMarkup(
   <LighthouseBuildPanel state={createInitialGameState()} onStateChange={noop} onClose={noop} />,
@@ -1139,11 +1139,11 @@ assert(
   !htmlTOther.includes('航海日志') && !htmlTOther.includes('锈蚀的指南针') && !htmlTOther.includes('潜水刀'),
   'T: 剧情道具/装备备件不在「其它」',
 );
-// 装备 tab：未装备备件（潜水刀）
+// 装备 tab：嵌入纸娃娃（作者 2026-06-20·B）——武器·主槽显穿戴的潜水刀（换装在此·升级/打造见 Otto）
 const htmlTGear = renderToStaticMarkup(
   <LockerView state={TLock} onStateChange={noop} onClose={noop} initialTab="gear" />,
 );
-assert(htmlTGear.includes('潜水刀') && htmlTGear.includes('未装备'), 'T: 装备备件（潜水刀）在「装备」·未装备区');
+assert(htmlTGear.includes('潜水刀') && htmlTGear.includes('武器·主'), 'T: 装备 tab 嵌入纸娃娃·武器·主槽显潜水刀（装备归装备 tab）');
 // 旧海图回退（#142）：详情只剩描述 + 摊开海图（坐标已迁导师日志·不再陈列坐标）
 const htmlTChartDetail = renderToStaticMarkup(
   <LockerView

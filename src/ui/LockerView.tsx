@@ -1,18 +1,19 @@
 import { useState } from 'react';
-import type { GameState, EquipmentInstance } from '@/types';
+import type { GameState } from '@/types';
 import { getItemDef, documentLoreId, itemOpensChart, itemMarkedPois } from '@/engine/items';
 import { resolveMarkedPois } from '@/engine/chart';
 import { allLoreEntries, getLoreEntry } from '@/engine/lore';
+import { equipItem, unequipItem, canUnequipSlot } from '@/engine/equipment';
 import { ItemGrid } from './ItemGrid';
 import { ItemCell } from './ItemCell';
 import { BestiaryView } from './BestiaryView';
 import { PanelShell } from './PanelShell';
-import { createStarterLoadout } from '@/engine/state';
+import { EquipmentDoll } from './EquipmentDoll';
 
 // 港口物品栏 / 储物柜（物品栏与装备 SPEC §2）：左侧 tab 选分类、右侧＝该类内容。展示外壳·按 tab 委托各 store：
 //   消耗品 / 材料 → profile.inventory 按 category（仓库·§1.1·共享 ItemGrid 翻页 + 稀有度边框）
 //   其它 → profile.inventory 里非消耗品/材料的「非剧情」道具（装备备件等）＋ 海图信物（浮标·点击＝摊开海图·见 itemOpensChart）
-//   装备 → profile.equipment（当前穿戴配置）；展示 + Lv；**升级归 Otto NPC（P3）**·点槽暂无操作。
+//   装备 → 嵌入纸娃娃（EquipmentDoll·allowUpgrade=false）：点槽换装（仓库↔槽·equipItem 单点）·升级/打造归 Otto（作者 2026-06-20·B）。
 //   剧情 → 图鉴一格（→BestiaryView）+ 见闻区（kind='lore'）+ **持有的剧情道具**（category='story' 且非海图信物·文献/信物：
 //          航海日志/怀表/泡水日志/指南针…·作者 2026-06-18「提供文字信息/剧情的道具应在剧情里」·tab id 仍 'journal'）。
 //          注：浮标＝海图工具→归「其它」（作者 2026-06-18「海图属于其它」）·不在剧情。
@@ -39,6 +40,7 @@ const TABS: { id: LockerTab; label: string }[] = [
 
 export function LockerView({
   state,
+  onStateChange,
   onClose,
   onOpenChart,
   onOpenChartAt,
@@ -60,7 +62,6 @@ export function LockerView({
   const [tab, setTab] = useState<LockerTab>(initialTab);
   const [detail, setDetail] = useState<Detail>(initialDetail ?? { kind: 'none' });
   const inv = state.profile.inventory;
-  const loadout = state.profile.equipment ?? createStarterLoadout();
   const catOf = (itemId: string) => getItemDef(itemId)?.category;
   // 持有的剧情道具（category='story' 且**非海图信物**·文献+信物 如 航海日志/指南针→进「剧情」tab）。
   // 浮标＝海图工具（itemOpensChart）·归「其它」·不在此（作者 2026-06-18「海图属于其它」）。
@@ -173,42 +174,16 @@ export function LockerView({
 
   function body() {
     if (tab === 'gear') {
-      // 装备＝平铺所有装备（和普通物品同款格子·作者 2026-06-19）：当前穿戴的加框（variant 'equipped'），
-      // 其余＝仓库备件（未装备）。升级 / 换装在 Otto（PortServiceMode 'upgrade'·纸娃娃 EquipmentDoll），不在此。
-      const wornIds = Object.values(loadout)
-        .filter((i): i is EquipmentInstance => !!i)
-        .map((i) => i.itemId);
+      // 装备 tab 顶部＝和别的 tab 一模一样的物品网格（这里＝仓库里未装备的备件·点格子 equipItem 装/替换·作者 2026-06-20·#3）。
+      // 当前穿戴的件 + 卸下 走下面那个独立的「装备栏」框（见 return 里的 .equip-doll-card·点装备槽 unequipItem 卸下）。
       const spares = inv.filter((i) => i.qty > 0 && catOf(i.itemId) === 'equipment');
-      if (wornIds.length === 0 && spares.length === 0) {
-        return <ItemGrid items={[]} rows={4} emptyText="还没有装备。" />;
-      }
       return (
-        <div className="item-grid">
-          {wornIds.map((itemId, idx) => {
-            const def = getItemDef(itemId);
-            return (
-              <ItemCell
-                key={`worn-${idx}-${itemId}`}
-                def={def}
-                itemId={itemId}
-                variant="equipped"
-                title={`${def?.name ?? itemId}（已装备 · 改装见 Otto）`}
-              />
-            );
-          })}
-          {spares.map((i) => {
-            const def = getItemDef(i.itemId);
-            return (
-              <ItemCell
-                key={i.itemId}
-                def={def}
-                itemId={i.itemId}
-                qty={i.qty > 1 ? i.qty : undefined}
-                title={`${def?.name ?? i.itemId}（未装备 · 换装见 Otto · P3 段2）`}
-              />
-            );
-          })}
-        </div>
+        <ItemGrid
+          items={spares}
+          rows={4}
+          emptyText="没有未装备的备件——已穿戴的在下面「装备栏」里。"
+          onItemClick={(id) => onStateChange(equipItem(state, id))}
+        />
       );
     }
     if (tab === 'journal') {
@@ -304,26 +279,44 @@ export function LockerView({
   }
 
   return (
-    <PanelShell title="物品栏" onClose={onClose}>
-      <div className="locker-main">
-        <div className="locker-tabs">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              className={`btn small locker-tab ${tab === t.id ? 'on' : ''}`}
-              aria-pressed={tab === t.id}
-              onClick={() => {
-                setTab(t.id);
-                setDetail({ kind: 'none' });
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
+    <>
+      <PanelShell title="物品栏" onClose={onClose}>
+        <div className="locker-main">
+          <div className="locker-tabs">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`btn small locker-tab ${tab === t.id ? 'on' : ''}`}
+                aria-pressed={tab === t.id}
+                onClick={() => {
+                  setTab(t.id);
+                  setDetail({ kind: 'none' });
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="locker-body">{body()}</div>
         </div>
-        <div className="locker-body">{body()}</div>
-      </div>
-    </PanelShell>
+      </PanelShell>
+      {/* 装备 tab 时下面再来一个**独立的框**「装备栏」（作者 2026-06-20·#3·和三个 NPC 各自独立框一样·真 sibling·不嵌在物品栏壳里）：
+          物品栏壳照常显格子（同别的 tab）、这框在它下面独立成卡（.equip-doll-card·bg-elev·同 .npc-card/.panel-shell）。点装备槽 unequip。 */}
+      {tab === 'gear' && (
+        <div className="equip-doll-card">
+          <div className="equip-doll-card-head">
+            <span className="equip-doll-card-title">装备栏</span>
+            <span className="dim">点装备槽卸下</span>
+          </div>
+          <EquipmentDoll
+            state={state}
+            onSlotClick={(slot, inst) => {
+              if (inst && canUnequipSlot(state.profile, slot)) onStateChange(unequipItem(state, slot));
+            }}
+          />
+        </div>
+      )}
+    </>
   );
 }

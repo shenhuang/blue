@@ -1,14 +1,15 @@
-// 装备纸娃娃（src/ui/EquipmentDoll.tsx）SSR 冒烟。
-// 用 react-dom/server 把 EquipmentDoll 在两态各渲染一次：
-//   ① Otto 改装态（onStateChange 传入·可点槽升级）
-//   ② 下潜「查看装备」只读态（readOnly·无改装钮）
-// 断言：不抛错 + 9 槽标签齐 + 锁定饰品显「升级解锁」+ Otto 态出「改装」钮、只读态不出升级行。
-// 守「装备 schema / 纸娃娃槽位演进别静默打挂 Otto 改装与 HUD 查看装备」（同 smoke-story/map-editor 套路）。
+// 装备 UI SSR 冒烟（作者 2026-06-20·#4 升级独立框重构）。
+//   ① Otto 改装视图 OttoUpgradeView：纸娃娃壳（点槽选中·受控）+ **旁边独立「改装」框** EquipmentUpgradeBox
+//   ② EquipmentUpgradeBox 打造：空声呐槽 → 「Otto 打造」入口
+//   ③ 下潜 HUD EquipmentDoll(readOnly)：选中槽显详情·无升级·无卸下
+//   ④ 物品栏「装备栏」EquipmentDoll(onSlotClick)：点装备槽卸下·不渲染详情
+// 断言：不抛错 + 9 槽标签齐 + 锁定饰品「升级解锁」+ Otto 旁框出改装行/打造入口/账单门控按钮 +
+//      HUD 不出升级行/不提示卸下 + onSlotClick 态提示「点击卸下」但不出详情/升级/打造。
 //
 // 跑法： npx tsx scripts/smoke-equipment-ui.tsx
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { EquipmentDoll } from '../src/ui/EquipmentDoll';
+import { EquipmentDoll, OttoUpgradeView, EquipmentUpgradeBox } from '../src/ui/EquipmentDoll';
 import { createInitialGameState } from '../src/engine/state';
 
 function assert(cond: unknown, msg: string): asserts cond {
@@ -20,28 +21,40 @@ function assert(cond: unknown, msg: string): asserts cond {
 
 const state = createInitialGameState();
 
-// ── ① Otto 改装态（可写·onStateChange 传入） ─────────────────────────────────
-const otto = renderToStaticMarkup(<EquipmentDoll state={state} onStateChange={() => {}} />);
-// 9 槽中文标签全渲染（UI 层映射·SLOT_LABEL）
+// ── ① Otto 改装视图（纸娃娃壳 + 旁边独立改装框） ─────────────────────────────────────
+const otto = renderToStaticMarkup(<OttoUpgradeView state={state} onStateChange={() => {}} onClose={() => {}} />);
 for (const label of ['潜水衣', '气瓶', '潜水灯', '声呐', '武器·主', '武器·副', '饰品 1', '饰品 2', '饰品 3']) {
   assert(otto.includes(label), `Otto 纸娃娃应渲染槽标签「${label}」`);
 }
-// 锁定的第 2/3 饰品槽显「升级解锁」（UNLOCKED_ACC_SLOTS 占位）
 assert(otto.includes('升级解锁'), 'Otto 态锁定饰品槽应显「升级解锁」');
-// 默认选中 tank（有 upgradeSteps 试点）→ 详情出「改装」升级行 + 钮
-assert(otto.includes('改装 → Lv.'), 'Otto 态应渲染改装升级行（tank 有 upgradeSteps）');
+// 默认选中 tank（有 upgradeSteps）→ 旁边独立改装框显「当前→改装后」数值对比（提升变绿↑）+ 账单门控按钮（起手无料→材料不足）
+assert(otto.includes('氧气上限'), 'Otto 改装框前后对比应显气瓶数值（氧气上限）');
+assert(otto.includes('↑'), 'Otto 改装框提升项带向上箭头 ↑（氧气上限 60→70·StatCompare）');
+assert(otto.includes('材料不足'), 'Otto 改装框账单（UpgradeCostView）起手无料应显门控按钮「材料不足」');
 
-// ── ② 下潜只读态（readOnly·无改装钮） ───────────────────────────────────────
-const hud = renderToStaticMarkup(<EquipmentDoll state={state} readOnly />);
+// ── ② EquipmentUpgradeBox 打造（空声呐槽 → Otto 打造入口） ───────────────────────────
+const craftBox = renderToStaticMarkup(<EquipmentUpgradeBox state={state} slot="sonar" onStateChange={() => {}} />);
+assert(craftBox.includes('Otto 打造'), '空声呐槽（craftCost）→ EquipmentUpgradeBox 应显「Otto 打造」入口');
+assert(craftBox.includes('声呐组件'), 'Otto 打造行应显可打造件名（声呐组件）');
+
+// ── ③ 下潜 HUD（readOnly·选中槽显详情·无升级·无卸下） ──────────────────────────────
+const hud = renderToStaticMarkup(<EquipmentDoll state={state} />);
 for (const label of ['潜水衣', '气瓶', '潜水灯', '声呐']) {
   assert(hud.includes(label), `只读纸娃娃应渲染槽标签「${label}」`);
 }
-// readOnly 跳过 detail 的 !readOnly 升级分支 → 不出改装升级行
-assert(!hud.includes('改装 → Lv.'), '只读态不应渲染改装升级行（HUD 查看装备只看不改）');
+assert(!hud.includes('改装 → Lv.'), 'HUD 只读不应渲染改装升级行（升级在 Otto 独立框）');
+assert(!hud.includes('点击卸下'), 'HUD 只读无 onSlotClick·装备槽不提示卸下');
 
-// ── ③ Otto 打造态（段2·空声呐槽 initialSlot=sonar → 「Otto 打造」入口） ─────────────
-const craftView = renderToStaticMarkup(<EquipmentDoll state={state} onStateChange={() => {}} initialSlot="sonar" />);
-assert(craftView.includes('Otto 打造'), '声呐空槽（craftCost）→ 应渲染「Otto 打造」入口');
-assert(craftView.includes('声呐组件'), 'Otto 打造行应显可打造件名（声呐组件）');
+// ── ④ 物品栏「装备栏」态（onSlotClick·点装备槽卸下·不渲染详情） ──────────────────────
+const clicked: string[] = [];
+const lockerDoll = renderToStaticMarkup(<EquipmentDoll state={state} onSlotClick={(s) => clicked.push(s)} />);
+for (const label of ['潜水衣', '气瓶', '潜水灯', '武器·主']) {
+  assert(lockerDoll.includes(label), `onSlotClick 态应渲染槽标签「${label}」`);
+}
+assert(lockerDoll.includes('点击卸下'), 'onSlotClick 态装备槽 title 提示「点击卸下」（starter 有穿戴件）');
+assert(
+  !lockerDoll.includes('改装 → Lv.') && !lockerDoll.includes('Otto 打造'),
+  'onSlotClick 态不渲染详情/升级/打造（装换走外部 flat grid·卸下点槽）',
+);
 
-console.log('✓ smoke-equipment-ui: EquipmentDoll Otto 改装 / 下潜只读 / 声呐打造 三态渲染通过（9 槽 + 锁定饰品 + 改装钮门控 + 打造入口）');
+console.log('✓ smoke-equipment-ui: Otto 改装(纸娃娃+独立改装框) / 打造 / 下潜只读 / 物品栏装备栏(点槽卸下) 渲染通过');

@@ -1575,6 +1575,8 @@ html, body, #root {
 .chart-map-poi {
   position: absolute;
   /* counter-scale（#131 续·作者反馈）：抵消 .chart-world 的 1/spanX → 标记+文字恒定屏幕大小、不随 zoom 放大。 */
+  /* translate(-50%,-50%) 的 % 基于自身尺寸——chart-poi-name 用 position:absolute 脱离文档流，
+     确保按钮高度恒为 padding+dot，避免 .sel 展开名称时 -50% 偏移量变化导致点位漂移。 */
   transform: translate(-50%, -50%) scale(var(--chart-cscale, 1));
   background: none;
   border: none;
@@ -1583,7 +1585,6 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
 }
 
 .chart-dot {
@@ -1611,6 +1612,12 @@ html, body, #root {
 
 .chart-poi-name {
   display: none;
+  /* 脱离文档流：不撑高父按钮，避免 translate(-50%,-50%) 因高度变化而漂移。
+     top: calc(100% - 11px) = 按钮底部减去下内边距，紧贴 dot 下方 3px。 */
+  position: absolute;
+  top: calc(100% - 11px + 3px);
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 0.7rem;
   white-space: nowrap;
   color: var(--accent);
@@ -2279,6 +2286,27 @@ html, body, #root {
 .locker-gear-upgrade {
   align-self: flex-start;
 }
+/* 装备栏独立框（作者 2026-06-20·#3·像 NPC 卡那样独立·见 .npc-card / .upgrade-line）：物品栏装备 tab 顶部格子区
+   和别的 tab 一模一样、只是 gear tab 下面额外多这一框装纸娃娃「装备栏」。用 var(--bg)（比 PanelShell 的 bg-elev 深）
+   + 边框，在壳里凸出成一张独立卡。 */
+.equip-doll-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-top: 16px;
+}
+.equip-doll-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.equip-doll-card-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
 /* 装备纸娃娃（EquipmentDoll·SPEC §4·作者 2026-06-19 模板）：左列4 / 中人像占位 / 右列2（下沉对齐潜水灯·声呐）/ 底饰品3·等大方格。 */
 .equip-doll-wrap {
   display: flex;
@@ -2360,14 +2388,54 @@ html, body, #root {
   gap: 8px;
 }
 .equip-detail-name { font-size: 0.92rem; }
+/* Otto 改装独立框（.equip-doll-card·#4）内的内容：槽信息 + 改装/打造块。框由外层 .equip-doll-card 提供·这里只排版。 */
+.equip-upgrade-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .equip-upgrade {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 8px;
+}
+/* 改装前后数值对比（作者 2026-06-20·#5）：左＝当前小框 → 右＝改装后小框·中间向右箭头·提升项变绿 + ↑。 */
+.equip-stat-compare {
+  display: flex;
+  align-items: stretch;
   gap: 10px;
-  flex-wrap: wrap;
-  border-top: 1px solid var(--border);
-  padding-top: 8px;
+}
+.equip-stat-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 9px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.equip-stat-col.solo {
+  flex: 0 1 auto;
+  align-self: flex-start;
+}
+/* 建造态（从基线·单框「建造获得的内容」·作者 2026-06-20·#6）：只一个框·不撑满。 */
+.equip-stat-compare.build .equip-stat-col {
+  flex: 0 1 auto;
+  align-self: flex-start;
+}
+.equip-stat-col-label {
+  font-size: 11px;
+}
+.equip-stat-line.up {
+  color: var(--green);
+}
+.equip-stat-arrow {
+  align-self: center;
+  flex: 0 0 auto;
+  color: var(--text-faint);
+  font-size: 18px;
 }
 .equip-upgrade-info {
   display: flex;
@@ -2493,4 +2561,60 @@ button.locker-coord-row:hover {
 .decoy-live {
   margin: 6px 0 0;
   font-size: 0.8rem;
+}
+
+/* 可复用账单（UpgradeCostView·变体 B 对齐清单·作者 2026-06-20·C/#2）：每料一行〔图标 · 名字 · 已有/需求右对齐〕
+   + 按钮右下·材料按稀有度排序——Otto 改装/打造（EquipmentDoll）、灯塔设施（LighthouseBuildPanel）、打捞行会（UpgradePanel）统一一份长相。 */
+.cost-block {
+  margin-top: 6px;
+}
+.cost-list {
+  display: flex;
+  flex-direction: column;
+}
+.cost-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 0.5px solid var(--bg-elev-2);
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.cost-row:last-child {
+  border-bottom: none;
+}
+/* 复用 .item-cell-icon 的占位/data-cat 钩子（将来上图），但在账单里是小号静态方块（非铺满格子）。 */
+.cost-row .item-cell-icon {
+  position: static;
+  inset: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+.cost-row-name {
+  color: var(--text-muted);
+}
+.cost-row-count {
+  margin-left: auto;
+  color: var(--text-faint);
+}
+.cost-row.short,
+.cost-row.short .cost-row-name,
+.cost-row.short .cost-row-count {
+  color: var(--danger);
+}
+.cost-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+/* 物品栏装备 tab 当前件效果行（EquipmentDoll detail·作者 2026-06-20）。 */
+.equip-effects {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
 }

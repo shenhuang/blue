@@ -18,6 +18,7 @@ import type {
 import actionData from '@/data/actions.json';
 import { ENEMY_FILE_MODULES } from '@/data/enemies/registry.generated';
 import { appendLog, addToInventory, removeFromInventory, clampStats } from './state';
+import { getEquipmentStats, weaponDamageForSlot } from './equipment';
 import { executeDeath } from './death';
 import { getItemDef } from './items';
 import { computeModifiers, effectiveStaminaMax } from './modifiers';
@@ -342,8 +343,10 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
     return pushCombatLog(state, { actor: 'player', text: `${action.name}：${def.name} 闪开了。` });
   }
 
-  // 伤害
-  let dmg = randRange(eff.damage);
+  // 伤害（含武器件伤害加成·按 action.requiresEquipment 槽读·避免跨武器串伤·C 2026-06-20）
+  const weaponSlot = action.requiresEquipment;
+  const weaponBonus = weaponSlot && state.run ? weaponDamageForSlot(state.run.equipment, weaponSlot) : 0;
+  let dmg = randRange(eff.damage) + weaponBonus;
   // ambush 暴击
   const ambushing = combat.playerStatuses.find((s) => s.kind === 'ambushing');
   if (ambushing) {
@@ -578,10 +581,10 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
   if (evading) {
     dmg = Math.ceil(dmg * (1 - (evading.param ?? 0.5)));
   }
-  // 潜水服减伤（简化）
-  const suit = state.run.equipment.suit;
-  if (suit) {
-    dmg = Math.max(1, dmg - 1);
+  // 潜水服减伤：读穿戴件 physicalArmor 累计（A·2026-06-20·替旧 if(suit)-1·改读数值·防双计 quirk #142）
+  const armor = getEquipmentStats(state.run.equipment).physicalArmor;
+  if (armor > 0) {
+    dmg = Math.max(1, dmg - armor);
   }
 
   let s = applyStatsDelta(state, { stamina: -dmg });

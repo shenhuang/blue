@@ -145,11 +145,20 @@ const SHOP_STOCK_CONSUMABLES: Record<string, number> = {
  * Mira 柜台的「基础装备件」货架（段2·作者 2026-06-19）：itemId → 每次回港备货上限。
  * 与消耗品货架平行——花金币买**基础装备件**（手电＝基础潜水灯·Mira 购买、不升级·见段2 装备模型：
  * 灯/规避＝固定属性买/换件、声呐＝Otto 打造、唯它逐级升）。买价/限量同一套（miraOfferFor × markup·回港补满）。
- * 注：买到的件进仓库（未装备备件·LockerView 未装备区）；「从仓库装到槽」的换装流程尚未实装（#141 未装备区只读），
- *   故现阶段意义＝「补一支基础灯」+ 为「Mira 卖基础 gear」模型铺路（加可买基础件＝往这表加一行·数据驱动）。
+ * 注：买到的件进仓库（未装备备件）；换装流程（仓库↔槽·equipItem/unequipItem 单点）已实装（B·作者 2026-06-20·
+ *   物品栏装备 tab / Otto 纸娃娃点槽→选仓库备件装上·旧件回仓库·见 engine/equipment.ts）。加可买件＝往这表加一行（数据驱动）。
+ * A（作者 2026-06-20）：退役的灯/电池/规避升级做回「固定属性档位件」上架（数值在 base effects·占位待调·别重建 upgrades.json 三线·quirk #142）。
  */
 const SHOP_STOCK_EQUIPMENT: Record<string, number> = {
   'item.light.hand_torch': 1,
+  'item.light.spotlight': 1,
+  'item.light.floodlamp': 1,
+  'item.light.eco_lamp': 1,
+  'item.suit.reinforced': 1,
+  'item.suit.sound_absorb': 1,
+  'item.suit.camo': 1,
+  'item.charm.quiet_pendant': 1,
+  'item.charm.spare_cell': 1,
 };
 
 /** 取某材料的 tier（非 material / 无 tier → undefined）。 */

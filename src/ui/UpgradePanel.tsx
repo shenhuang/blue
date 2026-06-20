@@ -4,8 +4,6 @@
 import type { ReactNode } from 'react';
 import type {
   GameState,
-  PlayerProfile,
-  UpgradeCost,
   UpgradeDef,
   UpgradeEffect,
   UpgradeLine,
@@ -17,10 +15,10 @@ import {
   getUnlockedLevelInLine,
   purchaseUpgrade,
 } from '@/engine/upgrades';
-import { countInInventory } from '@/engine/state';
-import { getItemDef } from '@/engine/items';
 import { DEV_TOOLS } from './devMode';
 import { PanelShell } from './PanelShell';
+import { UpgradeCostView } from './UpgradeCost';
+import { UpgradeEffectDelta, emptyEffectSet, mergeEffectSets, type EffectSet, type StatLine } from './UpgradeEffectDelta';
 
 interface Props {
   state: GameState;
@@ -93,6 +91,15 @@ function UpgradeLineCard({
   onDevUnlock: (id: string) => void;
 }) {
   const haveLevel = getUnlockedLevelInLine(state.profile, line);
+  // 每级 before＝低级累计·after＝含本级累计（前缀和）→ 喂统一 UpgradeEffectDelta（数值前后对比·解锁新增·作者 2026-06-20·#5）。
+  const rowSets: { before: EffectSet; after: EffectSet }[] = [];
+  let cum = emptyEffectSet();
+  for (const u of line.upgrades) {
+    const before = cum;
+    const after = mergeEffectSets(cum, upgradeEffectSet(u.effects));
+    rowSets.push({ before, after });
+    cum = after;
+  }
 
   return (
     <div className="upgrade-line">
@@ -104,8 +111,16 @@ function UpgradeLineCard({
       </div>
       <div className="upgrade-line-desc">{line.description}</div>
       <div className="upgrade-line-rows">
-        {line.upgrades.map((u) => (
-          <UpgradeRow key={u.id} def={u} state={state} onBuy={onBuy} onDevUnlock={onDevUnlock} />
+        {line.upgrades.map((u, i) => (
+          <UpgradeRow
+            key={u.id}
+            def={u}
+            before={rowSets[i].before}
+            after={rowSets[i].after}
+            state={state}
+            onBuy={onBuy}
+            onDevUnlock={onDevUnlock}
+          />
         ))}
       </div>
     </div>
@@ -114,129 +129,101 @@ function UpgradeLineCard({
 
 function UpgradeRow({
   def,
+  before,
+  after,
   state,
   onBuy,
   onDevUnlock,
 }: {
   def: UpgradeDef;
+  before: EffectSet;
+  after: EffectSet;
   state: GameState;
   onBuy: (id: string) => void;
   onDevUnlock: (id: string) => void;
 }) {
   const owned = state.profile.unlockedUpgrades.has(def.id);
   const avail = canPurchase(state.profile, def.id);
-
-  let statusEl: JSX.Element;
-  if (owned) {
-    statusEl = <span className="upgrade-status owned">已改装</span>;
-  } else if (avail.ok) {
-    statusEl = (
-      <button className="btn upgrade-buy" onClick={() => onBuy(def.id)}>
-        改装
-      </button>
-    );
-  } else if (avail.reason === 'needsPrev') {
-    statusEl = <span className="upgrade-status locked">需要前一级</span>;
-  } else if (avail.reason === 'notEnoughMaterials') {
-    statusEl = (
-      <button className="btn upgrade-buy" disabled>
-        材料不足
-      </button>
-    );
-  } else if (avail.reason === 'notEnoughGold') {
-    statusEl = (
-      <button className="btn upgrade-buy" disabled>
-        金币不足（还差 {avail.goldShort}）
-      </button>
-    );
-  } else {
-    statusEl = <span className="upgrade-status locked">不可用</span>;
-  }
+  // 账单之外的门（前置）→ 传 UpgradeCostView 的 disabled + 文案；材料/金币不足由它自算（统一账单 UI·作者 2026-06-20）。
+  const extraBlocked = !owned && !avail.ok && avail.reason === 'needsPrev';
 
   return (
     <div className={`upgrade-row ${owned ? 'owned' : ''}`}>
       <div className="upgrade-row-main">
-        <div className="upgrade-row-name">
-          {def.name}
-        </div>
+        <div className="upgrade-row-name">{def.name}</div>
         <div className="upgrade-row-desc">{def.description}</div>
-        <div className="upgrade-effects">
-          {def.effects.map((e, i) => (
-            <span key={i} className="upgrade-effect-chip">
-              {renderEffect(e)}
-            </span>
-          ))}
-        </div>
-        {!owned && <CostLine cost={def.cost} profile={state.profile} />}
-      </div>
-      <div className="upgrade-row-side">
-        {statusEl}
+        <UpgradeEffectDelta
+          before={before}
+          after={after}
+          beforeLabel={`Lv.${def.level - 1}`}
+          afterLabel={`Lv.${def.level}`}
+          build={def.level === 1}
+        />
+        {!owned && (
+          <UpgradeCostView
+            cost={def.cost}
+            inventory={state.profile.inventory}
+            bankedGold={state.profile.bankedGold}
+            actionLabel="改装"
+            onConfirm={() => onBuy(def.id)}
+            disabled={extraBlocked}
+            disabledLabel={extraBlocked ? '需要前一级' : undefined}
+          />
+        )}
         {/* Dev 测试解锁（?dev 门后·作者要求「不需要材料直接解锁任何港口升级」）：跳过材料/金币/前置，
-            同 Mira 测试货架口径——真购买按钮照常在上面，这颗只给测试者。 */}
+            同 Mira 测试货架口径；普通访客不渲染。 */}
         {DEV_TOOLS && !owned && (
           <button className="btn small upgrade-dev-unlock" onClick={() => onDevUnlock(def.id)}>
             测试解锁（0 成本）
           </button>
         )}
       </div>
+      <div className="upgrade-row-side">
+        {owned && <span className="upgrade-status owned">已改装</span>}
+      </div>
     </div>
   );
 }
 
-/** 账单明细：逐条材料"名×需求量"，自有不足时高亮 + 标注已有数；金币同理。 */
-function CostLine({ cost, profile }: { cost: UpgradeCost; profile: PlayerProfile }) {
-  const goldShort = profile.bankedGold < cost.gold;
-  return (
-    <div className="upgrade-cost">
-      <span className="upgrade-cost-label">需要：</span>
-      {cost.materials.map((m) => {
-        const owned = countInInventory(profile.inventory, m.itemId);
-        const short = owned < m.qty;
-        return (
-          <span
-            key={m.itemId}
-            className={`upgrade-cost-mat ${short ? 'short' : 'ok'}`}
-          >
-            {getItemDef(m.itemId)?.name ?? m.itemId}×{m.qty}
-            {short && <span className="upgrade-cost-have">（有 {owned}）</span>}
-          </span>
-        );
-      })}
-      {cost.gold > 0 && (
-        <span className={`upgrade-cost-gold ${goldShort ? 'short' : 'ok'}`}>
-          ＋ {cost.gold} 金
-        </span>
-      )}
-    </div>
-  );
-}
-
-function renderEffect(e: UpgradeEffect): string {
-  switch (e.kind) {
-    case 'unlockZone':
-      return `解锁海域：${zoneLabel(e.zoneId)}`;
-    case 'extraConsumableSlot':
-      return `背包格 +${e.value}`;
-    case 'oxygenMaxBonus':
-      return `氧气上限 +${e.value} 回合`;
-    case 'staminaMaxBonus':
-      return `体力上限 +${e.value}`;
-    case 'preservationBonus':
-      return `尸体保鲜 +${e.value}`;
-    case 'revealCorpseHint':
-      return e.value ? '海图标记尸体' : '';
-    case 'preDiveCorpseSelect':
-      return e.value ? '出海前可选目标尸体' : '';
-    case 'currentSweepImmune':
-      return e.value ? '海流不再冲走物品' : '';
-    // 段2（作者 2026-06-19）：传感器升级 kind 已从 UpgradeEffect 删除（声呐迁 Otto 打造的装备件·标签在
-    //   EquipmentDoll；灯/规避回基线）——unlockSonar/powerMaxBonus/lamp*/sonar*/signatureReduction/soundAbsorb/camo
-    //   的标签随之删。roomFeatureChanceBonus（salvage_guild lv4·仍为全局升级线）保留。
-    case 'roomFeatureChanceBonus':
-      return `更会翻找大洞室：开阔水域更常藏着多处可探（深处的「大房间」出现率 +${Math.round(e.value * 100)}%）`;
-    case 'unlockShopItem':
-      return `解锁商店：${itemLabel(e.itemId)}`;
+// UpgradeEffect → EffectSet（数值项 stats·解锁项 unlocks·作者 2026-06-20·#5·喂统一 UpgradeEffectDelta）。
+function upgradeEffectSet(effects: UpgradeEffect[]): EffectSet {
+  const stats: StatLine[] = [];
+  const unlocks: string[] = [];
+  for (const e of effects) {
+    switch (e.kind) {
+      case 'extraConsumableSlot':
+        stats.push({ label: e.kind, value: e.value, render: (v) => `背包格 +${v}` });
+        break;
+      case 'oxygenMaxBonus':
+        stats.push({ label: e.kind, value: e.value, render: (v) => `氧气上限 +${v} 回合` });
+        break;
+      case 'staminaMaxBonus':
+        stats.push({ label: e.kind, value: e.value, render: (v) => `体力上限 +${v}` });
+        break;
+      case 'preservationBonus':
+        stats.push({ label: e.kind, value: e.value, render: (v) => `尸体保鲜 +${v}` });
+        break;
+      case 'roomFeatureChanceBonus':
+        stats.push({ label: e.kind, value: e.value, render: (v) => `大房间出现率 +${Math.round(v * 100)}%` });
+        break;
+      case 'unlockZone':
+        unlocks.push(`解锁海域：${zoneLabel(e.zoneId)}`);
+        break;
+      case 'unlockShopItem':
+        unlocks.push(`解锁商店：${itemLabel(e.itemId)}`);
+        break;
+      case 'revealCorpseHint':
+        if (e.value) unlocks.push('海图标记尸体');
+        break;
+      case 'preDiveCorpseSelect':
+        if (e.value) unlocks.push('出海前可选目标尸体');
+        break;
+      case 'currentSweepImmune':
+        if (e.value) unlocks.push('海流不再冲走物品');
+        break;
+    }
   }
+  return { stats, unlocks };
 }
 
 function zoneLabel(id: string): string {

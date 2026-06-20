@@ -172,7 +172,19 @@ export type EquipmentEffect =
   | { kind: 'sonarPingCostReduction'; value: number }
   | { kind: 'sonarRobustness'; value: number }
   | { kind: 'sonarRangeBonus'; value: number }
-  | { kind: 'sonarScanRangeBonus'; value: number };
+  | { kind: 'sonarScanRangeBonus'; value: number }
+  // 灯/电池/规避「档位件」base 效果（A·作者 2026-06-20·退役的灯/电池/规避升级做回固定属性件·别重建 upgrades.json 三线）。
+  // 这些 kind 喂 deriveSensorTuning 的同名旋钮：lighthouses.ts::getRunBonuses 改读 eq.*（替段2 的字面 0）。
+  // 固定属性件数值全在 base effects（不升级·getEquipmentStats 读 base）；与声呐件（数值在 upgradeSteps）互补。
+  | { kind: 'lampEfficiency'; value: number }
+  | { kind: 'lampRobustness'; value: number }
+  | { kind: 'lampRangeBonus'; value: number }
+  | { kind: 'signatureReduction'; value: number }
+  | { kind: 'soundAbsorbBonus'; value: number }
+  | { kind: 'camoBonus'; value: number }
+  | { kind: 'powerMaxBonus'; value: number }
+  // 武器件伤害（C·作者 2026-06-20）：combat 玩家攻击 dmg += Σ weaponDamage（roll 后·armor 前·见 engine/combat.ts）。
+  | { kind: 'weaponDamage'; value: number };
 
 export interface ConsumableMeta {
   /** 在哪些场景可用 */

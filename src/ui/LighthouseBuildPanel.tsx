@@ -8,8 +8,7 @@ import type {
   Lighthouse,
   LighthouseTrack,
   LighthouseUpgradeDef,
-  PlayerProfile,
-  UpgradeCost,
+  LighthouseEffect,
 } from '@/types';
 import {
   canBuildAt,
@@ -19,10 +18,37 @@ import {
   getBuiltLevelInTrack,
 } from '@/engine/lighthouses';
 import { getOutpostForLighthouse } from '@/engine/outposts';
-import { countInInventory, HOME_LIGHTHOUSE_ID } from '@/engine/state';
-import { getItemDef } from '@/engine/items';
+import { getColumnForLighthouse } from '@/engine/columns';
+import { HOME_LIGHTHOUSE_ID } from '@/engine/state';
 import { PanelShell } from './PanelShell';
+import { UpgradeCostView } from './UpgradeCost';
+import { UpgradeEffectDelta, emptyEffectSet, mergeEffectSets, type EffectSet, type StatLine } from './UpgradeEffectDelta';
 import { DEV_TOOLS } from './devMode';
+
+// LighthouseEffect → EffectSet（全数值·作者 2026-06-20·#5·喂统一 UpgradeEffectDelta）。
+// energyDraw（设施能耗·越大越坏）不进对比（见 UpgradeEffectDelta 注：stats 统一「越大越好」）；探深轨 effects 空→空集→不渲染。
+function lighthouseEffectSet(effects: LighthouseEffect[]): EffectSet {
+  const stats: StatLine[] = [];
+  for (const e of effects) {
+    switch (e.kind) {
+      case 'extraConsumableSlot':
+        stats.push({ label: e.kind, value: e.value, render: (v) => `消耗品槽 +${v}` });
+        break;
+      case 'energyGen':
+        stats.push({ label: e.kind, value: e.value, render: (v) => `能源产出 +${v}` });
+        break;
+      case 'rechargeBonus':
+        stats.push({ label: e.kind, value: e.value, render: (v) => `出潜电量 +${v}` });
+        break;
+      case 'oxygenSupply':
+        stats.push({ label: e.kind, value: e.value, render: (v) => `出潜氧气 +${v}` });
+        break;
+      case 'energyDraw':
+        break;
+    }
+  }
+  return { stats, unlocks: [] };
+}
 
 interface Props {
   state: GameState;
@@ -119,6 +145,27 @@ function LighthouseTrackCard({
   onDevBuild: (lighthouseId: string, upgradeId: string) => void;
 }) {
   const haveLevel = getBuiltLevelInTrack(lighthouse, track);
+  // 每级 before＝低级累计·after＝含本级累计（前缀和）→ 喂统一 UpgradeEffectDelta（数值前后对比·作者 2026-06-20·#5/#6）。
+  // 低频声呐（探深轨·effects 空）：合成「探深至 {本档底深}m」数值——存**增量**（本档底深 − 上档底深）·前缀和后即绝对深度·
+  //   故对比显「探深至 90m → 探深至 120m↑」（每级开深一档·守探深＝信息基建北极星）。
+  const probeCol = track.id.startsWith('lhtrack.probe.') ? getColumnForLighthouse(lighthouse.id) : undefined;
+  const rowSets: { before: EffectSet; after: EffectSet }[] = [];
+  let cum = emptyEffectSet();
+  let prevDepth = 0;
+  track.upgrades.forEach((u, i) => {
+    let thisSet: EffectSet;
+    if (probeCol) {
+      const depth = probeCol.tiers[i]?.depthRange[1] ?? prevDepth;
+      thisSet = { stats: [{ label: 'probeDepth', value: depth - prevDepth, render: (v) => `探深至 ${v}m` }], unlocks: [] };
+      prevDepth = depth;
+    } else {
+      thisSet = lighthouseEffectSet(u.effects);
+    }
+    const before = cum;
+    const after = mergeEffectSets(cum, thisSet);
+    rowSets.push({ before, after });
+    cum = after;
+  });
 
   return (
     <div className="upgrade-line">
@@ -130,10 +177,13 @@ function LighthouseTrackCard({
       </div>
       <div className="upgrade-line-desc">{track.description}</div>
       <div className="upgrade-line-rows">
-        {track.upgrades.map((u) => (
+        {track.upgrades.map((u, i) => (
           <LighthouseUpgradeRow
             key={u.id}
             def={u}
+            level={i + 1}
+            before={rowSets[i].before}
+            after={rowSets[i].after}
             lighthouse={lighthouse}
             state={state}
             onBuild={onBuild}
@@ -147,12 +197,18 @@ function LighthouseTrackCard({
 
 function LighthouseUpgradeRow({
   def,
+  level,
+  before,
+  after,
   lighthouse,
   state,
   onBuild,
   onDevBuild,
 }: {
   def: LighthouseUpgradeDef;
+  level: number;
+  before: EffectSet;
+  after: EffectSet;
   lighthouse: Lighthouse;
   state: GameState;
   onBuild: (lighthouseId: string, upgradeId: string) => void;
@@ -160,42 +216,35 @@ function LighthouseUpgradeRow({
 }) {
   const built = lighthouse.builtUpgrades.has(def.id);
   const avail = canBuildAt(state.profile, lighthouse, def.id);
-
-  let statusEl: JSX.Element;
-  if (built) {
-    statusEl = <span className="upgrade-status owned">已建</span>;
-  } else if (avail.ok) {
-    statusEl = (
-      <button className="btn upgrade-buy" onClick={() => onBuild(lighthouse.id, def.id)}>
-        建造
-      </button>
-    );
-  } else if (avail.reason === 'needsPrev') {
-    statusEl = <span className="upgrade-status locked">需要前一级</span>;
-  } else if (avail.reason === 'needsLighthouseLevel') {
-    statusEl = <span className="upgrade-status locked">灯塔等级不足</span>;
-  } else if (avail.reason === 'notEnoughMaterials') {
-    statusEl = (
-      <button className="btn upgrade-buy" disabled>
-        材料不足
-      </button>
-    );
-  } else if (avail.reason === 'notEnoughGold') {
-    statusEl = (
-      <button className="btn upgrade-buy" disabled>
-        金币不足（还差 {avail.goldShort}）
-      </button>
-    );
-  } else {
-    statusEl = <span className="upgrade-status locked">不可用</span>;
-  }
+  // 账单之外的门（前置/灯塔等级）→ 传 UpgradeCostView 的 disabled + 文案；材料/金币不足由它自算（统一账单 UI·作者 2026-06-20）。
+  const reason = avail.ok ? undefined : avail.reason;
+  const extraBlocked = !built && (reason === 'needsPrev' || reason === 'needsLighthouseLevel');
+  const extraLabel =
+    reason === 'needsPrev' ? '需要前一级' : reason === 'needsLighthouseLevel' ? '灯塔等级不足' : undefined;
 
   return (
     <div className={`upgrade-row ${built ? 'owned' : ''}`}>
       <div className="upgrade-row-main">
         <div className="upgrade-row-name">{def.name}</div>
         <div className="upgrade-row-desc">{def.description}</div>
-        {!built && <LighthouseCostLine cost={def.cost} profile={state.profile} />}
+        <UpgradeEffectDelta
+          before={before}
+          after={after}
+          beforeLabel={`Lv.${level - 1}`}
+          afterLabel={`Lv.${level}`}
+          build={level === 1}
+        />
+        {!built && (
+          <UpgradeCostView
+            cost={def.cost}
+            inventory={state.profile.inventory}
+            bankedGold={state.profile.bankedGold}
+            actionLabel="建造"
+            onConfirm={() => onBuild(lighthouse.id, def.id)}
+            disabled={extraBlocked}
+            disabledLabel={extraLabel}
+          />
+        )}
         {/* Dev 测试建造（?dev 门后·与港口修缮「测试解锁」同款 #110 口径）：跳过材料/金币/
             前置/灯塔等级，真建造路径零触碰；普通访客 DEV_TOOLS=false 不渲染。 */}
         {DEV_TOOLS && !built && (
@@ -207,30 +256,9 @@ function LighthouseUpgradeRow({
           </button>
         )}
       </div>
-      <div className="upgrade-row-side">{statusEl}</div>
-    </div>
-  );
-}
-
-/** 账单明细：逐条材料"名×需求量"，不足高亮 + 标注已有数；金币同理（镜像 UpgradePanel::CostLine）。 */
-function LighthouseCostLine({ cost, profile }: { cost: UpgradeCost; profile: PlayerProfile }) {
-  const goldShort = profile.bankedGold < cost.gold;
-  return (
-    <div className="upgrade-cost">
-      <span className="upgrade-cost-label">需要：</span>
-      {cost.materials.map((m) => {
-        const owned = countInInventory(profile.inventory, m.itemId);
-        const short = owned < m.qty;
-        return (
-          <span key={m.itemId} className={`upgrade-cost-mat ${short ? 'short' : 'ok'}`}>
-            {getItemDef(m.itemId)?.name ?? m.itemId}×{m.qty}
-            {short && <span className="upgrade-cost-have">（有 {owned}）</span>}
-          </span>
-        );
-      })}
-      {cost.gold > 0 && (
-        <span className={`upgrade-cost-gold ${goldShort ? 'short' : 'ok'}`}>＋ {cost.gold} 金</span>
-      )}
+      <div className="upgrade-row-side">
+        {built && <span className="upgrade-status owned">已建</span>}
+      </div>
     </div>
   );
 }
