@@ -20,6 +20,7 @@ interface Props {
 export function PortView({ state, onStateChange, onOpenService, dialog, onDialogChange }: Props) {
   const aldo = getNpc('npc.aldo');
   const mira = getNpc('npc.mira');
+  const otto = getNpc('npc.otto');
 
   if (!aldo) return <div className="port">[资源缺失：npc.aldo]</div>;
 
@@ -89,12 +90,17 @@ export function PortView({ state, onStateChange, onOpenService, dialog, onDialog
             ) : (
               <NpcCard name="Mira" role="打捞商" description="柜台还没开。" disabled />
             )}
-            <NpcCard
-              name="Otto"
-              role="气瓶师"
-              description="气瓶师，手也巧——把料交给他，他改装你身上的家伙。"
-              extraAction={{ label: '改装装备', onClick: () => onOpenService('upgrade') }}
-            />
+            {otto ? (
+              <NpcCard
+                name={otto.name}
+                role="气瓶师"
+                description={otto.shortDescription}
+                onTalk={() => startDialogWith(otto)}
+                extraAction={{ label: '改装装备', onClick: () => onOpenService('upgrade') }}
+              />
+            ) : (
+              <NpcCard name="Otto" role="气瓶师" description="仓库门口没人。" disabled />
+            )}
           </div>
           {/* 常驻底部出口（作者 2026-06-19「物品栏/海图固定显示·海图置底」）：sticky 钉视区底·NPC 区随页滚。 */}
           <div className="port-actions">

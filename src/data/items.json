@@ -14,6 +14,11 @@
         "effects": [
           { "kind": "unlocksAction", "actionId": "action.knife_slash" },
           { "kind": "unlocksAction", "actionId": "action.knife_stab" }
+        ],
+        "upgradeSteps": [
+          { "materials": [{ "itemId": "item.shark_tooth", "qty": 2 }], "gold": 50, "statDeltas": [{ "kind": "weaponDamage", "value": 2 }] },
+          { "materials": [{ "itemId": "item.crab_chitin", "qty": 2 }, { "itemId": "item.brass_fitting", "qty": 1 }], "gold": 100, "statDeltas": [{ "kind": "weaponDamage", "value": 3 }] },
+          { "materials": [{ "itemId": "item.brass_fitting", "qty": 3 }, { "itemId": "item.shark_tooth", "qty": 3 }], "gold": 160, "statDeltas": [{ "kind": "weaponDamage", "value": 4 }] }
         ]
       }
     },
@@ -48,8 +53,7 @@
         "slot": "suit",
         "baseLevel": 1,
         "effects": [
-          { "kind": "staminaMaxBonus", "value": 0 },
-          { "kind": "physicalArmor", "value": 2 }
+          { "kind": "physicalArmor", "value": 1 }
         ]
       }
     },
@@ -61,6 +65,7 @@
       "description": "黄铜外壳的老式探照灯。光柱在水里是一道实体的剑。",
       "weight": 1,
       "sellPrice": 25,
+      "story": { "setsFlag": ["flag.owns_light"] },
       "equipment": {
         "slot": "light",
         "baseLevel": 1,
@@ -75,6 +80,7 @@
       "description": "组起一台手持声呐。关灯时可发脉冲探测前方——但回波远不如灯下所见可靠。黑水区从此能摸着探路。",
       "weight": 2,
       "sellPrice": 0,
+      "story": { "setsFlag": ["flag.owns_sonar"] },
       "equipment": {
         "slot": "sonar",
         "baseLevel": 1,
@@ -85,6 +91,139 @@
           { "materials": [{ "itemId": "item.eel_skin", "qty": 3 }, { "itemId": "item.cave_octopus_beak", "qty": 2 }], "gold": 200, "statDeltas": [{ "kind": "sonarRangeBonus", "value": 8 }] },
           { "materials": [{ "itemId": "item.eel_skin", "qty": 3 }, { "itemId": "item.cave_octopus_beak", "qty": 3 }], "gold": 240, "statDeltas": [{ "kind": "sonarScanRangeBonus", "value": 1 }] },
           { "materials": [{ "itemId": "item.lantern_gland", "qty": 2 }, { "itemId": "item.cave_octopus_beak", "qty": 3 }], "gold": 320, "statDeltas": [{ "kind": "sonarScanRangeBonus", "value": 2 }] }
+        ]
+      }
+    },
+    {
+      "id": "item.light.spotlight",
+      "name": "聚光灯",
+      "category": "equipment",
+      "rarity": "uncommon",
+      "description": "收窄的光柱打得更远，照进灯照不透的陡降——代价是视野窄了一圈。",
+      "weight": 1,
+      "sellPrice": 30,
+      "equipment": {
+        "slot": "light",
+        "baseLevel": 1,
+        "effects": [
+          { "kind": "lampRangeBonus", "value": 5 },
+          { "kind": "lightRadius", "value": 1 }
+        ]
+      }
+    },
+    {
+      "id": "item.light.floodlamp",
+      "name": "泛光灯组",
+      "category": "equipment",
+      "rarity": "uncommon",
+      "description": "一排灯珠把近处铺成白昼，水里那些骗眼睛的影子无所遁形。照不远，但看得清。",
+      "weight": 1,
+      "sellPrice": 30,
+      "equipment": {
+        "slot": "light",
+        "baseLevel": 1,
+        "effects": [
+          { "kind": "lightRadius", "value": 4 },
+          { "kind": "lampRobustness", "value": 8 }
+        ]
+      }
+    },
+    {
+      "id": "item.light.eco_lamp",
+      "name": "节能灯组",
+      "category": "equipment",
+      "rarity": "common",
+      "description": "老式但省电的灯组，配一块额外电池。黑水里能多撑一会儿。",
+      "weight": 1,
+      "sellPrice": 40,
+      "equipment": {
+        "slot": "light",
+        "baseLevel": 1,
+        "effects": [
+          { "kind": "lampEfficiency", "value": 0.3 },
+          { "kind": "powerMaxBonus", "value": 15 }
+        ]
+      }
+    },
+    {
+      "id": "item.suit.reinforced",
+      "name": "加固潜水服",
+      "category": "equipment",
+      "rarity": "uncommon",
+      "description": "夹层里缝了硬质板甲，挡得住啃咬，也重得拖人。",
+      "weight": 3,
+      "sellPrice": 45,
+      "equipment": {
+        "slot": "suit",
+        "baseLevel": 1,
+        "effects": [
+          { "kind": "physicalArmor", "value": 3 }
+        ]
+      }
+    },
+    {
+      "id": "item.suit.sound_absorb",
+      "name": "吸声潜行服",
+      "category": "equipment",
+      "rarity": "uncommon",
+      "description": "覆一层吸声蒙皮，吞掉你搅动的水声。靠声音找你的东西会迟疑。",
+      "weight": 2,
+      "sellPrice": 45,
+      "equipment": {
+        "slot": "suit",
+        "baseLevel": 1,
+        "effects": [
+          { "kind": "soundAbsorbBonus", "value": 0.3 },
+          { "kind": "physicalArmor", "value": 1 }
+        ]
+      }
+    },
+    {
+      "id": "item.suit.camo",
+      "name": "拟态迷彩服",
+      "category": "equipment",
+      "rarity": "rare",
+      "description": "表层随水色变换，压低你的轮廓。靠眼睛找你的东西更难锁定。",
+      "weight": 2,
+      "sellPrice": 50,
+      "equipment": {
+        "slot": "suit",
+        "baseLevel": 1,
+        "effects": [
+          { "kind": "camoBonus", "value": 0.3 },
+          { "kind": "signatureReduction", "value": 1 }
+        ]
+      }
+    },
+    {
+      "id": "item.charm.quiet_pendant",
+      "name": "静默坠",
+      "category": "equipment",
+      "rarity": "uncommon",
+      "description": "贴身的小坠子，据说能压住人的存在感。点灯开声呐时少惹些注意。",
+      "weight": 1,
+      "sellPrice": 30,
+      "equipment": {
+        "slot": "charm",
+        "baseLevel": 1,
+        "effects": [
+          { "kind": "signatureReduction", "value": 1 }
+        ]
+      }
+    },
+    {
+      "id": "item.charm.spare_cell",
+      "name": "备用电池组",
+      "category": "equipment",
+      "rarity": "common",
+      "description": "挂在腰间的备用电池。多带一块，灯和声呐能多用几次。",
+      "weight": 1,
+      "sellPrice": 30,
+      "equipment": {
+        "slot": "charm",
+        "baseLevel": 1,
+        "effects": [
+          { "kind": "powerMaxBonus", "value": 15 }
         ]
       }
     },

@@ -4,6 +4,7 @@
 import type { GameState, DialogNode, DialogChoice, DialogEffect, NpcDef } from '@/types';
 import aldoData from '@/data/npcs/aldo.json';
 import miraData from '@/data/npcs/mira.json';
+import ottoData from '@/data/npcs/otto.json';
 import { createNewRun } from './state';
 import { startDive } from './dive';
 import { getRunBonuses } from './lighthouses';
@@ -13,7 +14,11 @@ interface NpcFile {
   dialogs?: Record<string, DialogNode>;
 }
 
-const NPC_FILES: NpcFile[] = [aldoData as unknown as NpcFile, miraData as unknown as NpcFile];
+const NPC_FILES: NpcFile[] = [
+  aldoData as unknown as NpcFile,
+  miraData as unknown as NpcFile,
+  ottoData as unknown as NpcFile,
+];
 
 const NPC_INDEX: Map<string, NpcDef> = new Map();
 const DIALOG_INDEX: Map<string, DialogNode> = new Map();

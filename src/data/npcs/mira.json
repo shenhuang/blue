@@ -15,6 +15,42 @@
           "effects": [{ "kind": "openShop", "shopId": "mira.bench" }]
         },
         {
+          "id": "cant_see",
+          "label": "水里太黑了，什么都看不清。",
+          "next": "mira.sell_light",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "flag.tutorial_complete" },
+              { "kind": "notHasFlag", "flag": "flag.owns_light" }
+            ]
+          }
+        },
+        {
+          "id": "deeper_haul",
+          "label": "最近下到了新地方。",
+          "next": "mira.materials_reef",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "story.ch1.anchor.reef" },
+              { "kind": "notHasFlag", "flag": "flag.mira.tip_reef_seen" }
+            ]
+          }
+        },
+        {
+          "id": "wreck_haul",
+          "label": "（把战利品在柜台上推开）",
+          "next": "mira.materials_wreck",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "story.ch1.anchor.wreck" },
+              { "kind": "notHasFlag", "flag": "flag.mira.tip_wreck_seen" }
+            ]
+          }
+        },
+        {
           "id": "chat",
           "label": "今天行情怎么样？",
           "next": "mira.banter"
@@ -28,14 +64,87 @@
     }
   },
   "dialogs": {
+    "mira.sell_light": {
+      "id": "mira.sell_light",
+      "text": "「那你是下去没开灯？」\n\nMira 没等你回答，从货架底层抽出一盏黄铜外壳的探照灯，往柜台上一放。\n\n「老式的，但水下没有这东西摸不了路。四十金，随你。」\n\n她又去记账，没再看你。「当然你乐意摸黑，那是你的事。」",
+      "choices": [
+        {
+          "id": "buy_light",
+          "label": "买一盏。",
+          "next": "end",
+          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }]
+        },
+        {
+          "id": "pass_light",
+          "label": "下次再说。",
+          "next": "end"
+        }
+      ]
+    },
+    "mira.materials_reef": {
+      "id": "mira.materials_reef",
+      "text": "Mira 用秤砣压住一张油纸，翻着你最近带回来的东西。速度很快，但没漏掉一件。\n\n「礁石那块你是跑熟了。」她从堆里挑出几块，「灯腺我收——最近行情不错。」\n\n她抬头看你一眼。「往残骸那边下了没？鳗鱼皮、章鱼喙，能弄到的，带来。」\n\n「Otto 用得着一部分，我用得着另一部分。」",
+      "onEnter": [
+        { "kind": "setFlag", "flag": "flag.mira.tip_reef_seen" }
+      ],
+      "choices": [
+        {
+          "id": "open_shop_after",
+          "label": "（把东西摊在秤上）",
+          "next": "end",
+          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }]
+        },
+        {
+          "id": "back_reef",
+          "label": "（点头，先走）",
+          "next": "end"
+        }
+      ]
+    },
+    "mira.materials_wreck": {
+      "id": "mira.materials_wreck",
+      "text": "Mira 把你带回来的东西扫了一眼。\n\n「鳗鱼皮我要。」她顿了顿，「章鱼喙——留着，Otto 比我更需要这个。」\n\n停了一下，她才说：「你最近下得挺深。」\n\n她没说更多。又去记账了。",
+      "onEnter": [
+        { "kind": "setFlag", "flag": "flag.mira.tip_wreck_seen" }
+      ],
+      "choices": [
+        {
+          "id": "open_shop_wreck",
+          "label": "（把东西摊在秤上）",
+          "next": "end",
+          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }]
+        },
+        {
+          "id": "back_wreck",
+          "label": "（点头，先走）",
+          "next": "end"
+        }
+      ]
+    },
     "mira.banter": {
       "id": "mira.banter",
       "text": "「行情？」\n\nMira 用秤砣压住一张油纸。\n\n「鲨鱼牙最近能卖。珊瑚要看断口。锈罐头给的是良心价——人都不爱吃这种东西了。」\n\n「真要赚大钱，不是靠我。是靠你能不能再下去一趟。」",
       "choices": [
         {
+          "id": "ask_hours",
+          "label": "你几点开门？",
+          "next": "mira.routine"
+        },
+        {
           "id": "back",
           "label": "（点头）",
           "next": "mira.root"
+        }
+      ]
+    },
+    "mira.routine": {
+      "id": "mira.routine",
+      "text": "「我一直在。」她没抬头，「你以为这个柜台是自己打开的？」\n\n她往秤砣上吹了口气，擦了擦。\n\n「下次带回来，直接上这儿。不用客气。」",
+      "choices": [
+        {
+          "id": "back_routine",
+          "label": "（了然地点头）",
+          "next": "end"
         }
       ]
     }

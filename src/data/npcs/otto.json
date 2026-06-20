@@ -1,0 +1,63 @@
+{
+  "npc": {
+    "id": "npc.otto",
+    "name": "Otto",
+    "role": "engineer",
+    "shortDescription": "气瓶师，手也巧——把料交给他，他改装你身上的家伙。",
+    "dialogRoot": {
+      "id": "otto.root",
+      "text": "Otto 在仓库门口给一只气瓶上压力，没抬头。\n\n扳手转了两圈，他才停下，擦了擦手。\n\n「你要改装，还是加气？」",
+      "choices": [
+        {
+          "id": "to_upgrade",
+          "label": "改装装备。",
+          "next": "otto.upgrade_table"
+        },
+        {
+          "id": "sonar_query",
+          "label": "声呐能弄出来吗？",
+          "next": "otto.sonar_hint",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "flag.tutorial_complete" },
+              { "kind": "notHasFlag", "flag": "flag.owns_sonar" }
+            ]
+          }
+        },
+        {
+          "id": "leave",
+          "label": "没事，先这样。",
+          "next": "end"
+        }
+      ]
+    }
+  },
+  "dialogs": {
+    "otto.upgrade_table": {
+      "id": "otto.upgrade_table",
+      "text": "「放这里。」\n\nOtto 拍了拍改装台，又拿起扳手。\n\n「材料够就能做。不够——去弄够。」",
+      "choices": [
+        {
+          "id": "go_upgrade",
+          "label": "（走向改装台）",
+          "next": "end"
+        }
+      ]
+    },
+    "otto.sonar_hint": {
+      "id": "otto.sonar_hint",
+      "text": "Otto 停下来，看了你一会儿。\n\n「能弄。」他在台子上翻出一张纸，推过来——上面是零件清单，字写得很方正。\n\n「灯腺、鳗鱼皮、章鱼喙。凑够了来找我，我来组。」\n\n他重新拿起扳手。「深一点的地方才有。你知道去哪找。」",
+      "onEnter": [
+        { "kind": "setFlag", "flag": "flag.otto.sonar_hinted" }
+      ],
+      "choices": [
+        {
+          "id": "noted",
+          "label": "（把清单折起来放进口袋）",
+          "next": "end"
+        }
+      ]
+    }
+  }
+}

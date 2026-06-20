@@ -608,7 +608,109 @@ L('§6 鲸落支线派生（ch1WhaleStory）');
   L('  计数/找寻/独立目击/found/口径/round-trip ✓');
 }
 
+// ═══════════════════════════════════════════════════════════════
+// §4c Mira 进度对话门控（卖灯退场 + 材料提示一次性 + 退场 flag 自洽）
+// ═══════════════════════════════════════════════════════════════
+L('§4c Mira 进度对话门控');
+
+{
+  type Cond = { kind: string; flag?: string; of?: Cond[] };
+  type Choice = { id: string; next: string; visibleIf?: Cond };
+  type Node = { id: string; onEnter?: { kind: string; flag?: string }[]; choices?: Choice[] };
+  const mira = JSON.parse(readFileSync(resolve(ROOT, 'src/data/npcs/mira.json'), 'utf-8')) as {
+    npc: { dialogRoot: { choices: Choice[] } };
+    dialogs: Record<string, Node>;
+  };
+
+  const flatten = (c: Cond | undefined): { kind: string; flag?: string }[] =>
+    !c ? [] : c.of ? c.of.flatMap(flatten) : [{ kind: c.kind, flag: c.flag }];
+
+  // 卖灯：root 入口 all[ tutorial_complete, notHasFlag(owns_light) ]
+  const lightChoice = mira.npc.dialogRoot.choices.find((c) => c.next === 'mira.sell_light');
+  assert(lightChoice, '§4c mira.root 应有通向 mira.sell_light 的 choice');
+  const lightConds = flatten(lightChoice!.visibleIf);
+  assert(
+    lightConds.some((c) => c.kind === 'hasFlag' && c.flag === 'flag.tutorial_complete'),
+    '§4c 卖灯入口应 gate 在 hasFlag(flag.tutorial_complete)',
+  );
+  assert(
+    lightConds.some((c) => c.kind === 'notHasFlag' && c.flag === 'flag.owns_light'),
+    '§4c 卖灯入口应 notHasFlag(flag.owns_light)——得灯后自动退场',
+  );
+  assert(mira.dialogs['mira.sell_light'], '§4c mira.sell_light 节点应存在');
+
+  // 礁石材料提示：gate all[ anchor.reef hasFlag, notHasFlag(mira.tip_reef_seen) ]；onEnter 置同一 retire flag
+  const reefChoice = mira.npc.dialogRoot.choices.find((c) => c.next === 'mira.materials_reef');
+  assert(reefChoice, '§4c mira.root 应有通向 mira.materials_reef 的 choice');
+  const reefConds = flatten(reefChoice!.visibleIf);
+  assert(
+    reefConds.some((c) => c.kind === 'hasFlag' && c.flag === ch1AnchorFlag('reef')),
+    '§4c 礁石材料提示应 gate 在 hasFlag(story.ch1.anchor.reef)',
+  );
+  const reefRetire = reefConds.find((c) => c.kind === 'notHasFlag')?.flag;
+  assert(reefRetire, '§4c 礁石材料提示应带 notHasFlag 退场门');
+  assert(
+    (mira.dialogs['mira.materials_reef'].onEnter ?? []).some(
+      (e) => e.kind === 'setFlag' && e.flag === reefRetire,
+    ),
+    '§4c mira.materials_reef 应 onEnter setFlag 它入口所 negate 的 retire flag（一次性·自洽）',
+  );
+
+  // 残骸材料提示：gate all[ anchor.wreck hasFlag, notHasFlag(mira.tip_wreck_seen) ]；onEnter 置同一 retire flag
+  const wreckChoice = mira.npc.dialogRoot.choices.find((c) => c.next === 'mira.materials_wreck');
+  assert(wreckChoice, '§4c mira.root 应有通向 mira.materials_wreck 的 choice');
+  const wreckConds = flatten(wreckChoice!.visibleIf);
+  assert(
+    wreckConds.some((c) => c.kind === 'hasFlag' && c.flag === ch1AnchorFlag('wreck')),
+    '§4c 残骸材料提示应 gate 在 hasFlag(story.ch1.anchor.wreck)',
+  );
+  const wreckRetire = wreckConds.find((c) => c.kind === 'notHasFlag')?.flag;
+  assert(wreckRetire, '§4c 残骸材料提示应带 notHasFlag 退场门');
+  assert(
+    (mira.dialogs['mira.materials_wreck'].onEnter ?? []).some(
+      (e) => e.kind === 'setFlag' && e.flag === wreckRetire,
+    ),
+    '§4c mira.materials_wreck 应 onEnter setFlag 它入口所 negate 的 retire flag（一次性·自洽）',
+  );
+  L('  Mira 卖灯退场 + 材料提示自洽 ✓');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// §4d Otto 进度对话门控（声呐提示 gate + owns_sonar 退场自洽）
+// ═══════════════════════════════════════════════════════════════
+L('§4d Otto 进度对话门控');
+
+{
+  type Cond = { kind: string; flag?: string; of?: Cond[] };
+  type Choice = { id: string; next: string; visibleIf?: Cond };
+  type Node = { id: string; onEnter?: { kind: string; flag?: string }[] };
+  const otto = JSON.parse(readFileSync(resolve(ROOT, 'src/data/npcs/otto.json'), 'utf-8')) as {
+    npc: { id: string; dialogRoot: { choices: Choice[] } };
+    dialogs: Record<string, Node>;
+  };
+  assert(otto.npc.id === 'npc.otto', '§4d otto.json NPC id 应为 npc.otto');
+
+  const flatten = (c: Cond | undefined): { kind: string; flag?: string }[] =>
+    !c ? [] : c.of ? c.of.flatMap(flatten) : [{ kind: c.kind, flag: c.flag }];
+
+  // 声呐提示：gate all[ tutorial_complete, notHasFlag(owns_sonar) ]
+  const sonarChoice = otto.npc.dialogRoot.choices.find((c) => c.next === 'otto.sonar_hint');
+  assert(sonarChoice, '§4d otto.root 应有通向 otto.sonar_hint 的 choice');
+  const sonarConds = flatten(sonarChoice!.visibleIf);
+  assert(
+    sonarConds.some((c) => c.kind === 'hasFlag' && c.flag === 'flag.tutorial_complete'),
+    '§4d 声呐提示入口应 gate 在 hasFlag(flag.tutorial_complete)',
+  );
+  assert(
+    sonarConds.some((c) => c.kind === 'notHasFlag' && c.flag === 'flag.owns_sonar'),
+    '§4d 声呐提示入口应 notHasFlag(flag.owns_sonar)——持有声呐后自动退场',
+  );
+  assert(otto.dialogs['otto.sonar_hint'], '§4d otto.sonar_hint 节点应存在');
+  assert(otto.dialogs['otto.upgrade_table'], '§4d otto.upgrade_table 节点应存在');
+  L('  Otto 声呐提示门控 + owns_sonar 退场 ✓');
+}
+
 console.log(log.join('\n'));
 console.log(
-  '\n✓ playthrough 完成：剧情脊柱 §1 派生 / §2 港口路径 / §3 round-trip / §4 守门 / §5 St1 锚点链 / §6 鲸落支线 全部通过',
+  '\n✓ playthrough 完成：剧情脊柱 §1 派生 / §2 港口路径 / §3 round-trip / §4 守门 / §5 St1 锚点链 / §6 鲸落支线 / §4c Mira 对话 / §4d Otto 对话 全部通过',
 );
