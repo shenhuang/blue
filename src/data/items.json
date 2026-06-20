@@ -348,6 +348,16 @@
       "tier": 1
     },
     {
+      "id": "item.note.sonar_checklist",
+      "name": "声呐零件清单",
+      "category": "story",
+      "rarity": "common",
+      "description": "灯腺、鳗鱼皮、章鱼喙。Otto 的字，方方正正。凑齐了拿回去找他。",
+      "weight": 0.1,
+      "sellPrice": 0,
+      "decay": "eternal"
+    },
+    {
       "id": "item.rusty_compass",
       "name": "锈蚀的指南针",
       "category": "story",

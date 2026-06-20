@@ -20,6 +20,7 @@ import {
   createNewRun,
   serializeGameState,
   deserializeGameState,
+  countInInventory,
 } from '../src/engine/state';
 import {
   CH1_ANCHORS,
@@ -42,6 +43,8 @@ import { getEventById } from '../src/engine/zones';
 import { pickFromInventory, pickFlagTrigger, eventDoneFlag } from '../src/engine/portEvents';
 import { startDiveFromPoi } from '../src/engine/dive';
 import { generateChart } from '../src/engine/chart';
+import { applyDialogEffects, getDialogNode } from '../src/engine/dialog';
+import { allItems } from '../src/engine/items';
 import type { GameState, PlayerProfile } from '../src/types';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -707,7 +710,26 @@ L('§4d Otto 进度对话门控');
   );
   assert(otto.dialogs['otto.sonar_hint'], '§4d otto.sonar_hint 节点应存在');
   assert(otto.dialogs['otto.upgrade_table'], '§4d otto.upgrade_table 节点应存在');
-  L('  Otto 声呐提示门控 + owns_sonar 退场 ✓');
+
+  // 声呐提示发实物（A·#150）：otto.sonar_hint 的 onEnter 端到端把清单发进 profile.inventory。
+  // 走真引擎 applyDialogEffects（守 dialog.ts giveItem 接线 + onEnter 并列 + 物品存在），不止静态 JSON 形状。
+  const SONAR_CHECKLIST = 'item.note.sonar_checklist';
+  assert(
+    allItems().some((i) => i.id === SONAR_CHECKLIST),
+    `§4d items.json 应含 ${SONAR_CHECKLIST}（Otto 声呐清单实物）`,
+  );
+  const hintNode = getDialogNode('otto.sonar_hint');
+  assert(hintNode, '§4d getDialogNode(otto.sonar_hint) 应取到节点');
+  const afterHint = applyDialogEffects(createInitialGameState(), hintNode!.onEnter);
+  assert(
+    countInInventory(afterHint.profile.inventory, SONAR_CHECKLIST) >= 1,
+    '§4d 进 otto.sonar_hint 后 profile.inventory 应含声呐清单（giveItem 接线生效）',
+  );
+  assert(
+    afterHint.profile.flags.has('flag.otto.sonar_hinted'),
+    '§4d 进 otto.sonar_hint 后应置 flag.otto.sonar_hinted（与 giveItem 并列）',
+  );
+  L('  Otto 声呐提示门控 + owns_sonar 退场 + 清单发物 ✓');
 }
 
 console.log(log.join('\n'));

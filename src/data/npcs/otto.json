@@ -49,7 +49,8 @@
       "id": "otto.sonar_hint",
       "text": "Otto 停下来，看了你一会儿。\n\n「能弄。」他在台子上翻出一张纸，推过来——上面是零件清单，字写得很方正。\n\n「灯腺、鳗鱼皮、章鱼喙。凑够了来找我，我来组。」\n\n他重新拿起扳手。「深一点的地方才有。你知道去哪找。」",
       "onEnter": [
-        { "kind": "setFlag", "flag": "flag.otto.sonar_hinted" }
+        { "kind": "setFlag", "flag": "flag.otto.sonar_hinted" },
+        { "kind": "giveItem", "itemId": "item.note.sonar_checklist", "qty": 1 }
       ],
       "choices": [
         {

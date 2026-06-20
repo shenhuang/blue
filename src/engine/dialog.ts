@@ -5,7 +5,7 @@ import type { GameState, DialogNode, DialogChoice, DialogEffect, NpcDef } from '
 import aldoData from '@/data/npcs/aldo.json';
 import miraData from '@/data/npcs/mira.json';
 import ottoData from '@/data/npcs/otto.json';
-import { createNewRun } from './state';
+import { createNewRun, acquireIntoProfile } from './state';
 import { startDive } from './dive';
 import { getRunBonuses } from './lighthouses';
 
@@ -104,9 +104,14 @@ export function applyDialogEffects(
         // 切到顶层 shop phase；UI 层（App.tsx）负责挂对应面板。
         s = { ...s, phase: { kind: 'shop', shopId: e.shopId } };
         break;
-      case 'giveItem':
+      case 'giveItem': {
+        // 直接发物进 profile（同购买 / 回港 loot / devGrantItem 作弊路径·acquireIntoProfile 单点：
+        // 顺带兑现该物品的 story.setsFlag 里程碑·sticky 幂等·见 state.ts）。
+        s = { ...s, profile: acquireIntoProfile(s.profile, [{ itemId: e.itemId, qty: e.qty }]) };
+        break;
+      }
       case 'openUpgradeTree':
-        // TODO 实现：直接给物品、升级树面板（Mira 之外的店暂未实现）
+        // TODO 实现：升级树面板（Mira 之外的店暂未实现）
         break;
     }
   }
