@@ -4,7 +4,8 @@
   "worktreeRoot": ".worktrees",
   "gate": {
     "full": "npm run regress",
-    "sandbox": "npm run regress -- --only typecheck,check"
+    "sandbox": "npm run regress -- --only typecheck,check",
+    "affected": true
   },
   "reuseNodeModules": true,
   "lockStaleMinutes": 30

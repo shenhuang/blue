@@ -50,6 +50,10 @@ const concurrency = Math.max(
     Math.min(cpus().length || 4, 8),
 );
 const onlyTerms = onlyArg ? onlyArg.split(',').map((s) => s.trim()).filter(Boolean) : null;
+// --only-exact a,b,c：按任务名「精确」选（与 --only 子串匹配取并集）。供 affected 选测用——避免
+// 'playthrough' 这种子串把全部 playthrough* 都带上。additive·不给即与旧行为一致。
+const onlyExactArg = flag('--only-exact');
+const onlyExact = onlyExactArg ? new Set(onlyExactArg.split(',').map((s) => s.trim()).filter(Boolean)) : null;
 const skipTerms = skipArg ? skipArg.split(',').map((s) => s.trim()).filter(Boolean) : null;
 
 // ---- task list ----
@@ -110,7 +114,10 @@ for (const f of playthroughs) {
 
 // ---- 过滤 ----
 let selected = tasks;
-if (onlyTerms) selected = selected.filter((t) => onlyTerms.some((q) => t.name.includes(q)));
+if (onlyTerms || onlyExact)
+  selected = selected.filter(
+    (t) => (onlyTerms && onlyTerms.some((q) => t.name.includes(q))) || (onlyExact && onlyExact.has(t.name)),
+  );
 if (skipTerms) selected = selected.filter((t) => !skipTerms.some((q) => t.name.includes(q)));
 
 if (selected.length === 0) {

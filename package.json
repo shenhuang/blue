@@ -12,6 +12,7 @@
     "regress": "node scripts/regress.mjs",
     "regress:quick": "node scripts/regress.mjs --only typecheck",
     "psm": "node scripts/psm.mjs",
+    "affected": "node scripts/affected-tests.mjs",
     "handoff": "node scripts/handoff.mjs",
     "check:branch": "node scripts/check-branch.mjs",
     "weekend:start": "node scripts/set-writer.mjs weekend",

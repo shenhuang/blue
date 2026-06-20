@@ -62,6 +62,24 @@ psm gc                                  # Mac 本机：清掉已合并 worktree
   完整 playthrough/build 的语义绿留给 Mac/nightly 全量 `npm run regress`——与 CLAUDE.md「全量 regress 是 ship
   前的门、不是起手仪式」一致。要改跑什么编辑 `psm.config.json` 的 `gate`。
 
+## affected 选测（别每次全测·`gate.affected`·默认开）
+
+`land` 不再无脑跑全量行为测，而是**从「改了哪些文件」沿依赖图算出「哪些 playthrough 可能被波及」，只精确跑那些**（`scripts/affected-tests.mjs`）。心法见本文档顶部的讨论：**车道是写边界，波及面是依赖闭包**，按依赖图选才健全，按车道名硬映射会漏。
+
+- **静态 import 图**：解析 import/from/dynamic-import/require（`@/`→`src`·补扩展名·静态 `.json` import 也算边界）。
+- **动态依赖**：扫每个「入口可达文件」里的路径字面量，抓 `fs` 读的 fixture——`scenarios/**`（combat/lighthouse/mapgen 场景测）、`playthrough-chart.ts` 读的 `src/data/chart_pois.json` 等。纯 import 图看不见这些，漏了就是漏测。
+- **健全回退（宁可多跑不漏跑）**：任何「依赖图里解释不了的改动」（CSS、动态加载、新孤儿）或**全局触发**（`tsconfig`/`package.json`/`vite.config`/`regress.mjs` 本身）→ 直接 **ALL**，回退全量。
+- `typecheck` + 全部 `check-*`（纯 node·全局不变量）**永远跑**，不参与选择；affected 只挑贵的 tsx 行为测。
+
+效果（实测真实 Blue 图）：改 `scenarios/lighthouse/*.json` → 只选 `playthrough-lighthouse-scenarios`（1 个）；改核心模块 `engine/equipment.ts` → 28 个（它扇入大·该测就得多测——这正是健全：外围改动窄、核心改动宽，不给假绿）。
+
+环境：
+
+- **Mac**（有 native esbuild）：`land` 实跑 `npm run regress -- --only typecheck,check --only-exact <受影响行为测>`，快且覆盖到位。
+- **沙箱**（无 esbuild·跑不了 tsx）：只跑静态门，并**精确报告**「这些受影响行为测请在 Mac 补跑：`npm run regress -- --only-exact <list>`」——比旧的「playthrough 全留 nightly」精确得多。要在沙箱也跑行为测，接上 `ESBUILD_BINARY_PATH`（见自动记忆 `blue-regress-sandbox`），`land` 会自动改跑受影响行为测。
+
+逃生阀：`psm land <name> --full` 强制全量；或 `psm.config.json` 里 `gate.affected:false` 关掉。`--only-exact` 是给 `regress.mjs` 加的精确选测开关（与 `--only` 子串取并集·避免 `playthrough` 子串把 30 个全带上）。`node scripts/affected-tests.mjs --since main` 可单独看选测结果。
+
 ## 共享状态在哪
 
 台账和锁放跨 worktree 共享的 `.git/psm/`（= `git rev-parse --git-common-dir` 下），天然跨 session 共享、永不提交、
@@ -92,7 +110,7 @@ feature 树里别动它们，合并后在 main 上追加，天然免冲突。
   "mainBranch": "main",
   "branchPrefix": "feat/",
   "worktreeRoot": ".worktrees",
-  "gate": { "full": "npm run regress", "sandbox": "npm run regress -- --only typecheck,check" },
+  "gate": { "full": "npm run regress", "sandbox": "npm run regress -- --only typecheck,check", "affected": true },
   "reuseNodeModules": true,
   "lockStaleMinutes": 30
 }

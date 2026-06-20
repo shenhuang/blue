@@ -43,7 +43,7 @@ const DEFAULT_CONFIG = {
   mainBranch: 'main',
   branchPrefix: 'feat/',
   worktreeRoot: '.worktrees',
-  gate: { full: 'npm run regress', sandbox: 'npm run regress -- --only typecheck,check' },
+  gate: { full: 'npm run regress', sandbox: 'npm run regress -- --only typecheck,check', affected: true },
   reuseNodeModules: true,
   lockStaleMinutes: 30,
 };
@@ -293,10 +293,29 @@ function resolveSessionFromCwd(led) {
   for (const [n, s] of Object.entries(led.sessions)) if (resolve(ROOT(), s.worktree) === cur) return n;
   return null;
 }
-function runGate(cwd) {
-  const cmd = isSandbox(cwd) ? CFG.gate.sandbox : CFG.gate.full;
-  info(C.bold('\n跑绿门：') + ` ${cmd}  ${C.dim(isSandbox(cwd) ? '（沙箱·esbuild-free 子集·build/playthrough 留给 Mac/nightly 全绿）' : '（全量）')}`);
-  return spawnSync(cmd, { cwd, shell: true, stdio: 'inherit' }).status === 0;
+// 决定这次 land 跑哪条绿门命令。affected 模式：算改动→依赖图→受影响行为测，只精确跑那些 + 静态门。
+// 健全回退：选测不可用 / 改动波及 ALL → 退回 full（Mac）或静态子集（沙箱）。沙箱无 esbuild 跑不了
+// 行为测 → 只跑静态门，把受影响行为测列进 deferred（交接到 Mac 补跑）。
+function gatePlan(cwd, forceFull) {
+  const sb = isSandbox(cwd);
+  const fallback = sb ? CFG.gate.sandbox : CFG.gate.full;
+  if (forceFull) return { cmd: CFG.gate.full, note: '全量（--full）', deferred: [] };
+  if (!CFG.gate.affected) return { cmd: fallback, note: sb ? '沙箱静态子集' : '全量', deferred: [] };
+  let res = null;
+  const r = spawnSync('node', ['scripts/affected-tests.mjs', '--since', CFG.mainBranch, '--json'], { cwd, encoding: 'utf-8' });
+  if (r.status === 0) { try { res = JSON.parse(r.stdout); } catch { /* */ } }
+  if (!res) return { cmd: fallback, note: '选测不可用·回退' + (sb ? '静态子集' : '全量'), deferred: [] };
+  if (res.mode === 'all') return { cmd: fallback, note: `affected→ALL（${res.reason}）·跑${sb ? '静态子集' : '全量'}`, deferred: [] };
+  const beh = res.tasks || [];
+  if (!beh.length) return { cmd: 'npm run regress -- --only typecheck,check', note: '无受影响行为测·只跑静态门', deferred: [] };
+  const runnable = !sb || !!process.env.ESBUILD_BINARY_PATH;
+  if (runnable) return { cmd: `npm run regress -- --only typecheck,check --only-exact ${beh.join(',')}`, note: `affected：typecheck+check + ${beh.length} 受影响行为测`, deferred: [] };
+  return { cmd: 'npm run regress -- --only typecheck,check', note: `沙箱无 esbuild·跑静态门；${beh.length} 受影响行为测留待 Mac`, deferred: beh };
+}
+function runGate(cwd, forceFull) {
+  const plan = gatePlan(cwd, forceFull);
+  info(C.bold('\n跑绿门：') + ` ${plan.cmd}  ${C.dim('（' + plan.note + '）')}`);
+  return { ok: spawnSync(plan.cmd, { cwd, shell: true, stdio: 'inherit' }).status === 0, deferred: plan.deferred };
 }
 function cmdLand(argv) {
   const f = parseFlags(argv);
@@ -320,12 +339,15 @@ function cmdLand(argv) {
   s.baseSha = mainSha; s.updated = new Date().toISOString(); writeLedger(led);
   ok(`rebase 完成（基线对齐 ${CFG.mainBranch}@${mainSha.slice(0, 8)}）`);
 
-  if (!runGate(wtAbs)) { s.state = 'active'; writeLedger(led); stop(`绿门没过——别合。先在 ${s.worktree} 修绿，再 psm land ${name}。`); }
+  const gate = runGate(wtAbs, f.full);
+  if (!gate.ok) { s.state = 'active'; writeLedger(led); stop(`绿门没过——别合。先在 ${s.worktree} 修绿，再 psm land ${name}。`); }
   s.state = 'ready'; s.updated = new Date().toISOString(); writeLedger(led);
 
   if (!f.yes) {
-    info('\n' + C.green('✓ rebased + 绿门通过') + `（${s.branch} 基于 ${CFG.mainBranch}@${mainSha.slice(0, 8)}）` +
-      (isSandbox(wtAbs) ? '\n  ' + C.dim('注：沙箱只跑了 typecheck+check-*（esbuild-free）。完整 playthrough/build 的语义绿留给 Mac/nightly 全量 regress。') : ''));
+    const deferredNote = gate.deferred && gate.deferred.length
+      ? '\n  ' + C.dim(`沙箱未跑的受影响行为测——Mac 上补：npm run regress -- --only-exact ${gate.deferred.join(',')}`)
+      : '';
+    info('\n' + C.green('✓ rebased + 绿门通过') + `（${s.branch} 基于 ${CFG.mainBranch}@${mainSha.slice(0, 8)}）` + deferredNote);
     stop(`要把「${name}」ff 合进 ${CFG.mainBranch} 吗？确认就在 ${C.bold('main 树')} 跑：${C.bold('node scripts/psm.mjs land ' + name + ' --yes')}（或 psm merge ${name}）。`);
   }
   doMerge(name);
