@@ -1,9 +1,9 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
-> **2026-06-20 装备 base 激活 + 换装 + 武器伤害 + 账单/效果 UI 单一来源 + POI 漂移修复（交互 session·#148）**：`getEquipmentStats` 激活 base effects（氧/体 base 跳过防双计）；护甲改读值；新增 8 个 EquipmentEffect kind 接回 deriveSensorTuning；A 档位件＝Mira 货架固定属性件（灯/服/charm·数值占位待调）；`equipItem`/`unequipItem` 换装单点（只在固定件间换）；`EquipmentDoll` 三态重构（Otto 改装框·HUD 只看·物品栏卸装）；武器伤害按槽读（`weaponDamageForSlot`）；潜水刀加 upgradeSteps；`UpgradeCostView`/`UpgradeEffectDelta` 统一三处升级账单/效果 UI；海图 POI 点击圆点漂移修复（`.chart-poi-name` 改 `position:absolute`·按钮高度恒定）。regress **43/43 全绿**。新 quirk **#142**。详见 CHANGELOG #148。
+> **2026-06-20 对话给物审计 + `giveItem` 任务规划（交互 session·#149·纯审计·无代码提交）**：全库审计「文字给东西但没实际 grant」，唯一 gap＝`otto.sonar_hint` 清单选项后无实物（`giveItem` 类型已有·engine 是 TODO stub）。下 session 三步实装：① engine 接 `acquireIntoProfile`；② 加 `item.note.sonar_checklist`；③ Otto onEnter 给物。详见 CHANGELOG #149。
+> **2026-06-20 装备 base 激活 + 换装 + 武器伤害 + 账单/效果 UI 单一来源 + POI 漂移修复（交互 session·#148·commit `36adf7a`）**：`getEquipmentStats` 激活 base effects（氧/体跳过防双计）；新增 8 个 EquipmentEffect kind；A 档位件上 Mira 货架；`equipItem`/`unequipItem` 换装单点；`EquipmentDoll` 三态重构；`weaponDamageForSlot` 按槽读；`UpgradeCostView`/`UpgradeEffectDelta` 统一三处 UI；POI 漂移修复。regress **43/43 全绿**。新 quirk **#142**。详见 CHANGELOG #148。
 > **2026-06-20 NPC 进度对话续作：Mira 材料提示/卖灯退场 + Otto 声呐提示（交互 session·#147·commit `43a1dab`）**：照 Aldo 范式补 Mira + Otto；`craftEquipment` 补 setsFlag 路径；`playthrough-story §4c/§4d` 守门。regress **42/42 + build 全绿**。详见 CHANGELOG #147。
-> **2026-06-19 装备段2：声呐迁 Otto 打造件 + 退役三传感器线 + E/C/D 收口（交互 session·#145·feat `926f185`）**：声呐＝唯一逐级件；退役三传感器线；SAVE 6→7；`EQUIPMENT_SLOTS` 单一来源+穷尽性断言。regress **41+build 全绿**。新 quirk **#141**。详见 CHANGELOG #145。
 ## 1. 一句话状态
 
 完整 meta-loop 跑通：**港口对话 → 海图选点 → 教学线性下潜 / 节点图随机下潜 → 事件 → 战斗 → 上浮 → 减压 → 死亡 → 葬礼 → 尸体回收 → 衰减 → 回港变卖/回购 → 材料 ＋ 金币 修缮升级**。元进度已从"建设值"换成"材料经济"（2026-06-01 基建地图 Phase A，见 §5 + quirk #50）。**多灯塔基地数据模型已就位**（Phase B，`profile.lighthouses` + home 灯塔 + `engine/lighthouses.ts`，但灯塔 inert——reveal/reach 留 Phase C；quirk #51）。
