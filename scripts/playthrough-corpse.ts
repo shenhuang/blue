@@ -9,7 +9,9 @@ import { createInitialGameState, createNewRun, addToInventory } from '../src/eng
 import { executeDeath, recoverFromCorpse } from '../src/engine/death';
 import { startDive, moveToNode, enterNodeSelection } from '../src/engine/dive';
 import { renderDiverName } from '../src/ui/diverName';
-import type { GameState } from '../src/types';
+import { resolveCorpseWearerTier, corpseWearerChance } from '../src/engine/corpse-wearer';
+import { applyPlayerAction } from '../src/engine/combat';
+import type { GameState, DiveNode } from '../src/types';
 
 const log: string[] = [];
 function L(s: string) { log.push(s); }
@@ -237,5 +239,109 @@ dvCheck(
 L(`  正常 → 笔误(${dvTypo}) → 故障(${dvGlitch.length} 码元) → 揭示「你」· 确定性 ✓`);
 
 L('\n✓ 死亡-尸体闭环 + Lv.2 选目标 + Lv.1 提示门控 + D-reveal 跑通');
+
+// ============ 阶段 7: 尸衣者占据玩家尸体（75m·tier 2） ============
+L('\n========== 阶段 7: 75m 尸衣者战斗触发 + 胜利后路由回 corpse 打捞 ==========');
+
+// 纯函数验证
+L(`  resolveCorpseWearerTier: 20m→${resolveCorpseWearerTier(20)}, 45m→${resolveCorpseWearerTier(45)}, 75m→${resolveCorpseWearerTier(75)}, 95m→${resolveCorpseWearerTier(95)}`);
+if (resolveCorpseWearerTier(20) !== 0) throw new Error('20m 应为 tier 0');
+if (resolveCorpseWearerTier(45) !== 1) throw new Error('45m 应为 tier 1');
+if (resolveCorpseWearerTier(75) !== 2) throw new Error('75m 应为 tier 2');
+if (resolveCorpseWearerTier(95) !== 3) throw new Error('95m 应为 tier 3');
+if (corpseWearerChance(0) !== 0) throw new Error('tier 0 概率应为 0');
+L(`  corpseWearerChance: 0→${corpseWearerChance(0)}, 1→${corpseWearerChance(1)}, 2→${corpseWearerChance(2)}, 3→${corpseWearerChance(3)}`);
+
+// 构造带潜水刀的死亡记录（tier 2 武器变体用）
+const cwBaseRecord = state.profile.deaths[0];
+const cwRecord = {
+  ...cwBaseRecord,
+  id: 'death-cw-test-75m',
+  inventorySnapshot: [
+    { itemId: 'item.dive_knife.standard', qty: 1 },
+    { itemId: 'item.coral_shard', qty: 2 },
+  ],
+};
+
+// 出海到旧灯塔礁，注入 75m corpse 节点
+let cwState: GameState = {
+  ...state,
+  profile: {
+    ...state.profile,
+    deaths: [...state.profile.deaths, cwRecord],
+    flags: new Set([...state.profile.flags, 'flag.tutorial_complete']),
+  },
+  run: createNewRun({ zoneId: 'zone.old_lighthouse_reef' }),
+};
+cwState = startDive(cwState, 'zone.old_lighthouse_reef');
+
+const cwNodeId = 'node-cw-test-75m';
+const cwNode: DiveNode = {
+  id: cwNodeId,
+  layer: 3,
+  depth: 75,
+  zoneTag: 'wreck',
+  kind: 'corpse',
+  corpseRecordId: cwRecord.id,
+  connectsTo: [],
+  preview: '一具尸体',
+};
+cwState = {
+  ...cwState,
+  run: {
+    ...cwState.run!,
+    map: { ...cwState.run!.map!, nodes: { ...cwState.run!.map!.nodes, [cwNodeId]: cwNode } },
+    stats: { ...cwState.run!.stats, stamina: 100, oxygen: 30 },
+  },
+};
+
+// 临时锁定 Math.random = 0.1（< corpseWearerChance(2)=0.40 → 必触发占据）
+const origRandom = Math.random;
+Math.random = () => 0.1;
+cwState = moveToNode(cwState, cwNodeId);
+Math.random = origRandom;
+
+L(`  moveToNode 后 phase.kind=${cwState.phase.kind}`);
+if (cwState.phase.kind !== 'combat') throw new Error('75m 尸体应触发战斗，实际：' + cwState.phase.kind);
+
+const cwCombat = (cwState.phase as any).combat;
+L(`  encounterId=${cwCombat.encounterId}`);
+L(`  sourceCorpseId=${cwCombat.sourceCorpseId}`);
+if (!cwCombat.sourceCorpseId) throw new Error('sourceCorpseId 未设');
+if (cwCombat.sourceCorpseId !== cwRecord.id) throw new Error('sourceCorpseId 应是 cwRecord.id');
+
+const cwEnemy = cwCombat.enemies[0];
+L(`  敌人 defId=${cwEnemy.defId}, wornSkin=${cwEnemy.wornSkin}`);
+if (cwEnemy.defId !== 'enemy.corpse_wearer') throw new Error('应是 enemy.corpse_wearer');
+if (cwEnemy.wornSkin !== 'player') throw new Error('wornSkin 应是 player');
+
+// tier 2 应注入刀的攻击变体（phaseAttacksOverride 含 worn_knife）
+const cwAttacks = cwEnemy.phaseAttacksOverride as any[] | undefined;
+L(`  phaseAttacksOverride: ${cwAttacks ? cwAttacks.map((a: any) => a.id).join(', ') : '(无)'}`);
+if (!cwAttacks) throw new Error('tier 2 应设 phaseAttacksOverride（含武器变体）');
+if (!cwAttacks.some((a: any) => a.id === 'corpse_wearer.worn_knife')) throw new Error('应含 worn_knife 攻击');
+
+// 将敌人 HP 降至 1，action.fist 击杀，验证路由回 corpse subPhase
+const cwStatePreKill: GameState = {
+  ...cwState,
+  phase: {
+    kind: 'combat',
+    combat: { ...cwCombat, enemies: cwCombat.enemies.map((e: any) => ({ ...e, hp: 1 })) },
+  },
+};
+const cwResult = applyPlayerAction(cwStatePreKill, 'action.fist', cwEnemy.instanceId);
+L(`  战斗结果 outcome=${cwResult.outcome}`);
+if (cwResult.outcome !== 'victory') throw new Error('击杀后应 victory，实际：' + cwResult.outcome);
+
+const cwFinalPhase = cwResult.state.phase;
+const cwSub = (cwFinalPhase as any).subPhase;
+L(`  最终 phase=${cwFinalPhase.kind}, subPhase.kind=${cwSub?.kind}, deathRecordId=${cwSub?.deathRecordId}`);
+if (cwFinalPhase.kind !== 'dive') throw new Error('胜利后应回 dive phase');
+if (cwSub?.kind !== 'corpse') throw new Error('应路由到 corpse subPhase，实际：' + cwSub?.kind);
+if (cwSub?.deathRecordId !== cwRecord.id) throw new Error('deathRecordId 应匹配 cwRecord.id');
+
+L('  ✓ 战斗触发 + wornSkin=player + tier2 武器变体 + 胜利路由 corpse 打捞 · 全通');
+
+L('\n✓ 死亡-尸体闭环（全七阶段）跑通');
 
 console.log(log.join('\n'));

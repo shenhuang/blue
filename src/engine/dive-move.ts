@@ -10,6 +10,12 @@ import { computeModifiers } from './modifiers';
 import { enterNodeSelection } from './dive-select';
 import { autoScanOnArrival } from './dive-sensors';
 import { stalkerStep, weakStalkerStep, maybeApproachEncounter } from './dive-stalker';
+import { startCombat } from './combat';
+import {
+  resolveCorpseWearerTier,
+  corpseWearerChance,
+  buildInhabitedCorpseEncounter,
+} from './corpse-wearer';
 
 /** 编译期穷尽性检查：将来新增 NodeKind 却忘了在 moveToNode 里处理时，这里会直接报类型错误。 */
 function assertNever(x: never): never {
@@ -169,12 +175,20 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
       // 休息 / 地标节点都复用 rest subPhase；RestView 按 node.kind 分渲染（普通休息 / 上浮 / 换气 / 扎营）
       return { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
 
-    case 'corpse':
-      // 重访已被回收的尸体没意义；未回收则仍可回收（recoverFromCorpse 幂等）
+    case 'corpse': {
+      // 重访已被回收的尸体没意义；未回收则判断有无尸衣者占据
       if (target.corpseRecordId && !isRevisit) {
+        const record = s.profile.deaths.find((d) => d.id === target.corpseRecordId);
+        const tier = resolveCorpseWearerTier(target.depth);
+        if (record && tier > 0 && Math.random() < corpseWearerChance(tier)) {
+          // 被占据：先打一场战斗；胜/逃后 finalizeVictory/finalizeFlee 自动路由回 corpse subPhase
+          const encounter = buildInhabitedCorpseEncounter(record, tier as 1 | 2 | 3);
+          return startCombat(s, encounter, undefined, { sourceCorpseId: record.id });
+        }
         return { ...s, phase: { kind: 'dive', subPhase: { kind: 'corpse', deathRecordId: target.corpseRecordId } } };
       }
       return { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
+    }
 
     case 'shop':
     case 'boss':

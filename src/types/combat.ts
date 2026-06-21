@@ -138,6 +138,12 @@ export interface CombatState {
   pendingEmergencyAscent?: boolean;
 
   /**
+   * 尸衣者占据玩家尸体战斗专属：胜/逃后路由回此 DeathRecord 的 corpse subPhase，让玩家仍可打捞物品。
+   * 未设（普通战斗）→ finalizeVictory/finalizeFlee 走原有路由（victoryEventId / rest）。
+   */
+  sourceCorpseId?: string;
+
+  /**
    * boss 阶段索引（instanceId → 当前已触发的最高阶段索引）。
    * 缺省/不在 map 里 = -1（尚未进入任何阶段）。
    * 仅有 phases 的敌人才会有条目，普通敌人不写——零存档影响（#99 守则）。

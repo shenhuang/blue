@@ -103,6 +103,15 @@ export interface CombatScenarioInput {
    * 缺省 → 该敌 def.defaultSkin；普通敌人忽略。baseline 用它钉定「皮囊→loot 变体」路径。
    */
   wornSkin?: string;
+  /**
+   * createNewRun bonuses 透传（staminaMaxBonus / oxygenMaxBonus 等）。
+   * 主要用途：boss 战 baseline 需要超过默认 staminaMax=100 的体力上限（否则 stats.stamina 被 clampStats 压回 100）。
+   * 缺省 → 无加成（staminaMax=100 / oxygenMax 默认值）。
+   */
+  bonuses?: {
+    staminaMaxBonus?: number;
+    oxygenMaxBonus?: number;
+  };
 }
 
 /** 战斗结束的原因（细化于 combat.ts 的 outcome） */
@@ -212,7 +221,7 @@ function buildInitialState(input: CombatScenarioInput): GameState {
 
   // ----- run -----
   const zoneId = input.zoneId ?? 'zone.old_lighthouse_reef';
-  let run: RunState = createNewRun({ zoneId });
+  let run: RunState = createNewRun({ zoneId, bonuses: input.bonuses });
   if (input.depth !== undefined) run.currentDepth = input.depth;
   run.equipment = buildEquipment(input.equipment);
   run.inventory = (input.inventory ?? []).map((i) => ({ ...i }));

@@ -76,18 +76,25 @@ export interface StartCombatOptions {
    * 尸衣者专属：开战时为带 skinLoot 的敌人指定当前穿戴的皮囊 id（= 被翻动尸体所属敌种）。
    * 缺省 → 该敌 def.defaultSkin；普通敌人忽略此项（不写 wornSkin·EnemyInstance 形状不变）。
    * 这是未来「拾尸触发」钩子注入「翻的是哪具尸体」的入口（boss 设计蓝图 2026-06-21「尸衣者新定位」）。
+   * 注：EnemyPartyMemberDef.wornSkin 优先于此全局值（成员级 > 战斗级 > def.defaultSkin）。
    */
   wornSkin?: string;
+  /**
+   * 尸衣者占据玩家尸体专属：战斗结束（胜/逃）后路由回此 DeathRecord.id 的 corpse subPhase。
+   * 未设 → 普通路由（victoryEventId / rest）。由 dive-move.ts case 'corpse': 注入。
+   */
+  sourceCorpseId?: string;
 }
 
 export function startCombat(
   state: GameState,
-  combatId: string,
+  encOrId: string | CombatEncounterDef,
   initialPlayerStatuses?: PlayerStatus[],
   options?: StartCombatOptions,
 ): GameState {
-  const enc = COMBAT_ENCOUNTERS.get(combatId);
+  const enc = typeof encOrId === 'string' ? COMBAT_ENCOUNTERS.get(encOrId) : encOrId;
   if (!enc || !state.run) return state;
+  const combatId = enc.id;
 
   // scent（负伤 SPEC §6.1）：玩家流血·重时嗅觉系敌种开局就闻到你——unaware 直接 alerted
   // （潜行/突袭红利对它失效·骗局在你身上）。无伤/非嗅觉系 → initialStance 逐字节不变。
@@ -105,11 +112,15 @@ export function startCombat(
       aggro: def.threat,
       statuses: [],
     };
-    // 尸衣者：记录开战时穿戴的皮囊（loot-trigger 的尸体来源·缺省 defaultSkin）。仅对带 skinLoot
-    // 的敌人写此字段 ⇒ 普通敌人 EnemyInstance 逐字节不变（守 #99 + 既有 combat baseline）。
+    // 尸衣者：记录开战时穿戴的皮囊（loot-trigger 的尸体来源·成员级 > 战斗级 > defaultSkin）。
+    // 仅对带 skinLoot 的敌人写此字段 ⇒ 普通敌人 EnemyInstance 逐字节不变（守 #99 + 既有 combat baseline）。
     if (def.skinLoot) {
-      const worn = options?.wornSkin ?? def.defaultSkin;
+      const worn = m.wornSkin ?? options?.wornSkin ?? def.defaultSkin;
       if (worn !== undefined) inst.wornSkin = worn;
+    }
+    // 运行时攻击覆盖（尸衣者穿玩家武器时注入·静态 JSON 不设此字段 → 逐字节不变）。
+    if (m.attacksOverride) {
+      inst.phaseAttacksOverride = m.attacksOverride;
     }
     return inst;
   });
@@ -125,6 +136,8 @@ export function startCombat(
     log: [],
     victoryEventId: enc.victoryEventId,
     resumeNodeId: state.run.currentNodeId,
+    // 尸衣者玩家尸体战斗：胜/逃后路由回 corpse subPhase（未设 → 普通路由不变）。
+    ...(options?.sourceCorpseId ? { sourceCorpseId: options.sourceCorpseId } : {}),
   };
 
   // 图鉴发现门（敌人库·只显示已遭遇）：开战即把本场敌人（含 enemyRef 取到的）记入
@@ -783,8 +796,10 @@ function finalizeVictory(state: GameState): CombatTurnResult {
 
   s = appendLog(s, { tone: 'realistic', text: `战斗结束。` });
 
-  // 跳转
-  if (combat.victoryEventId) {
+  // 跳转：尸衣者玩家尸体战斗 → 回 corpse subPhase 让玩家仍可打捞；普通战斗 → 旧路由。
+  if (combat.sourceCorpseId) {
+    s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'corpse', deathRecordId: combat.sourceCorpseId } } };
+  } else if (combat.victoryEventId) {
     s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: combat.victoryEventId } } };
   } else {
     s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
@@ -795,9 +810,14 @@ function finalizeVictory(state: GameState): CombatTurnResult {
 
 function finalizeFlee(state: GameState): CombatTurnResult {
   if (state.phase.kind !== 'combat') return { state, outcome: 'flee' };
-  // 脱战：回到 nodeSelect
+  const sourceCorpseId = state.phase.combat.sourceCorpseId;
   let s = appendLog(state, { tone: 'realistic', text: `你脱离了战斗。` });
-  s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
+  // 尸衣者玩家尸体战斗：脱战后仍可回 corpse subPhase 打捞；普通脱战 → rest。
+  if (sourceCorpseId) {
+    s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'corpse', deathRecordId: sourceCorpseId } } };
+  } else {
+    s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
+  }
   return { state: s, outcome: 'flee' };
 }
 

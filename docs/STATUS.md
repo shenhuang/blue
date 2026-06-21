@@ -1,9 +1,9 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
+> **2026-06-21 尸衣者占据玩家尸体变体 + cave_grouper baseline 修复（交互 session〔Cowork〕·#164·新 quirk #153）**：`kind:'corpse'` 节点满足条件时先打一场战斗（tier 1-3 按深度·概率 0.25/0.4/0.55·胜/逃后仍可回收）。新文件 `engine/corpse-wearer.ts`（tier/概率/武器映射/动态 encounter 构建）；`startCombat` 展宽为 `string|CombatEncounterDef`（#153）；`sourceCorpseId` 路由胜/逃后回 corpse subPhase；`flag.has_died_before` 在 death 钩子写入；3 条 Ch1 浅水伏笔事件（prereqFlags 门控）。`CombatScenarioInput.bonuses` 解禁 staminaMax 上限·顺修 cave_grouper baseline（#159 起红·24/24 全绿）。
 > **2026-06-21 dev 工作台：4 浮层+2 编辑器 → 单一 `?editor` 工作台 + game↛dev 边界门（交互 session〔Cowork〕·#163·新 quirk #152）**：4 个游戏内 dev 浮层（事件回归/战斗/地图调试器/内容统计·Shift+D/C/M/S）+ 海图/剧情 2 个独立编辑器统一收进带左导航的 `?editor` 工作台（`EditorApp`+`EditorShell`·6 工具 3 域·懒加载·深链 `?editor=<tool>`）。撤 `App.tsx` 浮层+Shift 监听（净−~90 行）·`onClose` 可选·`?dev&panel=` 退役。新增 `check-boundaries` 规则五 game↛dev（游戏侧 34 文件 0 违例·quirk #152）。SPEC `docs/spec/深海回响_dev工作台_SPEC.md`。7/7 纯-node 静态门绿（build/playthrough 留 Mac/nightly·#147）。
-> **2026-06-21 shark_tooth 正常可获取（P1-2）+ 材料刷点范式 openEventPool 轮替（交互 session〔Cowork〕·#161·新 quirk #150）**：常规 reef 加鲨鱼入口（`reef.reef_shark` 入 `[reef]` 池 + `combat.reef_shark_solo/_pair` 复用现 def 不造数值）⇒ 鲨鱼牙不再只教学掉一次；新字段 `ChartPoi.openEventPool` ＝数据驱动「专门刷点」（入潜按 `runsCompleted` 轮替取 ≥3 个专属 beat 之一·"能刷但别反复同一段"），首例 `poi.anchor.reef_shark_shoals`（3 beat）。约定落成机制：`check-farm-pois.mjs` + `playthrough-farm-poi.ts`。沙箱 9 静态门+287/287 绿；commit sha 待填·留 nightly push。
-> **2026-06-21 救援斧障碍事件：`sealed_cargo_hatch` + `cold_stores` 追加斧子分支（交互 session〔Cowork〕·#160·commit `fd8be5c`）**：新事件 `wreck_graveyard.sealed_cargo_hatch`（realistic·24-40m·3 选项：axe_pry 撬链/体力硬掰/记下离开）+ `cold_stores` 追加 `pry_with_axe` 分支；沿用已有 `hasEquipment.actionId` 门控（quirk #146a）无新机制；4 scenarios 全通·satisfy 213 事件全满足·9 静态门绿。⚠️ 周末引擎约束待手动写入 SKILL.md（见 NEXT_SESSION_PROMPT.md 备忘）。
+> **2026-06-21 shark_tooth 正常可获取（P1-2）+ 材料刷点范式 openEventPool 轮替（交互 session〔Cowork〕·#161·新 quirk #150）**：常规 reef 加鲨鱼入口（`reef.reef_shark` 入 `[reef]` 池 + `combat.reef_shark_solo/_pair` 复用现 def 不造数值）⇒ 鲨鱼牙不再只教学掉一次；新字段 `ChartPoi.openEventPool` ＝数据驱动「专门刷点」（入潜按 `runsCompleted` 轮替取 ≥3 个专属 beat 之一·"能刷但别反复同一段"），首例 `poi.anchor.reef_shark_shoals`（3 beat）。约定落成机制：`check-farm-pois.mjs` + `playthrough-farm-poi.ts`。
 
 ## 1. 一句话状态
 

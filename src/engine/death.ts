@@ -113,6 +113,11 @@ export function executeDeath(state: GameState, cause: string): GameState {
     state.profile.unlockedUpgrades.has(SWEEP_IMMUNITY_UPGRADE),
   );
 
+  // 死亡伏笔 flag：第一次死后浅水区启用「悬念痕迹」事件池（foreshadow.wearer.*）。
+  // Set 幂等·多次死亡写入无害·不 bump SAVE_VERSION（纯加 flag·#99）。
+  const newFlags = new Set(state.profile.flags);
+  newFlags.add('flag.has_died_before');
+
   let s: GameState = {
     ...state,
     run: null,
@@ -120,6 +125,7 @@ export function executeDeath(state: GameState, cause: string): GameState {
       ...state.profile,
       deaths: [...agedDeaths, record],
       runsCompleted: state.profile.runsCompleted + 1,
+      flags: newFlags,
     },
     phase: { kind: 'funeral', record },
   };

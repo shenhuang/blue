@@ -95,6 +95,17 @@ export interface EnemyRef {
 export interface EnemyPartyMemberDef {
   defId?: string;
   enemyRef?: EnemyRef;
+  /**
+   * 运行时注入的攻击表覆盖（不写进静态 JSON·startCombat 写入 EnemyInstance.phaseAttacksOverride）。
+   * 尸衣者占据玩家尸体时用：基础攻击 + 玩家武器变体合并后传入（corpse-wearer.ts::buildInhabitedCorpseEncounter）。
+   * 普通 JSON 遭遇不设此字段·不影响任何既有 combat baseline。
+   */
+  attacksOverride?: EnemyAttack[];
+  /**
+   * 运行时指定的皮囊 id（优先于 StartCombatOptions.wornSkin 和 def.defaultSkin）。
+   * 尸衣者：'player' = 穿了潜水员尸体（effectiveLoot 找不到此 key → 回落 def.loot，动物皮囊行为不变）。
+   */
+  wornSkin?: string;
 }
 
 /** 敌人定义（数据模板） */
