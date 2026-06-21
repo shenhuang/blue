@@ -17,6 +17,7 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import './combat-panel.css';
 import {
   runCombatScenario,
+  buildCombatEntryState,
   listAllCombats,
   listAllEnemies,
   listAllActions,
@@ -29,8 +30,12 @@ import {
   type EnemySnapshot,
 } from '@/engine/combatScenario';
 import { createInitialGameState } from '@/engine/state';
-import type { Stat } from '@/types';
+import { listInjuryDefs } from '@/engine/injuries';
+import { frontmostLivingSegment } from '@/engine/chain-eel';
+import type { Stat, GameState, CombatState, InventoryItem } from '@/types';
 import { EQUIPMENT_SLOTS, type EquipmentSlot } from '@/types/items';
+// dev → game：实战预览复用真实战斗界面（#152 game↛dev 的允许方向·见 check-boundaries 规则五）。
+import { CombatView } from '../CombatView';
 
 import {
   emptyCombatFormState,
@@ -46,6 +51,7 @@ import {
   type CombatScenarioFormState,
   type SavedCombatScenarioEntry,
   type ActionRowForm,
+  type InjuryRowForm,
 } from './CombatScenarioSerializer';
 
 // ---------------------------------------------------------------------------
@@ -116,8 +122,57 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
     [inspectedEnemyId],
   );
 
+  // —— 新字段派生（injuries 下拉 / 当前遭遇皮囊选项 / 是否按序遭遇）——
+  const allInjuries = useMemo(() => listInjuryDefs(), []);
+
+  const selectedCombat = useMemo(
+    () => allCombats.find((c) => c.id === form.combatId) ?? null,
+    [allCombats, form.combatId],
+  );
+  const isOrderedEncounter = form.mode === 'combatId' ? !!selectedCombat?.attackInOrder : false;
+
+  // 当前遭遇里第一个带 skinLoot 的敌人 → 它的皮囊下拉（defaultSkin + 各 key）。无尸衣者 → null。
+  const skinOptions = useMemo(() => {
+    const defIds = form.mode === 'combatId' ? selectedCombat?.memberDefIds ?? [] : form.enemyDefIds;
+    for (const id of defIds) {
+      const def = describeEnemy(id)?.def;
+      if (def?.skinLoot) {
+        return { enemyId: id, defaultSkin: def.defaultSkin, keys: Object.keys(def.skinLoot) };
+      }
+    }
+    return null;
+  }, [form.mode, form.enemyDefIds, selectedCombat]);
+
+  // —— 实战预览（live mode）：用当前 loadout 经 buildCombatEntryState 造 combat 相位 state，喂真实 <CombatView> ——
+  const [previewMode, setPreviewMode] = useState<'batch' | 'live'>('batch');
+  const [live, setLive] = useState<GameState | null>(null);
+  const [liveErrors, setLiveErrors] = useState<string[]>([]);
+  const liveEntryRef = useRef<GameState | null>(null); // 进入前（port 相位）快照·loot diff 基线
+
+  function startLive() {
+    const entry = buildCombatEntryState(formToCombatScenarioInput(form));
+    liveEntryRef.current = entry.resolvedInitialState;
+    setLive(entry.state);
+    setLiveErrors(entry.errors);
+  }
+  function gotoLive() {
+    setPreviewMode('live');
+    if (!live && liveErrors.length === 0) startLive();
+  }
+  function exitLive() {
+    setLive(null);
+    setLiveErrors([]);
+    setPreviewMode('batch');
+  }
+  // 改了「要打哪一场」（换遭遇 / 切模式 / 改 ad-hoc party）时自动退出正在进行的实战——
+  // 否则实战里打的还是旧 loadout 那一场，和左栏新选择对不上（作者 2026-06-21）。
+  function exitLiveIfActive() {
+    if (previewMode === 'live') exitLive();
+  }
+
   // —— 切换 combat：清掉与该 combat 耦合的字段（actions），保留 variant/seed/maxTurns
   function selectCombat(combatId: string) {
+    exitLiveIfActive();
     setForm((prev) => {
       const fresh = emptyCombatFormState(combatId);
       fresh.mode = 'combatId';
@@ -129,6 +184,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
   }
 
   function toggleMode() {
+    exitLiveIfActive();
     setForm((prev) => ({
       ...prev,
       mode: prev.mode === 'combatId' ? 'adhoc' : 'combatId',
@@ -138,6 +194,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
 
   // —— ad-hoc enemy 勾选
   function toggleAdhocEnemy(enemyId: string) {
+    exitLiveIfActive();
     setForm((prev) => {
       const has = prev.enemyDefIds.includes(enemyId);
       const next = has
@@ -147,6 +204,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
     });
   }
   function addAdhocCopy(enemyId: string) {
+    exitLiveIfActive();
     setForm((prev) => ({
       ...prev,
       enemyDefIds: [...prev.enemyDefIds, enemyId],
@@ -154,6 +212,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
     }));
   }
   function removeAdhocAt(idx: number) {
+    exitLiveIfActive();
     setForm((prev) => ({
       ...prev,
       enemyDefIds: prev.enemyDefIds.filter((_, i) => i !== idx),
@@ -237,6 +296,27 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
       ...prev,
       inventory: prev.inventory.filter((_, i) => i !== idx),
     }));
+  }
+
+  // —— bonuses / wornSkin / injuries（今日新字段·#162/#164·负伤 §10）——
+  function setBonus(key: 'staminaMaxBonus' | 'oxygenMaxBonus', v: number | '') {
+    setForm((prev) => ({ ...prev, bonuses: { ...prev.bonuses, [key]: v } }));
+  }
+  function addInjuryRow() {
+    setForm((prev) => ({
+      ...prev,
+      injuries: [...prev.injuries, { defId: allInjuries[0]?.id ?? '', tier: 1 }],
+    }));
+  }
+  function updateInjuryRow(idx: number, patch: Partial<InjuryRowForm>) {
+    setForm((prev) => {
+      const next = [...prev.injuries];
+      next[idx] = { ...next[idx], ...patch };
+      return { ...prev, injuries: next };
+    });
+  }
+  function removeInjuryRow(idx: number) {
+    setForm((prev) => ({ ...prev, injuries: prev.injuries.filter((_, i) => i !== idx) }));
   }
 
   // —— IO（导入/导出/LS）
@@ -422,6 +502,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
                     {c.victoryEventId && (
                       <span className="dev-faint">→ {c.victoryEventId}</span>
                     )}
+                    {c.attackInOrder && <span className="dev-combat-order-badge">按序</span>}
                   </div>
                 </li>
               ))}
@@ -623,6 +704,98 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
           </div>
 
           <div className="dev-section">
+            <h4 className="dev-sub-title">bonuses（上限加成·#164）</h4>
+            <p className="dev-faint" style={{ margin: '0 0 6px' }}>
+              boss 战常需把体力上限顶过 100，否则体力卡满 → 次回合 actionUnavailable（quirk #151）。
+            </p>
+            <div className="dev-row">
+              <label className="dev-inline">
+                <span>staminaMaxBonus</span>
+                <input
+                  className="dev-input dev-input-num"
+                  type="number"
+                  value={form.bonuses.staminaMaxBonus}
+                  placeholder="0"
+                  onChange={(e) =>
+                    setBonus('staminaMaxBonus', e.target.value === '' ? '' : Number(e.target.value))
+                  }
+                />
+              </label>
+              <label className="dev-inline">
+                <span>oxygenMaxBonus</span>
+                <input
+                  className="dev-input dev-input-num"
+                  type="number"
+                  value={form.bonuses.oxygenMaxBonus}
+                  placeholder="0"
+                  onChange={(e) =>
+                    setBonus('oxygenMaxBonus', e.target.value === '' ? '' : Number(e.target.value))
+                  }
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="dev-section">
+            <h4 className="dev-sub-title">wornSkin（尸衣者皮囊·#162）</h4>
+            {skinOptions ? (
+              <label className="dev-stack">
+                <span>{skinOptions.enemyId} 穿哪具皮囊（换 loot 变体）</span>
+                <select
+                  className="dev-input"
+                  value={form.wornSkin}
+                  onChange={(e) => setForm((p) => ({ ...p, wornSkin: e.target.value }))}
+                >
+                  <option value="">默认（{skinOptions.defaultSkin ?? '—'}）</option>
+                  {skinOptions.keys.map((k) => (
+                    <option key={k} value={k}>
+                      {k}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <p className="dev-faint">（当前遭遇无带 skinLoot 的尸衣者；此项忽略）</p>
+            )}
+          </div>
+
+          <div className="dev-section">
+            <h4 className="dev-sub-title">
+              起始伤势（负伤 §10 baseline）
+              <button className="dev-btn dev-btn-tiny" onClick={addInjuryRow}>+ 加一行</button>
+            </h4>
+            {form.injuries.length === 0 && <p className="dev-faint">（无伤）</p>}
+            {form.injuries.map((row, i) => (
+              <div className="dev-inv-row" key={i}>
+                <select
+                  className="dev-input"
+                  value={row.defId}
+                  onChange={(e) => updateInjuryRow(i, { defId: e.target.value })}
+                >
+                  <option value="">（选伤种）</option>
+                  {allInjuries.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.id}（{d.name}）
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="dev-input dev-input-num"
+                  value={row.tier}
+                  onChange={(e) => updateInjuryRow(i, { tier: Number(e.target.value) === 2 ? 2 : 1 })}
+                  style={{ width: 90 }}
+                >
+                  <option value={1}>轻(1)</option>
+                  <option value={2}>重(2)</option>
+                </select>
+                <button className="dev-btn dev-btn-tiny" onClick={() => removeInjuryRow(i)}>
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="dev-section">
             <h4 className="dev-sub-title">upgrades（逗号分隔）</h4>
             <label className="dev-stack">
               <span>unlockedUpgrades</span>
@@ -708,6 +881,11 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
                 <button className="dev-btn dev-btn-tiny" onClick={clearActions}>清空</button>
               </span>
             </h4>
+            {isOrderedEncounter && (
+              <p className="dev-faint" style={{ margin: '0 0 6px' }}>
+                ⚯ 按序攻击遭遇：只能打最前存活节，后节目标已禁用（引擎会自动锁定最前节）。
+              </p>
+            )}
             <ActionsEditor
               form={form}
               actions={allActions.map((a) => ({ id: a.id, name: a.name }))}
@@ -745,13 +923,67 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
 
         {/* ——— 右栏 ——— */}
         <section className="dev-col dev-col-preview">
-          <h3 className="dev-col-title">runCombatScenario 实时输出</h3>
-          {!result ? (
-            <p className="dev-faint">
-              {form.mode === 'combatId' ? '选一个 combat 开始' : '至少勾一个 enemy 开始 ad-hoc'}
-            </p>
+          <div className="dev-preview-modebar">
+            <h3 className="dev-col-title" style={{ margin: 0 }}>
+              预览
+            </h3>
+            {/* 模式条按状态切换：批处理时 = [批处理预览(on)] [▶ 进入实战]；实战时 = [⟲ 重开] [退出实战]
+                （右键随「进入↔退出」翻面·左键随「批处理↔重开」翻面·把 重开/退出 提到顶部·不必再到 pane 里点）。 */}
+            <div className="dev-preview-modes">
+              {previewMode === 'batch' ? (
+                <>
+                  <button
+                    className="dev-btn dev-btn-tiny dev-btn-on"
+                    onClick={() => setPreviewMode('batch')}
+                    title="runCombatScenario 批处理（确定性·写 baseline 用）"
+                  >
+                    批处理预览
+                  </button>
+                  <button
+                    className="dev-btn dev-btn-tiny"
+                    onClick={gotoLive}
+                    title="用当前 loadout 反应式地打一场（真实 CombatView·活 RNG）"
+                  >
+                    ▶ 进入实战
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="dev-btn dev-btn-tiny"
+                    onClick={startLive}
+                    title="丢弃当前这局·按面板最新 loadout 重新开战"
+                  >
+                    ⟲ 重开
+                  </button>
+                  <button
+                    className="dev-btn dev-btn-tiny dev-btn-quiet"
+                    onClick={exitLive}
+                    title="退出实战·回到批处理预览"
+                  >
+                    退出实战
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {previewMode === 'batch' ? (
+            !result ? (
+              <p className="dev-faint">
+                {form.mode === 'combatId' ? '选一个 combat 开始' : '至少勾一个 enemy 开始 ad-hoc'}
+              </p>
+            ) : (
+              <CombatPreview result={result} />
+            )
           ) : (
-            <CombatPreview result={result} />
+            <LiveCombatPane
+              live={live}
+              errors={liveErrors}
+              entryState={liveEntryRef.current}
+              onStateChange={setLive}
+              onRestart={startLive}
+            />
           )}
         </section>
       </div>
@@ -804,8 +1036,9 @@ function ActionsEditor({ form, actions, turns, updateRow, removeRow }: ActionsEd
         >
           <option value="">tgt:auto</option>
           {enemyOptionsBase.map((e, idx) => (
-            <option key={idx} value={idx} disabled={e.hp <= 0}>
-              [{idx}] {e.name}{e.hp <= 0 ? ' (☠)' : ''}
+            <option key={idx} value={idx} disabled={!e.reachable}>
+              [{idx}] {e.name}
+              {e.hp <= 0 ? ' (☠)' : !e.reachable ? ' (被前节挡)' : ''}
             </option>
           ))}
         </select>
@@ -821,8 +1054,16 @@ function ActionsEditor({ form, actions, turns, updateRow, removeRow }: ActionsEd
 // ---------------------------------------------------------------------------
 
 function CombatPreview({ result }: { result: CombatScenarioResult }) {
+  // 战场压力读出（environmentalPressure·每回合漏单独读出·按本场出现过的 boss 类型聚合）
+  const distinctDefIds = Array.from(new Set(result.summary.enemiesFinal.map((e) => e.defId)));
+  const env = sumEnvPressure(distinctDefIds);
   return (
     <div className="dev-preview">
+      {env && (
+        <div className="dev-combat-envline" title="environmentalPressure：boss 存活时每回合叠加施加">
+          ⚑ 战场压力（每回合·每存活 boss 叠加）：{envPressureText(env)}
+        </div>
+      )}
       {result.errors.length > 0 && (
         <div className="dev-errors">
           <h4 className="dev-sub-title">errors</h4>
@@ -915,6 +1156,11 @@ function EnemyHpLine({ enemy }: { enemy: EnemySnapshot }) {
       <span className="dev-combat-stance">
         {enemy.stance}{statuses}
       </span>
+      {enemy.phaseCount > 0 && (
+        <span className="dev-combat-phase-badge" title="boss 阶段（CombatState.bossPhaseIndices）">
+          阶段 {enemy.phaseIndex + 1}/{enemy.phaseCount}
+        </span>
+      )}
     </div>
   );
 }
@@ -976,6 +1222,216 @@ function CombatSummaryBlock({ result }: { result: CombatScenarioResult }) {
           </tr>
         </tbody>
       </table>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 战场压力 / loot 工具（实战 + 批处理共用）
+// ---------------------------------------------------------------------------
+
+interface EnvPressureAgg {
+  oxygenDrainBonus: number;
+  staminaTickBonus: number;
+  sanityDamagePerTurn: number;
+}
+
+/** 把一组 defId 的 environmentalPressure 累加（caller 决定喂「去重的类型」还是「存活实例」）。无压力 → null。 */
+function sumEnvPressure(defIds: string[]): EnvPressureAgg | null {
+  let oxygenDrainBonus = 0;
+  let staminaTickBonus = 0;
+  let sanityDamagePerTurn = 0;
+  let any = false;
+  for (const id of defIds) {
+    const ep = describeEnemy(id)?.def.environmentalPressure;
+    if (!ep) continue;
+    any = true;
+    oxygenDrainBonus += ep.oxygenDrainBonus ?? 0;
+    staminaTickBonus += ep.staminaTickBonus ?? 0;
+    sanityDamagePerTurn += ep.sanityDamagePerTurn ?? 0;
+  }
+  return any ? { oxygenDrainBonus, staminaTickBonus, sanityDamagePerTurn } : null;
+}
+
+function envPressureText(p: EnvPressureAgg): string {
+  const parts: string[] = [];
+  if (p.oxygenDrainBonus) parts.push(`氧气 -${p.oxygenDrainBonus}`);
+  if (p.staminaTickBonus) parts.push(`体力 -${p.staminaTickBonus}`);
+  if (p.sanityDamagePerTurn) parts.push(`理智 -${p.sanityDamagePerTurn}`);
+  return parts.join(' · ') || '无';
+}
+
+/** loot diff（实战结束卡用·与 engine diffInventory 同口径但只读 UI 侧两份 inventory）。 */
+function diffInventorySimple(before: InventoryItem[], after: InventoryItem[]): InventoryItem[] {
+  const beforeMap = new Map(before.map((i) => [i.itemId, i.qty]));
+  const out: InventoryItem[] = [];
+  for (const item of after) {
+    const delta = item.qty - (beforeMap.get(item.itemId) ?? 0);
+    if (delta > 0) out.push({ itemId: item.itemId, qty: delta });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// 实战（live）—— 真实 <CombatView> 反应式打 + boss 阶段/战场压力/按序 HUD
+// ---------------------------------------------------------------------------
+
+interface LiveCombatPaneProps {
+  live: GameState | null;
+  errors: string[];
+  entryState: GameState | null;
+  onStateChange: (s: GameState) => void;
+  onRestart: () => void;
+}
+
+// 重开 / 退出实战 控件已上提到右栏顶部「预览」模式条（进入实战↔退出实战·批处理预览↔重开），此 pane 内不再重复。
+function LiveCombatPane({ live, errors, entryState, onStateChange, onRestart }: LiveCombatPaneProps) {
+  if (!live) {
+    return (
+      <div className="dev-live">
+        {errors.length > 0 ? (
+          <div className="dev-errors">
+            <h4 className="dev-sub-title">无法进入实战</h4>
+            <ul>
+              {errors.map((e, i) => (
+                <li key={i}>{e}</li>
+              ))}
+            </ul>
+            <p className="dev-faint">改完上方 loadout 后点顶部「⟲ 重开」重试。</p>
+          </div>
+        ) : (
+          <p className="dev-faint">点顶部「▶ 进入实战」用当前 loadout 开战。</p>
+        )}
+      </div>
+    );
+  }
+
+  // 终局（victory/defeat/flee/ascend → phase 已非 combat）：CombatView 自身会返 null，这里给收尾卡。
+  if (live.phase.kind !== 'combat') {
+    return (
+      <div className="dev-live">
+        <LiveTerminalCard live={live} entryState={entryState} onRestart={onRestart} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="dev-live">
+      <LiveCombatStatus combat={live.phase.combat} />
+      <div className="dev-live-combat">
+        <CombatView state={live} onStateChange={onStateChange} />
+      </div>
+    </div>
+  );
+}
+
+/** 实战中 HUD：boss 阶段（bossPhaseIndices）+ 战场压力（活敌叠加）+ 链鳗按序（最前存活节）。 */
+function LiveCombatStatus({ combat }: { combat: CombatState }) {
+  const aliveEnemies = combat.enemies.filter((e) => e.hp > 0);
+
+  const bossLines = combat.enemies
+    .map((e) => {
+      const def = describeEnemy(e.defId)?.def;
+      const phaseCount = def?.phases?.length ?? 0;
+      if (phaseCount === 0) return null;
+      return {
+        name: def?.name ?? e.defId,
+        idx: combat.bossPhaseIndices?.[e.instanceId] ?? -1,
+        phaseCount,
+        dead: e.hp <= 0,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+
+  const env = sumEnvPressure(aliveEnemies.map((e) => e.defId));
+
+  const front = combat.attackInOrder ? frontmostLivingSegment(combat.enemies) : undefined;
+  const frontIdx = front ? combat.enemies.findIndex((e) => e.instanceId === front.instanceId) : -1;
+
+  if (bossLines.length === 0 && !env && !combat.attackInOrder) return null;
+
+  return (
+    <div className="dev-live-status">
+      {bossLines.map((b, i) => (
+        <div key={i} className="dev-live-status-line">
+          <span className="dev-combat-phase-badge">
+            阶段 {b.idx + 1}/{b.phaseCount}
+          </span>
+          <span>
+            {b.name}
+            {b.dead ? '（已倒）' : ''}
+          </span>
+        </div>
+      ))}
+      {env && (
+        <div className="dev-live-status-line">
+          <span className="dev-faint">战场压力（每回合）</span>
+          <span>{envPressureText(env)}</span>
+        </div>
+      )}
+      {combat.attackInOrder && (
+        <div className="dev-live-status-line">
+          <span className="dev-faint">按序攻击</span>
+          <span>
+            {front
+              ? `可打：${describeEnemy(front.defId)?.def.name ?? front.defId}（第 ${frontIdx + 1}/${combat.enemies.length} 节·剩 ${aliveEnemies.length}）`
+              : '（无存活节）'}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** 实战终局卡：phase 已非 combat（胜/败/逃/上浮）时显示结果 + loot diff + 再来一局。 */
+function LiveTerminalCard({
+  live,
+  entryState,
+  onRestart,
+}: {
+  live: GameState;
+  entryState: GameState | null;
+  onRestart: () => void;
+}) {
+  const phase = live.phase.kind;
+  const label =
+    phase === 'gameOver'
+      ? '战败'
+      : phase === 'ascent'
+        ? '应急上浮（脱离）'
+        : '已结束（胜利 / 脱战）';
+  const loot = diffInventorySimple(entryState?.run?.inventory ?? [], live.run?.inventory ?? []);
+  return (
+    <div className="dev-combat-summary">
+      <h4 className="dev-sub-title">战斗结束</h4>
+      <table className="dev-combat-summary-table">
+        <tbody>
+          <tr>
+            <td>结果</td>
+            <td>{label}</td>
+          </tr>
+          <tr>
+            <td>final phase</td>
+            <td>{phase}</td>
+          </tr>
+          {live.run && (
+            <tr>
+              <td>final stats</td>
+              <td>
+                HP={live.run.stats.stamina.toFixed(0)} O2={live.run.stats.oxygen.toFixed(1)} San=
+                {live.run.stats.sanity.toFixed(0)} N2={live.run.stats.nitrogen.toFixed(1)}
+              </td>
+            </tr>
+          )}
+          <tr>
+            <td>loot</td>
+            <td>{loot.length === 0 ? '—' : loot.map((l) => `${l.itemId}×${l.qty}`).join(', ')}</td>
+          </tr>
+        </tbody>
+      </table>
+      <button className="dev-btn dev-btn-tiny" onClick={onRestart} style={{ marginTop: 8 }}>
+        ⟲ 再打一次
+      </button>
     </div>
   );
 }

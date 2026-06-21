@@ -108,6 +108,10 @@ tasks.push({ name: 'smoke-equipment-ui', cmd: [tsx, join('scripts', 'smoke-equip
 // 素材经济工作台 SSR smoke + parity（守 EconomyDevPanel 渲染 + computeMaterialStats 口径复现 CLI·见 scripts/smoke-economy-panel.tsx）
 tasks.push({ name: 'smoke-economy-panel', cmd: [tsx, join('scripts', 'smoke-economy-panel.tsx')] });
 
+// 战斗 dev 面板 SSR smoke + parity（守 CombatDevPanel 渲染 + serializer round-trip〔bonuses/wornSkin/injuries〕
+// + EnemySnapshot 扩展〔phaseCount/reachable〕+ buildCombatEntryState 实战入口·见 scripts/smoke-combat-panel.tsx）
+tasks.push({ name: 'smoke-combat-panel', cmd: [tsx, join('scripts', 'smoke-combat-panel.tsx')] });
+
 // 全部 playthrough*.ts —— 各自独立进程，可并行（#22 安全）
 const playthroughs = readdirSync(join(ROOT, 'scripts'))
   .filter((f) => /^playthrough.*\.ts$/.test(f))

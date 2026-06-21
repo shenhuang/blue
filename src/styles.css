@@ -758,6 +758,18 @@ html, body, #root {
   cursor: not-allowed;
 }
 
+/* 链鳗按序门：活着但被前节挡住（不可选）——淡化但不划掉（区别于已死节段）。 */
+.enemy-row.blocked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.enemy-blocked-hint {
+  color: var(--warn);
+  font-size: 11px;
+  font-weight: 500;
+}
+
 .enemy-name {
   display: flex;
   align-items: center;

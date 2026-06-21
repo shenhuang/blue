@@ -6,6 +6,7 @@ import {
   getEnemyDef,
   triggerEmergencyAscent,
 } from '@/engine/combat';
+import { frontmostLivingSegment } from '@/engine/chain-eel';
 import { beginAscent } from '@/engine/transitions';
 import { isAscentBlocked } from '@/engine/ascent';
 import { StatusBar } from './StatusBar';
@@ -26,9 +27,15 @@ export function CombatView({ state, onStateChange }: Props) {
   // 开阔水 / 在上浮口才保留紧急上浮（也是高氮的死亡出口）。见氮气 SPEC §4。
   const ascentBlocked = isAscentBlocked(state.run);
 
-  // 自动锁定第一个活敌人，若 selectedTarget 已死则换
-  const currentTarget =
-    aliveEnemies.find((e) => e.instanceId === selectedTarget) ?? aliveEnemies[0];
+  // 链鳗（分节实体）按序门：attackInOrder 遭遇里玩家只能打**最前存活节**，后节被前节挡着（不可选）。
+  // 缺省（非按序遭遇）→ attackInOrder=false ⇒ 目标可自由选、逐字节不变（守既有战斗 UI）。
+  const attackInOrder = combat.attackInOrder === true;
+  const frontSeg = frontmostLivingSegment(combat.enemies);
+
+  // 目标锁定：按序遭遇强制锁最前存活节（与引擎 applyAttack 同口径）；否则保留「选中的活敌·缺省首个活敌」。
+  const currentTarget = attackInOrder
+    ? frontSeg
+    : aliveEnemies.find((e) => e.instanceId === selectedTarget) ?? aliveEnemies[0];
 
   function handleAction(action: CombatAction) {
     const target = action.targeting === 'single' ? currentTarget?.instanceId : undefined;
@@ -56,14 +63,19 @@ export function CombatView({ state, onStateChange }: Props) {
         <h3>敌人</h3>
         {combat.enemies.length === 0 && <div className="dim">（空）</div>}
         <ul className="enemy-list">
-          {combat.enemies.map((e) => (
-            <EnemyRow
-              key={e.instanceId}
-              enemy={e}
-              selected={currentTarget?.instanceId === e.instanceId}
-              onSelect={() => setSelectedTarget(e.instanceId)}
-            />
-          ))}
+          {combat.enemies.map((e) => {
+            // 链鳗：活着但不是最前存活节 → 被挡住（不可选·给提示）；非按序遭遇恒可达。
+            const reachable = !attackInOrder || e.instanceId === frontSeg?.instanceId;
+            return (
+              <EnemyRow
+                key={e.instanceId}
+                enemy={e}
+                selected={currentTarget?.instanceId === e.instanceId}
+                reachable={reachable}
+                onSelect={() => reachable && setSelectedTarget(e.instanceId)}
+              />
+            );
+          })}
         </ul>
       </div>
 
@@ -119,25 +131,33 @@ export function CombatView({ state, onStateChange }: Props) {
 function EnemyRow({
   enemy,
   selected,
+  reachable,
   onSelect,
 }: {
   enemy: EnemyInstance;
   selected: boolean;
+  reachable: boolean;
   onSelect: () => void;
 }) {
   const def = getEnemyDef(enemy.defId);
   if (!def) return null;
   const hpPct = Math.max(0, (enemy.hp / def.hp) * 100);
   const dead = enemy.hp <= 0;
+  // 链鳗：活着但被前节挡住——不可选·禁用按钮·给提示（与引擎 checkActionAvailability 的 reason 同口径）。
+  const blocked = !dead && !reachable;
   return (
     <li>
       <button
-        className={`enemy-row ${selected ? 'selected' : ''} ${dead ? 'dead' : ''}`}
+        className={`enemy-row ${selected ? 'selected' : ''} ${dead ? 'dead' : ''} ${blocked ? 'blocked' : ''}`}
         onClick={onSelect}
-        disabled={dead}
+        disabled={dead || blocked}
+        title={blocked ? '够不到——它身前还有节段挡着，先清掉最前面的。' : undefined}
       >
         <div className="enemy-name">
-          {def.name}
+          <span>
+            {def.name}
+            {blocked && <span className="enemy-blocked-hint"> · 被前节挡住</span>}
+          </span>
           <span className={`stance stance-${enemy.stance}`}>
             {stanceLabel(enemy.stance)}
           </span>

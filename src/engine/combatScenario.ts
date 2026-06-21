@@ -54,6 +54,7 @@ import {
   startCombat,
 } from './combat';
 import { canResolveMember } from './enemyLibrary';
+import { isSegmentReachable } from './chain-eel';
 import { withSeededRandom } from './eventScenario';
 
 // ---------------------------------------------------------------------------
@@ -137,6 +138,18 @@ export interface EnemySnapshot {
   stance: EnemyStance;
   aggro: number;
   statuses: EnemyStatus[];
+  /**
+   * boss 阶段：当前已触发的最高阶段索引（= CombatState.bossPhaseIndices[instanceId]）。
+   * -1 = 尚未进入任何阶段 / 非 boss。配合 phaseCount 在预览里标「进入阶段 N / 共 M」。
+   */
+  phaseIndex: number;
+  /** 该敌 def.phases 的阶段数（0 = 非 boss/miniboss）。让 UI 不必回查 def 即可显示「共 M 阶段」。 */
+  phaseCount: number;
+  /**
+   * 当前是否可被单体攻击命中：attackInOrder（链鳗分节）遭遇 = 是否「最前存活节」；
+   * 普通遭遇 = hp > 0。供按序门可视化（actions 编辑器禁用非最前节）与实战目标提示。
+   */
+  reachable: boolean;
 }
 
 /** 单回合产出的 diff */
@@ -293,7 +306,9 @@ function startAdHocCombat(state: GameState, enemyDefIds: string[], wornSkin?: st
 
 function snapshotEnemies(state: GameState): EnemySnapshot[] {
   if (state.phase.kind !== 'combat') return [];
-  return state.phase.combat.enemies.map((e) => {
+  const combat = state.phase.combat;
+  const attackInOrder = combat.attackInOrder === true;
+  return combat.enemies.map((e) => {
     const def = getEnemyDef(e.defId);
     return {
       instanceId: e.instanceId,
@@ -304,6 +319,11 @@ function snapshotEnemies(state: GameState): EnemySnapshot[] {
       stance: e.stance,
       aggro: e.aggro,
       statuses: e.statuses.map((s) => ({ ...s })),
+      // boss 阶段索引（仅有 phases 的敌人在 bossPhaseIndices 里有条目·普通敌人 → -1）
+      phaseIndex: combat.bossPhaseIndices?.[e.instanceId] ?? -1,
+      phaseCount: def?.phases?.length ?? 0,
+      // 按序门可视：链鳗只有最前存活节可打；普通遭遇任意活敌可打（与既有目标解析同义）
+      reachable: attackInOrder ? isSegmentReachable(combat.enemies, e.instanceId) : e.hp > 0,
     };
   });
 }
@@ -314,7 +334,7 @@ function deriveTerminalEnemiesSnapshot(
   outcome: CombatTurnSnapshot['outcome'],
 ): EnemySnapshot[] {
   if (outcome === 'victory') {
-    return preTurn.map((e) => ({ ...e, hp: 0, stance: 'unaware' as EnemyStance, statuses: [] }));
+    return preTurn.map((e) => ({ ...e, hp: 0, stance: 'unaware' as EnemyStance, statuses: [], reachable: false }));
   }
   // flee / defeat / emergency_ascend：state.phase 已不是 combat，用 preTurn 的最后切片
   return preTurn.map((e) => ({ ...e }));
@@ -373,65 +393,48 @@ function snapshotInjuries(state: GameState): ActiveInjury[] {
   return (state.run?.injuries ?? []).map((i) => ({ ...i }));
 }
 
-export function runCombatScenario(input: CombatScenarioInput): CombatScenarioResult {
-  const errors: string[] = [];
+/**
+ * 「进入战斗」单一路径（runCombatScenario 与 buildCombatEntryState 共用）：
+ *   校验输入 → buildInitialState → startCombat（注册遭遇）/ startAdHocCombat（ad-hoc）。
+ * 抽出来＝「怎么开战」收口一处，免得批处理与实战两条入口各拼一份、日后悄悄漂。
+ * 行为对批处理逐字节不变：校验顺序、buildInitialState 时机、startCombat 的 seeded 窗口都原样保留
+ * （回合循环的另一个 withSeededRandom 仍留在 runCombatScenario·各自从 seed 重置 LCG）。
+ */
+type EnterCombatResult =
+  | { ok: true; state: GameState; resolvedInitialState: GameState }
+  | { ok: false; resolvedInitialState: GameState; reason: CombatScenarioOutcome; errors: string[] };
 
+function enterCombat(input: CombatScenarioInput): EnterCombatResult {
   // ----- 输入校验 -----
   if (!input.combatId && !input.enemyDefIds) {
     const s = buildInitialState(input);
-    return {
-      input,
-      resolvedInitialState: s,
-      turns: [],
-      summary: makeEmptySummary('invalidCombatId', s),
-      errors: ['必须提供 combatId 或 enemyDefIds 之一'],
-    };
+    return { ok: false, resolvedInitialState: s, reason: 'invalidCombatId', errors: ['必须提供 combatId 或 enemyDefIds 之一'] };
   }
   if (input.combatId && input.enemyDefIds) {
     const s = buildInitialState(input);
-    return {
-      input,
-      resolvedInitialState: s,
-      turns: [],
-      summary: makeEmptySummary('invalidCombatId', s),
-      errors: ['combatId 与 enemyDefIds 不能同时提供'],
-    };
+    return { ok: false, resolvedInitialState: s, reason: 'invalidCombatId', errors: ['combatId 与 enemyDefIds 不能同时提供'] };
   }
 
   // ----- 初始 state -----
   let state = buildInitialState(input);
   const resolvedInitialState: GameState = state;
-  const startStats: Stats = { ...state.run!.stats };
-  const startInventory: InventoryItem[] = state.run!.inventory.map((i) => ({ ...i }));
 
   // ----- 进入战斗 -----
   if (input.combatId) {
     const enc = getEncounter(input.combatId);
     if (!enc) {
-      return {
-        input,
-        resolvedInitialState,
-        turns: [],
-        summary: makeEmptySummary('invalidCombatId', state),
-        errors: [`combatId "${input.combatId}" 未在 COMBAT_ENCOUNTERS 中找到`],
-      };
+      return { ok: false, resolvedInitialState, reason: 'invalidCombatId', errors: [`combatId "${input.combatId}" 未在 COMBAT_ENCOUNTERS 中找到`] };
     }
     // 校验每个 member 可解析（defId 已注册 或 enemyRef 至少匹配一只·不掷 RNG）
     for (const m of enc.party.members) {
       if (!canResolveMember(m)) {
-        return {
-          input,
-          resolvedInitialState,
-          turns: [],
-          summary: makeEmptySummary('invalidEnemyDef', state),
-          errors: [`combat "${input.combatId}" 的 party 成员无法解析：${JSON.stringify(m)}`],
-        };
+        return { ok: false, resolvedInitialState, reason: 'invalidEnemyDef', errors: [`combat "${input.combatId}" 的 party 成员无法解析：${JSON.stringify(m)}`] };
       }
     }
     // 敌人库 SPEC §4：enemyRef 成员经 pickEnemy 取一只——pick 会掷一次 Math.random，必须落在
     // seeded 窗口内，否则当 enemyRef 匹配多于一只敌人时 baseline 不可复现（此前 startCombat 在
     // seeded 块外·见 enemyLibrary 注释）。defId 成员零 Math.random 消耗，故现有 defId 战斗 baseline
-    // 逐字节不变；下方回合循环另起的 withSeededRandom(seed) 各自从 seed 重置 LCG，turn RNG 流不受影响。
+    // 逐字节不变；回合循环另起的 withSeededRandom(seed) 各自从 seed 重置 LCG，turn RNG 流不受影响。
     withSeededRandom(input.seed, () => {
       state = startCombat(
         state,
@@ -443,27 +446,60 @@ export function runCombatScenario(input: CombatScenarioInput): CombatScenarioRes
   } else if (input.enemyDefIds) {
     for (const id of input.enemyDefIds) {
       if (!getEnemyDef(id)) {
-        return {
-          input,
-          resolvedInitialState,
-          turns: [],
-          summary: makeEmptySummary('invalidEnemyDef', state),
-          errors: [`enemyDefId "${id}" 未注册`],
-        };
+        return { ok: false, resolvedInitialState, reason: 'invalidEnemyDef', errors: [`enemyDefId "${id}" 未注册`] };
       }
     }
     const next = startAdHocCombat(state, input.enemyDefIds, input.wornSkin);
     if (!next) {
-      return {
-        input,
-        resolvedInitialState,
-        turns: [],
-        summary: makeEmptySummary('invalidEnemyDef', state),
-        errors: ['ad-hoc encounter 构造失败（无 run 或 enemyDef 缺失）'],
-      };
+      return { ok: false, resolvedInitialState, reason: 'invalidEnemyDef', errors: ['ad-hoc encounter 构造失败（无 run 或 enemyDef 缺失）'] };
     }
     state = next;
   }
+
+  return { ok: true, state, resolvedInitialState };
+}
+
+/** buildCombatEntryState 的产出：开战那一刻的 combat 相位 state（喂 CombatView）+ 进入前快照 + 错误。 */
+export interface CombatEntryState {
+  /** 已进入 combat 相位、可直接喂 <CombatView> 的 state；构造失败 → null（看 errors）。 */
+  state: GameState | null;
+  /** 进入前（port 相位）的初始 state 快照（loot diff 基线·与 runCombatScenario.resolvedInitialState 同义）。 */
+  resolvedInitialState: GameState;
+  errors: string[];
+}
+
+/**
+ * 「实战预览」入口（dev 工作台战斗面板用）：复用 enterCombat 的同一条进入路径
+ * （buildInitialState → startCombat / ad-hoc），但**只造到开战那一刻就停**、不跑回合循环——
+ * 把 combat 相位 state 交给真实 <CombatView> 反应式地打（活的 RNG·像游戏内遭遇；seed 仅定 enemyRef 取样）。
+ * phase 构造全留在引擎（守 check-boundaries 规则二：src/ui 不手搓 phase 字面量）。
+ */
+export function buildCombatEntryState(input: CombatScenarioInput): CombatEntryState {
+  const entered = enterCombat(input);
+  if (!entered.ok) {
+    return { state: null, resolvedInitialState: entered.resolvedInitialState, errors: entered.errors };
+  }
+  return { state: entered.state, resolvedInitialState: entered.resolvedInitialState, errors: [] };
+}
+
+export function runCombatScenario(input: CombatScenarioInput): CombatScenarioResult {
+  const errors: string[] = [];
+
+  // ----- 进入战斗（与 buildCombatEntryState 共用 enterCombat 单一路径）-----
+  const entered = enterCombat(input);
+  if (!entered.ok) {
+    return {
+      input,
+      resolvedInitialState: entered.resolvedInitialState,
+      turns: [],
+      summary: makeEmptySummary(entered.reason, entered.resolvedInitialState),
+      errors: entered.errors,
+    };
+  }
+  let state = entered.state;
+  const resolvedInitialState: GameState = entered.resolvedInitialState;
+  const startStats: Stats = { ...state.run!.stats };
+  const startInventory: InventoryItem[] = state.run!.inventory.map((i) => ({ ...i }));
 
   // ----- 跑回合 -----
   const turns: CombatTurnSnapshot[] = [];
@@ -655,6 +691,8 @@ export interface CombatListEntry {
   memberDefIds: string[];
   victoryEventId?: string;
   introText?: string;
+  /** 链鳗（分节实体）：本遭遇是否「按序攻击」分节链（enc.attackInOrder）。供面板标记 + 目标禁用。 */
+  attackInOrder?: boolean;
 }
 
 export interface EnemyAttackSummary {
@@ -691,6 +729,7 @@ export function listAllCombats(): CombatListEntry[] {
       memberDefIds: enc.party.members.map((m) => m.defId ?? `<ref:${m.enemyRef?.band ?? '?'}>`),
       victoryEventId: enc.victoryEventId,
       introText: enc.introText,
+      ...(enc.attackInOrder ? { attackInOrder: true as const } : {}),
     });
   }
   out.sort((a, b) => a.id.localeCompare(b.id));
