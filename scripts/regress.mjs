@@ -112,6 +112,9 @@ tasks.push({ name: 'smoke-economy-panel', cmd: [tsx, join('scripts', 'smoke-econ
 // + EnemySnapshot 扩展〔phaseCount/reachable〕+ buildCombatEntryState 实战入口·见 scripts/smoke-combat-panel.tsx）
 tasks.push({ name: 'smoke-combat-panel', cmd: [tsx, join('scripts', 'smoke-combat-panel.tsx')] });
 
+// 海图 POI 调试器 SSR smoke + parity（守 ChartViewDevPanel 渲染 + poiRevealState/effectiveDistance/describeModifier 自洽·见 scripts/smoke-chart-editor.mjs）
+tasks.push({ name: 'smoke-chart-editor', cmd: [tsx, join('scripts', 'smoke-chart-editor.mjs')] });
+
 // 全部 playthrough*.ts —— 各自独立进程，可并行（#22 安全）
 const playthroughs = readdirSync(join(ROOT, 'scripts'))
   .filter((f) => /^playthrough.*\.ts$/.test(f))

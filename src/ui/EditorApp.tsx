@@ -30,9 +30,12 @@ const StatsDevPanel = lazy(() =>
 const EconomyDevPanel = lazy(() =>
   import('./dev/EconomyDevPanel').then((m) => ({ default: m.EconomyDevPanel })),
 );
+const ChartViewDevPanel = lazy(() =>
+  import('./dev/ChartViewDevPanel').then((m) => ({ default: m.ChartViewDevPanel })),
+);
 
 // tab key 单一来源（导航 + URL 解析 + 渲染分支都读它）
-const TAB_KEYS = ['story', 'event', 'stats', 'economy', 'combat', 'chart', 'map'] as const;
+const TAB_KEYS = ['story', 'event', 'stats', 'economy', 'combat', 'chart', 'chartdev', 'map'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 const isTabKey = (v: string | null): v is TabKey =>
   v != null && (TAB_KEYS as readonly string[]).includes(v);
@@ -52,6 +55,7 @@ const NAV: EditorNavGroup[] = [
     group: '地图',
     items: [
       { key: 'chart', label: '海图' },
+      { key: 'chartdev', label: 'POI 调试' },
       { key: 'map', label: '关卡 mapgen' },
     ],
   },
@@ -96,6 +100,7 @@ export default function EditorApp() {
         {tab === 'economy' && <EconomyDevPanel />}
         {tab === 'combat' && <CombatDevPanel />}
         {tab === 'chart' && <MapEditor />}
+        {tab === 'chartdev' && <ChartViewDevPanel />}
         {tab === 'map' && <MapDevPanel />}
       </Suspense>
     </EditorShell>
