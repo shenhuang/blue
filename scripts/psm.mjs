@@ -24,7 +24,7 @@
 //   node scripts/psm.mjs land [name] --yes               确认后：ff 合进 main（须在 main 树跑）
 //   node scripts/psm.mjs merge <name>                    = land --yes 的合并那一步（须在 main 树跑）
 //   node scripts/psm.mjs abort <name>                    放弃一条线（沙箱里 worktree 留着·Mac 上 psm gc 清）
-//   node scripts/psm.mjs gc                              Mac 本机：移除已合并/已弃的 worktree（沙箱拒绝·不能 unlink）
+//   node scripts/psm.mjs gc                              Mac 本机：移除已合并/已弃的 worktree + 清已并入 main 的 wip/* 分支（沙箱拒绝·不能 unlink）
 //
 // 退出码：成功 0；「警告即停·等你确认」用 3（区别于真错误 1）。
 
@@ -272,6 +272,8 @@ function cmdStatus() {
   if (lk) info(C.yellow(`\n  merge 锁：${lk.holder} 持有中（${lk.ts}）`));
   const landed = sessions.filter(([, s]) => s.state === 'landed' || s.state === 'aborted');
   if (landed.length) info(C.dim(`\n  待清理（${isSandbox() ? 'Mac 上 ' : ''}psm gc）：${landed.map(([n, s]) => `${n}(${s.state})`).join(', ')}`));
+  const mw = mergedWipBranches();
+  if (mw.length) info(C.dim(`  已并入 main 的 wip/* 分支（${isSandbox() ? 'Mac 上 ' : ''}psm gc 清）：${mw.join(', ')}`));
 }
 function cmdCheck(argv) {
   const lanes = String(argv[0] || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -386,6 +388,17 @@ function cmdAbort(argv) {
   ok(`「${name}」已标记 aborted。`);
   info(C.dim(`  worktree ${s.worktree} 与分支 ${s.branch} 留着（沙箱不能删）。Mac 本机：node scripts/psm.mjs gc`));
 }
+// 已整体并入 main 的 wip/* 分支：交互 session churn 留下的陈旧本地指针（非 psm 台账内·上面 gc 循环只收 feat/）。
+// 「tip 已是 main 祖先」＝其改动全在 main 里 → 删之零损失。main / 当前分支 / auto/weekend（周末线·永不自动删）一律排除。
+function mergedWipBranches() {
+  let merged = [];
+  try {
+    merged = git(['branch', '--merged', CFG.mainBranch, '--format=%(refname:short)'])
+      .split('\n').map((x) => x.trim()).filter(Boolean);
+  } catch { return []; }
+  const keep = new Set([CFG.mainBranch, 'auto/weekend', currentBranch()].filter(Boolean));
+  return merged.filter((b) => b.startsWith('wip/') && !keep.has(b));
+}
 function cmdGc() {
   const root = ROOT();
   if (isSandbox()) die('gc 要在 Mac 本机跑——沙箱不能 unlink，删不掉 worktree（quirk #1）。');
@@ -404,7 +417,14 @@ function cmdGc() {
     if (gitOk(['rev-parse', '--verify', '--quiet', s.branch])) { try { execFileSync('git', ['branch', '-D', s.branch], { cwd: root }); ok(`删分支 ${s.branch}`); } catch { /* ignore */ } }
     delete led.sessions[name]; n++;
   }
-  writeLedger(led); ok(`gc 完成·清理 ${n} 条。`);
+  writeLedger(led);
+  // 顺手清「已并入 main 的 wip/* 分支」——`git branch -d` 自带「未完全合并就拒删」安全门（mergedWipBranches 已预筛一道）。
+  let wipN = 0;
+  for (const b of mergedWipBranches()) {
+    try { execFileSync('git', ['branch', '-d', b], { cwd: root }); ok(`删已并入分支 ${b}`); wipN++; }
+    catch (e) { warn(`删 ${b} 失败（未完全合并？）：${String(e.message || e).split('\n')[0]}`); }
+  }
+  ok(`gc 完成·清理 ${n} 条 worktree${wipN ? ` + ${wipN} 个 wip/* 分支` : ''}。`);
 }
 
 // ─────────────────────────── pre-commit 车道门 ───────────────────────────
@@ -461,7 +481,7 @@ switch (cmd) {
     info('  land [name] [--yes]           rebase + 绿门；绿了停下等确认；--yes 直接合');
     info('  merge <name>                  ff 合进 main（main 树跑）');
     info('  abort <name>                  放弃一条线');
-    info('  gc                            Mac 本机清理已合并/已弃 worktree');
+    info('  gc                            Mac 本机清理已合并/已弃 worktree + 已并入的 wip/* 分支');
     info('\n详见 docs/infra/parallel-sessions.md');
     process.exit(cmd ? 1 : 0);
 }
