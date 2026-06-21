@@ -1,11 +1,10 @@
 // 素材经济工作台 SSR 冒烟 + parity 守门（镜像 smoke-equipment-ui / smoke-story-editor）。
-//   ① EconomyDevPanel SSR 渲染不抛错 + 关键骨架在（标题/KPI/清单/热力图/状态信号/真实素材行）。
-//   ② parity：computeMaterialStats() 必须复现 CLI（npm run audit:materials）的口径——
-//      把「engine 聚合 == CLI 审计」从人眼盯 xlsx 升成会红的门（材料经济解析单一真相·别静默漂）。
+//   ① EconomyDevPanel SSR 渲染不抛错 + 三 tab（来源/消耗/状态）骨架 + 素材×大区热力图 + 真实素材行。
+//   ② parity：computeMaterialStats() 复现 CLI 口径（srcCount/totalDemand/status 不变）+ 新矩阵自洽
+//      （消耗矩阵行和＝总消耗·来源/消耗/净值一致·挖矿可检测）——把「engine 聚合 == CLI 审计」升成会红的门。
 //
-// CSS 处理：EconomyDevPanel 含 `import './dev-panel.css'`（与 StatsDevPanel 同·让其 lazy chunk 自带样式），
-// 而 tsx/node 不认 .css。故先 register 一个把 .css 重定向到空模块的 resolve 钩子（scripts/css-stub-loader.mjs），
-// 再**动态** import 面板（静态 import 会先于 register 求值→.css 炸）。computeMaterialStats 无 css·可静态 import。
+// CSS：EconomyDevPanel 含 `import './dev-panel.css'`，tsx/node 不认 .css → 先 register 把 .css 重定向到
+// 空模块的 resolve 钩子（scripts/css-stub-loader.mjs），再**动态** import 面板（静态会先于 register 求值炸）。
 //
 // 跑法：npx tsx scripts/smoke-economy-panel.tsx
 //   （沙箱：ESBUILD_BINARY_PATH=/tmp/esbuild-linux/.../esbuild node_modules/.bin/tsx scripts/smoke-economy-panel.tsx·#147）
@@ -23,56 +22,54 @@ function assert(cond: unknown, msg: string): asserts cond {
   }
 }
 
-// EconomyDevPanel 含 .css import → 必须在 register() 之后动态加载。
 const { EconomyDevPanel } = await import('../src/ui/dev/EconomyDevPanel');
 
-// ── ① SSR 渲染（onClose 缺省·工作台里关闭由左导航取代·对齐 PanelShell quirk #112） ──────────
+// ── ① SSR 渲染（默认 来源 tab·onClose 缺省·工作台里关闭由左导航取代） ─────────────────────────
 const html = renderToStaticMarkup(<EconomyDevPanel />);
 assert(html.includes('素材经济'), '面板应渲染标题「素材经济」');
 assert(html.includes('?editor=economy'), '副标题应含深链 ?editor=economy');
-for (const kpi of ['素材总数', '瓶颈', '死货', '死料']) {
-  assert(html.includes(kpi), `应渲染 KPI「${kpi}」`);
-}
-assert(html.includes('素材清单'), '应渲染「素材清单」卡片');
-assert(html.includes('素材 × Zone'), '应渲染「素材 × Zone」热力图卡片');
-// 真实素材行 + 状态信号（证明渲染走通 engine 数据·非空壳）
-assert(html.includes('黄铜配件'), '清单应含真实素材行（黄铜配件）');
-assert(html.includes('章鱼角喙'), '清单应含瓶颈素材行（章鱼角喙）');
-assert(html.includes('瓶颈'), '应渲染「瓶颈」状态信号（章鱼角喙/冷光腺单源重需求）');
-assert(html.includes('死料'), '应渲染「死料」状态信号（有产零销·非剧情）');
+for (const kpi of ['素材总数', '瓶颈', '死货', '死料']) assert(html.includes(kpi), `应渲染 KPI「${kpi}」`);
+for (const t of ['来源', '消耗', '状态']) assert(html.includes(t), `应渲染 tab「${t}」`);
+assert(html.includes('素材 × 大区'), '应渲染热力图标题「素材 × 大区」');
+assert(html.includes('总指数'), '默认来源 tab 末列应为「总指数」');
+assert(html.includes('黄铜配件'), '热力图应含真实素材行（黄铜配件）');
 
-// ── ② parity：engine 聚合复现 CLI 口径（任务给定基线·见 scripts/material-audit.ts） ──────────
+// ── ② parity：engine 聚合复现 CLI 口径 + 新矩阵自洽 ────────────────────────────────────────────
 const s = computeMaterialStats();
 const by = new Map(s.materials.map((m) => [m.id, m]));
 
 const beak = by.get('item.cave_octopus_beak');
-assert(beak && beak.srcCount === 1 && beak.bottleneck, '章鱼角喙 srcCount===1 且 bottleneck（单源垄断·需求≥8）');
-
+assert(beak && beak.srcCount === 1 && beak.bottleneck, '章鱼角喙 srcCount===1 且 bottleneck');
 const lantern = by.get('item.lantern_gland');
 assert(lantern && lantern.srcCount === 1 && lantern.bottleneck, '冷光腺 srcCount===1 且 bottleneck');
-
 const brass = by.get('item.brass_fitting');
-assert(brass && brass.srcCount === 21 && brass.totalDemand === 42, '黄铜配件 srcCount===21 且 totalDemand===42（多源重需求基线）');
-
+assert(brass && brass.srcCount === 21 && brass.totalDemand === 42, '黄铜配件 srcCount===21 且 totalDemand===42');
 const station = by.get('item.station_module');
-assert(
-  station && !station.deadstock && station.srcCount === 1,
-  '科考站升级模块非 deadstock 且单源（capstone grantsItem 算来源·别漏算成死货）',
+assert(station && !station.deadstock && station.srcCount === 1, '科考站升级模块非 deadstock 且单源（capstone 算源）');
+const idle = new Set(s.materials.filter((m) => m.idle).map((m) => m.name));
+for (const n of ['锰结核', '铁锰结壳', '热液硫化矿']) assert(idle.has(n), `idle 应含「${n}」`);
+
+// 新矩阵自洽：消耗矩阵行和 === 总消耗（消耗按设施所在区归位·无遗漏）
+s.materials.forEach((m, mi) => {
+  const rowSum = s.demandMatrix[mi].reduce((a, b) => a + b, 0);
+  assert(rowSum === m.totalDemand, `${m.name} demandMatrix 行和 ${rowSum} === 总消耗 ${m.totalDemand}`);
+});
+// 净值 === 来源指数 − 消耗
+s.materials.forEach((_m, mi) =>
+  s.regions.forEach((_r, ri) =>
+    assert(
+      Math.abs(s.netMatrix[mi][ri] - (s.sourceIndex[mi][ri] - s.demandMatrix[mi][ri])) < 0.011,
+      'netMatrix === sourceIndex − demandMatrix',
+    ),
+  ),
 );
-
-// idle（有产零销·category material）必含这几味隐性矿料
-const idleNames = new Set(s.materials.filter((m) => m.idle).map((m) => m.name));
-for (const n of ['锰结核', '铁锰结壳', '热液硫化矿']) {
-  assert(idleNames.has(n), `idle 应含「${n}」（有来源·零需求·material）`);
-}
-
-// flag ⇒ status 自洽（防将来重构两处漂移）
-for (const m of s.materials) {
-  if (m.deadstock) assert(m.status === 'deadstock', `${m.name} deadstock flag 应与 status 一致`);
-  else if (m.bottleneck) assert(m.status === 'bottleneck', `${m.name} bottleneck flag 应与 status 一致`);
-  assert(m.srcCount >= 0 && m.totalDemand >= 0, `${m.name} 计数非负`);
-}
+// 大区列含「港口」（装备消耗）·来源方式含「挖矿」（mine 能力门可检测）
+assert(s.regions.includes('港口'), '大区列应含「港口」（装备消耗归位）');
+const methods = new Set(s.materials.flatMap((m) => m.sources.map((x) => x.method)));
+for (const mm of ['敌人', '事件', '深度柱', '挖矿']) assert(methods.has(mm), `来源方式应含「${mm}」`);
+// 概率合法
+for (const m of s.materials) for (const x of m.sources) assert(x.chance >= 0 && x.chance <= 1, `${m.name} 概率 ∈[0,1]`);
 
 console.log(
-  `✓ smoke-economy-panel: SSR 渲染 + parity 通过（${s.total} 素材 · 瓶颈 ${s.bottleneckCount} · 死货 ${s.deadstockCount} · 死料 ${s.idleCount}）`,
+  `✓ smoke-economy-panel: SSR(3 tab) + parity 通过（${s.total} 素材 · ${s.regions.length} 大区 · 瓶颈 ${s.bottleneckCount} · 死货 ${s.deadstockCount} · 死料 ${s.idleCount}）`,
 );
