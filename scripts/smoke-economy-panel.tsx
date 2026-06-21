@@ -43,7 +43,8 @@ assert(beak && beak.srcCount === 1 && beak.bottleneck, '章鱼角喙 srcCount===
 const lantern = by.get('item.lantern_gland');
 assert(lantern && lantern.srcCount === 1 && lantern.bottleneck, '冷光腺 srcCount===1 且 bottleneck');
 const brass = by.get('item.brass_fitting');
-assert(brass && brass.srcCount === 21 && brass.totalDemand === 42, '黄铜配件 srcCount===21 且 totalDemand===42');
+// srcCount 随内容增减（#175 加 shaft_crack/flooded_gallery 两处旧装具掉落 → 21→23）；totalDemand 不变（未加新消费方）。
+assert(brass && brass.srcCount === 23 && brass.totalDemand === 42, '黄铜配件 srcCount===23 且 totalDemand===42');
 const station = by.get('item.station_module');
 assert(station && !station.deadstock && station.srcCount === 1, '科考站升级模块非 deadstock 且单源（capstone 算源）');
 const idle = new Set(s.materials.filter((m) => m.idle).map((m) => m.name));

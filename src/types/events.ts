@@ -23,7 +23,11 @@ export type ZoneTag =
   // St1 一章锚点专属 zone 的事件池（剧情 SPEC §4.1·#117）：
   | 'midwater' // 远洋中层（开阔无底蓝水·锚点③）
   | 'vent' // 海沟热液场（黑烟柱·锚点④）
-  | 'whalefall'; // 鲸落（碎屑→机会种→食骨蠕虫的死亡生态·非主线·St1 支线·#137）
+  | 'whalefall' // 鲸落（碎屑→机会种→食骨蠕虫的死亡生态·非主线·St1 支线·#137）
+  // 洞型谱三变体新区（mapShape='maze'·各带专属事件池·depthCurveRange 把同一迷路机制铺成三种洞型·见 mapgen.ts caveShapeBucket）：
+  | 'crack' // 竖穴裂缝 zone.shaft_crack（depthCurveRange 低·k<0.8 井+廊·先陡降后横走·窄）
+  | 'chamber' // 稀疏蜂巢 zone.chamber_network（depthCurveRange 中·匀速~廊道·连通蜂房·节点疏）
+  | 'flooded'; // 漫水回廊 zone.flooded_gallery（depthCurveRange 高·k>1.45 长平廊+尽头深坑·横向探索·窄 span）
 
 /** 一个下潜事件 */
 export interface DiveEvent {

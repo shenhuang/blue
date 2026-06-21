@@ -1,0 +1,273 @@
+{
+  "events": [
+    {
+      "id": "chamber.first_cell",
+      "depthRange": [34, 58],
+      "zoneTags": ["chamber"],
+      "weight": 8,
+      "cooldown": 4,
+      "title": "第一间石室",
+      "body": "窄道走到头，豁然开成一间圆鼓鼓的石室，灯一时照不满。\n墙是被水掏圆的，三四个黑窄口在不同的高度上张着，每一个都通向别处。\n你停下来记方向——这种地方，记错一个口就够喝一壶。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "mark_entry",
+          "label": "在来路口刻个记号再探",
+          "outcome": {
+            "text": "你在进来的那个口边上刻下一道印，这才放心绕室一周。墙根的缝里嵌着些能用的硬料，顺手收了。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.6 }
+            ]
+          }
+        },
+        {
+          "id": "listen_cells",
+          "label": "贴着各个口听一听水流",
+          "outcome": {
+            "text": "你挨个把头凑到那些黑口前。有两个口里渗出极轻的水流声，另几个是死的。你记下哪边是活水——活水通常通向更大的室。",
+            "oxygenTurnCost": 1
+          }
+        },
+        {
+          "id": "push_on",
+          "label": "挑个口直接往里",
+          "outcome": {
+            "text": "你不耽搁，挑了离得最近的口钻进去。身后那间石室很快被黑合上。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "chamber.pillars",
+      "depthRange": [40, 72],
+      "zoneTags": ["chamber"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "撑顶的石柱",
+      "body": "这间室矮，几根水里长出来的石柱从底撑到顶，柱身裹着一层硬壳似的活物。\n灯一照，壳面上有细小的东西缩了缩。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "harvest_crust",
+          "label": "刮下柱身的硬壳",
+          "outcome": {
+            "text": "你贴着柱子刮了一圈，硬壳成片地剥落，露出底下灰白的柱身。够换些钱的料，揣好。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.8 },
+              { "itemId": "item.crab_chitin", "qty": [1, 1], "chance": 0.35 }
+            ]
+          }
+        },
+        {
+          "id": "squeeze_pillars",
+          "label": "从柱子之间穿过去，抄近路",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你侧身在柱缝里游走，避开壳上那些缩动的小东西，干净利落地穿到对面的口。",
+              "oxygenTurnCost": 1
+            },
+            "onFailure": {
+              "text": "你蹭塌了一柱子壳，惊起一片细小的螫物，胳膊上立刻火辣辣地肿起几个点。",
+              "oxygenTurnCost": 2,
+              "deltas": { "stamina": -4 }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "chamber.octopus_den",
+      "depthRange": [40, 80],
+      "zoneTags": ["chamber"],
+      "weight": 6,
+      "cooldown": 0,
+      "title": "住了东西的室",
+      "body": "这间室的地上堆着一圈空壳和碎钳——有谁把这儿当成了家。\n灯扫到角落，一团软的东西正贴着墙变色，八条腕在石面上无声地挪。\n它把自己摊平，盯着你和那个唯一的出口之间的距离。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "fight_octopus",
+          "label": "抢在它前面，逼向出口",
+          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "outcome": {
+            "text": "你不等它先动，挺刀逼过去。它腕子一收，喷出一团墨——",
+            "triggerCombatId": "combat.cave_octopus_solo"
+          }
+        },
+        {
+          "id": "skirt_wall",
+          "label": "贴着另一面墙，慢慢挪向出口",
+          "hideCheck": true,
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你贴着对面的墙，一寸一寸往出口挪，不去碰它的那圈空壳。它变着色看你过去，没有扑。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -3 }
+            },
+            "onFailure": {
+              "text": "你的脚蹼扫翻了一只空壳。那点脆响在室里炸开——它弹了过来。",
+              "triggerCombatId": "combat.cave_octopus_solo"
+            }
+          }
+        },
+        {
+          "id": "retreat_den",
+          "label": "退回来路，换一间室",
+          "outcome": {
+            "text": "你倒退出它的室，把那个口让回给它。绕路要多花气，但你不跟住了东西的室抢地方。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "chamber.still_pool",
+      "depthRange": [45, 76],
+      "zoneTags": ["chamber"],
+      "weight": 5,
+      "cooldown": 4,
+      "title": "顶上的镜面",
+      "body": "室顶兜着一汪没被水填满的空腔，底面平得像一面镜。\n你的灯映上去，照出一个倒悬的、戴着面罩的人影，正低头看你。\n那是你自己。隔了一会儿你才确定。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "surface_breath",
+          "label": "浮上去，在空腔里换口气",
+          "outcome": {
+            "text": "你顶进那汪空气，摘了调节器吸了两口。气是陈的、带土腥，但是真的。镜面上的人影跟着你摘下面罩，你没去看它太久。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2, "oxygen": 6 }
+          }
+        },
+        {
+          "id": "look_away",
+          "label": "不去看那面镜，绕室找出口",
+          "outcome": {
+            "text": "你把灯从顶上挪开，省得再去看那个倒悬的自己，低头沿墙根找下一个口。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "chamber.echo_turn",
+      "depthRange": [40, 80],
+      "zoneTags": ["chamber"],
+      "sanityRange": [0, 75],
+      "weight": 5,
+      "cooldown": 3,
+      "title": "绕回了原处",
+      "body": "你钻过一连串窄道，开进一间室——\n来路口边的岩面上，刻着一道印。\n是你自己刻的。你绕了一圈，回到了起点。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "re_read",
+          "label": "稳住，重新数一遍各个口",
+          "check": {
+            "stat": "sanity",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你压下那股发慌，贴着墙一个口一个口重数。这回认出了哪个口的水流朝外——你之前漏看了它。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "你越数越乱，几个黑口在灯下长得一模一样。手开始不听话地抖，你只能先抓住一处岩棱，等自己缓过来。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -5, "stamina": -3 }
+            }
+          }
+        },
+        {
+          "id": "trust_flow",
+          "label": "只认渗水朝外的那个口走",
+          "outcome": {
+            "text": "你不再信自己的方向感，单认手背能觉出的那缕朝外的水流，顺它钻进对应的口。慢，但不再打转。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "chamber.nodule_floor",
+      "depthRange": [50, 80],
+      "zoneTags": ["chamber"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "铺了瘤子的室底",
+      "body": "这间室的底铺着一层黑沉沉的圆瘤，密密匝匝，半埋在软泥里。\n是常年静水里慢慢长出来的结核。挑大的撬，能换不少钱。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "drill_nodules",
+          "label": "用岩凿撬大块的结核",
+          "visibleIf": { "kind": "hasCapability", "capability": "mine" },
+          "outcome": {
+            "text": "你跪在软泥上，拿岩凿一颗颗撬大的。黑瘤接连松土脱出，没多久网兜就沉了。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.manganese_nodule", "qty": [2, 3], "chance": 0.9 },
+              { "itemId": "item.iron_concretion", "qty": [1, 1], "chance": 0.4 }
+            ]
+          }
+        },
+        {
+          "id": "hand_pick",
+          "label": "徒手捡浮在泥面上的几颗",
+          "outcome": {
+            "text": "没带凿子，你只能捡几颗已经半浮出泥的，埋得深的撬不动。聊胜于无。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.manganese_nodule", "qty": [1, 1], "chance": 0.6 }
+            ]
+          }
+        },
+        {
+          "id": "leave_floor",
+          "label": "踩着边沿绕过去，不搅这摊泥",
+          "outcome": {
+            "text": "你不去搅那层软泥——一搅起来满室浑，要等半天才看得清出口。你贴着室壁绕了过去。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "chamber.deepest_cell",
+      "depthRange": [66, 80],
+      "zoneTags": ["chamber"],
+      "sanityRange": [0, 65],
+      "weight": 4,
+      "cooldown": 0,
+      "title": "最里的那间",
+      "body": "蜂房一路往里、往深，最后这间室小、低、安静得不对。\n这里没有壳、没有瘤、没有住客——什么都不长。\n灯照了一圈，墙上只有一个朝下的口，黑得格外纯。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "peer_down",
+          "label": "趴到那个朝下的口上，看一眼",
+          "outcome": {
+            "text": "你趴到口沿往下照。光垂直落进去，照不到底，也照不出壁——这间室不是尽头，底下还接着别的东西。你慢慢撑起身，退开。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -5 }
+          }
+        },
+        {
+          "id": "turn_back_here",
+          "label": "到此为止，原路收兵",
+          "outcome": {
+            "text": "你不去碰那个朝下的口。蜂房到这间就够深了，再往下不是这趟该走的。你转身，认着一路的刻印往回。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    }
+  ]
+}

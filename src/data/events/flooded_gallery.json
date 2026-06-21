@@ -1,0 +1,316 @@
+{
+  "events": [
+    {
+      "id": "flooded.long_run",
+      "depthRange": [56, 72],
+      "zoneTags": ["flooded"],
+      "weight": 8,
+      "cooldown": 3,
+      "title": "看不到头的廊",
+      "body": "石廊往前一直铺，低矮的拱压在头顶，柱子一根接一根从两侧退向身后。\n深度几乎不变，你却已经游了很久。\n灯往前打，只照见更多一模一样的柱子，望不到头。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "pace_air",
+          "label": "数着柱子走，把回程的气先扣出来",
+          "outcome": {
+            "text": "你开始数过身的柱子，心里替回去那一程先扣下一半的气。这地方不深，要命的从来不是深度，是「进来太远」。",
+            "oxygenTurnCost": 1
+          }
+        },
+        {
+          "id": "push_deeper_in",
+          "label": "不管它，先尽量往里探",
+          "outcome": {
+            "text": "你压下那点算计，加快往里。柱子一根根从灯里冒出来又退走，廊还是没有头。"
+          }
+        },
+        {
+          "id": "mark_column",
+          "label": "在一根柱子上刻记号，标住到这儿",
+          "outcome": {
+            "text": "你在一根柱身上刻下一道印，记住自己探到了这里。回头时，认得出这道印，就还来得及。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "flooded.colonnade",
+      "depthRange": [56, 78],
+      "zoneTags": ["flooded"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "结了壳的柱列",
+      "body": "一段柱子结得格外厚，壳上挂着一簇簇硬珊瑚和亮晶晶的石牙，是常年静水养出来的。\n顺手能收一点，但每停一下，回程的账就重一分。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "harvest_colonnade",
+          "label": "快手刮一轮就走",
+          "outcome": {
+            "text": "你贴着柱列快手刮了一轮，硬珊瑚和几粒石英碎牙落进网兜，没敢恋战。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.8 },
+              { "itemId": "item.quartz_crystal", "qty": [1, 1], "chance": 0.3 }
+            ]
+          }
+        },
+        {
+          "id": "thorough_strip",
+          "label": "停下来，把这段柱子刮干净",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你索性停稳，把这一段柱列从根到顶刮了个干净。收成不错——只是身后那程，又远了一点。",
+              "oxygenTurnCost": 3,
+              "loot": [
+                { "itemId": "item.coral_shard", "qty": [2, 3], "chance": 0.9 },
+                { "itemId": "item.quartz_crystal", "qty": [1, 2], "chance": 0.5 }
+              ]
+            },
+            "onFailure": {
+              "text": "你刮得太投入，等直起腰，才发觉气比预想的掉得快。你慌忙收手，心里把回程重算了一遍。",
+              "oxygenTurnCost": 4,
+              "deltas": { "stamina": -3, "sanity": -2 }
+            }
+          }
+        },
+        {
+          "id": "pass_colonnade",
+          "label": "看一眼就过，不停",
+          "outcome": {
+            "text": "你扫了一眼那簇好料，没停。回程的气比柱子上的石牙金贵。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "flooded.silt_bury",
+      "depthRange": [58, 80],
+      "zoneTags": ["flooded"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "陷在淤泥里的东西",
+      "body": "廊底积着厚厚一层淤泥，半埋着一个长条的轮廓——一截绑了配重的旧装具，是从前哪个走到这么远、又没走回去的人留下的。\n泥很软，搅起来会糊住整条廊。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "cut_straps",
+          "label": "割开绑带，取下能用的件",
+          "visibleIf": { "kind": "hasCapability", "capability": "cut" },
+          "outcome": {
+            "text": "你贴着泥面下刀，割开锈死的绑带，把还成形的金属件一件件抽出来，尽量不搅起泥。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.brass_fitting", "qty": [1, 2], "chance": 0.7 },
+              { "itemId": "item.rusty_compass", "qty": [1, 1], "chance": 0.4 }
+            ]
+          }
+        },
+        {
+          "id": "dig_out",
+          "label": "徒手把它从泥里刨出来",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你两手插进软泥，把那截装具整个抱了出来。泥水糊了一脸，但东西到手了。",
+              "oxygenTurnCost": 3,
+              "loot": [
+                { "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.6 }
+              ]
+            },
+            "onFailure": {
+              "text": "你一使劲，整片淤泥翻起来，廊里瞬间糊成一锅黄汤。你呛着退开，什么都没抓住，还得等泥沉。",
+              "oxygenTurnCost": 4,
+              "deltas": { "stamina": -4, "sanity": -2 }
+            }
+          }
+        },
+        {
+          "id": "leave_buried",
+          "label": "不去惊动它，绕过去",
+          "outcome": {
+            "text": "你贴着柱根绕过那截轮廓，没去搅它，也没去看绑带那头连着什么。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "flooded.gallery_octopus",
+      "depthRange": [58, 86],
+      "zoneTags": ["flooded"],
+      "weight": 6,
+      "cooldown": 0,
+      "title": "柱影里的伏击",
+      "body": "前面一根柱子的影子动了一下。\n不是水流——是贴在柱背的一团软东西，变着色等你游进它够得着的那一圈。\n这条廊太窄，绕不太开。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "preempt",
+          "label": "抢先逼上去，别让它选时机",
+          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "outcome": {
+            "text": "你不等它，挺刀贴着柱子逼过去。它从柱背弹开——",
+            "triggerCombatId": "combat.cave_octopus_solo"
+          }
+        },
+        {
+          "id": "slow_pass",
+          "label": "压低身子，从另一侧柱缝慢慢过",
+          "hideCheck": true,
+          "check": {
+            "stat": "stamina",
+            "dc": 14,
+            "onSuccess": {
+              "text": "你贴着对侧的柱缝，放慢到几乎不动，一点点挪过它的射程。它变着色盯着，终究没扑。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -3 }
+            },
+            "onFailure": {
+              "text": "窄缝里你的气瓶磕响了柱子。那点声一落，它就从柱背扑了出来。",
+              "triggerCombatId": "combat.cave_octopus_solo"
+            }
+          }
+        },
+        {
+          "id": "fall_back_gallery",
+          "label": "退回上一段廊，再想办法",
+          "outcome": {
+            "text": "你倒退回上一段柱列。绕不开就先不绕——可往回的每一蹬，都是从回程那口气里借的。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "flooded.return_budget",
+      "depthRange": [60, 82],
+      "zoneTags": ["flooded"],
+      "sanityRange": [0, 80],
+      "weight": 5,
+      "cooldown": 3,
+      "title": "回头的账",
+      "body": "你停在一根柱子边，回头望来路。\n灯照不到尽头，柱子一根接一根没进黑里——你不记得自己已经游过了多少根。\n表上的气，看着够；可那是要分两半花的东西。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "do_the_math",
+          "label": "认真算一遍：到这儿，还回得去吗",
+          "check": {
+            "stat": "sanity",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你强迫自己冷静地算：来时多少蹬，回去就得留多少。算下来还有富余，但不多。你心里有了底，手也稳了。",
+              "oxygenTurnCost": 1
+            },
+            "onFailure": {
+              "text": "数字在脑子里打结，越算越没把握。那股「会回不去」的念头一旦起来就压不下去，手指在柱面上掐得发白。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 }
+            }
+          }
+        },
+        {
+          "id": "turn_now",
+          "label": "不赌了，就到这儿，回头",
+          "outcome": {
+            "text": "你决定不再往里。探到哪儿是哪儿——能走回去的人，才有下一趟。你认着柱上的刻印，往回。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "flooded.column_seam",
+      "depthRange": [60, 86],
+      "zoneTags": ["flooded"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "柱身的矿缝",
+      "body": "一根柱子从中裂开，裂面里夹着一道亮闪闪的矿缝，结着成排的晶簇。\n是这条长廊里最值钱的一处——也是离出口最远的一处。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "mine_seam",
+          "label": "用岩凿取下整排晶簇",
+          "visibleIf": { "kind": "hasCapability", "capability": "mine" },
+          "outcome": {
+            "text": "你把岩凿探进裂缝，沿着矿脉一路撬。晶簇成排脱落，亮得在灯下晃眼。值这一趟远路。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.quartz_crystal", "qty": [2, 3], "chance": 0.85 },
+              { "itemId": "item.iron_concretion", "qty": [1, 1], "chance": 0.4 }
+            ]
+          }
+        },
+        {
+          "id": "chip_seam",
+          "label": "拿刀柄硬磕几粒下来",
+          "outcome": {
+            "text": "没有凿子，你拿刀柄磕下几粒边上松的晶。剩下嵌得深的，留个念想。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.quartz_crystal", "qty": [1, 1], "chance": 0.6 }
+            ]
+          }
+        },
+        {
+          "id": "note_seam",
+          "label": "记下这根柱子，下趟带凿子来",
+          "outcome": {
+            "text": "你把这根裂柱的位置和它前后的柱数都记下。这种好缝跑不了，跑得了的是气。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "flooded.far_pit",
+      "depthRange": [78, 86],
+      "zoneTags": ["flooded"],
+      "sanityRange": [0, 70],
+      "weight": 4,
+      "cooldown": 0,
+      "title": "廊尽头的直坑",
+      "body": "柱列在这里断了。\n长廊的尽头，地面整片塌了下去，开成一个朝下的直坑。坑壁是直的，灯垂下去，照不到底。\n这一路的横，原来都是为了把你领到这一处竖的跌落前。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "sound_pit",
+          "label": "往坑里落一块石头，听底",
+          "outcome": {
+            "text": "你掰下一块柱石松进坑里。你等着那一声落底——等了很久，久到你开始怀疑自己漏听了。你收回灯，退离坑沿。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -5 }
+          }
+        },
+        {
+          "id": "turn_at_pit",
+          "label": "到此为止，认着刻印往回赶",
+          "outcome": {
+            "text": "你在坑沿的柱子上补刻一道印，转身往回。这趟到坑口为止——回程的账你早扣好了，现在该花了。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        },
+        {
+          "id": "lean_into_pit",
+          "label": "再往坑沿探一点，看清坑壁",
+          "hallucination": true,
+          "outcome": {
+            "text": "你扒着坑沿又探进去一点。有那么一瞬，坑壁上像是有一排朝下的、规整的凹口，像是给手脚留的——等你定睛，又只是被水蚀直的素壁。你白搭进去一截气，赶紧撑回廊里。",
+            "oxygenTurnCost": 4,
+            "deltas": { "sanity": -6 }
+          }
+        }
+      ]
+    }
+  ]
+}

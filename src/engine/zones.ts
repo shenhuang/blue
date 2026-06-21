@@ -15,6 +15,9 @@ import ventEvents from '@/data/events/vent.json';
 import wreckFieldPatrolEvents from '@/data/events/wreck_field_patrol.json';
 import whalefallEvents from '@/data/events/whalefall.json';
 import corpseWearerForeshadowEvents from '@/data/events/corpse_wearer_foreshadow.json';
+import shaftCrackEvents from '@/data/events/shaft_crack.json';
+import chamberNetworkEvents from '@/data/events/chamber_network.json';
+import floodedGalleryEvents from '@/data/events/flooded_gallery.json';
 import zonesData from '@/data/zones.json';
 
 export const ZONES: Map<string, ZoneDef> = new Map();
@@ -36,6 +39,9 @@ for (const e of (ventEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (wreckFieldPatrolEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 敌人库 enemyRef 线上用例（SPEC §4）
 for (const e of (whalefallEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 鲸落支线（#137·目击链 / 找寻 / 三相生态）
 for (const e of (corpseWearerForeshadowEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 尸衣者 Ch1 浅水伏笔（flag.has_died_before 门控·不触发战斗）
+for (const e of (shaftCrackEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 竖穴裂缝（洞型谱·crack tag·k<0.8 井+廊）
+for (const e of (chamberNetworkEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 蜂房洞（洞型谱·chamber tag·连通蜂房）
+for (const e of (floodedGalleryEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 漫水回廊（洞型谱·flooded tag·k>1.45 长平廊+深坑）
 
 export function getZone(id: string): ZoneDef | undefined {
   return ZONES.get(id);

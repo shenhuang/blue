@@ -111,6 +111,61 @@
       "generation": "random",
       "canFreeAscend": true,
       "ambushEncounters": []
+    },
+    {
+      "id": "zone.shaft_crack",
+      "name": "竖穴裂缝",
+      "description": "礁盘上一道竖着的裂口，窄得只容一个人侧身进去。当地人管这种缝叫「井」——进得去，不一定上得来。光只够照到头几米，再往下是直的、黑的。",
+      "depthRange": [20, 78],
+      "layerCount": 4,
+      "nodesPerLayer": [1, 2],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["crack"] }
+      ],
+      "requiresFlags": ["flag.tutorial_complete"],
+      "generation": "random",
+      "mapShape": "maze",
+      "depthCurveRange": [0.2, 0.55],
+      "canFreeAscend": false,
+      "ambushEncounters": ["combat.blind_eel_solo"],
+      "weakHunts": true,
+      "weakHuntEncounters": ["combat.blind_eel_juv_solo"]
+    },
+    {
+      "id": "zone.chamber_network",
+      "name": "蜂房洞",
+      "description": "一连串圆鼓鼓的水下石室，彼此用窄道串着，像被水掏空的蜂巢。室与室之间岔得很开，走两步就分不清来路。Aldo 说进去的人多半不是被困住的，是绕晕的。",
+      "depthRange": [34, 80],
+      "layerCount": 6,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["chamber"] }
+      ],
+      "requiresFlags": ["flag.tutorial_complete"],
+      "generation": "random",
+      "mapShape": "maze",
+      "depthCurveRange": [1.3, 1.9],
+      "canFreeAscend": false,
+      "ambushEncounters": ["combat.cave_octopus_solo", "combat.blind_eel_solo"],
+      "weakHunts": true,
+      "weakHuntEncounters": ["combat.blind_eel_juv_solo"]
+    },
+    {
+      "id": "zone.flooded_gallery",
+      "name": "漫水回廊",
+      "description": "一道淹了顶的长石廊，石柱一根接一根撑着低矮的拱，望不到头。这里不深，但很长——往里走得越远，回头那口气就越要算着花。尽头据说塌下去一个直坑，没人量过底。",
+      "depthRange": [56, 86],
+      "layerCount": 9,
+      "nodesPerLayer": [3, 4],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["flooded"] }
+      ],
+      "requiresFlags": ["flag.tutorial_complete"],
+      "generation": "random",
+      "mapShape": "maze",
+      "depthCurveRange": [2.2, 3.5],
+      "canFreeAscend": false,
+      "ambushEncounters": ["combat.cave_octopus_solo"]
     }
   ]
 }

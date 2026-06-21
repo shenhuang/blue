@@ -1,9 +1,11 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
+> **2026-06-21 三种洞型变体 cave zone + 21 专属事件（交互 session〔Cowork〕·cave-zones 并行线·#175·新 quirk #158·47/47 通过〔--skip build〕·build 留 nightly）**：`zone.shaft_crack`〔竖穴·k[0.2,0.55]〕/`zone.chamber_network`〔蜂房·[1.3,1.9]〕/`zone.flooded_gallery`〔漫水回廊·[2.2,3.5]·横向回程预算〕三 maze zone + `crack`/`chamber`/`flooded` 三 ZoneTag + 21 专属事件〔各 7·声线照 blue_caves〕；纯数据零 mapgen 改。**未接海图**（cave-content 线后续）。与 cave-mapgen〔orientation〕线并发同树。
 > **2026-06-21 col.trench 解耦蓝洞群（zoneId + cave tags）+ 多风格洞穴设计讨论（交互 session〔Cowork〕·#174·无新 quirk·47/48 通过·build 红=沙箱 rollup·commit 待 nightly）**：`depth_columns.json` col.trench 四档 `zoneId:'zone.blue_caves'`→`'zone.vent_trench'`·cave tags 全删（twilight/midnight only）；test 9b（playthrough-chart）+ test 3 deepOverride（playthrough-bands）同步修复。设计讨论：shaft/linear/gallery/honeycomb/dendritic/水平洞穴五种风格谱；并行 session 方案（cave-zones Opus + cave-mapgen Sonnet）。
 > **2026-06-21 自动试玩 sim 工具 + findings + 月度 schedule（交互 session〔Cowork〕·#173·无新 quirk·typecheck 绿·纯 docs+tools/·不碰 src）**：真引擎驱动「理性玩家」机器人 ~2200 潜 → `tools/playtest-sim/`（`run.sh` 随时跑）+ `docs/playtest-findings.md`（P0/P1/P2 backlog）+ schedule `blue-playtest-sim`。要点：避战软锁(P0-1)·刷子瓶颈=遭遇稀(P1-1)·shark_tooth 只教学掉一次(P1-2)·**海沟 station 终局不可达〔`trench_found` 无人置位〕(P1-8)**·spare_tank 未定义(P2-4)。
-> **2026-06-21 ch1 St2 留白结局 `ending_blank` + 录音第 1 段（交互 session〔Cowork〕·#172·无新 quirk·commit `1991c34`·gate 11/11 绿）**：圆满结局 loot 破损饰品 + 持饰品重访 vent POI 强制开场 `ch1.ending_blank`（fulfilled-first 门·band 深潜不受扰）；录音第 1 段（导师真声·不泄失联）；「够深必出幻觉」scoped + 饰品宝石材料修复。## 1. 一句话状态
+
+## 1. 一句话状态
 
 完整 meta-loop 跑通：**港口对话 → 海图选点 → 教学线性下潜 / 节点图随机下潜 → 事件 → 战斗 → 上浮 → 减压 → 死亡 → 葬礼 → 尸体回收 → 衰减 → 回港变卖/回购 → 材料 ＋ 金币 修缮升级**。元进度已从"建设值"换成"材料经济"（2026-06-01 基建地图 Phase A，见 §5 + quirk #50）。**多灯塔基地数据模型已就位**（Phase B，`profile.lighthouses` + home 灯塔 + `engine/lighthouses.ts`，但灯塔 inert——reveal/reach 留 Phase C；quirk #51）。
 内容层 3 个 random zone（旧灯塔礁 / 蓝洞群 / 沉船墓园）。**洞穴 zone（蓝洞群）的下潜图已从层状 DAG 重写为洞穴"迷路图"**：双向边的连通图，有绕回的环 / 死路 / 多个最深点 / 入口+远端两个上浮口，由 `ZoneDef.mapShape='maze'` 选择；开阔海域（旧灯塔礁 / 沉船墓园）仍走层状 DAG。迷路剖面走**洞型谱** `depthCurveRange`（k 谱：井+廊 / 匀速 / 廊+坑·每洞口按 POI id 派生固定性格·quirk #114）；海图 POI 经 `PoiModifier`（GenOpts 薄投影）可配窄 span/长图/钉 k——首条平廊「横岩廊」+ 洞型情报标签已上海图（quirk #115）。详见 §5 +「mapgen 回归」+ quirk #30–#34/#114/#115。出海点位已升级为 **港口海图（POI 选点）**：anchor 持久 + roaming 按 runsCompleted 刷新，两级门控（发现 flag / 抵达 upgrade），POI 带深度偏移·洋流·能见度修正（三种全部实装：深度→耗氧/减压、洋流→移动耗体力+氧、能见度→理智压力+黑暗盲航）。详见 §5 + quirk #27/#28。
