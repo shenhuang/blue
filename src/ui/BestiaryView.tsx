@@ -22,6 +22,8 @@ const ROLE_LABEL: Record<EnemyRole, string> = {
   sanity: '蚀心者',
   swarm: '群涌',
   ambusher: '伏击者',
+  boss: '首领',
+  miniboss: '精英',
 };
 
 const THREAT_LABEL: Record<ThreatTier, string> = { low: '低', mid: '中', high: '高' };

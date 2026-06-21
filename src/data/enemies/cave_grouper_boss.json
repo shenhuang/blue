@@ -1,0 +1,101 @@
+{
+  "enemies": [
+    {
+      "id": "enemy.cave_grouper_boss",
+      "bands": ["zone.blue_caves", "zone.wreck_graveyard"],
+      "biomes": ["cave_anchialine", "wreck_field"],
+      "role": "miniboss",
+      "threatTier": "high",
+      "codex": {
+        "habitat": "蓝洞群入口窄缝附近的暗角。它守着那道缝，不是因为领地，是因为它就是那道缝的一部分。",
+        "behavior": "不追，不绕。等你进来，然后堵住你的路。洞口巨石斑的策略只有一种：让你没法出去。",
+        "appearance": "一米八的石斑，体表嵌了十几年的礁石纹路，背鳍磨成了钝刃。看起来不像活物，更像洞口的一块突起。",
+        "firstSeenHint": "那块礁石动了——或者说，它一直在动，只是你刚注意到。"
+      },
+      "name": "洞口巨石斑",
+      "tier": "uncanny",
+      "hp": 62,
+      "armor": 3,
+      "evasion": 1,
+      "speed": 3,
+      "threat": 8,
+      "hostility": "territorial",
+      "initialStance": "alerted",
+      "aiPattern": "aggressor",
+      "hitBonus": 0.05,
+      "attacks": [
+        {
+          "id": "cave_grouper_boss.charge",
+          "name": "冲撞",
+          "damageType": "physical",
+          "damage": [6, 10],
+          "description": "它用半个身子横过来，冲进你没有退路的角落。水压比撞击先到。",
+          "weight": 3
+        },
+        {
+          "id": "cave_grouper_boss.bite",
+          "name": "咬合",
+          "damageType": "physical",
+          "damage": [4, 7],
+          "description": "嘴张开之前你听见了礁石缝里的水流变了调——然后就是骨头传来的声音。",
+          "weight": 2
+        }
+      ],
+      "physicalDamage": [4, 10],
+      "phases": [
+        {
+          "hpThreshold": 0.4,
+          "transitionText": "它猛地后退半米，背贴进洞口最窄的地方——礁石和它的身体之间几乎没有缝隙。你突然意识到：你不是在和它战斗，你在它的嘴里。",
+          "stanceForce": "enraged",
+          "aiPatternOverride": "aggressor",
+          "attacksOverride": [
+            {
+              "id": "cave_grouper_boss.charge_enraged",
+              "name": "猛撞",
+              "damageType": "physical",
+              "damage": [9, 14],
+              "description": "它用全身的重量砸过来，不是攻击，是在把你嵌进洞壁里。",
+              "weight": 3,
+              "injuryOnHit": { "chance": 0.35, "injuryId": "injury.rib" }
+            },
+            {
+              "id": "cave_grouper_boss.bite_enraged",
+              "name": "死咬",
+              "damageType": "physical",
+              "damage": [5, 9],
+              "description": "它咬住不松——不是要伤你，是要把你固定住。",
+              "weight": 2
+            }
+          ]
+        }
+      ],
+      "environmentalPressure": {
+        "oxygenDrainBonus": 1
+      },
+      "loot": {
+        "guaranteed": [
+          { "itemId": "item.grouper_maw", "qty": [1, 1], "weight": 1 }
+        ],
+        "rolls": [
+          { "itemId": "item.coral_shard", "qty": [1, 2], "weight": 3 },
+          { "itemId": "item.crab_chitin", "qty": [1, 1], "weight": 2 }
+        ],
+        "rollCount": 1,
+        "victoryModifier": {
+          "kill": 1.0,
+          "flee": 0.4
+        }
+      },
+      "victoryConditions": ["kill", "flee"]
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.cave_grouper_boss_solo",
+      "party": {
+        "members": [{ "defId": "enemy.cave_grouper_boss" }]
+      },
+      "introText": "你刚转过这道弯，它就在那里。洞口的位置，礁石的颜色，完全不动——然后它动了，把整个出口堵死了。"
+    }
+  ]
+}

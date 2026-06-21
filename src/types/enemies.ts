@@ -41,10 +41,34 @@ export type VictoryPath = 'kill' | 'flee' | 'tame' | 'scare' | 'commune';
 // —— 敌人库元数据类型（敌人库 SPEC 支柱一·docs/spec/深海回响_敌人库_SPEC.md §2） ——
 
 /** 战斗生态位（与 aiPattern 正交：aiPattern=战斗 AI 行为；role=内容侧"这段需要什么样的威胁"）。草案词表·可增。 */
-export type EnemyRole = 'predator' | 'gatekeeper' | 'sanity' | 'swarm' | 'ambusher';
+export type EnemyRole = 'predator' | 'gatekeeper' | 'sanity' | 'swarm' | 'ambusher' | 'boss' | 'miniboss';
 
 /** 粗档威胁。缺省时由 enemyLibrary 从 threat 数值派生（开放问题①·派生 + 可显式覆盖）。 */
 export type ThreatTier = 'low' | 'mid' | 'high';
+
+/** boss 阶段（HP 跌破 threshold 时触发） */
+export interface BossPhase {
+  /** 触发 HP 比例（0–1，例如 0.4 = HP 跌破 40% 时触发） */
+  hpThreshold: number;
+  /** 推入战斗 log 的过渡叙事文本 */
+  transitionText: string;
+  /** 替换攻击表（缺省 = 沿用当前阶段） */
+  attacksOverride?: EnemyAttack[];
+  /** 覆盖 AI 模式 */
+  aiPatternOverride?: AiPattern;
+  /** 强制切 stance */
+  stanceForce?: EnemyStance;
+}
+
+/** boss 存在时持续施加的战场压力（每回合 tick） */
+export interface EnvironmentalPressure {
+  /** 每回合额外氧气消耗（叠加基础 tick） */
+  oxygenDrainBonus?: number;
+  /** 每回合额外体力流失 */
+  staminaTickBonus?: number;
+  /** 每回合理智伤害 */
+  sanityDamagePerTurn?: number;
+}
 
 /** 背景/图鉴文本（喂未来图鉴 + 辅助判断场景契合·非机器过滤项·能过滤的信息一律走 bands/biomes/role）。 */
 export interface CodexEntry {
@@ -142,6 +166,18 @@ export interface EnemyDef {
 
   /** 遭遇事件中可显示的额外选项（潜行/挑衅/谈判/...） */
   encounterOptions?: EventOption[];
+
+  /**
+   * boss/miniboss 阶段序列（hpThreshold 降序排列，引擎按当前 HP% 找最高已触发阶段）。
+   * 例：[{hpThreshold:0.6,...}, {hpThreshold:0.3,...}] → HP 跌破 60% 进阶段 0、跌破 30% 进阶段 1。
+   * check-enemy-refs 门验证降序；错序 → regress 失败。
+   */
+  phases?: BossPhase[];
+  /**
+   * boss 存在时对战场施加的持续压力（boss 存活即生效，不分阶段）。
+   * applyEnvironmentalPressure 每回合 tick 处累计所有存活 boss 的值。
+   */
+  environmentalPressure?: EnvironmentalPressure;
 }
 
 export interface EnemyAttack {
@@ -183,6 +219,16 @@ export interface EnemyInstance {
   stance: EnemyStance;
   aggro: number; // 对玩家的仇恨度
   statuses: EnemyStatus[];
+  /**
+   * 当前阶段覆盖的攻击表（maybeBossPhaseShift 写入·BossPhase.attacksOverride）。
+   * enemyAttackPlayer 优先读此字段；undefined = 用 def.attacks。
+   */
+  phaseAttacksOverride?: EnemyAttack[];
+  /**
+   * 当前阶段覆盖的 AI 模式（maybeBossPhaseShift 写入·BossPhase.aiPatternOverride）。
+   * 未来 AI 分发扩展时读；当前 aggressor/flanker 等均已在 runEnemyTurn 逐字判断·此字段留位。
+   */
+  phaseAiPattern?: AiPattern;
 }
 
 export interface EnemyStatus {

@@ -136,6 +136,13 @@ export interface CombatState {
 
   /** 玩家在战斗中选择"应急上浮"时的标记 */
   pendingEmergencyAscent?: boolean;
+
+  /**
+   * boss 阶段索引（instanceId → 当前已触发的最高阶段索引）。
+   * 缺省/不在 map 里 = -1（尚未进入任何阶段）。
+   * 仅有 phases 的敌人才会有条目，普通敌人不写——零存档影响（#99 守则）。
+   */
+  bossPhaseIndices?: Record<string, number>;
 }
 
 export interface CombatLogEntry {

@@ -5,6 +5,7 @@
 // 过期保护：scripts/check-enemy-refs 会用 `--check` 验它与目录一致（regress 门）。
 
 import blind_eel from './blind_eel.json';
+import cave_grouper_boss from './cave_grouper_boss.json';
 import cave_octopus from './cave_octopus.json';
 import drowned_lantern from './drowned_lantern.json';
 import reef_barracuda from './reef_barracuda.json';
@@ -19,6 +20,7 @@ export type EnemyFileModule = { enemies?: unknown[]; combatEncounters?: unknown[
 /** 目录里全部敌人文件（按文件名排序·确定性）。新增敌人＝丢 JSON 后跑 `npm run gen:enemies`。 */
 export const ENEMY_FILE_MODULES: EnemyFileModule[] = [
   blind_eel,
+  cave_grouper_boss,
   cave_octopus,
   drowned_lantern,
   reef_barracuda,

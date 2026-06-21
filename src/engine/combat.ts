@@ -15,6 +15,7 @@ import type {
   EnemyDef,
   EnemyAttack,
   Stats,
+  BossPhase,
 } from '@/types';
 import actionData from '@/data/actions.json';
 import { ENEMY_FILE_MODULES } from '@/data/enemies/registry.generated';
@@ -237,6 +238,8 @@ export function applyPlayerAction(
       text: `伤口没合上，力气跟着血走（体力 ${tick}）。`,
     });
   }
+  // —— 0b. boss 战场压力 tick（boss 存活即施加·叠加基础 tick·每回合触发一次）——
+  s = applyEnvironmentalPressure(s);
   // —— 1. 扣资源（负伤修正后的实际消耗·与 availability 同一函数） ——
   const costs = actionCosts(s.run!, action);
   s = applyStatsDelta(s, {
@@ -421,6 +424,8 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
     actor: 'player',
     text: `${action.name}：你击中 ${def.name}，造成 ${dmg} 点伤害。${target.hp - dmg <= 0 ? `${def.name} 失去战斗力。` : ''}`,
   });
+  // boss 阶段检查（HP 因玩家攻击下降·每次命中后触发）
+  s = maybeBossPhaseShift(s, target.instanceId);
 
   // 放电芯扣电（命中触发后结算·run.power 单点扣·非 Stats clamp 范畴）。
   if (powerSpent > 0 && s.run) {
@@ -634,6 +639,8 @@ function runEnemyTurn(state: GameState): GameState {
         enemies: c.enemies.map((x) => (x.instanceId === e.instanceId ? { ...x, hp: Math.max(0, x.hp - dot) } : x)),
       }));
       s = pushCombatLog(s, { actor: 'system', text: `${dname} 因持续伤势失去 ${dot} 点生命。` });
+      // boss 阶段检查（HP 因 DoT 下降）
+      s = maybeBossPhaseShift(s, e.instanceId);
     }
   }
 
@@ -655,8 +662,8 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
   if (state.phase.kind !== 'combat' || !state.run) return state;
   const def = ENEMY_DEFS.get(enemy.defId);
   if (!def) return state;
-  // 挑一个攻击
-  const attacks = def.attacks;
+  // 挑一个攻击（优先读阶段覆盖攻击表·BossPhase.attacksOverride·无覆盖则 def.attacks）
+  const attacks = enemy.phaseAttacksOverride ?? def.attacks;
   const weights = attacks.map((a) => a.weight ?? 1);
   const totalW = weights.reduce((a, b) => a + b, 0);
   let r = Math.random() * totalW;
@@ -759,6 +766,108 @@ function finalizeFlee(state: GameState): CombatTurnResult {
   let s = appendLog(state, { tone: 'realistic', text: `你脱离了战斗。` });
   s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
   return { state: s, outcome: 'flee' };
+}
+
+// ——— Boss 阶段系统 ———
+
+/**
+ * maybeBossPhaseShift：HP 变化后检查是否进入新 boss 阶段。
+ *
+ * 规则：phases 以 hpThreshold 降序排列（[0.6, 0.3, 0.1]）。
+ * "最高已触发阶段" = 数组里满足 phase.hpThreshold >= currentHpRatio 的最大 index。
+ * 若比 bossPhaseIndices 记录的更高，则视为进入新阶段：
+ *   - 推 transitionText 进 log
+ *   - 若有 stanceForce → 更新 instance.stance
+ *   - 若有 attacksOverride / aiPatternOverride → 写入 instance.phaseAttacksOverride / phaseAiPattern
+ */
+function maybeBossPhaseShift(state: GameState, instanceId: string): GameState {
+  if (state.phase.kind !== 'combat') return state;
+  const combat = state.phase.combat;
+  const instance = combat.enemies.find((e) => e.instanceId === instanceId);
+  if (!instance || instance.hp <= 0) return state;
+  const def = ENEMY_DEFS.get(instance.defId);
+  if (!def?.phases?.length) return state;
+
+  const currentHpRatio = instance.hp / def.hp;
+  // 找满足 hpThreshold >= currentHpRatio 的最大 index（phases 降序·越大 index = 越深触发）
+  let highestTriggeredIndex = -1;
+  for (let i = 0; i < def.phases.length; i++) {
+    if (def.phases[i].hpThreshold >= currentHpRatio) {
+      highestTriggeredIndex = i;
+    }
+  }
+
+  const currentIndex = combat.bossPhaseIndices?.[instanceId] ?? -1;
+  if (highestTriggeredIndex <= currentIndex) return state; // 无新阶段
+
+  const newPhase = def.phases[highestTriggeredIndex] as BossPhase;
+
+  // 更新阶段索引
+  let s = setCombat(state, (c) => ({
+    ...c,
+    bossPhaseIndices: { ...(c.bossPhaseIndices ?? {}), [instanceId]: highestTriggeredIndex },
+  }));
+
+  // 过渡叙事
+  s = pushCombatLog(s, { actor: 'system', text: newPhase.transitionText });
+
+  // 写入实例覆盖（stance / attacksOverride / aiPatternOverride）
+  s = setCombat(s, (c) => ({
+    ...c,
+    enemies: c.enemies.map((e) => {
+      if (e.instanceId !== instanceId) return e;
+      return {
+        ...e,
+        ...(newPhase.stanceForce ? { stance: newPhase.stanceForce } : {}),
+        ...(newPhase.attacksOverride ? { phaseAttacksOverride: newPhase.attacksOverride } : {}),
+        ...(newPhase.aiPatternOverride ? { phaseAiPattern: newPhase.aiPatternOverride } : {}),
+      };
+    }),
+  }));
+
+  return s;
+}
+
+/**
+ * applyEnvironmentalPressure：累计所有存活 boss 的战场压力并扣减资源。
+ * 在每回合 tick 处调用（applyPlayerAction 步骤 0b·紧随 staminaTickPerTurn）。
+ * 多 boss 并存时线性叠加（oxygenDrainBonus / staminaTickBonus / sanityDamagePerTurn）。
+ */
+function applyEnvironmentalPressure(state: GameState): GameState {
+  if (state.phase.kind !== 'combat' || !state.run) return state;
+  const combat = state.phase.combat;
+
+  let oxygenDrain = 0;
+  let staminaDrain = 0;
+  let sanityDmg = 0;
+
+  for (const e of combat.enemies) {
+    if (e.hp <= 0) continue;
+    const def = ENEMY_DEFS.get(e.defId);
+    if (!def?.environmentalPressure) continue;
+    const ep = def.environmentalPressure;
+    oxygenDrain += ep.oxygenDrainBonus ?? 0;
+    staminaDrain += ep.staminaTickBonus ?? 0;
+    sanityDmg += ep.sanityDamagePerTurn ?? 0;
+  }
+
+  if (oxygenDrain === 0 && staminaDrain === 0 && sanityDmg === 0) return state;
+
+  let s = state;
+  if (oxygenDrain > 0) {
+    s = applyStatsDelta(s, { oxygen: -oxygenDrain });
+    s = pushCombatLog(s, { actor: 'system', text: `它堵住了出口——氧气消耗加快（氧气 -${oxygenDrain}）。` });
+  }
+  if (staminaDrain > 0) {
+    s = applyStatsDelta(s, { stamina: -staminaDrain });
+    s = pushCombatLog(s, { actor: 'system', text: `战场压力让你消耗更快（体力 -${staminaDrain}）。` });
+  }
+  if (sanityDmg > 0) {
+    s = applyStatsDelta(s, { sanity: -sanityDmg });
+    s = pushCombatLog(s, { actor: 'system', text: `它的存在本身就在消磨你（理智 -${sanityDmg}）。` });
+  }
+
+  return s;
 }
 
 /** 玩家选择应急上浮（战斗中可用） */

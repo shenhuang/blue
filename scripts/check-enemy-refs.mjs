@@ -78,6 +78,7 @@ for (const f of enemyFiles) {
       role: typeof e.role === 'string' ? e.role : undefined,
       threat: typeof e.threat === 'number' ? e.threat : 0,
       threatTier: typeof e.threatTier === 'string' ? e.threatTier : undefined,
+      phases: Array.isArray(e.phases) ? e.phases : undefined,
       file: f,
     });
   }
@@ -138,6 +139,23 @@ for (const e of enemyDefs) {
   if (e.biomes.length === 0) errors.push(`[orphan] ${e.id}（${e.file}）缺 biomes`);
 }
 
+// —— (c2) boss/miniboss phases 降序验证 ——
+// 约定：phases 必须以 hpThreshold 降序排列（[0.6, 0.3, 0.1]）。
+// 错序时引擎 maybeBossPhaseShift 会跳过本应触发的阶段，数据侧拦截优于运行时静默错误。
+for (const e of enemyDefs) {
+  if (e.role !== 'boss' && e.role !== 'miniboss') continue;
+  if (!e.phases || e.phases.length < 2) continue;
+  for (let i = 1; i < e.phases.length; i++) {
+    if (e.phases[i - 1].hpThreshold <= e.phases[i].hpThreshold) {
+      errors.push(
+        `[phases] ${e.id}（${e.file}）phases 未降序：` +
+          `phases[${i - 1}].hpThreshold=${e.phases[i - 1].hpThreshold} ≤ ` +
+          `phases[${i}].hpThreshold=${e.phases[i].hpThreshold}（应降序·最高阈值在 index 0）`,
+      );
+    }
+  }
+}
+
 // —— (d) 有 baseline ——
 /** combatId → 该 encounter 的全部敌人 defId */
 const encRefById = new Map(encounters.map((e) => [e.id, e.refIds]));
@@ -174,5 +192,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  `✓ check-enemy-refs：${enemyDefs.length} 敌人 / ${encounters.length} encounter · 引用完整 · 无孤儿 · 全有 baseline · registry 最新`,
+  `✓ check-enemy-refs：${enemyDefs.length} 敌人 / ${encounters.length} encounter · 引用完整 · 无孤儿 · boss 阶段降序 · 全有 baseline · registry 最新`,
 );

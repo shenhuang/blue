@@ -1,0 +1,30 @@
+{
+  "_comment": "洞口巨石斑 miniboss baseline · knife_slash × 10（seed 1）。HP=62 / armor=3 / evasion=1。进入激怒阶段（HP≤40%=≤24）：猛撞 9-14 / 死咬 5-9（armor 后 8-13/4-8）+ stanceForce='enraged' + attacksOverride。environmentalPressure oxygenDrainBonus=1 每回合多吃 1 氧。玩家给足 stamina=300 / oxygen=120 以在 10 刀以内稳定击杀而不被耗死（boss 设计面向中期玩家·此 baseline 只验流程正确·数值调整留作者）。注意 lootGained 断言 grouper_maw×1（guaranteed 掉落）；无 statsDelta / turnsElapsed 约束（阶段 RNG 路径多·不锁精确回合）。",
+  "combatId": "combat.cave_grouper_boss_solo",
+  "seed": 1,
+  "stats": { "stamina": 300, "oxygen": 120 },
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": { "item.grouper_maw": 1 },
+    "enemiesAlive": 0
+  }
+}
