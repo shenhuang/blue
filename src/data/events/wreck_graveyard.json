@@ -2,8 +2,13 @@
   "events": [
     {
       "id": "wreck_graveyard.the_wearer",
-      "depthRange": [44, 56],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        44,
+        56
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 3,
       "cooldown": 6,
       "oncePerRun": true,
@@ -20,13 +25,17 @@
             "onSuccess": {
               "text": "你按住自己，不动，一样样地数：没有灯，没有泡，那身装备是博物馆里的老古董——招手的胳膊，抬下去又抬起来，每一次都一模一样，没有一点活人的零碎。\n你也给得出别的解释：一具挂在断缆上的旧尸，让深流摆着。你挑不出哪个更真，可你数出来的那些『不对』，已经够你把整条船壳横到你俩中间，慢慢退开。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 },
+              "deltas": {
+                "sanity": -5
+              },
               "loreEntry": "lore.wreck_graveyard.the_wearer"
             },
             "onFailure": {
               "text": "你盯着那只招手的手，看得太久。它招的节奏，不知什么时候，跟上了你的心跳。\n然后它不招了——手停在半空，铜盔慢慢偏过来对正你，没有蹬腿，整个人朝你这边平平地滑近。你没让自己去看那面镜里有没有脸，撞着船舷退开，半天找不回上浮的方向。",
               "oxygenTurnCost": 4,
-              "deltas": { "sanity": -12 }
+              "deltas": {
+                "sanity": -12
+              }
             }
           }
         },
@@ -36,7 +45,9 @@
           "outcome": {
             "text": "你没法把一个人丢在这么深的地方。你朝他游过去。\n他不迎上来，也不退，就停在原地等你靠近。等你近得能碰到那只手，帆布手套是瘪的，盔里是满的黑水——空的，你告诉自己，是空的。你没有伸手去确认，退着离开，背后一直发凉。",
             "oxygenTurnCost": 3,
-            "deltas": { "sanity": -8 }
+            "deltas": {
+              "sanity": -8
+            }
           }
         },
         {
@@ -45,15 +56,22 @@
           "outcome": {
             "text": "你让一整条沉船的铁壳挡住你俩，闷头绕开。等你从船尾出来，那个穿旧装的人还在原处招手，对着你刚才站的地方——不是现在的你。这一回，它没看出你换了位置。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -3 }
+            "deltas": {
+              "sanity": -3
+            }
           }
         }
       ]
     },
     {
       "id": "wreck_graveyard.deck_cargo",
-      "depthRange": [18, 26],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        18,
+        26
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 7,
       "cooldown": 4,
       "title": "甲板上的货",
@@ -70,14 +88,29 @@
               "text": "你割断泡烂的绳扣，撬开最上面一只木箱。盖板一掀，里头码着没胀的罐头，箱角还塞着一卷扎紧的旧渔网。",
               "oxygenTurnCost": 2,
               "loot": [
-                { "itemId": "item.canned_food", "qty": [1, 2] },
-                { "itemId": "item.old_fishing_net", "qty": [1, 1], "chance": 0.5 }
+                {
+                  "itemId": "item.canned_food",
+                  "qty": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "itemId": "item.old_fishing_net",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5
+                }
               ]
             },
             "onFailure": {
               "text": "绳一割断，整堆货顺着斜甲板往舷边塌。你抽手不及，铁桶擦着护胸滚进舷外的黑里，闷响半天才到底。你空着手退开。",
               "oxygenTurnCost": 2,
-              "deltas": { "stamina": -8 }
+              "deltas": {
+                "stamina": -8
+              }
             }
           }
         },
@@ -87,7 +120,16 @@
           "outcome": {
             "text": "你不去碰那堆悬着的货，只在早年散到沙里的零碎中翻找——一只滚出来的铜活计，半埋在淤泥里。",
             "oxygenTurnCost": 1,
-            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.5 }]
+            "loot": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": [
+                  1,
+                  1
+                ],
+                "chance": 0.5
+              }
+            ]
           }
         },
         {
@@ -102,8 +144,13 @@
     },
     {
       "id": "wreck_graveyard.cabin_entrance",
-      "depthRange": [18, 32],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        18,
+        32
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 8,
       "cooldown": 3,
       "title": "船舱入口",
@@ -117,7 +164,14 @@
             "text": "你侧着身子滑进去。锈渣从舱顶簌簌掉下来，落在你的灯柱里。",
             "oxygenTurnCost": 2,
             "loot": [
-              { "itemId": "item.canned_food", "qty": [1, 2], "chance": 0.7 }
+              {
+                "itemId": "item.canned_food",
+                "qty": [
+                  1,
+                  2
+                ],
+                "chance": 0.7
+              }
             ]
           }
         },
@@ -128,18 +182,36 @@
             "text": "你沿着倾斜的船舷游了一段——绞盘的缝里夹着一段渔网，下面是被沙半埋的破瓷。",
             "oxygenTurnCost": 1,
             "loot": [
-              { "itemId": "item.old_fishing_net", "qty": [1, 1], "chance": 0.5 },
-              { "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.4 }
+              {
+                "itemId": "item.old_fishing_net",
+                "qty": [
+                  1,
+                  1
+                ],
+                "chance": 0.5
+              },
+              {
+                "itemId": "item.coral_shard",
+                "qty": [
+                  1,
+                  1
+                ],
+                "chance": 0.4
+              }
             ]
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.collapsed_passage",
-      "depthRange": [22, 40],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        22,
+        40
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 7,
       "cooldown": 4,
       "title": "塌了的过道",
@@ -156,14 +228,30 @@
               "text": "你压住浮力，肩膀蹭着梁体过去——气瓶刮了一下，没破。另一头的舱里有东西闪光。",
               "oxygenTurnCost": 2,
               "loot": [
-                { "itemId": "item.coral_shard", "qty": [1, 2] },
-                { "itemId": "item.canned_food", "qty": [1, 1], "chance": 0.5 }
+                {
+                  "itemId": "item.coral_shard",
+                  "qty": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "itemId": "item.canned_food",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5
+                }
               ]
             },
             "onFailure": {
               "text": "你卡在缝里。挣脱的时候气瓶撞到钢梁，发出一声闷响。你猛吸一口，气泡乱涌。",
               "oxygenTurnCost": 4,
-              "deltas": { "stamina": -10, "sanity": -3 }
+              "deltas": {
+                "stamina": -10,
+                "sanity": -3
+              }
             }
           }
         },
@@ -173,16 +261,22 @@
           "outcome": {
             "text": "你倒着踢水退出去。背后传来一声塌响——你没回头。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.tangling_kelp",
-      "depthRange": [20, 38],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        20,
+        38
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 7,
       "cooldown": 4,
       "title": "缠住脚的海草",
@@ -198,12 +292,17 @@
             "onSuccess": {
               "text": "你弓起身子，膝盖一蹬——海草断了几股，剩下的滑开。你晃了一会儿才稳住。",
               "oxygenTurnCost": 1,
-              "deltas": { "stamina": -4 }
+              "deltas": {
+                "stamina": -4
+              }
             },
             "onFailure": {
               "text": "海草绷得更紧，把你拽向沉船一侧。你蹬了三次才挣开，气瓶磕在铁皮上一下。",
               "oxygenTurnCost": 3,
-              "deltas": { "stamina": -10, "sanity": -3 }
+              "deltas": {
+                "stamina": -10,
+                "sanity": -3
+              }
             }
           }
         },
@@ -216,19 +315,27 @@
             "onSuccess": {
               "text": "你把气压到底，整个人变软，从海草的另一侧滑出去。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": 2 }
+              "deltas": {
+                "sanity": 2
+              }
             },
             "onFailure": {
               "text": "你憋不住了。气泡一涌——海草也跟着一阵猛缠。你硬拽，左小腿划开一道。",
               "oxygenTurnCost": 3,
-              "deltas": { "stamina": -7, "sanity": -2 }
+              "deltas": {
+                "stamina": -7,
+                "sanity": -2
+              }
             }
           }
         },
         {
           "id": "cut_with_knife",
           "label": "用刀割开",
-          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "visibleIf": {
+            "kind": "hasEquipment",
+            "slot": "tool"
+          },
           "outcome": {
             "text": "你把刀贴着脚蹼一拉。海草断成两截，沉下去。你出了一身冷汗——但没事。",
             "oxygenTurnCost": 1
@@ -236,11 +343,15 @@
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.lost_diver",
-      "depthRange": [25, 42],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        25,
+        42
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 5,
       "cooldown": 6,
       "oncePerRun": true,
@@ -255,8 +366,18 @@
           "outcome": {
             "text": "你解开他胸前的扣带——尸体没有动。日志比想象中沉。\n你低头跟他说了一句什么，连你自己也没听清。",
             "oxygenTurnCost": 2,
-            "loot": [{ "itemId": "item.waterlogged_logbook", "qty": [1, 1] }],
-            "deltas": { "sanity": -5 },
+            "loot": [
+              {
+                "itemId": "item.waterlogged_logbook",
+                "qty": [
+                  1,
+                  1
+                ]
+              }
+            ],
+            "deltas": {
+              "sanity": -5
+            },
             "loreEntry": "lore.wreck_graveyard.lost_diver"
           }
         },
@@ -266,16 +387,22 @@
           "outcome": {
             "text": "你给他让出一段水。回头时灯柱里有一阵细沙——也许是你的气泡惊到了什么。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.compass_room",
-      "depthRange": [28, 45],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        28,
+        45
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 6,
       "cooldown": 5,
       "oncePerSave": true,
@@ -289,8 +416,18 @@
           "outcome": {
             "text": "你用刀柄敲了两下，抽屉松开。怀表落进你掌心——\n外壳上有一行刻字，被水蚀得几乎看不清。",
             "oxygenTurnCost": 2,
-            "loot": [{ "itemId": "item.brass_pocket_watch", "qty": [1, 1] }],
-            "deltas": { "sanity": -3 }
+            "loot": [
+              {
+                "itemId": "item.brass_pocket_watch",
+                "qty": [
+                  1,
+                  1
+                ]
+              }
+            ],
+            "deltas": {
+              "sanity": -3
+            }
           }
         },
         {
@@ -302,14 +439,34 @@
             "onSuccess": {
               "text": "指针在玻璃下转了半圈——指向你身后的舱壁。\n你转身——那只是一面普通的舱壁。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -3 },
-              "loot": [{ "itemId": "item.brass_pocket_watch", "qty": [1, 1] }]
+              "deltas": {
+                "sanity": -3
+              },
+              "loot": [
+                {
+                  "itemId": "item.brass_pocket_watch",
+                  "qty": [
+                    1,
+                    1
+                  ]
+                }
+              ]
             },
             "onFailure": {
               "text": "指针没动。但你在玻璃的反光里看见了一只眼睛——不是你的。\n等你回过神，怀表已经在你手里了。你不记得是怎么拿到的。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -8 },
-              "loot": [{ "itemId": "item.brass_pocket_watch", "qty": [1, 1] }]
+              "deltas": {
+                "sanity": -8
+              },
+              "loot": [
+                {
+                  "itemId": "item.brass_pocket_watch",
+                  "qty": [
+                    1,
+                    1
+                  ]
+                }
+              ]
             }
           }
         },
@@ -323,11 +480,15 @@
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.engine_room_hum",
-      "depthRange": [35, 50],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        35,
+        50
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 6,
       "cooldown": 5,
       "title": "引擎室的共鸣",
@@ -343,13 +504,18 @@
             "onSuccess": {
               "text": "你贴着锅炉的外壳，嗡鸣在你颅骨里成形——\n不是一个调子。是七八个声音叠在一起，互相错开，像一群人在很远的地方对话。\n你撑住了。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -8 },
+              "deltas": {
+                "sanity": -8
+              },
               "loreEntry": "lore.wreck_graveyard.engine_room"
             },
             "onFailure": {
               "text": "嗡鸣突然变成一个清晰的字——你听不懂，但你知道它在叫一个名字。\n你不记得自己是怎么退出引擎室的。",
               "oxygenTurnCost": 4,
-              "deltas": { "sanity": -14, "stamina": -3 }
+              "deltas": {
+                "sanity": -14,
+                "stamina": -3
+              }
             }
           }
         },
@@ -359,27 +525,38 @@
           "outcome": {
             "text": "你倒着踢水，灯柱在锅炉上一晃就移开了。\n出舱后嗡鸣还在——但变远了。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -5 }
+            "deltas": {
+              "sanity": -5
+            }
           }
         },
         {
           "id": "investigate_with_knife",
           "label": "拿刀敲一下锅炉看看",
-          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "visibleIf": {
+            "kind": "hasEquipment",
+            "slot": "tool"
+          },
           "outcome": {
             "text": "你的刀刃磕在锅炉外壳上——\n嗡鸣戛然停下。一秒。两秒。\n然后从锅炉里爬出来两只——它们一直在里面。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -4 },
+            "deltas": {
+              "sanity": -4
+            },
             "triggerCombatId": "combat.wreck_spider_crabs_pair"
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.dive_slate",
-      "depthRange": [22, 40],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        22,
+        40
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 5,
       "cooldown": 5,
       "oncePerRun": true,
@@ -393,7 +570,9 @@
           "outcome": {
             "text": "第一行：『气够，水好，下到四十米。』\n第二行：『有人在敲船壳。是节奏，三下，停，三下。』\n第三行的字更用力，也更乱：『不要回敲。』",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -6 },
+            "deltas": {
+              "sanity": -6
+            },
             "loreEntry": "lore.wreck_graveyard.the_slate"
           }
         },
@@ -402,16 +581,22 @@
           "label": "记住那三行，不碰那块板",
           "outcome": {
             "text": "你把那三行记进脑子，没去碰那块板。它继续在水里慢慢摆——像在等下一个人来写第四行。",
-            "deltas": { "sanity": -3 }
+            "deltas": {
+              "sanity": -3
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.pocket_watch_log",
-      "depthRange": [0, 0],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        0,
+        0
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 0,
       "oncePerSave": true,
       "title": "怀表上的字",
@@ -428,11 +613,15 @@
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.logbook_read",
-      "depthRange": [0, 0],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        0,
+        0
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 0,
       "oncePerSave": true,
       "title": "潜水员日志的最后一页",
@@ -449,11 +638,15 @@
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.cold_stores",
-      "depthRange": [26, 42],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        26,
+        42
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 6,
       "cooldown": 5,
       "title": "储藏舱",
@@ -470,16 +663,43 @@
               "text": "你拿肩膀顶开铁门。一股闷了很久的气泡涌出来，擦过你的面镜。\n你抓了几个还没锈穿的罐头塞进网兜。码得最齐的那一摞，你没去动。",
               "oxygenTurnCost": 2,
               "loot": [
-                { "itemId": "item.canned_food", "qty": [1, 2] },
-                { "itemId": "item.old_fishing_net", "qty": [1, 1], "chance": 0.4 }
+                {
+                  "itemId": "item.canned_food",
+                  "qty": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "itemId": "item.old_fishing_net",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.4
+                }
               ],
-              "deltas": { "sanity": -3 }
+              "deltas": {
+                "sanity": -3
+              }
             },
             "onFailure": {
               "text": "门只松了一道缝。你一使劲，里面那摞罐头自己塌了——哗啦一声，在静水里响得过分。\n你只够着了外圈的两个。",
               "oxygenTurnCost": 3,
-              "loot": [{ "itemId": "item.canned_food", "qty": [1, 1], "chance": 0.7 }],
-              "deltas": { "stamina": -8, "sanity": -4 }
+              "loot": [
+                {
+                  "itemId": "item.canned_food",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.7
+                }
+              ],
+              "deltas": {
+                "stamina": -8,
+                "sanity": -4
+              }
             }
           }
         },
@@ -489,16 +709,22 @@
           "outcome": {
             "text": "你把网兜收好退出去。门缝里那一摞罐头还码得齐齐的——等下一次清点。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.hull_handprints",
-      "depthRange": [24, 40],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        24,
+        40
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 6,
       "cooldown": 5,
       "oncePerSave": true,
@@ -515,13 +741,17 @@
             "onSuccess": {
               "text": "五指张开，往外推的姿势。指缝里嵌着锈。\n就这些。舱里再没有别的——没有这只手该连着的人。\n你把灯收回来。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -6 },
+              "deltas": {
+                "sanity": -6
+              },
               "loreEntry": "lore.wreck_graveyard.handprints"
             },
             "onFailure": {
               "text": "你凑近的时候，最上面那只手印的手指，慢慢合拢了一点。\n也可能是你的灯晃了一下。\n你没有再看第二眼去确认。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -10 }
+              "deltas": {
+                "sanity": -10
+              }
             }
           }
         },
@@ -531,16 +761,22 @@
           "outcome": {
             "text": "你把灯移开，玻璃重新变成一块黑。\n你游开的时候背对着那扇窗，走得比平常快一点。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -3 }
+            "deltas": {
+              "sanity": -3
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.the_knocking",
-      "depthRange": [30, 48],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        30,
+        48
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 5,
       "cooldown": 6,
       "oncePerRun": true,
@@ -558,13 +794,18 @@
             "onSuccess": {
               "text": "你把头盔贴上门板。三下之间还有更小的三下，一层套着一层，往里听不到底。\n你撑住了，把头移开。那节奏没有跟过来。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -8 },
+              "deltas": {
+                "sanity": -8
+              },
               "loreEntry": "lore.wreck_graveyard.the_knocking"
             },
             "onFailure": {
               "text": "你贴上去的那一下，敲击声停了——因为它就在门的内侧，贴着你的耳朵，跟你共用这一面铁。\n你猛地推开身子，灯柱在舱里乱扫。",
               "oxygenTurnCost": 4,
-              "deltas": { "sanity": -14, "stamina": -3 }
+              "deltas": {
+                "sanity": -14,
+                "stamina": -3
+              }
             }
           }
         },
@@ -574,7 +815,9 @@
           "outcome": {
             "text": "你的指节碰到冷铁。三下。\n门后静了一瞬——\n然后回了你三下。紧接着第四下、第五下，越来越快，从门那头，从你身后的过道，从你自己的气瓶壁里一起来。\n你不记得是怎么游回上一个舱口的。",
             "oxygenTurnCost": 4,
-            "deltas": { "sanity": -14 },
+            "deltas": {
+              "sanity": -14
+            },
             "loreEntry": "lore.wreck_graveyard.the_knocking"
           }
         },
@@ -584,16 +827,22 @@
           "outcome": {
             "text": "你不去碰那扇门。游远了，那三下还在——停，再三下，不快也不慢——在等下一个肯回敲的人。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -4 }
+            "deltas": {
+              "sanity": -4
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.the_open_door",
-      "depthRange": [40, 50],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        40,
+        50
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 5,
       "cooldown": 6,
       "oncePerRun": true,
@@ -610,13 +859,18 @@
             "onSuccess": {
               "text": "你抓着门框，把灯探进去。光走了几米就被吃干净了。\n那点冷光没有更近，也没有更远——它在等你先动。\n你把自己拽回来，关上了那扇本不该开着的门。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -9 },
+              "deltas": {
+                "sanity": -9
+              },
               "loreEntry": "lore.wreck_graveyard.the_door"
             },
             "onFailure": {
               "text": "那股水流忽然转成往里吸。你的灯、你的气泡、连你整个人，都朝门里偏了半尺。\n你蹬着舱壁才退回来。门还开着。那点冷光，好像近了一点。",
               "oxygenTurnCost": 4,
-              "deltas": { "sanity": -13, "stamina": -3 }
+              "deltas": {
+                "sanity": -13,
+                "stamina": -3
+              }
             }
           }
         },
@@ -626,16 +880,22 @@
           "outcome": {
             "text": "你贴着舱壁绕过去，眼睛一直没离开那扇门。\n经过的时候，那股一呼一吸的水流在你背后停了一下——像是刚刚注意到你。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -5 }
+            "deltas": {
+              "sanity": -5
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.drifting_light",
-      "depthRange": [34, 50],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        34,
+        50
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 5,
       "cooldown": 6,
       "oncePerRun": true,
@@ -646,7 +906,10 @@
         {
           "id": "draw_knife",
           "label": "趁它还远，迎上去",
-          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "visibleIf": {
+            "kind": "hasEquipment",
+            "slot": "tool"
+          },
           "outcome": {
             "text": "你把刀横在身前，蹬水迎上去。那点冷光没有躲——它只是张得更开，把那股冷推到你脸上。",
             "triggerCombatId": "combat.drowned_lantern_solo"
@@ -661,13 +924,18 @@
             "onSuccess": {
               "text": "你按灭探照灯，把呼吸压到最慢，让自己变成一块沉在水里的废铁。\n那点光在离你一臂的地方停了一瞬——然后顺着沙沟漂走了，亮度一点没变。\n它没在找你。它只是在漂。这反而更难受。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -4 },
+              "deltas": {
+                "sanity": -4
+              },
               "loreEntry": "lore.drowned_lantern"
             },
             "onFailure": {
               "text": "你憋不住，胸口一耸——一串气泡冒上去。\n那点光立刻偏过来，对正了你。那股冷顺着丝先到，比光快。\n等你重新打开灯，它已经不见了。你的手在抖，不全是因为冷。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -11, "stamina": -4 }
+              "deltas": {
+                "sanity": -11,
+                "stamina": -4
+              }
             }
           }
         },
@@ -677,16 +945,22 @@
           "outcome": {
             "text": "你关灯，贴着锈烂的船舷往回退。黑里那点冷光还在，沿着沙沟慢慢移——\n没追你，也没停。它有的是时间。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -5 }
+            "deltas": {
+              "sanity": -5
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.galley",
-      "depthRange": [20, 34],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        20,
+        34
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 7,
       "cooldown": 4,
       "title": "伙房",
@@ -703,14 +977,30 @@
               "text": "木门连着锈铰一起崩开。里面码着几听没胀的罐头，柜底压着一卷卷紧的旧渔网。",
               "oxygenTurnCost": 2,
               "loot": [
-                { "itemId": "item.canned_food", "qty": [1, 2] },
-                { "itemId": "item.old_fishing_net", "qty": [1, 1], "chance": 0.5 }
+                {
+                  "itemId": "item.canned_food",
+                  "qty": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "itemId": "item.old_fishing_net",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5
+                }
               ]
             },
             "onFailure": {
               "text": "门纹丝不动。你脚蹬舱壁去撬，杯架先塌了，搪瓷杯叮叮当当滚进黑里。那声音在死舱里响得太久。",
               "oxygenTurnCost": 2,
-              "deltas": { "stamina": -8, "sanity": -1 }
+              "deltas": {
+                "stamina": -8,
+                "sanity": -1
+              }
             }
           }
         },
@@ -720,7 +1010,16 @@
           "outcome": {
             "text": "你把手探进炉膛下的淤泥。指尖碰到圆的、硬的东西——一听滚到炉子底下、没被人拿走的罐头。",
             "oxygenTurnCost": 2,
-            "loot": [{ "itemId": "item.canned_food", "qty": [1, 1], "chance": 0.6 }]
+            "loot": [
+              {
+                "itemId": "item.canned_food",
+                "qty": [
+                  1,
+                  1
+                ],
+                "chance": 0.6
+              }
+            ]
           }
         },
         {
@@ -733,11 +1032,15 @@
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.the_other",
-      "depthRange": [18, 25],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        18,
+        25
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 5,
       "cooldown": 5,
       "title": "水里的另一个人",
@@ -753,13 +1056,17 @@
             "onSuccess": {
               "text": "你晃了三下回收信号。对面也晃了三下——一模一样，慢了半拍，像你的光打在两船之间的浮沙上弹回来的影。\n你没再打第二次，干活时一直把船体挡在你俩中间。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -4 },
+              "deltas": {
+                "sanity": -4
+              },
               "loreEntry": "lore.wreck_graveyard.the_other"
             },
             "onFailure": {
               "text": "你晃灯。对面没回——只是跟着你的节奏，停在那段水里。\n你停下，直直地盯过去想看清他的面镜——那一下他不见了，水里只剩你自己发抖的灯柱。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -9 }
+              "deltas": {
+                "sanity": -9
+              }
             }
           }
         },
@@ -769,7 +1076,9 @@
           "outcome": {
             "text": "你蹬水穿过那段开阔水。到他那儿——什么都没有，只有一柱慢慢升起来的浮沙，和你自己的气泡，不知怎么从上面绕回来落在你肩上。\n你比出发时离深水更近了一点。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -5 }
+            "deltas": {
+              "sanity": -5
+            }
           }
         },
         {
@@ -778,16 +1087,22 @@
           "outcome": {
             "text": "你把沉船的铁壳留在你和他之间，加快手上的活。\n他一直在视野的边上，不近一寸，也不消失，直到你绕过最后一条断龙骨。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.all_facing",
-      "depthRange": [18, 25],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        18,
+        25
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 3,
       "oncePerRun": true,
       "title": "都朝着一个方向",
@@ -803,13 +1118,17 @@
             "onSuccess": {
               "text": "你悬住，顺着那些船首望过去。它们连成一条线，落在塌口外、深水暗处的某一点上。\n你把那个方位记下，告诉自己是洋流——几十年的洋流，会把沉船都梳成一个朝向。\n你信了一半。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 },
+              "deltas": {
+                "sanity": -5
+              },
               "loreEntry": "lore.wreck_graveyard.all_facing"
             },
             "onFailure": {
               "text": "你看得越久，那一片铁就越不像被水流放倒的残骸——更像一口屏住的气，一整片指着同一处的铁，在等它们所指的那个东西回应。\n等你回过神，你比刚才低了好几米，不记得自己沉下来过。",
               "oxygenTurnCost": 4,
-              "deltas": { "sanity": -12 }
+              "deltas": {
+                "sanity": -12
+              }
             }
           }
         },
@@ -819,16 +1138,22 @@
           "outcome": {
             "text": "你把目光从那个口子上挪开，闷头往对面游。\n眼角里，每一道船首还指着同一个方向。你没有低头去看它们指的地方。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -3 }
+            "deltas": {
+              "sanity": -3
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.full_nets",
-      "depthRange": [18, 25],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        18,
+        25
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 6,
       "cooldown": 5,
       "title": "拉满的网",
@@ -845,14 +1170,29 @@
               "text": "你在网绷向深处之前、网眼还结实的上半截下刀。割下好一段网；拖网船甲板上滚出来的几听罐头也在手边。\n你没顺着网往下去看，是什么把它拉得那么紧。",
               "oxygenTurnCost": 2,
               "loot": [
-                { "itemId": "item.old_fishing_net", "qty": [1, 1] },
-                { "itemId": "item.canned_food", "qty": [1, 2], "chance": 0.5 }
+                {
+                  "itemId": "item.old_fishing_net",
+                  "qty": [
+                    1,
+                    1
+                  ]
+                },
+                {
+                  "itemId": "item.canned_food",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 0.5
+                }
               ]
             },
             "onFailure": {
               "text": "刀卡在网眼里。整张网猛地一抖，往下又吃进一截，把你的手腕朝深水那边拽了一掌宽，你才割脱开。\n你退回浅处，手是空的。",
               "oxygenTurnCost": 3,
-              "deltas": { "stamina": -7 }
+              "deltas": {
+                "stamina": -7
+              }
             }
           }
         },
@@ -862,7 +1202,9 @@
           "outcome": {
             "text": "你顺着绷紧的网往下望。网吃着力，一直绷过你灯照得到的地方，再往下，进了蓝。\n那底下还在动——还在拉，慢慢的，匀匀的，没有停的意思。\n你把灯收回来。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -4 },
+            "deltas": {
+              "sanity": -4
+            },
             "loreEntry": "lore.wreck_graveyard.full_nets"
           }
         },
@@ -872,16 +1214,22 @@
           "outcome": {
             "text": "你给那张绷着的网让出一大圈水。你经过的时候，网又往下坡吃进一寸——没有一点声音。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.no_bubbles",
-      "depthRange": [26, 42],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        26,
+        42
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 5,
       "cooldown": 5,
       "title": "不冒泡的潜水员",
@@ -897,12 +1245,16 @@
             "onSuccess": {
               "text": "你按住自己，盯着那个背影看。手是在动——可那是水在动它，一只空袖子挂在断缆上，随涌浪一摆一摆。\n是套挂住的空潜水服，是闭路呼吸器才不冒泡，你给得出两个解释，挑了你更想信的那个，贴着船壳绕了过去。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -4 }
+              "deltas": {
+                "sanity": -4
+              }
             },
             "onFailure": {
               "text": "你盯着那个背影。它忽然停了手——手按在舷窗上，不动了。\n然后，没有回头，没有蹬腿，它整个人朝你这边平平地移过来，速度和你刚才游过去的一模一样，头顶始终没有一个泡。\n你撞着船舷退开，半天找不回自己的方向。",
               "oxygenTurnCost": 4,
-              "deltas": { "sanity": -11 }
+              "deltas": {
+                "sanity": -11
+              }
             }
           }
         },
@@ -912,7 +1264,9 @@
           "outcome": {
             "text": "你拿刀柄当当敲了两下气瓶——这声音水里传得很远，活人会回头的。\n那个背影没回头。它只是停了那么一拍，又接着慢慢地动手，头顶还是没有泡。\n你把刀收回来，决定不去看它的面镜里有没有脸。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -5 },
+            "deltas": {
+              "sanity": -5
+            },
             "loreEntry": "lore.wreck_graveyard.no_bubbles"
           }
         },
@@ -922,16 +1276,22 @@
           "outcome": {
             "text": "你让一整条沉船的铁壳挡在你俩中间，闷头干自己的活。\n等你绕出来，那个背影还伏在原处，手在动，头顶静着。它没跟过来。这一回没有。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.ghost_net",
-      "depthRange": [26, 42],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        26,
+        42
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 7,
       "cooldown": 4,
       "title": "还在打渔的网",
@@ -948,14 +1308,29 @@
               "text": "你从底脚下刀，避开网衣兜兜转转的褶子，割下完好的一幅。抖落里头的陈年残骸时，掉出个锈死的罐头，跟着网一起卷走的。",
               "oxygenTurnCost": 2,
               "loot": [
-                { "itemId": "item.old_fishing_net", "qty": [1, 1] },
-                { "itemId": "item.canned_food", "qty": [1, 1], "chance": 0.5 }
+                {
+                  "itemId": "item.old_fishing_net",
+                  "qty": [
+                    1,
+                    1
+                  ]
+                },
+                {
+                  "itemId": "item.canned_food",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5
+                }
               ]
             },
             "onFailure": {
               "text": "网比你想的活。下刀时一股流把网兜起来，松脱的网衣裹上你持刀的手腕，越挣越紧。你割了好一阵才脱身，那幅网也搅成了废的。",
               "oxygenTurnCost": 3,
-              "deltas": { "stamina": -7 }
+              "deltas": {
+                "stamina": -7
+              }
             }
           }
         },
@@ -965,7 +1340,16 @@
           "outcome": {
             "text": "你不碰主网，只在外圈松垮处薅了一把。一段铜栏杆配件连着半截烂绳，被你拽了出来。",
             "oxygenTurnCost": 1,
-            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.5 }]
+            "loot": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": [
+                  1,
+                  1
+                ],
+                "chance": 0.5
+              }
+            ]
           }
         },
         {
@@ -978,11 +1362,15 @@
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.the_cargo",
-      "depthRange": [24, 40],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        24,
+        40
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 7,
       "cooldown": 4,
       "title": "没送到的货",
@@ -999,14 +1387,29 @@
               "text": "箱板一碰就化，露出里头码得整齐的货：油纸包着的罐头，还有一匣黄铜配件，锈得轻，是这舱里少数没烂透的东西。",
               "oxygenTurnCost": 2,
               "loot": [
-                { "itemId": "item.brass_fitting", "qty": [1, 2] },
-                { "itemId": "item.canned_food", "qty": [1, 2], "chance": 0.6 }
+                {
+                  "itemId": "item.brass_fitting",
+                  "qty": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "itemId": "item.canned_food",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 0.6
+                }
               ]
             },
             "onFailure": {
               "text": "你撬的那只是承重的箱子。它一塌，上头半垛跟着滑下来，扬起一舱锈泥。你抽身退出去，呛了一口红水，什么也没拿到。",
               "oxygenTurnCost": 3,
-              "deltas": { "stamina": -6 }
+              "deltas": {
+                "stamina": -6
+              }
             }
           }
         },
@@ -1016,7 +1419,16 @@
           "outcome": {
             "text": "你在那团焊死的铁里找了找，拧下一个还算囫囵的黄铜部件。其余的一碰就掉渣，红锈在灯柱里慢慢散开。",
             "oxygenTurnCost": 1,
-            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.6 }]
+            "loot": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": [
+                  1,
+                  1
+                ],
+                "chance": 0.6
+              }
+            ]
           }
         },
         {
@@ -1029,11 +1441,15 @@
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.rusticles",
-      "depthRange": [30, 46],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        30,
+        46
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 5,
       "cooldown": 5,
       "title": "锈的冰锥",
@@ -1046,7 +1462,9 @@
           "outcome": {
             "text": "你指尖一搭，锈锥就塌了，软得没有一点抵抗，化成红粉裹住你的手套，温的。底下露出钢面——已经被吃得只剩薄薄一层，对着光，能看见那后头隐隐透亮。整艘船都这么薄了。它还立着，只是因为还没人去碰。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -3 },
+            "deltas": {
+              "sanity": -3
+            },
             "loreEntry": "lore.wreck_graveyard.rusticles"
           }
         },
@@ -1056,7 +1474,16 @@
           "outcome": {
             "text": "你挑了块没被吃透的舱缘，撬下一个黄铜配件——铜不锈，是这片红锈里唯一啃不动的东西。",
             "oxygenTurnCost": 1,
-            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.6 }]
+            "loot": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": [
+                  1,
+                  1
+                ],
+                "chance": 0.6
+              }
+            ]
           }
         },
         {
@@ -1065,16 +1492,22 @@
           "outcome": {
             "text": "你慢慢退开，连水都尽量不搅。那一片红锥在身后轻轻淌着，无声地、一口一口地，把这艘船继续吃下去。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -1 }
+            "deltas": {
+              "sanity": -1
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.ship_bell",
-      "depthRange": [20, 30],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        20,
+        30
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 7,
       "cooldown": 4,
       "title": "船钟",
@@ -1090,13 +1523,23 @@
             "onSuccess": {
               "text": "你一点点撬松锈死的吊环，托住钟，怕它一脱手砸下去惊动整条船。钟到手里沉得意外。刮掉钟腰的壳，那个名字一个字一个字地认全了——现在至少有一个人知道，沉在这儿的是哪条船。",
               "oxygenTurnCost": 2,
-              "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1] }],
+              "loot": [
+                {
+                  "itemId": "item.brass_fitting",
+                  "qty": [
+                    1,
+                    1
+                  ]
+                }
+              ],
               "loreEntry": "lore.wreck_graveyard.the_bell"
             },
             "onFailure": {
               "text": "吊环锈进了架子，纹丝不动。你换个角度再使劲，钟往斜里一沉，卡得更死，锈渣从头顶簌簌落下来，糊了半边面镜。你松了手，没敢再硬来。",
               "oxygenTurnCost": 2,
-              "deltas": { "stamina": -8 }
+              "deltas": {
+                "stamina": -8
+              }
             }
           }
         },
@@ -1119,11 +1562,15 @@
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.the_lodger",
-      "depthRange": [20, 28],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        20,
+        28
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 6,
       "cooldown": 4,
       "title": "住客",
@@ -1140,14 +1587,29 @@
               "text": "你把手放到最慢，贴着筒壁一寸寸探进去，绕开那张一开一合的嘴。鳗没动，只把眼睛转过来看你。你勾住那卷渔具慢慢抽出来——一卷还能用的旧网，网里裹着个没胀的罐头。它从头到尾没把你当回事。",
               "oxygenTurnCost": 2,
               "loot": [
-                { "itemId": "item.old_fishing_net", "qty": [1, 1] },
-                { "itemId": "item.canned_food", "qty": [1, 1], "chance": 0.5 }
+                {
+                  "itemId": "item.old_fishing_net",
+                  "qty": [
+                    1,
+                    1
+                  ]
+                },
+                {
+                  "itemId": "item.canned_food",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5
+                }
               ]
             },
             "onFailure": {
               "text": "你探进去的手快了半分。鳗猛地一缩头，撞了你手背一下，硬得像根拧紧的肌肉，转眼缩回筒子深处去了。你抽回手，那卷渔具被它带得更往里卡，够不着了。",
               "oxygenTurnCost": 2,
-              "deltas": { "stamina": -7 }
+              "deltas": {
+                "stamina": -7
+              }
             }
           }
         },
@@ -1169,11 +1631,15 @@
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.coal_bunker",
-      "depthRange": [22, 30],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        22,
+        30
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 7,
       "cooldown": 4,
       "title": "煤舱",
@@ -1190,14 +1656,29 @@
               "text": "你一捧一捧扒开松煤，煤灰在灯柱里腾成一团黑雾，呛得人睁不开眼。摸到工具箱，撬开锈死的搭扣——里头一只黄铜配件，还有码着的几听罐头，油纸包得严实。",
               "oxygenTurnCost": 2,
               "loot": [
-                { "itemId": "item.brass_fitting", "qty": [1, 1] },
-                { "itemId": "item.canned_food", "qty": [1, 2], "chance": 0.6 }
+                {
+                  "itemId": "item.brass_fitting",
+                  "qty": [
+                    1,
+                    1
+                  ]
+                },
+                {
+                  "itemId": "item.canned_food",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 0.6
+                }
               ]
             },
             "onFailure": {
               "text": "你扒到一半，整面煤堆松了，黑雾轰地盖满整个舱，眼前什么都没了。你只能凭记忆往门缝退，手背蹭着滚下来的煤块，空着手挤了出来。",
               "oxygenTurnCost": 2,
-              "deltas": { "stamina": -8 }
+              "deltas": {
+                "stamina": -8
+              }
             }
           }
         },
@@ -1207,7 +1688,16 @@
           "outcome": {
             "text": "你贴着舱壁慢慢挪，不碰那堆悬着的煤。墙边挂钩上摘下个还算完好的黄铜物件。那两把铲子你没动——摆得太齐了，像还归人用。",
             "oxygenTurnCost": 1,
-            "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.5 }]
+            "loot": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": [
+                  1,
+                  1
+                ],
+                "chance": 0.5
+              }
+            ]
           }
         },
         {
@@ -1220,11 +1710,15 @@
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.the_reef_now",
-      "depthRange": [18, 24],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        18,
+        24
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 7,
       "cooldown": 4,
       "title": "成了礁",
@@ -1241,14 +1735,29 @@
               "text": "你顺着长满软珊瑚的舱缘摸找，掰下几块结实的珊瑚枝，又从一处礁缝里掏出只缩着的龙虾。沉船把自己还给了海，顺手也分你一点。",
               "oxygenTurnCost": 2,
               "loot": [
-                { "itemId": "item.coral_shard", "qty": [1, 2] },
-                { "itemId": "item.lobster", "qty": [1, 1], "chance": 0.5 }
+                {
+                  "itemId": "item.coral_shard",
+                  "qty": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "itemId": "item.lobster",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5
+                }
               ]
             },
             "onFailure": {
               "text": "你伸手进礁缝，缝里那只龙虾倒退着弹走了，尾巴扇起一团沙。你只够着几块脆珊瑚，一掰就碎在手里。空着手退出来。",
               "oxygenTurnCost": 2,
-              "deltas": { "stamina": -6 }
+              "deltas": {
+                "stamina": -6
+              }
             }
           }
         },
@@ -1258,7 +1767,9 @@
           "outcome": {
             "text": "你在长满生长的甲板上停了停。鱼群绕着你不慌不忙，水是暖的。墓园里少有的一处，让人不去想着死。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 1 }
+            "deltas": {
+              "sanity": 1
+            }
           }
         },
         {
@@ -1271,11 +1782,15 @@
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.amphora_hold",
-      "depthRange": [22, 30],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        22,
+        30
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 6,
       "cooldown": 5,
       "title": "更老的船",
@@ -1291,12 +1806,22 @@
             "onSuccess": {
               "text": "你从沙里起出一只完整的，封蜡早化了，罐口箍着一圈青铜的封箍。里头空了，装的东西回了海，几千年前的事。你把那圈不锈的铜箍卸下来，铜比陶罐还耐放。",
               "oxygenTurnCost": 2,
-              "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1] }]
+              "loot": [
+                {
+                  "itemId": "item.brass_fitting",
+                  "qty": [
+                    1,
+                    1
+                  ]
+                }
+              ]
             },
             "onFailure": {
               "text": "你刚把一只罐子从沙里撬松，它就顺着沉积裂成两瓣，碎沿割花了手套，碎片沉回沙里，跟那条船一起，回到没人动过的样子。你空着手收回手。",
               "oxygenTurnCost": 2,
-              "deltas": { "stamina": -6 }
+              "deltas": {
+                "stamina": -6
+              }
             }
           }
         },
@@ -1319,11 +1844,15 @@
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.the_quarters",
-      "depthRange": [20, 28],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        20,
+        28
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 4,
       "cooldown": 6,
       "oncePerRun": true,
@@ -1340,13 +1869,17 @@
             "onSuccess": {
               "text": "你按住自己，一样样看：没有洋流灌进来的舱，淤泥把东西轻轻压住、定在原地，几十年没人搅动，本就会是这样。\n道理都对。可道理说不清，为什么连那排缸子的把手，都还朝着同一个方向。你把这间屋记下来，退了出去，没去开任何一只柜门。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 },
+              "deltas": {
+                "sanity": -5
+              },
               "loreEntry": "lore.wreck_graveyard.the_kept_quarters"
             },
             "onFailure": {
               "text": "你越看越觉得这屋是有人在收拾的。毯子的折痕太新，靴子摆得太正，那排缸子像今早才有人擦过、挂回钩上。\n你忽然很想知道，那只手这会儿在不在屋里。你没敢回头确认，背着那间太干净的舱退了出去。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -11 }
+              "deltas": {
+                "sanity": -11
+              }
             }
           }
         },
@@ -1356,7 +1889,9 @@
           "outcome": {
             "text": "你伸手去够一只搪瓷缸——又停住了。这屋子有人在守着的样子，让你下不去手。你把缸子留在钩上，把手还朝着它原来朝的方向。有些屋子，不该拿走东西。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 },
+            "deltas": {
+              "sanity": -2
+            },
             "loreEntry": "lore.wreck_graveyard.the_kept_quarters"
           }
         },
@@ -1366,16 +1901,22 @@
           "outcome": {
             "text": "你没跨进那道舱门，退回过道里。屋里一切都还在原处，等着那双手回来。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -1 }
+            "deltas": {
+              "sanity": -1
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.the_gear_lump",
-      "depthRange": [22, 30],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        22,
+        30
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 4,
       "cooldown": 5,
       "title": "一团齿轮",
@@ -1391,12 +1932,22 @@
             "onSuccess": {
               "text": "你把铜疙瘩从板结的淤泥里撬松，掂在手里——沉、死、冰凉，就是一块锈透的废铜。里头那些齿轮再也不会动了。\n当黄铜料卖，它和别的铜没两样。你把它收进网兜，没再去想它原来在数什么。",
               "oxygenTurnCost": 2,
-              "loot": [{ "itemId": "item.brass_fitting", "qty": [1, 1] }]
+              "loot": [
+                {
+                  "itemId": "item.brass_fitting",
+                  "qty": [
+                    1,
+                    1
+                  ]
+                }
+              ]
             },
             "onFailure": {
               "text": "你撬得太急，那道崩口一受力，整块铜从中间散开，齿轮一个接一个掉进淤泥，搅起一团泥沙就没了影。等水清下来，沙面平平整整，像从来没有过这东西。你空着手，半天没回过神。",
               "oxygenTurnCost": 2,
-              "deltas": { "stamina": -6 }
+              "deltas": {
+                "stamina": -6
+              }
             }
           }
         },
@@ -1409,13 +1960,17 @@
             "onSuccess": {
               "text": "你拨动崩口里露出的那圈齿，几十年了，它们居然还顺滑地咬着转。刻度盘跟着走了几格，停在一个数上。\n你跟自己讲：是台旧式的计算装置，老早就有人造得出来，没什么稀奇。道理都对。你没跟自己讲的是，你松了手，那圈齿还在自己往下走，那个数还在往大里加。你把手收回来。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 },
+              "deltas": {
+                "sanity": -5
+              },
               "loreEntry": "lore.wreck_graveyard.the_count"
             },
             "onFailure": {
               "text": "你拨了那圈齿。它转得太顺了，顺得像一直在等人来拨。刻度盘跳到一个数上——你说不清那是什么的数，只知道它比你想的大得多，而且你一停手，它自己接着往上加。\n你忽然很怕弄懂它在数到几。你撒开手，那团铜在淤泥里轻轻转着，自己数自己的。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -11 }
+              "deltas": {
+                "sanity": -11
+              }
             }
           }
         },
@@ -1429,11 +1984,15 @@
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.the_fish_that_wait",
-      "depthRange": [18, 26],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        18,
+        26
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 5,
       "cooldown": 4,
       "title": "不躲的鱼",
@@ -1449,13 +2008,17 @@
             "onSuccess": {
               "text": "你停住，由它们围着。鱼就是鱼——常有人下来的残骸，鱼不怕人了，说不定还有人喂过，把灯和投食记成了一回事。\n道理都对。它们等了一会儿，没等到那一下，慢慢散开去啄礁了。你绕过那片刚才齐齐看你的眼睛，记下了这片舱。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -4 },
+              "deltas": {
+                "sanity": -4
+              },
               "loreEntry": "lore.wreck_graveyard.the_waiting_fish"
             },
             "onFailure": {
               "text": "你停住，由它们围着。鱼不散，越聚越多，全悬在光圈边上，一动不动地等。\n你忽然很想知道，被它们这么等过的上一个人，等来的是什么。这念头一起就压不住了——你拨开那堵活的墙往外退，鱼在你身后合拢，还是齐齐对着你。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -10 }
+              "deltas": {
+                "sanity": -10
+              }
             }
           }
         },
@@ -1465,7 +2028,9 @@
           "outcome": {
             "text": "你抬手拨开那群悬着的鱼，往舱里游。它们让开一条缝，又在你身后合上，从头到尾没有一条游开，全侧着身子跟着你转，把脸对着你。你没回头去数有多少。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -3 },
+            "deltas": {
+              "sanity": -3
+            },
             "loreEntry": "lore.wreck_graveyard.the_waiting_fish"
           }
         },
@@ -1475,16 +2040,22 @@
           "outcome": {
             "text": "你把灯从舱口移开，退了出去。光一走，那群鱼还停在原处的黑里，对着灯刚才照过的地方，等着。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -1 }
+            "deltas": {
+              "sanity": -1
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.the_same_minute",
-      "depthRange": [20, 28],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        20,
+        28
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 4,
       "cooldown": 5,
       "title": "停摆的钟",
@@ -1500,13 +2071,17 @@
             "onSuccess": {
               "text": "你摸到机舱那只钟前。指针果然停在同一刻——水一齐灌满，钟一齐淹死，机械停摆，本就该是这样，全船同一分钟，没什么玄的。\n道理都对。你把表记下来，转身往回走时，没让自己去想：被按住的那一分钟，会不会其实没过去，下面一直还是那一刻。",
               "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 },
+              "deltas": {
+                "sanity": -5
+              },
               "loreEntry": "lore.wreck_graveyard.the_same_minute"
             },
             "onFailure": {
               "text": "你找到第三只钟，指针果然停在同一刻。可越看越不对——不是它们停在了那一分钟，是那一分钟根本没走，是你也正泡在那一分钟里，跟这条船一起，被按在水底她沉下去的那一刻。\n你抬手看自己的潜水表，怕它也停了。你没敢看第二眼，赶紧往上找亮的地方。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -11 }
+              "deltas": {
+                "sanity": -11
+              }
             }
           }
         },
@@ -1516,7 +2091,9 @@
           "outcome": {
             "text": "你没去碰那两只钟。有些钟不该再上发条。你由它们停着，停在那条船最后的一分钟上，绕了过去。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 },
+            "deltas": {
+              "sanity": -2
+            },
             "loreEntry": "lore.wreck_graveyard.the_same_minute"
           }
         },
@@ -1526,16 +2103,22 @@
           "outcome": {
             "text": "你从舵房游出去。身后两只钟指着同一刻，安安静静地，继续一致下去。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -1 }
+            "deltas": {
+              "sanity": -1
+            }
           }
         }
       ]
     },
-
     {
       "id": "wreck_graveyard.swept",
-      "depthRange": [24, 28],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        24,
+        28
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 3,
       "cooldown": 6,
       "oncePerRun": true,
@@ -1552,13 +2135,17 @@
             "onSuccess": {
               "text": "你停住，一条条讲给自己听：背流的一截会被涡流冲得干净，鱼啃过的地方铜会发亮，烂绳泡久了自己会塌成一圈。\n每一条都讲得通，每一条都是真的。可没有哪一条，能把栏杆上那段铜，擦成这个亮法。你把讲得通的都记下，剩下那点讲不通的，压着，慢慢退开，没有抬头去看是谁在扫。",
               "oxygenTurnCost": 3,
-              "deltas": { "sanity": -6 },
+              "deltas": {
+                "sanity": -6
+              },
               "loreEntry": "lore.wreck_graveyard.the_swept_deck"
             },
             "onFailure": {
               "text": "你盯着那截干净看得太久。淤泥抹开的方向、缆绳盘起的圈、擦亮的铜——它们凑在一起，只剩一个讲得通的说法：有人刚在这儿干过活，还没走远。\n你忽然发觉，自己这会儿正站在那截扫干净的甲板上。你不知道自己什么时候站上来的。你退下那道线，退进烂泥里，赶紧找上浮的方向。",
               "oxygenTurnCost": 5,
-              "deltas": { "sanity": -12 }
+              "deltas": {
+                "sanity": -12
+              }
             }
           }
         },
@@ -1568,7 +2155,9 @@
           "outcome": {
             "text": "你绕开那一臂宽的干净，脚蹼都不往那边扇。谁扫到一半的活计，你不去接，也不去搅。你把它留在那儿，留给会回来的那个人。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -3 },
+            "deltas": {
+              "sanity": -3
+            },
             "loreEntry": "lore.wreck_graveyard.the_swept_deck"
           }
         },
@@ -1578,7 +2167,257 @@
           "outcome": {
             "text": "你从那截扫过的甲板上方游开。回头看时，干净的那截还在，一臂宽，等着接着被扫下去。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "deltas": {
+              "sanity": -2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "wreck_graveyard.the_keel_bone",
+      "depthRange": [
+        76,
+        100
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "龙骨",
+      "body": "你到了这条船的底部。\n龙骨——一根生铁的脊柱，从船首延伸到黑暗里消失。两侧的肋骨从它出发，往上撑开，撑出这条船原本的形状。现在大多断了，锈缩进去，只剩这一根还横在这里。\n再往下，是沙。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "follow_the_keel",
+          "label": "沿龙骨走一段，看看两端接着什么",
+          "outcome": {
+            "text": "你贴着龙骨游。铁上面糊了一层生物附着——贝壳、藤壶、钙质残留，把金属包成了另一个形状。\n走到一段龙骨弯折的地方，折角里卡着什么东西：一只铜活件，被附着物托着，没有沉进沙里。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": [
+                  1,
+                  1
+                ],
+                "chance": 0.65
+              }
+            ]
+          }
+        },
+        {
+          "id": "read_the_shape",
+          "label": "停下来，看这条船原来的样子",
+          "outcome": {
+            "text": "你停下来，把灯转一圈，顺着肋骨往上看。\n在这个角度，船的骨架很完整——没有皮肉，但形状还在，还是一条船的轮廓，只不过里面全是黑水。\n你认了一会儿，才记起该走。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "wreck_graveyard.silt_floor_keel",
+      "depthRange": [
+        78,
+        100
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 7,
+      "cooldown": 5,
+      "title": "底泥",
+      "body": "龙骨两侧是多年积下来的泥——细如粉末，厚到你的灯打进去只剩一道白柱。\n你的鳍尖蹭到它。一柱烟升起来，三秒内把你包进一个看不见手的白盒子里。\n标准动作：停。不动。等它落。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "stop_and_wait",
+          "label": "停住，水平悬停，等泥落",
+          "check": {
+            "stat": "sanity",
+            "dc": 40,
+            "onSuccess": {
+              "text": "你压住蹬踹的冲动，手摊开，让浮力把你托住。\n看不见，听不到回声，只有自己的呼吸。\n大概三十秒之后，白色开始有了层次，然后是轮廓，然后是龙骨边缘。泥落回去，你的手出现了。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "你没忍住，踢了一下——后退。泥又一次扬起来，比第一次更厚，把你原地封住。\n你闭着眼睛贴着一面看不见的铁壁，数自己的呼气次数，用时间换能见度。你不知道数了多少下。",
+              "oxygenTurnCost": 4,
+              "deltas": {
+                "sanity": -5
+              }
+            }
+          }
+        },
+        {
+          "id": "go_up_a_bit",
+          "label": "向上游开，找能见度",
+          "outcome": {
+            "text": "你慢慢往上浮，让那团白色沉在下面。两米之上，水开始透了。\n你在上面等了一会儿，等到下面的泥重新压平，才继续。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "wreck_graveyard.the_lowest_point",
+      "depthRange": [
+        76,
+        98
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "最低点",
+      "body": "船的最低点是个汇聚的地方。\n你扫了一圈：几枚硬币，一支钢笔，一只靴子底，还有根骨头，比你的手指还细。\n船里所有能滚的东西，几十年来都滚到这里来了。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "sift_through",
+          "label": "翻找，看有没有值得带走的",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你用指尖拨开最上层的泥，先碰到几枚说不清国籍的硬币，再往下，一只铜表壳——机芯没了，但壳子还在。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                {
+                  "itemId": "item.brass_fitting",
+                  "qty": [
+                    1,
+                    1
+                  ]
+                },
+                {
+                  "itemId": "item.brass_pocket_watch",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.3
+                }
+              ]
+            },
+            "onFailure": {
+              "text": "你动了动，沙子和泥混进来，把你刚扒出的层次糊回去。\n再看，什么都找不到了——好像从来没有过。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -3
+              }
+            }
+          }
+        },
+        {
+          "id": "only_look",
+          "label": "不动它，只看",
+          "outcome": {
+            "text": "你没伸手。那根细骨头靠着钢笔，钢笔靠着一枚硬币——这样挨着，不像是随机落下来的，又的确是。\n几十年来都没人动过这里，你也没有。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "wreck_graveyard.the_hull_ribs",
+      "depthRange": [
+        80,
+        100
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 5,
+      "cooldown": 4,
+      "title": "肋骨",
+      "body": "船板腐烂了，只剩肋骨。\n一排钢肋从龙骨出发，往两侧撑出去，在黑暗里依次消失。没有遮盖，没有填充——框架，只是框架，这条船现在是只空笼子。\n你的灯经过每一根肋骨，都在你身上投下一条短暂的阴影。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "thread_the_ribs",
+          "label": "从肋骨之间穿过去",
+          "check": {
+            "stat": "stamina",
+            "dc": 14,
+            "onSuccess": {
+              "text": "你侧身，一根一根地过。气瓶在两根肋骨之间过的时候紧了一下，你屏住气，慢慢推过去。\n出来之后，你把每一根肋骨的位置又在脑子里过了一遍——你知道这不必要。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "你卡住了。肋骨弯出的弧度比你估的小——气瓶挡住了，退也退不顺。\n你慢慢地、非常慢地调整，别让泥扬起来。铁在面罩上留了一道划痕。",
+              "oxygenTurnCost": 4,
+              "deltas": {
+                "stamina": -8,
+                "sanity": -4
+              }
+            }
+          }
+        },
+        {
+          "id": "go_around",
+          "label": "绕到肋骨架的外侧",
+          "outcome": {
+            "text": "你游到框架外面，贴着肋骨的弧面走。\n从外面看，这些肋骨像一只手的手指，从一条生铁手掌上伸出来，分开，在你四周弯过去。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "wreck_graveyard.below_the_hull",
+      "depthRange": [
+        82,
+        100
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 2,
+      "cooldown": 8,
+      "oncePerRun": true,
+      "title": "壳外",
+      "body": "龙骨底部有一个锈穿的洞，手掌大，圆的。\n你侧身挤过去。\n现在整条船都在你上方，铁肚皮朝上，下面是沙地，下面是你。\n你有半秒不知道哪边是上面。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "reorient",
+          "label": "找气泡，确认方向，再往下看",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你对着自己的呼气气泡，看它们往上漂——上面是船底，不是天空，但气泡告诉你那是上面。\n沙地在脚下，船壳在头顶，都对了。\n你绕着船底游了一圈，看了一眼没有人看过的那一面。锈上面的附着物又厚又密，像是另一块岩礁在这里生长了几十年。",
+              "oxygenTurnCost": 3,
+              "deltas": {
+                "sanity": -4
+              }
+            },
+            "onFailure": {
+              "text": "你找气泡，气泡往上，上面是铁，铁是沙，不对，再来——你眼睛里只有龙骨和沙地来回换位。\n你掐了自己的手腕，痛让你停下来。气泡往铁的那边去，那就是上面，就是上面。\n你从洞里退回船内，后背贴着铁壁，等自己从那半秒里出来。",
+              "oxygenTurnCost": 4,
+              "deltas": {
+                "sanity": -12
+              }
+            }
+          }
+        },
+        {
+          "id": "back_inside",
+          "label": "退回船内——不想在外面待",
+          "outcome": {
+            "text": "你没有在外面停留。半秒的颠倒够了，你退回洞里，背面朝沙，顶面朝铁，重新找到那条线：上是上，下是下。\n洞外的那半秒，你留给那半秒。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -3
+            }
           }
         }
       ]

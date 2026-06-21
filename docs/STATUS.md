@@ -8,7 +8,7 @@
 
 完整 meta-loop 跑通：**港口对话 → 海图选点 → 教学线性下潜 / 节点图随机下潜 → 事件 → 战斗 → 上浮 → 减压 → 死亡 → 葬礼 → 尸体回收 → 衰减 → 回港变卖/回购 → 材料 ＋ 金币 修缮升级**。元进度已从"建设值"换成"材料经济"（2026-06-01 基建地图 Phase A，见 §5 + quirk #50）。**多灯塔基地数据模型已就位**（Phase B，`profile.lighthouses` + home 灯塔 + `engine/lighthouses.ts`，但灯塔 inert——reveal/reach 留 Phase C；quirk #51）。
 内容层 3 个 random zone（旧灯塔礁 / 蓝洞群 / 沉船墓园）。**洞穴 zone（蓝洞群）的下潜图已从层状 DAG 重写为洞穴"迷路图"**：双向边的连通图，有绕回的环 / 死路 / 多个最深点 / 入口+远端两个上浮口，由 `ZoneDef.mapShape='maze'` 选择；开阔海域（旧灯塔礁 / 沉船墓园）仍走层状 DAG。迷路剖面走**洞型谱** `depthCurveRange`（k 谱：井+廊 / 匀速 / 廊+坑·每洞口按 POI id 派生固定性格·quirk #114）；海图 POI 经 `PoiModifier`（GenOpts 薄投影）可配窄 span/长图/钉 k——首条平廊「横岩廊」+ 洞型情报标签已上海图（quirk #115）。详见 §5 +「mapgen 回归」+ quirk #30–#34/#114/#115。出海点位已升级为 **港口海图（POI 选点）**：anchor 持久 + roaming 按 runsCompleted 刷新，两级门控（发现 flag / 抵达 upgrade），POI 带深度偏移·洋流·能见度修正（三种全部实装：深度→耗氧/减压、洋流→移动耗体力+氧、能见度→理智压力+黑暗盲航）。详见 §5 + quirk #27/#28。
-TypeScript 类型干净，**11 个端到端 playthrough 脚本**全部通过（新增 `playthrough-chart.ts`），加上 **事件回归框架**（`scripts/event-runner.ts` + `scripts/playthrough-scenarios.ts`，目前 **394 个 baseline scenario**）+ **战斗回归框架**（`scripts/combat-runner.ts` + `scripts/playthrough-combat-scenarios.ts`，目前 18 个 baseline scenario）+ **事件 + 战斗双 dev 面板**（DEV 模式 Shift+D / Shift+C 互斥切换，详见 §3）。268 个 dive 事件（midwater 41 / vent 32 / whalefall 7 / trench 30 + 其它区）。
+TypeScript 类型干净，**11 个端到端 playthrough 脚本**全部通过（新增 `playthrough-chart.ts`），加上 **事件回归框架**（`scripts/event-runner.ts` + `scripts/playthrough-scenarios.ts`，目前 **413 个 baseline scenario**）+ **战斗回归框架**（`scripts/combat-runner.ts` + `scripts/playthrough-combat-scenarios.ts`，目前 18 个 baseline scenario）+ **事件 + 战斗双 dev 面板**（DEV 模式 Shift+D / Shift+C 互斥切换，详见 §3）。277 个 dive 事件（midwater 41 / vent 36 / whalefall 7 / trench 30 / wreck 45 + 其它区）。
 
 ---
 

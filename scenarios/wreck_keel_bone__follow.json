@@ -1,0 +1,13 @@
+{
+  "_comment": "wreck t3·龙骨·沿龙骨游（realistic）：ox -2，chance loot brass_fitting。",
+  "eventId": "wreck_graveyard.the_keel_bone",
+  "depth": 85,
+  "seed": 1,
+  "choices": ["follow_the_keel"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -2 }
+  }
+}

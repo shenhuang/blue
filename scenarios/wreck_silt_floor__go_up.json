@@ -1,0 +1,13 @@
+{
+  "_comment": "wreck t3·底泥·向上游开找能见度：ox -2。",
+  "eventId": "wreck_graveyard.silt_floor_keel",
+  "depth": 85,
+  "seed": 1,
+  "choices": ["go_up_a_bit"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -2 }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "_comment": "vent t1·奶色的水·穿过去（uncanny）：ox -2，lore added。",
+  "eventId": "vent.milk_water",
+  "depth": 45,
+  "seed": 1,
+  "choices": ["push_through"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.vent.milk_water_precipitation"],
+    "statsDelta": { "oxygen": -2 }
+  }
+}

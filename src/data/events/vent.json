@@ -1827,6 +1827,167 @@
           }
         }
       ]
+    },
+    {
+      "id": "vent.the_first_warmth",
+      "depthRange": [
+        28,
+        68
+      ],
+      "zoneTags": [
+        "vent"
+      ],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "第一道暖",
+      "body": "水里有一块暖。\n不大，游进去两臂宽，出来又凉了。跟压缩、跟下降的深度没有关系——那是另一种热，来自下面的某个地方。\n你的仪表只动了零点几格。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "mark_and_descend",
+          "label": "记下深度，继续往下",
+          "outcome": {
+            "text": "你记下深度计的数字，往下游。\n每再下沉十米，就会有一小段暖过来，持续两三步，然后消失。越往下，这种感觉越频繁，间隔越短。\n你还没到，但你知道下面有什么了。",
+            "oxygenTurnCost": 1,
+            "loreEntry": "lore.vent.first_warmth_gradient"
+          }
+        },
+        {
+          "id": "swim_back_into_warm",
+          "label": "原路游回去，在那块暖里停一下",
+          "outcome": {
+            "text": "你退回那两臂宽的暖水里，停在中间悬停。\n比你的皮肤热，不烫，就是热。两侧都是冷的正常海水，只有这一块不对。\n你在里面停了比该停的更长的时间。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "vent.seep_crack",
+      "depthRange": [
+        25,
+        68
+      ],
+      "zoneTags": [
+        "vent"
+      ],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "裂缝",
+      "body": "海底有一道缝，几毫米宽，一米多长。\n气泡从里面钻出来——不是成串的，是一个一个，间隔不固定，像在喘。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "watch_closely",
+          "label": "贴近，看清楚这道缝",
+          "check": {
+            "stat": "sanity",
+            "dc": 42,
+            "onSuccess": {
+              "text": "你趴近到距缝十厘米。\n气泡是无色的，一颗一颗，有些在出来之前在缝里憋了半秒，能看见矿物质在缝边沉积——白色的粉末，非常薄。\n没有热量，或者热量被稀释掉了。这是一条细缝，不是热液口，但连到同一套下面的东西上。",
+              "oxygenTurnCost": 2,
+              "loreEntry": "lore.vent.seep_crack_detail"
+            },
+            "onFailure": {
+              "text": "你趴近看，脑子里一直在算：如果这道缝扩开，如果压力变了，如果下面的东西推上来——\n你把自己往后拨了两下。那道缝还在冒泡，一颗一颗，不管你在不在。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -4
+              }
+            }
+          }
+        },
+        {
+          "id": "pass_by",
+          "label": "绕开它，继续",
+          "outcome": {
+            "text": "你从缝旁边绕过去。最后一颗气泡在你的影子里升起，跟你走了一段，然后不见了。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "vent.milk_water",
+      "depthRange": [
+        30,
+        70
+      ],
+      "zoneTags": [
+        "vent"
+      ],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "奶色的水",
+      "body": "你游进一片奶白色的水里。\n能见度没有变差，只是颜色变了——水成了白的，像稀开的牛奶。你的手在里面还是你的手，只是边缘有点难认。\n矿物质渗出来遇海水沉淀。你知道这个。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "push_through",
+          "label": "穿过去",
+          "outcome": {
+            "text": "你闷头游，白水在你身上留了一层，出来之后，你的手套有点涩，像沾了什么。\n往下，白色变薄了，最后又成了正常的蓝黑色。你没看白水的边界在哪里——你不想看。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.vent.milk_water_precipitation"
+          }
+        },
+        {
+          "id": "go_around",
+          "label": "绕开，走清水那边",
+          "outcome": {
+            "text": "你绕到白水的外沿游过去。从侧面看，那片奶色有个边界，整齐，像是被什么框住的，两侧是正常的蓝黑色。\n你从清水里回头看，白色的水团就悬在那，不扩散。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "vent.waiting_fish",
+      "depthRange": [
+        32,
+        72
+      ],
+      "zoneTags": [
+        "vent"
+      ],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "聚在那里的",
+      "body": "一片暖水里，鱼。\n十几条，悬在同一个水层，各朝不同的方向，但都不动。你靠近三米，它们还在那。\n不是被你惊到了——它们本来就不动，停在那，好像在等什么。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "stay_and_watch",
+          "label": "停下来，等着看它们等什么",
+          "check": {
+            "stat": "sanity",
+            "dc": 45,
+            "onSuccess": {
+              "text": "你悬停，不动，跟它们一起在那里。\n等了一会儿，最靠近你的那条轻轻转了个方向，对着你。你对视了三秒。\n然后它转回去，换了个方向，还是不动。\n也许是热量，也许是洋流，也许什么都不是。你游走的时候，背后没有动静。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "你停下来，看了一会儿，然后发现自己开始数：十三条，等一下，十三条，现在变成——\n你把眼睛移开，继续游，没有把那个数字数完。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -5
+              }
+            }
+          }
+        },
+        {
+          "id": "swim_through",
+          "label": "不管它们，从它们中间穿过去",
+          "outcome": {
+            "text": "你直接穿过去。它们让开——不急，每条各自偏了一点，给你让出一条缝，等你过去，又合回来。\n你没有回头。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -2
+            }
+          }
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,16 @@
+{
+  "_comment": "vent t1·裂缝·贴近看·sanity 100 seed 100 → pass：ox -2，lore added。",
+  "eventId": "vent.seep_crack",
+  "depth": 45,
+  "seed": 100,
+  "stats": { "sanity": 100 },
+  "choices": ["watch_closely"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "loreAdded": ["lore.vent.seep_crack_detail"],
+    "statsDelta": { "oxygen": -2 }
+  }
+}
