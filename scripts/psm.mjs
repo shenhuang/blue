@@ -222,7 +222,7 @@ function cmdStart(argv) {
   if (CFG.reuseNodeModules) {
     const wtNM = join(wtAbs, 'node_modules');
     if (!existsSync(wtNM) && existsSync(join(root, 'node_modules'))) {
-      try { symlinkSync(join(root, 'node_modules'), wtNM, 'dir'); ok('node_modules → symlink 复用 main 树（macOS-native·省装）'); }
+      try { symlinkSync(relPath(wtAbs, join(root, 'node_modules')), wtNM, 'dir'); ok('node_modules → symlink 复用 main 树（相对路径·Mac+沙箱通用）'); }
       catch { warn(`symlink node_modules 失败·改独立装：(cd ${wtRel} && npm install)`); }
     }
   }
