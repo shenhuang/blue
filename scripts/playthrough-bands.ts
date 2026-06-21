@@ -87,11 +87,17 @@ L(`  深黑 band「${deep!.name}」${deep!.depthRange[0]}–${deep!.depthRange[1
 // 3. mapgen depthRange 覆盖：band 绝对窗口生成
 // ============================================================
 L('\n========== 3. mapgen depthRange 覆盖 ==========');
-const zone = getZone(deep!.zoneId)!;
-const map = generateDiveMap({ zone, profileFlags: new Set(), depthRange: deep!.depthRange });
+// 找一个深度超出宿主 zone 上限的 band 来验证 depthRange 覆盖（trench.t2+ 均超出 vent_trench[85,118]）。
+const deepOverride = bands.find((b) => {
+  const z = getZone(b.zoneId);
+  return z != null && b.depthRange[1] > z.depthRange[1];
+});
+assert(deepOverride, '3: 存在 band.depthRange[1] 超出宿主 zone.depthRange[1] 的深柱档（depthRange 覆盖有意义）');
+const zone = getZone(deepOverride!.zoneId)!;
+const map = generateDiveMap({ zone, profileFlags: new Set(), depthRange: deepOverride!.depthRange });
 const md = Object.values(map.nodes).map((n) => n.depth);
 const lo = Math.min(...md), hi = Math.max(...md);
-assert(lo >= deep!.depthRange[0] && hi <= deep!.depthRange[1], `3: 深度落在 band 窗口 [${deep!.depthRange}]，实际 [${lo},${hi}]`);
+assert(lo >= deepOverride!.depthRange[0] && hi <= deepOverride!.depthRange[1], `3: 深度落在 band 窗口 [${deepOverride!.depthRange}]，实际 [${lo},${hi}]`);
 assert(hi > zone.depthRange[1], `3: band 窗口比 zone 自身 depthRange[1]=${zone.depthRange[1]} 更深（覆盖生效、非平移）`);
 // 不传 depthRange → 回退 zone 自身（POI/教学路径不受影响）
 const mapBase = generateDiveMap({ zone, profileFlags: new Set() });

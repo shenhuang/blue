@@ -594,7 +594,7 @@ assert(litT1?.columnId === 'col.home' && litT1?.depthTier === 1, '9a: 携带 col
 // 9b bandId 档下潜走 band 路径：落 band 的 zone + alertFactor/hunts（band.trench.t3：dark·alertFactor 1.4·hunts）。
 const deepTier: ChartPoi = {
   id: 'poi.dive.trench.t3',
-  zoneId: 'zone.blue_caves',
+  zoneId: 'zone.vent_trench',
   bandId: 'band.trench.t3',
   columnId: 'col.trench',
   depthTier: 3,
@@ -604,7 +604,7 @@ const deepTier: ChartPoi = {
   persistent: true,
 };
 const sDeep = startDiveFromPoi(createInitialGameState(), deepTier);
-assert(sDeep.run?.zoneId === 'zone.blue_caves', '9b: bandId 档 → 进 band 的 zone（blue_caves）');
+assert(sDeep.run?.zoneId === 'zone.vent_trench', '9b: bandId 档 → 进 band 的 zone（vent_trench）');
 assert(
   sDeep.run?.bandAlertFactor === 1.4,
   `9b: bandId 档 → 落 band.trench.t3 alertFactor(1.4)，实 ${sDeep.run?.bandAlertFactor}`,
