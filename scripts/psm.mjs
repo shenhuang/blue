@@ -29,7 +29,7 @@
 // 退出码：成功 0；「警告即停·等你确认」用 3（区别于真错误 1）。
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, symlinkSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, symlinkSync, rmSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join, relative as relPath, posix as ppath } from 'node:path';
 
@@ -349,6 +349,8 @@ function cmdLand(argv) {
 
   if (runningOnMac) {
     const root = ROOT();
+    // 先清沙箱残留 lock——Mac rm 没问题，沙箱留下的 *.lock 会挡 ff-merge
+    clearStaleLocks(root);
     const preFfSha = shaOf(CFG.mainBranch);
     const ffResult = spawnSync('git', ['merge', '--ff-only', s.branch], { cwd: root, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] });
     if (ffResult.status !== 0) {
@@ -413,6 +415,60 @@ function doMerge(name) {
 
 // ─────────────────────────── abort / gc ───────────────────────────
 
+// ─────────────────────────── unlock ───────────────────────────
+// 沙箱 mount 不能 unlink，git 崩溃后遗留 *.lock 文件挡住 Mac 操作。
+// Mac 本机 rm 没问题——这里统一清掉常见残留位置，避免手动找。
+function clearStaleLocks(root, { verbose = false } = {}) {
+  const candidates = [
+    join(root, '.git', 'HEAD.lock'),
+    join(root, '.git', 'index.lock'),
+    join(root, '.git', 'packed-refs.lock'),
+    join(root, '.git', 'COMMIT_EDITMSG.lock'),
+  ];
+  // worktree admin locks
+  const wtAdmin = join(root, '.git', 'worktrees');
+  if (existsSync(wtAdmin)) {
+    try {
+      for (const d of readdirSync(wtAdmin)) {
+        for (const f of ['HEAD.lock', 'index.lock', 'REBASE_HEAD.lock']) {
+          candidates.push(join(wtAdmin, d, f));
+        }
+      }
+    } catch { /* ignore */ }
+  }
+  // refs/heads/*.lock
+  const refsHeads = join(root, '.git', 'refs', 'heads');
+  if (existsSync(refsHeads)) {
+    try {
+      for (const f of readdirSync(refsHeads)) {
+        if (f.endsWith('.lock')) candidates.push(join(refsHeads, f));
+      }
+    } catch { /* ignore */ }
+  }
+  // refs/heads/feat/*.lock
+  const refsHeadsFeat = join(refsHeads, 'feat');
+  if (existsSync(refsHeadsFeat)) {
+    try {
+      for (const f of readdirSync(refsHeadsFeat)) {
+        if (f.endsWith('.lock')) candidates.push(join(refsHeadsFeat, f));
+      }
+    } catch { /* ignore */ }
+  }
+  let removed = 0;
+  for (const p of candidates) {
+    if (existsSync(p)) {
+      try { rmSync(p); removed++; if (verbose) ok(`清 lock：${p.replace(root + '/', '')}`); }
+      catch (e) { warn(`清 lock 失败（${p.replace(root + '/', '')}）：${e.message}`); }
+    }
+  }
+  return removed;
+}
+function cmdUnlock() {
+  if (isSandbox()) die('unlock 要在 Mac 本机跑（沙箱不能 unlink）。');
+  const root = ROOT();
+  const n = clearStaleLocks(root, { verbose: true });
+  ok(`清理完成：共移除 ${n} 个 lock 文件。`);
+}
 function cmdAbort(argv) {
   const name = parseFlags(argv)._[0]; if (!name) die('用法：psm abort <name>');
   const led = readLedger(); const s = led.sessions[name];
@@ -504,6 +560,7 @@ switch (cmd) {
   case 'merge': cmdMerge(rest); break;
   case 'abort': cmdAbort(rest); break;
   case 'gc': cmdGc(); break;
+  case 'unlock': cmdUnlock(); break;
   case 'hook': if (rest[0] === 'pre-commit') hookPreCommit(); else process.exit(0); break;
   default:
     info(C.bold('psm —— 并行 session 管理器'));
@@ -515,6 +572,7 @@ switch (cmd) {
     info('  merge <name>                  ff 合进 main（main 树跑）');
     info('  abort <name>                  放弃一条线');
     info('  gc                            Mac 本机清理已合并/已弃 worktree + 已并入的 wip/* 分支');
+    info('  unlock                        清沙箱遗留 *.lock 文件（land 会自动调·手动备用）');
     info('\n详见 docs/infra/parallel-sessions.md');
     process.exit(cmd ? 1 : 0);
 }
