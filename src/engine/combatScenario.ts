@@ -97,6 +97,12 @@ export interface CombatScenarioInput {
   maxTurns?: number;
   /** 每回合玩家行动；i ≥ actions.length 时停步 */
   actions?: CombatActionInput[];
+
+  /**
+   * 尸衣者专属：开战时为带 skinLoot 的敌人指定穿戴皮囊 id（透传 startCombat 的 wornSkin·见 combat.ts）。
+   * 缺省 → 该敌 def.defaultSkin；普通敌人忽略。baseline 用它钉定「皮囊→loot 变体」路径。
+   */
+  wornSkin?: string;
 }
 
 /** 战斗结束的原因（细化于 combat.ts 的 outcome） */
@@ -231,13 +237,13 @@ function buildInitialState(input: CombatScenarioInput): GameState {
 }
 
 /** ad-hoc encounter：手工合成一个 CombatState（不经 startCombat 注册） */
-function startAdHocCombat(state: GameState, enemyDefIds: string[]): GameState | null {
+function startAdHocCombat(state: GameState, enemyDefIds: string[], wornSkin?: string): GameState | null {
   if (!state.run) return null;
   const enemies: EnemyInstance[] = [];
   for (let idx = 0; idx < enemyDefIds.length; idx++) {
     const def = getEnemyDef(enemyDefIds[idx]);
     if (!def) return null;
-    enemies.push({
+    const inst: EnemyInstance = {
       instanceId: `adhoc.${idx}`,
       defId: def.id,
       hp: def.hp,
@@ -245,7 +251,13 @@ function startAdHocCombat(state: GameState, enemyDefIds: string[]): GameState | 
       stance: def.initialStance,
       aggro: def.threat,
       statuses: [],
-    });
+    };
+    // 尸衣者：与 startCombat 同口径——仅带 skinLoot 的敌人记 wornSkin（缺省 defaultSkin）·普通敌人形状不变。
+    if (def.skinLoot) {
+      const worn = wornSkin ?? def.defaultSkin;
+      if (worn !== undefined) inst.wornSkin = worn;
+    }
+    enemies.push(inst);
   }
   return {
     ...state,
@@ -412,7 +424,12 @@ export function runCombatScenario(input: CombatScenarioInput): CombatScenarioRes
     // seeded 块外·见 enemyLibrary 注释）。defId 成员零 Math.random 消耗，故现有 defId 战斗 baseline
     // 逐字节不变；下方回合循环另起的 withSeededRandom(seed) 各自从 seed 重置 LCG，turn RNG 流不受影响。
     withSeededRandom(input.seed, () => {
-      state = startCombat(state, input.combatId!);
+      state = startCombat(
+        state,
+        input.combatId!,
+        undefined,
+        input.wornSkin !== undefined ? { wornSkin: input.wornSkin } : undefined,
+      );
     });
   } else if (input.enemyDefIds) {
     for (const id of input.enemyDefIds) {
@@ -426,7 +443,7 @@ export function runCombatScenario(input: CombatScenarioInput): CombatScenarioRes
         };
       }
     }
-    const next = startAdHocCombat(state, input.enemyDefIds);
+    const next = startAdHocCombat(state, input.enemyDefIds, input.wornSkin);
     if (!next) {
       return {
         input,

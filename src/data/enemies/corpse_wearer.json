@@ -1,0 +1,82 @@
+{
+  "enemies": [
+    {
+      "id": "enemy.corpse_wearer",
+      "bands": ["zone.wreck_graveyard", "zone.blue_caves"],
+      "biomes": ["wreck_field", "cave_anchialine"],
+      "role": "ambusher",
+      "threatTier": "high",
+      "scent": true,
+      "codex": {
+        "habitat": "后期区域的尸堆与窄缝里。哪儿死过东西、哪儿的尸体多，它就在哪儿——不是吃尸体，是住进去。",
+        "behavior": "翻动一具看似死透的尸体时，它从里面出来。流血的人它锁得更快。很多潜水员汇报的『死亡后复活的生物』目击报告，都是它。",
+        "appearance": "你先看见的是一张你认得的脸——某条鱼、某只蟹，皮还在，只是不太合身。皮底下撑着它的，不是那东西的骨头。",
+        "firstSeenHint": "那具尸体动了。不是水流——它在从里面把自己撑起来。"
+      },
+      "name": "尸衣者",
+      "tier": "uncanny",
+      "hp": 38,
+      "armor": 2,
+      "evasion": 2,
+      "speed": 4,
+      "threat": 8,
+      "hostility": "predatory",
+      "initialStance": "unaware",
+      "aiPattern": "flanker",
+      "hitBonus": 0.1,
+      "attacks": [
+        {
+          "id": "corpse_wearer.lunge",
+          "name": "撑裂",
+          "damageType": "physical",
+          "damage": [5, 9],
+          "description": "皮从中间裂开，里面的东西一下撑到你面前——它本不该是这个形状的。",
+          "weight": 3
+        },
+        {
+          "id": "corpse_wearer.wrong_face",
+          "name": "戴着的脸",
+          "damageType": "sanity",
+          "damage": [0, 0],
+          "sanityDamage": [3, 6],
+          "description": "它把那张脸转向你，慢慢摆出一个像是认得你的角度。问题是，你也认得它。",
+          "weight": 2
+        }
+      ],
+      "physicalDamage": [5, 9],
+      "sanityDamage": [3, 6],
+      "loot": {
+        "guaranteed": [{ "itemId": "item.eel_skin", "qty": [1, 1], "weight": 1 }],
+        "rolls": [],
+        "rollCount": 0,
+        "victoryModifier": {
+          "kill": 1.0,
+          "flee": 0.3
+        }
+      },
+      "defaultSkin": "enemy.blind_eel",
+      "skinLoot": {
+        "enemy.blind_eel": {
+          "guaranteed": [{ "itemId": "item.eel_skin", "qty": [1, 1], "weight": 1 }],
+          "rolls": [],
+          "rollCount": 0
+        },
+        "enemy.cave_octopus": {
+          "guaranteed": [{ "itemId": "item.cave_octopus_beak", "qty": [1, 1], "weight": 1 }],
+          "rolls": [],
+          "rollCount": 0
+        }
+      },
+      "victoryConditions": ["kill", "flee"]
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.corpse_wearer_solo",
+      "party": {
+        "members": [{ "defId": "enemy.corpse_wearer" }]
+      },
+      "introText": "你伸手去翻那具尸体——它先动了。皮还挂在身上，撑起它的却是另一样东西。"
+    }
+  ]
+}

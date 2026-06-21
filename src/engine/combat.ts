@@ -16,6 +16,7 @@ import type {
   EnemyAttack,
   Stats,
   BossPhase,
+  LootTable,
 } from '@/types';
 import actionData from '@/data/actions.json';
 import { ENEMY_FILE_MODULES } from '@/data/enemies/registry.generated';
@@ -69,10 +70,21 @@ export function listAllEncounters(): CombatEncounterDef[] { return [...COMBAT_EN
 
 // ——— 战斗发起 ———
 
+/** startCombat 可选项。 */
+export interface StartCombatOptions {
+  /**
+   * 尸衣者专属：开战时为带 skinLoot 的敌人指定当前穿戴的皮囊 id（= 被翻动尸体所属敌种）。
+   * 缺省 → 该敌 def.defaultSkin；普通敌人忽略此项（不写 wornSkin·EnemyInstance 形状不变）。
+   * 这是未来「拾尸触发」钩子注入「翻的是哪具尸体」的入口（boss 设计蓝图 2026-06-21「尸衣者新定位」）。
+   */
+  wornSkin?: string;
+}
+
 export function startCombat(
   state: GameState,
   combatId: string,
   initialPlayerStatuses?: PlayerStatus[],
+  options?: StartCombatOptions,
 ): GameState {
   const enc = COMBAT_ENCOUNTERS.get(combatId);
   if (!enc || !state.run) return state;
@@ -84,7 +96,7 @@ export function startCombat(
     // 敌人库 SPEC §4/支柱二：defId 直查 · enemyRef 经 pickEnemy 取一只合适的（route B 加法·非破坏）。
     const def = resolveEncounterMember(m);
     if (!def) throw new Error(`Enemy def not resolved for party member: ${JSON.stringify(m)}`);
-    return {
+    const inst: EnemyInstance = {
       instanceId: `${combatId}.${idx}`,
       defId: def.id,
       hp: def.hp,
@@ -93,6 +105,13 @@ export function startCombat(
       aggro: def.threat,
       statuses: [],
     };
+    // 尸衣者：记录开战时穿戴的皮囊（loot-trigger 的尸体来源·缺省 defaultSkin）。仅对带 skinLoot
+    // 的敌人写此字段 ⇒ 普通敌人 EnemyInstance 逐字节不变（守 #99 + 既有 combat baseline）。
+    if (def.skinLoot) {
+      const worn = options?.wornSkin ?? def.defaultSkin;
+      if (worn !== undefined) inst.wornSkin = worn;
+    }
+    return inst;
   });
 
   const combat: CombatState = {
@@ -730,17 +749,31 @@ function allEnemiesDefeated(c: CombatState): boolean {
   return c.enemies.every((e) => e.hp <= 0);
 }
 
+/**
+ * effectiveLoot：尸衣者 loot 变体解析（纯函数·无副作用·可单测）。
+ * 穿着某皮囊（instance.wornSkin 命中 def.skinLoot）→ 返回该皮囊的 LootTable（**替换** def.loot·非叠加）；
+ * 否则（普通敌人无 skinLoot / 无 wornSkin / 皮囊不在表内）→ 返回 def.loot 原对象（同一引用）。
+ * ⇒ 普通敌人恒返回 def.loot ⇒ finalizeVictory 普通路径的 randRange 调用次数与结果逐字节不变
+ * （守「不改 finalizeVictory 普通敌人路径」·boss 路径只读 loot 不受影响）。
+ */
+export function effectiveLoot(def: EnemyDef, instance: EnemyInstance): LootTable {
+  const worn = instance.wornSkin;
+  if (worn && def.skinLoot && def.skinLoot[worn]) return def.skinLoot[worn];
+  return def.loot;
+}
+
 function finalizeVictory(state: GameState): CombatTurnResult {
   if (state.phase.kind !== 'combat' || !state.run) return { state, outcome: 'victory' };
   const combat = state.phase.combat;
 
   let s = state;
 
-  // 战利品
+  // 战利品（尸衣者按 wornSkin 替换 loot·普通敌人 effectiveLoot 恒回 def.loot ⇒ 逐字节不变）
   for (const e of combat.enemies) {
     const def = ENEMY_DEFS.get(e.defId);
     if (!def) continue;
-    for (const l of def.loot.guaranteed ?? []) {
+    const loot = effectiveLoot(def, e);
+    for (const l of loot.guaranteed ?? []) {
       const qty = randRange(l.qty);
       if (qty > 0 && s.run) {
         s = { ...s, run: { ...s.run, inventory: addToInventory(s.run.inventory, l.itemId, qty) } };

@@ -6,6 +6,7 @@
 //   (a) registry 不过期    —— registry.generated.ts 与 src/data/enemies/*.json 一致（调 gen --check）。
 //   (b) 引用完整           —— 每个 combatEncounter 引用的敌人 defId（含增援池）都已注册。
 //   (c) 无孤儿敌人         —— 每只敌人 ≥1 bands 且 ≥1 biomes（否则 pickEnemy 永选不中＝死库存）。
+//       (c2) boss/miniboss phases 降序；(c3) 尸衣者 skinLoot 形状 + defaultSkin∈skinLoot。
 //   (d) 有 baseline        —— 每只敌人被 ≥1 个 scenarios/combat/*.json 实跑覆盖。
 //
 // 这是 §5 两条自动化入库工作流（描述→实装 / 定时生成）的"绿门"：绿才算"完成"。
@@ -79,6 +80,9 @@ for (const f of enemyFiles) {
       threat: typeof e.threat === 'number' ? e.threat : 0,
       threatTier: typeof e.threatTier === 'string' ? e.threatTier : undefined,
       phases: Array.isArray(e.phases) ? e.phases : undefined,
+      hasSkinLoot: Object.prototype.hasOwnProperty.call(e, 'skinLoot'),
+      skinLoot: e.skinLoot,
+      defaultSkin: e.defaultSkin,
       file: f,
     });
   }
@@ -156,6 +160,51 @@ for (const e of enemyDefs) {
   }
 }
 
+// —— (c3) 尸衣者 skinLoot 形状 + defaultSkin∈skinLoot ——
+// 约定（深水区 SPEC §5 / boss 设计蓝图「尸衣者新定位」）：声明 skinLoot 的敌人（尸衣者类）——
+// skinLoot 必须是非空对象（皮囊 id → LootTable）；每个皮囊变体须是合法 LootTable（guaranteed/rolls
+// 至少其一为数组·entry 形如 {itemId:string, qty:[n,n]}）；defaultSkin（若有）必须是 skinLoot 的一个 key。
+// 引擎 effectiveLoot 按 EnemyInstance.wornSkin 命中此表替换 loot——数据侧拦截优于运行时静默回落 def.loot。
+function isLootTableShape(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+  const g = v.guaranteed;
+  const r = v.rolls;
+  if (g !== undefined && !Array.isArray(g)) return false;
+  if (r !== undefined && !Array.isArray(r)) return false;
+  if (g === undefined && r === undefined) return false; // 至少一个 loot 数组
+  const entries = [...(Array.isArray(g) ? g : []), ...(Array.isArray(r) ? r : [])];
+  for (const ent of entries) {
+    if (!ent || typeof ent.itemId !== 'string') return false;
+    if (
+      !Array.isArray(ent.qty) ||
+      ent.qty.length !== 2 ||
+      typeof ent.qty[0] !== 'number' ||
+      typeof ent.qty[1] !== 'number'
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+for (const e of enemyDefs) {
+  if (!e.hasSkinLoot) continue;
+  const sl = e.skinLoot;
+  if (!sl || typeof sl !== 'object' || Array.isArray(sl) || Object.keys(sl).length === 0) {
+    errors.push(`[skinLoot] ${e.id}（${e.file}）skinLoot 须为非空对象（皮囊 id → LootTable）`);
+    continue;
+  }
+  for (const [skin, table] of Object.entries(sl)) {
+    if (!isLootTableShape(table)) {
+      errors.push(
+        `[skinLoot] ${e.id}（${e.file}）皮囊 "${skin}" 的 loot 表形状非法（需 guaranteed/rolls 数组·entry={itemId,qty:[n,n]}）`,
+      );
+    }
+  }
+  if (e.defaultSkin !== undefined && !(e.defaultSkin in sl)) {
+    errors.push(`[skinLoot] ${e.id}（${e.file}）defaultSkin="${e.defaultSkin}" 不是 skinLoot 的 key`);
+  }
+}
+
 // —— (d) 有 baseline ——
 /** combatId → 该 encounter 的全部敌人 defId */
 const encRefById = new Map(encounters.map((e) => [e.id, e.refIds]));
@@ -192,5 +241,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  `✓ check-enemy-refs：${enemyDefs.length} 敌人 / ${encounters.length} encounter · 引用完整 · 无孤儿 · boss 阶段降序 · 全有 baseline · registry 最新`,
+  `✓ check-enemy-refs：${enemyDefs.length} 敌人 / ${encounters.length} encounter · 引用完整 · 无孤儿 · boss 阶段降序 · 尸衣 skinLoot 合规 · 全有 baseline · registry 最新`,
 );

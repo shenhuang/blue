@@ -178,6 +178,20 @@ export interface EnemyDef {
    * applyEnvironmentalPressure 每回合 tick 处累计所有存活 boss 的值。
    */
   environmentalPressure?: EnvironmentalPressure;
+
+  /**
+   * 尸衣者（corpse-wearer）专属：按当前穿戴「皮囊」决定的 loot 变体表（深水区 SPEC §5 / boss 设计蓝图 2026-06-21「尸衣者新定位」）。
+   * key = 皮囊 id（＝被翻动尸体所属敌种 id，如 'enemy.blind_eel'）；value = 该皮囊下的完整 LootTable。
+   * 运行时由 EnemyInstance.wornSkin 选中其一（startCombat 写入 → combat.ts::effectiveLoot 消费）；
+   * wornSkin 未设或不在表内 → 回落 def.loot（**替换语义·非叠加**·见 effectiveLoot）。
+   * 仅尸衣者类敌人声明此字段；check-enemy-refs (c3) 验证其形状 + defaultSkin∈skinLoot（约定落成 regress 门）。
+   */
+  skinLoot?: Record<string, LootTable>;
+  /**
+   * 尸衣者缺省皮囊（startCombat 未显式传入 wornSkin 时用·= 它「默认穿着」的尸皮）。
+   * 必须是 skinLoot 的一个 key（check-enemy-refs (c3) 守）。
+   */
+  defaultSkin?: string;
 }
 
 export interface EnemyAttack {
@@ -229,6 +243,12 @@ export interface EnemyInstance {
    * 未来 AI 分发扩展时读；当前 aggressor/flanker 等均已在 runEnemyTurn 逐字判断·此字段留位。
    */
   phaseAiPattern?: AiPattern;
+  /**
+   * 尸衣者运行时穿戴的「皮囊」id（startCombat 写入·来自 loot-trigger 的尸体来源·缺省 def.defaultSkin）。
+   * finalizeVictory 经 effectiveLoot 用它从 def.skinLoot 选 loot 变体；undefined = 非尸衣者/未指定 → def.loot。
+   * 仅带 skinLoot 的敌人会被写此字段 ⇒ 普通敌人 EnemyInstance 形状逐字节不变（守 #99 + 既有 combat baseline）。
+   */
+  wornSkin?: string;
 }
 
 export interface EnemyStatus {

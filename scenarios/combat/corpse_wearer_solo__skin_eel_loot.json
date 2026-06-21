@@ -1,0 +1,27 @@
+{
+  "_comment": "尸衣者 baseline ②·皮囊=盲鳗（= def.defaultSkin）→ loot=鳗皮（item.eel_skin）。与 skin_octopus baseline 同一 encounter、不同 wornSkin → 不同 loot，焊死『loot 随皮囊变』。此条同时覆盖默认皮囊路径（wornSkin 显式传 defaultSkin 值；即便不传，startCombat 也会落到同一 defaultSkin → 同结果）。默认满状态（staminaMax=100/oxygenMax=60）足够 ~5 回合稳杀（hp=38/armor=2）——别写超 max 大数会被 clampStats 夹掉（quirk #151）。guaranteed qty=[1,1] ⇒ lootGained 确定性·不锁 turnsElapsed/statsDelta。",
+  "combatId": "combat.corpse_wearer_solo",
+  "wornSkin": "enemy.blind_eel",
+  "seed": 1,
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": { "item.eel_skin": 1 },
+    "enemiesAlive": 0
+  }
+}

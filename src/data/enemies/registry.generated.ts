@@ -7,6 +7,7 @@
 import blind_eel from './blind_eel.json';
 import cave_grouper_boss from './cave_grouper_boss.json';
 import cave_octopus from './cave_octopus.json';
+import corpse_wearer from './corpse_wearer.json';
 import drowned_lantern from './drowned_lantern.json';
 import reef_barracuda from './reef_barracuda.json';
 import reef_grouper from './reef_grouper.json';
@@ -22,6 +23,7 @@ export const ENEMY_FILE_MODULES: EnemyFileModule[] = [
   blind_eel,
   cave_grouper_boss,
   cave_octopus,
+  corpse_wearer,
   drowned_lantern,
   reef_barracuda,
   reef_grouper,
