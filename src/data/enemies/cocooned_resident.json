@@ -1,9 +1,9 @@
 {
-  "_comment": "茧化居民（metamorphosis·new-engine）· boss 设计蓝图 2026-06-21。幼体（larva）passive，不攻击，等待。玩家氧气降至 ≤ 20 → 茧化（armor 升至 10·计时 3 回合）。茧化期：击破（hp→0）= 奖励掉落 coral_shard×2 + 以成体（adult·hp=20）立即复活；计时到期 = 羽化成体（hp=20·攻击全替换·主动攻击）。成体比幼体危险——施压来自「时间压力下选择：打它？还是先回头管氧气？」。需新字段 src/types/enemies.ts（metamorphosis）+ startCombat 初始化 metamorphosisStage='larva'·已实装。数值占位·待作者调（defer-number-tuning）。文案 [待过稿]·#117。",
+  "_comment": "茧裂铠蟹（metamorphosis·new-engine·铠甲蟹/galatheid 联想）· boss 设计蓝图 2026-06-21。幼体（larva）passive，不攻击，等待。玩家氧气降至 ≤ 20 → 茧化（armor 升至 10·计时 3 回合）。茧化期：击破（hp→0）= 奖励掉落 coral_shard×2 + 以成体（adult·hp=20）立即复活；计时到期 = 羽化成体（hp=20·攻击全替换·主动攻击）。成体比幼体危险——施压来自「时间压力下选择：打它？还是先回头管氧气？」。需新字段 src/types/enemies.ts（metamorphosis）+ startCombat 初始化 metamorphosisStage='larva'·已实装。数值占位·待作者调（defer-number-tuning）。文案 [待过稿]·#117。",
   "enemies": [
     {
       "id": "enemy.cocooned_resident",
-      "name": "[待过稿] 茧化居民",
+      "name": "[待过稿] 茧裂铠蟹",
       "tier": "uncanny",
       "bands": ["band.trench.t4"],
       "biomes": ["trench"],

@@ -269,6 +269,26 @@ export interface EnemyDef {
   };
 
   /**
+   * 口孵深鱼（maternal mouthbrooder）：母鱼护巢仔行为系。
+   * - 玩家攻击命中护巢仔（shieldedBy 列出的 defId）时，interceptChance 概率把伤害转移到母鱼
+   *   （maybeInterceptJuvenile·以 armorWhileProtected 替代 def.armor 计算截击减伤）。
+   * - 母鱼 HP < 50% 时，于己方回合开头消耗一只存活护巢仔回血（maybeConsumeJuvenile·per-turn 自然节流）。
+   * - 护巢仔全灭后母鱼 enrage（phaseAttacksOverride = enragedAttacks·applyMaternalEnrageIfAlone）。
+   * interceptChance ≥ 1 → rollChance 不消耗 RNG ⇒ 零额外 RNG 成本·既有 combat baseline 逐字节不变（守 #99）。
+   * 仅声明本字段的敌人进对应分支；普通敌人逐字节不变。
+   */
+  maternalBehavior?: {
+    /** 截击路径母鱼的有效甲值（代替 def.armor；护巢仔全灭后直接攻母鱼仍走 def.armor） */
+    armorWhileProtected: number;
+    /** 护巢仔受攻击时截击概率（≥1 = 必截且零 RNG·defer-number-tuning·数值占位） */
+    interceptChance: number;
+    /** 消耗护巢仔的回血量（母鱼 HP < 50% + 有存活护巢仔时触发·per-turn 一次·数值占位） */
+    consumeJuvenileHpGain: number;
+    /** 护巢仔全灭后的狂暴攻击替换（写入 phaseAttacksOverride·复用 BossPhase 同款字段） */
+    enragedAttacks: EnemyAttack[];
+  };
+
+  /**
    * 茧化居民（metamorphosis·new-engine）：
    * - 幼体（metamorphosisStage='larva'）passive——不发起攻击。
    * - 玩家氧气降至 ≤ cocoonTriggerOxygen → 茧化（armor 替换为 cocoonArmor·计时 cocoonMaxTurns 回合）。

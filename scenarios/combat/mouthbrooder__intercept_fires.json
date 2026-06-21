@@ -1,0 +1,14 @@
+{
+  "_comment": "口孵深鱼截击路径 baseline · seed 1。interceptChance=1.0 → rollChance 不掷骰·零 RNG 消耗（既有 baseline 逐字节不变·quirk #99）。玩家第 1 刀攻击护巢幼鱼（idx 0）→ 母鱼必截击（冲到前面截下了这一击）→ 伤害转移到母鱼（rawDmg=10 - armorWhileProtected=3 = 7）。护巢幼鱼 hp 不变（仍=8）。combat 未结束，action 耗尽 → outcome=noActionProvided。断言：logIncludes 含截击文案。",
+  "combatId": "combat.mycelial_queen_with_drones",
+  "seed": 1,
+  "bonuses": { "staminaMaxBonus": 500 },
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "noActionProvided",
+    "survived": true,
+    "logIncludes": ["冲到前面截下了这一击"]
+  }
+}

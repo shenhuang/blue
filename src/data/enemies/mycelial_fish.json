@@ -1,9 +1,9 @@
 {
-  "_comment": "菌群鱼（queen/drone）· boss 设计蓝图 2026-06-21。核心机制：女王（queen）带 shieldedBy=['enemy.mycelial_drone']——场上任意工蜂存活时玩家无法选中女王，攻击请求被 checkActionAvailability 拦截。工蜂全灭后女王揭示（可选中）。工蜂死亡无尽（「清场后揭示」= 设计意图）的自动补充机制留到后续 session 落成具体触发——当前遭遇由固定 party（2 工蜂 + 1 女王）演示核心目标门。数值占位·待作者调（defer-number-tuning）。文案 [待过稿]·#117。",
+  "_comment": "噙卵深鱼（口孵护巢·mouthbrooder）+ 护巢幼鱼（juveniles） · boss 设计蓝图 2026-06-21 重设计。核心机制：①shieldedBy——护巢幼鱼存活时母鱼不可选中（checkActionAvailability 拦截，同原设计）；② maternalBehavior——母鱼以 interceptChance 概率截击护巢幼鱼受到的攻击（maybeInterceptJuvenile）；③ consumeJuvenileHpGain——母鱼 HP<50% 时于己方回合吞仔回血（maybeConsumeJuvenile）；④ enragedAttacks——护巢幼鱼全灭后母鱼 enrage（applyMaternalEnrageIfAlone）。数值占位·待作者调（defer-number-tuning）。文案 [待过稿]·#117。interceptChance=1.0 守零 RNG 消耗（既有 baseline 逐字节不变·quirk #99）。",
   "enemies": [
     {
       "id": "enemy.mycelial_drone",
-      "name": "[待过稿] 菌孢工蜂",
+      "name": "[待过稿] 护巢幼鱼",
       "tier": "uncanny",
       "bands": ["band.vent.t3", "band.trench.t4"],
       "biomes": ["hydrothermal_vent", "trench"],
@@ -19,11 +19,11 @@
       "aiPattern": "crowd",
       "attacks": [
         {
-          "id": "mycelial_drone.sting",
-          "name": "[待过稿] 菌丝刺",
+          "id": "mycelial_drone.bite",
+          "name": "[待过稿] 幼鱼撕咬",
           "damageType": "physical",
           "damage": [2, 4],
-          "description": "[待过稿] 细长的菌丝从它身上射出来，刺进你的皮肤——不深，但你能感觉到什么东西留在里面了。"
+          "description": "[待过稿] 它从母鱼口中被喷出来，直接咬住了你——小小的牙，但很用力。"
         }
       ],
       "physicalDamage": [2, 4],
@@ -34,14 +34,14 @@
       },
       "victoryConditions": ["kill"],
       "codex": {
-        "habitat": "[待过稿] 热液柱和海沟。它们总是在女王附近。",
-        "behavior": "[待过稿] 单只很弱，但你绕不过它——只要它活着，你就碰不到女王。",
-        "appearance": "[待过稿] 像一团游动的孢子，你不确定它是一只还是很多只。"
+        "habitat": "[待过稿] 跟在母鱼周围，从不单独出现。",
+        "behavior": "[待过稿] 它们从母鱼嘴里被吐出来——你得先应付它们，才有机会靠近母鱼。",
+        "appearance": "[待过稿] 透明的小鱼，背骨还没长硬。你几乎认不出它是一条鱼，直到它咬了你。"
       }
     },
     {
       "id": "enemy.mycelial_queen",
-      "name": "[待过稿] 菌群女王",
+      "name": "[待过稿] 噙卵深鱼",
       "tier": "uncanny",
       "bands": ["band.vent.t3", "band.trench.t4"],
       "biomes": ["hydrothermal_vent", "trench"],
@@ -56,23 +56,47 @@
       "initialStance": "attacking",
       "aiPattern": "caster",
       "shieldedBy": ["enemy.mycelial_drone"],
+      "maternalBehavior": {
+        "armorWhileProtected": 3,
+        "interceptChance": 1.0,
+        "consumeJuvenileHpGain": 15,
+        "enragedAttacks": [
+          {
+            "id": "mycelial_queen.enraged_lunge",
+            "name": "[待过稿] 噙巢冲撞",
+            "damageType": "physical",
+            "damage": [8, 14],
+            "description": "[待过稿] 它不再等了——整个身体像一颗子弹打过来，你来不及躲。",
+            "weight": 2
+          },
+          {
+            "id": "mycelial_queen.enraged_sanity",
+            "name": "[待过稿] 绝嗣哀鸣",
+            "damageType": "sanity",
+            "sanityDamage": [5, 10],
+            "damage": [0, 0],
+            "description": "[待过稿] 一种低频的哀鸣从它喉咙里溢出来，你的脑子里突然空了一块。",
+            "weight": 1
+          }
+        ]
+      },
       "attacks": [
         {
-          "id": "mycelial_queen.spore_burst",
-          "name": "[待过稿] 孢子爆发",
-          "damageType": "sanity",
-          "damage": [3, 6],
-          "sanityDamage": [3, 6],
-          "description": "[待过稿] 整个菌群突然共振——你感觉到的不是冲击而是侵入，像有什么在你的思维里划了一道。",
-          "weight": 1
-        },
-        {
-          "id": "mycelial_queen.pulse",
-          "name": "[待过稿] 菌网脉冲",
+          "id": "mycelial_queen.pressure_pulse",
+          "name": "[待过稿] 深压波",
           "damageType": "physical",
           "damage": [5, 9],
-          "description": "[待过稿] 女王通过菌丝传导能量——你周围所有的孢子同时向你收缩。",
+          "description": "[待过稿] 它猛地收缩鳃腔，一股水压冲过来。你感觉到肋骨受到了挤压。",
           "weight": 2
+        },
+        {
+          "id": "mycelial_queen.sonic_burst",
+          "name": "[待过稿] 声呐致幻",
+          "damageType": "sanity",
+          "damage": [0, 0],
+          "sanityDamage": [3, 6],
+          "description": "[待过稿] 它发出一声超出你听力范围的鸣叫——你没听到什么，但你感觉到了，像是什么在你内耳里划破了什么。",
+          "weight": 1
         }
       ],
       "physicalDamage": [5, 9],
@@ -85,10 +109,10 @@
       },
       "victoryConditions": ["kill"],
       "codex": {
-        "habitat": "[待过稿] 热液柱核心，或更深处。它不移动。",
-        "behavior": "[待过稿] 它不需要移动。工蜂是它的眼睛、手和武器。先把工蜂清干净，它才会露出来。",
-        "appearance": "[待过稿] 比工蜂大很多倍，在工蜂后面脉动。你得先穿过那层蜂才能看清它。",
-        "firstSeenHint": "[待过稿] 你先看到的是工蜂，然后看到工蜂聚集的地方有什么在跳动。"
+        "habitat": "[待过稿] 热液柱核心，或更深处。它不离开自己选的那块水域。",
+        "behavior": "[待过稿] 它把幼鱼含在嘴里——遇到威胁就喷出来当盾牌。幼鱼活着，你就打不到它。幼鱼没了，它就彻底变了。",
+        "appearance": "[待过稿] 比幼鱼大很多倍，嘴巴异常地大，下颌微微鼓着。你意识到那是因为它嘴里还有东西。",
+        "firstSeenHint": "[待过稿] 你先看到几条透明小鱼，然后才看到它们是从哪里来的。"
       }
     }
   ],
@@ -103,7 +127,7 @@
         ]
       },
       "showIntro": true,
-      "introText": "[待过稿] 两团孢子在你周围游荡，后面有什么大得多的东西在脉动。工蜂在前——你没法绕过去。"
+      "introText": "[待过稿] 两条透明小鱼先游过来，后面跟着什么大得多的东西——下颌鼓着，你一时没反应过来那意味着什么。"
     }
   ]
 }
