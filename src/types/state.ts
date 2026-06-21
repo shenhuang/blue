@@ -429,7 +429,13 @@ export type DiveSubPhase =
   | { kind: 'event'; eventId: string }
   | { kind: 'nodeSelect'; choices: NodeChoice[]; features?: FeatureChoice[] }
   | { kind: 'rest' }
-  | { kind: 'corpse'; deathRecordId: string };
+  | { kind: 'corpse'; deathRecordId: string }
+  /**
+   * 高等级遭遇前序叙事停顿（boss 设计蓝图 2026-06-21）：encounterId 标记了 showIntro:true + introText 时，
+   * enterCombat 先落这里让玩家读完文案、点确认再进战斗。
+   * 仅事件触发的 combat（EventView）走这条；猎手伏击不经此门（已有即时叙事行）。
+   */
+  | { kind: 'pre_combat'; encounterId: string; introText: string };
 
 /** 下潜节点（运行时） */
 export interface NodeChoice {

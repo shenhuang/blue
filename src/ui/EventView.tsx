@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import type { GameState, EventOption } from '@/types';
 import { getEvent, isOptionEnabled, isOptionVisible, resolveOption } from '@/engine/events';
 import { enterNodeSelection } from '@/engine/dive';
-import { startCombat } from '@/engine/combat';
+import { enterCombat } from '@/engine/combat';
 import { toDiveEvent, beginAscent, toGameOver } from '@/engine/transitions';
 import { DiveHeader } from './DiveHeader';
 
@@ -39,7 +39,7 @@ export function EventView({ state, eventId, onStateChange }: Props) {
         next = toDiveEvent(next, result.next.eventId);
         break;
       case 'startCombat':
-        next = startCombat(next, result.next.combatId);
+        next = enterCombat(next, result.next.combatId);
         break;
       case 'forceAscend':
         next = beginAscent(next);

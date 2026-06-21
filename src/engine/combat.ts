@@ -208,6 +208,42 @@ function actionCosts(run: RunState, action: CombatAction): { stamina: number; ox
   };
 }
 
+/**
+ * 战斗入口（含 pre_combat 前序叙事门·boss 设计蓝图 2026-06-21）。
+ * 遭遇标记 showIntro:true + 有 introText → 先切到 pre_combat 子阶段；玩家确认后 confirmEncounter → startCombat。
+ * 猎手伏击等即时 combat 直接调 startCombat，不经此门（不停顿）。
+ * EventView 的 startCombat 调用改走这里（case 'startCombat'）。
+ */
+export function enterCombat(
+  state: GameState,
+  encOrId: string | CombatEncounterDef,
+  initialPlayerStatuses?: PlayerStatus[],
+  options?: StartCombatOptions,
+): GameState {
+  const enc = typeof encOrId === 'string' ? COMBAT_ENCOUNTERS.get(encOrId) : encOrId;
+  if (!enc || !state.run) return state;
+  if (enc.showIntro && enc.introText) {
+    return {
+      ...state,
+      phase: {
+        kind: 'dive',
+        subPhase: { kind: 'pre_combat', encounterId: enc.id, introText: enc.introText },
+      },
+    };
+  }
+  return startCombat(state, enc, initialPlayerStatuses, options);
+}
+
+/**
+ * 玩家在 PreCombatView 确认「进入战斗」（pre_combat → combat）。
+ * 读取 subPhase.encounterId 直接调 startCombat；状态不符则原样返回。
+ */
+export function confirmEncounter(state: GameState): GameState {
+  if (state.phase.kind !== 'dive' || state.phase.subPhase.kind !== 'pre_combat') return state;
+  const { encounterId } = state.phase.subPhase;
+  return startCombat(state, encounterId);
+}
+
 export function checkActionAvailability(
   state: GameState,
   action: CombatAction,

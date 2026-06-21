@@ -102,6 +102,7 @@
           { "defId": "enemy.mycelial_queen" }
         ]
       },
+      "showIntro": true,
       "introText": "[待过稿] 两团孢子在你周围游荡，后面有什么大得多的东西在脉动。工蜂在前——你没法绕过去。"
     }
   ]

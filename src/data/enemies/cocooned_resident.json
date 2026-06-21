@@ -76,6 +76,7 @@
       "party": {
         "members": [{ "defId": "enemy.cocooned_resident" }]
       },
+      "showIntro": true,
       "introText": "[待过稿] 沟壁上挂着一块灰色的东西，大约一拳大小，一动不动。你靠近了，它还是没动。但你注意到——它在呼吸。"
     }
   ]

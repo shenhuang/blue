@@ -11,6 +11,7 @@ import { RestView } from '@/ui/RestView';
 import { AscentView } from '@/ui/AscentView';
 import { CombatView } from '@/ui/CombatView';
 import { CorpseView, FuneralView } from '@/ui/CorpseView';
+import { PreCombatView } from '@/ui/PreCombatView';
 import { ResolutionView, GameOverView } from '@/ui/ResolutionView';
 import { ChangelogModal } from '@/ui/ChangelogModal';
 
@@ -120,6 +121,10 @@ export default function App() {
           deathRecordId={state.phase.subPhase.deathRecordId}
           onStateChange={setState}
         />
+      )}
+
+      {state.phase.kind === 'dive' && state.phase.subPhase.kind === 'pre_combat' && (
+        <PreCombatView state={state} onStateChange={setState} />
       )}
 
       {state.phase.kind === 'funeral' && (

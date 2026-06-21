@@ -95,6 +95,7 @@
       "party": {
         "members": [{ "defId": "enemy.cave_grouper_boss" }]
       },
+      "showIntro": true,
       "introText": "你刚转过这道弯，它就在那里。洞口的位置，礁石的颜色，完全不动——然后它动了，把整个出口堵死了。"
     }
   ]

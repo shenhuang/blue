@@ -174,6 +174,12 @@ export interface CombatEncounterDef {
   victoryEventId?: string;
   reinforcementPool?: EnemyParty['joinRules'];
   /**
+   * 高等级遭遇前序叙事（boss 设计蓝图 2026-06-21）：true + introText 有值时，enterCombat 先切到
+   * pre_combat 子阶段让玩家读文案确认后再进战斗。缺省/false → 直接进战（逐字节不变）。
+   * 仅 EventView 触发的 combat 走这条；猎手伏击走 startCombat 直接路径（不停顿）。
+   */
+  showIntro?: boolean;
+  /**
    * 链鳗（分节实体·boss 设计蓝图 2026-06-21）：标记本遭遇为「按序攻击」分节链——
    * party.members 即节序（**头在末端**·index 0 = 最前节·须先死），玩家每次只能命中**最前存活节**，
    * 前节死后才解锁下一节（combat.ts target 解析 + checkActionAvailability 双层门）。
