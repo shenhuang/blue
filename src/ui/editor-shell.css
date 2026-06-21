@@ -1,0 +1,85 @@
+/* ============================================================
+ * dev 工作台壳（EditorShell·?editor sibling 根·与游戏 App 解耦）
+ *
+ * 左 nav rail + 右 content 区。content 是 position:relative 容器，
+ * 让盖屏式工具（.dev-panel = fixed inset:0）收进区内而非盖满视口。
+ * 颜色复用 styles.css 的 :root 变量（main.tsx 全局 import·任一根都在）；带回退值。
+ * 详见 docs/spec/深海回响_dev工作台_SPEC.md
+ * ============================================================ */
+
+.editor-shell {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  background: var(--bg, #0a1014);
+  color: var(--text, #cfe3e8);
+  font: 13px/1.5 system-ui, sans-serif;
+}
+
+.editor-nav {
+  width: 188px;
+  flex: 0 0 188px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #1d2d36;
+  background: #0e1b22;
+  overflow-y: auto;
+}
+
+.editor-nav-brand {
+  padding: 12px 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent, #5ec4d6);
+  border-bottom: 1px solid #142730;
+}
+
+.editor-nav-group {
+  padding: 8px 0 2px;
+}
+
+.editor-nav-grouphead {
+  padding: 4px 14px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5f7c88;
+}
+
+.editor-nav-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-left: 2px solid transparent;
+  color: #cfe3ea;
+  padding: 7px 14px 7px 20px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.editor-nav-item:hover {
+  background: #11242c;
+}
+
+.editor-nav-item.on {
+  background: #13404a;
+  border-left-color: var(--accent, #5ec4d6);
+  color: #eaf4f7;
+}
+
+.editor-content {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* 把盖屏式 dev 面板（.dev-panel = fixed inset:0 z-index:9999）收进 content 区。
+   两段选择器特异性高于 dev-panel.css 的单类 .dev-panel → 不依赖 import 顺序就生效。 */
+.editor-content .dev-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}

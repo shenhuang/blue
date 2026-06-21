@@ -1,4 +1,4 @@
-// 海图编辑器（dev 工具·?editor 进入·与 SeaChartView/游戏完全解耦）。
+// 海图编辑器（dev 工具·?editor=chart / 旧裸 ?editor 进入·现由 EditorApp 工作台承载·与 SeaChartView/游戏完全解耦）。
 // 拖 beacon（owned POI 整簇跟随）/ 拖 POI（重算相对偏移·超出 owner radius 标红）/ 调 owner radius；
 // 滚轮缩放 + 背景拖拽平移（拖得更远/放更大）；海岸线(x=0)参考 + 不许拖进陆地(x<0)；
 // 「保存进项目」直接写回 src/data/*.json（dev 中间件·见 vite.config.ts），或「导出」复制粘贴。
@@ -271,7 +271,7 @@ export default function MapEditor() {
   const landW = Math.max(0, sx(0)); // 海岸左侧陆地宽（像素）
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#0a1014', color: '#cfe3e8', font: '13px/1.5 system-ui, sans-serif' }}>
+    <div style={{ display: 'flex', position: 'absolute', inset: 0, background: '#0a1014', color: '#cfe3e8', font: '13px/1.5 system-ui, sans-serif' }}>
       <div style={{ flex: '1 1 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, minWidth: 0 }}>
         <svg
           ref={svgRef} viewBox={`0 0 ${VIEW} ${VIEW}`} onPointerDown={startPan}

@@ -10,7 +10,7 @@ import './dev-panel.css';
 import { computeEventStats, type EventStats } from '@/engine/eventStats';
 
 export interface StatsDevPanelProps {
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 type Tab = 'zone' | 'tone';
@@ -37,7 +37,7 @@ export function StatsDevPanel({ onClose }: StatsDevPanelProps) {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        onClose?.();
       }
     }
     window.addEventListener('keydown', onKey);
@@ -72,9 +72,11 @@ export function StatsDevPanel({ onClose }: StatsDevPanelProps) {
               TONE 分布
             </button>
           </div>
-          <button className="dev-btn dev-btn-quiet" onClick={onClose}>
-            关闭 (Esc)
-          </button>
+          {onClose && (
+            <button className="dev-btn dev-btn-quiet" onClick={onClose}>
+              关闭 (Esc)
+            </button>
+          )}
         </div>
       </header>
 

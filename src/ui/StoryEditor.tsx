@@ -1,4 +1,4 @@
-// 剧情编辑器（dev 工具 · ?storyeditor 进入 · 与游戏 App 解耦的独立 sibling 根 · 见 main.tsx）。
+// 剧情编辑器（dev 工具 · ?editor=story / 旧 ?storyeditor 进入 · 现由 EditorApp 工作台承载 · 见 main.tsx + dev工作台 SPEC）。
 //
 // 测的是「剧情库」本身（EVENT_DB / src/data/events/*.json），不碰玩家存档。三栏：
 //   左：全库事件列表（按 zoneTag 分组 + 文本过滤 + 只看弧头）。
@@ -337,7 +337,8 @@ function ArcTree({ arc, currentId, onJump }: { arc: EventArc; currentId: string 
 
 // ── 内联样式（dev 工具自留地·与 MapEditor 同深色系；滚动内联·规则三只扫 styles.css）──
 const S: Record<string, CSSProperties> = {
-  app: { position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: '#0c171d', color: '#cfe3ea', font: '13px/1.5 system-ui, sans-serif' },
+  // 根填充工作台 content 区（EditorApp·position:relative 容器）；曾是 fixed 盖屏（独立 ?storyeditor 时代）。
+  app: { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#0c171d', color: '#cfe3ea', font: '13px/1.5 system-ui, sans-serif' },
   header: { display: 'flex', alignItems: 'center', gap: 12, padding: '8px 14px', borderBottom: '1px solid #1d3640', background: '#0e1b22' },
   faint: { color: '#6f8a96', fontSize: 12 },
   toggle: { display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#9fb8c2', cursor: 'pointer' },

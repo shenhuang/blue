@@ -53,7 +53,7 @@ import {
 // ---------------------------------------------------------------------------
 
 export interface CombatDevPanelProps {
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 const STAT_KEYS: Stat[] = ['stamina', 'oxygen', 'sanity', 'nitrogen'];
@@ -315,7 +315,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onClose?.();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -361,7 +361,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
           <button className="dev-btn" onClick={handleExport}>导出 JSON</button>
           <button className="dev-btn" onClick={() => setShowImport((s) => !s)}>导入 JSON</button>
           <button className="dev-btn" onClick={handleSaveLs}>存 LS</button>
-          <button className="dev-btn dev-btn-quiet" onClick={onClose}>关闭 (Esc)</button>
+          {onClose && <button className="dev-btn dev-btn-quiet" onClick={onClose}>关闭 (Esc)</button>}
         </div>
       </header>
 

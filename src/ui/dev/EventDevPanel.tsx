@@ -48,7 +48,7 @@ import {
 // ---------------------------------------------------------------------------
 
 export interface EventDevPanelProps {
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 const ALL_ZONE_TAGS = ['tutorial', 'reef', 'cave', 'wreck', 'shallow', 'deep'] as const;
@@ -265,7 +265,7 @@ export function EventDevPanel({ onClose }: EventDevPanelProps) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') {
-        onClose();
+        onClose?.();
       }
     }
     window.addEventListener('keydown', onKey);
@@ -300,7 +300,7 @@ export function EventDevPanel({ onClose }: EventDevPanelProps) {
           <button className="dev-btn" onClick={handleExport}>导出 JSON</button>
           <button className="dev-btn" onClick={() => setShowImport((s) => !s)}>导入 JSON</button>
           <button className="dev-btn" onClick={handleSaveLs}>存 LS</button>
-          <button className="dev-btn dev-btn-quiet" onClick={onClose}>关闭 (Esc)</button>
+          {onClose && <button className="dev-btn dev-btn-quiet" onClick={onClose}>关闭 (Esc)</button>}
         </div>
       </header>
 

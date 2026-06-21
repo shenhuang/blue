@@ -22,7 +22,7 @@ import { buildCaveGeometry, bakeCaveRGBA, SONAR_PX_PER_M, SONAR_COL_W } from '..
 import type { DiveMap, DiveNode, ZoneDef } from '@/types';
 
 export interface MapDevPanelProps {
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 const FLAGS = new Set(['flag.tutorial_complete']);
@@ -171,9 +171,11 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
           <button className="dev-btn" onClick={() => setSeed(Math.floor(Math.random() * 1_000_000))}>
             🎲 随机 seed
           </button>
-          <button className="dev-btn dev-btn-quiet" onClick={onClose}>
-            关闭 ✕
-          </button>
+          {onClose && (
+            <button className="dev-btn dev-btn-quiet" onClick={onClose}>
+              关闭 ✕
+            </button>
+          )}
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import type { GameState } from '@/types';
 import { createInitialGameState, loadGame, saveGame, clearSave } from '@/engine/state';
 import { handleReturnToPort as handleReturnToPortFn } from '@/engine/port';
@@ -14,45 +14,12 @@ import { CorpseView, FuneralView } from '@/ui/CorpseView';
 import { ResolutionView, GameOverView } from '@/ui/ResolutionView';
 import { ChangelogModal } from '@/ui/ChangelogModal';
 
-// Dev 工具门控（作者 2026-06-06·quirk #97）：定义迁至 ui/devMode.ts（#109·Mira 测试货架也要读）——
-// 语义零变化：?dev 运行时门 + lazy chunk；地图调试器会揭示整张图（破坏迷雾/声呐设计）故必须门控。
+// DEV_TOOLS（?dev 运行时门·单一来源 ui/devMode.ts·#109）：这里仅 withDevTutorialSkip 用。
+// dev 面板/编辑器已迁出游戏、收进 ?editor 工作台（EditorApp·见 main.tsx + dev工作台 SPEC）——
+// 游戏不再 import 任何 dev 工具（game↛dev 由 check-boundaries 守·SPEC §6），dev 代码不进游戏主包。
 import { DEV_TOOLS } from '@/ui/devMode';
 
-const EventDevPanel = DEV_TOOLS
-  ? lazy(() =>
-      import('@/ui/dev/EventDevPanel').then((m) => ({ default: m.EventDevPanel })),
-    )
-  : null;
-const CombatDevPanel = DEV_TOOLS
-  ? lazy(() =>
-      import('@/ui/dev/CombatDevPanel').then((m) => ({ default: m.CombatDevPanel })),
-    )
-  : null;
-const MapDevPanel = DEV_TOOLS
-  ? lazy(() =>
-      import('@/ui/dev/MapDevPanel').then((m) => ({ default: m.MapDevPanel })),
-    )
-  : null;
-const StatsDevPanel = DEV_TOOLS
-  ? lazy(() =>
-      import('@/ui/dev/StatsDevPanel').then((m) => ({ default: m.StatsDevPanel })),
-    )
-  : null;
-
-/** 当前打开的 dev 面板（事件 / 战斗 / 地图 / 统计 / 无）。各面板互斥，一次只显示一个。 */
-type DevPanelKind = 'event' | 'combat' | 'map' | 'stats' | null;
-
-/**
- * URL 直开 dev 面板：`?dev&panel=map|event|combat|stats`（#107 续·作者手机验收用）。
- * 手机没有 Shift 键、Shift+D/C/M 够不着面板——URL 参数是触屏唯一入口；仍在 ?dev 门后
- * （DEV_TOOLS false 时恒 null·普通访客零变化）。桌面快捷键照常可再切换/关闭；
- * 手机上关面板＝去掉 panel 参数刷新。
- */
-function initialDevPanel(): DevPanelKind {
-  if (!DEV_TOOLS || typeof window === 'undefined') return null;
-  const p = new URLSearchParams(window.location.search).get('panel');
-  return p === 'map' || p === 'event' || p === 'combat' || p === 'stats' ? p : null;
-}
+// dev 面板路由已移除：dev 工具改由 ?editor 工作台（EditorApp）承载·见 main.tsx + dev工作台 SPEC。
 
 /**
  * dev 跳过教学（**仅 ?dev**·不含 npm-dev：本地 dev server 默认走真玩家流程·作者 2026-06-14 改）：
@@ -76,40 +43,8 @@ export default function App() {
     withDevTutorialSkip(loadGame() ?? createInitialGameState()),
   );
 
-  // Dev 面板开关：本地 state，不进 GameState（避免污染存档版本号；quirk #23）；?dev&panel=… 可 URL 直开（见上）
-  const [devPanel, setDevPanel] = useState<DevPanelKind>(initialDevPanel);
-
   // 更新日志弹窗开关：同样是本地 UI state，不进 GameState（quirk #23）
   const [changelogOpen, setChangelogOpen] = useState(false);
-
-  // Shift+D（事件）/ Shift+C（战斗）/ Shift+M（地图）/ Shift+S（统计）切换 dev 面板；只在 dev 工具启用时（?dev）注册监听
-  // 互斥规则：当前打开任一面板时，按任一快捷键 = 关闭；关闭时按 D/C/M/S = 打开对应面板。
-  useEffect(() => {
-    if (!DEV_TOOLS) return;
-    function onKey(e: KeyboardEvent) {
-      // 在 input/textarea/select 中输入字母时不切换
-      const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) {
-        return;
-      }
-      if (!e.shiftKey) return;
-      if (e.key === 'D' || e.key === 'd') {
-        e.preventDefault();
-        setDevPanel((cur) => (cur === null ? 'event' : null));
-      } else if (e.key === 'C' || e.key === 'c') {
-        e.preventDefault();
-        setDevPanel((cur) => (cur === null ? 'combat' : null));
-      } else if (e.key === 'M' || e.key === 'm') {
-        e.preventDefault();
-        setDevPanel((cur) => (cur === null ? 'map' : null));
-      } else if (e.key === 'S' || e.key === 's') {
-        e.preventDefault();
-        setDevPanel((cur) => (cur === null ? 'stats' : null));
-      }
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
 
   // 自动存档：state 变化即写 localStorage（回合制、频率低，无需防抖；非浏览器环境 saveGame 自动跳过）
   useEffect(() => {
@@ -243,28 +178,6 @@ export default function App() {
       </footer>
 
       {changelogOpen && <ChangelogModal onClose={() => setChangelogOpen(false)} />}
-
-      {/* Dev 面板覆盖层 —— 仅 dev 工具启用（dev server 或 ?dev）且面板打开时挂载；事件 / 战斗 / 地图 互斥 */}
-      {DEV_TOOLS && devPanel === 'event' && EventDevPanel && (
-        <Suspense fallback={null}>
-          <EventDevPanel onClose={() => setDevPanel(null)} />
-        </Suspense>
-      )}
-      {DEV_TOOLS && devPanel === 'combat' && CombatDevPanel && (
-        <Suspense fallback={null}>
-          <CombatDevPanel onClose={() => setDevPanel(null)} />
-        </Suspense>
-      )}
-      {DEV_TOOLS && devPanel === 'map' && MapDevPanel && (
-        <Suspense fallback={null}>
-          <MapDevPanel onClose={() => setDevPanel(null)} />
-        </Suspense>
-      )}
-      {DEV_TOOLS && devPanel === 'stats' && StatsDevPanel && (
-        <Suspense fallback={null}>
-          <StatsDevPanel onClose={() => setDevPanel(null)} />
-        </Suspense>
-      )}
     </div>
   );
 }

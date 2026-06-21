@@ -3,27 +3,20 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles.css';
 
-// dev 工具页（独立 sibling 根·与游戏 App 解耦·lazy 加载·不进游戏主包）：
-//   ?editor       海图编辑器（src/ui/MapEditor）
-//   ?storyeditor  剧情编辑器（src/ui/StoryEditor·测剧情库本身·不碰存档）
+// dev 工作台（独立 sibling 根·与游戏 App 解耦·lazy 加载·不进游戏主包）：
+//   ?editor / ?editor=<tool>  dev 工作台（EditorApp·6 工具按域分组：事件/剧情·战斗·地图）
+//   ?storyeditor              旧别名 → 工作台 story tab（回退兼容）
+//   裸 ?editor                → 海图 tab（保住旧 ?editor＝海图书签）
+// EditorApp 内部按 URL 选初始 tab 并 lazy() 各工具；详见 docs/spec/深海回响_dev工作台_SPEC.md
 const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
-const isEditor = params.has('editor');
-const isStoryEditor = params.has('storyeditor');
-const MapEditor = lazy(() => import('./ui/MapEditor'));
-const StoryEditor = lazy(() => import('./ui/StoryEditor'));
+const isWorkbench = params.has('editor') || params.has('storyeditor');
+const EditorApp = lazy(() => import('./ui/EditorApp'));
 
 function Root() {
-  if (isStoryEditor) {
+  if (isWorkbench) {
     return (
       <Suspense fallback={null}>
-        <StoryEditor />
-      </Suspense>
-    );
-  }
-  if (isEditor) {
-    return (
-      <Suspense fallback={null}>
-        <MapEditor />
+        <EditorApp />
       </Suspense>
     );
   }

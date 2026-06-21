@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 架构边界检查（四条规则，命中任一即打印 file:line 并退出 1）：
+// 架构边界检查（五条规则，命中任一即打印 file:line 并退出 1）：
 //
 // 规则一：engine ↛ ui —— 引擎层不得依赖 UI 层 / React。
 //   扫 src/engine/**/*.ts(x) 的模块说明符：
@@ -23,6 +23,10 @@
 //   hydrateGameState 单点补默认）、combatScenario.ts（回归框架快照只读·写走 seedInjuries）。
 //   其余引擎文件要数值走 computeModifiers、要写走 injuries.ts——消耗修正散成一地 if 就是这条防的。
 //   （正则是 tripwire 不是沙箱：把 run 重命名再访问可以骗过它，但骗过 lint 的代码过不了评审。）
+//
+// 规则五：game ↛ dev —— 游戏入口/UI（App.tsx + src/ui 下非 dev 文件）不得 import dev 工具
+//   （src/ui/dev/** + MapEditor/StoryEditor/EditorApp/EditorShell）。dev 工具只经 ?editor 工作台
+//   （EditorApp·main.tsx 不扫）入口；把「dev 不进游戏主包/不揭整张图」从散文升成机制（dev工作台 SPEC §6）。
 //
 // 把此前靠散文（CLAUDE.md / 评审记忆）维持的解耦约定做成会在 `npm run regress`
 // 里失败的门。现状 0 违例 → 直接绿；以后谁越界，这个门会红——不再靠下一个
@@ -157,6 +161,39 @@ for (const file of engineFiles) {
   }
 }
 
+// ── 规则五：game ↛ dev —— 游戏入口/UI 不得 import dev 工具（dev 工作台解耦·dev工作台 SPEC §6）──
+// dev 工具＝src/ui/dev/** + MapEditor/StoryEditor/EditorApp/EditorShell；只有 main.tsx（不扫）与
+// dev 工具彼此可 import。扫 App.tsx + src/ui 下非 dev 文件，import 到 dev 工具即违例。
+// engine→dev 已被规则一（engine↛ui·dev 在 ui 下）覆盖，这里专扫 game UI + App。
+const DEV_DIR = resolve(ROOT, 'src/ui/dev');
+const DEV_ROOT_FILES = new Set([
+  resolve(ROOT, 'src/ui/MapEditor.tsx'),
+  resolve(ROOT, 'src/ui/StoryEditor.tsx'),
+  resolve(ROOT, 'src/ui/EditorApp.tsx'),
+  resolve(ROOT, 'src/ui/EditorShell.tsx'),
+]);
+const isDevFile = (abs) => abs === DEV_DIR || abs.startsWith(DEV_DIR + '/') || DEV_ROOT_FILES.has(abs);
+// 模块说明符指向 dev 工具：含 dev/ 段（ui/dev/x · ./dev/x · @/ui/dev/x；devMode 不含 dev/ 不命中），
+// 或 basename 是编辑器根（./MapEditor · @/ui/StoryEditor …）。
+const DEV_DIR_SPEC_RE = /(^|\/)dev\//;
+const DEV_ROOT_SPEC_RE = /(^|\/)(MapEditor|StoryEditor|EditorApp|EditorShell)$/;
+const gameFiles = [...collectTs(UI_DIR), resolve(ROOT, 'src/App.tsx')]
+  .filter((f) => !isDevFile(f))
+  .sort();
+const devImportViolations = [];
+for (const file of gameFiles) {
+  const text = readFileSync(file, 'utf-8');
+  let m;
+  SPEC_RE.lastIndex = 0;
+  while ((m = SPEC_RE.exec(text))) {
+    const spec = m[1] || m[2] || m[3];
+    if (!spec) continue;
+    if (DEV_DIR_SPEC_RE.test(spec) || DEV_ROOT_SPEC_RE.test(spec)) {
+      devImportViolations.push({ file: relative(ROOT, file), line: lineOf(text, m.index), spec });
+    }
+  }
+}
+
 let failed = false;
 
 if (importViolations.length) {
@@ -210,12 +247,26 @@ if (injuryViolations.length) {
   );
 }
 
+if (devImportViolations.length) {
+  failed = true;
+  console.error('✘ game ↛ dev 边界违例：游戏入口/UI 不得 import dev 工具（dev 工作台与游戏解耦）\n');
+  for (const v of devImportViolations) {
+    console.error(`  ${v.file}:${v.line}  import dev 工具 '${v.spec}'`);
+  }
+  console.error(
+    `\n共 ${devImportViolations.length} 处。dev 面板/编辑器只经 ?editor 工作台（EditorApp·main.tsx）入口；` +
+      `\n游戏侧别 import src/ui/dev/* 或 MapEditor/StoryEditor/EditorApp/EditorShell——` +
+      `\n保 dev 代码不进游戏主包、地图调试器不揭整张图（dev工作台 SPEC §6）。\n`,
+  );
+}
+
 if (failed) process.exit(1);
 
 console.log(
   `✓ 边界干净：engine ↛ ui（src/engine ${engineFiles.length} 文件·0 违例）` +
     `；src/ui 无 phase 字面量（src/ui+App ${uiFiles.length} 文件·0 违例）` +
     `；styles.css 滚动容器全在白名单（${SCROLL_WHITELIST.join(' / ')}）` +
-    `；run.injuries 触碰面收口（engine 内仅 injuries/modifiers/state/combatScenario）`,
+    `；run.injuries 触碰面收口（engine 内仅 injuries/modifiers/state/combatScenario）` +
+    `；game ↛ dev（游戏侧 ${gameFiles.length} 文件不 import dev 工具）`,
 );
 process.exit(0);
