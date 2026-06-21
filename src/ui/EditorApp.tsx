@@ -27,9 +27,12 @@ const MapDevPanel = lazy(() =>
 const StatsDevPanel = lazy(() =>
   import('./dev/StatsDevPanel').then((m) => ({ default: m.StatsDevPanel })),
 );
+const EconomyDevPanel = lazy(() =>
+  import('./dev/EconomyDevPanel').then((m) => ({ default: m.EconomyDevPanel })),
+);
 
 // tab key 单一来源（导航 + URL 解析 + 渲染分支都读它）
-const TAB_KEYS = ['story', 'event', 'stats', 'combat', 'chart', 'map'] as const;
+const TAB_KEYS = ['story', 'event', 'stats', 'economy', 'combat', 'chart', 'map'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 const isTabKey = (v: string | null): v is TabKey =>
   v != null && (TAB_KEYS as readonly string[]).includes(v);
@@ -43,6 +46,7 @@ const NAV: EditorNavGroup[] = [
       { key: 'stats', label: '统计' },
     ],
   },
+  { group: '经济', items: [{ key: 'economy', label: '素材' }] },
   { group: '战斗', items: [{ key: 'combat', label: '回归' }] },
   {
     group: '地图',
@@ -89,6 +93,7 @@ export default function EditorApp() {
         {tab === 'story' && <StoryEditor />}
         {tab === 'event' && <EventDevPanel />}
         {tab === 'stats' && <StatsDevPanel />}
+        {tab === 'economy' && <EconomyDevPanel />}
         {tab === 'combat' && <CombatDevPanel />}
         {tab === 'chart' && <MapEditor />}
         {tab === 'map' && <MapDevPanel />}

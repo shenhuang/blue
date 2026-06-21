@@ -878,3 +878,31 @@
 .dev-bi-legenditem { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
 .dev-bi-legenditem em { font-style: normal; color: var(--text); font-variant-numeric: tabular-nums; }
 .dev-bi-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+/* ============================================================
+ * EconomyDevPanel —— 素材经济（镜像 StatsDevPanel·复用 .dev-bi-* 骨架）
+ * 仅补「状态信号」配色 + 过滤条；其余沿用上方 BI 类（KPI/卡片/表/热力矩阵/图例）。
+ * ============================================================ */
+
+/* —— 过滤条（tier / zone / status 下拉·窄于 .dev-input 的 100%） —— */
+.dev-bi-filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.dev-bi-filter { width: auto; min-width: 92px; }
+
+/* —— KPI 着色（瓶颈/死货红·死料灰·镜像 .dev-bi-kpi-gap/thin） —— */
+.dev-bi-kpi-alert { border-left-color: #c2483f; }
+.dev-bi-kpi-alert .dev-bi-kpi-num { color: #e0796a; }
+.dev-bi-kpi-muted { border-left-color: #555e6a; }
+.dev-bi-kpi-muted .dev-bi-kpi-num { color: #9aa3b0; }
+
+/* —— 状态信号标签（瓶颈红·死货红·死料灰·其余静） —— */
+.dev-bi-tag-bottleneck,
+.dev-bi-tag-deadstock { color: #e0796a; border-color: #c2483f; }
+.dev-bi-tag-idle { color: #8a93a0; border-color: #555e6a; }
+.dev-bi-tag-quiet { color: var(--text-faint); border-color: var(--border); }
+
+/* —— 行强调：瓶颈/死货行左红条·死料行左灰条（一眼扫出问题素材） —— */
+.dev-bi-table tr.alert > td:first-child { box-shadow: inset 3px 0 0 #c2483f; }
+.dev-bi-table tr.muted > td:first-child { box-shadow: inset 3px 0 0 #555e6a; }
+.dev-bi-table tr.alert .dev-bi-num-dem { color: #e0796a; font-weight: 600; }
+.dev-bi-num-dem { font-variant-numeric: tabular-nums; }
+.dev-bi-rowh-mat { color: var(--text); white-space: nowrap; }

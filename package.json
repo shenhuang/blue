@@ -20,7 +20,8 @@
     "weekend:worktree": "node scripts/setup-weekend-worktree.mjs",
     "gen:enemies": "node scripts/gen-enemy-registry.mjs",
     "check:enemies": "node scripts/gen-enemy-registry.mjs --check",
-    "check:dive": "node scripts/check-dive-refs.mjs"
+    "check:dive": "node scripts/check-dive-refs.mjs",
+    "audit:materials": "tsx scripts/material-audit.ts"
   },
   "dependencies": {
     "react": "^18.3.1",
