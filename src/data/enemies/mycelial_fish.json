@@ -1,0 +1,108 @@
+{
+  "_comment": "菌群鱼（queen/drone）· boss 设计蓝图 2026-06-21。核心机制：女王（queen）带 shieldedBy=['enemy.mycelial_drone']——场上任意工蜂存活时玩家无法选中女王，攻击请求被 checkActionAvailability 拦截。工蜂全灭后女王揭示（可选中）。工蜂死亡无尽（「清场后揭示」= 设计意图）的自动补充机制留到后续 session 落成具体触发——当前遭遇由固定 party（2 工蜂 + 1 女王）演示核心目标门。数值占位·待作者调（defer-number-tuning）。文案 [待过稿]·#117。",
+  "enemies": [
+    {
+      "id": "enemy.mycelial_drone",
+      "name": "[待过稿] 菌孢工蜂",
+      "tier": "uncanny",
+      "bands": ["band.vent.t3", "band.trench.t4"],
+      "biomes": ["hydrothermal_vent", "trench"],
+      "role": "swarm",
+      "threatTier": "low",
+      "hp": 8,
+      "armor": 0,
+      "evasion": 2,
+      "speed": 6,
+      "threat": 2,
+      "hostility": "aggressive",
+      "initialStance": "attacking",
+      "aiPattern": "crowd",
+      "attacks": [
+        {
+          "id": "mycelial_drone.sting",
+          "name": "[待过稿] 菌丝刺",
+          "damageType": "physical",
+          "damage": [2, 4],
+          "description": "[待过稿] 细长的菌丝从它身上射出来，刺进你的皮肤——不深，但你能感觉到什么东西留在里面了。"
+        }
+      ],
+      "physicalDamage": [2, 4],
+      "loot": {
+        "rolls": [],
+        "rollCount": 0,
+        "victoryModifier": { "kill": 1.0 }
+      },
+      "victoryConditions": ["kill"],
+      "codex": {
+        "habitat": "[待过稿] 热液柱和海沟。它们总是在女王附近。",
+        "behavior": "[待过稿] 单只很弱，但你绕不过它——只要它活着，你就碰不到女王。",
+        "appearance": "[待过稿] 像一团游动的孢子，你不确定它是一只还是很多只。"
+      }
+    },
+    {
+      "id": "enemy.mycelial_queen",
+      "name": "[待过稿] 菌群女王",
+      "tier": "uncanny",
+      "bands": ["band.vent.t3", "band.trench.t4"],
+      "biomes": ["hydrothermal_vent", "trench"],
+      "role": "boss",
+      "threatTier": "high",
+      "hp": 40,
+      "armor": 2,
+      "evasion": 0,
+      "speed": 2,
+      "threat": 8,
+      "hostility": "aggressive",
+      "initialStance": "attacking",
+      "aiPattern": "caster",
+      "shieldedBy": ["enemy.mycelial_drone"],
+      "attacks": [
+        {
+          "id": "mycelial_queen.spore_burst",
+          "name": "[待过稿] 孢子爆发",
+          "damageType": "sanity",
+          "damage": [3, 6],
+          "sanityDamage": [3, 6],
+          "description": "[待过稿] 整个菌群突然共振——你感觉到的不是冲击而是侵入，像有什么在你的思维里划了一道。",
+          "weight": 1
+        },
+        {
+          "id": "mycelial_queen.pulse",
+          "name": "[待过稿] 菌网脉冲",
+          "damageType": "physical",
+          "damage": [5, 9],
+          "description": "[待过稿] 女王通过菌丝传导能量——你周围所有的孢子同时向你收缩。",
+          "weight": 2
+        }
+      ],
+      "physicalDamage": [5, 9],
+      "sanityDamage": [3, 6],
+      "loot": {
+        "guaranteed": [{ "itemId": "item.eel_skin", "qty": [1, 1], "weight": 1 }],
+        "rolls": [{ "itemId": "item.coral_shard", "qty": [2, 4], "weight": 1 }],
+        "rollCount": 1,
+        "victoryModifier": { "kill": 1.0 }
+      },
+      "victoryConditions": ["kill"],
+      "codex": {
+        "habitat": "[待过稿] 热液柱核心，或更深处。它不移动。",
+        "behavior": "[待过稿] 它不需要移动。工蜂是它的眼睛、手和武器。先把工蜂清干净，它才会露出来。",
+        "appearance": "[待过稿] 比工蜂大很多倍，在工蜂后面脉动。你得先穿过那层蜂才能看清它。",
+        "firstSeenHint": "[待过稿] 你先看到的是工蜂，然后看到工蜂聚集的地方有什么在跳动。"
+      }
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.mycelial_queen_with_drones",
+      "party": {
+        "members": [
+          { "defId": "enemy.mycelial_drone" },
+          { "defId": "enemy.mycelial_drone" },
+          { "defId": "enemy.mycelial_queen" }
+        ]
+      },
+      "introText": "[待过稿] 两团孢子在你周围游荡，后面有什么大得多的东西在脉动。工蜂在前——你没法绕过去。"
+    }
+  ]
+}

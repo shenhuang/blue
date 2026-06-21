@@ -1,0 +1,80 @@
+{
+  "_comment": "裂球（split-proliferation）· boss 设计蓝图 2026-06-21。每 3 回合若玩家对单只裂球造成伤害 < minDamageToDeny，它就分裂成 2 只（HP = 60%）；上限 8 只（maxPartySize 含自身）。越拖越多——压力来源是时间，而不是单个个体的强度。数值占位·待作者调（defer-number-tuning）。文案 [待过稿]·#117。",
+  "enemies": [
+    {
+      "id": "enemy.fissure_sphere",
+      "name": "[待过稿] 裂球",
+      "tier": "uncanny",
+      "bands": ["band.midwater.t4", "band.vent.t3"],
+      "biomes": ["midwater", "hydrothermal_vent"],
+      "role": "swarm",
+      "threatTier": "mid",
+      "hp": 18,
+      "armor": 0,
+      "evasion": 1,
+      "speed": 4,
+      "threat": 3,
+      "hostility": "aggressive",
+      "initialStance": "attacking",
+      "aiPattern": "crowd",
+      "splitBehavior": {
+        "intervalTurns": 3,
+        "spawnDefId": "enemy.fissure_sphere",
+        "spawnCount": 2,
+        "spawnHpRatio": 0.6,
+        "maxPartySize": 8,
+        "minDamageToDeny": 6
+      },
+      "attacks": [
+        {
+          "id": "fissure_sphere.pulse",
+          "name": "[待过稿] 震荡脉冲",
+          "damageType": "physical",
+          "damage": [2, 4],
+          "description": "[待过稿] 球体表面突然绷紧，往外弹了一下——像一颗心脏在憋着不该有的跳动。"
+        },
+        {
+          "id": "fissure_sphere.crack",
+          "name": "[待过稿] 裂缝喷流",
+          "damageType": "physical",
+          "damage": [3, 6],
+          "description": "[待过稿] 裂纹里射出一股压缩水柱——冲击力让你在水里打了个转。",
+          "weight": 1
+        }
+      ],
+      "physicalDamage": [2, 6],
+      "loot": {
+        "rolls": [{ "itemId": "item.coral_shard", "qty": [1, 1], "weight": 1 }],
+        "rollCount": 1,
+        "victoryModifier": { "kill": 1.0 }
+      },
+      "victoryConditions": ["kill"],
+      "codex": {
+        "habitat": "[待过稿] 中层黑水和热液烟囱附近。它一直在移动，总是在移动。",
+        "behavior": "[待过稿] 单只不危险。问题是你刀下得慢一点，它就会变成两只。刀慢两次，四只。越杀越多，直到把你淹没。",
+        "appearance": "[待过稿] 一个半透明的球，里面充满了什么乳白色的东西，压力大到快要撑破。你能看见它在颤。",
+        "firstSeenHint": "[待过稿] 很小。你以为一刀就能解决。"
+      }
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.fissure_sphere_solo",
+      "party": {
+        "members": [{ "defId": "enemy.fissure_sphere" }]
+      },
+      "introText": "[待过稿] 一颗半透明的球漂到你面前，大约拳头大小，在颤抖。你以为一刀就够了。",
+      "stalker": { "sensesBy": "sound", "hspeed": 0.3 }
+    },
+    {
+      "id": "combat.fissure_sphere_pair",
+      "party": {
+        "members": [
+          { "defId": "enemy.fissure_sphere" },
+          { "defId": "enemy.fissure_sphere" }
+        ]
+      },
+      "introText": "[待过稿] 两颗球同时向你漂来，它们之间有某种默契——或者只是同一件事的两半。"
+    }
+  ]
+}

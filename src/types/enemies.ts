@@ -228,6 +228,62 @@ export interface EnemyDef {
    * 仅链鳗头节声明；check-enemy-refs (c4) 验证标了 attackInOrder 的 encounter 末节（头节）带本字段。
    */
   headEnrage?: SegmentEnrage;
+
+  /**
+   * 裂球（split-proliferation）：每 intervalTurns 回合检查，若玩家对该敌造成的伤害 < minDamageToDeny
+   * → 裂变：分裂产生 spawnCount 只 spawnDefId 新敌人（初始 HP = spawnHpRatio × spawnDefId.hp），
+   * 总 party 不超过 maxPartySize。仅声明本字段的敌人才进 maybeEnemySplit 分支；普通敌人逐字节不变。
+   */
+  splitBehavior?: {
+    intervalTurns: number;
+    spawnDefId: string;
+    spawnCount: number;
+    spawnHpRatio: number;
+    maxPartySize: number;
+    minDamageToDeny: number;
+  };
+
+  /**
+   * 清道夫（corpse-eating）：party 内任意敌人死亡时，清道夫恢复 hpGainPerCorpse 点 HP（不超过自身 def.hp），
+   * 并将 absorbsAttacksFrom 列出的 defId 的攻击追加到自身 absorbedAttacks（战斗内即生效）。
+   */
+  corpseEating?: {
+    hpGainPerCorpse: number;
+    absorbsAttacksFrom?: string[];
+  };
+
+  /**
+   * 菌群鱼女王：shieldedBy 列出的 defId 中任意一只存活时，本敌人无法被玩家选为攻击目标。
+   * （checkActionAvailability 守·照 chain-eel isSegmentReachable 套路）
+   */
+  shieldedBy?: string[];
+
+  /**
+   * 菌群鱼女王工蜂补充：女王每次行动前，若场上 spawnDefId 类敌人数量 < minCount 则自动补至 minCount。
+   * maybeReplenishDrones 在 runEnemyTurn 开头调用；仅带此字段的敌人才进该分支。
+   */
+  droneReplenish?: {
+    spawnDefId: string;
+    minCount: number;
+    maxPartySize: number;
+  };
+
+  /**
+   * 茧化居民（metamorphosis·new-engine）：
+   * - 幼体（metamorphosisStage='larva'）passive——不发起攻击。
+   * - 玩家氧气降至 ≤ cocoonTriggerOxygen → 茧化（armor 替换为 cocoonArmor·计时 cocoonMaxTurns 回合）。
+   * - 茧化期被击穿（hp→0）→ 奖励 cocoonBreakBonus 掉落，随即以成体复活（hp=adultHp·攻击=adultAttacksOverride）。
+   * - 茧化计时归零 → 羽化成体（hp=adultHp·攻击=adultAttacksOverride·恢复正常 armor）。
+   * 阶段跟踪在 EnemyInstance.metamorphosisStage / cocoonTurnsLeft / phaseArmorOverride。
+   */
+  metamorphosis?: {
+    cocoonTriggerOxygen: number;
+    cocoonArmor: number;
+    cocoonMaxTurns: number;
+    adultHp: number;
+    adultAttacksOverride: EnemyAttack[];
+    cocoonBreakBonus?: LootEntry[];
+  };
 }
 
 export interface EnemyAttack {
@@ -285,6 +341,27 @@ export interface EnemyInstance {
    * 仅带 skinLoot 的敌人会被写此字段 ⇒ 普通敌人 EnemyInstance 形状逐字节不变（守 #99 + 既有 combat baseline）。
    */
   wornSkin?: string;
+
+  // ——— 裂球（splitBehavior）运行时追踪 ———
+  /** 本次检查周期内玩家对此敌造成的累计伤害（maybeEnemySplit 读写）。 */
+  splitDamageAccum?: number;
+  /** 上次分裂检查时的回合号（0-indexed·未检查 = undefined）。 */
+  splitLastCheckTurn?: number;
+
+  // ——— 清道夫（corpseEating）运行时追踪 ———
+  /** 从已死亡敌人处吸收的额外攻击（enemyAttackPlayer 合并到攻击池末尾）。 */
+  absorbedAttacks?: EnemyAttack[];
+
+  // ——— 茧化居民（metamorphosis）运行时阶段 ———
+  /** 当前发育阶段（larva / cocoon / adult）。未声明 metamorphosis 的敌人不写此字段。 */
+  metamorphosisStage?: 'larva' | 'cocoon' | 'adult';
+  /** 茧化阶段剩余回合数（归零时羽化成体）。 */
+  cocoonTurnsLeft?: number;
+  /**
+   * 阶段临时装甲覆盖（茧化期间替换 def.armor；成体羽化后清除）。
+   * enemyAttackPlayer 用此值代替 def.armor 计算物理减伤（仅 physical）。
+   */
+  phaseArmorOverride?: number;
 }
 
 export interface EnemyStatus {

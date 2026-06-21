@@ -1,0 +1,27 @@
+{
+  "_comment": "裂球分裂触发测试：前 3 回合故意不用攻击（仅 breathe·无伤害），触发 intervalTurns=3 分裂检查（累计伤害 0 < minDamageToDeny=6）→ 分裂出 2 只新个体（maxPartySize=8 未满）→ 场上 3 只 → 然后全部击杀。seed 1。breathe 不消耗氧/体·仅回复，3 次 breathe 后 turn=3；maybeEnemySplit 在 runEnemyTurn 开头检查 turn-lastCheck=3 ≥ intervalTurns=3 → 分裂。随后用 10 刀消灭 3 只（各 18×0.6≈11 HP·knife 平均 7 伤·约 2 刀/只）。logIncludes 钉住「裂成」子串（分裂 log 文案）。不锁 turnsElapsed（RNG/miss）。",
+  "combatId": "combat.fissure_sphere_solo",
+  "seed": 1,
+  "actions": [
+    { "actionId": "action.breathe" },
+    { "actionId": "action.breathe" },
+    { "actionId": "action.breathe" },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "survived": true,
+    "finalPhase": "dive",
+    "enemiesAlive": 0,
+    "logIncludes": ["裂成"]
+  }
+}

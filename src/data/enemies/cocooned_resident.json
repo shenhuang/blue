@@ -1,0 +1,82 @@
+{
+  "_comment": "茧化居民（metamorphosis·new-engine）· boss 设计蓝图 2026-06-21。幼体（larva）passive，不攻击，等待。玩家氧气降至 ≤ 20 → 茧化（armor 升至 10·计时 3 回合）。茧化期：击破（hp→0）= 奖励掉落 coral_shard×2 + 以成体（adult·hp=20）立即复活；计时到期 = 羽化成体（hp=20·攻击全替换·主动攻击）。成体比幼体危险——施压来自「时间压力下选择：打它？还是先回头管氧气？」。需新字段 src/types/enemies.ts（metamorphosis）+ startCombat 初始化 metamorphosisStage='larva'·已实装。数值占位·待作者调（defer-number-tuning）。文案 [待过稿]·#117。",
+  "enemies": [
+    {
+      "id": "enemy.cocooned_resident",
+      "name": "[待过稿] 茧化居民",
+      "tier": "uncanny",
+      "bands": ["band.trench.t4"],
+      "biomes": ["trench"],
+      "role": "ambusher",
+      "threatTier": "high",
+      "hp": 14,
+      "armor": 0,
+      "evasion": 0,
+      "speed": 1,
+      "threat": 3,
+      "hostility": "passive",
+      "initialStance": "unaware",
+      "aiPattern": "observer",
+      "metamorphosis": {
+        "cocoonTriggerOxygen": 20,
+        "cocoonArmor": 10,
+        "cocoonMaxTurns": 3,
+        "adultHp": 20,
+        "adultAttacksOverride": [
+          {
+            "id": "cocooned_resident.adult.slash",
+            "name": "[待过稿] 羽化切割",
+            "damageType": "physical",
+            "damage": [6, 10],
+            "description": "[待过稿] 新生出来的肢体还没学会控制力道——它就是这么打的。",
+            "weight": 2
+          },
+          {
+            "id": "cocooned_resident.adult.pierce",
+            "name": "[待过稿] 刺穿",
+            "damageType": "physical",
+            "damage": [8, 14],
+            "description": "[待过稿] 它找到了你的空隙，比幼体时准了太多。",
+            "weight": 1,
+            "injuryOnHit": { "chance": 0.5 }
+          }
+        ],
+        "cocoonBreakBonus": [
+          { "itemId": "item.coral_shard", "qty": [2, 3], "weight": 1 }
+        ]
+      },
+      "attacks": [
+        {
+          "id": "cocooned_resident.larva.idle",
+          "name": "[待过稿] （无动作）",
+          "damageType": "physical",
+          "damage": [0, 0],
+          "description": "[待过稿] 它什么都没做。"
+        }
+      ],
+      "physicalDamage": [6, 14],
+      "loot": {
+        "guaranteed": [],
+        "rolls": [{ "itemId": "item.coral_shard", "qty": [1, 2], "weight": 1 }],
+        "rollCount": 1,
+        "victoryModifier": { "kill": 1.0 }
+      },
+      "victoryConditions": ["kill"],
+      "codex": {
+        "habitat": "[待过稿] 海沟。它依附在沟壁上，像一块石头，直到你的氧气不够了。",
+        "behavior": "[待过稿] 它在等你耗尽。氧气一低，它就开始变——如果你快够打破它的茧，有东西可以捡；但如果让它茧化完成，你面对的就是另一个东西了。",
+        "appearance": "[待过稿] 幼体时像一个结了壳的囊，灰白色，没有眼睛，没有明显的嘴。茧化后是一个灰色硬球。成体……你最好别让它到那一步。",
+        "firstSeenHint": "[待过稿] 你以为那是一块石头。"
+      }
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.cocooned_resident_solo",
+      "party": {
+        "members": [{ "defId": "enemy.cocooned_resident" }]
+      },
+      "introText": "[待过稿] 沟壁上挂着一块灰色的东西，大约一拳大小，一动不动。你靠近了，它还是没动。但你注意到——它在呼吸。"
+    }
+  ]
+}

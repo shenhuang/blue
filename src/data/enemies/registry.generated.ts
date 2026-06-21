@@ -8,11 +8,15 @@ import blind_eel from './blind_eel.json';
 import cave_grouper_boss from './cave_grouper_boss.json';
 import cave_octopus from './cave_octopus.json';
 import chain_eel from './chain_eel.json';
+import cocooned_resident from './cocooned_resident.json';
 import corpse_wearer from './corpse_wearer.json';
 import drowned_lantern from './drowned_lantern.json';
+import fissure_sphere from './fissure_sphere.json';
+import mycelial_fish from './mycelial_fish.json';
 import reef_barracuda from './reef_barracuda.json';
 import reef_grouper from './reef_grouper.json';
 import reef_shark from './reef_shark.json';
+import scavenger from './scavenger.json';
 import wreck_field_patrol from './wreck_field_patrol.json';
 import wreck_spider_crab from './wreck_spider_crab.json';
 
@@ -25,11 +29,15 @@ export const ENEMY_FILE_MODULES: EnemyFileModule[] = [
   cave_grouper_boss,
   cave_octopus,
   chain_eel,
+  cocooned_resident,
   corpse_wearer,
   drowned_lantern,
+  fissure_sphere,
+  mycelial_fish,
   reef_barracuda,
   reef_grouper,
   reef_shark,
+  scavenger,
   wreck_field_patrol,
   wreck_spider_crab,
 ] as unknown as EnemyFileModule[];

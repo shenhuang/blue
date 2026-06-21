@@ -123,6 +123,10 @@ export function startCombat(
     if (m.attacksOverride) {
       inst.phaseAttacksOverride = m.attacksOverride;
     }
+    // 茧化居民：开战时初始化为幼体阶段（仅带 metamorphosis 的敌人写此字段·普通敌人逐字节不变）。
+    if (def.metamorphosis) {
+      inst.metamorphosisStage = 'larva';
+    }
     return inst;
   });
 
@@ -257,6 +261,29 @@ export function checkActionAvailability(
     return { available: false, reason: '够不到——它身前还有节段挡着，先清掉最前面的。' };
   }
 
+  // —— 菌群鱼（shieldedBy）目标门——
+  // 被工蜂护卫的女王：场上还有护卫存活时，任何攻击行动均无法指向女王。
+  // 仅 attackInOrder 以外的普通遭遇走这条检查；attackInOrder 遭遇已有 isSegmentReachable 覆盖。
+  if (
+    targetInstanceId !== undefined &&
+    action.effect.kind === 'attack' &&
+    state.phase.kind === 'combat' &&
+    !state.phase.combat.attackInOrder
+  ) {
+    const tgt = state.phase.combat.enemies.find((e) => e.instanceId === targetInstanceId && e.hp > 0);
+    if (tgt) {
+      const tgtDef = ENEMY_DEFS.get(tgt.defId);
+      if (tgtDef?.shieldedBy?.length) {
+        const shielded = state.phase.combat.enemies.some(
+          (e) => e.hp > 0 && e.instanceId !== targetInstanceId && tgtDef.shieldedBy!.includes(e.defId),
+        );
+        if (shielded) {
+          return { available: false, reason: '工蜂还在——女王躲在蜂群之后，先清光工蜂再出手。' };
+        }
+      }
+    }
+  }
+
   return { available: true };
 }
 
@@ -295,6 +322,11 @@ export function applyPlayerAction(
   }
   // —— 0b. boss 战场压力 tick（boss 存活即施加·叠加基础 tick·每回合触发一次）——
   s = applyEnvironmentalPressure(s);
+  // —— 0c. 茧化居民变态发育检查（氧气阈值触发·仅带 metamorphosis 的敌人进分支·其余逐字节不变）——
+  s = maybeMetamorphosis(s);
+  // —— 0d. 裂球分裂检查（回合开头·在玩家行动造伤之前检查·这样本回合的伤害不会逆向抑制「之前 N 回合」的分裂门）——
+  // 仅带 splitBehavior 的敌人进分支；普通敌人逐字节不变。
+  s = maybeEnemySplit(s);
   // —— 1. 扣资源（负伤修正后的实际消耗·与 availability 同一函数） ——
   const costs = actionCosts(s.run!, action);
   s = applyStatsDelta(s, {
@@ -457,9 +489,10 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
   if (ambushing) {
     dmg = Math.floor(dmg * (ambushing.param ?? 1));
   }
-  // 物理装甲
+  // 物理装甲（茧化居民：茧化期用 phaseArmorOverride 替代 def.armor·其余时段与普通敌人一致）
   if (eff.damageType === 'physical') {
-    dmg = Math.max(1, dmg - def.armor);
+    const effectiveArmor = target.phaseArmorOverride ?? def.armor;
+    dmg = Math.max(1, dmg - effectiveArmor);
   }
   // 免疫
   if (def.immunity?.includes(eff.damageType)) {
@@ -476,6 +509,10 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
             hp: Math.max(0, e.hp - dmg),
             aggro: e.aggro + Math.ceil(dmg / 5),
             stance: e.stance === 'unaware' ? 'alerted' : e.stance === 'alerted' ? 'attacking' : e.stance,
+            // 裂球：累计本周期内玩家造成的伤害（maybeEnemySplit 读取·仅带 splitBehavior 的敌人才写）
+            ...(ENEMY_DEFS.get(e.defId)?.splitBehavior
+              ? { splitDamageAccum: (e.splitDamageAccum ?? 0) + dmg }
+              : {}),
             statuses: eff.applyStatusOnHit
               ? [...e.statuses.filter((st) => st.kind !== eff.applyStatusOnHit!.kind), { kind: eff.applyStatusOnHit.kind, remainingTurns: eff.applyStatusOnHit.turns }]
               : e.statuses,
@@ -489,6 +526,8 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
   });
   // boss 阶段检查（HP 因玩家攻击下降·每次命中后触发）
   s = maybeBossPhaseShift(s, target.instanceId);
+  // 清道夫（corpseEating）：玩家攻击致死 → 触发尸食钩子
+  s = maybeCorpseEat(s, target.instanceId);
 
   // 放电芯扣电（命中触发后结算·run.power 单点扣·非 Stats clamp 范畴）。
   if (powerSpent > 0 && s.run) {
@@ -640,16 +679,25 @@ function rollChance(chance?: number): boolean {
 function runEnemyTurn(state: GameState): GameState {
   if (state.phase.kind !== 'combat' || !state.run) return state;
   let s: GameState = state;
-  const combat = state.phase.combat;
+
+  // 菌群鱼（droneReplenish）：女王行动前补充工蜂（仅带 droneReplenish 的敌人进分支）。
+  s = maybeReplenishDrones(s);
 
   // 按 aggro 降序，每个活着且未眩晕的敌人依次行动
-  const order = [...combat.enemies]
+  const order = [...(s.phase.kind === 'combat' ? s.phase.combat.enemies : [])]
     .filter((e) => e.hp > 0 && !e.statuses.some((st) => st.kind === 'stunned'))
     .sort((a, b) => b.aggro - a.aggro);
 
   for (const e of order) {
     const def = ENEMY_DEFS.get(e.defId);
     if (!def) continue;
+    // 茧化居民幼体（metamorphosisStage='larva'）：passive，不发起攻击——直接跳过。
+    if (def.metamorphosis && e.metamorphosisStage === 'larva') {
+      s = pushCombatLog(s, { actor: 'enemy', text: `${def.name} 停在原地，像一颗等待爆发的蛋。` });
+      continue;
+    }
+    // 茧化居民茧（metamorphosisStage='cocoon'）：同样 passive，不出手。
+    if (def.metamorphosis && e.metamorphosisStage === 'cocoon') continue;
     // 逃跑的敌人不打人
     if (e.stance === 'fleeing') {
       s = pushCombatLog(s, { actor: 'enemy', text: `${def.name} 向远处游开。` });
@@ -704,11 +752,16 @@ function runEnemyTurn(state: GameState): GameState {
       s = pushCombatLog(s, { actor: 'system', text: `${dname} 因持续伤势失去 ${dot} 点生命。` });
       // boss 阶段检查（HP 因 DoT 下降）
       s = maybeBossPhaseShift(s, e.instanceId);
+      // 清道夫（corpseEating）：DoT 致死同样触发尸食钩子
+      s = maybeCorpseEat(s, e.instanceId);
     }
   }
 
   // 链鳗（分节实体）头节 enrage：DoT 可能杀掉最后一节体节 → 头节成为最前存活节（守 attackInOrder·非链鳗逐字节不变）。
   s = maybeChainEelEnrage(s);
+
+  // 茧化居民茧化倒计时：每轮结束后递减（归零时下一个 maybeMetamorphosis 触发羽化成体）。
+  s = maybeCocoonCountdown(s);
 
   // 状态衰减
   s = setCombat(s, (c) => ({
@@ -728,8 +781,12 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
   if (state.phase.kind !== 'combat' || !state.run) return state;
   const def = ENEMY_DEFS.get(enemy.defId);
   if (!def) return state;
-  // 挑一个攻击（优先读阶段覆盖攻击表·BossPhase.attacksOverride·无覆盖则 def.attacks）
-  const attacks = enemy.phaseAttacksOverride ?? def.attacks;
+  // 挑一个攻击（优先读阶段覆盖攻击表·BossPhase.attacksOverride·无覆盖则 def.attacks；
+  // 清道夫吸收的攻击追加到攻击池末尾·absorbedAttacks 仅清道夫写入·普通敌人零影响）
+  const baseAttacks = enemy.phaseAttacksOverride ?? def.attacks;
+  const attacks = enemy.absorbedAttacks?.length
+    ? [...baseAttacks, ...enemy.absorbedAttacks]
+    : baseAttacks;
   const weights = attacks.map((a) => a.weight ?? 1);
   const totalW = weights.reduce((a, b) => a + b, 0);
   let r = Math.random() * totalW;
@@ -1001,6 +1058,289 @@ function applyEnvironmentalPressure(state: GameState): GameState {
   }
 
   return s;
+}
+
+// ——— 新 boss 机制钩子 ———
+
+/**
+ * maybeEnemySplit（裂球·split-proliferation）：每 intervalTurns 回合检查一次，若目标在本检查周期内
+ * 受到伤害 < minDamageToDeny → 分裂产生最多 spawnCount 只新个体（HP = spawnHpRatio × spawnDefId.hp），
+ * 总 party 不超 maxPartySize。检查结束后重置 splitDamageAccum + 更新 splitLastCheckTurn。
+ * 仅带 splitBehavior 的敌人进分支；普通敌人逐字节不变。
+ */
+function maybeEnemySplit(state: GameState): GameState {
+  if (state.phase.kind !== 'combat') return state;
+  const combat = state.phase.combat;
+  const currentTurn = combat.turn;
+  let s = state;
+
+  for (const e of combat.enemies) {
+    if (e.hp <= 0) continue;
+    const def = ENEMY_DEFS.get(e.defId);
+    const sb = def?.splitBehavior;
+    if (!sb) continue;
+
+    const lastCheck = e.splitLastCheckTurn ?? 0;
+    if (currentTurn - lastCheck < sb.intervalTurns) continue; // 未到检查点
+
+    const damageAccum = e.splitDamageAccum ?? 0;
+    const spawnDef = ENEMY_DEFS.get(sb.spawnDefId);
+
+    // 重置累计伤害 + 记录检查回合
+    s = setCombat(s, (c) => ({
+      ...c,
+      enemies: c.enemies.map((x) =>
+        x.instanceId === e.instanceId
+          ? { ...x, splitDamageAccum: 0, splitLastCheckTurn: currentTurn }
+          : x,
+      ),
+    }));
+
+    if (damageAccum >= sb.minDamageToDeny) continue; // 受伤够多，不分裂
+
+    const curPartySize = (s.phase.kind === 'combat' ? s.phase.combat.enemies : []).filter((x) => x.hp > 0).length;
+    const slots = Math.max(0, sb.maxPartySize - curPartySize);
+    if (slots <= 0 || !spawnDef) continue;
+
+    const toSpawn = Math.min(sb.spawnCount, slots);
+    const spawnHp = Math.max(1, Math.round(spawnDef.hp * sb.spawnHpRatio));
+    const spawnName = spawnDef.name;
+    const encId = s.phase.kind === 'combat' ? s.phase.combat.combatId : 'split';
+
+    s = pushCombatLog(s, {
+      actor: 'system',
+      text: `${def.name} 崩开——裂成 ${toSpawn} 只更小的。`,
+    });
+
+    const newInstances = Array.from({ length: toSpawn }, (_, i) => {
+      const idx = Date.now() + i; // 唯一性后缀（combat 内不冲突）
+      return {
+        instanceId: `${encId}.split.${idx}`,
+        defId: sb.spawnDefId,
+        hp: spawnHp,
+        stance: 'attacking' as const,
+        aggro: spawnDef.threat,
+        statuses: [],
+      };
+    });
+
+    s = setCombat(s, (c) => ({ ...c, enemies: [...c.enemies, ...newInstances] }));
+    s = pushCombatLog(s, { actor: 'system', text: `${toSpawn} 只${spawnName}出现在你周围。` });
+  }
+
+  return s;
+}
+
+/**
+ * maybeCorpseEat（清道夫·corpse-eating）：killedInstanceId 所代表的敌人 HP ≤ 0 时，
+ * party 内带 corpseEating 的敌人获得 HP 回复，并吸收 absorbsAttacksFrom 列出的 defId 的攻击。
+ * 若 killedInstanceId 的敌人仍然存活（HP > 0），本函数为 no-op（守幂等）。
+ */
+function maybeCorpseEat(state: GameState, killedInstanceId: string): GameState {
+  if (state.phase.kind !== 'combat') return state;
+  const combat = state.phase.combat;
+
+  const killed = combat.enemies.find((e) => e.instanceId === killedInstanceId);
+  if (!killed || killed.hp > 0) return state; // 目标未死
+
+  const killedDef = ENEMY_DEFS.get(killed.defId);
+  let s = state;
+
+  for (const e of combat.enemies) {
+    if (e.hp <= 0 || e.instanceId === killedInstanceId) continue;
+    const def = ENEMY_DEFS.get(e.defId);
+    const ce = def?.corpseEating;
+    if (!ce) continue;
+
+    // HP 回复（不超过自身 def.hp 上限）
+    const newHp = Math.min(def.hp, e.hp + ce.hpGainPerCorpse);
+    s = setCombat(s, (c) => ({
+      ...c,
+      enemies: c.enemies.map((x) =>
+        x.instanceId === e.instanceId ? { ...x, hp: newHp } : x,
+      ),
+    }));
+    s = pushCombatLog(s, {
+      actor: 'enemy',
+      text: `${def.name} 扑上去吃掉了尸体——它恢复了 ${newHp - e.hp} 点生命。`,
+    });
+
+    // 吸收攻击（仅当死亡敌人的 defId 在 absorbsAttacksFrom 列表中）
+    if (ce.absorbsAttacksFrom?.includes(killed.defId) && killedDef) {
+      const newAttacks = killedDef.attacks.map((a) => ({
+        ...a,
+        id: `absorbed.${a.id}`, // 避免 id 冲突
+      }));
+      s = setCombat(s, (c) => ({
+        ...c,
+        enemies: c.enemies.map((x) =>
+          x.instanceId === e.instanceId
+            ? { ...x, absorbedAttacks: [...(x.absorbedAttacks ?? []), ...newAttacks] }
+            : x,
+        ),
+      }));
+      s = pushCombatLog(s, {
+        actor: 'system',
+        text: `${def.name} 消化了${killedDef.name}——它的本能变成了它自己的。`,
+      });
+    }
+  }
+
+  return s;
+}
+
+/**
+ * maybeReplenishDrones（菌群鱼·droneReplenish）：女王行动前检查场上工蜂数量，
+ * 不足 minCount 则补充（总 party 不超 maxPartySize）。仅带 droneReplenish 的敌人触发；普通敌人逐字节不变。
+ */
+function maybeReplenishDrones(state: GameState): GameState {
+  if (state.phase.kind !== 'combat') return state;
+  const combat = state.phase.combat;
+  let s = state;
+
+  for (const e of combat.enemies) {
+    if (e.hp <= 0) continue;
+    const def = ENEMY_DEFS.get(e.defId);
+    const dr = def?.droneReplenish;
+    if (!dr) continue;
+
+    const liveDrones = combat.enemies.filter((x) => x.hp > 0 && x.defId === dr.spawnDefId).length;
+    if (liveDrones >= dr.minCount) continue;
+
+    const curTotal = combat.enemies.filter((x) => x.hp > 0).length;
+    const need = dr.minCount - liveDrones;
+    const slots = Math.max(0, dr.maxPartySize - curTotal);
+    const toSpawn = Math.min(need, slots);
+    if (toSpawn <= 0) continue;
+
+    const spawnDef = ENEMY_DEFS.get(dr.spawnDefId);
+    if (!spawnDef) continue;
+
+    const encId = s.phase.kind === 'combat' ? s.phase.combat.combatId : 'drone';
+    const newDrones = Array.from({ length: toSpawn }, (_, i) => ({
+      instanceId: `${encId}.drone.${Date.now() + i}`,
+      defId: dr.spawnDefId,
+      hp: spawnDef.hp,
+      stance: 'attacking' as const,
+      aggro: spawnDef.threat,
+      statuses: [],
+    }));
+
+    s = setCombat(s, (c) => ({ ...c, enemies: [...c.enemies, ...newDrones] }));
+    s = pushCombatLog(s, {
+      actor: 'system',
+      text: `${def.name} 排出 ${toSpawn} 只${spawnDef.name}——它们从缝隙里钻出来。`,
+    });
+  }
+
+  return s;
+}
+
+/**
+ * maybeMetamorphosis（茧化居民·metamorphosis）：每回合检查带 metamorphosis 的敌人的阶段状态。
+ * - larva + 玩家氧气 ≤ cocoonTriggerOxygen → 茧化（phaseArmorOverride=cocoonArmor，计时开始）。
+ * - cocoon + hp 已在 applyAttack 降至 0 → 茧破（奖励掉落 + 成体复活）。
+ * - cocoon + cocoonTurnsLeft 已由 maybeCocoonCountdown 清零 → 羽化成体。
+ * 非 metamorphosis 敌人逐字节不变。
+ */
+function maybeMetamorphosis(state: GameState): GameState {
+  if (state.phase.kind !== 'combat' || !state.run) return state;
+  const oxygen = state.run.stats.oxygen;
+  let s = state;
+
+  for (const e of (s.phase.kind === 'combat' ? s.phase.combat.enemies : [])) {
+    const def = ENEMY_DEFS.get(e.defId);
+    const meta = def?.metamorphosis;
+    if (!meta) continue;
+
+    const stage = e.metamorphosisStage ?? 'larva';
+
+    if (stage === 'larva' && oxygen <= meta.cocoonTriggerOxygen) {
+      // 幼体→茧化
+      s = setCombat(s, (c) => ({
+        ...c,
+        enemies: c.enemies.map((x) =>
+          x.instanceId === e.instanceId
+            ? { ...x, metamorphosisStage: 'cocoon', cocoonTurnsLeft: meta.cocoonMaxTurns, phaseArmorOverride: meta.cocoonArmor }
+            : x,
+        ),
+      }));
+      s = pushCombatLog(s, {
+        actor: 'system',
+        text: `${def.name} 开始包裹自己——它在缩紧，外壳变硬。`,
+      });
+    } else if (stage === 'cocoon' && e.hp <= 0) {
+      // 茧被击破
+      if (meta.cocoonBreakBonus && s.run) {
+        for (const bonus of meta.cocoonBreakBonus) {
+          const qty = randRange(bonus.qty);
+          if (qty > 0 && s.run) {
+            s = { ...s, run: { ...s.run!, inventory: addToInventory(s.run.inventory, bonus.itemId, qty) } };
+          }
+        }
+      }
+      // 成体复活（HP 恢复 adultHp·清除护甲覆盖·换攻击表）
+      s = setCombat(s, (c) => ({
+        ...c,
+        enemies: c.enemies.map((x) =>
+          x.instanceId === e.instanceId
+            ? {
+                ...x,
+                hp: meta.adultHp,
+                metamorphosisStage: 'adult' as const,
+                cocoonTurnsLeft: undefined,
+                phaseArmorOverride: undefined,
+                phaseAttacksOverride: meta.adultAttacksOverride,
+                stance: 'attacking' as const,
+              }
+            : x,
+        ),
+      }));
+      s = pushCombatLog(s, {
+        actor: 'system',
+        text: `茧壳从内部炸开——${def.name} 羽化出来，比原来快了三倍。`,
+      });
+    } else if (stage === 'cocoon' && (e.cocoonTurnsLeft ?? 1) <= 0) {
+      // 茧化计时归零→羽化成体（HP 满格·攻击表替换）
+      s = setCombat(s, (c) => ({
+        ...c,
+        enemies: c.enemies.map((x) =>
+          x.instanceId === e.instanceId
+            ? {
+                ...x,
+                hp: meta.adultHp,
+                metamorphosisStage: 'adult' as const,
+                cocoonTurnsLeft: undefined,
+                phaseArmorOverride: undefined,
+                phaseAttacksOverride: meta.adultAttacksOverride,
+                stance: 'attacking' as const,
+              }
+            : x,
+        ),
+      }));
+      s = pushCombatLog(s, {
+        actor: 'system',
+        text: `茧化完成——${def.name} 撑破外壳，以全新的姿态出现。`,
+      });
+    }
+  }
+
+  return s;
+}
+
+/**
+ * maybeCocoonCountdown（茧化居民·每轮末倒计时）：递减 cocoonTurnsLeft；到 0 时
+ * 下一次 maybeMetamorphosis 将触发羽化。分离计时与转换逻辑，避免同回合双重判断。
+ */
+function maybeCocoonCountdown(state: GameState): GameState {
+  if (state.phase.kind !== 'combat') return state;
+  return setCombat(state, (c) => ({
+    ...c,
+    enemies: c.enemies.map((e) => {
+      if (e.metamorphosisStage !== 'cocoon' || e.cocoonTurnsLeft === undefined) return e;
+      return { ...e, cocoonTurnsLeft: Math.max(0, e.cocoonTurnsLeft - 1) };
+    }),
+  }));
 }
 
 /** 玩家选择应急上浮（战斗中可用） */

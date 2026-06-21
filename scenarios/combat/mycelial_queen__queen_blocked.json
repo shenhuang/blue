@@ -1,0 +1,11 @@
+{
+  "_comment": "菌群鱼 shieldedBy 门 baseline：工蜂存活时直接指向女王（targetIndex 2）→ checkActionAvailability.shieldedBy 拦截（返回 available=false·reason='工蜂还在...'）→ runner 停步 outcome=actionUnavailable。证明「工蜂在场时女王不可选」目标门正常工作。与 chain_eel__target_head_blocked.json 模式对称——两者都是「非法目标 → actionUnavailable 停步」baseline。seed 任意（门在第 0 回合即触发·与 RNG 无关）。",
+  "combatId": "combat.mycelial_queen_with_drones",
+  "seed": 1,
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 2 }
+  ],
+  "expect": {
+    "outcome": "actionUnavailable"
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "_comment": "清道夫（corpse-eating）· boss 设计蓝图 2026-06-21。同 party 内任意敌人死亡 → 清道夫吃尸回血（+8 HP）；若死亡敌人属于 absorbsAttacksFrom 列表中的种类，还会吸收其攻击方式（下回合起可用）。与其他任意敌人组合使用，体现「不管什么先死，清道夫都赚」。数值占位·待作者调（defer-number-tuning）。文案 [待过稿]·#117。",
+  "enemies": [
+    {
+      "id": "enemy.scavenger",
+      "name": "[待过稿] 清道夫",
+      "tier": "uncanny",
+      "bands": ["band.wreck.t3", "band.midwater.t4"],
+      "biomes": ["wreck_field", "midwater"],
+      "role": "predator",
+      "threatTier": "mid",
+      "hp": 24,
+      "armor": 1,
+      "evasion": 2,
+      "speed": 5,
+      "threat": 5,
+      "hostility": "aggressive",
+      "initialStance": "attacking",
+      "aiPattern": "observer",
+      "corpseEating": {
+        "hpGainPerCorpse": 8,
+        "absorbsAttacksFrom": [
+          "enemy.reef_shark",
+          "enemy.reef_barracuda",
+          "enemy.blind_eel",
+          "enemy.cave_octopus",
+          "enemy.reef_grouper",
+          "enemy.fissure_sphere"
+        ]
+      },
+      "attacks": [
+        {
+          "id": "scavenger.tear",
+          "name": "[待过稿] 撕咬",
+          "damageType": "physical",
+          "damage": [4, 7],
+          "description": "[待过稿] 它的嘴不是用来猎杀的，但用来撕扯绰绰有余。",
+          "weight": 2
+        },
+        {
+          "id": "scavenger.lunge",
+          "name": "[待过稿] 猛扑",
+          "damageType": "physical",
+          "damage": [5, 9],
+          "description": "[待过稿] 它已经吃饱了，但还是扑过来——不是饿，是习惯。",
+          "weight": 1
+        }
+      ],
+      "physicalDamage": [4, 9],
+      "loot": {
+        "rolls": [
+          { "itemId": "item.coral_shard", "qty": [1, 2], "weight": 2 },
+          { "itemId": "item.grouper_maw", "qty": [1, 1], "weight": 1 }
+        ],
+        "rollCount": 1,
+        "victoryModifier": { "kill": 1.0 }
+      },
+      "victoryConditions": ["kill"],
+      "codex": {
+        "habitat": "[待过稿] 残骸场和中层黑水。它总是出现在战斗刚结束的地方。",
+        "behavior": "[待过稿] 它不挑食。任何死亡对它都是机会。你杀的东西越多，它就越难杀——它会带着你所有猎物的技能来找你。",
+        "appearance": "[待过稿] 体形细长，嘴比眼睛大。皮肤总是湿漉漉的，像刚从什么东西里爬出来。",
+        "firstSeenHint": "[待过稿] 它在等。"
+      }
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.scavenger_solo",
+      "party": {
+        "members": [{ "defId": "enemy.scavenger" }]
+      },
+      "introText": "[待过稿] 它从礁石后面飘出来，不紧不慢的。好像在等你先把别的东西解决掉。",
+      "stalker": { "sensesBy": "sound", "hspeed": 0.4 }
+    },
+    {
+      "id": "combat.scavenger_with_eel",
+      "party": {
+        "members": [
+          { "defId": "enemy.blind_eel" },
+          { "defId": "enemy.scavenger" }
+        ]
+      },
+      "introText": "[待过稿] 盲鳗在前，清道夫在后。盲鳗找你，清道夫等盲鳗死。"
+    }
+  ]
+}
