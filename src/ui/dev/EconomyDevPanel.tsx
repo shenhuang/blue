@@ -56,6 +56,12 @@ function statusTag(m: MaterialStat): { label: string; cls: string } {
 }
 const pct = (c: number) => `${Math.round(c * 100)}%`;
 const num = (v: number) => (v ? (Number.isInteger(v) ? String(v) : v.toFixed(1)) : '');
+// 总差值 = 总指数 − 总消耗（带符号·0 显 0）：状态页一眼看素材整体盈/亏。
+const netTotal = (m: MaterialStat) => +(m.sourceIndexTotal - m.totalDemand).toFixed(1);
+const netTotalTxt = (m: MaterialStat) => {
+  const v = netTotal(m);
+  return v > 0 ? `+${v}` : String(v);
+};
 
 export function EconomyDevPanel({ onClose }: EconomyDevPanelProps) {
   const stats = useMemo(() => computeMaterialStats(), []);
@@ -95,6 +101,10 @@ export function EconomyDevPanel({ onClose }: EconomyDevPanelProps) {
   const maxNet = useMemo(
     () => Math.max(1, ...rows.flatMap(({ i }) => stats.netMatrix[i].map(Math.abs))),
     [rows, stats],
+  );
+  const maxNetTot = useMemo(
+    () => Math.max(1, ...rows.map(({ m }) => Math.abs(netTotal(m)))),
+    [rows],
   );
 
   const sel = selId ? stats.materials.find((m) => m.id === selId) ?? null : null;
@@ -191,7 +201,14 @@ export function EconomyDevPanel({ onClose }: EconomyDevPanelProps) {
                       {r}
                     </th>
                   ))}
-                  <th className="eco-toth">{totalHead}</th>
+                  {tab === 'status' ? (
+                    <>
+                      <th className="eco-toth">总差值</th>
+                      <th className="eco-toth">状态</th>
+                    </>
+                  ) : (
+                    <th className="eco-toth">{totalHead}</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -220,9 +237,18 @@ export function EconomyDevPanel({ onClose }: EconomyDevPanelProps) {
                         );
                       })}
                       {tab === 'status' ? (
-                        <td className="eco-total">
-                          <span className={`dev-bi-tag ${tg.cls}`}>{tg.label}</span>
-                        </td>
+                        <>
+                          <td
+                            className="eco-total"
+                            style={{ background: diverge(netTotal(m), maxNetTot) }}
+                            title={`总差值 = 总指数 ${m.sourceIndexTotal} − 总消耗 ${m.totalDemand}`}
+                          >
+                            {netTotalTxt(m)}
+                          </td>
+                          <td className="eco-total">
+                            <span className={`dev-bi-tag ${tg.cls}`}>{tg.label}</span>
+                          </td>
+                        </>
                       ) : (
                         <td
                           className="eco-total"
