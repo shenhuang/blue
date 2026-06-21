@@ -1,9 +1,8 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
-> **2026-06-21 三种洞型变体 cave zone + 21 专属事件（交互 session〔Cowork〕·cave-zones 并行线·#175·新 quirk #158·47/47 通过〔--skip build〕·build 留 nightly）**：`zone.shaft_crack`〔竖穴·k[0.2,0.55]〕/`zone.chamber_network`〔蜂房·[1.3,1.9]〕/`zone.flooded_gallery`〔漫水回廊·[2.2,3.5]·横向回程预算〕三 maze zone + `crack`/`chamber`/`flooded` 三 ZoneTag + 21 专属事件〔各 7·声线照 blue_caves〕；纯数据零 mapgen 改。**未接海图**（cave-content 线后续）。与 cave-mapgen〔orientation〕线并发同树。
-> **2026-06-21 col.trench 解耦蓝洞群（zoneId + cave tags）+ 多风格洞穴设计讨论（交互 session〔Cowork〕·#174·无新 quirk·47/48 通过·build 红=沙箱 rollup·commit 待 nightly）**：`depth_columns.json` col.trench 四档 `zoneId:'zone.blue_caves'`→`'zone.vent_trench'`·cave tags 全删（twilight/midnight only）；test 9b（playthrough-chart）+ test 3 deepOverride（playthrough-bands）同步修复。设计讨论：shaft/linear/gallery/honeycomb/dendritic/水平洞穴五种风格谱；并行 session 方案（cave-zones Opus + cave-mapgen Sonnet）。
-> **2026-06-21 自动试玩 sim 工具 + findings + 月度 schedule（交互 session〔Cowork〕·#173·无新 quirk·typecheck 绿·纯 docs+tools/·不碰 src）**：真引擎驱动「理性玩家」机器人 ~2200 潜 → `tools/playtest-sim/`（`run.sh` 随时跑）+ `docs/playtest-findings.md`（P0/P1/P2 backlog）+ schedule `blue-playtest-sim`。要点：避战软锁(P0-1)·刷子瓶颈=遭遇稀(P1-1)·shark_tooth 只教学掉一次(P1-2)·**海沟 station 终局不可达〔`trench_found` 无人置位〕(P1-8)**·spare_tank 未定义(P2-4)。
+> **2026-06-21 横向洞穴朝向 `ZoneDef.orientation='horizontal'`（交互 session〔Cowork〕·cave-mapgen 线·#176·无新 quirk·47/48·build 留 nightly·commit `f0b85d7`）**：`types/dive.ts` ZoneDef 新增 `orientation?:'vertical'|'horizontal'`；`engine/mapgen.ts` generateMazeMap 深度赋值分流（horizontal=baseMid±hVariance 不钉 deepPoints，vertical=原 frac^k 逐字节不变）；`zones.json` zone.horizontal_test 验证用。mapLayout.ts 无需改。
+> **2026-06-21 三种洞型变体 cave zone + 21 专属事件（交互 session〔Cowork〕·cave-zones 并行线·#175·新 quirk #158·47/47 通过〔--skip build〕·build 留 nightly）**：`zone.shaft_crack`〔竖穴·k[0.2,0.55]〕/`zone.chamber_network`〔蜂房·[1.3,1.9]〕/`zone.flooded_gallery`〔漫水回廊·[2.2,3.5]·横向回程预算〕三 maze zone + `crack`/`chamber`/`flooded` 三 ZoneTag + 21 专属事件〔各 7·声线照 blue_caves〕；纯数据零 mapgen 改。**未接海图**（cave-content 线后续）。
 
 ## 1. 一句话状态
 
