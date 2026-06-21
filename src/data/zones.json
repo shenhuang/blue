@@ -98,6 +98,21 @@
       "ambushEncounters": ["combat.wreck_spider_crab_solo", "combat.drowned_lantern_solo"]
     },
     {
+      "id": "zone.horizontal_test",
+      "name": "横向测试廊",
+      "description": "深度锁定的横向水道——进来容易，问题是回得去吗。（开发测试用·非正式内容）",
+      "depthRange": [35, 50],
+      "layerCount": 6,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["cave"] }
+      ],
+      "generation": "random",
+      "mapShape": "maze",
+      "orientation": "horizontal",
+      "canFreeAscend": false
+    },
+    {
       "id": "zone.whalefall",
       "name": "鲸落",
       "description": "中层那头巨兽沉下去的地方。一架越来越小的骨头半埋在海床里，周围一圈被一具尸体喂肥的生命，按各自的节奏拆解它、住进它、从它身上活下去。死的是一个，靠它活的是一整片。",

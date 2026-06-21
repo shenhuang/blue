@@ -33,6 +33,14 @@ export interface ZoneDef {
    */
   mapShape?: 'layered' | 'maze';
   /**
+   * 地图朝向（仅 mapShape='maze' 生效）：
+   *  - 'vertical'（默认）：深度随树距递增，危险轴 = 「太深了」（现有行为）。
+   *  - 'horizontal'：深度锁在 depthRange 中值 ± (span/2) 小幅浮动，节点沿水平轴延伸；
+   *    危险轴从「太深」换成「进来太远——回得去吗」（探索距离替代深度成为主要压力）。
+   *    depthRange 在此模式下表示「基准深度 ± span/2」，而非单调下行窗口。
+   */
+  orientation?: 'vertical' | 'horizontal';
+  /**
    * 洞穴剖面曲线指数 k 的派生区间（仅 mapShape='maze' 生效·洞型谱机制）：
    * 迷路图深度按 depth = d0 + span·frac^k 赋值（frac=树距比例），k 决定「落差发生在行进的哪一段」：
    *  - k<1：进洞先掉竖井、深处横向铺开（井+廊）

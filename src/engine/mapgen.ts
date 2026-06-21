@@ -665,24 +665,37 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
     }
   }
 
-  // —— 4. 赋深度（剖面曲线 frac^k＝洞型谱）——
-  // k=1 走原式（逐字节复现旧图）；k≠1 时 pow 单调 ⇒ 「位置即深度」#92（起点最浅·深度随树距上升）对任意 k>0 保持。
-  // jitter 的 rng 消耗每节点恒一次、与 k 无关 ⇒ 曲线只改深度值、不动结构 rng 流。
+  // —— 4. 赋深度（按朝向分流）——
   const kCurve = resolveDepthCurve(opts);
+  const isHorizontal = zone.orientation === 'horizontal';
   const depth = new Array<number>(N).fill(d0);
-  const jitterRange = (d1 - d0) * 0.12;
-  for (let i = 1; i < N; i++) {
-    const frac = dist[i] / maxDist;
-    const curved = kCurve === 1 ? frac : Math.pow(frac, kCurve);
-    const jitter = (rng() * 2 - 1) * jitterRange;
-    depth[i] = Math.round(clamp(d0 + (d1 - d0) * curved + jitter, d0, d1));
-  }
-  // 最深点钉死 d1，并把其（唯一）邻居压到更浅 → 严格局部极大
-  for (const dp of deepPoints) {
-    depth[dp] = d1;
-    for (const nb of adj[dp]) {
-      if (depth[nb] >= depth[dp]) {
-        depth[nb] = clamp(depth[dp] - randInt(3, 8, rng), d0, d1 - 1);
+
+  if (isHorizontal) {
+    // 水平廊模式：深度锁在 [d0,d1] 中值附近小幅浮动；探索距离（layer/dist）替代深度成为主压力轴。
+    // depthRange 语义 = 「基准深度 ± (span/2)」；不强制最深点钉死 d1（深度轴已不是压力来源）。
+    const baseMid = (d0 + d1) / 2;
+    const hVariance = (d1 - d0) / 2;
+    for (let i = 0; i < N; i++) {
+      const jitter = (rng() * 2 - 1) * hVariance;
+      depth[i] = Math.round(clamp(baseMid + jitter, d0, d1));
+    }
+  } else {
+    // 垂直模式（默认）：k=1 走原式（逐字节复现旧图）；k≠1 时 pow 单调 ⇒ 「位置即深度」#92 对任意 k>0 保持。
+    // jitter 的 rng 消耗每节点恒一次、与 k 无关 ⇒ 曲线只改深度值、不动结构 rng 流。
+    const jitterRange = (d1 - d0) * 0.12;
+    for (let i = 1; i < N; i++) {
+      const frac = dist[i] / maxDist;
+      const curved = kCurve === 1 ? frac : Math.pow(frac, kCurve);
+      const jitter = (rng() * 2 - 1) * jitterRange;
+      depth[i] = Math.round(clamp(d0 + (d1 - d0) * curved + jitter, d0, d1));
+    }
+    // 最深点钉死 d1，并把其（唯一）邻居压到更浅 → 严格局部极大
+    for (const dp of deepPoints) {
+      depth[dp] = d1;
+      for (const nb of adj[dp]) {
+        if (depth[nb] >= depth[dp]) {
+          depth[nb] = clamp(depth[dp] - randInt(3, 8, rng), d0, d1 - 1);
+        }
       }
     }
   }
