@@ -125,8 +125,19 @@ export interface ChartPoi {
    * 字面量守门归 playthrough-story）；eventId = 入潜强制开场的锚点节拍事件。
    * 触发规则（作者拍 2026-06-12·任意顺序）：该锚点 flag 未置位才强制开场；其中 vent
    * （结局分歧）额外要求其余三锚点全置位——否则都是普通下潜（回流重访自然成立）。
+   *
+   * **留白结局重访**（St2·剧情 SPEC §4.1·通用三字段·别硬编码 id 进引擎）：锚点**已完成**后再次入潜
+   * 该 POI——若已置 revisitRequiresFlag 且未置 revisitDoneFlag——强制开场 revisitEventId（dive-start.ts
+   * 镜像上方锚点强制块·读 flag 不写）。一章仅 vent 用：圆满后持破损饰品（charm_found）重访 → 留白结局
+   * （ending_blank）；门=持饰品（⟺ 已达圆满＝fulfilled-first·保证圆满在前、第一次绝不跳过留白）。
    */
-  story?: { anchor: string; eventId: string };
+  story?: {
+    anchor: string;
+    eventId: string;
+    revisitEventId?: string;
+    revisitRequiresFlag?: string;
+    revisitDoneFlag?: string;
+  };
   /**
    * 通用脚本剧情潜点的「强制开场事件」（#137 鲸落找寻潜点·沿 mimic/story 锚点「入潜强制开场」模板）：
    * 设了 openEventId ⇒ 本 POI 入潜强制此事件作为开场，直到 openEventFlag 置位（一次性·dive-start.ts）。

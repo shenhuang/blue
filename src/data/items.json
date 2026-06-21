@@ -753,6 +753,21 @@
       }
     },
     {
+      "id": "item.ch1.steadying_charm_broken",
+      "name": "定心坠（损坏）",
+      "category": "story",
+      "rarity": "rare",
+      "description": "导师贴身戴的小坠子，你在观测站的记录架上找到它。金属托里本该嵌一粒石，那处裂了、空着。攥住它的时候，眼前晃动的影子会安静一拍——只一拍，像隔着一层很薄的东西把它按住了。托上的裂口，得用对的石头才补得回。",
+      "weight": 0.2,
+      "sellPrice": 0,
+      "decay": "eternal",
+      "story": {
+        "setsFlag": [
+          "story.ch1.charm_found"
+        ]
+      }
+    },
+    {
       "id": "item.lobster",
       "name": "龙虾",
       "category": "material",

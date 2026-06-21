@@ -292,6 +292,19 @@ export function startDiveFromPoi(
         ...s,
         phase: { kind: 'dive', subPhase: { kind: 'event', eventId: poi.story.eventId } },
       };
+    } else if (anchorDone && poi.story.revisitEventId) {
+      // 留白结局重访（St2·剧情 SPEC §4.1·镜像上方锚点强制块）：锚点**已完成**（圆满已达）+ 持有
+      // revisitRequiresFlag（破损饰品 charm_found·⟺ fulfilled-first·保证圆满在前、第一次绝不跳过留白）+
+      // 未置 revisitDoneFlag（ending.blank 未达）⇒ 入潜强制留白结局事件。破损饰品「稳住幻象一拍」的真·
+      // 抵消能力 + 二章宝石材料修复留二章（机制按需长出·剧情 SPEC §4.4）；这里同上只读 flag 派生、不写。
+      const reqOk = !poi.story.revisitRequiresFlag || s.profile.flags.has(poi.story.revisitRequiresFlag);
+      const notDone = !poi.story.revisitDoneFlag || !s.profile.flags.has(poi.story.revisitDoneFlag);
+      if (reqOk && notDone) {
+        s = {
+          ...s,
+          phase: { kind: 'dive', subPhase: { kind: 'event', eventId: poi.story.revisitEventId } },
+        };
+      }
     }
   }
 

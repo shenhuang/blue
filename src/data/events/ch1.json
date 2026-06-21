@@ -1,5 +1,5 @@
 {
-  "_doc": "一章锚点节拍事件（St1·剧情 SPEC §4.1·#117）。四锚点 POI（chart_pois.json story 字段）入潜强制开场（#69 mimic 模板：weight 0·无 zoneTags=永不入池·oncePerRun 兜底·真正的防重播靠 story flag——dive-start.ts 只在锚点 flag 未置位时强制开场）。任意顺序（作者拍 2026-06-12）；vent=结局分歧，需其余三锚点齐（门在 dive-start 接线，不在事件数据）。锚点置位只走 setProfileFlags + 字面量必须等于 engine/story.ts::ch1AnchorFlag/ch1EndingFlag 输出（quirk #118·playthrough-story 守门）。每锚点配一种原创鱼（§3.3 一站一种·真实物种打底）：①萤光背礁鳚（教学日志已预埋草图+「白天别去找它」批注）②锈甲沉船鲷③幻光流帆鱼④热液岩鳞鱼——先事件+lore 形态（lore.ch1.* 自由串），图鉴系统后置。圆满结局按「当时为真」写，四条低调 tells（不摘面罩/站太干净/队友只在余光与反光/台词全出自日志句子）只做回读伏笔不抢戏（quirk #117）。一二章对失联真相/断片说零泄漏。伤害走一章轻量教学档（负伤 SPEC §6.3：本批纯 stat 代价·事件 addInjury op 是 Wave 2 章节批次的活）。全部文案 [待过稿]（quirk #117·机制+草稿先行·作者事后逐拍）。",
+  "_doc": "一章锚点节拍事件（St1·剧情 SPEC §4.1·#117）。四锚点 POI（chart_pois.json story 字段）入潜强制开场（#69 mimic 模板：weight 0·无 zoneTags=永不入池·oncePerRun 兜底·真正的防重播靠 story flag——dive-start.ts 只在锚点 flag 未置位时强制开场）。任意顺序（作者拍 2026-06-12）；vent=结局分歧，需其余三锚点齐（门在 dive-start 接线，不在事件数据）。锚点置位只走 setProfileFlags + 字面量必须等于 engine/story.ts::ch1AnchorFlag/ch1EndingFlag 输出（quirk #118·playthrough-story 守门）。每锚点配一种原创鱼（§3.3 一站一种·真实物种打底）：①萤光背礁鳚（教学日志已预埋草图+「白天别去找它」批注）②锈甲沉船鲷③幻光流帆鱼④热液岩鳞鱼——先事件+lore 形态（lore.ch1.* 自由串），图鉴系统后置。圆满结局按「当时为真」写，四条低调 tells（不摘面罩/站太干净/队友只在余光与反光/台词全出自日志句子）只做回读伏笔不抢戏（quirk #117）。一二章对失联真相/断片说零泄漏。伤害走一章轻量教学档（负伤 SPEC §6.3：本批纯 stat 代价·事件 addInjury op 是 Wave 2 章节批次的活）。全部文案 [待过稿]（quirk #117·机制+草稿先行·作者事后逐拍）。 St2 续（#171）：ending_blank=留白结局——圆满两选项顺带 loot 破损饰品(item.ch1.steadying_charm_broken)+置 story.ch1.charm_found；之后持饰品重访 vent POI 由 dive-start 据 chart_pois POI.story.revisit*（revisitRequiresFlag=charm_found·= fulfilled-first 保证圆满在前）强制开场 ending_blank·空站+完整图鉴+录音第1段（导师真声·刻意留白不泄失联·回收 tells T4「台词全出自日志」的反证）·设 story.ch1.ending.blank+story.ch1.recording.1+forceAscend。够深必出幻觉(scoped 本事件+二章)+饰品宝石材料修复(一章钻石/二章群宝·新材料类)留二章——剧情 SPEC §4.4。",
   "events": [
     {
       "id": "ch1.anchor_reef",
@@ -221,10 +221,11 @@
           "id": "hand_over_the_log",
           "label": "把你抄满的日志递给他",
           "outcome": {
-            "text": "他接过去，一页页翻，在你补完的四张草图上各停了一拍。\n「萤纹丛还活着。锈甲群换了条船。薄膜群东移了两海里。岩鳞群在第三烟柱。」他说的每一句你都在日志里读过——他说出来，它们就都成了真的。\n他领你看完整面观察墙：四种鱼，四个群落，十年的记录没有断过一天。「群落比坐标重要，」他把一支笔放进你手里，「记录接着写。写的人换一个，海不在乎。」\n器材舱里有人影在忙。你想看清，每次却都差一个转头的角度——他们只在玻璃的反光里。\n你没有再追上去看。有些角度，你今天不想转过去。\n十年的执念，你算是放下了。\n你找到他了。",
+            "text": "他接过去，一页页翻，在你补完的四张草图上各停了一拍。\n「萤纹丛还活着。锈甲群换了条船。薄膜群东移了两海里。岩鳞群在第三烟柱。」他说的每一句你都在日志里读过——他说出来，它们就都成了真的。\n他领你看完整面观察墙：四种鱼，四个群落，十年的记录没有断过一天。「群落比坐标重要，」他把一支笔放进你手里，「记录接着写。写的人换一个，海不在乎。」\n器材舱里有人影在忙。你想看清，每次却都差一个转头的角度——他们只在玻璃的反光里。\n你没有再追上去看。有些角度，你今天不想转过去。\n十年的执念，你算是放下了。\n临走你从记录架上拿了样东西收着——他贴身戴的那枚小坠子，金属托裂了，搁在笔筒边。\n你找到他了。",
             "deltas": { "sanity": 18 },
+            "loot": [{ "itemId": "item.ch1.steadying_charm_broken", "qty": [1, 1] }],
             "loreEntry": "lore.ch1.the_station",
-            "setProfileFlags": ["story.ch1.anchor.vent", "story.ch1.ending.fulfilled"],
+            "setProfileFlags": ["story.ch1.anchor.vent", "story.ch1.ending.fulfilled", "story.ch1.charm_found"],
             "endDive": "forceAscend"
           }
         },
@@ -232,10 +233,43 @@
           "id": "look_around_first",
           "label": "先看看这座站——十年，他是怎么过的",
           "outcome": {
-            "text": "他不催你。你沿着观察墙慢慢走。\n记录从十年前你认得的那种蓝墨水开始，一摞一摞，没有断过。器材舱里有人影在忙——你每次都差一个转头的角度，只在玻璃反光里看见他们晃过去。\n「人手一直够，」导师在你身后说，「海上不缺肯留下的人。」这句话日志的扉页上也有。他说出来的时候，你没接话——有些话你怕一开口，这一刻就散了。\n他把一支笔放进你手里：「记录接着写。」\n你接了。十年的执念落了地。\n你找到他了。",
+            "text": "他不催你。你沿着观察墙慢慢走。\n记录从十年前你认得的那种蓝墨水开始，一摞一摞，没有断过。器材舱里有人影在忙——你每次都差一个转头的角度，只在玻璃反光里看见他们晃过去。\n「人手一直够，」导师在你身后说，「海上不缺肯留下的人。」这句话日志的扉页上也有。他说出来的时候，你没接话——有些话你怕一开口，这一刻就散了。\n他把一支笔放进你手里：「记录接着写。」\n你接了。十年的执念落了地。\n记录架上搁着他贴身戴的那枚小坠子，托裂了。你拿起来收进口袋。\n你找到他了。",
             "deltas": { "sanity": 18 },
+            "loot": [{ "itemId": "item.ch1.steadying_charm_broken", "qty": [1, 1] }],
             "loreEntry": "lore.ch1.the_station",
-            "setProfileFlags": ["story.ch1.anchor.vent", "story.ch1.ending.fulfilled"],
+            "setProfileFlags": ["story.ch1.anchor.vent", "story.ch1.ending.fulfilled", "story.ch1.charm_found"],
+            "endDive": "forceAscend"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "ch1.ending_blank",
+      "depthRange": [60, 140],
+      "weight": 0,
+      "oncePerRun": true,
+      "title": "观测站（再访）",
+      "body": "气闸门又一次为你转开。这一次你没有在门口停。\n口袋里那枚裂了的小坠子硌着你。记录架前那个戴面罩的身影抬了下头——又像隔着一层很薄的东西，没有合拢。你看着它散开。\n站是空的。干净，却没有住过人的痕迹——十年也没有。墙上四种鱼的群落图鉴补得完完整整，是你补的；没有第三个人的笔迹。记录架上搁着一台旧录音机，压着一盘没标字的磁带。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "play_the_tape",
+          "label": "按下播放键",
+          "outcome": {
+            "text": "磁带转起来。先是水声，然后是他的声音——比你记得的哑。不是日志里的任何一句。\n『……如果你听到这个，说明你下来了。』停了一下。『氮醉会放大执念。你越想见到什么，就越会见到它。别让看见的东西替你做判断——尤其在这下面。』\n又是水声。磁带到头，啪地停了。\n你站在空站里，把它听完。他说出来的这一句，你在日志里从没读到过。",
+            "loreEntry": ["lore.ch1.recording_1", "lore.ch1.ending_blank"],
+            "setProfileFlags": ["story.ch1.ending.blank", "story.ch1.recording.1"],
+            "endDive": "forceAscend"
+          }
+        },
+        {
+          "id": "read_the_wall_first",
+          "label": "先把那面图鉴看完",
+          "outcome": {
+            "text": "你沿着观察墙走。四种鱼，四个群落，十年的记录——完整，因为最后四张草图是你补上去的。没有第三个人的笔迹。这面墙是你和他隔着十年一起写完的，可站里只有你一个人的呼吸声。\n你回到记录架，按下那台录音机。他的声音比你记得的哑，说的不是日志里的任何一句：『氮醉会放大执念……别让看见的东西替你做判断。』\n你把磁带收进口袋。",
+            "loreEntry": ["lore.ch1.recording_1", "lore.ch1.ending_blank"],
+            "setProfileFlags": ["story.ch1.ending.blank", "story.ch1.recording.1"],
             "endDive": "forceAscend"
           }
         }

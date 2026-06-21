@@ -183,7 +183,10 @@
         ],
         "story": {
           "anchor": "vent",
-          "eventId": "ch1.anchor_vent"
+          "eventId": "ch1.anchor_vent",
+          "revisitEventId": "ch1.ending_blank",
+          "revisitRequiresFlag": "story.ch1.charm_found",
+          "revisitDoneFlag": "story.ch1.ending.blank"
         }
       },
       {

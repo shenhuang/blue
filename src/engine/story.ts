@@ -9,7 +9,9 @@
 //                                 setProfileFlags 写入——dive 中也持久，死在教学关不丢钩）
 //   - story.ch1.anchor.<id>       一章四锚点节拍位（St1 实装锚点链时由锚点事件置位）
 //   - story.ch1.ending.fulfilled  圆满结局位（St1 末实装；canon：主角以为的真结局·按当时为真）
-//   - story.ch1.ending.blank      留白结局位（St2 实装；更难的清醒重访）
+//   - story.ch1.ending.blank      留白结局位（St2 实装；持破损饰品的清醒重访·见下 charm_found）
+//   - story.ch1.recording.<n>     一章水下录音碎片位（St2 实装第 1 段；分段 canon §4.4·2+ 段留二章）
+//   - story.ch1.charm_found       破损饰品（导师遗物·缺宝石）已获得位（St2 实装；= 留白结局重访门）
 // flag 字符串**只在本模块生成**（单一来源）；data JSON 里出现的字面量必须与这里的
 // 生成器输出一致（playthrough-story §4 守这条——手拼漂移会红）。
 //
@@ -56,6 +58,24 @@ export function ch1AnchorFlag(anchor: Ch1Anchor): string {
 export function ch1EndingFlag(ending: Ch1Ending): string {
   return `story.ch1.ending.${ending}`;
 }
+
+/**
+ * 一章水下录音碎片 flag（St2·剧情 SPEC §3.2「录音=真伪锚点」/§4.1 留白结局得第 1 段）。
+ * 分段 canon（§4.4「录音分段化」）：留白给第 1 段；2+ 段藏于一章更强关底 + 二章回流——**机制留二章**
+ * （Q4·机制按需长出），本模块现仅生成并登记第 1 段（离散 flag·随 profile.flags Set 往返·确定性）。
+ */
+export function ch1RecordingFlag(segment: number): string {
+  return `story.ch1.recording.${segment}`;
+}
+
+/**
+ * 破损饰品（导师遗物·托里嵌宝石处裂空）已获得 flag —— **留白结局重访门**（St2·剧情 SPEC §4.1）。
+ * 语义：持有破损饰品 ⟺ 已达圆满结局（饰品是圆满的拾取物）＝ fulfilled-first，**保证圆满在前、第一次绝不
+ * 跳过留白**。dive-start.ts 读它决定是否在 vent POI 重访时强制 ending_blank。破损饰品的「稳住幻象一拍」
+ * 真·抵消能力 + 二章宝石材料修复（一章只钻石/二章群宝·新材料类）都留二章——见剧情 SPEC §4.4。
+ * 由 ch1.ending（圆满）outcome.setProfileFlags + 破损饰品 item.story.setsFlag 双置（幂等·不软锁）。
+ */
+export const CH1_CHARM_FOUND_FLAG = 'story.ch1.charm_found';
 
 /**
  * 既有教学完成 flag 收编为常量（**不改名**——chart_pois.json requiresFlags /
@@ -125,6 +145,8 @@ export function allStoryFlags(): string[] {
     ...CH1_ANCHORS.map((a) => ch1AnchorFlag(a)),
     ch1EndingFlag('fulfilled'),
     ch1EndingFlag('blank'),
+    ch1RecordingFlag(1),
+    CH1_CHARM_FOUND_FLAG,
     TRENCH_FOUND_FLAG,
     ...Array.from({ length: SIGHTINGS_FOR_SEARCH }, (_, i) => whaleSightingFlag(i + 1)),
     WHALE_SIGHTING_WRECK_FLAG,

@@ -1,0 +1,24 @@
+{
+  "_comment": "留白结局（St2·#170·剧情 SPEC §4.1）：清醒重访空站——破损饰品稳住幻象、站内只剩完整图鉴+录音第1段。事件由 dive-start 在圆满后持破损饰品(charm_found)重访 vent POI 强制开场（门见 playthrough-story §5(e)）；本 baseline 直接跑事件本体，断言 ending.blank + recording.1 同置 + 录音/空站 lore 解锁 + forceAscend。录音=导师真声、刻意留白不泄失联、回收 tells T4。",
+  "eventId": "ch1.ending_blank",
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "depth": 100,
+  "choices": [
+    "play_the_tape"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "ascent",
+    "flagsAdded": [
+      "story.ch1.ending.blank",
+      "story.ch1.recording.1"
+    ],
+    "loreAdded": [
+      "lore.ch1.recording_1",
+      "lore.ch1.ending_blank"
+    ],
+    "statsDelta": {}
+  }
+}

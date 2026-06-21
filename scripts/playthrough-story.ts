@@ -32,6 +32,8 @@ import {
   WHALEFALL_FOUND_FLAG,
   ch1AnchorFlag,
   ch1EndingFlag,
+  ch1RecordingFlag,
+  CH1_CHARM_FOUND_FLAG,
   ch1Story,
   ch1WhaleStory,
   chapterUnlocked,
@@ -536,8 +538,14 @@ L('§5 St1 锚点链（POI 强制开场·任意顺序·vent 门·守门）');
   for (const opt of station.options) {
     const flags = opt.outcome?.setProfileFlags ?? [];
     assert(
-      flags.includes(ch1AnchorFlag('vent')) && flags.includes(ch1EndingFlag('fulfilled')),
-      `§5 观测站选项 ${opt.id} 应同时置 vent + fulfilled`,
+      flags.includes(ch1AnchorFlag('vent')) &&
+        flags.includes(ch1EndingFlag('fulfilled')) &&
+        flags.includes(CH1_CHARM_FOUND_FLAG),
+      `§5 观测站选项 ${opt.id} 应同时置 vent + fulfilled + charm_found（破损饰品=留白结局门·St2）`,
+    );
+    assert(
+      (opt.outcome?.loot ?? []).some((l) => l.itemId === 'item.ch1.steadying_charm_broken'),
+      `§5 观测站选项 ${opt.id} 应 loot 破损饰品（留白结局重访门的拾取物·St2）`,
     );
     assert(opt.outcome?.endDive === 'forceAscend', `§5 观测站选项 ${opt.id} 应 forceAscend 收尾（一章收束）`);
   }
@@ -545,7 +553,66 @@ L('§5 St1 锚点链（POI 强制开场·任意顺序·vent 门·守门）');
   const endSt = ch1Story(afterStation.profile);
   assert(endSt.complete && endSt.anchorsDone.length === 4, '§5 结局落账后一章 complete·四锚点齐');
   assert(chapterUnlocked(afterStation.profile, 'ch2'), '§5 圆满后 ch2 解锁（SPEC §1 解锁链）');
-  L('  POI 强制开场/任意顺序/vent 门/回流/落账/守门 ✓');
+
+  // —— (e) 留白结局重访门（St2·剧情 SPEC §4.1）：圆满后**持破损饰品（charm_found）**重访 vent POI →
+  // 强制开场 ending_blank；门=持饰品（⟺ fulfilled-first·保证圆满在前、第一次绝不跳过）；置 blank 后不再强制。
+  const fulfilledFlags = [
+    TUTORIAL_COMPLETE_FLAG,
+    ch1AnchorFlag('reef'),
+    ch1AnchorFlag('wreck'),
+    ch1AnchorFlag('midwater'),
+    ch1AnchorFlag('vent'),
+    ch1EndingFlag('fulfilled'),
+  ];
+  const withCharm: GameState = {
+    ...ready,
+    profile: { ...ready.profile, flags: new Set([...fulfilledFlags, CH1_CHARM_FOUND_FLAG]) },
+  };
+  const noCharm: GameState = {
+    ...ready,
+    profile: { ...ready.profile, flags: new Set(fulfilledFlags) },
+  };
+  const blankDone: GameState = {
+    ...ready,
+    profile: { ...ready.profile, flags: new Set([...fulfilledFlags, CH1_CHARM_FOUND_FLAG, ch1EndingFlag('blank')]) },
+  };
+  assert(
+    subEvent(startDiveFromPoi(withCharm, poiOf('vent'))) === 'ch1.ending_blank',
+    '§5 圆满后持破损饰品重访 vent → 强制开场 ch1.ending_blank（留白门）',
+  );
+  assert(
+    subEvent(startDiveFromPoi(noCharm, poiOf('vent'))) !== 'ch1.ending_blank',
+    '§5 圆满但无破损饰品（charm_found 未置）→ 不触发留白（门=持饰品·不只是 fulfilled）',
+  );
+  assert(
+    subEvent(startDiveFromPoi(blankDone, poiOf('vent'))) !== 'ch1.ending_blank',
+    '§5 已得留白后重访 vent 不再强制 ending_blank（revisitDoneFlag=ending.blank）',
+  );
+
+  // ending_blank 事件形状 + 真实落账：两选项都置 ending.blank + recording.1 + forceAscend + 解锁录音 lore
+  const blankEv = getEventById('ch1.ending_blank')!;
+  assert(blankEv, '§5 ch1.ending_blank 应已注册（EVENT_DB）');
+  for (const opt of blankEv.options) {
+    const flags = opt.outcome?.setProfileFlags ?? [];
+    assert(
+      flags.includes(ch1EndingFlag('blank')) && flags.includes(ch1RecordingFlag(1)),
+      `§5 留白选项 ${opt.id} 应置 ending.blank + recording.1`,
+    );
+    assert(opt.outcome?.endDive === 'forceAscend', `§5 留白选项 ${opt.id} 应 forceAscend 收尾`);
+    const lore = opt.outcome?.loreEntry;
+    const loreArr = Array.isArray(lore) ? lore : lore ? [lore] : [];
+    assert(loreArr.includes('lore.ch1.recording_1'), `§5 留白选项 ${opt.id} 应解锁 lore.ch1.recording_1（录音第1段）`);
+  }
+  const afterBlank = resolveOption(startDiveFromPoi(withCharm, poiOf('vent')), blankEv.options[0]).state;
+  assert(
+    afterBlank.profile.flags.has(ch1EndingFlag('blank')) && afterBlank.profile.flags.has(ch1RecordingFlag(1)),
+    '§5 留白落账后 profile 应有 ending.blank + recording.1',
+  );
+  assert(afterBlank.profile.loreEntries.has('lore.ch1.recording_1'), '§5 留白落账后录音 lore 入档');
+  const endBlank = ch1Story(afterBlank.profile);
+  assert(endBlank.endings.fulfilled && endBlank.endings.blank, '§5 留白落账后圆满/留白两位同存（canon：留白是圆满之后的重访）');
+
+  L('  POI 强制开场/任意顺序/vent 门/回流/落账/守门 + 留白重访门/落账 ✓');
 }
 
 // ═══════════════════════════════════════════════════════════════
