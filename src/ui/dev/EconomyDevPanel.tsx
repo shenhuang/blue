@@ -48,11 +48,21 @@ const STATUS_LABEL: Record<MaterialStatus, string> = {
   heavy: '重需求',
   ok: '✓',
 };
-function statusTag(m: MaterialStat): { label: string; cls: string } {
-  if (m.deadstock) return { label: '死货', cls: 'dev-bi-tag-deadstock' };
-  if (m.bottleneck) return { label: '瓶颈', cls: 'dev-bi-tag-bottleneck' };
-  if (m.idle) return { label: '死料', cls: 'dev-bi-tag-idle' };
-  return { label: STATUS_LABEL[m.status], cls: 'dev-bi-tag-quiet' };
+// 状态漂浮解释（悬停 title·一眼看懂每档含义与处置方向）。
+const STATUS_EXPLAIN: Record<string, string> = {
+  deadstock: '死货：有需求、无来源（真 bug 类——配方做不出·该补来源）',
+  bottleneck: '瓶颈：单一来源且总需求≥8（垄断·建议加来源分摊风险）',
+  idle: '死料：有产出、零消耗、且是真材料（废产——该配个用途或别让它掉）',
+  single: '单源：仅一个来源、有需求（尚可·留意将来扩源）',
+  singleIdle: '纯卖：单源、无需求、非材料（剧情/纪念件——只卖或留着·非经济问题）',
+  heavy: '重需求：多来源、总需求≥20（重需求·多源尚可）',
+  ok: '✓ 健康：多源 / 供需无明显问题',
+};
+function statusTag(m: MaterialStat): { label: string; cls: string; explain: string } {
+  if (m.deadstock) return { label: '死货', cls: 'dev-bi-tag-deadstock', explain: STATUS_EXPLAIN.deadstock };
+  if (m.bottleneck) return { label: '瓶颈', cls: 'dev-bi-tag-bottleneck', explain: STATUS_EXPLAIN.bottleneck };
+  if (m.idle) return { label: '死料', cls: 'dev-bi-tag-idle', explain: STATUS_EXPLAIN.idle };
+  return { label: STATUS_LABEL[m.status], cls: 'dev-bi-tag-quiet', explain: STATUS_EXPLAIN[m.status] };
 }
 const pct = (c: number) => `${Math.round(c * 100)}%`;
 const num = (v: number) => (v ? (Number.isInteger(v) ? String(v) : v.toFixed(1)) : '');
@@ -246,7 +256,7 @@ export function EconomyDevPanel({ onClose }: EconomyDevPanelProps) {
                             {netTotalTxt(m)}
                           </td>
                           <td className="eco-total">
-                            <span className={`dev-bi-tag ${tg.cls}`}>{tg.label}</span>
+                            <span className={`dev-bi-tag ${tg.cls}`} title={tg.explain}>{tg.label}</span>
                           </td>
                         </>
                       ) : (
