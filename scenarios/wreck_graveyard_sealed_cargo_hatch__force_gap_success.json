@@ -1,0 +1,14 @@
+{
+  "_comment": "沉船墓园 · 货舱栅门 — 无斧路径·硬掰铆钉（stamina vs 15）成功分支。满 stamina 时 rate=0.95（clamp 上限），seed 1 确定性通过。验证 check 通过 + stamina -10 + oxygenTurnCost 3 → statsDelta oxygen -3。默认 tool 槽＝潜水刀（无 axe_pry 解锁），pry_chain 选项隐藏；force_gap 仍可见。",
+  "eventId": "wreck_graveyard.sealed_cargo_hatch",
+  "depth": 30,
+  "seed": 1,
+  "choices": ["force_gap"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -3, "stamina": -10 }
+  }
+}

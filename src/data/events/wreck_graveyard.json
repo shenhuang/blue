@@ -704,6 +704,25 @@
           }
         },
         {
+          "id": "pry_with_axe",
+          "label": "用救援斧把铁门撬开（氧气 -1）[待过稿]",
+          "visibleIf": {
+            "kind": "hasEquipment",
+            "slot": "tool",
+            "actionId": "action.axe_pry"
+          },
+          "outcome": {
+            "text": "斧头撬口插进门缝，往下一压——门轴发出一声闷响，铁门整个开了。气泡从里头涌出来，你等它散了再进去，把没锈穿的罐头都装进网兜。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              {
+                "itemId": "item.canned_food",
+                "qty": [1, 3]
+              }
+            ]
+          }
+        },
+        {
           "id": "leave_neat",
           "label": "不动那些罐头，离开",
           "outcome": {
@@ -2236,6 +2255,78 @@
           "label": "看了一眼，游走",
           "outcome": {
             "text": "这东西嵌得太死了，徒手弄不下来。记下这条龙骨的位置。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "wreck_graveyard.sealed_cargo_hatch",
+      "depthRange": [24, 40],
+      "zoneTags": ["wreck"],
+      "weight": 7,
+      "cooldown": 5,
+      "title": "货舱栅门",
+      "body": "甲板下的货舱口被一道铁栅封住——不是生锈封的，是有人用锈链绕过栅条、挂了把挂锁，才挂死的。\n从这边照进去：里头叠着的货箱一字排开，最上面一只盖板裂了缝，能看见箱角的铜包皮。\n链子粗，挂锁也没烂透。徒手拿不动。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "pry_chain",
+          "label": "用救援斧撬断链条，进去取货（氧气 -2）[待过稿]",
+          "visibleIf": {
+            "kind": "hasEquipment",
+            "slot": "tool",
+            "actionId": "action.axe_pry"
+          },
+          "outcome": {
+            "text": "斧口咬进链条最细的一环。你悬住身子，用上自重往下压——哐，一声沉闷的金属断裂，链条松了。\n货箱里大半是泡烂的布货，但最上头那只铜包角的箱子还撑着形。你翻出几件能用的。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": [1, 1]
+              },
+              {
+                "itemId": "item.canned_food",
+                "qty": [1, 2],
+                "chance": 0.6
+              }
+            ]
+          }
+        },
+        {
+          "id": "force_gap",
+          "label": "找栅条边上松动的铆钉，硬掰一条缝（体力检定）[待过稿]",
+          "check": {
+            "stat": "stamina",
+            "dc": 15,
+            "onSuccess": {
+              "text": "第三根铆钉应声松脱，栅条向里弯了够你侧身挤过的角度。你蹭进去，把网兜装了一半再原路挤出来——手套划破了，但没事。",
+              "oxygenTurnCost": 3,
+              "loot": [
+                {
+                  "itemId": "item.canned_food",
+                  "qty": [1, 1]
+                }
+              ],
+              "deltas": {
+                "stamina": -10
+              }
+            },
+            "onFailure": {
+              "text": "铆钉纹丝不动。你把铁栅蹬得发出一声回响，空着手退开，手掌多了两道血口子。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "stamina": -8
+              }
+            }
+          }
+        },
+        {
+          "id": "note_and_leave",
+          "label": "记下这里，游走",
+          "outcome": {
+            "text": "你记住栅门的位置——下次带趁手的工具来。",
             "oxygenTurnCost": 1
           }
         }
