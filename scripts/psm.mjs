@@ -341,8 +341,34 @@ function cmdLand(argv) {
   s.baseSha = mainSha; s.updated = new Date().toISOString(); writeLedger(led);
   ok(`rebase 完成（基线对齐 ${CFG.mainBranch}@${mainSha.slice(0, 8)}）`);
 
-  const gate = runGate(wtAbs, f.full);
-  if (!gate.ok) { s.state = 'active'; writeLedger(led); stop(`绿门没过——别合。先在 ${s.worktree} 修绿，再 psm land ${name}。`); }
+  // ── gate ──────────────────────────────────────────────────────────────────
+  // Mac：从 main 树 temp ff 后跑 gate（worktree esbuild 启动在 Mac 上有 ENOEXEC(-8) 问题）。
+  // 沙箱：从 worktree 跑（esbuild-free 子集·原来路径不变）。
+  const runningOnMac = !isSandbox();
+  let gate;
+
+  if (runningOnMac) {
+    const root = ROOT();
+    const preFfSha = shaOf(CFG.mainBranch);
+    const ffResult = spawnSync('git', ['merge', '--ff-only', s.branch], { cwd: root, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] });
+    if (ffResult.status !== 0) {
+      warn((ffResult.stderr || ffResult.stdout || '').trim());
+      stop(`ff 预合并失败（main 树有未提交改动？或分支不可 ff？）`);
+    }
+    gate = runGate(root, f.full);
+    // 两种情况需要回滚 temp ff：绿门没过，或绿门过了但用户还没确认（无 --yes）
+    if (!gate.ok || !f.yes) {
+      spawnSync('git', ['reset', '--hard', preFfSha], { cwd: root, stdio: 'inherit' });
+    }
+    if (!gate.ok) {
+      s.state = 'active'; writeLedger(led);
+      stop(`绿门没过——main 已回滚。先在 ${s.worktree} 修绿，再 psm land ${name}。`);
+    }
+  } else {
+    gate = runGate(wtAbs, f.full);
+    if (!gate.ok) { s.state = 'active'; writeLedger(led); stop(`绿门没过——别合。先在 ${s.worktree} 修绿，再 psm land ${name}。`); }
+  }
+
   s.state = 'ready'; s.updated = new Date().toISOString(); writeLedger(led);
 
   if (!f.yes) {
@@ -351,6 +377,13 @@ function cmdLand(argv) {
       : '';
     info('\n' + C.green('✓ rebased + 绿门通过') + `（${s.branch} 基于 ${CFG.mainBranch}@${mainSha.slice(0, 8)}）` + deferredNote);
     stop(`要把「${name}」ff 合进 ${CFG.mainBranch} 吗？确认就在 ${C.bold('main 树')} 跑：${C.bold('node scripts/psm.mjs land ' + name + ' --yes')}（或 psm merge ${name}）。`);
+  }
+
+  // ── --yes：正式合并 ───────────────────────────────────────────────────────
+  if (runningOnMac) {
+    // Mac temp ff 在绿门阶段已做完且未回滚（gate.ok && f.yes）；
+    // 更新 baseSha 让 doMerge 的幂等性检查通过（main 已在 branch tip，merge 会 no-op）
+    s.baseSha = shaOf(CFG.mainBranch); s.updated = new Date().toISOString(); writeLedger(led);
   }
   doMerge(name);
 }
