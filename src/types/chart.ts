@@ -137,6 +137,17 @@ export interface ChartPoi {
   openEventId?: string;
   openEventFlag?: string;
   /**
+   * 「材料刷点」范式（P1-2·playtest-findings「每区图谱」）：设了 openEventPool ⇒ 本 POI 是一个**专门刷点**——
+   * 入潜从池里**轮替**取一个开场事件（rotation by profile.runsCompleted·每潜递进 ⇒ 每次来不同 beat），
+   * 让玩家「能刷某素材，但别反复同一段剧情」。与 openEventId 互斥（单一强制开场源·check-farm-pois 守门）。
+   * 不带 flag 门控（刷点恒可刷·不一次性）。约束（机制化·scripts/check-farm-pois.mjs）：
+   *   ① 只能挂在 anchor（persistent）上——roaming 运行时 POI 逐字段构造、不透传本字段（chart.ts generateChart）；
+   *   ② ≥3 个不同 beat（"别反复同一段"的下限）；③ 每个 id 必解析到真实事件；
+   *   ④ 池内 beat 必须是**专属事件**（zoneTags 空 ⇒ 不漏进普通下潜池·只经本 POI 强制开场触发）。
+   * 派生「每区可再加一个刷点」＝新增一个带 openEventPool 的 anchor + 一组专属 beat 事件，无需改引擎。
+   */
+  openEventPool?: string[];
+  /**
    * 运行时揭示态（generateChart 派生写入·区域揭示三态·§10）。只有进了 chart.pois 的点带它（'lit'|'dim'）；
    * 'hidden' 点不入结果。纯派生、不入存档（同 roaming 的运行时 id 一样按 profile 重算）。
    */

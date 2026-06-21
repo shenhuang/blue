@@ -526,8 +526,8 @@ assert(fogRoam <= 2, `7: 浓雾机会点 ≤2（实际 ${fogRoam}）`);
 const anchorCount = (c: { pois: { persistent: boolean; columnId?: string }[] }) =>
   c.pois.filter((p) => p.persistent && p.columnId === undefined).length;
 assert(
-  anchorCount(fogChart) === 12 && anchorCount(calmChart) === 12,
-  `7: 锚点不受天气遮蔽（期望 12·实际 fog ${anchorCount(fogChart)}/calm ${anchorCount(calmChart)}·含鲸落 found 后 3 生态点·#137·守进度安全·#117 四锚点入列）`,
+  anchorCount(fogChart) === 13 && anchorCount(calmChart) === 13,
+  `7: 锚点不受天气遮蔽（期望 13·实际 fog ${anchorCount(fogChart)}/calm ${anchorCount(calmChart)}·含鲸落 found 后 3 生态点·#137·守进度安全·#117 四锚点入列·P1-2 鲨鱼刷点 anchor reef_shark_shoals 入列）`,
 );
 assert(fogChart.conditions.weather === 'fog' && calmChart.conditions.weather !== 'fog', '7: SeaChart.conditions 落返回结构');
 L(`  海况确定性 + 随回合变 + 浓雾遮一处（run ${fogRun} 雾→${fogRoam} / run ${calmRun} ${calmChart.conditions.weather}→${calmRoam}）+ 锚点不受影响 ✓`);

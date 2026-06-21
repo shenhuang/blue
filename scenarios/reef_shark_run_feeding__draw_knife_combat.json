@@ -1,0 +1,14 @@
+{
+  "_comment": "材料刷点 beat③（正在进食）· 拔刀驱赶触发 combat.reef_shark_solo（牙＝击杀掉落）。poi.anchor.reef_shark_shoals 的 openEventPool 之一·另留一条体力检定避战路（不在此 scenario 覆盖）。draw_knife 需 tool（默认刀）。statsDelta 空。",
+  "eventId": "reef.shark_run_feeding",
+  "depth": 35,
+  "seed": 1,
+  "choices": ["draw_knife"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "combatTriggered": "combat.reef_shark_solo",
+    "statsDelta": {}
+  }
+}

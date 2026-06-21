@@ -64,6 +64,25 @@
       },
       "introText": "鲨鱼盯着你，鳃部张合。你握紧潜水刀。",
       "victoryEventId": "tutorial.deeper"
+    },
+    {
+      "id": "combat.reef_shark_solo",
+      "_doc": "常规 reef 的暗礁鲨遭遇（P1-2·非教学）。复用 enemy.reef_shark.tutorial 定义（不另造数值·见 memory defer-number-tuning），但**不带 victoryEventId** ⇒ 胜负后回流普通下潜（教学版那条 tutorial.deeper 跳转是教学专属）。由 reef.reef_shark（普通池）与刷点 beat 经 triggerCombatId 触发。",
+      "party": {
+        "members": [{ "defId": "enemy.reef_shark.tutorial" }]
+      },
+      "introText": "它不再绕了——鳃部一张一合，齿列在水里划出一道白线，朝你直冲过来。"
+    },
+    {
+      "id": "combat.reef_shark_pair",
+      "_doc": "两条暗礁鲨（刷点「成对」beat 用·见 chart_pois.json poi.anchor.reef_shark_shoals）。同样复用同一敌人定义 ×2（不造新数值），给刷点战斗一点变化而不动平衡。无 victoryEventId ⇒ 回流普通下潜。",
+      "party": {
+        "members": [
+          { "defId": "enemy.reef_shark.tutorial" },
+          { "defId": "enemy.reef_shark.tutorial" }
+        ]
+      },
+      "introText": "血味把第二条也引来了。两道白线一前一后，绕着你收圈。"
     }
   ]
 }

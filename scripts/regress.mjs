@@ -87,6 +87,9 @@ tasks.push({ name: 'check-enemy-refs', cmd: ['node', join('scripts', 'check-enem
 // 深入潜点四条门（纯 node·bandId 完整 + 探深↔POI 配对 + 无孤儿 + onlyLighthouse 合法，见 scripts/check-dive-refs.mjs）
 tasks.push({ name: 'check-dive-refs', cmd: ['node', join('scripts', 'check-dive-refs.mjs')] });
 
+// 材料刷点五条门（纯 node·openEventPool 挂 anchor + ≥3 不同 beat + 引用可解析 + beat 专属 + 与 openEventId 互斥，见 scripts/check-farm-pois.mjs）
+tasks.push({ name: 'check-farm-pois', cmd: ['node', join('scripts', 'check-farm-pois.mjs')] });
+
 // append-only 文档门（纯 node·CHANGELOG/QUIRKS 只在 main 改、别在 feature/auto 分支碰·机制化 quirk #130·见 scripts/check-append-only-docs.mjs）
 tasks.push({ name: 'check-append-only-docs', cmd: ['node', join('scripts', 'check-append-only-docs.mjs')] });
 

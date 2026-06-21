@@ -32,6 +32,32 @@
         "requiresLighthouseUpgrade": "lighthouse.dockyard.lv1"
       },
       {
+        "id": "poi.anchor.reef_shark_shoals",
+        "zoneId": "zone.old_lighthouse_reef",
+        "name": "礁口·鲨多的那道缺",
+        "blurb": "礁脊朝外海开的一道缺口，灰影几乎总在。Mira 说想攒鲨鱼牙就来这儿——能刷，但每趟碰上的不一样。",
+        "distance": 1,
+        "owner": "lighthouse.home",
+        "mapX": 0.15,
+        "mapY": 0.15,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "requiresLighthouseUpgrade": "lighthouse.dockyard.lv1",
+        "modifier": {
+          "depthRange": [
+            28,
+            44
+          ]
+        },
+        "openEventPool": [
+          "reef.shark_run_circling",
+          "reef.shark_run_pair",
+          "reef.shark_run_feeding"
+        ]
+      },
+      {
         "id": "poi.anchor.blue_caves",
         "zoneId": "zone.blue_caves",
         "name": "蓝洞群",
