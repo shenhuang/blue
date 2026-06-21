@@ -27,7 +27,12 @@ export type ZoneTag =
   // 洞型谱三变体新区（mapShape='maze'·各带专属事件池·depthCurveRange 把同一迷路机制铺成三种洞型·见 mapgen.ts caveShapeBucket）：
   | 'crack' // 竖穴裂缝 zone.shaft_crack（depthCurveRange 低·k<0.8 井+廊·先陡降后横走·窄）
   | 'chamber' // 稀疏蜂巢 zone.chamber_network（depthCurveRange 中·匀速~廊道·连通蜂房·节点疏）
-  | 'flooded'; // 漫水回廊 zone.flooded_gallery（depthCurveRange 高·k>1.45 长平廊+尽头深坑·横向探索·窄 span）
+  | 'flooded'  // 漫水回廊 zone.flooded_gallery（depthCurveRange 高·k>1.45 长平廊+尽头深坑·横向探索·窄 span）
+  // 洞穴扩充 Batch 0 新标签（cave_zones_spec.md）：
+  | 'tide'      // 浅潮洞（8–44m）：潮汐主导、涨退压力、藤壶顶、气腔
+  | 'grotto'    // 石窟厅（20–82m）：矿物柱、骨床、声学异常、静态美与不安
+  | 'deep_cave' // 深穴（35–124m）：黑暗+静水+地质+设备边缘
+  | 'chasm';    // 深裂隙（90–148m）：氮醉边界+设备极限+"这里不像水"
 
 /** 一个下潜事件 */
 export interface DiveEvent {

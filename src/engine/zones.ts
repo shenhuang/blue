@@ -18,6 +18,10 @@ import corpseWearerForeshadowEvents from '@/data/events/corpse_wearer_foreshadow
 import shaftCrackEvents from '@/data/events/shaft_crack.json';
 import chamberNetworkEvents from '@/data/events/chamber_network.json';
 import floodedGalleryEvents from '@/data/events/flooded_gallery.json';
+import tideEvents from '@/data/events/tide.json';
+import grottoEvents from '@/data/events/grotto.json';
+import deepCaveEvents from '@/data/events/deep_cave.json';
+import chasmEvents from '@/data/events/chasm.json';
 import zonesData from '@/data/zones.json';
 
 export const ZONES: Map<string, ZoneDef> = new Map();
@@ -42,6 +46,10 @@ for (const e of (corpseWearerForeshadowEvents.events as DiveEvent[])) EVENT_DB.s
 for (const e of (shaftCrackEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 竖穴裂缝（洞型谱·crack tag·k<0.8 井+廊）
 for (const e of (chamberNetworkEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 蜂房洞（洞型谱·chamber tag·连通蜂房）
 for (const e of (floodedGalleryEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 漫水回廊（洞型谱·flooded tag·k>1.45 长平廊+深坑）
+for (const e of (tideEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 浅潮洞（洞穴扩充·tide tag·潮汐主导·8–44m）
+for (const e of (grottoEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 石窟厅（洞穴扩充·grotto tag·矿物柱+骨床+声学·20–82m）
+for (const e of (deepCaveEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 深穴（洞穴扩充·deep_cave tag·黑暗+静水+地质·35–124m）
+for (const e of (chasmEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 深裂隙（洞穴扩充·chasm tag·氮醉边界+设备极限·90–148m）
 
 export function getZone(id: string): ZoneDef | undefined {
   return ZONES.get(id);
