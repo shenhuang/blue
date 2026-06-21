@@ -21,6 +21,8 @@
 //                       number（实际 delta ≤ 给定值；用于"至少损失这么多"断言）
 //   - injuriesFinal     { defId: tier }（**精确集合匹配**：总数一致且每条档位相等；
 //                       {} = 断言全程无伤。负伤 SPEC §10 baseline 用）
+//   - logIncludes       string[]（每个子串须出现在战斗全程 log 里·脚本化叙事节拍断言：
+//                       boss 阶段过渡 / 链鳗头节 enrage 等。注意：断言的子串=当前文案·改文案需同步更新 baseline）
 //
 // 详见 docs/STATUS.md "战斗回归框架（Phase 3）" 一节。
 
@@ -50,6 +52,7 @@ interface ScenarioFile extends CombatScenarioInput {
     hpDeltaAtMost?: number;
     oxygenDeltaAtMost?: number;
     injuriesFinal?: Record<string, number>;
+    logIncludes?: string[];
     notes?: string;
   };
 }
@@ -140,6 +143,18 @@ function assertScenario(name: string, result: CombatScenarioResult, expect: Scen
     for (const [defId, tier] of want) {
       if (got.get(defId) !== tier) {
         fail(name, `injuriesFinal.${defId} 不符：期望 tier ${tier}，实际 ${got.get(defId) ?? '(没有这处伤)'}`);
+      }
+    }
+  }
+
+  if (expect.logIncludes) {
+    const allText = result.turns
+      .flatMap((t) => t.log)
+      .map((l) => l.text)
+      .join('\n');
+    for (const frag of expect.logIncludes) {
+      if (!allText.includes(frag)) {
+        fail(name, `logIncludes 未命中：战斗 log 里找不到子串 "${frag}"`);
       }
     }
   }

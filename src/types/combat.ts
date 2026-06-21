@@ -149,6 +149,13 @@ export interface CombatState {
    * 仅有 phases 的敌人才会有条目，普通敌人不写——零存档影响（#99 守则）。
    */
   bossPhaseIndices?: Record<string, number>;
+
+  /**
+   * 链鳗（分节实体）：本场是否「按序攻击」分节链（startCombat 从 enc.attackInOrder 写入）。
+   * true ⇒ target 解析锁定最前存活节 + checkActionAvailability 拒打后节 + enemyAttackPlayer 按存活节数派生威胁。
+   * 缺省/false ⇒ 无序多成员 party 逐字节不变。CombatState 不入存档（战斗态不序列化）⇒ 零存档影响。
+   */
+  attackInOrder?: boolean;
 }
 
 export interface CombatLogEntry {
@@ -166,6 +173,14 @@ export interface CombatEncounterDef {
   /** 胜利后跳转的事件 id */
   victoryEventId?: string;
   reinforcementPool?: EnemyParty['joinRules'];
+  /**
+   * 链鳗（分节实体·boss 设计蓝图 2026-06-21）：标记本遭遇为「按序攻击」分节链——
+   * party.members 即节序（**头在末端**·index 0 = 最前节·须先死），玩家每次只能命中**最前存活节**，
+   * 前节死后才解锁下一节（combat.ts target 解析 + checkActionAvailability 双层门）。
+   * 缺省/false ⇒ 普通无序多成员 party（wreck_field_patrol / spider_crabs_pair）逐字节不变——
+   * 新约束**仅**对显式标 true 的遭遇生效。check-enemy-refs (c4) 验证标了的遭遇节序合法（≥2 节 + 末节带 headEnrage）。
+   */
+  attackInOrder?: boolean;
   /**
    * 猎手档案（猎手 SPEC §2.2 per-encounter「给现有敌打标签、不是加敌」）：该遭遇被选为猎手
    * （zone ambushEncounters → maybeSpawnStalker）时的个体差异。缺省/缺字段 → 沿用深度派生默认（逐字节不变）。

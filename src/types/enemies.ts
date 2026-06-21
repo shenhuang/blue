@@ -60,6 +60,23 @@ export interface BossPhase {
   stanceForce?: EnemyStance;
 }
 
+/**
+ * 链鳗（分节实体·boss 设计蓝图 2026-06-21）：某节在「按序」遭遇中**成为最前存活节**时施加的 enrage 覆盖。
+ * 复用 BossPhase 的 stance/attacks/ai 覆写写法，但触发是 **party-state**（前置节全死、本节成为最前存活节），
+ * 而非 HP 阈值——因此不经 maybeBossPhaseShift（HP 路径·#149/#159），由 combat.ts::maybeChainEelEnrage 单独施加。
+ * 仅 attackInOrder 遭遇 + 带本字段的节生效；普通敌人不声明此字段 ⇒ EnemyDef 形状零存档影响（#99）。
+ */
+export interface SegmentEnrage {
+  /** 推入战斗 log 的过渡叙事文本（[待过稿]·#117）。 */
+  transitionText: string;
+  /** 替换攻击表（缺省 = 沿用 def.attacks·写入 EnemyInstance.phaseAttacksOverride·复用 BossPhase 写法）。 */
+  attacksOverride?: EnemyAttack[];
+  /** 覆盖 AI 模式（写入 EnemyInstance.phaseAiPattern）。 */
+  aiPatternOverride?: AiPattern;
+  /** 强制切 stance（缺省 'enraged'）。 */
+  stanceForce?: EnemyStance;
+}
+
 /** boss 存在时持续施加的战场压力（每回合 tick） */
 export interface EnvironmentalPressure {
   /** 每回合额外氧气消耗（叠加基础 tick） */
@@ -203,6 +220,14 @@ export interface EnemyDef {
    * 必须是 skinLoot 的一个 key（check-enemy-refs (c3) 守）。
    */
   defaultSkin?: string;
+
+  /**
+   * 链鳗（分节实体）头节专属：本节在 attackInOrder 遭遇里成为**最前存活节**时的 enrage 覆盖
+   * （boss 设计蓝图 2026-06-21「链鳗（分节实体）」·越杀越短、头节 enraged）。
+   * 触发＝party-state（前置节全死）·由 combat.ts::maybeChainEelEnrage 施加（**不经** maybeBossPhaseShift 的 HP 路径）。
+   * 仅链鳗头节声明；check-enemy-refs (c4) 验证标了 attackInOrder 的 encounter 末节（头节）带本字段。
+   */
+  headEnrage?: SegmentEnrage;
 }
 
 export interface EnemyAttack {

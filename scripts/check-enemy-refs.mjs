@@ -83,6 +83,7 @@ for (const f of enemyFiles) {
       hasSkinLoot: Object.prototype.hasOwnProperty.call(e, 'skinLoot'),
       skinLoot: e.skinLoot,
       defaultSkin: e.defaultSkin,
+      headEnrage: e.headEnrage,
       file: f,
     });
   }
@@ -91,7 +92,15 @@ for (const f of enemyFiles) {
     collectDefIdRefs(c, refIds);
     const enemyRefs = [];
     collectEnemyRefs(c, enemyRefs);
-    encounters.push({ id: c.id, refIds, enemyRefs, file: f });
+    encounters.push({
+      id: c.id,
+      refIds,
+      enemyRefs,
+      // 链鳗（分节实体·c4 用）：按序标记 + 节序成员（保序·头在末端）。
+      attackInOrder: c.attackInOrder === true,
+      members: Array.isArray(c.party?.members) ? c.party.members : [],
+      file: f,
+    });
   }
 }
 
@@ -205,6 +214,40 @@ for (const e of enemyDefs) {
   }
 }
 
+// —— (c4) 链鳗「按序」遭遇节序合法 + headEnrage 形状 ——
+// 约定（boss 设计蓝图 2026-06-21「链鳗（分节实体）」）：attackInOrder=true 的 encounter 是分节链——
+// party.members 即节序（**头在末端**·index 0 = 最前节·逐节解锁）。把「按序」约定落成会红的门：
+//   ① ≥2 节（<2 节排序无意义）。
+//   ② 末节（头节）须写死 defId（非 enemyRef·头必须确定）且其 def 带 headEnrage（成为最前存活节时狂暴）。
+//   ③ 任何声明 headEnrage 的 def——headEnrage 须含非空 transitionText；attacksOverride（若有）须为数组。
+// 引擎 maybeChainEelEnrage 对「最前存活节带 headEnrage」者施加 enrage；数据侧拦截缺头/错配优于运行时哑火。
+const headEnrageIds = new Set(enemyDefs.filter((d) => d.headEnrage !== undefined).map((d) => d.id));
+for (const e of enemyDefs) {
+  if (e.headEnrage === undefined) continue;
+  const h = e.headEnrage;
+  if (!h || typeof h !== 'object' || Array.isArray(h) || typeof h.transitionText !== 'string' || !h.transitionText) {
+    errors.push(`[headEnrage] ${e.id}（${e.file}）headEnrage 须含非空 transitionText`);
+  }
+  if (h && typeof h === 'object' && h.attacksOverride !== undefined && !Array.isArray(h.attacksOverride)) {
+    errors.push(`[headEnrage] ${e.id}（${e.file}）headEnrage.attacksOverride 须为数组`);
+  }
+}
+for (const enc of encounters) {
+  if (!enc.attackInOrder) continue;
+  if (enc.members.length < 2) {
+    errors.push(`[ordered] encounter ${enc.id}（${enc.file}）attackInOrder 需 ≥2 节，实际 ${enc.members.length}`);
+    continue;
+  }
+  const head = enc.members[enc.members.length - 1];
+  if (!head || typeof head.defId !== 'string') {
+    errors.push(`[ordered] encounter ${enc.id}（${enc.file}）末节（头节）须写死 defId（非 enemyRef·头必须确定）`);
+  } else if (!headEnrageIds.has(head.defId)) {
+    errors.push(
+      `[ordered] encounter ${enc.id}（${enc.file}）末节 ${head.defId} 缺 headEnrage（头节须配「成为最前存活节时」的狂暴覆盖）`,
+    );
+  }
+}
+
 // —— (d) 有 baseline ——
 /** combatId → 该 encounter 的全部敌人 defId */
 const encRefById = new Map(encounters.map((e) => [e.id, e.refIds]));
@@ -241,5 +284,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  `✓ check-enemy-refs：${enemyDefs.length} 敌人 / ${encounters.length} encounter · 引用完整 · 无孤儿 · boss 阶段降序 · 尸衣 skinLoot 合规 · 全有 baseline · registry 最新`,
+  `✓ check-enemy-refs：${enemyDefs.length} 敌人 / ${encounters.length} encounter · 引用完整 · 无孤儿 · boss 阶段降序 · 尸衣 skinLoot 合规 · 链鳗按序节序合规 · 全有 baseline · registry 最新`,
 );

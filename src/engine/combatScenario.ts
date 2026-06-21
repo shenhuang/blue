@@ -510,7 +510,9 @@ export function runCombatScenario(input: CombatScenarioInput): CombatScenarioRes
         }
       }
 
-      const avail = checkActionAvailability(state, action);
+      // 链鳗按序门：透传已解析的 targetInstanceId——指向非最前存活节的攻击 → actionUnavailable（停步）。
+      // 既有无序遭遇 targetInstanceId 不触发按序门（checkActionAvailability 内守 attackInOrder）⇒ 逐字节不变。
+      const avail = checkActionAvailability(state, action, targetInstanceId);
       if (!avail.available) {
         // 记一笔不可用回合，停步
         const enemiesAfter = preTurnEnemies;

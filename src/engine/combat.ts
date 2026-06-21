@@ -35,6 +35,7 @@ import { getItemDef } from './items';
 import { computeModifiers, effectiveStaminaMax } from './modifiers';
 import { addInjury, injuryIdForDamageType, applyMedkitHeal } from './injuries';
 import { resolveEncounterMember, enemySeenFlag } from './enemyLibrary';
+import { frontmostLivingSegment, isSegmentReachable, chainSegmentDamageBonus } from './chain-eel';
 
 // ——— 数据索引 ———
 
@@ -138,6 +139,8 @@ export function startCombat(
     resumeNodeId: state.run.currentNodeId,
     // 尸衣者玩家尸体战斗：胜/逃后路由回 corpse subPhase（未设 → 普通路由不变）。
     ...(options?.sourceCorpseId ? { sourceCorpseId: options.sourceCorpseId } : {}),
+    // 链鳗（分节实体）：按序攻击分节链标记（仅显式标 true 的遭遇带·普通 party 不写 ⇒ 逐字节不变）。
+    ...(enc.attackInOrder ? { attackInOrder: true as const } : {}),
   };
 
   // 图鉴发现门（敌人库·只显示已遭遇）：开战即把本场敌人（含 enemyRef 取到的）记入
@@ -201,7 +204,11 @@ function actionCosts(run: RunState, action: CombatAction): { stamina: number; ox
   };
 }
 
-export function checkActionAvailability(state: GameState, action: CombatAction): ActionAvailability {
+export function checkActionAvailability(
+  state: GameState,
+  action: CombatAction,
+  targetInstanceId?: string,
+): ActionAvailability {
   const run = state.run;
   if (!run) return { available: false, reason: '无 run state' };
 
@@ -235,6 +242,21 @@ export function checkActionAvailability(state: GameState, action: CombatAction):
       return { available: false, reason: `缺少物品：${action.requiresItemId}` };
     }
   }
+
+  // —— 链鳗（分节实体）按序门（面板诚实）——
+  // 仅 attackInOrder 遭遇 + 攻击行动 + 指定了具体目标时校验：玩家攻击只允许命中**最前存活节**，
+  // 指向更后的节（含未解锁的头节）→ 不可用并给 reason（applyPlayerAction 据此把该击当作无操作=「被拒」）。
+  // 缺省（无目标=自动打最前节）/ 非攻击行动 / 非按序遭遇 → 跳过 ⇒ 既有无序 party 与所有非攻击行动逐字节不变。
+  if (
+    targetInstanceId !== undefined &&
+    action.effect.kind === 'attack' &&
+    state.phase.kind === 'combat' &&
+    state.phase.combat.attackInOrder &&
+    !isSegmentReachable(state.phase.combat.enemies, targetInstanceId)
+  ) {
+    return { available: false, reason: '够不到——它身前还有节段挡着，先清掉最前面的。' };
+  }
+
   return { available: true };
 }
 
@@ -255,7 +277,8 @@ export function applyPlayerAction(
   }
   const action = ACTIONS.get(actionId);
   if (!action) return { state, outcome: 'continue' };
-  const avail = checkActionAvailability(state, action);
+  // 链鳗按序门：把目标透传给可用性检查——指向非最前存活节的攻击 = 不可用 → 本击当无操作（被拒）。
+  const avail = checkActionAvailability(state, action, targetInstanceId);
   if (!avail.available) return { state, outcome: 'continue' };
 
   let s = state;
@@ -291,6 +314,11 @@ export function applyPlayerAction(
 
   // —— 2. 应用效果 ——
   s = applyActionEffect(s, action, targetInstanceId);
+
+  // —— 2b. 链鳗（分节实体）头节 enrage：本次行动若杀掉最后一节体节，头节成为最前存活节 → 立即 enrage，
+  // 其 enraged 攻击表当回合即生效（紧接的敌人回合用上）。maybeChainEelEnrage 内首行守 attackInOrder ⇒
+  // 非链鳗遭遇逐字节不变（不触 maybeBossPhaseShift 的 HP 路径）。
+  s = maybeChainEelEnrage(s);
 
   // —— 3. 移除一次性玩家状态（ambushing 消耗后清除） ——
   s = setCombat(s, (c) => ({
@@ -391,9 +419,12 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
   if (state.phase.kind !== 'combat') return state;
   if (action.effect.kind !== 'attack') return state;
   const combat = state.phase.combat;
-  const target =
-    combat.enemies.find((e) => e.instanceId === targetId && e.hp > 0) ??
-    combat.enemies.find((e) => e.hp > 0);
+  // 链鳗（分节实体）按序：攻击锁定**最前存活节**（防御纵深——可用性门已拒非法目标·此处保证即便被绕过
+  // 也绝不伤到后节）。非按序遭遇 → 既有解析（指定目标活则打它·否则首个活敌）逐字节不变。
+  const target = combat.attackInOrder
+    ? frontmostLivingSegment(combat.enemies)
+    : (combat.enemies.find((e) => e.instanceId === targetId && e.hp > 0) ??
+       combat.enemies.find((e) => e.hp > 0));
   if (!target) return state;
 
   const eff = action.effect;
@@ -676,6 +707,9 @@ function runEnemyTurn(state: GameState): GameState {
     }
   }
 
+  // 链鳗（分节实体）头节 enrage：DoT 可能杀掉最后一节体节 → 头节成为最前存活节（守 attackInOrder·非链鳗逐字节不变）。
+  s = maybeChainEelEnrage(s);
+
   // 状态衰减
   s = setCombat(s, (c) => ({
     ...c,
@@ -716,6 +750,12 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
 
   // 计算伤害
   let dmg = randRange(chosen.damage);
+  // 链鳗（分节实体）威胁派生（boss 设计蓝图「越杀越短越快越危险」）：按序遭遇里存活节越少 → 余节攻击越凶。
+  // chainSegmentDamageBonus 是纯整数算术·无 RNG ⇒ 仅 attackInOrder 遭遇进此分支 ⇒ 无序 party 的 RNG 流逐字节不变。
+  if (state.phase.combat.attackInOrder) {
+    const seg = state.phase.combat.enemies;
+    dmg += chainSegmentDamageBonus(seg.filter((e) => e.hp > 0).length, seg.length);
+  }
   // 闪避减伤
   const evading = state.phase.combat.playerStatuses.find((s) => s.kind === 'evading');
   if (evading) {
@@ -878,6 +918,46 @@ function maybeBossPhaseShift(state: GameState, instanceId: string): GameState {
     }),
   }));
 
+  return s;
+}
+
+/**
+ * maybeChainEelEnrage：链鳗（分节实体）头节 enrage —— **party-state 触发**（≠ HP 阈值）。
+ *
+ * 触发：在 attackInOrder 遭遇里，**最前存活节**（lowest-index living）带 def.headEnrage 且尚未 enrage 时，
+ * 视为「头节被逼到最前」（前置体节全死）→ 推 transitionText 进 log、按 headEnrage 写实例覆盖
+ * （stance / phaseAttacksOverride / phaseAiPattern·复用 BossPhase 的写法）。
+ * 幂等：链鳗里只有本函数把 stance 设 'enraged'，故已 enraged ⇒ 跳过（不重复推文本）。
+ *
+ * 与 maybeBossPhaseShift（HP 路径·#149/#159）**完全独立**——不改其分发，只共用 stance/attacks 写法套在新触发上。
+ * 非 attackInOrder 遭遇 / 最前节无 headEnrage（是体节）→ 直接返回（普通战斗逐字节不变）。
+ */
+function maybeChainEelEnrage(state: GameState): GameState {
+  if (state.phase.kind !== 'combat') return state;
+  const combat = state.phase.combat;
+  if (!combat.attackInOrder) return state;
+  const front = frontmostLivingSegment(combat.enemies);
+  if (!front || front.stance === 'enraged') return state; // 无存活节 / 已 enrage（幂等）
+  const def = ENEMY_DEFS.get(front.defId);
+  const enr = def?.headEnrage;
+  if (!enr) return state; // 当前最前节是体节（无 headEnrage）→ 不动
+
+  // 过渡叙事（[待过稿]·#117）
+  let s = pushCombatLog(state, { actor: 'system', text: enr.transitionText });
+  // 写实例覆盖（复用 BossPhase 写法·触发改为 party-state）
+  s = setCombat(s, (c) => ({
+    ...c,
+    enemies: c.enemies.map((e) =>
+      e.instanceId === front.instanceId
+        ? {
+            ...e,
+            stance: enr.stanceForce ?? 'enraged',
+            ...(enr.attacksOverride ? { phaseAttacksOverride: enr.attacksOverride } : {}),
+            ...(enr.aiPatternOverride ? { phaseAiPattern: enr.aiPatternOverride } : {}),
+          }
+        : e,
+    ),
+  }));
   return s;
 }
 

@@ -1,0 +1,25 @@
+{
+  "_comment": "链鳗（分节实体·boss 设计蓝图 2026-06-21）按序杀节 → 头节 enrage → 胜利 baseline（seed 1·auto-target=不写 targetIndex ⇒ runner 每回合自动打最前存活节）。party = 3 体节(8hp) + 1 头节(14hp·头在末端·attackInOrder=true)。逐节清光：体节各 1 刀、头节 2 刀；前 3 节死后头节成为最前存活节 → engine maybeChainEelEnrage 推过渡文案 + stance='enraged' + 攻击表替换为『撕扯』(logIncludes 子串『只剩这一节』钉死 enrage 发生)。越杀越短：chainSegmentDamageBonus 随存活节数派生威胁(余节越凶)。默认满状态 100/60 足够(短战·quirk #151·别堆无效大数)。**不锁 turnsElapsed**(玩家命中 RNG·偶 miss→6 回合·参 cave_grouper_boss baseline『阶段 RNG 多·不锁精确回合』约定)。文案 [待过稿]·#117——改 headEnrage.transitionText 需同步本文件 logIncludes 子串。",
+  "combatId": "combat.chain_eel",
+  "seed": 1,
+  "actions": [
+    { "actionId": "action.knife_slash" },
+    { "actionId": "action.knife_slash" },
+    { "actionId": "action.knife_slash" },
+    { "actionId": "action.knife_slash" },
+    { "actionId": "action.knife_slash" },
+    { "actionId": "action.knife_slash" },
+    { "actionId": "action.knife_slash" },
+    { "actionId": "action.knife_slash" },
+    { "actionId": "action.knife_slash" },
+    { "actionId": "action.knife_slash" }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "survived": true,
+    "finalPhase": "dive",
+    "enemiesAlive": 0,
+    "lootGained": { "item.eel_skin": 1 },
+    "logIncludes": ["只剩这一节"]
+  }
+}
