@@ -34,8 +34,8 @@ export function ChangelogModal({ onClose }: Props) {
       >
         <div className="changelog-head">
           <div className="changelog-title">更新日志</div>
-          <button className="btn changelog-close" onClick={onClose}>
-            关闭
+          <button className="icon-close" type="button" onClick={onClose} aria-label="关闭">
+            ✕
           </button>
         </div>
 
