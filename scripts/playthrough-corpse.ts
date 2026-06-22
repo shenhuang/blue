@@ -12,6 +12,18 @@ import { renderDiverName } from '../src/ui/diverName';
 import { resolveCorpseWearerTier, corpseWearerChance } from '../src/engine/corpse-wearer';
 import { applyPlayerAction } from '../src/engine/combat';
 import type { GameState, DiveNode } from '../src/types';
+import { makeLcg } from '../src/engine/rng';
+
+// 焊死 flaky #157（同 quirk #129·playthrough.ts）：本测试有两处用未播种 Math.random：
+//   §3 回收导航——moveToNode 内 `Math.random() < corpseWearerChance(tier)`（dive-move.ts:183）
+//     按真实概率偶发触发尸衣者占据 → phase 偶变 combat（期望 dive·subPhase=corpse）→ 断言炸；
+//   §5 末「HP=1 一拳击杀」——命中判定走真 RNG·偶 miss → outcome=continue（期望 victory）。
+// 全程锁同一 LCG ⇒ 确定性·无 flake·无需 runner 重试。golden seed 已验证落在「§3 干净回收 +
+// 击杀必中」happy path（§5 中段那处 `Math.random = () => 0.1` 强制占据是局部覆盖·save/restore
+// origRandom=本 LCG·不消费 LCG 流·与此正交）。内容改动若让该 seed 偏出 happy path → regress
+// **确定性**变红（而非 flaky）→ 调 CORPSE_SEED 重选即可。调试：PT_SEED=<n> npx tsx scripts/playthrough-corpse.ts
+const CORPSE_SEED = Number(process.env.PT_SEED) || 1;
+Math.random = makeLcg(CORPSE_SEED);
 
 const log: string[] = [];
 function L(s: string) { log.push(s); }
