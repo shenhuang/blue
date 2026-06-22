@@ -1,8 +1,8 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
+> **2026-06-22 夜间 verify+publish + 焊死 corpse flake #157（夜间定时 session〔Cowork〕+作者交互续·#179·无新 quirk·48/48·`3035138` 发布 +`e644820` 修 flake）**：把 #161–#178 棚积的 49 个未推 commit ff 推上 `origin/main`（含 player changelog 草稿 + `REPORT-2026-06-22`）；`auto/weekend`〔`f797933`·63 behind main〕因 `trench/vent/wreck_graveyard` 事件档 + CHANGELOG/lore_ledger 真冲突**跳过·待作者手动 merge**；`playthrough-corpse` 顶锁 LCG seed〔同 quirk #129〕→ 确定性·盖 #157 记的占据 flake + 一处没记的「HP=1 击杀命中走真 RNG」flake·QUIRKS #157 标✓已修。
 > **2026-06-22 前哨能源层移除·补给建成即全额生效（交互 session〔Cowork〕·#178·无新 quirk·代码在 `ecba6b2`·47/48·build 留 nightly）**：删前哨能源经济（`outpostEnergy`/容量·在线门控 + 水力发电 + `OutpostDef.current`/`currentOnly`）；充电/制氧建成即全额（rechargeBonus 20 / oxygenSupply 10·不再超容量掉线）；`outposts.ts` 瘦到只剩 `getOutpostForLighthouse`；SAVE_VERSION 7→8；电池轴 `run.power` 不动。两层中只废前哨那层（[[deep_game_vision]] 电池主资源轴/电力槽不受影响）。
-> **2026-06-22 背包重量制 `carryWeightLimit`（交互 session〔Cowork〕·#177·新 quirk #159·47/48·build 留 nightly）**：`inventoryCapacity`（格）→`carryWeightLimit:15`（kg）全链路替换；`weightForItem`/`totalRunInventoryWeight`；拾取超重逐 roll 跳过；UI「X.X / 15.0 kg」；`slotsForItem` @deprecated；弹药 weight=0.05；`fissure_sphere__split_trigger` 加 staminaMaxBonus 修 #169 残留。
 
 ## 1. 一句话状态
 
