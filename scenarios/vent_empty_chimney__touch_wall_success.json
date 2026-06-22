@@ -1,0 +1,23 @@
+{
+  "_comment": "哑的·摸管壁成功（uncanny·sanity90高通过·氧-2 理智-2）",
+  "eventId": "vent.the_empty_chimney",
+  "depth": 205,
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "stats": {
+    "sanity": 90
+  },
+  "choices": [
+    "touch_outer_wall"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -2
+    }
+  }
+}

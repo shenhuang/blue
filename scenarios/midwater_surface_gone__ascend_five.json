@@ -1,0 +1,22 @@
+{
+  "_comment": "上面没了·往上游五米确认（cosmic·155-178m·sanity80·氧-2 理智-2）",
+  "eventId": "midwater.the_surface_gone",
+  "depth": 162,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "ascend_five_meters"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -2
+    }
+  }
+}

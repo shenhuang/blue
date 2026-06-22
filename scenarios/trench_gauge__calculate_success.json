@@ -1,0 +1,23 @@
+{
+  "_comment": "数字没动·用气量推深度成功（uncanny·sanity90高通过·氧-2 理智-2）",
+  "eventId": "trench.the_gauge",
+  "depth": 260,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "stats": {
+    "sanity": 90
+  },
+  "choices": [
+    "calculate_from_gas"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -2
+    }
+  }
+}

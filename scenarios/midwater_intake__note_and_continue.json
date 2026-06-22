@@ -1,0 +1,22 @@
+{
+  "_comment": "一种气味·记在潜水板（cosmic·183-208m·sanity +1·氧-1）",
+  "eventId": "midwater.the_intake",
+  "depth": 195,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "note_and_continue"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": 1
+    }
+  }
+}

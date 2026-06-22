@@ -1,0 +1,22 @@
+{
+  "_comment": "数字没动·不管继续走（uncanny·252-268m·sanity80·氧-2 理智-3）",
+  "eventId": "trench.the_gauge",
+  "depth": 260,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "keep_descending_blind"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -3
+    }
+  }
+}

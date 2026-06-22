@@ -1,0 +1,22 @@
+{
+  "_comment": "划痕·不碰继续走（uncanny·248-268m·sanity80·氧-1 理智-2）",
+  "eventId": "trench.the_scratches",
+  "depth": 260,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "keep_going_dont_touch"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -2
+    }
+  }
+}

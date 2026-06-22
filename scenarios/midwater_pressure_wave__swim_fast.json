@@ -1,0 +1,22 @@
+{
+  "_comment": "推了一下·加速游走（uncanny·185-208m·sanity80·体力-4 氧-2）",
+  "eventId": "midwater.the_pressure_wave",
+  "depth": 195,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "swim_fast_out"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "stamina": -4,
+      "oxygen": -2
+    }
+  }
+}

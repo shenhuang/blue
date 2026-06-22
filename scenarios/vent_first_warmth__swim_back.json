@@ -1,0 +1,13 @@
+{
+  "_comment": "vent t1·第一道暖·游回去在暖水里停一下：ox -2。",
+  "eventId": "vent.the_first_warmth",
+  "depth": 45,
+  "seed": 1,
+  "choices": ["swim_back_into_warm"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -2 }
+  }
+}

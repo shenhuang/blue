@@ -1,0 +1,15 @@
+{
+  "_comment": "闪光触发·缓慢前行（uncanny·155-188m·sanity80·氧-3 理智-3）",
+  "eventId": "midwater.the_trigger",
+  "depth": 170,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": { "sanity": 80 },
+  "choices": ["move_slow"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": { "oxygen": -3, "sanity": -3 }
+  }
+}

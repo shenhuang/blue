@@ -1,0 +1,13 @@
+{
+  "_comment": "wreck t3·龙骨·看船形（realistic·safe）：ox -1。",
+  "eventId": "wreck_graveyard.the_keel_bone",
+  "depth": 85,
+  "seed": 1,
+  "choices": ["read_the_shape"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -1 }
+  }
+}

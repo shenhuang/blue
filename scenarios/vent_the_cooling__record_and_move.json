@@ -1,0 +1,14 @@
+{
+  "_comment": "不喷了·记下来继续走（realistic·130-168m·无 check → oxygen-1）。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "vent.the_cooling",
+  "depth": 150,
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "choices": ["record_and_move"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -1 }
+  }
+}

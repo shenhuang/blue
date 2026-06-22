@@ -1,0 +1,15 @@
+{
+  "_comment": "烟囱倒塌·后退等待（realistic·175-215m·sanity80·氧-2）",
+  "eventId": "vent.chimney_fall",
+  "depth": 190,
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "stats": { "sanity": 80 },
+  "choices": ["back_up_wait"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": { "oxygen": -2 }
+  }
+}

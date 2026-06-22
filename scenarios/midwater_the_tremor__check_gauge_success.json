@@ -1,0 +1,20 @@
+{
+  "_comment": "手在抖·检查仪表（realistic·120-148m·sanity vs 45·sanity80 seed1 success → oxygen-1 sanity+1）。loot-free。statsDelta 实跑抄（quirk #43）。",
+  "eventId": "midwater.the_tremor",
+  "depth": 130,
+  "seed": 1,
+  "sanity": 80,
+  "zoneId": "zone.open_midwater",
+  "choices": [
+    "check_gauge"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -1
+    }
+  }
+}

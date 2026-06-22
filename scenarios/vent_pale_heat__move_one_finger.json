@@ -1,0 +1,15 @@
+{
+  "_comment": "苍白之热·动一根手指（cosmic·180-222m·sanity80·氧-1 理智+1）",
+  "eventId": "vent.pale_heat",
+  "depth": 200,
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "stats": { "sanity": 80 },
+  "choices": ["move_one_finger"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": { "oxygen": -1, "sanity": 1 }
+  }
+}

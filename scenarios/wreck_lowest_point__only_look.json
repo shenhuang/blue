@@ -1,0 +1,13 @@
+{
+  "_comment": "wreck t3·最低点·只看不动（uncanny）：ox -1，sanity -2。",
+  "eventId": "wreck_graveyard.the_lowest_point",
+  "depth": 85,
+  "seed": 1,
+  "choices": ["only_look"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -1, "sanity": -2 }
+  }
+}

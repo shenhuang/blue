@@ -1,0 +1,15 @@
+{
+  "_comment": "wreck t3·底泥·停住等泥落·sanity 100 seed 100 → pass：ox -2。",
+  "eventId": "wreck_graveyard.silt_floor_keel",
+  "depth": 85,
+  "seed": 100,
+  "stats": { "sanity": 100 },
+  "choices": ["stop_and_wait"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": true,
+    "statsDelta": { "oxygen": -2 }
+  }
+}

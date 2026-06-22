@@ -1,0 +1,22 @@
+{
+  "_comment": "往上的水·记下来继续（uncanny·110-160m·sanity -1·氧-2）",
+  "eventId": "trench.the_up_current",
+  "depth": 130,
+  "seed": 1,
+  "zoneId": "zone.open_trench",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "note_and_continue"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -1
+    }
+  }
+}

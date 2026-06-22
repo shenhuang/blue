@@ -1,0 +1,22 @@
+{
+  "_comment": "生死边界·量线成功（sanity>=46·sanity+3）",
+  "eventId": "vent.the_boundary",
+  "seed": 1,
+  "zoneId": "zone.hydrothermal_vent",
+  "depth": 185,
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "trace_the_edge"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": 3
+    }
+  }
+}

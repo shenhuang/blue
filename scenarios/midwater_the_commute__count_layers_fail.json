@@ -1,0 +1,23 @@
+{
+  "_comment": "中层·昼夜垂直迁移·数层带失败（体力 vs 42·低体力·体力-4 氧-2）",
+  "eventId": "midwater.the_commute",
+  "depth": 130,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "stamina": 10
+  },
+  "choices": [
+    "count_layers"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": false,
+    "statsDelta": {
+      "stamina": -4,
+      "oxygen": -2
+    }
+  }
+}

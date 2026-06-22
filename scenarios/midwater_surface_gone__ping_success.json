@@ -1,0 +1,23 @@
+{
+  "_comment": "上面没了·声呐验证成功（cosmic·sanity90高通过·氧-1 理智-2）",
+  "eventId": "midwater.the_surface_gone",
+  "depth": 162,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "sanity": 90
+  },
+  "choices": [
+    "ping_upward"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -2
+    }
+  }
+}

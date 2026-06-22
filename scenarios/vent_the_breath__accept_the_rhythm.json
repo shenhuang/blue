@@ -1,0 +1,15 @@
+{
+  "_comment": "裂缝呼吸·跟上节律（uncanny·178-220m·sanity80·氧-1 理智+2）",
+  "eventId": "vent.the_breath",
+  "depth": 195,
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "stats": { "sanity": 80 },
+  "choices": ["accept_the_rhythm"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": { "oxygen": -1, "sanity": 2 }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "_comment": "vent t1·第一道暖·记下深度继续往下（realistic）：ox -1，lore added。",
+  "eventId": "vent.the_first_warmth",
+  "depth": 45,
+  "seed": 1,
+  "choices": ["mark_and_descend"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "loreAdded": ["lore.vent.first_warmth_gradient"],
+    "statsDelta": { "oxygen": -1 }
+  }
+}

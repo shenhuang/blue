@@ -1,0 +1,22 @@
+{
+  "_comment": "晚了一下·提前半秒（uncanny·185-210m·sanity -3·氧-1）",
+  "eventId": "midwater.the_absent_hand",
+  "depth": 200,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "accept_and_plan_ahead"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -3
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "_comment": "没有·只信深度计（cosmic·185-210m·sanity80·氧-2 理智-2）",
+  "eventId": "midwater.the_nothing_here",
+  "depth": 193,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "trust_gauge_only"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -2
+    }
+  }
+}

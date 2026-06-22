@@ -1,0 +1,22 @@
+{
+  "_comment": "樽海鞘帘·看脉冲（sanity+2）",
+  "eventId": "midwater.the_salp_run",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 100,
+  "stats": {
+    "sanity": 60
+  },
+  "choices": [
+    "watch_the_pulse"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": 2
+    }
+  }
+}

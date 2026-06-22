@@ -1,0 +1,22 @@
+{
+  "_comment": "氮醉腿停·上五米（sanity-2）",
+  "eventId": "midwater.the_drift",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 110,
+  "stats": {
+    "sanity": 60
+  },
+  "choices": [
+    "ascend_five"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -2
+    }
+  }
+}

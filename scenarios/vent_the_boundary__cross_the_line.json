@@ -1,0 +1,22 @@
+{
+  "_comment": "生死边界·越线（sanity-2）",
+  "eventId": "vent.the_boundary",
+  "seed": 1,
+  "zoneId": "zone.hydrothermal_vent",
+  "depth": 185,
+  "stats": {
+    "sanity": 60
+  },
+  "choices": [
+    "cross_the_line"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -2
+    }
+  }
+}

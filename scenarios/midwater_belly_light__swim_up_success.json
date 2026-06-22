@@ -1,0 +1,23 @@
+{
+  "_comment": "腹部·往上追（uncanny·sanity95高通过·氧-3 理智-4）",
+  "eventId": "midwater.the_belly_light",
+  "depth": 160,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "sanity": 95
+  },
+  "choices": [
+    "swim_up_closer"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": true,
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": -4
+    }
+  }
+}

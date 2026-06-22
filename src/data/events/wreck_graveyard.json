@@ -717,7 +717,10 @@
             "loot": [
               {
                 "itemId": "item.canned_food",
-                "qty": [1, 3]
+                "qty": [
+                  1,
+                  3
+                ]
               }
             ]
           }
@@ -2262,8 +2265,13 @@
     },
     {
       "id": "wreck_graveyard.sealed_cargo_hatch",
-      "depthRange": [24, 40],
-      "zoneTags": ["wreck"],
+      "depthRange": [
+        24,
+        40
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
       "weight": 7,
       "cooldown": 5,
       "title": "货舱栅门",
@@ -2284,11 +2292,17 @@
             "loot": [
               {
                 "itemId": "item.brass_fitting",
-                "qty": [1, 1]
+                "qty": [
+                  1,
+                  1
+                ]
               },
               {
                 "itemId": "item.canned_food",
-                "qty": [1, 2],
+                "qty": [
+                  1,
+                  2
+                ],
                 "chance": 0.6
               }
             ]
@@ -2306,7 +2320,10 @@
               "loot": [
                 {
                   "itemId": "item.canned_food",
-                  "qty": [1, 1]
+                  "qty": [
+                    1,
+                    1
+                  ]
                 }
               ],
               "deltas": {
@@ -2328,6 +2345,254 @@
           "outcome": {
             "text": "你记住栅门的位置——下次带趁手的工具来。",
             "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "wreck_graveyard.the_keel_bone",
+      "depthRange": [
+        76,
+        100
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "龙骨",
+      "body": "你到了这条船的底部。\n龙骨——一根生铁的脊柱，从船首延伸到黑暗里消失。两侧的肋骨从它出发，往上撑开，撑出这条船原本的形状。现在大多断了，锈缩进去，只剩这一根还横在这里。\n再往下，是沙。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "follow_the_keel",
+          "label": "沿龙骨走一段，看看两端接着什么",
+          "outcome": {
+            "text": "你贴着龙骨游。铁上面糊了一层生物附着——贝壳、藤壶、钙质残留，把金属包成了另一个形状。\n走到一段龙骨弯折的地方，折角里卡着什么东西：一只铜活件，被附着物托着，没有沉进沙里。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              {
+                "itemId": "item.brass_fitting",
+                "qty": [
+                  1,
+                  1
+                ],
+                "chance": 0.65
+              }
+            ]
+          }
+        },
+        {
+          "id": "read_the_shape",
+          "label": "停下来，看这条船原来的样子",
+          "outcome": {
+            "text": "你停下来，把灯转一圈，顺着肋骨往上看。\n在这个角度，船的骨架很完整——没有皮肉，但形状还在，还是一条船的轮廓，只不过里面全是黑水。\n你认了一会儿，才记起该走。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "wreck_graveyard.silt_floor_keel",
+      "depthRange": [
+        78,
+        100
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 7,
+      "cooldown": 5,
+      "title": "底泥",
+      "body": "龙骨两侧是多年积下来的泥——细如粉末，厚到你的灯打进去只剩一道白柱。\n你的鳍尖蹭到它。一柱烟升起来，三秒内把你包进一个看不见手的白盒子里。\n标准动作：停。不动。等它落。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "stop_and_wait",
+          "label": "停住，水平悬停，等泥落",
+          "check": {
+            "stat": "sanity",
+            "dc": 40,
+            "onSuccess": {
+              "text": "你压住蹬踹的冲动，手摊开，让浮力把你托住。\n看不见，听不到回声，只有自己的呼吸。\n大概三十秒之后，白色开始有了层次，然后是轮廓，然后是龙骨边缘。泥落回去，你的手出现了。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "你没忍住，踢了一下——后退。泥又一次扬起来，比第一次更厚，把你原地封住。\n你闭着眼睛贴着一面看不见的铁壁，数自己的呼气次数，用时间换能见度。你不知道数了多少下。",
+              "oxygenTurnCost": 4,
+              "deltas": {
+                "sanity": -5
+              }
+            }
+          }
+        },
+        {
+          "id": "go_up_a_bit",
+          "label": "向上游开，找能见度",
+          "outcome": {
+            "text": "你慢慢往上浮，让那团白色沉在下面。两米之上，水开始透了。\n你在上面等了一会儿，等到下面的泥重新压平，才继续。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "wreck_graveyard.the_lowest_point",
+      "depthRange": [
+        76,
+        98
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "最低点",
+      "body": "船的最低点是个汇聚的地方。\n你扫了一圈：几枚硬币，一支钢笔，一只靴子底，还有根骨头，比你的手指还细。\n船里所有能滚的东西，几十年来都滚到这里来了。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "sift_through",
+          "label": "翻找，看有没有值得带走的",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你用指尖拨开最上层的泥，先碰到几枚说不清国籍的硬币，再往下，一只铜表壳——机芯没了，但壳子还在。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                {
+                  "itemId": "item.brass_fitting",
+                  "qty": [
+                    1,
+                    1
+                  ]
+                },
+                {
+                  "itemId": "item.brass_pocket_watch",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.3
+                }
+              ]
+            },
+            "onFailure": {
+              "text": "你动了动，沙子和泥混进来，把你刚扒出的层次糊回去。\n再看，什么都找不到了——好像从来没有过。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -3
+              }
+            }
+          }
+        },
+        {
+          "id": "only_look",
+          "label": "不动它，只看",
+          "outcome": {
+            "text": "你没伸手。那根细骨头靠着钢笔，钢笔靠着一枚硬币——这样挨着，不像是随机落下来的，又的确是。\n几十年来都没人动过这里，你也没有。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "wreck_graveyard.the_hull_ribs",
+      "depthRange": [
+        80,
+        100
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 5,
+      "cooldown": 4,
+      "title": "肋骨",
+      "body": "船板腐烂了，只剩肋骨。\n一排钢肋从龙骨出发，往两侧撑出去，在黑暗里依次消失。没有遮盖，没有填充——框架，只是框架，这条船现在是只空笼子。\n你的灯经过每一根肋骨，都在你身上投下一条短暂的阴影。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "thread_the_ribs",
+          "label": "从肋骨之间穿过去",
+          "check": {
+            "stat": "stamina",
+            "dc": 14,
+            "onSuccess": {
+              "text": "你侧身，一根一根地过。气瓶在两根肋骨之间过的时候紧了一下，你屏住气，慢慢推过去。\n出来之后，你把每一根肋骨的位置又在脑子里过了一遍——你知道这不必要。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "你卡住了。肋骨弯出的弧度比你估的小——气瓶挡住了，退也退不顺。\n你慢慢地、非常慢地调整，别让泥扬起来。铁在面罩上留了一道划痕。",
+              "oxygenTurnCost": 4,
+              "deltas": {
+                "stamina": -8,
+                "sanity": -4
+              }
+            }
+          }
+        },
+        {
+          "id": "go_around",
+          "label": "绕到肋骨架的外侧",
+          "outcome": {
+            "text": "你游到框架外面，贴着肋骨的弧面走。\n从外面看，这些肋骨像一只手的手指，从一条生铁手掌上伸出来，分开，在你四周弯过去。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "wreck_graveyard.below_the_hull",
+      "depthRange": [
+        82,
+        100
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 2,
+      "cooldown": 8,
+      "oncePerRun": true,
+      "title": "壳外",
+      "body": "龙骨底部有一个锈穿的洞，手掌大，圆的。\n你侧身挤过去。\n现在整条船都在你上方，铁肚皮朝上，下面是沙地，下面是你。\n你有半秒不知道哪边是上面。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "reorient",
+          "label": "找气泡，确认方向，再往下看",
+          "check": {
+            "stat": "sanity",
+            "dc": 50,
+            "onSuccess": {
+              "text": "你对着自己的呼气气泡，看它们往上漂——上面是船底，不是天空，但气泡告诉你那是上面。\n沙地在脚下，船壳在头顶，都对了。\n你绕着船底游了一圈，看了一眼没有人看过的那一面。锈上面的附着物又厚又密，像是另一块岩礁在这里生长了几十年。",
+              "oxygenTurnCost": 3,
+              "deltas": {
+                "sanity": -4
+              }
+            },
+            "onFailure": {
+              "text": "你找气泡，气泡往上，上面是铁，铁是沙，不对，再来——你眼睛里只有龙骨和沙地来回换位。\n你掐了自己的手腕，痛让你停下来。气泡往铁的那边去，那就是上面，就是上面。\n你从洞里退回船内，后背贴着铁壁，等自己从那半秒里出来。",
+              "oxygenTurnCost": 4,
+              "deltas": {
+                "sanity": -12
+              }
+            }
+          }
+        },
+        {
+          "id": "back_inside",
+          "label": "退回船内——不想在外面待",
+          "outcome": {
+            "text": "你没有在外面停留。半秒的颠倒够了，你退回洞里，背面朝沙，顶面朝铁，重新找到那条线：上是上，下是下。\n洞外的那半秒，你留给那半秒。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -3
+            }
           }
         }
       ]

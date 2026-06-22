@@ -1,0 +1,22 @@
+{
+  "_comment": "一个数字·放掉它（uncanny·185-210m·sanity -3·氧-1）",
+  "eventId": "midwater.the_wrong_number",
+  "depth": 200,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "let_it_go"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -3
+    }
+  }
+}

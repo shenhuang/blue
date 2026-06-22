@@ -1,0 +1,22 @@
+{
+  "_comment": "起来的音·记在板上（uncanny·183-208m·sanity80·氧-1 理智+1）",
+  "eventId": "midwater.the_low_tone",
+  "depth": 193,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "write_it_down"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": 1
+    }
+  }
+}

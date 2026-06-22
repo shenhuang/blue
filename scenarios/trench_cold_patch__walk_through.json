@@ -1,0 +1,22 @@
+{
+  "_comment": "冷的那两步·直接穿过（cosmic·248-266m·sanity80·氧-1 理智-2）",
+  "eventId": "trench.the_cold_patch",
+  "depth": 258,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "stats": {
+    "sanity": 80
+  },
+  "choices": [
+    "walk_straight_through"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -2
+    }
+  }
+}

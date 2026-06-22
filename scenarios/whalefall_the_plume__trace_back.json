@@ -1,0 +1,25 @@
+{
+  "_comment": "鲸落·化学羽流·追踪气味（无检定·氧-2 理智+2·lore 鲸落化学线）",
+  "eventId": "whalefall.the_plume",
+  "depth": 95,
+  "seed": 1,
+  "zoneId": "zone.whalefall",
+  "choices": [
+    "trace_back"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "loreAdded": [
+      "lore.whalefall.the_plume"
+    ],
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": 2
+    }
+  },
+  "stats": {
+    "sanity": 80
+  }
+}

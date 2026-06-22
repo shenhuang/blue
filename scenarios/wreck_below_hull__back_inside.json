@@ -1,0 +1,13 @@
+{
+  "_comment": "wreck t3·壳外·退回船内（cosmic safe）：ox -1，sanity -3。",
+  "eventId": "wreck_graveyard.below_the_hull",
+  "depth": 85,
+  "seed": 1,
+  "choices": ["back_inside"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": { "oxygen": -1, "sanity": -3 }
+  }
+}
