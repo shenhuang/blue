@@ -1,8 +1,8 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
+> **2026-06-22 前哨能源层移除·补给建成即全额生效（交互 session〔Cowork〕·#178·无新 quirk·代码在 `ecba6b2`·47/48·build 留 nightly）**：删前哨能源经济（`outpostEnergy`/容量·在线门控 + 水力发电 + `OutpostDef.current`/`currentOnly`）；充电/制氧建成即全额（rechargeBonus 20 / oxygenSupply 10·不再超容量掉线）；`outposts.ts` 瘦到只剩 `getOutpostForLighthouse`；SAVE_VERSION 7→8；电池轴 `run.power` 不动。两层中只废前哨那层（[[deep_game_vision]] 电池主资源轴/电力槽不受影响）。
 > **2026-06-22 背包重量制 `carryWeightLimit`（交互 session〔Cowork〕·#177·新 quirk #159·47/48·build 留 nightly）**：`inventoryCapacity`（格）→`carryWeightLimit:15`（kg）全链路替换；`weightForItem`/`totalRunInventoryWeight`；拾取超重逐 roll 跳过；UI「X.X / 15.0 kg」；`slotsForItem` @deprecated；弹药 weight=0.05；`fissure_sphere__split_trigger` 加 staminaMaxBonus 修 #169 残留。
-> **2026-06-21 横向洞穴朝向 `ZoneDef.orientation='horizontal'`（交互 session〔Cowork〕·cave-mapgen 线·#176·无新 quirk·47/48·build 留 nightly·commit `f0b85d7`）**：`types/dive.ts` ZoneDef 新增 `orientation?:'vertical'|'horizontal'`；`engine/mapgen.ts` generateMazeMap 深度赋值分流（horizontal=baseMid±hVariance 不钉 deepPoints，vertical=原 frac^k 逐字节不变）；`zones.json` zone.horizontal_test 验证用。mapLayout.ts 无需改。
 
 ## 1. 一句话状态
 
