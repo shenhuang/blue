@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { GameState, DeathRecord, InventoryItem, DecayTier } from '@/types';
 import { recoverFromCorpse } from '@/engine/death';
 import { enterNodeSelection } from '@/engine/dive';
-import { appendLog } from '@/engine/state';
+import { appendLog, totalRunInventoryWeight } from '@/engine/state';
 import { getItemDef } from '@/engine/items';
 import { renderDiverName, D_REVEAL_FLAG } from './diverName';
 import { DiveHeader } from './DiveHeader';
@@ -92,7 +92,8 @@ export function CorpseView({ state, deathRecordId, onStateChange }: Props) {
             </div>
           </div>
           <p className="dim">
-            可以带走（背包剩余 {state.run.inventoryCapacity - state.run.inventory.length} 格）：
+            可以带走（背包剩余{' '}
+            {Math.max(0, state.run.carryWeightLimit - totalRunInventoryWeight(state.run.inventory)).toFixed(1)} kg）：
           </p>
         </div>
 

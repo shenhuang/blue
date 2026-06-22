@@ -103,11 +103,10 @@ function litOutpostState(opts: {
     },
   };
 }
-// 深脊柱前哨已删（#131）——能源设施门控（outpostOnly/currentOnly）改在**章节前哨**上验：
-//   残骸前哨＝静水前哨（无 current·outpostOnly 满足、currentOnly 不满足）；
-//   热液井台＝水流前哨（current:true·currentOnly 满足）。坐标/名取各自 result 灯塔（lighthouse_upgrades.json）。
+// 深脊柱前哨已删（#131）——补给设施门控（outpostOnly）在**章节前哨**上验：
+//   残骸前哨＝深水前哨（outpostOnly 满足·显示充电/制氧）。坐标/名取 result 灯塔（lighthouse_upgrades.json）。
+//   （能源容量门控 + 水力发电/currentOnly 已删·2026-06-21。）
 const WRECK_OUTPOST_LH = { id: 'lighthouse.ch1_wreck_outpost', name: '残骸前哨', mapX: 0.3, mapY: 0.69 };
-const VENT_OUTPOST_LH = { id: 'lighthouse.ch1_vent_outpost', name: '热液井台', mapX: 0.75, mapY: 0.61 };
 
 // ============================================
 // A. SeaChartView · 教学后无升级 → 区域揭示配置化：只点亮家·珊瑚区（旧灯塔礁缺船坞·dim）；
@@ -575,8 +574,8 @@ const htmlF2target = renderToStaticMarkup(
     carry={{}}
     carryables={[]}
     carryPicks={[]}
-    carryCapacity={8}
-    slotsUsed={0}
+    carryWeight={15}
+    weightUsed={0}
     stepCarry={noopF as (id: string, d: number, m: number) => void}
     onDepart={noopF as (poi: ChartPoi, t?: string) => void}
   />,
@@ -750,13 +749,13 @@ assert(htmlM1.includes('设施升级'), 'M: 应渲染设施升级标题（灯塔
 assert(htmlM1.includes('旧灯塔'), 'M: 应列出家灯塔');
 assert(htmlM1.includes('船坞'), 'M: home 应显示船坞轨（homeOnly）');
 assert(htmlM1.includes('cost-confirm">建造'), 'M: 材料金币够 → 船坞应有可点"建造"按钮（UpgradeCostView）');
-// M2/M3/M4：深水区 Phase 2b 能源设施轨的 outpostOnly / currentOnly 门控
+// M2/M3：前哨补给设施轨的 outpostOnly 门控（能源容量 + 水力/currentOnly 已删·2026-06-21）
 const homeOnlyPanel = renderToStaticMarkup(
   <LighthouseBuildPanel state={createInitialGameState()} onStateChange={noop} onClose={noop} />,
 );
-assert(!homeOnlyPanel.includes('充电站'), 'M2: 家灯塔不显示前哨能源设施（充电站 outpostOnly）');
-assert(!homeOnlyPanel.includes('水力发电'), 'M2: 家灯塔不显示水力发电（currentOnly）');
-// 静水章节前哨（残骸前哨·current 缺省）：outpostOnly 满足、currentOnly 不满足。
+assert(!homeOnlyPanel.includes('充电站'), 'M2: 家灯塔不显示前哨补给设施（充电站 outpostOnly）');
+assert(!homeOnlyPanel.includes('水力发电'), 'M2: 水力发电设施已删·任何灯塔都不显示');
+// 深水章节前哨（残骸前哨）：outpostOnly 满足 → 显示充电/制氧。
 const staticOutpostPanel = renderToStaticMarkup(
   <LighthouseBuildPanel
     state={litOutpostState({ outpostId: 'outpost.ch1_wreck', resultLh: WRECK_OUTPOST_LH })}
@@ -764,23 +763,14 @@ const staticOutpostPanel = renderToStaticMarkup(
     onClose={noop}
   />,
 );
-assert(staticOutpostPanel.includes('充电站'), 'M3: 静水前哨显示充电站（outpostOnly）');
-assert(staticOutpostPanel.includes('制氧站'), 'M3: 静水前哨显示制氧站');
-assert(!staticOutpostPanel.includes('水力发电'), 'M3: 静水前哨不显示水力发电（currentOnly 不满足）');
-// 水流章节前哨（热液井台·current:true）：currentOnly 满足。
-const currentOutpostPanel = renderToStaticMarkup(
-  <LighthouseBuildPanel
-    state={litOutpostState({ outpostId: 'outpost.ch1_vent', resultLh: VENT_OUTPOST_LH })}
-    onStateChange={noop}
-    onClose={noop}
-  />,
-);
-assert(currentOutpostPanel.includes('水力发电'), 'M4: 水流前哨显示水力发电（currentOnly 满足）');
-L('  家灯塔船坞轨 + 能源设施轨 outpostOnly/currentOnly 门控（家×/静水/水流）✓');
+assert(staticOutpostPanel.includes('充电站'), 'M3: 深水前哨显示充电站（outpostOnly）');
+assert(staticOutpostPanel.includes('制氧站'), 'M3: 深水前哨显示制氧站');
+assert(!staticOutpostPanel.includes('水力发电'), 'M3: 水力发电设施已删·前哨不显示');
+L('  家灯塔船坞轨 + 前哨补给设施轨 outpostOnly 门控（家×/深水前哨○）✓');
 
 // ============================================
 // N. 章节前哨标记（海图） + OutpostPopup 前哨详情面板（区域揭示配置化 SPEC）
-//    深脊柱前哨已整体删除（#131·改数据驱动深度柱·深入 POI 派生）；章节前哨建造/能源面板收编进点击 popup，
+//    深脊柱前哨已整体删除（#131·改数据驱动深度柱·深入 POI 派生）；章节前哨建造面板收编进点击 popup，
 //    故 SSR 不点击 → 面板内容直接渲染 OutpostPopup 验（同 E6 直渲 SonarScanPanel 的隔离思路）。
 // ============================================
 L('\n========== N. 章节前哨标记（发现门控）+ 前哨详情面板 ==========');
@@ -795,9 +785,8 @@ const n1Revealed = devRevealOutpost(stateWith(['flag.tutorial_complete'], []), '
 const htmlN1b = renderToStaticMarkup(<SeaChartView state={n1Revealed} onStateChange={noop} />);
 assert(htmlN1b.includes('残骸前哨'), 'N1: devReveal/剧情发现后 → 章节前哨暗标记现身');
 assert(htmlN1b.includes('待解锁'), 'N1: 现身的未解锁章节前哨标为「暗·待解锁」');
-// N2：静水章节前哨点亮 + 两个补给设施（draw 超 base 能源）→ OutpostPopup 渲染能源状态 + 部分掉线。
-// 衰减已删（#125）：不再有衰减级/荒废/维护 UI；掉线纯由「设施占用 > 能源容量」结构性触发（与时间无关）。
-// 静水前哨（残骸前哨·无 current）能源容量＝base 1；两设施各占 1 → 占用 2 > 容量 1 → 部分掉线。
+// N2：章节前哨点亮 + 建补给设施 → OutpostPopup 正常渲染。
+// 能源容量门控已删（2026-06-21）：popup 不再显示能源/掉线；衰减更早删（#125）：无衰减级/荒废 UI。
 const N2 = litOutpostState({
   outpostId: 'outpost.ch1_wreck',
   resultLh: WRECK_OUTPOST_LH,
@@ -806,10 +795,10 @@ const N2 = litOutpostState({
 const htmlN2 = renderToStaticMarkup(
   <OutpostPopup outpostId="outpost.ch1_wreck" state={N2} onStateChange={noop} onDive={noop} onClose={noop} />,
 );
-assert(htmlN2.includes('能源'), 'N2: 点亮前哨 popup 显示能源状态');
-assert(htmlN2.includes('部分设施停转'), 'N2: 设施占用超能源容量 → 标注设施停转');
+assert(htmlN2.includes('残骸前哨'), 'N2: 点亮前哨 popup 显示前哨名');
+assert(!htmlN2.includes('能源') && !htmlN2.includes('部分设施停转'), 'N2: 能源层已删 → popup 不再显示能源/掉线');
 assert(!htmlN2.includes('衰减') && !htmlN2.includes('荒废'), 'N2: 衰减已删 → 无衰减级/荒废 UI');
-L('  章节前哨标记（暗·待解锁·未发现不在图）+ 前哨 popup 能源/掉线（衰减已删·中转寄存已删）✓');
+L('  章节前哨标记（暗·待解锁·未发现不在图）+ 前哨 popup（能源层已删·无能源/掉线/衰减 UI）✓');
 
 // ============================================
 // O. SeaChartView · mimic「无灯之光」引诱 + 宏观 tell（深水区 Phase 3）
@@ -865,15 +854,15 @@ const htmlP1pack = renderToStaticMarkup(
     carry={{}}
     carryables={[{ itemId: 'item.decoy_sound', qty: 2 }]}
     carryPicks={[]}
-    carryCapacity={8}
-    slotsUsed={0}
+    carryWeight={15}
+    weightUsed={0}
     stepCarry={noop2 as (id: string, d: number, m: number) => void}
     onDepart={noop2 as (poi: ChartPoi, t?: string) => void}
   />,
 );
 assert(htmlP1pack.includes('行前装包'), 'P1pack: departStep=pack → 行前装包标题可见');
 assert(htmlP1pack.includes('声诱标') && htmlP1pack.includes('×2'), 'P1pack: 储物柜格列出消耗品名 + 数量角标');
-assert(htmlP1pack.includes('0/8 格') && htmlP1pack.includes('item-cell empty'), 'P1pack: 背包上限可见（0/8 格）+ 空格占位');
+assert(htmlP1pack.includes('0.0 / 15.0 kg'), 'P1pack: 背包承载上限可见（重量制·0.0 / 15.0 kg）');
 assert(htmlP1pack.includes('点击放进背包'), 'P1pack: 储物柜格可点（title 提示放进背包）');
 // P1 空仓库 none：无消耗品 → none 步骤只显出海按钮（始终如此）
 const htmlP1empty = renderToStaticMarkup(

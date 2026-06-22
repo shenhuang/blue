@@ -139,7 +139,7 @@ const SHOP_STOCK_CONSUMABLES: Record<string, number> = {
   'item.decoy_sound': 2,
   'item.decoy_light': 2,
   'item.med_kit': 2,
-  // 弹药（武器系统·作者 2026-06-20）：按发补货；携带占格按弹匣 stackSize（items.ts::slotsForItem）。数值＝提案可调。
+  // 弹药（武器系统·作者 2026-06-20）：按发补货；携带承载按重量（每发 0.05kg·items.ts::weightForItem）。数值＝提案可调。
   'item.ammo.pneumatic': 16,
   'item.ammo.harpoon': 60,
 };

@@ -4,11 +4,14 @@
 //
 // 注意（Phase C）：dockyard 已从全局升级迁成**家灯塔「船坞」设施**（lighthouse.dockyard.lv1）。
 // 全局升级线现在是 2 条（打捞行会 / 气瓶库）；dockyard 的覆盖移到 playthrough-lighthouse.ts +
-// 本脚本 §5/§6/§7（验证它仍给 +1 消耗品槽 + 门控旧灯塔礁）。
+// 本脚本 §5/§6/§7（门控旧灯塔礁）。
+// 背包重量制（2026-06-21）：背包容量改为重量上限 carryWeightLimit（base RUN_CARRY_WEIGHT=15kg·见 state.ts）。
+// dockyard 的 extraConsumableSlot（旧「+1 格」）在重量制下**暂不折进承载**（格制遗物·待作者按重量重定义升级）——
+// dockyard 现存功能＝门控远海 POI（§5/§6），不再改 run 背包容量。§7 据此断言 carryWeightLimit 恒 15。
 //
 // 跑法：npx tsx scripts/playthrough-upgrades.ts
 
-import { createInitialGameState, createNewRun, countInInventory, createStarterLoadout, HOME_LIGHTHOUSE_ID } from '../src/engine/state';
+import { createInitialGameState, createNewRun, countInInventory, createStarterLoadout, HOME_LIGHTHOUSE_ID, RUN_CARRY_WEIGHT } from '../src/engine/state';
 import { SONAR_PING_COST, SONAR_DEPTH_REACH, ROOM_FEATURE_CHANCE_MAX } from '../src/engine/clarity';
 import { SONAR_SCAN_RANGE_MAX } from '../src/engine/sonar';
 import {
@@ -199,8 +202,8 @@ s2 = withHomeDockyard(s2);
 assert(isPoiDepartable(s2.profile, lhOf(s2)!), '通教学 + 家灯塔船坞 → 可出海');
 log.push('  ✓ 旧灯塔礁门控：发现=flag.tutorial_complete，抵达=家灯塔 lighthouse.dockyard.lv1');
 
-log.push('\n========== 7. 升级真正改变 run（startDive 链路 ＋ 船坞 +1 槽） ==========');
-// 走 Aldo 出海到东礁，断言 run.oxygenMax 带气瓶库加成、inventoryCapacity 带家灯塔船坞 +1 槽
+log.push('\n========== 7. 升级真正改变 run（startDive 链路·气瓶库改 oxygenMax；背包承载＝重量制恒 15） ==========');
+// 走 Aldo 出海到东礁，断言 run.oxygenMax 带气瓶库加成；carryWeightLimit 在重量制下恒 RUN_CARRY_WEIGHT（船坞 +1 格已不折进承载）
 let s3 = createInitialGameState();
 s3 = {
   ...s3,
@@ -217,10 +220,10 @@ const departEast = briefingNode.choices!.find((c) => c.id === 'depart_east')!;
 const r2 = selectChoice(s3, briefingNode, departEast);
 s3 = r2.state;
 log.push(`run.oxygenMax = ${s3.run!.oxygenMax} （应为 60 + 10 = 70）`);
-log.push(`run.inventoryCapacity = ${s3.run!.inventoryCapacity} （应为 8 + 1 = 9）`);
+log.push(`run.carryWeightLimit = ${s3.run!.carryWeightLimit} （重量制恒 ${RUN_CARRY_WEIGHT}kg·船坞 +1 格已不折进承载）`);
 assert(s3.run!.oxygenMax === 70, '气瓶库 lv1 应让 oxygenMax = 70');
 assert(s3.run!.stats.oxygen === 70, '初始 oxygen 应填到上限');
-assert(s3.run!.inventoryCapacity === 9, '家灯塔船坞应让 inventoryCapacity = 9');
+assert(s3.run!.carryWeightLimit === RUN_CARRY_WEIGHT, `重量制：carryWeightLimit 恒 ${RUN_CARRY_WEIGHT}kg（船坞 extraConsumableSlot 暂不折进承载）`);
 
 log.push('\n========== 8. 段2：声呐＝Otto 打造的装备件 → 打造+升满 → getRunBonuses → run.sensorTuning（对账旧 sonar_rig 逐项相等）==========');
 // 声呐从「升级线 sonar_rig」迁成「Otto 打造的装备件」(item.sonar.handheld)：空槽→打造 Lv.1（=解锁）→逐级升 Lv.5。

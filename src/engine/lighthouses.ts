@@ -226,8 +226,6 @@ export function devBuildAtLighthouse(
 export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses {
   const bonuses: LighthouseBonuses = {
     extraConsumableSlot: 0,
-    energyGen: 0,
-    energyDraw: 0,
     rechargeBonus: 0,
     oxygenSupply: 0,
   };
@@ -238,12 +236,6 @@ export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses 
       switch (e.kind) {
         case 'extraConsumableSlot':
           bonuses.extraConsumableSlot += e.value;
-          break;
-        case 'energyGen':
-          bonuses.energyGen += e.value;
-          break;
-        case 'energyDraw':
-          bonuses.energyDraw += e.value;
           break;
         case 'rechargeBonus':
           bonuses.rechargeBonus += e.value;

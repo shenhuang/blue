@@ -26,7 +26,7 @@ import { UpgradeEffectDelta, emptyEffectSet, mergeEffectSets, type EffectSet, ty
 import { DEV_TOOLS } from './devMode';
 
 // LighthouseEffect → EffectSet（全数值·作者 2026-06-20·#5·喂统一 UpgradeEffectDelta）。
-// energyDraw（设施能耗·越大越坏）不进对比（见 UpgradeEffectDelta 注：stats 统一「越大越好」）；探深轨 effects 空→空集→不渲染。
+// 探深轨 effects 空→空集→不渲染（见 UpgradeEffectDelta 注：stats 统一「越大越好」）。
 function lighthouseEffectSet(effects: LighthouseEffect[]): EffectSet {
   const stats: StatLine[] = [];
   for (const e of effects) {
@@ -34,16 +34,11 @@ function lighthouseEffectSet(effects: LighthouseEffect[]): EffectSet {
       case 'extraConsumableSlot':
         stats.push({ label: e.kind, value: e.value, render: (v) => `消耗品槽 +${v}` });
         break;
-      case 'energyGen':
-        stats.push({ label: e.kind, value: e.value, render: (v) => `能源产出 +${v}` });
-        break;
       case 'rechargeBonus':
         stats.push({ label: e.kind, value: e.value, render: (v) => `出潜电量 +${v}` });
         break;
       case 'oxygenSupply':
         stats.push({ label: e.kind, value: e.value, render: (v) => `出潜氧气 +${v}` });
-        break;
-      case 'energyDraw':
         break;
     }
   }
@@ -89,12 +84,11 @@ export function LighthouseBuildPanel({ state, onStateChange, onClose, focusLight
       {state.profile.lighthouses
         .filter((lh) => !focusLighthouseId || lh.id === focusLighthouseId)
         .map((lh) => {
-        // 深水区 Phase 2b：能源设施（充电/制氧/水力）只在 OutpostDef 支撑的深水前哨可建；水力再限水流前哨。
+        // 深水区 Phase 2b：补给设施（充电/制氧）只在 OutpostDef 支撑的深水前哨可建。
         const outpost = getOutpostForLighthouse(lh.id);
         const trackVisible = (t: LighthouseTrack): boolean => {
           if (t.onlyLighthouse) return lh.id === t.onlyLighthouse;
           if (t.homeOnly) return lh.id === HOME_LIGHTHOUSE_ID;
-          if (t.currentOnly) return !!outpost?.current;
           if (t.outpostOnly) return !!outpost;
           return true;
         };

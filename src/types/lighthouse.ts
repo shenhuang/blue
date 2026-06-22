@@ -32,11 +32,9 @@ export interface Lighthouse {
  */
 export type LighthouseEffect =
   | { kind: 'extraConsumableSlot'; value: number } // 随身消耗品槽 +value（家灯塔「船坞」设施，桥接进 run 加成；Phase C 迁移自全局 dockyard）
-  // —— 深水区 Phase 2b 前哨能源经济（base 层；engine/outposts.ts 消费）——
-  | { kind: 'energyGen'; value: number } // 水力发电：能源产出 +value（仅在水流 current 前哨有产出，否则计 0）
-  | { kind: 'energyDraw'; value: number } // 设施能源占用 +value（超出该前哨能源容量的设施掉线）
-  | { kind: 'rechargeBonus'; value: number } // 充电设施：从该前哨蛙跳时电池总量 +value（设施在线才生效）
-  | { kind: 'oxygenSupply'; value: number }; // 充氧设施：从该前哨蛙跳时氧气上限 +value（设施在线才生效）
+  // —— 深水区前哨补给设施（建成即全额生效·能源容量门控已删 2026-06-21·engine/dive-start.ts 消费）——
+  | { kind: 'rechargeBonus'; value: number } // 充电设施：从该前哨深入下潜时电池总量 +value
+  | { kind: 'oxygenSupply'; value: number }; // 充氧设施：从该前哨深入下潜时氧气上限 +value
 
 /** 一条灯塔设施升级定义。账单复用全局的材料＋金币双资源 UpgradeCost（Phase A）。 */
 export interface LighthouseUpgradeDef {
@@ -71,14 +69,12 @@ export interface LighthouseTrack {
   upgrades: LighthouseUpgradeDef[];
   /** true = 只能建在家灯塔（如船坞）。建造 UI 对前哨灯塔隐藏此轨。 */
   homeOnly?: boolean;
-  /** true = 只能建在 OutpostDef 支撑的深水前哨（充电/制氧/水力等能源设施）；家/废墟灯塔隐藏。深水区 Phase 2b。 */
+  /** true = 只能建在 OutpostDef 支撑的深水前哨（充电/制氧等补给设施）；家/废墟灯塔隐藏。深水区 Phase 2b。 */
   outpostOnly?: boolean;
-  /** true = 只能建在水流（current）前哨（水力发电；静水前哨建了也不产电）。深水区 Phase 2b。 */
-  currentOnly?: boolean;
   /**
    * 只在某一座指定 id 的灯塔显示（灯塔/蛙跳重构 step ②·「低频声呐」设施按宿主灯塔分流）：
    * 家灯塔的近岸探深、各前哨各自的探深各是一条 onlyLighthouse 轨——建造 UI 只在该灯塔露此轨。
-   * 与 homeOnly/outpostOnly/currentOnly 并列（最具体·优先判定）。
+   * 与 homeOnly/outpostOnly 并列（最具体·优先判定）。
    */
   onlyLighthouse?: string;
 }
@@ -155,11 +151,6 @@ export interface OutpostDef {
    * 可重新 ferry 材料维护补回（engine/outposts.ts）。
    */
   submerged?: boolean;
-  /**
-   * 位于水流（激流）区（深水区 Phase 2b §3.6 选址权衡）。true → 衰减更快（维护压力大），
-   * 但 energyGen（水力发电）设施才有产出 → 能源足 → 更多补给设施同时在线。缺省 false = 静水（省维护、能源少）。
-   */
-  current?: boolean;
   /** 建造阶段（索引 0 = 第一阶段；长度 = OUTPOST_MAX_STAGE）。 */
   stages: OutpostStageDef[];
   /** 点亮后 push 进 profile.lighthouses 的灯塔（复用 LighthouseRuinDef.result 形状）。 */
@@ -188,14 +179,9 @@ export interface LighthouseUpgradesFile {
 export interface LighthouseBonuses {
   /** 随身消耗品槽 +value（仅家灯塔的「船坞」设施会贡献；桥接进 createNewRun 的 run 加成）。 */
   extraConsumableSlot: number;
-  // —— 深水区 Phase 2b 前哨能源（engine/outposts.ts 据此做能源容量/在线判定）。这些是**原始**聚合值，
-  //     设施是否真在线（受能源容量影响）由 outposts.ts 的 effectiveOutpostBonuses 二次结算。——
-  /** 能源产出（水力；仅水流前哨实际产出，见 outposts.ts::outpostEnergy）。 */
-  energyGen: number;
-  /** 能源占用（所有设施的 draw 之和；用于在线判定）。 */
-  energyDraw: number;
-  /** 充电设施给的电池总量加成（在线才计入蛙跳 run）。 */
+  // —— 深水区前哨补给（建成即全额生效·能源容量门控已删 2026-06-21·dive-start.ts 消费）——
+  /** 充电设施给的电池总量加成（深入下潜时计入随身加成）。 */
   rechargeBonus: number;
-  /** 充氧设施给的氧气上限加成（在线才计入蛙跳 run）。 */
+  /** 充氧设施给的氧气上限加成（深入下潜时计入随身加成）。 */
   oxygenSupply: number;
 }

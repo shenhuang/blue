@@ -1,6 +1,6 @@
 // 探深「深度柱」回归（#131·级数/深度 §10 定案）—— depth_columns.json 单一来源 → 派生 band / 派生 probe 轨 /
 // 海图深入 POI，及核心档位可见性（建到第 K 级 → 1…K lit / K+1 dim / 更深 hidden·一级露一档）+ 从 lit 档下潜落 run +
-// 宿主前哨在线补给设施并入柱下潜（能源保留接线）+ 海沟 t4 科考站电梯 capstone（module gate + setsFlag 揭示科考站区）。
+// 宿主前哨补给设施并入柱下潜（建成即全额生效）+ 海沟 t4 科考站电梯 capstone（module gate + setsFlag 揭示科考站区）。
 // 约定见 src/types/columns.ts。
 //
 // 跑法： npx tsx scripts/playthrough-columns.ts
@@ -8,7 +8,7 @@
 import { createInitialGameState } from '../src/engine/state';
 import { getBand } from '../src/engine/bands';
 import { startDiveFromPoi } from '../src/engine/dive';
-import { canBuildAt, buildAtLighthouse } from '../src/engine/lighthouses';
+import { canBuildAt, buildAtLighthouse, getLighthouseBonuses } from '../src/engine/lighthouses';
 import { STATION_FOUND_FLAG, VENT_INTEL_FLAG } from '../src/engine/story';
 import {
   getColumns,
@@ -23,7 +23,6 @@ import {
   columnDivePoiId,
 } from '../src/engine/columns';
 import { generateChart, poiBlockReason, isPoiDepartable } from '../src/engine/chart';
-import { effectiveOutpostBonuses } from '../src/engine/outposts';
 import type { GameState } from '../src/types';
 
 const log: string[] = [];
@@ -229,25 +228,25 @@ L('\n========== 7. 柱潜点下潜落 run ==========');
 L('  从 lit 档 startDiveFromPoi → run 落 zone/turn0/alert/sonarDeception/hunt/visibility ✓');
 
 // ============================================================
-// 8. 宿主前哨在线补给设施并入柱下潜（能源保留接线·老蛙跳删后承接）
-//    用中层柱（trench t1-t3 设 noPoi·无海图 POI 可下潜）；effectiveOutpostBonuses 逻辑与柱种无关。
+// 8. 宿主前哨补给设施并入柱下潜（老蛙跳删后承接·能源容量门控已删 2026-06-21：建成即全额生效）
+//    用中层柱（trench t1-t3 设 noPoi·无海图 POI 可下潜）；getLighthouseBonuses 逻辑与柱种无关。
 // ============================================================
 L('\n========== 8. 宿主前哨补给设施 ==========');
 {
-  // 静水前哨容量=OUTPOST_BASE_ENERGY(1)；单建制氧（draw 1）→ 在线 → oxygenSupply 10。
+  // 建制氧设施 → oxygenSupply 10（建成即全额生效·无能源门）。
   const host = colState('col.midwater', 1, ['lighthouse.oxygen_supply.lv1']).profile.lighthouses.find(
     (l) => l.id === 'lighthouse.ch1_midwater_outpost',
   )!;
-  assert(effectiveOutpostBonuses(host).oxygenSupply === 10, '8: 制氧设施在线 → oxygenSupply 10');
+  assert(getLighthouseBonuses(host).oxygenSupply === 10, '8: 制氧设施全额生效 → oxygenSupply 10');
   const sNo = colState('col.midwater', 1);
   const sOx = colState('col.midwater', 1, ['lighthouse.oxygen_supply.lv1']);
   const poiNo = generateChart({ profile: sNo.profile }).pois.find((p) => p.id === columnDivePoiId('col.midwater', 1))!;
   const poiOx = generateChart({ profile: sOx.profile }).pois.find((p) => p.id === columnDivePoiId('col.midwater', 1))!;
   const oxNo = startDiveFromPoi(sNo, poiNo).run!.oxygenMax;
   const oxOx = startDiveFromPoi(sOx, poiOx).run!.oxygenMax;
-  assert(oxOx - oxNo === 10, `8: 宿主在线制氧 → 柱下潜氧上限 +10（实得 +${oxOx - oxNo}）`);
+  assert(oxOx - oxNo === 10, `8: 宿主制氧设施 → 柱下潜氧上限 +10（实得 +${oxOx - oxNo}）`);
 }
-L('  宿主前哨在线制氧 → 柱下潜随身氧上限 +10（能源保留接线）✓');
+L('  宿主前哨制氧设施 → 柱下潜随身氧上限 +10（建成即全额生效）✓');
 
 // ============================================================
 // 9. 海沟 t4 科考站电梯 capstone（#131 §10）：module gate + setsFlag 揭示科考站区 + 只解锁电梯入口一个潜点

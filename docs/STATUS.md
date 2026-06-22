@@ -1,8 +1,8 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
+> **2026-06-22 背包重量制 `carryWeightLimit`（交互 session〔Cowork〕·#177·新 quirk #159·47/48·build 留 nightly）**：`inventoryCapacity`（格）→`carryWeightLimit:15`（kg）全链路替换；`weightForItem`/`totalRunInventoryWeight`；拾取超重逐 roll 跳过；UI「X.X / 15.0 kg」；`slotsForItem` @deprecated；弹药 weight=0.05；`fissure_sphere__split_trigger` 加 staminaMaxBonus 修 #169 残留。
 > **2026-06-21 横向洞穴朝向 `ZoneDef.orientation='horizontal'`（交互 session〔Cowork〕·cave-mapgen 线·#176·无新 quirk·47/48·build 留 nightly·commit `f0b85d7`）**：`types/dive.ts` ZoneDef 新增 `orientation?:'vertical'|'horizontal'`；`engine/mapgen.ts` generateMazeMap 深度赋值分流（horizontal=baseMid±hVariance 不钉 deepPoints，vertical=原 frac^k 逐字节不变）；`zones.json` zone.horizontal_test 验证用。mapLayout.ts 无需改。
-> **2026-06-21 三种洞型变体 cave zone + 21 专属事件（交互 session〔Cowork〕·cave-zones 并行线·#175·新 quirk #158·47/47 通过〔--skip build〕·build 留 nightly）**：`zone.shaft_crack`〔竖穴·k[0.2,0.55]〕/`zone.chamber_network`〔蜂房·[1.3,1.9]〕/`zone.flooded_gallery`〔漫水回廊·[2.2,3.5]·横向回程预算〕三 maze zone + `crack`/`chamber`/`flooded` 三 ZoneTag + 21 专属事件〔各 7·声线照 blue_caves〕；纯数据零 mapgen 改。**未接海图**（cave-content 线后续）。
 
 ## 1. 一句话状态
 

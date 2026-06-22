@@ -11,8 +11,8 @@ import type {
   Stats,
   Visibility,
 } from '@/types';
-import { addToInventory, appendLog, clampStats } from './state';
-import { getItemDef } from './items';
+import { addToInventory, appendLog, clampStats, totalRunInventoryWeight } from './state';
+import { getItemDef, weightForItem } from './items';
 import { equipmentUnlocksAction } from './equipment';
 import { EQUIPMENT_SLOTS } from '@/types/items';
 import { restoreLighthouse, advanceOutpost } from './lighthouses';
@@ -170,7 +170,17 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
         const min = roll.qty[0];
         const max = roll.qty[1];
         const qty = min + Math.floor(Math.random() * (max - min + 1));
-        if (qty > 0) inv = addToInventory(inv, roll.itemId, qty);
+        if (qty > 0) {
+          // 背包承载（重量制·#资源重量制 2026-06-21）：dive 期间 run 背包加这件后超 carryWeightLimit → 跳过该件并日志提示
+          // （不阻断整个事件·其余 loot 继续 roll）。inv 是本事件累计的工作副本——含本轮已拾的其它件，焊死「一个事件塞爆」。
+          // 港口侧（无 run）仓库无承载上限，照旧不限。
+          if (s.run && totalRunInventoryWeight(inv) + weightForItem(roll.itemId, qty) > s.run.carryWeightLimit) {
+            const name = getItemDef(roll.itemId)?.name ?? roll.itemId;
+            s = appendLog(s, { tone: 'system', text: `背包超载，无法拾取 ${name}。` });
+            continue;
+          }
+          inv = addToInventory(inv, roll.itemId, qty);
+        }
       }
     }
     if (s.run) s = { ...s, run: { ...s.run, inventory: inv } };

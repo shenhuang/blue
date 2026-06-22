@@ -6,11 +6,10 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import type { GameState, ChartPoi, InventoryItem } from '@/types';
 import { generateChart, poiLockReason, poiBlockReason, isPoiDepartable, describeModifier, describeCaveShape } from '@/engine/chart';
-import { startDiveFromPoi, carryCapacityFor } from '@/engine/dive';
+import { startDiveFromPoi, carryWeightLimitFor } from '@/engine/dive';
 import { toPort } from '@/engine/transitions';
 import {
   getHomeLighthouse,
-  getLighthouse,
   getOutposts,
   outpostStage,
   nextOutpostStage,
@@ -26,10 +25,9 @@ import {
   OUTPOST_MAX_STAGE,
   OUTPOST_USABLE_STAGE,
 } from '@/engine/lighthouses';
-import { outpostEnergy } from '@/engine/outposts';
 import { getZone } from '@/engine/zones';
 import { getUpgradeBonuses } from '@/engine/upgrades';
-import { getItemDef, slotsForItem } from '@/engine/items';
+import { getItemDef, weightForItem } from '@/engine/items';
 import { isOverloaded } from '@/engine/equipment';
 import { listRecoverableCorpses } from '@/engine/death';
 import { LighthouseBuildPanel } from './LighthouseBuildPanel';
@@ -37,7 +35,7 @@ import { ChartViewport, type ChartContentBox } from './ChartViewport';
 import { HOME_LIGHTHOUSE_ID } from '@/engine/state';
 import { regionForOwner, flagGatedRegions } from '@/engine/regions';
 import { DEV_TOOLS } from './devMode';
-import { ItemCell, EmptyCell } from './ItemCell';
+import { ItemCell } from './ItemCell';
 
 /** 地图节点弹窗选择态：点击前哨 → 建造/能源/设施/章节蛙跳。（家灯塔 + 已点亮前哨灯塔点击直接开灯塔设施面板·灯塔/蛙跳重构 step ③） */
 type MapPopup = { kind: 'home' } | { kind: 'outpost'; id: string };
@@ -211,9 +209,9 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
   const carryPicks: InventoryItem[] = Object.entries(carry)
     .filter(([, q]) => q > 0)
     .map(([itemId, qty]) => ({ itemId, qty }));
-  // 容量与占格：与 createNewRun/applyCarryItems 同源（carryCapacityFor + items.ts::slotsForItem·弹药 stack-aware），UI 画的格数＝真截断线。
-  const carryCapacity = carryCapacityFor(state.profile);
-  const slotsUsed = carryPicks.reduce((a, p) => a + slotsForItem(p.itemId, p.qty), 0);
+  // 承载与重量（重量制 2026-06-21）：与 createNewRun/applyCarryItems 同源（carryWeightLimitFor + items.ts::weightForItem·按 qty 线性），UI 画的承载＝真截断线（kg）。
+  const carryWeight = carryWeightLimitFor(state.profile);
+  const weightUsed = carryPicks.reduce((a, p) => a + weightForItem(p.itemId, p.qty), 0);
   const stepCarry = (itemId: string, delta: number, max: number) =>
     setCarry((c) => ({ ...c, [itemId]: Math.max(0, Math.min(max, (c[itemId] ?? 0) + delta)) }));
 
@@ -565,8 +563,8 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
               carry={carry}
               carryables={carryables}
               carryPicks={carryPicks}
-              carryCapacity={carryCapacity}
-              slotsUsed={slotsUsed}
+              carryWeight={carryWeight}
+              weightUsed={weightUsed}
               stepCarry={stepCarry}
               onDepart={handleDepart}
             />
@@ -588,8 +586,10 @@ export interface ChartInfoCarry {
   carry: Record<string, number>;
   carryables: InventoryItem[];
   carryPicks: InventoryItem[];
-  carryCapacity: number;
-  slotsUsed: number;
+  /** 背包承载上限（kg·重量制 2026-06-21）。 */
+  carryWeight: number;
+  /** 当前已装重量（kg）。 */
+  weightUsed: number;
   stepCarry: (itemId: string, delta: number, max: number) => void;
 }
 
@@ -611,8 +611,8 @@ export function ChartInfo({
   carry,
   carryables,
   carryPicks,
-  carryCapacity,
-  slotsUsed,
+  carryWeight,
+  weightUsed,
   stepCarry,
   onDepart,
 }: {
@@ -677,19 +677,20 @@ export function ChartInfo({
         <div className="chart-info-head">
           <h3 className="chart-info-name">{poi.name}</h3>
           <span className="dim chart-info-zone">
-            行前装包 <span className="dim">背包 {slotsUsed}/{carryCapacity} 格</span>
+            行前装包 <span className="dim">背包 {weightUsed.toFixed(1)} / {carryWeight.toFixed(1)} kg</span>
           </span>
         </div>
         {carryables.length > 0 ? (
           <>
             <p className="dim chart-carry-hint">
-              点储物柜里的东西放进背包，点背包里的放回。带下去的，死了就留在尸体上；活着回来自动归库。
+              点储物柜里的东西放进背包，点背包里的放回。背包按重量装，越满越接近上限。带下去的，死了就留在尸体上；活着回来自动归库。
             </p>
             <div className="item-grid chart-carry-bag">
               {carryPicks.flatMap((p) => {
                 const def = getItemDef(p.itemId);
                 const stack = def?.stackSize;
-                // 弹药：一匣（≤stackSize 发）占一格·渲染成弹匣格（最后一匣可能不满）；其余道具：一件一格（旧口径不变）。
+                // 弹药：仍按「弹匣」分格渲染（一匣 ≤stackSize 发·最后一匣可能不满）＝可读的成组显示；其余道具：一件一格。
+                // 注：承载已是重量制（按 qty 线性·见 weightForItem），这里的「匣/格」纯属显示分组，不再是容量单位。
                 if (stack && stack > 0) {
                   const mags = Math.ceil(p.qty / stack);
                   return Array.from({ length: mags }, (_, i) => {
@@ -716,9 +717,6 @@ export function ChartInfo({
                   />
                 ));
               })}
-              {Array.from({ length: Math.max(0, carryCapacity - slotsUsed) }, (_, i) => (
-                <EmptyCell key={`empty-${i}`} />
-              ))}
             </div>
             <h4 className="chart-carry-subtitle dim">储物柜（消耗品）</h4>
             <div className="item-grid chart-carry-locker">
@@ -726,9 +724,9 @@ export function ChartInfo({
                 const def = getItemDef(it.itemId);
                 const picked = carry[it.itemId] ?? 0;
                 const remaining = it.qty - picked;
-                // 加 1 件的边际占格（弹药 stack-aware：填进未满弹匣＝0 格·满了才 +1 格；其余道具恒 +slotsRequired）。
-                const marginal = slotsForItem(it.itemId, picked + 1) - slotsForItem(it.itemId, picked);
-                const bagFull = slotsUsed + marginal > carryCapacity;
+                // 再装 1 件的边际重量（按 qty 线性＝单件 weight·弹药同理每发 0.05）；加上去超承载 → 禁用。
+                const marginal = weightForItem(it.itemId, 1);
+                const bagFull = weightUsed + marginal > carryWeight;
                 if (remaining <= 0) return null;
                 return (
                   <ItemCell
@@ -739,7 +737,7 @@ export function ChartInfo({
                     disabled={bagFull}
                     title={
                       bagFull
-                        ? '背包满了——先点背包里的东西放回来'
+                        ? '背包到承载上限了——先点背包里的东西放回来'
                         : `${def?.name ?? it.itemId}——点击放进背包`
                     }
                     onClick={() => stepCarry(it.itemId, +1, it.qty)}
@@ -860,8 +858,6 @@ export function OutpostPopup({
   const canBuild = canAdvanceOutpost(state.profile, o.id);
   const chapter = isChapterOutpost(o);
   const unlocked = outpostUnlocked(state.profile, o.id);
-  const lh = getLighthouse(state.profile, o.result.id);
-  const energy = lh ? outpostEnergy(lh) : null;
 
   const status =
     chapter && !unlocked
@@ -879,12 +875,6 @@ export function OutpostPopup({
         <span className="dim chart-popup-status">{status}</span>
       </div>
 
-      {energy && (
-        <p className="dim chart-popup-energy">
-          能源 {energy.capacity}（占用 {energy.demand}
-          {energy.demand > energy.capacity ? ' · 部分设施停转' : ''}）
-        </p>
-      )}
       {chapter && !unlocked && (
         <p className="dim chart-popup-locked">
           这片还没探到——走到附近，它才会亮起来、能动工。

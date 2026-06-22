@@ -1,7 +1,7 @@
 // 开潜入口（#106 拆分自 dive.ts）：港口 zone（startDive）/ 海图 POI（startDiveFromPoi），及出海叙事。
 // 旧「前哨蛙跳」startDiveFromOutpost + deepestOutpostLaunch 已删（#131 探深深度柱重构·老蛙跳废弃）——
 // 深入下潜统一走 startDiveFromPoi：深度柱深入 POI 带 bandId 走 band 绝对 depthRange 路径（diveIntoBand），
-// 宿主灯塔在线补给设施（充电/充氧）在此并入随身加成。
+// 宿主灯塔补给设施（充电/充氧）在此并入随身加成。
 
 import type {
   GameState,
@@ -21,13 +21,13 @@ import {
   countInInventory,
   removeFromInventory,
   addToInventory,
-  RUN_INVENTORY_CAPACITY,
+  totalRunInventoryWeight,
+  RUN_CARRY_WEIGHT,
 } from './state';
-import { getItemDef, slotsForItem } from './items';
+import { getItemDef, weightForItem } from './items';
 import { isOverloaded } from './equipment';
-import { getRunBonuses } from './lighthouses';
+import { getRunBonuses, getLighthouseBonuses } from './lighthouses';
 import type { RunStartBonuses } from './lighthouses';
-import { effectiveOutpostBonuses } from './outposts';
 import { getColumn } from './columns';
 import { autoScanOnArrival } from './dive-sensors';
 import { getBand, bandDiveModifier } from './bands';
@@ -135,21 +135,21 @@ export function startDive(
 }
 
 /**
- * 出发前选带（作者拍板 2026-06-10·#108）：把仓库里勾选的消耗品装进 run 背包随身带下水。
+ * 出发前选带（作者拍板 2026-06-10·#108·重量制重构 2026-06-21）：把仓库里勾选的消耗品装进 run 背包随身带下水。
  * 风险自担＝机制核心：死了随身物进尸体快照（现有 DeathRecord 回收闭环）、生还由 handleReturnToPort
  * 自动并回仓库——本函数只搬，不新增任何闭环。规则：
  *   - 只认 category === 'consumable'（材料/剧情物不随身——它们走仓库/账单面）；
- *   - qty 夹到仓库现有量；占格按 slotsRequired（默认 1）累计、超 run.inventoryCapacity 的部分截断（先选先得）；
+ *   - qty 夹到仓库现有量；按**重量**累计、超 run.carryWeightLimit 的部分截断（先选先得·逐件试装）；
  *   - 全空 / 没选 → profile/run 原样返回（向后兼容：所有既有调用不传 picks ＝ 行为逐字节不变）。
  * 纯函数（不碰 GameState 其它部分）；UI 面在 SeaChartView 的「行前装包」。
  */
 /**
- * 出发前的背包容量（行前装包 UI 用·作者 2026-06-10「背包格子有上限、出发前可见」）：
- * 与 createNewRun 同一来源（RUN_INVENTORY_CAPACITY + extraConsumableSlot），保证 UI 画的格数
- * ＝ 实际 run.inventoryCapacity（applyCarryItems 的截断线）。纯函数。
+ * 出发前的背包承载上限（kg·行前装包 UI 用·重量制 2026-06-21）：与 createNewRun 同一来源（RUN_CARRY_WEIGHT），
+ * 保证 UI 画的承载条＝实际 run.carryWeightLimit（applyCarryItems 的截断线）。保留 profile 形参给未来
+ * 「按 profile 升级加成承载」留口（当前与 profile 无关·恒 RUN_CARRY_WEIGHT）。纯函数。
  */
-export function carryCapacityFor(profile: PlayerProfile): number {
-  return RUN_INVENTORY_CAPACITY + (getRunBonuses(profile).extraConsumableSlot ?? 0);
+export function carryWeightLimitFor(_profile: PlayerProfile): number {
+  return RUN_CARRY_WEIGHT;
 }
 
 export function applyCarryItems(
@@ -160,17 +160,13 @@ export function applyCarryItems(
   if (picks.length === 0) return { profile, run };
   let profileInv = profile.inventory;
   let runInv = run.inventory;
-  // 占格 stack-aware（弹药一匣占一格·加发可能不增格·单一来源 items.ts::slotsForItem）：
-  // 用「加上 q 后该物品新占格 − 原占格」算边际成本，对非弹药＝slotsRequired×q（逐字节不变）。
-  const usedSlots = () => runInv.reduce((a, i) => a + slotsForItem(i.itemId, i.qty), 0);
   let moved = false;
   for (const p of picks) {
     const def = getItemDef(p.itemId);
     if (!def || def.category !== 'consumable') continue;
     let q = Math.min(p.qty, countInInventory(profileInv, p.itemId));
-    const existing = countInInventory(runInv, p.itemId);
-    const baseSlots = usedSlots() - slotsForItem(p.itemId, existing);
-    while (q > 0 && baseSlots + slotsForItem(p.itemId, existing + q) > run.inventoryCapacity) q--;
+    // 逐件削减 q 直到「现有背包重量 + 这 q 件的重量」不超承载（先选先得·截断超重部分）。
+    while (q > 0 && totalRunInventoryWeight(runInv) + weightForItem(p.itemId, q) > run.carryWeightLimit) q--;
     if (q <= 0) continue;
     profileInv = removeFromInventory(profileInv, p.itemId, q);
     runInv = addToInventory(runInv, p.itemId, q);
@@ -208,14 +204,14 @@ export function startDiveFromPoi(
     const band = getBand(poi.bandId);
     if (band) {
       // 随身加成 = 全局升级 + 家灯塔船坞（getRunBonuses）。深度柱深入潜点（#131·columnId 设）额外并入
-      // **宿主灯塔的在线补给设施**（充电/充氧·effectiveOutpostBonuses）——你是从那座前哨下去的，
-      // 它的能源设施仍然管用（老蛙跳删了·这层补给改由柱潜点承接·守「能源保留」#128）。
+      // **宿主灯塔的补给设施**（充电/充氧）——你是从那座前哨下去的，它的补给设施管用（老蛙跳删了·
+      // 这层补给改由柱潜点承接·守「能源保留」#128。能源容量门控已删·2026-06-21：设施建成即全额生效）。
       let bonuses = getRunBonuses(state.profile);
       if (poi.columnId) {
         const col = getColumn(poi.columnId);
         const host = col ? state.profile.lighthouses.find((l) => l.id === col.lighthouseId) : undefined;
         if (host) {
-          const ob = effectiveOutpostBonuses(host);
+          const ob = getLighthouseBonuses(host);
           bonuses = {
             ...bonuses,
             powerMaxBonus: bonuses.powerMaxBonus + ob.rechargeBonus,

@@ -74,13 +74,12 @@ export interface ItemDef {
   category: ItemCategory;
   rarity: ItemRarity;
   description: string;
-  /** 占用背包格子数（默认 1） */
+  /** @deprecated 背包承载已由「格数」改「重量」（2026-06-21·见 weightForItem）。曾用于旧格制占格（默认 1）。 */
   slotsRequired?: number;
   /**
-   * 弹匣/堆叠上限（一格最多装几发/几个·作者 2026-06-20）：仅用于「按堆叠占格」的可叠道具（弹药）。
-   * 设了它＝占格按 ceil(qty / stackSize)「弹匣数」算（一匣占一格·可带多匣·但一匣不无限）；缺省＝按
-   * slotsRequired×qty 旧口径（逐字节不变）。单一来源 engine/state.ts::slotsForItem，dive-start/UI 共用。
-   * 例：AP-12 气动弹 stackSize 8、PR-40 鱼叉弹 stackSize 30。
+   * 弹匣容量（一匣装几发·作者 2026-06-20）：仅可叠道具（弹药）设。背包承载改重量制后（2026-06-21·按 qty 线性·
+   * weightForItem），它**不再决定占格/承载**，只剩**显示用途**：行前装包/物品栏把弹药按「弹匣」分格成组渲染
+   * （一匣 ≤stackSize 发·最后一匣可能不满）＝更可读。例：AP-12 气动弹 stackSize 8、PR-40 鱼叉弹 stackSize 30。
    */
   stackSize?: number;
   /** 负重（影响上浮速度与氧气消耗·负重档位见 engine/equipment.ts::weightTier） */

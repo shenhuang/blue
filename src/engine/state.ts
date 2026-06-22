@@ -12,7 +12,7 @@ import type {
   Lighthouse,
 } from '@/types';
 import { POWER_MAX, deriveSensorTuning } from './clarity';
-import { itemSetsFlags } from './items';
+import { itemSetsFlags, weightForItem } from './items';
 import lighthouseData from '@/data/lighthouse_upgrades.json';
 
 // 5（#131 探深深度柱重构）：门控模型从「flag.probe.* 解锁」改档位制、旧 probe 升级 id 改 lighthouse.probe.<柱>.lv<级>、
@@ -21,7 +21,9 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // 5→6（#131 §10 收尾·2026-06-14）：深度柱级数/深度改定案（midwater↔trench 级数 4/6→6/4·vent 深度变·
 // 海沟 t4 电梯 capstone）⇒ 派生 probe 升级 id 空间变形（midwater lv5/6 新增·trench lv5/6 作废）
 // ⇒ #130 期本地档已不兼容、下次启动自动弃、从头开始。
-const SAVE_VERSION = 7;
+// 7→8（前哨能源层移除·2026-06-21）：删 energyGen/energyDraw 效果 + 水力发电设施 + OutpostDef.current——
+// 旧档残留 lighthouse.hydro.lv1 已无 def（getLighthouseUpgradeDef→undefined·静默跳过）；按 quirk #99 bump 弃旧档、从头开始。
+const SAVE_VERSION = 8;
 
 /** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile 用。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
@@ -143,10 +145,20 @@ export function createInitialGameState(): GameState {
 }
 
 /**
- * run 背包基础格数（升级 extraConsumableSlot 在此之上加）。抽成常量＝单一来源：
- * createNewRun 与行前装包 UI（carryCapacityFor·dive-start.ts）共用，别在 UI 里手抄 8。
+ * run 背包基础承载上限（kg·资源/矿物的天然节制·作者 2026-06-21 由「格数」改「重量」）。抽成常量＝单一来源：
+ * createNewRun 与行前装包 UI（carryWeightLimitFor·dive-start.ts）共用，别在 UI 里手抄 15。
+ * 未来可由港口升级在此之上加成（同 powerMax/oxygenMax 模式）。**这是背包承载——与 equipment.ts 的
+ * 穿戴件总负重(totalLoadoutWeight/isOverloaded)是两套独立机制，别混。**
  */
-export const RUN_INVENTORY_CAPACITY = 8;
+export const RUN_CARRY_WEIGHT = 15;
+
+/**
+ * 背包内全部物品的合计重量（kg·按 qty 线性·矿物/弹药/消耗品同口径）。装载截断、拾取超载判定的单一来源。
+ * 单件重量缺省走 weightForItem 的 `?? 0.5` 兜底。纯函数。
+ */
+export function totalRunInventoryWeight(inv: InventoryItem[]): number {
+  return inv.reduce((sum, i) => sum + weightForItem(i.itemId, i.qty), 0);
+}
 
 /** 默认起始装备配置（导师留下的装备·canon 见剧情 SPEC §2） */
 export function createStarterLoadout(): EquipmentLoadout {
@@ -174,7 +186,8 @@ export function createInitialStats(): Stats {
 
 export function createNewRun(opts: {
   zoneId: string;
-  inventoryCapacity?: number;
+  /** 背包承载上限覆写（kg·缺省＝RUN_CARRY_WEIGHT·脚本/测试可调）。 */
+  carryWeightLimit?: number;
   /** 来自 profile.equipment 的持久装备配置（Otto P3·缺省＝导师起始件）。 */
   equipment?: EquipmentLoadout;
   /**
@@ -204,7 +217,6 @@ export function createNewRun(opts: {
 }): RunState {
   const oxygenBonus = opts.bonuses?.oxygenMaxBonus ?? 0;
   const staminaBonus = opts.bonuses?.staminaMaxBonus ?? 0;
-  const slotBonus = opts.bonuses?.extraConsumableSlot ?? 0;
   const sonarUnlocked = opts.bonuses?.sonarUnlocked ?? false;
   // 深水区 Phase 0 升级轨：电池总量 = 基线 + 加成；其余传感器旋钮烤成 sensorTuning（地板/上限在 deriveSensorTuning）。
   const powerMax = POWER_MAX + (opts.bonuses?.powerMaxBonus ?? 0);
@@ -237,7 +249,9 @@ export function createNewRun(opts: {
     oxygenMax,
     equipment: opts.equipment ?? createStarterLoadout(),
     inventory: [],
-    inventoryCapacity: (opts.inventoryCapacity ?? RUN_INVENTORY_CAPACITY) + slotBonus,
+    // 背包承载上限（kg·#资源重量制 2026-06-21）。base = RUN_CARRY_WEIGHT；未来升级可在此加成（同 powerMax 模式）。
+    // 旧的 extraConsumableSlot（按「格数」加位）不再折进承载——它是格制遗物，待作者按重量重新定义升级。
+    carryWeightLimit: opts.carryWeightLimit ?? RUN_CARRY_WEIGHT,
     gold: 0,
     currentDepth: 0,
     currentNodeId: null,
@@ -362,6 +376,8 @@ export function hydrateGameState(state: GameState): GameState {
     profile,
     run: {
       ...run,
+      // 旧档（格制·inventoryCapacity）→ 缺 carryWeightLimit 单点补 RUN_CARRY_WEIGHT（#资源重量制·不 bump SAVE_VERSION·quirk #99）。
+      carryWeightLimit: run.carryWeightLimit ?? RUN_CARRY_WEIGHT,
       sensors: run.sensors ?? { light: true, sonar: 'off', sonarUnlocked: false },
       power: run.power ?? powerMax,
       powerMax,

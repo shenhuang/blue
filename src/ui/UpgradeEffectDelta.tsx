@@ -4,7 +4,7 @@
 // 边界：src/ui·纯展示·**不认 effect kind**（只收已归一化的 EffectSet·解耦三套 effect 类型·账单 UI 用 UpgradeCostView·这是效果 UI）。
 //
 // EffectSet：数值项 stats（label 作匹配键·跨 before/after 对齐·render 格式化「合并求和后」的值）、解锁项 unlocks（文案）。
-// 注：数值统一「越大越好」语义（绿↑＝after > before）；越大越坏的项（如灯塔 energyDraw）归一化时**别放进 stats**（在面板侧跳过）。
+// 注：数值统一「越大越好」语义（绿↑＝after > before）；越大越坏的项归一化时**别放进 stats**（在面板侧跳过）。
 
 export interface StatLine {
   /** 匹配键（同系统内同一 stat 用同 label·跨 before/after / 合并对齐）。 */

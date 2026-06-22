@@ -28,7 +28,7 @@ function makeCorpseWith(itemIds: string[]): GameState {
       oxygenMax: 60,
       equipment: { tank: null, suit: null, light: null, tool: null, charm: null },
       inventory: itemIds.map((id) => ({ itemId: id, qty: 1 })),
-      inventoryCapacity: 8,
+      carryWeightLimit: 15,
       gold: 0,
       currentDepth: 40,
       currentNodeId: null,

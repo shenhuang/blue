@@ -277,7 +277,7 @@ L('§5 精简营地（无柱 · 非区 owner · 补给轨 outpostOnly）');
   // 非 chart_regions owner（鲸落区仍 flag-gated owner-less·建营地不加第二个圈·reveal ⊥ 营地·#127 纪律）。
   assert(regionForOwner('lighthouse.ch1_whalefall_outpost') === undefined, '§5 营地灯塔非区 owner（鲸落区 flag-gated·建营地不加圈）');
 
-  // 在线补给轨（recharge/oxygen·outpostOnly）：营地是非家/非废墟的前哨灯塔 → 这些轨可用。
+  // 补给轨（recharge/oxygen·outpostOnly）：营地是非家/非废墟的前哨灯塔 → 这些轨可用。
   const tracks = (lhUpgradesRaw.tracks ?? []) as Array<{ id: string; outpostOnly?: boolean }>;
   const recharge = tracks.find((t) => t.id === 'lhtrack.recharge');
   const oxy = tracks.find((t) => t.id === 'lhtrack.oxygen_supply');

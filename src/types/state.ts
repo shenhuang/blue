@@ -291,7 +291,7 @@ export interface RunState {
   oxygenMax: number; // 满气瓶可支撑的回合数
   equipment: EquipmentLoadout;
   inventory: InventoryItem[];
-  inventoryCapacity: number; // 格子上限
+  carryWeightLimit: number; // 背包承载上限（kg）：拾取/装载按重量截断；装备负重(equipment.ts)是另一套，互不相干
   gold: number; // 本次下潜身上的金币（死亡会丢失）
   currentDepth: number; // 米
   currentNodeId: string | null;

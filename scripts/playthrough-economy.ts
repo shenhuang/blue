@@ -6,11 +6,12 @@
 //   5. Mira 回购（基建地图 Phase A）：T1/T2 可买(买价>卖价)、T3/T4 不可买；
 //      shopStock 限量 + 回港补货；金币买不了升级
 //   6. 消耗品货架 + 出发前选带（猎手 SPEC §4·#108）：decoy 上架（同一套限量/加价）·
-//      applyCarryItems 只认消耗品/夹库存/容量截断/不选原样·生还自动归库
+//      applyCarryItems 只认消耗品/夹库存/承载(重量)截断/不选原样·生还自动归库
 //
 // 跑法： npx tsx scripts/playthrough-economy.ts
 
-import { createInitialGameState, createNewRun, countInInventory } from '../src/engine/state';
+import { createInitialGameState, createNewRun, countInInventory, RUN_CARRY_WEIGHT } from '../src/engine/state';
+import { weightForItem } from '../src/engine/items';
 import { applyCarryItems } from '../src/engine/dive-start';
 import {
   handleReturnToPort,
@@ -356,15 +357,18 @@ L('\n========== 出发前选带（applyCarryItems·作者拍板「不全带·死
   // 没选 → 原对象原样（既有调用零变化）
   const c0 = applyCarryItems(s6.profile, r0, []);
   assert(c0.profile === s6.profile && c0.run === r0, '不选带 → profile/run 原对象（向后兼容）');
-  // 容量截断：背包 8 格 → 勾超过 8 件只装 8
-  let bigProfile = { ...s6.profile, inventory: [{ itemId: 'item.med_kit', qty: 20 }] };
-  const cCap = applyCarryItems(bigProfile, r0, [{ itemId: 'item.med_kit', qty: 20 }]);
-  assert(findQty(cCap.run.inventory, 'item.med_kit') === r0.inventoryCapacity, `超容量截断（只装 ${r0.inventoryCapacity}）`);
+  // 承载截断（重量制 2026-06-21）：背包按重量装·勾超过 carryWeightLimit(kg) 的部分截断（先选先得）。
+  // 期望装入量＝floor(承载 / 单件重量)（急救包 0.3kg·15kg → 50 件）；用 weightForItem 派生＝robust to 调数值。
+  const perKit = weightForItem('item.med_kit', 1);
+  const expectFit = Math.floor(RUN_CARRY_WEIGHT / perKit);
+  let bigProfile = { ...s6.profile, inventory: [{ itemId: 'item.med_kit', qty: expectFit + 10 }] };
+  const cCap = applyCarryItems(bigProfile, r0, [{ itemId: 'item.med_kit', qty: expectFit + 10 }]);
+  assert(findQty(cCap.run.inventory, 'item.med_kit') === expectFit, `超承载截断（只装 ${expectFit} 件·总重 ≤ ${RUN_CARRY_WEIGHT}kg）`);
   // 生还闭环：随身没用完的 decoy 回港自动并回仓库（现有 handleReturnToPort 合并·零新代码）
   let s6back: GameState = { ...s6, profile: c1.profile, run: c1.run };
   s6back = handleReturnToPort(s6back).state;
   assert(findQty(s6back.profile.inventory, 'item.decoy_sound') === 2, '生还 → 没用的诱饵自动归库（1+1=2）');
-  L('  只认消耗品 · qty 夹库存 · 容量截断 · 不选=原样 · 生还自动归库 ✓');
+  L('  只认消耗品 · qty 夹库存 · 承载(重量)截断 · 不选=原样 · 生还自动归库 ✓');
 }
 
 console.log(log.join('\n'));

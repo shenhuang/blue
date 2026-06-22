@@ -41,7 +41,7 @@ import {
 } from '../src/engine/equipment';
 import { getRunBonuses } from '../src/engine/lighthouses';
 import { isBuyableFromMira } from '../src/engine/port';
-import { allItems, slotsForItem } from '../src/engine/items';
+import { allItems, weightForItem } from '../src/engine/items';
 import type { GameState, EquipmentLoadout } from '../src/types';
 
 const log: string[] = [];
@@ -257,17 +257,15 @@ assert(
 );
 L('§11a 负重档位：起手轻/换斧中/重载过载 + 倍率/命中补正 ✓');
 
-// §11b 弹匣占格（slotsForItem·stack-aware·一匣占一格·可带多匣）
+// §11b 背包承载＝重量制（weightForItem·按 qty 线性·2026-06-21·取代旧「弹匣占格」）
+const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
 assert(
-  slotsForItem('item.ammo.pneumatic', 8) === 1 && slotsForItem('item.ammo.pneumatic', 9) === 2 && slotsForItem('item.ammo.pneumatic', 16) === 2,
-  '气动弹 8/匣：8→1格·9→2格·16→2格',
+  near(weightForItem('item.ammo.pneumatic', 8), 0.4) && near(weightForItem('item.ammo.pneumatic', 16), 0.8),
+  '气动弹每发 0.05kg：8 发→0.4kg·16 发→0.8kg（线性）',
 );
-assert(
-  slotsForItem('item.ammo.harpoon', 30) === 1 && slotsForItem('item.ammo.harpoon', 31) === 2,
-  '鱼叉弹 30/匣：30→1格·31→2格',
-);
-assert(slotsForItem('item.med_kit', 3) === 3, '非弹药按 slotsRequired×qty（急救包 3→3格·逐字节不变）');
-L('§11b 弹匣占格 stack-aware（弹药按匣·余者按件）✓');
+assert(near(weightForItem('item.ammo.harpoon', 30), 1.5), '鱼叉弹每发 0.05kg：满弹匣 30 发→1.5kg');
+assert(near(weightForItem('item.med_kit', 3), 0.9), '急救包 0.3kg：3 个→0.9kg（按 qty 线性）');
+L('§11b 背包承载＝重量制（按 qty 线性·弹药每发 0.05kg）✓');
 
 // §11c 武器解锁行动（unlocksAction 严格门·持刀/斧/枪/盾各自）+ 盾被动护甲
 assert(equipmentUnlocksAction(createStarterLoadout(), 'tool', 'action.knife_slash'), '起手刀解锁挥砍');

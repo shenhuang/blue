@@ -43,43 +43,9 @@
       ]
     },
     {
-      "id": "lhtrack.hydro",
-      "name": "水力发电",
-      "description": "在激流里架起水轮——只有水流够急的前哨才转得动。转起来，前哨的能源足以同时跑更多补给设施。",
-      "currentOnly": true,
-      "upgrades": [
-        {
-          "id": "lighthouse.hydro.lv1",
-          "level": 1,
-          "name": "水轮机组",
-          "cost": {
-            "materials": [
-              {
-                "itemId": "item.brass_fitting",
-                "qty": 3
-              },
-              {
-                "itemId": "item.crab_chitin",
-                "qty": 2
-              }
-            ],
-            "gold": 80
-          },
-          "effects": [
-            {
-              "kind": "energyGen",
-              "value": 2
-            }
-          ],
-          "description": "架起水轮机组。前哨能源 +2，但只在激流前哨才转得起来，静水里是摆设。",
-          "requiresLighthouseLevel": 1
-        }
-      ]
-    },
-    {
       "id": "lhtrack.recharge",
       "name": "充电站",
-      "description": "前哨的充电桩——从这儿蛙跳出潜时电池充得更满。要占用前哨的能源。",
+      "description": "前哨的充电桩——从这儿深入下潜时电池充得更满。",
       "outpostOnly": true,
       "upgrades": [
         {
@@ -101,15 +67,11 @@
           },
           "effects": [
             {
-              "kind": "energyDraw",
-              "value": 1
-            },
-            {
               "kind": "rechargeBonus",
               "value": 20
             }
           ],
-          "description": "出发前多充一截电，上限 +20。占用前哨 1 格能源，能源不足时自动断电。",
+          "description": "出发前多充一截电，电池上限 +20。",
           "requiresLighthouseLevel": 1
         }
       ]
@@ -117,7 +79,7 @@
     {
       "id": "lhtrack.oxygen_supply",
       "name": "制氧站",
-      "description": "前哨的制氧机——从这儿蛙跳出潜时气瓶补得更足。要占用前哨的能源。",
+      "description": "前哨的制氧机——从这儿深入下潜时气瓶补得更足。",
       "outpostOnly": true,
       "upgrades": [
         {
@@ -139,15 +101,11 @@
           },
           "effects": [
             {
-              "kind": "energyDraw",
-              "value": 1
-            },
-            {
               "kind": "oxygenSupply",
               "value": 10
             }
           ],
-          "description": "出发前多灌一截气，上限 +10。占用前哨 1 格能源，能源不足时自动断电。",
+          "description": "出发前多灌一截气，氧气上限 +10。",
           "requiresLighthouseLevel": 1
         }
       ]
@@ -301,7 +259,6 @@
       "name": "热液井台",
       "requiresAnchor": "vent",
       "submerged": true,
-      "current": true,
       "stages": [
         {
           "label": "在井口岩架上凿出锚位（鳗皮×2 ＋ 70 金）",

@@ -21,11 +21,19 @@ export function allItems(): ItemDef[] {
 }
 
 /**
- * 某物品 qty 件占用的背包格数（**单一来源**·dive-start::applyCarryItems / carry 容量 / UI 行前装包共用·作者 2026-06-20）。
- * - 可叠道具（`stackSize` 设了·弹药）：按 ceil(qty / stackSize)「弹匣数」——一匣（≤stackSize 发）占一格，
- *   可带多匣（多格），但一匣不无限（作者：手枪 8 / 步枪 30）。
- * - 其余：slotsRequired×qty（旧口径·逐字节不变——非弹药道具行为不变）。
- * 散在 dive-start / SeaChartView 的 `slotsRequired×qty` 收口到这里，加可叠道具只改此处（维护性）。
+ * 某物品 qty 件的合计重量（kg·背包承载制的单一来源·作者 2026-06-21 由「格数」改「重量」）。
+ * 按 qty **线性**累计（矿物/弹药/消耗品同口径），单件缺 weight 兜底 0.5。
+ * dive-start::applyCarryItems / carry 容量 / events 拾取超载 / UI 行前装包共用。
+ */
+export function weightForItem(itemId: string, qty: number): number {
+  if (qty <= 0) return 0;
+  return (getItemDef(itemId)?.weight ?? 0.5) * qty;
+}
+
+/**
+ * @deprecated 背包承载已由「格数」改「重量」（作者 2026-06-21·见 weightForItem / RUN_CARRY_WEIGHT）。
+ * 当前无调用方（dive-start/UI 均已改用 weightForItem）；保留作历史参考，新代码勿用。
+ * 旧语义：某物品 qty 件占用的背包格数——可叠道具按 ceil(qty/stackSize) 弹匣数，其余 slotsRequired×qty。
  */
 export function slotsForItem(itemId: string, qty: number): number {
   if (qty <= 0) return 0;
