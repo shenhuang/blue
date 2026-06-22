@@ -1,8 +1,8 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
-> **2026-06-22 教学日志物品时序修复 + 全局叙事/物品一致性审查（交互 session〔Cowork〕·#181·quirk #160·47/48·build 留 nightly）**：`item.mentor_logbook` 改为 `tutorial.prologue` run-loot（原在 ending_log/ending_safe 端口事件发·与开场文案矛盾）；`marksPois` ch1 四锚点在上岸 `acquireIntoProfile` 时触发（quirk #160）。全局审查 7 文件 13 处文案/loot 不一致修复（reef ×4·wreck_graveyard 文案 ×2·whalefall 文案 ×2·midwater ×1·vent ×2·trench ×1·blue_caves ×1）；smoke-economy-panel brass srcCount 23→24（weekend merge 净 +1）；PLAYTHROUGH_SEED 20260620→20260622（prologue 新 loot 偏移 RNG·quirk #160）。
-> **2026-06-22 夜间 verify+publish + 焊死 corpse flake #157（夜间定时 session〔Cowork〕+作者交互续·#179·无新 quirk·48/48·`3035138` 发布 +`e644820` 修 flake）**：把 #161–#178 棚积的 49 个未推 commit ff 推上 `origin/main`（含 player changelog 草稿 + `REPORT-2026-06-22`）；`auto/weekend`〔`f797933`·63 behind main〕因 `trench/vent/wreck_graveyard` 事件档 + CHANGELOG/lore_ledger 真冲突**跳过·待作者手动 merge**；`playthrough-corpse` 顶锁 LCG seed〔同 quirk #129〕→ 确定性·盖 #157 记的占据 flake + 一处没记的「HP=1 击杀命中走真 RNG」flake·QUIRKS #157 标✓已修。
+> **2026-06-22 更新日志弹窗关闭按钮统一 icon-close ✕（交互 session〔Cowork〕·#182·无新 quirk·47/47·`283e365`）**：手机标题换行→关闭按钮改 `icon-close`（固定 30×30）统一 PanelShell 规范；清理 stale MERGE_HEAD。
+> **2026-06-22 教学日志物品时序修复 + 全局叙事/物品一致性审查（交互 session〔Cowork〕·#181·quirk #160·47/48·build 留 nightly）**：`item.mentor_logbook` 改为 `tutorial.prologue` run-loot；全局审查 7 文件 13 处文案/loot 不一致修复；PLAYTHROUGH_SEED 20260620→20260622。
 
 ## 1. 一句话状态
 
