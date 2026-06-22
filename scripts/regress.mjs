@@ -67,7 +67,15 @@ const tasks = [];
 tasks.push({ name: 'typecheck', cmd: [tsc, '--noEmit'] });
 
 // 生产构建（落全新临时目录，避免 mount 删不掉旧 assets 的 EACCES）
-tasks.push({ name: 'build', cmd: [vite, 'build', '--outDir', buildOut, '--logLevel', 'warn'] });
+// 沙箱（Linux）缺 @rollup/rollup-linux-arm64-gnu（node_modules 是 macOS 装的）→ 自动跳过（quirk #147）。
+// nightly 单独用 NODE_PATH=/tmp/rollup-linux-fix 跑 build，不走本门。
+const ROLLUP_LINUX_NATIVE = join(ROOT, 'node_modules', '@rollup', 'rollup-linux-arm64-gnu');
+const canBuild = process.platform !== 'linux' || existsSync(ROLLUP_LINUX_NATIVE);
+if (canBuild) {
+  tasks.push({ name: 'build', cmd: [vite, 'build', '--outDir', buildOut, '--logLevel', 'warn'] });
+} else {
+  console.log('⚠  build 自动跳过（沙箱缺 rollup-linux-arm64-gnu·#147·nightly 单独处理）');
+}
 
 // 端到端教学验证（纯 node，不走 tsx）
 tasks.push({ name: 'verify-tutorial', cmd: ['node', join('scripts', 'verify-tutorial.mjs')] });
