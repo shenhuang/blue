@@ -1956,16 +1956,7 @@
             },
             "onFailure": {
               "text": "凿头凿偏了，岩粉扑出来，晶柱碎成了沙——拢在掌心，只剩玻璃渣。",
-              "oxygenTurnCost": 2,
-              "loot": [
-                {
-                  "itemId": "item.quartz_crystal",
-                  "qty": [
-                    0,
-                    1
-                  ]
-                }
-              ]
+              "oxygenTurnCost": 2
             }
           }
         },

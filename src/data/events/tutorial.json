@@ -16,6 +16,7 @@
           "outcome": {
             "text": "海面在你头顶合拢。今天先干今天的活。",
             "setProfileFlags": ["story.ch1.hook"],
+            "loot": [{ "itemId": "item.mentor_logbook", "qty": [1, 1] }],
             "triggerEventId": "tutorial.descent"
           }
         },
@@ -25,6 +26,7 @@
           "outcome": {
             "text": "你用拇指压平卷起的纸边。十年了，铅笔的光泽还在。\n这条鱼不在任何图鉴里——除非它真的存在，真的被人看见过。\n你把这一页记进脑子里，才把日志收好，翻身入水。",
             "setProfileFlags": ["story.ch1.hook"],
+            "loot": [{ "itemId": "item.mentor_logbook", "qty": [1, 1] }],
             "triggerEventId": "tutorial.descent"
           }
         }
@@ -260,7 +262,6 @@
           "outcome": {
             "text": "你合上两本日志，吹掉海图上的橡皮屑。\n海的味道还在指尖。",
             "applyFlags": ["flag.tutorial_complete"],
-            "loot": [{ "itemId": "item.mentor_logbook", "qty": [1, 1] }],
             "loreEntry": ["lore.ch1.captains_page", "lore.ch1.mentor_logbook"]
           }
         }
@@ -283,7 +284,6 @@
           "outcome": {
             "text": "你合上日志，吹掉海图上的橡皮屑。\n海的味道还在指尖。",
             "applyFlags": ["flag.tutorial_complete"],
-            "loot": [{ "itemId": "item.mentor_logbook", "qty": [1, 1] }],
             "loreEntry": "lore.ch1.mentor_logbook"
           }
         }

@@ -35,7 +35,7 @@ import { makeLcg } from '../src/engine/rng';
 // 全程定死随机：整条 playthrough 变确定性，golden seed 已验证落在「潜行成功 → 上浮」happy
 // path。内容改动若让该 seed 落到失败分支，regress 会**确定性**变红（而非 flaky）→ 调
 // PLAYTHROUGH_SEED 重选即可。调试：PT_SEED=<n> npx tsx scripts/playthrough.ts 临时换种子。
-const PLAYTHROUGH_SEED = Number(process.env.PT_SEED) || 20260620;
+const PLAYTHROUGH_SEED = Number(process.env.PT_SEED) || 20260622;
 Math.random = makeLcg(PLAYTHROUGH_SEED);
 
 let state: GameState = createInitialGameState();

@@ -596,14 +596,6 @@
                   1,
                   1
                 ]
-              },
-              {
-                "itemId": "item.brass_fitting",
-                "qty": [
-                  1,
-                  1
-                ],
-                "chance": 0.5
               }
             ],
             "loreEntry": "lore.old_lighthouse.keeper"
@@ -1100,16 +1092,6 @@
               "deltas": {
                 "sanity": -6
               },
-              "loot": [
-                {
-                  "itemId": "item.coral_shard",
-                  "qty": [
-                    1,
-                    2
-                  ],
-                  "chance": 0.5
-                }
-              ],
               "loreEntry": "lore.deep_water.cold_light"
             },
             "onFailure": {
@@ -1585,16 +1567,6 @@
           "outcome": {
             "text": "你拨开鱼往里挤。到最密的地方，中心是一小片空沙——一个浅浅的圆坑，里头什么都没有。\n它们围的不是你。是这片空地。",
             "oxygenTurnCost": 1,
-            "loot": [
-              {
-                "itemId": "item.coral_shard",
-                "qty": [
-                  1,
-                  1
-                ],
-                "chance": 0.4
-              }
-            ],
             "deltas": {
               "sanity": -2
             }
@@ -3400,16 +3372,6 @@
             "deltas": {
               "sanity": -3
             },
-            "loot": [
-              {
-                "itemId": "item.coral_shard",
-                "qty": [
-                  1,
-                  1
-                ],
-                "chance": 0.3
-              }
-            ],
             "loreEntry": "lore.reef_shallows.the_star_sand"
           }
         },

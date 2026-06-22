@@ -129,14 +129,18 @@ L('§2 ending_log 港口路径（无 run → flag 直进 profile）');
 
 {
   let state: GameState = createInitialGameState();
-  // 教学潜水生还回港后：captain_log 已并入 profile.inventory（handleReturnToPort 既有管线），run 已清。
+  // 教学潜水生还回港后：captain_log + mentor_logbook 均已并入 profile.inventory
+  // （handleReturnToPort 既有管线·mentor_logbook 由 tutorial.prologue run-loot 在上岸时并入·不再由 ending_log 发）。
   state = {
     ...state,
     run: null,
     profile: {
       ...state.profile,
       flags: new Set([CH1_HOOK_FLAG]), // prologue 在 dive 中经 setProfileFlags 已种钩
-      inventory: [{ itemId: 'item.captain_log', qty: 1 }],
+      inventory: [
+        { itemId: 'item.captain_log', qty: 1 },
+        { itemId: 'item.mentor_logbook', qty: 1 }, // prologue run-loot → 上岸并入 profile
+      ],
     },
   };
 
@@ -158,10 +162,11 @@ L('§2 ending_log 港口路径（无 run → flag 直进 profile）');
 
   assert(state.profile.flags.has(TUTORIAL_COMPLETE_FLAG), '§2 无 run 路径 applyFlags 应直落 profile.flags');
   assert(state.profile.loreEntries.has('lore.ch1.captains_page'), '§2 lore.ch1.captains_page 应入档');
-  // #142：ending_log 港口发物（无 run → loot 进 profile.inventory）+ loreEntry 数组一拍解锁两条
+  // mentor_logbook 由 tutorial.prologue run-loot 在上岸时并入（不再由 ending_log 直发·#142 已重构）；
+  // 此处只验 loreEntry 由 ending_log 一拍解锁，inventory 已在 setup 中预置。
   assert(
     state.profile.inventory.some((i) => i.itemId === 'item.mentor_logbook'),
-    '§2 导师日志（mentor_logbook）应进 profile.inventory（港口 loot 路径·#142）',
+    '§2 导师日志（mentor_logbook）应在 profile.inventory（prologue run-loot 上岸路径）',
   );
   assert(state.profile.loreEntries.has('lore.ch1.mentor_logbook'), '§2 导师日志 lore 应一并解锁（loreEntry 数组）');
   const st = ch1Story(state.profile);
@@ -196,13 +201,14 @@ L('§2b ending_safe 上浮一路（flag 触发·无剧情物）');
 
   let state: GameState = createInitialGameState();
   // 上浮一路：拿了浮标就上浮，没拿船长日志（库存无 captain_log）；ascend_now 已种 flag.tutorial_ascended（上面验证持久）。
+  // mentor_logbook 由 tutorial.prologue run-loot 上岸并入（两路一致·不再由 ending_safe 直发）。
   state = {
     ...state,
     run: null,
     profile: {
       ...state.profile,
       flags: new Set([CH1_HOOK_FLAG, 'flag.tutorial_ascended']),
-      inventory: [],
+      inventory: [{ itemId: 'item.mentor_logbook', qty: 1 }], // prologue run-loot → 上岸并入 profile
     },
   };
   // 剧情物触发为空（没日志）→ 走 flag 触发
@@ -224,10 +230,10 @@ L('§2b ending_safe 上浮一路（flag 触发·无剧情物）');
   };
   assert(state.profile.flags.has(TUTORIAL_COMPLETE_FLAG), '§2b 上浮一路也置 tutorial_complete（海图解锁）');
   assert(chapterUnlocked(state.profile, 'ch1'), '§2b ch1 解锁');
-  // #142：上浮一路也在 ending_safe 拿到导师日志（含四坐标）——两路都得到日志（一致性）；但不解锁船长 lore（上验）
+  // mentor_logbook 由 tutorial.prologue run-loot 上岸并入（#142 已重构·两路共用 prologue 路径·一致性保持）；此处仅验已在 inventory
   assert(
     state.profile.inventory.some((i) => i.itemId === 'item.mentor_logbook'),
-    '§2b ending_safe 也发导师日志进 profile.inventory（两路一致·#142）',
+    '§2b 导师日志应在 profile.inventory（prologue run-loot 上岸路径·两路一致）',
   );
   assert(state.profile.loreEntries.has('lore.ch1.mentor_logbook'), '§2b 导师日志 lore 解锁');
   assert(!state.profile.loreEntries.has('lore.ch1.captains_page'), '§2b 上浮一路仍不解锁船长日志 lore（没下去看）');
