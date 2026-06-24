@@ -1,6 +1,7 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
+> **2026-06-23 洞穴系统全面重规划：设计章 + 执行 roadmap（交互 session〔Cowork〕·#183·纯 docs·无新 quirk·typecheck 绿·3 个 cave_*.md）**：28→23 区·lc 跨度拉大（中7–15/大16–30/史诗100+）·入口/出口穿流·beacon×尺寸分布（trench 0·midwater 海山 hub）·多口持久洞 B·发现揭示分层·温度热冷·深门=循环再生洞〔后期〕；roadmap 9 任务 + 并行审查（T1∥E1–4∥T2 真并行·T4 撞车修正）。落 `docs/spec/cave_zones_spec.md`+`cave_roadmap.md`（待实装·全 deferred）。
 > **2026-06-22 更新日志弹窗关闭按钮统一 icon-close ✕（交互 session〔Cowork〕·#182·无新 quirk·47/47·`283e365`）**：手机标题换行→关闭按钮改 `icon-close`（固定 30×30）统一 PanelShell 规范；清理 stale MERGE_HEAD。
 > **2026-06-22 教学日志物品时序修复 + 全局叙事/物品一致性审查（交互 session〔Cowork〕·#181·quirk #160·47/48·build 留 nightly）**：`item.mentor_logbook` 改为 `tutorial.prologue` run-loot；全局审查 7 文件 13 处文案/loot 不一致修复；PLAYTHROUGH_SEED 20260620→20260622。
 
