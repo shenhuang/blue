@@ -7,7 +7,7 @@
 
 import type { GameState, InventoryItem, MaterialTier, PlayerProfile } from '@/types';
 import { pickReturnTrigger } from './portEvents';
-import { acquireIntoProfile, removeFromInventory } from './state';
+import { acquireIntoProfile, addToPoiSetMap, removeFromInventory } from './state';
 import { allItems, getItemDef } from './items';
 
 export interface ReturnToPortResult {
@@ -34,7 +34,16 @@ export function handleReturnToPort(state: GameState): ReturnToPortResult {
   }
   const trigger = pickReturnTrigger(state);
   // 物品入袋统一入口：合并 run.inventory 并兑现被获得物品的 story.setsFlag（acquireIntoProfile·见 state.ts）。
-  const acquired = acquireIntoProfile(state.profile, state.run.inventory);
+  let acquired = acquireIntoProfile(state.profile, state.run.inventory);
+  // 固定资源**永久**耗尽入账（POI 固定资源耗尽·2026-06-25）：生还回港才把本 run 采到的 save 级件
+  // 合并进 profile.harvestedResources[poiId]（死亡走 gameOver/funeral·不经此 ⇒ 资源留给下次·与物品入袋同走「生还才落袋」）。
+  if (state.run.poiId && state.run.harvestedSaveItems && state.run.harvestedSaveItems.size > 0) {
+    let harvested = acquired.harvestedResources;
+    for (const itemId of state.run.harvestedSaveItems) {
+      harvested = addToPoiSetMap(harvested, state.run.poiId, itemId);
+    }
+    acquired = { ...acquired, harvestedResources: harvested };
+  }
   const next: GameState = {
     ...state,
     // 回港即补满 Mira 备货（清空 shopStock → getShopStock 懒默认成满货）：soft per-run 限量

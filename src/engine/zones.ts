@@ -1,7 +1,7 @@
 // Zone 注册表 + 事件池加载
 // 所有事件 JSON 在此被合并成一个全局 EVENT_DB；mapgen 从中按 tag/depth 抽取
 
-import type { DiveEvent, ZoneDef, ZoneTag } from '@/types';
+import type { DiveEvent, Outcome, ZoneDef, ZoneTag } from '@/types';
 import tutorialEvents from '@/data/events/tutorial.json';
 import reefEvents from '@/data/events/reef.json';
 import blueCavesEvents from '@/data/events/blue_caves.json';
@@ -69,6 +69,30 @@ export function getEventById(id: string): DiveEvent | undefined {
   return EVENT_DB.get(id);
 }
 
+/**
+ * 收集一个事件**直接**产出的全部 loot 物品 id（onEnter + 各选项 outcome / check 成败分支）。
+ * 固定资源耗尽（2026-06-25）：mapgen 据此判断某资源点是否产出已永久采尽的物品（save 级）。
+ * 链式 triggerEventId 不递归（以「直产」为准·避免环 + 越界判定）；事件不存在 → 空集。纯函数。
+ */
+export function eventLootItemIds(eventId: string): Set<string> {
+  const out = new Set<string>();
+  const ev = EVENT_DB.get(eventId);
+  if (!ev) return out;
+  const collect = (o?: Outcome): void => {
+    if (!o?.loot) return;
+    for (const roll of o.loot) out.add(roll.itemId);
+  };
+  collect(ev.onEnter);
+  for (const opt of ev.options) {
+    collect(opt.outcome);
+    if (opt.check) {
+      collect(opt.check.onSuccess);
+      collect(opt.check.onFailure);
+    }
+  }
+  return out;
+}
+
 /** 在 zone 当前层选哪些 zoneTag 抽取事件 */
 export function tagsForDepth(zone: ZoneDef, depth: number): ZoneTag[] {
   let active: ZoneTag[] = [];
@@ -88,6 +112,11 @@ export function buildEventPool(opts: {
   excludeIds?: Set<string>;
   /** band 专属 tag 池（深水区内容期）：覆盖 zoneTagsByDepth，让 trench 用 twilight/midnight 专属事件。缺省→回退按深度算。 */
   tagsOverride?: ZoneTag[];
+  /**
+   * 当前下潜的 POI 身份串（POI 固定资源耗尽·2026-06-25）：有 poiId 的事件只在此值匹配时进池；
+   * 没设 poiId 的事件不受影响（存量事件零影响）。缺省（非 POI 下潜）→ 所有带 poiId 的事件一律不进池。
+   */
+  poiId?: string;
 }): DiveEvent[] {
   const tags = new Set(opts.tagsOverride ?? tagsForDepth(opts.zone, opts.depth));
   const triggered = new Set(opts.triggeredEventIds);
@@ -97,6 +126,10 @@ export function buildEventPool(opts: {
   for (const ev of EVENT_DB.values()) {
     if (ev.weight <= 0) continue;
     if (exclude.has(ev.id)) continue;
+
+    // POI 专属事件（POI 固定资源耗尽·2026-06-25）：有 poiId 的事件只在下潜该 POI 时进池；
+    // 没设 poiId 的事件落到下面照旧按 zoneTags/depth/flags 过滤（存量事件零影响）。
+    if (ev.poiId && ev.poiId !== opts.poiId) continue;
 
     // 深度匹配
     if (opts.depth < ev.depthRange[0] || opts.depth > ev.depthRange[1]) continue;

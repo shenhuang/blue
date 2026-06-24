@@ -92,6 +92,17 @@ export interface ItemDef {
   tier?: MaterialTier;
 
   /**
+   * 固定资源耗尽追踪的持久层级（POI 固定资源耗尽 SPEC·2026-06-25）。该 loot 物品被采集后，
+   * 其所在「资源点」的耗尽记到哪一层：
+   *  - 'save'：永久耗尽——采完就没（profile.harvestedResources·跨 run·该 POI 此资源永不再生）。
+   *  - 'run'（缺省）：run 级耗尽——本次下潜内采过即空、下次重进（新 run）刷新（run.harvestedNodes）。
+   * applyOutcome 在 loot 落包时读它记账（engine/items.ts::harvestPersistOf 单点·缺省 'run'）；
+   * mapgen 据耗尽信息把已采资源点抹平成空节点（玩家在地图上看不到已采完的点）。
+   * 仅对「固定地图 POI 下潜」（run.poiId 有值·seedKey=poi.id 同图）生效；非 POI 下潜（教学/scenario）不记账。
+   */
+  harvestPersist?: 'save' | 'run';
+
+  /**
    * 该道具赋予的能力标签（通用·不限 category）。与 events.ts hasCapability 条件配套使用：
    * hasCapability 同时扫装备槽（run.equipment）和当前潜水背包（run.inventory），任意来源匹配即满足。
    *

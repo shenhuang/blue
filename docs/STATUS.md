@@ -1,8 +1,8 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
+> **2026-06-25 POI 固定资源耗尽机制 + POI 专属事件池 + 2 样板 POI（交互 session〔Cowork〕·#185·新 quirk #163·SAVE_VERSION 8→9·48/48）**：`ItemDef.harvestPersist:'save'|'run'`（缺省 run）两级耗尽——save 永久存 `profile.harvestedResources`（生还回港才入账·死亡不入）、run 存 `run.harvestedNodes`；`mapgen.applyHarvestDepletion`（确定性·零 rng·缺省 no-op）把采尽资源点抹平成空 rest（同 seed 同图·守拓扑）。`DiveEvent.poiId` + `buildEventPool` 过滤＝POI 专属事件池（存量零影响）；静态门 `check-event-poi`（47→48）。样板：蓝洞晶脉（save·岩凿 `mine` 门）/ 漆号样地（run·复用 `coral_shard` + 导师专属叙事）；鲸落 canon loot-free 故不用。范式立起·余 POI 待按范式铺。
 > **2026-06-25 教学重放修复 + 东礁二次下潜 + 主角旁白收紧（交互 session〔Cowork〕·#184·quirk #161/#162·47/47）**：`oncePerSave` 机制真正落地（`event_seen:<id>` 写入 `profile.flags`）；东礁第二次进入生成 layered 图而非走教学脚本；`tutorial.captain_revisit` 新事件（未见黑影可二探船长室）；`remainOnEvent` 东礁死锁修复；主角旁白五处删情绪标签（ch1/flooded_gallery/mimic/wreck_graveyard/lore）。quirk #161（applyFlags vs setProfileFlags）/ #162（oncePerSave 机制双端）。
-> **2026-06-23 洞穴系统全面重规划：设计章 + 执行 roadmap（交互 session〔Cowork〕·#183·纯 docs·无新 quirk·typecheck 绿·3 个 cave_*.md）**：28→23 区·lc 跨度拉大（中7–15/大16–30/史诗100+）·入口/出口穿流·beacon×尺寸分布（trench 0·midwater 海山 hub）·多口持久洞 B·发现揭示分层·温度热冷·深门=循环再生洞〔后期〕；roadmap 9 任务 + 并行审查（T1∥E1–4∥T2 真并行·T4 撞车修正）。落 `docs/spec/cave_zones_spec.md`+`cave_roadmap.md`（待实装·全 deferred）。
 
 ## 1. 一句话状态
 

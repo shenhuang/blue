@@ -71,6 +71,14 @@ export interface PlayerProfile {
    * additive·缺省补 createStarterLoadout()·不 bump SAVE_VERSION（#99 纯加字段）。
    */
   equipment?: EquipmentLoadout;
+  /**
+   * 固定资源**永久耗尽**追踪（POI 固定资源耗尽 SPEC·2026-06-25）：poiId → 该 POI 已永久采尽的 itemId 集。
+   * `harvestPersist:'save'` 的 loot 采到后（生还回港）合并进此处（handleReturnToPort·见 engine/port.ts）。
+   * mapgen 据此把产出已采尽物品的资源点抹平成空节点（玩家不再看到）。run 级耗尽走 RunState.harvestedNodes。
+   * 容器必填：createInitialProfile 种 new Map()，旧档缺它由 hydrateGameState 单点补（#107）。
+   * 序列化由 saveReplacer/saveReviver 的 Map 分支处理（同 Set·见 state.ts）。
+   */
+  harvestedResources: Map<string, Set<string>>;
 }
 
 /** 死亡记录，用于尸体回收 */
@@ -285,6 +293,12 @@ export interface DiveDecoy {
 export interface RunState {
   runId: string;
   zoneId: string; // 所在海域
+  /**
+   * 本次下潜的 POI 身份串（POI 固定资源耗尽 SPEC·2026-06-25）：startDiveFromPoi/diveIntoBand 落 poi.id
+   * （= 地图 seedKey·同图）。固定资源耗尽记账（harvestedNodes 写、harvestedResources 合并）皆按它做 key。
+   * 缺省（教学/港口 zone/scenario 下潜·非 POI）→ undefined ⇒ harvest 记账整段 no-op（真条件字段·不种不补）。
+   */
+  poiId?: string;
   map: DiveMap | null; // 随机生成的节点图；教学线性脚本下潜为 null
   stats: Stats;
   staminaMax: number;
@@ -371,6 +385,20 @@ export interface RunState {
    * （UI 渲染徽章直读不限）——check-boundaries 规则四强制。
    */
   injuries: ActiveInjury[];
+  /**
+   * 固定资源**run 级耗尽**追踪（POI 固定资源耗尽 SPEC·2026-06-25）：poiId → 本 run 已采过的 nodeId 集。
+   * applyOutcome 在 loot 落包成功时把 currentNodeId 写进来（任意 harvestPersist 的 loot 都算「采过这个点」）。
+   * mapgen 据此把本 run 已采的资源点抹平成空节点；run 结束即弃 ⇒「下次重进刷新」（新 run 种空 Map）。
+   * 容器必填：createNewRun 种 new Map()，旧档缺它由 hydrateGameState 单点补（#107）。Map 序列化见 saveReplacer。
+   */
+  harvestedNodes: Map<string, Set<string>>;
+  /**
+   * 本 run 已采、待**永久**入账的 `harvestPersist:'save'` 物品 id 集（POI 固定资源耗尽 SPEC·2026-06-25）。
+   * 暂存于 run（poiId 即 run.poiId·单 POI 一个 Set 够用）；生还回港由 handleReturnToPort 合并进
+   * profile.harvestedResources[run.poiId] 后随 run 销毁——**死亡则不入账**（资源留给下次·与 acquireIntoProfile
+   * 同走「生还才落袋」语义）。真条件字段（quirk #106）：无 save 级采集即缺席·createNewRun 不种·hydrate 不补。
+   */
+  harvestedSaveItems?: Set<string>;
 }
 
 /** 装备配置（9 槽纸娃娃·作者 2026-06-19·见 types/items.ts EquipmentSlot 注释） */

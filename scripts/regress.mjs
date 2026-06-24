@@ -89,6 +89,9 @@ tasks.push({ name: 'check-boundaries', cmd: ['node', join('scripts', 'check-boun
 // 事件选项 check 标注一致性（纯 node·label「（理智 vs N）」双写必须 == check.{stat,dc}，见 scripts/check-event-dc.mjs）
 tasks.push({ name: 'check-event-dc', cmd: ['node', join('scripts', 'check-event-dc.mjs')] });
 
+// POI 专属事件门（纯 node·DiveEvent.poiId 必须命中 chart_pois.json 真实 POI·拼错=软锁，见 scripts/check-event-poi.mjs）
+tasks.push({ name: 'check-event-poi', cmd: ['node', join('scripts', 'check-event-poi.mjs')] });
+
 // 敌人库四条门（纯 node·registry 不过期 + 引用完整 + 无孤儿 + 有 baseline，见 scripts/check-enemy-refs.mjs）
 tasks.push({ name: 'check-enemy-refs', cmd: ['node', join('scripts', 'check-enemy-refs.mjs')] });
 

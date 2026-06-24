@@ -68,10 +68,20 @@ export function startDive(
     return state;
   }
 
+  // 固定资源耗尽（POI 固定资源耗尽·2026-06-25）：POI 下潜（run.poiId 有值·createNewRun 落）解析两层「已采尽」信息
+  // 透传 mapgen——save 级（profile.harvestedResources）+ run 级（run.harvestedNodes·新 run 起手空）。
+  // poiId 还驱动 buildEventPool 的 POI 专属事件门控。非 POI 下潜 → 全 undefined ⇒ mapgen 零改动 + 带 poiId 事件不进池。
+  const poiId = state.run.poiId;
+  const harvestedItemIds = poiId ? state.profile.harvestedResources.get(poiId) : undefined;
+  const harvestedNodeIds = poiId ? state.run.harvestedNodes.get(poiId) : undefined;
+
   const map = generateDiveMap({
     zone,
     profileFlags: state.profile.flags,
     deaths: state.profile.deaths,
+    poiId,
+    harvestedItemIds,
+    harvestedNodeIds,
     depthOffset: opts?.depthOffset,
     depthRange: opts?.depthRange,
     layerCount: opts?.layerCount,
@@ -223,6 +233,7 @@ export function startDiveFromPoi(
         bonuses,
         carryItems: opts?.carryItems,
         seedKey: poi.id,
+        poiId: poi.id,
       });
     }
   }
@@ -230,7 +241,8 @@ export function startDiveFromPoi(
   // 随身加成 = 全局升级 ＋ 家灯塔「船坞」设施（dockyard 迁灯塔后由 getRunBonuses 并回，见 lighthouses.ts）
   // RunStartBonuses 字段全是 createNewRun bonuses 的超集，直接整个传（含深水区 Phase 0 升级轨，避免逐字段抄漏）。
   const bonuses = getRunBonuses(state.profile);
-  let run = createNewRun({ zoneId: poi.zoneId, bonuses, equipment: state.profile.equipment });
+  // POI 固定资源耗尽（2026-06-25）：落 run.poiId=poi.id（=seedKey）⇒ startDive 解析已采尽信息 + 记账按它 key。
+  let run = createNewRun({ zoneId: poi.zoneId, bonuses, equipment: state.profile.equipment, poiId: poi.id });
 
   // 出发前选带（#108·作者拍板「不全带·死了就没」）：勾选的消耗品仓库 → run 背包。
   const carry = applyCarryItems(state.profile, run, opts?.carryItems ?? []);
@@ -370,9 +382,11 @@ function diveIntoBand(
     bonuses: RunStartBonuses;
     carryItems?: InventoryItem[];
     seedKey: string;
+    /** POI 固定资源耗尽（2026-06-25）：本次深入潜点的 POI id（=seedKey）→ 落 run.poiId 供耗尽记账。 */
+    poiId?: string;
   },
 ): GameState {
-  let run = createNewRun({ zoneId: band.zoneId, bonuses: opts.bonuses, equipment: state.profile.equipment });
+  let run = createNewRun({ zoneId: band.zoneId, bonuses: opts.bonuses, equipment: state.profile.equipment, poiId: opts.poiId });
 
   // 出发前选带（#108·与 startDiveFromPoi 同一套）：勾选的消耗品仓库 → run 背包。
   const carry = applyCarryItems(state.profile, run, opts.carryItems ?? []);

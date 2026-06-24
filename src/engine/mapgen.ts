@@ -10,7 +10,7 @@
 // depth ±10m 匹配 findRecoverableCorpse。analyzeMap() 是纯结构分析器，给 dev 面板 + 回归脚本复用。
 
 import type { DiveMap, DiveNode, NodeFeature, ZoneDef, NodeKind, ZoneTag, DeathRecord } from '@/types';
-import { buildEventPool, pickWeighted, tagsForDepth } from './zones';
+import { buildEventPool, eventLootItemIds, pickWeighted, tagsForDepth } from './zones';
 import { findRecoverableCorpse, isRecoverableCorpse } from './death';
 
 interface GenOpts {
@@ -84,6 +84,21 @@ interface GenOpts {
    * 放在深度最接近其 depthAtDeath 的可用节点上。无效 / 未设则退回原有随机 corpse pass。
    */
   targetCorpseId?: string;
+  /**
+   * 当前下潜的 POI 身份串（POI 固定资源耗尽·2026-06-25）：透传给 buildEventPool 做 POI 专属事件门控
+   * （有 poiId 的事件只在此池出现）。缺省（非 POI 下潜）→ 带 poiId 的事件一律不进池。
+   */
+  poiId?: string;
+  /**
+   * 该 POI **永久**采尽的物品 id 集（save 级·来自 profile.harvestedResources[poiId]）：mapgen 生成后把
+   * 产出这些物品的资源点抹平成空节点（玩家在地图上看不到已采完的点）。缺省/空 → 不抹平（向后兼容·零改动）。
+   */
+  harvestedItemIds?: Set<string>;
+  /**
+   * 该 POI 本 run 已采的 nodeId 集（run 级·来自 run.harvestedNodes[poiId]）：mapgen 把这些节点抹平成空节点。
+   * 固定地图（seedKey=poi.id·同图同 nodeId）下「同一 run 内重生成」才用得上；新 run 起手为空 → 零改动。
+   */
+  harvestedNodeIds?: Set<string>;
 }
 
 function randInt(min: number, max: number, rng = Math.random): number {
@@ -124,6 +139,7 @@ interface MultiFeatureArgs {
   profileFlags: Set<string>;
   triggeredFakeIds: string[];
   bandTags?: ZoneTag[];
+  poiId?: string;
   rng: () => number;
   maxFeatures: number;
   chanceBonus?: number;
@@ -154,6 +170,7 @@ function maybeMultiFeatureRoom(
       triggeredEventIds: args.triggeredFakeIds,
       excludeIds: used,
       tagsOverride: args.bandTags,
+      poiId: args.poiId,
     });
     if (pool.length === 0) break; // 池子抽干（或同房可用事件用尽）→ 少给几个 feature
     const chosen = pickWeighted(pool, args.rng)!;
@@ -408,7 +425,80 @@ export function generateDiveMap(opts: GenOpts): DiveMap {
   // 不可信声呐失真（声呐与房间 S2）：深 band 给部分内部节点挂 spoofs/evades（确定性·零 rng·gated）。
   // 放在分流之后＝两种拓扑共用一条欺骗 pass；chance=0（缺省）时 no-op、不耗 rng、逐字节复现旧图。
   applySonarDeception(map, opts.sonarDeception ?? 0);
+  // 固定资源耗尽（POI 固定资源耗尽·2026-06-25）：把已采尽的资源点抹平成空节点（确定性·零 rng·gated·post-pass·
+  // 同 applySonarDeception 模式）。两集都空（缺省）→ no-op、逐字节复现旧图（不破现有 mapgen 场景快照）。
+  applyHarvestDepletion(map, opts.harvestedItemIds, opts.harvestedNodeIds);
   return map;
+}
+
+// ============================================================
+// 固定资源耗尽（POI 固定资源耗尽 SPEC·2026-06-25）—— 把已采尽的资源点抹平成空节点
+// ============================================================
+
+/** 一个事件节点是否产出**已永久采尽**的物品（save 级·任一 loot 命中即算）。 */
+function eventYieldsExhausted(eventId: string, exhausted: Set<string>): boolean {
+  for (const id of eventLootItemIds(eventId)) {
+    if (exhausted.has(id)) return true;
+  }
+  return false;
+}
+
+/**
+ * 把一个资源点节点**原地**抹平成「采空」的空节点（rest）。保留 id/layer/depth/zoneTag/connectsTo
+ * ＝守拓扑/可达性不变量（只清掉事件与 feature）；地标/出口/尸体本就不进这条 pass。
+ */
+function depleteNode(node: DiveNode): void {
+  node.kind = 'rest';
+  node.eventId = undefined;
+  node.features = undefined;
+  node.preview = '一处已经被采空的地方，只剩翻动过的痕迹。';
+}
+
+/**
+ * 已采尽资源点抹平 pass（确定性·零 rng·缺省 no-op）：
+ *  - run 级：node.id ∈ harvestedNodeIds（本 run 已采·下次重进刷新）→ 整点抹平。
+ *  - save 级：单事件节点其事件产出已永久采尽物品 → 整点抹平；多 feature 房间剔除产出采尽物品的 feature，
+ *    全剔则抹平、剔到只剩一个则退化回单事件房间（与 mapgen 单 feature 同形）。
+ * 仅事件节点参与（含多 feature 大房间·kind 仍为 'event'）；地标/出口/尸体/休息点一律不动。原地改 map.nodes。
+ */
+function applyHarvestDepletion(
+  map: DiveMap,
+  harvestedItemIds?: Set<string>,
+  harvestedNodeIds?: Set<string>,
+): void {
+  const hasItems = harvestedItemIds !== undefined && harvestedItemIds.size > 0;
+  const hasNodes = harvestedNodeIds !== undefined && harvestedNodeIds.size > 0;
+  if (!hasItems && !hasNodes) return;
+  for (const node of Object.values(map.nodes)) {
+    if (node.kind !== 'event') continue;
+    // run 级：整点本 run 已采 → 抹平
+    if (hasNodes && harvestedNodeIds!.has(node.id)) {
+      depleteNode(node);
+      continue;
+    }
+    if (!hasItems) continue;
+    // save 级·单事件节点
+    if (node.eventId) {
+      if (eventYieldsExhausted(node.eventId, harvestedItemIds!)) depleteNode(node);
+      continue;
+    }
+    // save 级·多 feature 房间：逐 feature 剔除
+    if (node.features && node.features.length > 0) {
+      const kept = node.features.filter((f) => !eventYieldsExhausted(f.eventId, harvestedItemIds!));
+      if (kept.length === node.features.length) continue; // 无 feature 采尽 → 不动
+      if (kept.length === 0) {
+        depleteNode(node);
+      } else if (kept.length === 1) {
+        // 退化回单事件房间（与 mapgen 生成单 feature 同形：走 eventId、自动触发）
+        node.eventId = kept[0].eventId;
+        node.preview = kept[0].preview;
+        node.features = undefined;
+      } else {
+        node.features = kept;
+        node.preview = roomPreview(kept.length);
+      }
+    }
+  }
 }
 
 // ============================================================
@@ -470,6 +560,7 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
           profileFlags,
           triggeredEventIds: triggeredFakeIds,
           tagsOverride: opts.bandTags,
+          poiId: opts.poiId,
         });
         if (pool.length === 0) {
           // 没有匹配事件，退化为 rest
@@ -484,7 +575,7 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
         triggeredFakeIds.push(chosen.id); // 同 run 不再选
         // 多事件房间（S1）：偶尔升级成大房间（maxRoomFeatures>1 才进；缺省零额外 rng＝旧图不变）。
         const feats = maybeMultiFeatureRoom(chosen, {
-          zone, depth, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, rng, maxFeatures: maxRoomFeatures, chanceBonus: roomFeatureChanceBonus,
+          zone, depth, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, poiId: opts.poiId, rng, maxFeatures: maxRoomFeatures, chanceBonus: roomFeatureChanceBonus,
         });
         if (feats) {
           features = feats;
@@ -763,6 +854,7 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
           profileFlags,
           triggeredEventIds: triggeredFakeIds,
           tagsOverride: opts.bandTags,
+          poiId: opts.poiId,
         });
         if (pool.length === 0) {
           kind = 'rest';
@@ -775,7 +867,7 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
           triggeredFakeIds.push(chosen.id);
           // 多事件房间（S1）：洞里大房间偶尔含多个 feature（maxRoomFeatures>1 才进；缺省零额外 rng＝旧迷路图不变）。
           const feats = maybeMultiFeatureRoom(chosen, {
-            zone, depth: depthI, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, rng, maxFeatures: maxRoomFeatures, chanceBonus: roomFeatureChanceBonus,
+            zone, depth: depthI, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, poiId: opts.poiId, rng, maxFeatures: maxRoomFeatures, chanceBonus: roomFeatureChanceBonus,
           });
           if (feats) {
             features = feats;

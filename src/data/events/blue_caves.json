@@ -1972,6 +1972,52 @@
           }
         }
       ]
+    },
+    {
+      "id": "blue_caves.geode_vein",
+      "depthRange": [
+        12,
+        55
+      ],
+      "zoneTags": [
+        "cave"
+      ],
+      "weight": 8,
+      "poiId": "poi.anchor.blue_caves",
+      "title": "壁里的一窝晶",
+      "body": "灯扫过洞壁，有一处反光不一样。\n凑近看，是嵌在石里的一窝晶簇——灰壳裹着，剖面朝外，紫蓝的尖一层叠一层。这洞就这么大，矿脉数得过来；这一窝凿走，这面壁往后就只剩石。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "pry_geode",
+          "label": "用凿子撬下这一窝晶簇",
+          "visibleIf": {
+            "kind": "hasCapability",
+            "capability": "mine"
+          },
+          "outcome": {
+            "text": "你把凿尖卡进晶壳和石的接缝，一点点撬。壳裂开，整窝晶连着底座落进你手里，断面还是新的。\n你回头看那面壁——嵌晶的地方留了个浅坑，灰白的石，再没有第二窝。这条脉，到此为止。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              {
+                "itemId": "item.bluecave_geode",
+                "qty": [
+                  1,
+                  2
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "leave_geode",
+          "label": "记下位置，空手走",
+          "outcome": {
+            "text": "你没带能凿它的家伙，徒手在壳上抠了两下，只蹭下一层石粉。\n你把这处记进写字板：方位、深度、那一窝晶的成色。它跑不了，等你带对工具再来。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
     }
   ]
 }

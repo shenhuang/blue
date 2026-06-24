@@ -43,6 +43,12 @@ export interface DiveEvent {
   zoneTags?: ZoneTag[];
   sanityRange?: [number, number];
   weight: number; // 抽取权重；教程事件可设为 0（仅通过 forceTrigger 进入）
+  /**
+   * POI 专属事件池（POI 固定资源耗尽 SPEC·2026-06-25）。设了 poiId ⇒ 本事件**只**在下潜该 POI
+   * （opts.poiId === poiId·当前仅 anchor 实例匹配）时进 buildEventPool；没设 ⇒ 照旧按 zoneTags/depthRange/flags
+   * 过滤（存量事件零影响）。poiId 必须命中 chart_pois.json 里的 id（scripts/check-event-poi.mjs 守成 regress 门）。
+   */
+  poiId?: string;
   cooldown?: number; // 同次下潜事件冷却（多少回合后才能再次抽取）
   oncePerRun?: boolean;
   oncePerSave?: boolean;

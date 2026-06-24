@@ -23,7 +23,9 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // ⇒ #130 期本地档已不兼容、下次启动自动弃、从头开始。
 // 7→8（前哨能源层移除·2026-06-21）：删 energyGen/energyDraw 效果 + 水力发电设施 + OutpostDef.current——
 // 旧档残留 lighthouse.hydro.lv1 已无 def（getLighthouseUpgradeDef→undefined·静默跳过）；按 quirk #99 bump 弃旧档、从头开始。
-const SAVE_VERSION = 8;
+// 8→9（POI 固定资源耗尽·2026-06-25）：profile.harvestedResources / run.harvestedNodes（Map<poiId,Set>）+ run.poiId 新增——
+// 形状变（profile/run 多 Map 容器·序列化加 __map 分支）；按 quirk #99 不写迁移、bump 弃旧档从头开始。
+const SAVE_VERSION = 9;
 
 /** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile 用。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
@@ -71,6 +73,8 @@ export function createInitialProfile(): PlayerProfile {
     lighthouses: [createHomeLighthouse()],
     outpostState: {},
     equipment: createStarterLoadout(),
+    // 固定资源永久耗尽追踪（POI 固定资源耗尽·2026-06-25）：起手空 Map（无 POI 被采尽）。
+    harvestedResources: new Map(),
   };
 }
 
@@ -109,6 +113,23 @@ export function acquireIntoProfile(
     }
   }
   return { ...profile, inventory, flags: flags ?? profile.flags };
+}
+
+/**
+ * 不可变地往 `Map<string, Set<string>>` 的某 key 的 Set 里加一个值（返回新 Map·新 Set·原对象一律不动）。
+ * 固定资源耗尽追踪（profile.harvestedResources / run.harvestedNodes）的**单一写入器**——别在别处手写
+ * `new Map(...).set(...)`，免得 copy-on-write 漏拷出别名 bug。幂等：value 已在则原样返回（不白拷）。
+ */
+export function addToPoiSetMap(
+  map: Map<string, Set<string>>,
+  key: string,
+  value: string,
+): Map<string, Set<string>> {
+  const existing = map.get(key);
+  if (existing?.has(value)) return map;
+  const next = new Map(map);
+  next.set(key, new Set(existing ?? []).add(value));
+  return next;
 }
 
 /** 数某个物品在 inventory 里的数量（没有则 0）；纯函数。升级账单 / Mira 回购都用它。 */
@@ -186,6 +207,11 @@ export function createInitialStats(): Stats {
 
 export function createNewRun(opts: {
   zoneId: string;
+  /**
+   * 本次下潜的 POI 身份串（POI 固定资源耗尽·2026-06-25）：固定地图 POI 下潜传 poi.id（=seedKey），
+   * 固定资源耗尽记账按它做 key。非 POI 下潜（教学/港口 zone/scenario）省略 ⇒ run.poiId undefined ⇒ 不记账。
+   */
+  poiId?: string;
   /** 背包承载上限覆写（kg·缺省＝RUN_CARRY_WEIGHT·脚本/测试可调）。 */
   carryWeightLimit?: number;
   /** 来自 profile.equipment 的持久装备配置（Otto P3·缺省＝导师起始件）。 */
@@ -243,6 +269,8 @@ export function createNewRun(opts: {
   return {
     runId: `run-${Date.now()}`,
     zoneId: opts.zoneId,
+    // POI 固定资源耗尽（2026-06-25）：固定地图 POI 下潜带 poi.id；非 POI（缺省）→ undefined ⇒ harvest 记账 no-op。
+    poiId: opts.poiId,
     map: null,
     stats,
     staminaMax,
@@ -276,6 +304,8 @@ export function createNewRun(opts: {
     huntEnabled: false,
     // 负伤（负伤 SPEC §3）：run 级身体债，出海无伤起步；回港随 run 销毁＝全愈。
     injuries: [],
+    // POI 固定资源 run 级耗尽（2026-06-25）：起手空 Map（本 run 还没采过任何点）。
+    harvestedNodes: new Map(),
   };
 }
 
@@ -330,17 +360,20 @@ export function clampStats(stats: Stats, max: { stamina: number; oxygen: number 
 
 const SAVE_KEY = 'deepecho.save';
 
+// Set ↔ {__set:[...]} 与 Map ↔ {__map:[[k,v],...]}：stringify 先 replace 再递归 ⇒ Map value 里的嵌套
+// Set 仍被本 replacer 处理（如 harvestedResources: Map<poiId, Set<itemId>>）；parse 自底向上 ⇒ revive 到
+// __map 时其条目里的 __set 已先 revive 成 Set。两层容器都安全 round-trip。
 function saveReplacer(_key: string, value: unknown): unknown {
-  return value instanceof Set ? { __set: Array.from(value) } : value;
+  if (value instanceof Set) return { __set: Array.from(value) };
+  if (value instanceof Map) return { __map: Array.from(value.entries()) };
+  return value;
 }
 
 function saveReviver(_key: string, value: unknown): unknown {
-  if (
-    value &&
-    typeof value === 'object' &&
-    Array.isArray((value as { __set?: unknown[] }).__set)
-  ) {
-    return new Set((value as { __set: unknown[] }).__set);
+  if (value && typeof value === 'object') {
+    const v = value as { __set?: unknown[]; __map?: [unknown, unknown][] };
+    if (Array.isArray(v.__set)) return new Set(v.__set);
+    if (Array.isArray(v.__map)) return new Map(v.__map);
   }
   return value;
 }
@@ -362,6 +395,8 @@ export function hydrateGameState(state: GameState): GameState {
     ...state.profile,
     shopStock: state.profile.shopStock ?? {},
     outpostState: state.profile.outpostState ?? {},
+    // 固定资源永久耗尽容器（POI 固定资源耗尽·2026-06-25）：旧档/缺失单点补空 Map（#107 同 shopStock）。
+    harvestedResources: state.profile.harvestedResources ?? new Map(),
     // 装备：缺则种起始件；已有则与起始件合并补齐「新增槽」（如 ranged·作者 2026-06-18 拆武器槽）——
     // 已穿戴槽以存档为准、缺的新槽取起始默认（null）·additive·不 bump SAVE_VERSION（#99）·旧档不作废。
     equipment: state.profile.equipment
@@ -388,6 +423,9 @@ export function hydrateGameState(state: GameState): GameState {
       sonarDeception: run.sonarDeception ?? 0,
       huntEnabled: run.huntEnabled ?? false,
       injuries: run.injuries ?? [],
+      // 固定资源 run 级耗尽容器（POI 固定资源耗尽·2026-06-25）：缺失单点补空 Map（poiId/harvestedSaveItems
+      // 是真条件字段·缺席有语义·不补）。
+      harvestedNodes: run.harvestedNodes ?? new Map(),
     },
   };
 }

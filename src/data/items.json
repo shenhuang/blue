@@ -1166,6 +1166,18 @@
       "sellPrice": 22,
       "decay": "durable",
       "tier": 4
+    },
+    {
+      "id": "item.bluecave_geode",
+      "name": "蓝洞晶簇",
+      "category": "material",
+      "rarity": "uncommon",
+      "description": "从蓝洞壁上凿下来的整块晶簇，外壳是灰扑扑的石，剖面里却是一窝紫蓝的晶。这洞就这么大、就这几条矿脉——凿空一条，那面壁往后就只剩石。Mira 说做声学件的肯收，价钱看成色。",
+      "weight": 1,
+      "sellPrice": 26,
+      "decay": "durable",
+      "tier": 3,
+      "harvestPersist": "save"
     }
   ]
 }

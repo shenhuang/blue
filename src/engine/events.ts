@@ -11,8 +11,8 @@ import type {
   Stats,
   Visibility,
 } from '@/types';
-import { addToInventory, appendLog, clampStats, totalRunInventoryWeight } from './state';
-import { getItemDef, weightForItem } from './items';
+import { addToInventory, addToPoiSetMap, appendLog, clampStats, totalRunInventoryWeight } from './state';
+import { getItemDef, harvestPersistOf, weightForItem } from './items';
 import { equipmentUnlocksAction } from './equipment';
 import { EQUIPMENT_SLOTS } from '@/types/items';
 import { restoreLighthouse, advanceOutpost } from './lighthouses';
@@ -164,6 +164,11 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
   // 有 run = dive 期间 → run.inventory（上岸结算）；无 run = 港口事件（如教学收尾发导师日志）→ profile.inventory（持久）。
   if (outcome.loot) {
     let inv = s.run ? s.run.inventory : s.profile.inventory;
+    // 固定资源耗尽记账（POI 固定资源耗尽·2026-06-25）：dive 期间统计本事件「采到了什么」——
+    // harvestedAnything ＝ 这个节点采过（任意 loot·入 run.harvestedNodes 做 run 级耗尽）；
+    // savePersistItems ＝ harvestPersist:'save' 的件（暂存 run.harvestedSaveItems·回港永久入账）。
+    let harvestedAnything = false;
+    const savePersistItems: string[] = [];
     for (const roll of outcome.loot) {
       const chance = roll.chance ?? 1;
       if (Math.random() <= chance) {
@@ -180,11 +185,29 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
             continue;
           }
           inv = addToInventory(inv, roll.itemId, qty);
+          if (s.run) {
+            harvestedAnything = true;
+            if (harvestPersistOf(roll.itemId) === 'save') savePersistItems.push(roll.itemId);
+          }
         }
       }
     }
-    if (s.run) s = { ...s, run: { ...s.run, inventory: inv } };
-    else s = { ...s, profile: { ...s.profile, inventory: inv } };
+    if (s.run) {
+      const run = { ...s.run, inventory: inv };
+      // 固定资源耗尽记账：仅「固定地图 POI 下潜」（run.poiId 有值）+ 在某节点上（currentNodeId）才记。
+      // 节点入 run.harvestedNodes（run 级·下次重进刷新）；save 级件暂存 run.harvestedSaveItems（回港永久入账·死则不入）。
+      if (harvestedAnything && run.poiId && run.currentNodeId) {
+        run.harvestedNodes = addToPoiSetMap(run.harvestedNodes, run.poiId, run.currentNodeId);
+        if (savePersistItems.length > 0) {
+          const staged = new Set(run.harvestedSaveItems ?? []);
+          for (const id of savePersistItems) staged.add(id);
+          run.harvestedSaveItems = staged;
+        }
+      }
+      s = { ...s, run };
+    } else {
+      s = { ...s, profile: { ...s.profile, inventory: inv } };
+    }
   }
 
   // ---- Flags ----

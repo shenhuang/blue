@@ -94,3 +94,12 @@ export function poisKnownFromItems(profile: PlayerProfile): Set<string> {
 export function itemSetsFlags(itemId: string): string[] {
   return getItemDef(itemId)?.story?.setsFlag ?? [];
 }
+
+/**
+ * 该 loot 物品被采集后的资源耗尽持久层级（POI 固定资源耗尽·2026-06-25·缺省 'run'）。
+ * applyOutcome 记账（run 级写 run.harvestedNodes / save 级暂存 run.harvestedSaveItems）的**单一来源**——
+ * 别在别处手抄 `?? 'run'`。'save'＝采完永久没（profile.harvestedResources）；'run'＝本 run 采空、下次重进刷新。
+ */
+export function harvestPersistOf(itemId: string): 'save' | 'run' {
+  return getItemDef(itemId)?.harvestPersist ?? 'run';
+}
