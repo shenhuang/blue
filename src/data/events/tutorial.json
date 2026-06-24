@@ -278,6 +278,27 @@
     },
 
     {
+      "id": "tutorial.captain_revisit_empty",
+      "depthRange": [24, 30],
+      "zoneTags": ["reef", "wreck"],
+      "weight": 10,
+      "oncePerSave": true,
+      "prereqFlags": ["story.ch1.hook", "flag.seen_first_uncanny"],
+      "title": "旧沉船",
+      "body": "你又游回了这里。\n\n入口还在。你这次下去了。\n\n水温骤降，和上次一样。灯扫过去——什么都没有。淤泥没有被扰动过，一道脚印都没有。上次你看到的东西不在这里。\n\n也许从来就不在。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "leave",
+          "label": "出来。",
+          "outcome": {
+            "text": ""
+          }
+        }
+      ]
+    },
+
+    {
       "id": "tutorial.ending_log",
       "depthRange": [0, 0],
       "zoneTags": ["tutorial"],
