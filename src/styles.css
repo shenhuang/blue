@@ -576,9 +576,7 @@ html, body, #root {
     overflow: auto;
     margin-top: 0;
   }
-  .dive-header.has-dive-panel .dive-panel-head {
-    display: flex;
-  }
+  /* .dive-panel-head 已改为默认 flex·此处无需再覆盖 */
 }
 
 @media (min-width: 1200px) {
@@ -1042,21 +1040,59 @@ html, body, #root {
 .dive-sensor-bar {
   margin: 8px 0 0;
 }
-/* 下潜面板开关条 + 面板（SPEC §6）：声呐图 / 战利品互斥；桌面内联（默认声呐图开），移动端 @media 全屏覆盖。 */
-.dive-panel-bar {
+/* 图标栏（灯 / 声呐图 / 战利品 / 装备·SPEC §6）：小方格图标，互斥面板开关 + 灯开关。 */
+.dive-icon-bar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   margin-top: 8px;
+}
+.dive-icon-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dive-icon-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.dive-icon-btn.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* 灯按钮：颜色只跟灯开/关，不跟鼠标移入（非 .on 时 hover 静默）。 */
+.dive-icon-btn--light:not(.on):hover {
+  border-color: var(--border);
+  color: inherit;
+}
+/* 声呐开/关按钮（移至声呐面板内·紧贴面板头下方）。 */
+.dive-sonar-controls {
+  margin-bottom: 8px;
 }
 .dive-panel {
   margin-top: 12px;
 }
+/* 面板头：标题 + 右上 ✕（桌面内联 / 移动全屏均显·复用 icon-close·与其他界面关闭位置一致）。 */
 .dive-panel-head {
-  display: none; /* 桌面内联不需要标题/关闭条；移动全屏覆盖时由 @media 打开 */
+  display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.dive-panel-head-title {
+  font-size: 0.9rem;
+  color: var(--fg-dim, var(--fg));
 }
 .panel-toggle.on {
   border-color: var(--accent);

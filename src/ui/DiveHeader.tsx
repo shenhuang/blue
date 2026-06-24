@@ -7,6 +7,49 @@ import { SonarScanPanel } from './SonarScanPanel';
 import { LootPanel } from './LootPanel';
 import { EquipmentDoll } from './EquipmentDoll';
 
+// 图标栏 SVG 图标（inline·无依赖·currentColor 随主题·17×17 视口·aria-hidden）。
+// 加图标：在此加一个 const，按钮里引用，禁止散在 JSX 里写 SVG。
+// 手电筒开：筒身 + 灯头（梯形展宽）+ 三道光束。
+const ICON_LIGHT = (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="2" y="9.5" width="10" height="5" rx="1.5"/>
+    <path d="M12 8.5 L18 7 L18 17 L12 15.5z"/>
+    <line x1="19" y1="12" x2="22" y2="12"/>
+    <line x1="18.5" y1="9.5" x2="21.5" y2="7.5"/>
+    <line x1="18.5" y1="14.5" x2="21.5" y2="16.5"/>
+  </svg>
+);
+// 手电筒关：同一筒身 + 灯头，无光束。
+const ICON_LIGHT_OFF = (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="2" y="9.5" width="10" height="5" rx="1.5"/>
+    <path d="M12 8.5 L18 7 L18 17 L12 15.5z"/>
+  </svg>
+);
+const ICON_SONAR = (
+  <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+    {/* 声源点 */}
+    <circle cx="10" cy="16" r="1.5" fill="currentColor" stroke="none"/>
+    {/* 向上辐射的声波弧 */}
+    <path d="M6.5 12.5a5 5 0 0 1 7 0"/>
+    <path d="M3.5 9a9 9 0 0 1 13 0"/>
+  </svg>
+);
+const ICON_LOOT = (
+  <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {/* 袋身 */}
+    <path d="M5.5 9C4.5 9.8 4 11 4 12.5v1.5A4.5 4.5 0 0 0 8.5 18.5h3A4.5 4.5 0 0 0 16 14v-1.5c0-1.5-.5-2.7-1.5-3.5"/>
+    {/* 袋口 */}
+    <path d="M8 9V7a2 2 0 0 1 4 0v2"/>
+  </svg>
+);
+const ICON_EQUIP = (
+  <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {/* 盾牌轮廓 */}
+    <path d="M10 2.5L3.5 5.5v6c0 3.8 2.8 6.8 6.5 7.8 3.7-1 6.5-4 6.5-7.8v-6z"/>
+  </svg>
+);
+
 // 下潜内常驻头部（作者拍板：像状态栏一样**不随子阶段消失**）：属性栏 + 灯/声呐开关 + 互斥面板（声呐图 / 战利品 / 装备）。
 // 在 NodeSelect / Event / Rest / Corpse 各子阶段共用（替代各视图原来的裸 <StatusBar>）。
 //
@@ -67,66 +110,49 @@ export function DiveHeader({ state, onStateChange, choices = [], pendingNodeId =
       {/* 状态条常显（作者拍板：氧/体/理智一直可见·不收进图标）。 */}
       <StatusBar run={run} />
       <div className="dive-sensor-bar">
-        {/* 传感器开关：灯 + 声呐开/关（声呐只此一个控制·关着点开＝本回合立即扫一次·#5）。 */}
-        <div className="sensor-controls" data-divebar="1">
+        {/* 图标栏（互斥面板·SPEC §6）：灯开关 + 声呐图（已解锁时）+ 战利品 + 装备。
+            声呐开/关移至声呐面板内部。移动端点开面板＝全屏覆盖；桌面内联展开、右上 ✕ 关闭（复用 icon-close）。 */}
+        <div className="dive-icon-bar">
           <button
-            className={`btn sensor-btn ${lightOn ? 'on' : ''}`}
+            type="button"
+            className={`dive-icon-btn dive-icon-btn--light ${lightOn ? 'on' : ''}`}
             onClick={() => onStateChange(setLight(state, !lightOn))}
+            title={lightOn ? '熄灯（隐蔽 / 省电）' : '开灯（看清 / 暴露）'}
+            aria-label={lightOn ? '熄灯' : '开灯'}
           >
-            {lightOn ? '熄灯（隐蔽 / 省电）' : '开灯（看清 / 暴露）'}
+            {lightOn ? ICON_LIGHT : ICON_LIGHT_OFF}
           </button>
-          {sonarUnlocked && (
-            <button
-              className={`btn sensor-btn sonar-toggle ${standingOn ? 'on' : ''}`}
-              onClick={() => {
-                if (standingOn) {
-                  onStateChange(setSonarNext(state, false)); // 开→关：下一段路起关掉
-                } else {
-                  // 关→开：本回合立即开 + 立即扫一记（关态点开就扫·#5）。profile.sonarOn 跨 run 持久。
-                  let s: GameState = {
-                    ...state,
-                    run: { ...run, sensors: { ...run.sensors, sonarOn: true, sonarNext: true } },
-                    profile: { ...state.profile, sonarOn: true },
-                  };
-                  if (canPing && !alreadyPinged) s = pingSonar(s);
-                  onStateChange(s);
-                }
-              }}
-              title="声呐开＝每站自动成图、但一直暴露你；关＝隐蔽、只看保留的旧图。关着时点开＝本回合立即开并扫一记。"
-            >
-              {standingOn ? '声呐：开' : '声呐：关'}
-              {standingNext !== standingOn ? (standingNext ? ' → 下回合开' : ' → 下回合关') : ''}
-              {!standingOn && !canPing ? '（电量不足）' : ''}
-            </button>
-          )}
-        </div>
-        {/* 面板开关（互斥·SPEC §6）：声呐图 / 战利品——点开一个收起另一个；移动端全屏覆盖、桌面内联。 */}
-        <div className="dive-panel-bar">
           {sonarUnlocked && (
             <button
               type="button"
-              className={`btn small panel-toggle ${activePanel === 'sonar' ? 'on' : ''}`}
+              className={`dive-icon-btn ${activePanel === 'sonar' ? 'on' : ''}`}
               aria-expanded={activePanel === 'sonar'}
               onClick={() => showPanel('sonar')}
+              aria-label="声呐图"
+              title="声呐图"
             >
-              声呐图
+              {ICON_SONAR}
             </button>
           )}
           <button
             type="button"
-            className={`btn small panel-toggle ${activePanel === 'loot' ? 'on' : ''}`}
+            className={`dive-icon-btn ${activePanel === 'loot' ? 'on' : ''}`}
             aria-expanded={activePanel === 'loot'}
             onClick={() => showPanel('loot')}
+            aria-label="战利品"
+            title="战利品"
           >
-            战利品
+            {ICON_LOOT}
           </button>
           <button
             type="button"
-            className={`btn small panel-toggle ${activePanel === 'equipment' ? 'on' : ''}`}
+            className={`dive-icon-btn ${activePanel === 'equipment' ? 'on' : ''}`}
             aria-expanded={activePanel === 'equipment'}
             onClick={() => showPanel('equipment')}
+            aria-label="装备"
+            title="装备"
           >
-            装备
+            {ICON_EQUIP}
           </button>
         </div>
       </div>
@@ -134,19 +160,45 @@ export function DiveHeader({ state, onStateChange, choices = [], pendingNodeId =
       {activePanel !== 'none' && (
         <div className="dive-panel">
           <div className="dive-panel-head">
-            <span>{PANEL_LABEL[activePanel]}</span>
-            <button type="button" className="btn small" onClick={() => showPanel('none')} aria-label="关闭">
-              关闭 ✕
+            <span className="dive-panel-head-title">{PANEL_LABEL[activePanel]}</span>
+            <button type="button" className="icon-close" onClick={() => showPanel('none')} aria-label="关闭">
+              ✕
             </button>
           </div>
           {activePanel === 'sonar' ? (
-            <SonarScanPanel
-              state={state}
-              choices={choices}
-              onStateChange={onStateChange}
-              pendingNodeId={pendingNodeId}
-              onPendingChange={onPendingChange}
-            />
+            <>
+              {/* 声呐开/关：放在声呐面板内，关着点开＝本回合立即扫一次（#5）。 */}
+              <div className="dive-sonar-controls">
+                <button
+                  className={`btn sensor-btn sonar-toggle ${standingOn ? 'on' : ''}`}
+                  onClick={() => {
+                    if (standingOn) {
+                      onStateChange(setSonarNext(state, false));
+                    } else {
+                      let s: GameState = {
+                        ...state,
+                        run: { ...run, sensors: { ...run.sensors, sonarOn: true, sonarNext: true } },
+                        profile: { ...state.profile, sonarOn: true },
+                      };
+                      if (canPing && !alreadyPinged) s = pingSonar(s);
+                      onStateChange(s);
+                    }
+                  }}
+                  title="声呐开＝每站自动成图、但一直暴露你；关＝隐蔽、只看保留的旧图。关着时点开＝本回合立即开并扫一记。"
+                >
+                  {standingOn ? '声呐：开' : '声呐：关'}
+                  {standingNext !== standingOn ? (standingNext ? ' → 下回合开' : ' → 下回合关') : ''}
+                  {!standingOn && !canPing ? '（电量不足）' : ''}
+                </button>
+              </div>
+              <SonarScanPanel
+                state={state}
+                choices={choices}
+                onStateChange={onStateChange}
+                pendingNodeId={pendingNodeId}
+                onPendingChange={onPendingChange}
+              />
+            </>
           ) : activePanel === 'loot' ? (
             <LootPanel state={state} />
           ) : (
