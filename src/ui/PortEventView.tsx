@@ -30,7 +30,7 @@ export function PortEventView({ state, eventId, onStateChange }: Props) {
 
   function handleChoose(opt: EventOption) {
     if (!isOptionEnabled(state, opt)) return;
-    const result = resolveOption(state, opt);
+    const result = resolveOption(state, opt, event);
     // portEvent 阶段所有 next.kind 都按 "回到港口" 处理（cutscene 一锤子买卖）
     onStateChange(finalize(result.state));
   }

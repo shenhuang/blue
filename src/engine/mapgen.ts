@@ -368,23 +368,30 @@ export function generateDiveMap(opts: GenOpts): DiveMap {
   const baseD1 = Math.max(baseD0 + 1, range[1] + depthOffset);
 
   if (zone.generation === 'linearScripted') {
-    // 教学关：单节点指向起始事件
-    const startNode: DiveNode = {
-      id: 'scripted.start',
-      layer: 0,
-      depth: baseD0,
-      zoneTag: 'tutorial',
-      kind: 'event',
-      eventId: zone.scriptedStartEventId,
-      connectsTo: [],
-      preview: '出发。',
-    };
-    return {
-      zoneId: zone.id,
-      generatedAt: Date.now(),
-      nodes: { [startNode.id]: startNode },
-      startNodeId: startNode.id,
-    };
+    // 教学关首次：单节点指向起始事件。
+    // 若 oncePerSave 起始事件已见（event_seen 已写），fall through 到普通 layered 生成。
+    const tutorialSeen =
+      zone.scriptedStartEventId != null &&
+      opts.profileFlags.has(`event_seen:${zone.scriptedStartEventId}`);
+    if (!tutorialSeen) {
+      const startNode: DiveNode = {
+        id: 'scripted.start',
+        layer: 0,
+        depth: baseD0,
+        zoneTag: 'tutorial',
+        kind: 'event',
+        eventId: zone.scriptedStartEventId,
+        connectsTo: [],
+        preview: '出发。',
+      };
+      return {
+        zoneId: zone.id,
+        generatedAt: Date.now(),
+        nodes: { [startNode.id]: startNode },
+        startNodeId: startNode.id,
+      };
+    }
+    // 教学已完成 → 当普通 layered zone 处理（zoneTagsByDepth 已换成 shallow/reef/wreck）
   }
 
   // 洞穴一致性（SPEC §6①·#98）：未显式传 rng 时，若有 seedKey 则用「地点派生」的确定性 rng（同地点同图）；

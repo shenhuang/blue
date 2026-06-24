@@ -230,17 +230,48 @@
             "onSuccess": {
               "text": "你撑住了。眨一下眼，影子不在了。书桌只是书桌。\n但有一行字在你脑子里一闪——\n\n⟪ 那不是人影。但那也不是没有什么。 ⟫",
               "deltas": { "sanity": -5 },
-              "applyFlags": ["flag.seen_first_uncanny"],
+              "setProfileFlags": ["flag.seen_first_uncanny"],
               "loot": [{ "itemId": "item.captain_log", "qty": [1, 1] }],
               "endDive": "forceAscend"
             },
             "onFailure": {
               "text": "你没撑住。\n你看见了——你不知道你看见了什么。等你回过神，气泡已经狂涌。",
               "deltas": { "sanity": -15 },
-              "applyFlags": ["flag.seen_first_uncanny"],
+              "setProfileFlags": ["flag.seen_first_uncanny"],
               "loot": [{ "itemId": "item.captain_log", "qty": [1, 1] }],
               "endDive": "forceAscend"
             }
+          }
+        }
+      ]
+    },
+
+    {
+      "id": "tutorial.captain_revisit",
+      "depthRange": [24, 30],
+      "zoneTags": ["reef", "wreck"],
+      "weight": 10,
+      "oncePerSave": true,
+      "prereqFlags": ["story.ch1.hook"],
+      "forbiddenFlags": ["flag.seen_first_uncanny"],
+      "title": "旧沉船",
+      "body": "你又游回了这里。\n\n锈蚀的桅杆还斜着，淤泥还埋到了二分之一，图筒的位置空了——上次带走的。\n\n船舱往下那道更暗的入口还在。你上次没有下去。\n\n灯扫过去，照不到底。和上次一样。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "go_down",
+          "label": "下去。",
+          "outcome": {
+            "text": "你顺着入口下沉。水温骤降。",
+            "triggerEventId": "tutorial.captain_quarters"
+          }
+        },
+        {
+          "id": "leave",
+          "label": "不去了，上浮。",
+          "outcome": {
+            "text": "你在入口边停了一会儿，没有下去。灯光扫过去，什么也没有。",
+            "endDive": "forceAscend"
           }
         }
       ]

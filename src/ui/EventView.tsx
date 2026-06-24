@@ -30,7 +30,7 @@ export function EventView({ state, eventId, onStateChange }: Props) {
 
   function handleChoose(opt: EventOption) {
     if (!isOptionEnabled(state, opt)) return;
-    const result = resolveOption(state, opt);
+    const result = resolveOption(state, opt, event);
     let next = result.state;
 
     // 处理 next 转移
@@ -48,8 +48,8 @@ export function EventView({ state, eventId, onStateChange }: Props) {
         next = toGameOver(next, '在深处死去');
         break;
       case 'remainOnEvent':
-        // 事件无显式后续：若处于随机图下潜，进入节点选择；否则停留
-        if (next.run?.map && next.run.map.zoneId !== 'zone.east_reef') {
+        // 事件无显式后续 → 进入节点选择（linearScripted 教学链从不返回 remainOnEvent；layered 图包括东礁二次下潜都需要此路径）
+        if (next.run?.map) {
           next = enterNodeSelection(next);
         }
         break;

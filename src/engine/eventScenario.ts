@@ -518,7 +518,7 @@ export function runEventScenario(
         };
       }
 
-      const result = resolveOption(state, targetOpt);
+      const result = resolveOption(state, targetOpt, ev);
       state = result.state;
 
       // narrative 第一行带 "检定 [stat vs dc] 成功/失败"——我们靠这个回填 passed

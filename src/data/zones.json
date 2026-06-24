@@ -8,7 +8,8 @@
       "layerCount": 5,
       "nodesPerLayer": [1, 1],
       "zoneTagsByDepth": [
-        { "minDepth": 0, "tags": ["tutorial"] }
+        { "minDepth": 0,  "tags": ["shallow", "reef"] },
+        { "minDepth": 24, "tags": ["reef", "wreck"] }
       ],
       "generation": "linearScripted",
       "scriptedStartEventId": "tutorial.prologue"

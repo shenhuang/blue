@@ -289,24 +289,40 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
   return { state: s, narrative, next: { kind: 'remainOnEvent' } };
 }
 
-/** 选项 → Outcome（处理 check 分支） */
-export function resolveOption(state: GameState, opt: EventOption): OutcomeResult {
+/** 选项 → Outcome（处理 check 分支）
+ * @param event 可选：父事件（用于写 event_seen 标记·oncePerSave 门）
+ */
+export function resolveOption(
+  state: GameState,
+  opt: EventOption,
+  event?: Pick<DiveEvent, 'id' | 'oncePerSave'>,
+): OutcomeResult {
+  let result: OutcomeResult;
   if (opt.check && state.run) {
     const succeeded = performCheck(state.run.stats, opt.check.stat, opt.check.dc);
     const outcome = succeeded ? opt.check.onSuccess : opt.check.onFailure;
-    const result = applyOutcome(state, outcome);
-    return {
-      ...result,
+    const r = applyOutcome(state, outcome);
+    result = {
+      ...r,
       narrative: [
         `检定 [${opt.check.stat} vs ${opt.check.dc}] ${succeeded ? '成功' : '失败'}`,
-        ...result.narrative,
+        ...r.narrative,
       ],
     };
+  } else if (opt.outcome) {
+    result = applyOutcome(state, opt.outcome);
+  } else {
+    result = { state, narrative: ['（这个选项暂时没接好。）'], next: { kind: 'remainOnEvent' } };
   }
-  if (opt.outcome) {
-    return applyOutcome(state, opt.outcome);
+
+  // oncePerSave 事件：选完即写 event_seen 到 profile.flags（持久·跨 run）
+  if (event?.oncePerSave) {
+    const flags = new Set(result.state.profile.flags);
+    flags.add(`event_seen:${event.id}`);
+    result = { ...result, state: { ...result.state, profile: { ...result.state.profile, flags } } };
   }
-  return { state, narrative: ['（这个选项暂时没接好。）'], next: { kind: 'remainOnEvent' } };
+
+  return result;
 }
 
 /**
