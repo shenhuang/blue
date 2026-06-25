@@ -1,9 +1,9 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
+> **2026-06-25 grotto 事件池（7 事件）+ psm land auto-stash（E2 内容 session〔Cowork〕·#193·commit `87d66ed`+`fad3bad`·49/49）**：填 `grotto.json`（空 stub→7 事件·20–82m·grotto tag）；crystal_column/bone_bed/acoustic_node/moonpool_light/sulfur_seep/old_anchor/dark_corner；realistic×3+uncanny×4；moonpool_light 含 sanity +3 天井驻留；dark_corner sanityRange [0,70] 门控。psm.mjs land 新增 rebase 前 auto-stash（沙箱 index 残留 + 并发 session 推进 main 两类脏态均自动处理）。cave roadmap E2 完成。
 > **2026-06-25 deep_cave 事件池：深穴 8 事件 + 焊死 combat-scenarios flake（E3 内容 session〔Cowork〕·#192·无新 quirk·48/48·commit `b8ccf7f`+`1bebbed`）**：填 `deep_cave.json`（空 stub→8 事件·35–124m·一池兜大型深穴+中深窄道〔blind_alley/murk_gallery〕两类区）；核心＝黑暗+封闭+感知不可信·与空间大小无关·cosmic2/uncanny4/realistic2·地质细节具体（截面 70°/温差/回声秒数）·复用现有 loot/combat id·守 protagonist-voice。顺修 `playthrough-combat-scenarios` 未播种 Math.random 的 flake（`fissure_sphere__split_trigger` 偶 noActionProvided→makeLcg 锁定·#129/#157 套路·扫 1–25 均 34/34·不改 baseline）。事件暂不可达（27 洞未接 chart·T3·deferred）。
 > **2026-06-25 tide 事件池：潮间洞穴 7 事件（E1 内容 session〔Cowork〕·#191·commit `4961043`·沙箱 9/9 静态门·plumbing ff 进 main）**：填 `tide.json`（空 stub→7 事件·8–44m·tide tag·全 realistic）；tide.surge/barnacle_ceiling/trapped_air/tidal_creature/pressure_shift/silt_bloom/watermark；体感替代情绪·遵 protagonist-voice；无 poiId/flag/全局 loot·visibleIf 刀具 loot 点 2 处。cave roadmap E1 完成。
-> **2026-06-25 chasm 事件池：史诗深裂隙 10 事件（E4 内容 session〔Cowork·Opus〕·#190·新 quirk #167·commit `30dd8b7`·沙箱 9/9 静态门 + Mac land 49/49）**：填 `chasm.json`（空 stub→10 事件·90–148m·`the_deep_gate` 深度带）；「越深越欺骗」轴——检定成功只换来「稳住自己」、不揭真相·失败把模糊推深；uncanny×6/cosmic×3/realistic×1·全 loot/combat/flag-free·5 oncePerRun。事件暂不可达（`the_deep_gate` 未接 chart·deferred）。
 
 ## 1. 一句话状态
 

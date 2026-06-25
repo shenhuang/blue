@@ -389,7 +389,22 @@ function cmdLand(argv) {
 
   const mainSha = shaOf(CFG.mainBranch);
   info(`rebase ${s.branch} → ${CFG.mainBranch}@${mainSha.slice(0, 8)} ...`);
+
+  // Auto-stash：沙箱提交后 index 残留 staged/unstaged 文件会让 rebase 直接拒绝（quirk #104 副作用）。
+  // 策略：rebase 前检测受跟踪文件的脏态（忽略 ?? 未追踪），有则 stash；rebase 后（成功或失败）drop。
+  // drop 不 pop：stash 里是沙箱 index 残留，不是真正的 WIP，恢复只会制造噪声。
+  const statusOut = spawnSync('git', ['--no-optional-locks', 'status', '--porcelain'], { cwd: wtAbs, encoding: 'utf-8' });
+  const dirtyTracked = (statusOut.stdout || '').split('\n').filter(l => l.length >= 2 && !(l[0] === '?' && l[1] === '?') && l.trim());
+  let autoStashed = false;
+  if (dirtyTracked.length) {
+    const st = spawnSync('git', ['--no-optional-locks', 'stash', 'push', '-m', 'psm-land-autostash'], { cwd: wtAbs, encoding: 'utf-8' });
+    if (st.status !== 0) die(`auto-stash 失败（${dirtyTracked.length} 个脏文件·手动 git stash 后再 land）：\n${st.stderr || st.stdout}`);
+    autoStashed = true;
+    warn(`⚠ 工作区有 ${dirtyTracked.length} 个未提交改动（常见：沙箱 index 残留）——已自动 stash，rebase 后 drop。`);
+  }
+
   const rb = spawnSync('git', ['--no-optional-locks', 'rebase', CFG.mainBranch], { cwd: wtAbs, encoding: 'utf-8' });
+  if (autoStashed) spawnSync('git', ['--no-optional-locks', 'stash', 'drop'], { cwd: wtAbs, stdio: 'ignore' });
   if (rb.status !== 0) {
     spawnSync('git', ['rebase', '--abort'], { cwd: wtAbs, stdio: 'ignore' });
     warn((rb.stderr || rb.stdout || '').trim().split('\n').slice(-6).join('\n'));
