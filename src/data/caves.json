@@ -9,6 +9,50 @@
       "entrancePortals": 2,
       "exitPortals": 1,
       "depthCurveRange": [0.6, 1.8]
+    },
+    {
+      "caveId": "cave.serpentine_deep",
+      "zoneId": "zone.serpentine_deep",
+      "depthRange": [35, 82],
+      "sizeScale": 13,
+      "entrancePortals": 3,
+      "exitPortals": 2,
+      "entranceDepths": [42, 72, 56],
+      "depthCurveRange": [0.9, 1.5],
+      "traversalFlag": "flag.cave_exit_serpentine_deep"
+    },
+    {
+      "caveId": "cave.mirror_maze",
+      "zoneId": "zone.mirror_maze",
+      "depthRange": [28, 70],
+      "sizeScale": 13,
+      "entrancePortals": 3,
+      "exitPortals": 2,
+      "entranceDepths": [33, 50, 62],
+      "depthCurveRange": [1.8, 3.2],
+      "traversalFlag": "flag.cave_exit_mirror_maze"
+    },
+    {
+      "caveId": "cave.flooded_gallery",
+      "zoneId": "zone.flooded_gallery",
+      "depthRange": [56, 86],
+      "sizeScale": 12,
+      "entrancePortals": 2,
+      "exitPortals": 2,
+      "entranceDepths": [60, 76],
+      "depthCurveRange": [2.2, 3.5],
+      "traversalFlag": "flag.cave_exit_flooded_gallery"
+    },
+    {
+      "caveId": "cave.blue_throat",
+      "zoneId": "zone.blue_throat",
+      "depthRange": [32, 72],
+      "sizeScale": 9,
+      "entrancePortals": 2,
+      "exitPortals": 1,
+      "entranceDepths": [36, 52],
+      "depthCurveRange": [0.15, 0.5],
+      "traversalFlag": "flag.cave_exit_blue_throat"
     }
   ]
 }

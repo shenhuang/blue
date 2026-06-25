@@ -14,7 +14,8 @@
         "persistent": true,
         "requiresFlags": [
           "flag.tutorial_complete"
-        ]
+        ],
+        "storyOpenEvents": ["tutorial.captain_revisit", "tutorial.captain_revisit_empty"]
       },
       {
         "id": "poi.anchor.old_lighthouse_reef",
@@ -501,7 +502,12 @@
         "requiresFlags": [
           "flag.tutorial_complete",
           "flag.cave_chart_page"
-        ]
+        ],
+        "caveEntry": {
+          "caveId": "cave.blue_throat",
+          "entryNodeId": "node.1",
+          "mouthDepth": 36
+        }
       },
       {
         "id": "poi.anchor.chamber_network",
@@ -549,7 +555,12 @@
         "requiresFlags": [
           "flag.tutorial_complete",
           "story.ch1.anchor.midwater"
-        ]
+        ],
+        "caveEntry": {
+          "caveId": "cave.mirror_maze",
+          "entryNodeId": "node.1",
+          "mouthDepth": 33
+        }
       },
       {
         "id": "poi.anchor.serpentine_deep",
@@ -564,7 +575,12 @@
         "requiresFlags": [
           "flag.tutorial_complete",
           "story.ch1.anchor.midwater"
-        ]
+        ],
+        "caveEntry": {
+          "caveId": "cave.serpentine_deep",
+          "entryNodeId": "node.1",
+          "mouthDepth": 42
+        }
       },
       {
         "id": "poi.anchor.flooded_gallery",
@@ -582,6 +598,91 @@
         ],
         "modifier": {
           "current": "mild"
+        },
+        "caveEntry": {
+          "caveId": "cave.flooded_gallery",
+          "entryNodeId": "node.1",
+          "mouthDepth": 60
+        }
+      },
+      {
+        "id": "poi.anchor.serpentine_deep_vent",
+        "zoneId": "zone.serpentine_deep",
+        "name": "蛇行深处·热液侧口",
+        "blurb": "热液场这侧的一道泄流口，水顺着往外涌——逆不回去。出来才反应过来：里头转着转着，竟和中层那处蛇形水道是同一个洞。",
+        "distance": 3,
+        "owner": "lighthouse.ch1_vent_outpost",
+        "mapX": 0.06,
+        "mapY": -0.05,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "flag.cave_exit_serpentine_deep"
+        ],
+        "caveEntry": {
+          "caveId": "cave.serpentine_deep",
+          "entryNodeId": "node.2",
+          "mouthDepth": 72
+        }
+      },
+      {
+        "id": "poi.anchor.mirror_maze_wreck",
+        "zoneId": "zone.mirror_maze",
+        "name": "镜廊·残骸侧口",
+        "blurb": "残骸区边上一道窄缝，进去石壁一样会反光。走通了才明白，这和中层那座镜廊是连着的。",
+        "distance": 3,
+        "owner": "lighthouse.ch1_wreck_outpost",
+        "mapX": 0.05,
+        "mapY": 0.06,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "flag.cave_exit_mirror_maze"
+        ],
+        "caveEntry": {
+          "caveId": "cave.mirror_maze",
+          "entryNodeId": "node.2",
+          "mouthDepth": 50
+        }
+      },
+      {
+        "id": "poi.anchor.flooded_gallery_vent",
+        "zoneId": "zone.flooded_gallery",
+        "name": "漫水回廊·热液侧口",
+        "blurb": "热液场深处一道塌口，水往外挤。逆向进不来，却是漫水回廊另一头的出路。",
+        "distance": 3,
+        "owner": "lighthouse.ch1_vent_outpost",
+        "mapX": -0.05,
+        "mapY": 0.05,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "flag.cave_exit_flooded_gallery"
+        ],
+        "caveEntry": {
+          "caveId": "cave.flooded_gallery",
+          "entryNodeId": "node.2",
+          "mouthDepth": 76
+        }
+      },
+      {
+        "id": "poi.anchor.blue_throat_wreck",
+        "zoneId": "zone.blue_throat",
+        "name": "蓝喉·残骸侧口",
+        "blurb": "残骸区一处不起眼的洞口，进去蓝色一样会褪掉——原来和海山那处蓝喉通着。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_wreck_outpost",
+        "mapX": 0.06,
+        "mapY": 0.05,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "flag.cave_exit_blue_throat"
+        ],
+        "caveEntry": {
+          "caveId": "cave.blue_throat",
+          "entryNodeId": "node.2",
+          "mouthDepth": 52
         }
       },
       {

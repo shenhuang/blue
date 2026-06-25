@@ -223,4 +223,11 @@ export interface CaveGenParams {
   exitDepths?: number[];
   /** 深度密度剖面曲线 k 区间（沿用 #114 depthCurveRange·决定哪段深度节点多＝洞胖瘦·§3.3 模型 B）。 */
   depthCurveRange?: [number, number];
+  /**
+   * 穿越发现 flag（多口持久洞 SPEC §6.2·跨 beacon T3b）：设了 ⇒ 玩家**从本洞任一出口门户（portalKind:'exit'）
+   * 上浮**时 engine（ascent.ts::executeAscent）置此 flag——揭示对侧口 POI（副口 anchor 的 requiresFlags 消费它·
+   * 跨 beacon「一口入、对侧出」＝顺穿流·§1）。单一来源在此（caves.json）：副口 POI 的 requiresFlags 与此值
+   * **同串**（check-cave-bindings 焊死漂移＝红）。缺省（单口/双口都直接可见的洞·如 cave.blue_caves）⇒ 不置任何穿越 flag。
+   */
+  traversalFlag?: string;
 }

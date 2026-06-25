@@ -7,6 +7,7 @@ import { executeDeath, ageAndDecayDeaths, getPreservationBonus } from './death';
 import { effectiveStaminaMax } from './modifiers';
 import { miraOfferFor } from './port';
 import { getZone } from './zones';
+import { getCave } from './caves';
 import { N2 } from './nitrogen';
 
 // 氮气分档阈值 N2（SAFE/ONE_STOP/TWO_STOP）迁居 engine/nitrogen.ts（与饱和曲线同住·单点可调）。
@@ -132,6 +133,15 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
   const flags = new Set(s.profile.flags);
   if (bends === 2) flags.add('debuff.bends_ii');
   if (bends === 3) flags.add('debuff.bends_iii');
+
+  // 穿越发现（多口持久洞 SPEC §6.2·T3b）：从持久洞的**出口门户**（portalKind:'exit'·顺流泄出口·§1）上浮
+  // ⇒ 置该洞的 traversalFlag，揭示对侧口 POI（跨 beacon·副口 anchor 的 requiresFlags 消费它）。只认出口——
+  // 从入口上浮是来路、不揭示。非洞下潜 run.caveId 缺席 / 洞无 traversalFlag（单口·blue_caves）⇒ 跳过（零影响）。
+  if (run.caveId && run.map && run.currentNodeId) {
+    const surfacedFrom = run.map.nodes[run.currentNodeId]?.portalKind;
+    const traversalFlag = getCave(run.caveId)?.traversalFlag;
+    if (surfacedFrom === 'exit' && traversalFlag) flags.add(traversalFlag);
+  }
 
   s = {
     ...s,
