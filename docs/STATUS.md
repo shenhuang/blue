@@ -1,9 +1,8 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
-> **2026-06-25 roaming 机会点支持 POI 专属内容（交互 session〔Cowork〕·#188·新 quirk #166·48/48·commit `52d371e`）**：把 #185/#186 的 POI 专属事件范式从 anchor 推广到 roaming。机制缺口＝roaming 实例 id（`poi.roam.<runs>.<tpl>`）每次变·配不上静态事件 poiId；拍板**按 templateId（稳定）匹配**——`ChartPoi.templateId` 新字段 + `dive-start` 透传 `poiTemplateId` → `buildEventPool` 放宽（`ev.poiId===poiId || ===poiTemplateId`·anchor 逐字节不变）+ `check-event-poi` 合法集合并入 templateId（拼错仍挡）。耗尽语义定 **run 级 only**（save 级按实例 id 记账对 roaming 无意义·取舍入 #166）。2 样板证机制：`roam.wreck_north_collapse`（run 级采集·新 `item.collapse_fitting`）+ `roam.vent_dead_chimneys`（纯叙事/uncanny·loot-free·过 protagonist-voice+canon）。`playthrough-wreckyard` 补 roaming 相位隔离断言 + tsx 冒烟（实例 id 变仍抽到模板事件·anchor/非 POI 零漏）。余 9 个 roaming 模板待铺。
-> **2026-06-25 鲸落三相钉相 + 分级采集 loot（交互 session〔Cowork〕·#186 同日续·无新 quirk·48/48·引擎零改）**：三条演替事件各加 `poiId` 锁进对应 anchor（食腐/富集/化能·相位不再串）·4 条共享氛围不钉留作背景。分级 loot：先到的纯观察不加 loot·富了的泥→run 级 `whalefall_polychaete`（采样·无门）·剩下的骨头→save 级 `whale_bone`（`mine` 门·撬走永久没了·唯一 id 守 #163）。`playthrough-whalefall` §6 旧「三相在非 POI 池」断言改写成相位隔离门。
-> **2026-06-25 按 #185 范式给现存 POI 铺固定内容·第一批（交互 session〔Cowork〕·#186·新 quirk #164·48/48·引擎零改）**：7 个 POI 加 `poiId` 专属事件 + 3 个新资源道具（`gallery_crust`/`wreck_bronze` save·`oyster_shell` run），全走数据层。横岩廊结壳·墓园青铜（皆 save·`mine` 门）/ 旧灯塔礁牡蛎壳+燧石（run·`cut` 门）/ 礁口鲨群筛鲨牙（run·不动 openEventPool）；温带商船/远洋中层/海沟热液三 story 锚点纯叙事（loot-free·重访氛围·过 protagonist-voice+canon）。两条 save 脉用不同 item id（#163）。新 quirk #164（openEventPool/story.eventId 只定开场·poiId 内容仍由 buildEventPool 供给）。余 POI（roaming 模板等）待续。
+> **2026-06-25 洞穴重规划数据侧：删 5 区 + lc 上调（交互 session〔Cowork〕·#184·纯数据·48/48·commit `f05479a`）**：`zones.json` 删 coral_grotto/sunken_chimney/sea_arch_cave/echo_cavern/trench_hall（28→23 区）；中型 lc→7–9·大型→12–14·史诗 the_deep_gate lc→70·depthRange→[70,148]；cave_zones_spec.md 同步（删块·标题·事件池表）。cave roadmap T1 完成。
+> **2026-06-25 roaming 机会点支持 POI 专属内容（交互 session〔Cowork〕·#188·新 quirk #166·48/48·commit `52d371e`）**：按 templateId（稳定）匹配·run 级耗尽·2 样板证机制（塌口采集+死烟囱叙事）。余 9 个 roaming 模板待铺。
 
 ## 1. 一句话状态
 
