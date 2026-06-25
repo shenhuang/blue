@@ -4300,6 +4300,116 @@
           }
         }
       ]
+    },
+    {
+      "id": "reef.old_lighthouse_oyster_bed",
+      "depthRange": [
+        10,
+        30
+      ],
+      "zoneTags": [
+        "shallow",
+        "reef"
+      ],
+      "weight": 7,
+      "poiId": "poi.anchor.old_lighthouse_reef",
+      "title": "礁盘上的牡蛎丛",
+      "body": "旧灯塔礁的礁盘背流一侧，长着一丛丛老牡蛎，壳一层叠一层，把礁石糊成一片。礁缝里还夹着几枚圆钝的黑石。\n礁活着，年年自己补回来——取一捧，不伤根。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "gather_shells",
+          "label": "撬一捧厚壳下来",
+          "outcome": {
+            "text": "你顺着壳缝起手，撬下几枚长老的厚壳，外面糙，里面一层青白珠光。剩下的还连在礁上，接着长。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              {
+                "itemId": "item.oyster_shell",
+                "qty": [
+                  2,
+                  3
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "pry_flint",
+          "label": "用刀尖把礁缝里的燧石撬出来",
+          "visibleIf": {
+            "kind": "hasCapability",
+            "capability": "cut"
+          },
+          "outcome": {
+            "text": "你把刀尖探进礁缝，别住那枚圆钝的黑石往外撬。石头脱缝落进手心，断口处是灰蓝的，光滑得像玻璃。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              {
+                "itemId": "item.flint_nodule",
+                "qty": [
+                  1,
+                  2
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "leave_oyster",
+          "label": "不取，绕过这丛",
+          "outcome": {
+            "text": "你没碰那丛牡蛎，从礁盘外侧绕过去。退潮的水从壳堆上淌过，一片细响。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "reef.shark_shoals_tooth_sift",
+      "depthRange": [
+        28,
+        44
+      ],
+      "zoneTags": [
+        "reef",
+        "wreck"
+      ],
+      "weight": 6,
+      "poiId": "poi.anchor.reef_shark_shoals",
+      "title": "缺口下的沙",
+      "body": "礁脊朝外海开的这道缺口，灰影几乎总在头顶来回。它们一辈子换好几副牙，掉下来的全落进缺口底下那片沙里。\nMira 要的就是这个——不用招惹上头那群，低下身，在沙里筛就是。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "sift_sand",
+          "label": "伏低身子，在缺口底的沙里筛牙",
+          "outcome": {
+            "text": "你贴着沙底，让灰影在头顶过，手在松沙里一把把地筛。三角形的牙，锋利得不像话，沙里比想的多。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              {
+                "itemId": "item.shark_tooth",
+                "qty": [
+                  1,
+                  3
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "watch_shoal",
+          "label": "先看清这趟灰影是几条、什么路数",
+          "outcome": {
+            "text": "你停在缺口边，数头顶的灰影：三条，绕着定圈，没冲下来的意思。今天是温的那种。\n你记下它们绕圈的方向，再下手。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": 1
+            }
+          }
+        }
+      ]
     }
   ]
 }

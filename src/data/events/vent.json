@@ -2048,6 +2048,56 @@
           }
         }
       ]
+    },
+    {
+      "id": "vent.behind_the_plume",
+      "depthRange": [
+        85,
+        118
+      ],
+      "zoneTags": [
+        "vent"
+      ],
+      "weight": 3,
+      "poiId": "poi.anchor.ch1_vent_field",
+      "title": "烟柱后面",
+      "body": "海沟底，黑烟一柱柱立着，水是温的。日志最后能读的那行写在你脑子里：往烟柱后面看。\n你绕到一道烟柱后头。烟影里，那座轮廓还立着——十年了，舷灯还亮着，匀速，不晃。\n它一直在那儿。是日志先让你看见它的。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "hold_distance",
+          "label": "停在烟柱这侧，把那座轮廓看清",
+          "check": {
+            "stat": "sanity",
+            "dc": 52,
+            "onSuccess": {
+              "text": "你借着烟柱挡身，一点点辨那座轮廓：方的，矮的，舷灯的间距是人摆的间距。是观测站，不是别的。\n你认得这种摆法。你按住自己，没急着过去——烟柱后面的东西，日志让你看，没让你冲。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "sanity": -4
+              }
+            },
+            "onFailure": {
+              "text": "你盯着那盏舷灯，看它匀速地亮。看久了，它的匀速跟上了你调节器里进气的节拍——一下，一下，严丝合缝。\n你把脸从烟柱后面挪开，手在面镜边上抖。那盏灯没有变，是你先撑不住了。",
+              "oxygenTurnCost": 3,
+              "deltas": {
+                "sanity": -11
+              }
+            }
+          }
+        },
+        {
+          "id": "leave_plume",
+          "label": "记下它还亮着，退回烟柱前",
+          "outcome": {
+            "text": "你退回烟柱这一侧，把那盏还亮着的舷灯记进写字板。烟一鼓，轮廓糊了一下，又清回来。它不急。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -2
+            }
+          }
+        }
+      ]
     }
   ]
 }

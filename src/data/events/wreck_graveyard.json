@@ -2596,6 +2596,113 @@
           }
         }
       ]
+    },
+    {
+      "id": "wreck_graveyard.bronze_sternshaft",
+      "depthRange": [
+        24,
+        50
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 6,
+      "poiId": "poi.anchor.wreck_graveyard",
+      "title": "尾轴上的青铜",
+      "body": "墓园最大那艘商船的船尾翻在沙里，尾轴朝上戳着。轴根上套着一圈青铜衬套，海水只在表面咬了层绿，铜芯还是实的——这种大件，一艘船就那么一两处。\n碎黄铜满墓园都是，这样整块的青铜不是。撬走了，这艘船便不再有第二块。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "pry_bronze",
+          "label": "用岩凿把整圈青铜衬套撬下来",
+          "visibleIf": {
+            "kind": "hasCapability",
+            "capability": "mine"
+          },
+          "check": {
+            "stat": "stamina",
+            "dc": 14,
+            "onSuccess": {
+              "text": "你把凿头别进衬套和轴的接缝，一点点撬。绿锈簌簌往下落，整圈青铜松脱，沉甸甸坠进你怀里。\n你回头看那根空了的尾轴——这艘船的大件，到此为止。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                {
+                  "itemId": "item.wreck_bronze",
+                  "qty": [
+                    1,
+                    1
+                  ]
+                }
+              ]
+            },
+            "onFailure": {
+              "text": "衬套咬得比看着紧。凿头打滑，刮下一片绿锈，青铜纹丝没动。你换了个角度，先记下它的位置。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "stamina": -7
+              }
+            }
+          }
+        },
+        {
+          "id": "read_sternshaft",
+          "label": "认一认轴上还剩的字号",
+          "outcome": {
+            "text": "你抹开尾轴上的绿，铸号还认得出半截。你记下船名能拼出来的那两个字母，没多停。\n碎铜年年有人来捡，这块大的一直在等一个带对工具的。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": 1
+            }
+          }
+        },
+        {
+          "id": "leave_bronze",
+          "label": "没带能撬它的家伙，记下位置走",
+          "outcome": {
+            "text": "你徒手抠了两下衬套，只起一层绿粉。记下方位和深度——它跑不了，带对家伙再来。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "wreck_graveyard.temperate_revisit",
+      "depthRange": [
+        18,
+        50
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 4,
+      "poiId": "poi.anchor.ch1_temperate_wreck",
+      "title": "断了页的那艘",
+      "body": "你又贴着这艘侧躺的温带商船游了一圈。船名锈得还是只剩两个字母。\n货舱破口里，那队鳕鱼悬在舷窗后面，隔着玻璃，鱼眼空洞——和上回一模一样，谁也没动过。\n日志在这里断了一页。你知道断在哪一句，也知道后面没有了。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "trace_route",
+          "label": "照日志记的，把他们当年走的那条线再走一遍",
+          "outcome": {
+            "text": "你照着记得的那几条坐标，贴着船壳走他们走过的路：破口、货舱、舵机房。每一处都对得上，每一处都空着。\n金属敲金属的轻响又起了一下，节奏不像水流。你没有去找它的来处，掉头。",
+            "oxygenTurnCost": 2,
+            "deltas": {
+              "sanity": -3
+            }
+          }
+        },
+        {
+          "id": "leave_temperate",
+          "label": "看一眼就够了，上去",
+          "outcome": {
+            "text": "你没再进船。手在调节器上停了一下，又松开，朝亮处去。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -1
+            }
+          }
+        }
+      ]
     }
   ]
 }

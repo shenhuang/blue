@@ -1178,6 +1178,41 @@
       "decay": "durable",
       "tier": 3,
       "harvestPersist": "save"
+    },
+    {
+      "id": "item.gallery_crust",
+      "name": "横岩廊结壳",
+      "category": "material",
+      "rarity": "uncommon",
+      "description": "从横岩廊顶上剥下来的一片硬壳，灰白带土黄，断面一层层叠着，像是水里的矿物年复一年贴上去结的。这条廊就这么长，结壳的脉数得过来——剥光一段，那面顶往后就只剩素石。Mira 说窑上磨釉的肯收，看厚薄称重。",
+      "weight": 0.7,
+      "sellPrice": 16,
+      "decay": "durable",
+      "tier": 2,
+      "harvestPersist": "save"
+    },
+    {
+      "id": "item.wreck_bronze",
+      "name": "船体青铜",
+      "category": "material",
+      "rarity": "uncommon",
+      "description": "从墓园那艘大商船尾轴上撬下来的整块青铜——舵轴的衬套，沉得压手，绿锈只在表面咬了一层。这种大件一艘船就那么一两处，撬走了便不再长回来。Mira 说铸器铺整块收，比零碎黄铜值钱。",
+      "weight": 1.4,
+      "sellPrice": 30,
+      "decay": "durable",
+      "tier": 3,
+      "harvestPersist": "save"
+    },
+    {
+      "id": "item.oyster_shell",
+      "name": "牡蛎壳",
+      "category": "material",
+      "rarity": "common",
+      "description": "礁盘浅处一丛丛长老的牡蛎，撬下来的厚壳，外面糙、里面一层青白的珠光。礁活着，年年自己补回来，取一捧不伤根。Mira 说烧壳灰的肯收，论筐不论个。",
+      "weight": 0.3,
+      "sellPrice": 5,
+      "decay": "durable",
+      "tier": 1
     }
   ]
 }

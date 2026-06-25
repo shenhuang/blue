@@ -1,8 +1,8 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
+> **2026-06-25 按 #185 范式给现存 POI 铺固定内容·第一批（交互 session〔Cowork〕·#186·新 quirk #164·48/48·引擎零改）**：7 个 POI 加 `poiId` 专属事件 + 3 个新资源道具（`gallery_crust`/`wreck_bronze` save·`oyster_shell` run），全走数据层。横岩廊结壳·墓园青铜（皆 save·`mine` 门）/ 旧灯塔礁牡蛎壳+燧石（run·`cut` 门）/ 礁口鲨群筛鲨牙（run·不动 openEventPool）；温带商船/远洋中层/海沟热液三 story 锚点纯叙事（loot-free·重访氛围·过 protagonist-voice+canon）。两条 save 脉用不同 item id（#163）。新 quirk #164（openEventPool/story.eventId 只定开场·poiId 内容仍由 buildEventPool 供给）。余 POI（roaming 模板等）待续。
 > **2026-06-25 POI 固定资源耗尽机制 + POI 专属事件池 + 2 样板 POI（交互 session〔Cowork〕·#185·新 quirk #163·SAVE_VERSION 8→9·48/48）**：`ItemDef.harvestPersist:'save'|'run'`（缺省 run）两级耗尽——save 永久存 `profile.harvestedResources`（生还回港才入账·死亡不入）、run 存 `run.harvestedNodes`；`mapgen.applyHarvestDepletion`（确定性·零 rng·缺省 no-op）把采尽资源点抹平成空 rest（同 seed 同图·守拓扑）。`DiveEvent.poiId` + `buildEventPool` 过滤＝POI 专属事件池（存量零影响）；静态门 `check-event-poi`（47→48）。样板：蓝洞晶脉（save·岩凿 `mine` 门）/ 漆号样地（run·复用 `coral_shard` + 导师专属叙事）；鲸落 canon loot-free 故不用。范式立起·余 POI 待按范式铺。
-> **2026-06-25 教学重放修复 + 东礁二次下潜 + 主角旁白收紧（交互 session〔Cowork〕·#184·quirk #161/#162·47/47）**：`oncePerSave` 机制真正落地（`event_seen:<id>` 写入 `profile.flags`）；东礁第二次进入生成 layered 图而非走教学脚本；`tutorial.captain_revisit` 新事件（未见黑影可二探船长室）；`remainOnEvent` 东礁死锁修复；主角旁白五处删情绪标签（ch1/flooded_gallery/mimic/wreck_graveyard/lore）。quirk #161（applyFlags vs setProfileFlags）/ #162（oncePerSave 机制双端）。
 
 ## 1. 一句话状态
 
