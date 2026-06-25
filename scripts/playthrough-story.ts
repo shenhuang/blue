@@ -270,35 +270,45 @@ L('§2c 逃跑兜底（event_seen:tutorial.prologue → ending_safe，无 tutori
 }
 
 // ═══════════════════════════════════════════════════════════════
-// §2d 教学后重返东礁老沉船（storyOpenEvents 强制开场·quirk #174）
+// §2d 教学后重返东礁老沉船（storyOpenEvents 按深度途中触发·quirk #174）
 //     captain_revisit / _empty 是 weight 0 故事节拍——必须经 poi.anchor.east_reef.storyOpenEvents
-//     强制开场、按各事件自身门控选变体；不能落随机池（曾 weight 10 → 被 ~45 个 reef/wreck 事件淹没＝
-//     二次下潜命中率 ~3%＝玩家「回来看不到重访内容」的真凶）。这条门焊死「重访内容必现 + 选对变体」。
-//     用真实 startDiveFromPoi（dive-start 强制开场分支）·不是手搓 flag——补此前只验「入池」不验「真出现」的盲区。
+//     **钉放到事件 depthRange 的途中节点**、按各事件自身门控选变体；不能落随机池（曾 weight 10 → 被 ~45 个
+//     reef/wreck 事件淹没＝二次下潜命中率 ~3%＝玩家「回来看不到重访内容」的真凶）。这条门焊死「重访内容必现
+//     ＋ 选对变体 ＋ 落在 wreck 深度（不是开场瞬移）」。用真实 startDiveFromPoi → 查生成的 run.map 节点·
+//     不是手搓 flag——补此前只验「入池」不验「真出现」的盲区。
 // ═══════════════════════════════════════════════════════════════
-L('§2d 重返东礁强制开场（storyOpenEvents 选变体）');
+L('§2d 重返东礁深度途中触发（storyOpenEvents 选变体 + 钉到 wreck 深度）');
 {
-  // 前提不变量：两个重访事件都 weight 0（buildEventPool 跳 weight<=0 ⇒ 永不进随机池）
-  assert(getEventById('tutorial.captain_revisit')!.weight === 0, '§2d captain_revisit weight 0（只经强制开场·不进随机池）');
+  // 前提不变量：两个重访事件都 weight 0（buildEventPool 跳 weight<=0 ⇒ 永不进随机池·只能被钉放）
+  assert(getEventById('tutorial.captain_revisit')!.weight === 0, '§2d captain_revisit weight 0（不进随机池·只钉放）');
   assert(getEventById('tutorial.captain_revisit_empty')!.weight === 0, '§2d captain_revisit_empty weight 0');
 
   const POST = ['event_seen:tutorial.prologue', CH1_HOOK_FLAG, TUTORIAL_COMPLETE_FLAG, 'flag.tutorial_ascended'];
-  const reopenEast = (flags: string[]): string | null => {
+  // 真实下潜 → 查 run.map：返回被钉放的重访事件 id + 其节点深度（没钉放则 {null,null}）。
+  const reopenEast = (flags: string[]): { pinned: string | null; depth: number | null; opensWith: string | null } => {
     const profile = profileWith(flags);
     const poi = generateChart({ profile }).pois.find((p) => p.id === 'poi.anchor.east_reef');
     assert(poi, '§2d poi.anchor.east_reef 教学后应在海图');
-    const sub = (startDiveFromPoi({ ...createInitialGameState(), profile }, poi!).phase as { subPhase?: { kind: string; eventId?: string } }).subPhase;
-    return sub?.kind === 'event' ? sub.eventId ?? null : null;
+    const after = startDiveFromPoi({ ...createInitialGameState(), profile }, poi!);
+    const nodes = Object.values(after.run?.map.nodes ?? {});
+    const hit = nodes.find((n) => n.eventId === 'tutorial.captain_revisit' || n.eventId === 'tutorial.captain_revisit_empty');
+    const sub = (after.phase as { subPhase?: { kind: string; eventId?: string } }).subPhase;
+    return { pinned: hit?.eventId ?? null, depth: hit?.depth ?? null, opensWith: sub?.kind === 'event' ? sub.eventId ?? null : null };
   };
 
-  // (a) 没见怪相（上浮一路 / 逃跑一路）→ 强制 captain_revisit（让玩家补上没下去的那一段）
-  assert(reopenEast(POST) === 'tutorial.captain_revisit', '§2d 没见怪相 → 强制开场 captain_revisit');
-  // (b) 见过怪相（教学里下去过 / 已重访下去）→ 强制 captain_revisit_empty（空了的收尾）
-  assert(reopenEast([...POST, 'flag.seen_first_uncanny']) === 'tutorial.captain_revisit_empty', '§2d 见过怪相 → 强制开场 captain_revisit_empty');
-  // (c) 两变体都走过（event_seen 都写）→ 不再强制故事开场（回归普通下潜）
-  const done = reopenEast([...POST, 'flag.seen_first_uncanny', 'event_seen:tutorial.captain_revisit', 'event_seen:tutorial.captain_revisit_empty']);
-  assert(done !== 'tutorial.captain_revisit' && done !== 'tutorial.captain_revisit_empty', '§2d 重访走完 → 不再强制故事开场');
-  L('  storyOpenEvents 变体选择 + weight0 + 防重播 ✓');
+  // (a) 没见怪相（上浮一路 / 逃跑一路）→ captain_revisit 钉到 wreck 深度（24–30m）·**不在开场**
+  const a = reopenEast(POST);
+  assert(a.pinned === 'tutorial.captain_revisit', '§2d 没见怪相 → 钉放 captain_revisit');
+  assert(a.depth !== null && a.depth >= 24 && a.depth <= 30, `§2d captain_revisit 落在 wreck 深度 24–30m（实际 ${a.depth}）`);
+  assert(a.opensWith !== 'tutorial.captain_revisit', '§2d 不是开场瞬移（重访在深度途中·非起手节点）');
+  // (b) 见过怪相 → 钉放 captain_revisit_empty
+  const b = reopenEast([...POST, 'flag.seen_first_uncanny']);
+  assert(b.pinned === 'tutorial.captain_revisit_empty', '§2d 见过怪相 → 钉放 captain_revisit_empty');
+  assert(b.depth !== null && b.depth >= 24 && b.depth <= 30, `§2d _empty 也落 wreck 深度（实际 ${b.depth}）`);
+  // (c) 两变体都走过（event_seen 都写）→ 不再钉放（普通下潜）
+  const c = reopenEast([...POST, 'flag.seen_first_uncanny', 'event_seen:tutorial.captain_revisit', 'event_seen:tutorial.captain_revisit_empty']);
+  assert(c.pinned === null, '§2d 重访走完 → 不再钉放（回归普通下潜）');
+  L('  深度钉放 + 变体选择 + wreck 深度 + 防重播 ✓');
 }
 
 // ═══════════════════════════════════════════════════════════════

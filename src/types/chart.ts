@@ -182,13 +182,15 @@ export interface ChartPoi {
   openEventId?: string;
   openEventFlag?: string;
   /**
-   * 「故事重访变体」强制开场（非锚点·镜像 `story` 的 eventId+revisitEventId 但**不占** 4 canon anchor 名额·
-   * 也不像 openEventId 只能单事件）：设了 storyOpenEvents ⇒ 入潜按**顺序**选第一个「门控通过且未见过」的事件强制开场；
+   * 「故事重访变体」按深度途中触发（非锚点·不占 4 canon anchor 名额·也不像 openEventId 只能单事件·quirk #174）：
+   * 设了 storyOpenEvents ⇒ 入潜时 dive-start 按**顺序**选第一个「门控通过且未见过」的事件，透传 mapgen
+   * **钉放到该事件 `depthRange` 的途中节点**（保证出现·不进随机池）——玩家下潜到那个深度才撞见（不是开场瞬移）；
+   * 没下到该深度就上浮＝不进该节点＝事件 oncePerSave 不写 event_seen＝下次再钉·不可错过地等着。
    * 都不合（已全部走过）→ 普通下潜。**变体切换读各事件自身的 prereqFlags/forbiddenFlags/oncePerSave(event_seen)/
    * prereqEventIds（单一真相·POI 不重复写 flag 逻辑）**。用于「重返同一地点·随进度换节拍」的剧情点
    * （如教学后重返东礁老沉船＝tutorial.captain_revisit〔没见过怪相·可下去看〕→ captain_revisit_empty〔见过了·空了〕）。
-   * 这些事件应 `weight: 0`（不进随机池·只经本机制强制触发·否则会被内容库淹没＝命中率个位数%·见 quirk #174）。
-   * 与 openEventId / openEventPool 互斥（单一强制开场源·check-story-open-events 守门）。置位归事件 setProfileFlags（dive-start 只读不写）。
+   * 这些事件必须 `weight: 0`（不进随机池·只经本机制钉放·否则会被内容库淹没＝命中率个位数%·见 quirk #174）。
+   * 仅 layered 图（reef/wreck）实现放置。与 openEventId / openEventPool 互斥（check-story-open-events 守门）。置位归事件 setProfileFlags（dive-start 只读不写）。
    */
   storyOpenEvents?: string[];
   /**

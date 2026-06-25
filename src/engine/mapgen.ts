@@ -10,7 +10,7 @@
 // depth ±10m 匹配 findRecoverableCorpse。analyzeMap() 是纯结构分析器，给 dev 面板 + 回归脚本复用。
 
 import type { DiveMap, DiveNode, NodeFeature, ZoneDef, NodeKind, ZoneTag, DeathRecord, CavePortal, CaveRegion, CaveGenParams } from '@/types';
-import { buildEventPool, eventLootItemIds, pickWeighted, tagsForDepth } from './zones';
+import { buildEventPool, eventLootItemIds, getEventById, pickWeighted, tagsForDepth } from './zones';
 import { findRecoverableCorpse, isRecoverableCorpse } from './death';
 
 interface GenOpts {
@@ -105,6 +105,12 @@ interface GenOpts {
    * 固定地图（seedKey=poi.id·同图同 nodeId）下「同一 run 内重生成」才用得上；新 run 起手为空 → 零改动。
    */
   harvestedNodeIds?: Set<string>;
+  /**
+   * 钉放剧情节拍（quirk #174）：一个 `weight:0` 的故事事件 id，**保证放置**在其 `depthRange` 的途中节点
+   * （不进随机池·只此一途出现·防被内容库淹没）。由 dive-start 从 `poi.storyOpenEvents` 选出合规变体后透传。
+   * 缺省 undefined → 不放置（所有非剧情下潜零影响·byte-identical）。仅 layered 图实现（reef/wreck·东礁重访）。
+   */
+  pinnedEventId?: string;
 }
 
 function randInt(min: number, max: number, rng = Math.random): number {
@@ -665,6 +671,29 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
     .flat()
     .filter((id) => nodes[id].kind !== 'ascent_point');
   placeCorpses(nodes, midCandidates, { deaths, zoneId: zone.id, targetCorpseId, corpseChance, rng });
+
+  // 钉放剧情节拍（quirk #174）：weight 0 的故事事件不进随机池，只由此显式放到其 depthRange 的**途中**节点——
+  // 选范围内最深的「非末层」（末层＝必为上浮口·见 chooseLayeredNodeKind），强制其首节点为该事件（在 corpse pass
+  // 之后落＝故事节拍优先于尸体）。下潜到该深度才撞见；没下到就上浮＝不进该节点＝事件 oncePerSave 不写 event_seen
+  // ＝下次再钉·不可错过地等着（dive-start 每潜重算合规变体）。
+  if (opts.pinnedEventId) {
+    const ev = getEventById(opts.pinnedEventId);
+    if (ev) {
+      let targetLayer = -1;
+      let lastResort = -1;
+      for (let L = 0; L < totalLayers; L++) {
+        const depth = Math.round(d0 + depthStep * L);
+        if (depth < ev.depthRange[0] || depth > ev.depthRange[1]) continue;
+        if (L === totalLayers - 1) lastResort = L; // 末层＝上浮口·仅作兜底
+        else targetLayer = L; // 持续更新 → 落在范围内最深的非末层
+      }
+      if (targetLayer < 0) targetLayer = lastResort;
+      if (targetLayer >= 0) {
+        const nid = layerNodes[targetLayer][0];
+        nodes[nid] = { ...nodes[nid], kind: 'event', eventId: opts.pinnedEventId, features: undefined, preview: ev.title };
+      }
+    }
+  }
 
   return {
     zoneId: zone.id,

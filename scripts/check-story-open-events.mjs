@@ -3,10 +3,10 @@
 // 把「重访剧情节拍必现」的约定变成会在 `npm run regress` 里失败的检查（仿 check-farm-pois / check-event-poi）。
 // 纯读 JSON·无 TS 依赖。任一不过 → exit 1。
 //
-// 背景：storyOpenEvents 让一个 POI 入潜按顺序强制开场第一个「门控通过且未见过」的故事事件
-// （dive-start.ts·按事件自身 prereq/forbidden/oncePerSave 选变体）。这些事件**必须 weight 0**——
-// 否则同时落进 buildEventPool 随机池，会被内容库（reef.*/wreck_graveyard.*）淹没＝命中率个位数%
-// ＝玩家回来看不到重访内容（captain_revisit 原 weight 10 即此 bug）。引用 typo 则静默 no-op＝软锁。
+// 背景：storyOpenEvents 让一个 POI 入潜时按顺序选第一个「门控通过且未见过」的故事事件，**钉放到该事件
+// depthRange 的途中节点**（dive-start.ts 选变体 → mapgen pinnedEventId·下潜到该深度才撞见）。这些事件
+// **必须 weight 0**——否则同时落进 buildEventPool 随机池，会被内容库（reef.*/wreck_graveyard.*）淹没＝
+// 命中率个位数%＝玩家回来看不到重访内容（captain_revisit 原 weight 10 即此 bug）。引用 typo 则静默 no-op＝软锁。
 //
 // 四条门（仅针对带 storyOpenEvents 的 POI）：
 //   (a) 只能挂 persistent anchor（roaming 运行时 POI 逐字段构造·不透传此字段·会被静默丢弃）。

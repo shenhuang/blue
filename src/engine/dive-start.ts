@@ -72,6 +72,8 @@ export function startDive(
      * harvest——cave overlay 已在副本上叠加）。缺省（zone/band 路径）→ 走 generateDiveMap 每潜重生（旧行为不变）。
      */
     prebuiltMap?: DiveMap;
+    /** 钉放剧情节拍（quirk #174）：weight0 故事事件 id·透传 mapgen 放到其 depthRange 途中节点。由 startDiveFromPoi 从 poi.storyOpenEvents 选合规变体填。 */
+    pinnedEventId?: string;
   },
 ): GameState {
   const zone = getZone(zoneId);
@@ -114,6 +116,8 @@ export function startDive(
       profileFlags: state.profile.flags,
       deaths: state.profile.deaths,
       poiId,
+      // 钉放剧情节拍（quirk #174）：由 startDiveFromPoi 从 poi.storyOpenEvents 选出的合规变体透传而来（缺省 undefined＝不钉放）。
+      pinnedEventId: opts?.pinnedEventId,
       // roaming 专属内容（2026-06-25）：稳定模板身份直透 buildEventPool（缺省 undefined＝anchor/教学零影响）。
       poiTemplateId: opts?.poiTemplateId,
       harvestedItemIds,
@@ -369,8 +373,24 @@ export function startDiveFromPoi(
   // 作者 2026-06-14：删掉「出海更近」/距离预耗氧机制——每个潜点都从第一回合起算损耗（不再有 turn 偏移 / 路上耗气）。
   run = { ...run, diveModifier: poi.modifier };
 
+  // 「故事重访变体」按深度途中触发（quirk #174）：从 poi.storyOpenEvents 里按各事件**自身**门控
+  // （prereq/forbidden/oncePerSave event_seen/prereqEventIds）选第一个合规变体，透传 startDive→mapgen
+  // 钉放到其 depthRange 的途中节点（weight 0·不进随机池·只此一途）。都走过 / 无此字段 → undefined → 普通下潜。
+  // 单一真相：变体切换读事件自身 flag·POI 不重复写逻辑。东礁重访 captain_revisit→captain_revisit_empty。
+  const pinnedStoryEventId = (poi.storyOpenEvents ?? []).find((id) => {
+    const ev = getEventById(id);
+    if (!ev) return false;
+    const f = state.profile.flags;
+    if (ev.oncePerSave && f.has(`event_seen:${id}`)) return false;
+    if (ev.prereqFlags && !ev.prereqFlags.every((x) => f.has(x))) return false;
+    if (ev.forbiddenFlags && ev.forbiddenFlags.some((x) => f.has(x))) return false;
+    if (ev.prereqEventIds && !ev.prereqEventIds.every((e) => f.has(`event_seen:${e}`))) return false;
+    return true;
+  });
+
   let s: GameState = { ...state, profile: carry.profile, run };
   s = startDive(s, poi.zoneId, {
+    pinnedEventId: pinnedStoryEventId,
     depthOffset: poi.modifier?.depthOffset,
     // 平廊/洞型 POI（#114 续）：modifier 是 GenOpts 的薄投影——窄 depthRange + 大 layerCount ＝
     // 横向洞（威胁换轴成「进来太远」的回程预算）；depthCurve 钉死剖面（缺省仍按 POI id 哈希派生性格）。
@@ -446,32 +466,14 @@ export function startDiveFromPoi(
     };
   }
 
-  // 「故事重访变体」强制开场（types/chart.ts ChartPoi.storyOpenEvents·quirk #174）：POI 带 storyOpenEvents ⇒
-  // 按**顺序**选第一个「门控通过且未见过」的事件强制开场（变体随进度切换·如教学后重返东礁老沉船＝
-  // captain_revisit〔没见怪相·可下去〕→ captain_revisit_empty〔见过了·空了〕→ 都走过则普通下潜）。
-  // 门控读各事件**自身**的 prereqFlags/forbiddenFlags/oncePerSave(event_seen)/prereqEventIds（单一真相·POI 不重复写）。
-  // 纯读 profile·不写 flag（置位归事件 setProfileFlags·同上方强制开场）。与 openEventId 互斥（剧情开场优先）。
-  if (!poi.openEventId && poi.storyOpenEvents && poi.storyOpenEvents.length > 0) {
-    const flags = s.profile.flags;
-    const pick = poi.storyOpenEvents.find((id) => {
-      const ev = getEventById(id);
-      if (!ev) return false;
-      if (ev.oncePerSave && flags.has(`event_seen:${id}`)) return false;
-      if (ev.prereqFlags && !ev.prereqFlags.every((f) => flags.has(f))) return false;
-      if (ev.forbiddenFlags && ev.forbiddenFlags.some((f) => flags.has(f))) return false;
-      if (ev.prereqEventIds && !ev.prereqEventIds.every((e) => flags.has(`event_seen:${e}`))) return false;
-      return true;
-    });
-    if (pick) {
-      s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: pick } } };
-    }
-  }
+  // 注：「故事重访变体」storyOpenEvents 不在此强制开场——改由上方 pinnedStoryEventId 透传 mapgen，
+  // 钉放到事件 depthRange 的**途中**节点（下潜到该深度才撞见·quirk #174）。
 
   // 「材料刷点」范式（P1-2·types/chart.ts ChartPoi.openEventPool）：POI 带 openEventPool ⇒ 入潜从池里
   // **轮替**取一个开场事件——rotation by runsCompleted（每潜递进 ⇒ 反复来刷时每次不同 beat·"能刷但别
   // 反复同一段剧情"），确定性 ⇒ 可被 playthrough-farm-poi 钉死。纯读 profile·不写 flag（同上方强制开场）。
   // 与 openEventId 互斥（check-farm-pois 守门）；这里加 `!poi.openEventId` 兜底＝剧情强制开场优先于刷点轮替。
-  if (!poi.openEventId && !poi.storyOpenEvents && poi.openEventPool && poi.openEventPool.length > 0) {
+  if (!poi.openEventId && poi.openEventPool && poi.openEventPool.length > 0) {
     const pool = poi.openEventPool;
     const idx = ((state.profile.runsCompleted % pool.length) + pool.length) % pool.length;
     s = {
