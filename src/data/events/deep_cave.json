@@ -1,1 +1,346 @@
-{ "events": [] }
+{
+  "events": [
+    {
+      "id": "deep_cave.column_shard",
+      "depthRange": [60, 110],
+      "zoneTags": ["deep_cave"],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "断了的石柱",
+      "body": "一根从底长到顶的石柱，在齐胸的高度断了。\n断面和柱身约成七十度的斜角，平得能映出灯光——没有断裂该有的碎渣，没有崩口，连边缘都是齐的。\n上半截不在。地上也找不到。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "touch_face",
+          "label": "把手贴上断面",
+          "outcome": {
+            "text": "你把掌心按上去。面是凉的，比周围的水还凉几度，平得手底分不出一丝起伏。你贴了一会，指尖先开始不受控地轻轻发颤，你把手收了回来。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -4 }
+          }
+        },
+        {
+          "id": "take_shard",
+          "label": "从断面边沿取一块料",
+          "visibleIf": { "kind": "hasCapability", "capability": "mine" },
+          "outcome": {
+            "text": "你拿岩凿沿断面边沿撬，柱芯里夹着的晶簇成片脱落。料是好料——只是凿子下去的每一块，断口都参差扎手，和那个齐平的截面一点也不像。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.quartz_crystal", "qty": [1, 2], "chance": 0.8 },
+              { "itemId": "item.iron_concretion", "qty": [1, 1], "chance": 0.4 }
+            ]
+          }
+        },
+        {
+          "id": "leave_column",
+          "label": "记下这根柱子，绕开走",
+          "outcome": {
+            "text": "你把这根断柱的位置记下，没再去碰那个截面。绕过它时，你没让灯在断口上多停。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "deep_cave.still_water",
+      "depthRange": [55, 98],
+      "zoneTags": ["deep_cave"],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "不动的那层水",
+      "body": "你的气泡升到头顶半米，停住了，横着摊开，像撞上了一层看不见的盖。\n那个高度上，水分成两层：下层比上层凉了三四度，交界面晃着油一样的光纹。\n下面这一层没有一丝流动。手背贴上去，觉不出任何方向。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "push_through",
+          "label": "穿过那层界面往上",
+          "outcome": {
+            "text": "你顶进交界面。那一瞬光纹在脸前散开，耳压闷闷地顶了一下，水从凉变温。穿过去之后，气泡又正常地往上走了。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        },
+        {
+          "id": "watch_layer",
+          "label": "停在界面下，看着自己的气泡",
+          "outcome": {
+            "text": "你停在凉层里，看气泡一颗颗顶到那条线就停下、横着铺开，谁也上不去。你看了很久，久到忘了自己也得呼吸。一阵耳鸣提醒了你，你才动。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        },
+        {
+          "id": "stay_low",
+          "label": "贴着低处绕过去，不穿那层",
+          "outcome": {
+            "text": "你压低身子，从凉层底下绕了过去，没去捅那层不动的水。背上的凉一直没散。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "deep_cave.wall_marking",
+      "depthRange": [45, 92],
+      "zoneTags": ["deep_cave"],
+      "sanityRange": [0, 85],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "壁上的几道槽",
+      "body": "侧壁上有四道平行的浅槽，从壁顶斜划进底泥里。\n间距都是一指宽，深浅一致，槽底磨得发圆。\n可能是水沿着一道软层蚀出来的。也可能不是。隔着调节器，你听见自己的呼吸快了半拍。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "fit_hand",
+          "label": "把手指按进槽里比一比",
+          "outcome": {
+            "text": "你把四指叉开按进去。槽比你的指距宽出小半指，每道的弧度又都一样。你抽回手，在裤腿上蹭了蹭，没擦掉那点凉。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -4 }
+          }
+        },
+        {
+          "id": "scrape_wall",
+          "label": "刮一点槽边结的料就走",
+          "outcome": {
+            "text": "你不去比对，只贴着槽边快手刮了一圈结壳，落进网兜，没在这面壁前多待。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.gallery_crust", "qty": [1, 2], "chance": 0.7 },
+              { "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.3 }
+            ]
+          }
+        },
+        {
+          "id": "follow_grooves",
+          "label": "顺着槽划进去的方向往里看",
+          "hallucination": true,
+          "outcome": {
+            "text": "你顺着四道槽斜下去的方向往里照。灯尽头，那几道槽像是没断，一直顺着壁拐进黑里，再往里还有——你眨了下眼，灯下又只剩这一段四道浅槽。你白搭进去一截气，撑了回来。",
+            "oxygenTurnCost": 3,
+            "deltas": { "sanity": -6 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "deep_cave.dead_vent",
+      "depthRange": [70, 116],
+      "zoneTags": ["deep_cave"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "停了的烟囱",
+      "body": "一座烟囱状的硫化物堆从底泥里拔起，顶口结死了，早不出烟。\n手背凑近，水比周围温了两度——底下的热还没散尽。\n隔着调节器都尝得到硫的味，舌根发苦。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "mine_vent",
+          "label": "用岩凿凿下烟囱壁的硫化物",
+          "visibleIf": { "kind": "hasCapability", "capability": "mine" },
+          "outcome": {
+            "text": "你把岩凿抵进烟囱壁，沿着结晶的纹路一路撬。沉甸甸的硫化物成块脱落，断口里还透着金属的光。这一堆够换不少钱。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.vent_sulfide", "qty": [2, 3], "chance": 0.85 },
+              { "itemId": "item.iron_concretion", "qty": [1, 1], "chance": 0.4 }
+            ]
+          }
+        },
+        {
+          "id": "chip_vent",
+          "label": "拿刀柄敲几块松的下来",
+          "outcome": {
+            "text": "没带凿子，你拿刀柄沿顶口敲，磕下几块已经松脆的。剩下结得实的，敲不动，留着。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.vent_sulfide", "qty": [1, 1], "chance": 0.6 }
+            ]
+          }
+        },
+        {
+          "id": "leave_vent",
+          "label": "记下这座烟囱，先走",
+          "outcome": {
+            "text": "你把这座死烟囱的位置和它那点余温记下。好料跑不了，跑得了的是气。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "deep_cave.echo_delay",
+      "depthRange": [48, 100],
+      "zoneTags": ["deep_cave"],
+      "sanityRange": [0, 80],
+      "weight": 5,
+      "cooldown": 3,
+      "title": "回声慢了",
+      "body": "你拿刀背磕了一下壁，听落底。\n这么近的壁，回声该在半秒里回来——却隔了将近两秒才到，而且是从身后回来的，不是从你敲的那个方向。\n你停住，没敢再动。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "knock_again",
+          "label": "再敲一次，确认是不是听岔了",
+          "check": {
+            "stat": "sanity",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你定了定神，又磕了一记，这回盯着秒数听。回声还是慢，但方向对得上了——是前一下你自己慌了、把方向记串了。你松了半口气，把这段壁的回声特性记下，继续走。",
+              "oxygenTurnCost": 1
+            },
+            "onFailure": {
+              "text": "第二下磕出去，回声又从一个不对的方向、隔着不对的时间回来，和第一下还不一样。你数不清这是第几面壁在应你。手指攥着刀柄，半天没敢松。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 }
+            }
+          }
+        },
+        {
+          "id": "ignore_echo",
+          "label": "不再试，认着来路往前",
+          "outcome": {
+            "text": "你不去较真那声回声从哪儿来。声音在这种地方本就不可信，你只认手底壁的走向往前蹭。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "deep_cave.gauge_drift",
+      "depthRange": [50, 108],
+      "zoneTags": ["deep_cave"],
+      "weight": 5,
+      "cooldown": 4,
+      "title": "表跳了一下",
+      "body": "你低头看深度仪。\n数字从八十几一下跳到九十几，又跳了回来——针在中间抖了一抖，才稳住。\n这个深度已经压到表面玻璃上有一圈极细的水珠，是渗进来的，还是结的雾，看不准。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "trust_gauge",
+          "label": "当它是稳的，按现在的读数算气",
+          "outcome": {
+            "text": "你认定那是针卡了一下，按稳住后的读数把回程的气重扣了一遍。表也许会骗你，但你手里只有它。",
+            "oxygenTurnCost": 1
+          }
+        },
+        {
+          "id": "cross_check",
+          "label": "停下来，靠耳压和体感核一遍深度",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你停稳，捏鼻鼓气听耳压，又看气泡上升的快慢，跟表上的数对了一遍。差不太多——表大概没坏，是这个深度它本就到了量程边上。你心里有了底。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "你越核越没准头：耳压、气泡、表上的针，三样给你三个不一样的深度。到底在多深，你说不上来。你只能挑最深的那个数，按它扣气——宁可亏，不能赌。",
+              "oxygenTurnCost": 3,
+              "deltas": { "sanity": -3 }
+            }
+          }
+        },
+        {
+          "id": "turn_back_gauge",
+          "label": "不信坏表了，提前往回",
+          "outcome": {
+            "text": "你不跟一块开始乱跳的表赌命。探到这儿够了——表一旦信不过，再往里每一蹬都是瞎走。你转身往回。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "deep_cave.the_quiet",
+      "depthRange": [80, 124],
+      "zoneTags": ["deep_cave"],
+      "sanityRange": [0, 70],
+      "weight": 4,
+      "cooldown": 0,
+      "title": "这里的安静",
+      "body": "到这个深度，安静变了一种。\n没有水流声，没有设备的嗡声被壁弹回来——声音出去，就不回来了。\n那点空被耳鸣填上。你听见自己的心跳，数着数着，发觉它比该有的要慢。",
+      "tone": "cosmic",
+      "options": [
+        {
+          "id": "let_it_settle",
+          "label": "停下，让自己适应这种静",
+          "outcome": {
+            "text": "你停在原地，由着那片静压上来。呼吸不自觉地放慢，跟上了周围的没有声音。过了一会，你的手指头开始一下下轻敲气瓶——不为什么，只是想确认那点声还是你发出来的。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -4 }
+          }
+        },
+        {
+          "id": "make_noise",
+          "label": "故意弄出点声音，把这静填满",
+          "outcome": {
+            "text": "你拿刀背连磕了几下壁。声响出去，没有一点回来，落进这片静里小得可怜，像从没响过。你停了手。这地方不还你声音。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -5 }
+          }
+        },
+        {
+          "id": "keep_moving",
+          "label": "不停留，按住呼吸往前",
+          "outcome": {
+            "text": "你不在这片静里多待，刻意把呼吸压成一个稳的节拍，一蹬一蹬往前。只要还在动，那片静就追不上你。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "deep_cave.passage_use",
+      "depthRange": [55, 102],
+      "zoneTags": ["deep_cave"],
+      "weight": 5,
+      "cooldown": 0,
+      "title": "被走熟的道",
+      "body": "这条窄道两侧被磨得发亮，磨痕在同一个高度上，前后连成一条线——像有什么常年贴着这条线进出。\n底泥上没有落石、没有残屑，干净得不像没人管的地方。\n那条磨亮的线，刚好和你贴壁过去的高度一样。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "slip_along_line",
+          "label": "贴着那条磨亮的线，轻手过去",
+          "hideCheck": true,
+          "check": {
+            "stat": "stamina",
+            "dc": 14,
+            "onSuccess": {
+              "text": "你贴着磨痕，放慢到几乎不带起一丝泥，一点点挪过这段窄道。什么都没来。出了道口你才发觉自己一路屏着气。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -3 }
+            },
+            "onFailure": {
+              "text": "你的气瓶磕响了道壁。那点声一落，前头磨亮的线尽头，黑里有什么顺着同一条线朝你冲了过来。",
+              "triggerCombatId": "combat.blind_eel_solo"
+            }
+          }
+        },
+        {
+          "id": "sample_polish",
+          "label": "刮一点磨痕上的结壳看看",
+          "outcome": {
+            "text": "你贴着磨亮的那条线刮了点结壳下来。壳很薄，底下的岩面滑得反光——磨它的东西，来回走了不知多少年。你把料揣好，没敢在这条线上多停。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.gallery_crust", "qty": [1, 1], "chance": 0.6 }
+            ]
+          }
+        },
+        {
+          "id": "back_out_passage",
+          "label": "退出去，另寻一条道",
+          "outcome": {
+            "text": "你倒着退出这条被走熟的窄道，把它让回给常走它的那个。绕路要多花气，但你不跟有主的道抢。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -2 }
+          }
+        }
+      ]
+    }
+  ]
+}
