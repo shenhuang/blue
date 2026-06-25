@@ -270,6 +270,38 @@ L('§2c 逃跑兜底（event_seen:tutorial.prologue → ending_safe，无 tutori
 }
 
 // ═══════════════════════════════════════════════════════════════
+// §2d 教学后重返东礁老沉船（storyOpenEvents 强制开场·quirk #174）
+//     captain_revisit / _empty 是 weight 0 故事节拍——必须经 poi.anchor.east_reef.storyOpenEvents
+//     强制开场、按各事件自身门控选变体；不能落随机池（曾 weight 10 → 被 ~45 个 reef/wreck 事件淹没＝
+//     二次下潜命中率 ~3%＝玩家「回来看不到重访内容」的真凶）。这条门焊死「重访内容必现 + 选对变体」。
+//     用真实 startDiveFromPoi（dive-start 强制开场分支）·不是手搓 flag——补此前只验「入池」不验「真出现」的盲区。
+// ═══════════════════════════════════════════════════════════════
+L('§2d 重返东礁强制开场（storyOpenEvents 选变体）');
+{
+  // 前提不变量：两个重访事件都 weight 0（buildEventPool 跳 weight<=0 ⇒ 永不进随机池）
+  assert(getEventById('tutorial.captain_revisit')!.weight === 0, '§2d captain_revisit weight 0（只经强制开场·不进随机池）');
+  assert(getEventById('tutorial.captain_revisit_empty')!.weight === 0, '§2d captain_revisit_empty weight 0');
+
+  const POST = ['event_seen:tutorial.prologue', CH1_HOOK_FLAG, TUTORIAL_COMPLETE_FLAG, 'flag.tutorial_ascended'];
+  const reopenEast = (flags: string[]): string | null => {
+    const profile = profileWith(flags);
+    const poi = generateChart({ profile }).pois.find((p) => p.id === 'poi.anchor.east_reef');
+    assert(poi, '§2d poi.anchor.east_reef 教学后应在海图');
+    const sub = (startDiveFromPoi({ ...createInitialGameState(), profile }, poi!).phase as { subPhase?: { kind: string; eventId?: string } }).subPhase;
+    return sub?.kind === 'event' ? sub.eventId ?? null : null;
+  };
+
+  // (a) 没见怪相（上浮一路 / 逃跑一路）→ 强制 captain_revisit（让玩家补上没下去的那一段）
+  assert(reopenEast(POST) === 'tutorial.captain_revisit', '§2d 没见怪相 → 强制开场 captain_revisit');
+  // (b) 见过怪相（教学里下去过 / 已重访下去）→ 强制 captain_revisit_empty（空了的收尾）
+  assert(reopenEast([...POST, 'flag.seen_first_uncanny']) === 'tutorial.captain_revisit_empty', '§2d 见过怪相 → 强制开场 captain_revisit_empty');
+  // (c) 两变体都走过（event_seen 都写）→ 不再强制故事开场（回归普通下潜）
+  const done = reopenEast([...POST, 'flag.seen_first_uncanny', 'event_seen:tutorial.captain_revisit', 'event_seen:tutorial.captain_revisit_empty']);
+  assert(done !== 'tutorial.captain_revisit' && done !== 'tutorial.captain_revisit_empty', '§2d 重访走完 → 不再强制故事开场');
+  L('  storyOpenEvents 变体选择 + weight0 + 防重播 ✓');
+}
+
+// ═══════════════════════════════════════════════════════════════
 // §3 存档 round-trip：story flags 往返后派生不变
 // ═══════════════════════════════════════════════════════════════
 L('§3 存档 round-trip');

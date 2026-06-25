@@ -248,9 +248,10 @@
 
     {
       "id": "tutorial.captain_revisit",
+      "_doc": "weight 0：剧情重访·只经 poi.anchor.east_reef.storyOpenEvents 强制开场（不进随机池·否则被内容库淹没=命中率个位数%·quirk #174）。",
       "depthRange": [24, 30],
       "zoneTags": ["reef", "wreck"],
-      "weight": 10,
+      "weight": 0,
       "oncePerSave": true,
       "prereqFlags": ["story.ch1.hook"],
       "forbiddenFlags": ["flag.seen_first_uncanny"],
@@ -279,9 +280,10 @@
 
     {
       "id": "tutorial.captain_revisit_empty",
+      "_doc": "weight 0：剧情重访（见过怪相后·空了）·只经 poi.anchor.east_reef.storyOpenEvents 强制开场（不进随机池·quirk #174）。",
       "depthRange": [24, 30],
       "zoneTags": ["reef", "wreck"],
-      "weight": 10,
+      "weight": 0,
       "oncePerSave": true,
       "prereqFlags": ["story.ch1.hook", "flag.seen_first_uncanny"],
       "title": "旧沉船",

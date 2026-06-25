@@ -101,6 +101,9 @@ tasks.push({ name: 'check-dive-refs', cmd: ['node', join('scripts', 'check-dive-
 // 材料刷点五条门（纯 node·openEventPool 挂 anchor + ≥3 不同 beat + 引用可解析 + beat 专属 + 与 openEventId 互斥，见 scripts/check-farm-pois.mjs）
 tasks.push({ name: 'check-farm-pois', cmd: ['node', join('scripts', 'check-farm-pois.mjs')] });
 
+// 故事重访强制开场四条门（纯 node·storyOpenEvents 挂 anchor + 引用可解析 + 事件 weight0 + 与 openEventId/Pool 互斥·quirk #174·见 scripts/check-story-open-events.mjs）
+tasks.push({ name: 'check-story-open-events', cmd: ['node', join('scripts', 'check-story-open-events.mjs')] });
+
 // 持久多口洞绑定门（纯 node·caves.json 参数 sane + chart_pois caveEntry 不悬空·多口持久洞 SPEC §7·见 scripts/check-cave-bindings.mjs）
 tasks.push({ name: 'check-cave-bindings', cmd: ['node', join('scripts', 'check-cave-bindings.mjs')] });
 

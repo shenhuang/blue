@@ -182,6 +182,16 @@ export interface ChartPoi {
   openEventId?: string;
   openEventFlag?: string;
   /**
+   * 「故事重访变体」强制开场（非锚点·镜像 `story` 的 eventId+revisitEventId 但**不占** 4 canon anchor 名额·
+   * 也不像 openEventId 只能单事件）：设了 storyOpenEvents ⇒ 入潜按**顺序**选第一个「门控通过且未见过」的事件强制开场；
+   * 都不合（已全部走过）→ 普通下潜。**变体切换读各事件自身的 prereqFlags/forbiddenFlags/oncePerSave(event_seen)/
+   * prereqEventIds（单一真相·POI 不重复写 flag 逻辑）**。用于「重返同一地点·随进度换节拍」的剧情点
+   * （如教学后重返东礁老沉船＝tutorial.captain_revisit〔没见过怪相·可下去看〕→ captain_revisit_empty〔见过了·空了〕）。
+   * 这些事件应 `weight: 0`（不进随机池·只经本机制强制触发·否则会被内容库淹没＝命中率个位数%·见 quirk #174）。
+   * 与 openEventId / openEventPool 互斥（单一强制开场源·check-story-open-events 守门）。置位归事件 setProfileFlags（dive-start 只读不写）。
+   */
+  storyOpenEvents?: string[];
+  /**
    * 「材料刷点」范式（P1-2·playtest-findings「每区图谱」）：设了 openEventPool ⇒ 本 POI 是一个**专门刷点**——
    * 入潜从池里**轮替**取一个开场事件（rotation by profile.runsCompleted·每潜递进 ⇒ 每次来不同 beat），
    * 让玩家「能刷某素材，但别反复同一段剧情」。与 openEventId 互斥（单一强制开场源·check-farm-pois 守门）。

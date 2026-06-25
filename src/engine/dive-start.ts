@@ -16,7 +16,7 @@ import type {
   PersistentCave,
 } from '@/types';
 import { generateDiveMap, generatePersistentCaveMap, applyCaveOverlays, cavePortalsOf, caveSeededRng, caveHash } from './mapgen';
-import { getZone } from './zones';
+import { getZone, getEventById } from './zones';
 import { getCave } from './caves';
 import {
   appendLog,
@@ -446,11 +446,32 @@ export function startDiveFromPoi(
     };
   }
 
+  // 「故事重访变体」强制开场（types/chart.ts ChartPoi.storyOpenEvents·quirk #174）：POI 带 storyOpenEvents ⇒
+  // 按**顺序**选第一个「门控通过且未见过」的事件强制开场（变体随进度切换·如教学后重返东礁老沉船＝
+  // captain_revisit〔没见怪相·可下去〕→ captain_revisit_empty〔见过了·空了〕→ 都走过则普通下潜）。
+  // 门控读各事件**自身**的 prereqFlags/forbiddenFlags/oncePerSave(event_seen)/prereqEventIds（单一真相·POI 不重复写）。
+  // 纯读 profile·不写 flag（置位归事件 setProfileFlags·同上方强制开场）。与 openEventId 互斥（剧情开场优先）。
+  if (!poi.openEventId && poi.storyOpenEvents && poi.storyOpenEvents.length > 0) {
+    const flags = s.profile.flags;
+    const pick = poi.storyOpenEvents.find((id) => {
+      const ev = getEventById(id);
+      if (!ev) return false;
+      if (ev.oncePerSave && flags.has(`event_seen:${id}`)) return false;
+      if (ev.prereqFlags && !ev.prereqFlags.every((f) => flags.has(f))) return false;
+      if (ev.forbiddenFlags && ev.forbiddenFlags.some((f) => flags.has(f))) return false;
+      if (ev.prereqEventIds && !ev.prereqEventIds.every((e) => flags.has(`event_seen:${e}`))) return false;
+      return true;
+    });
+    if (pick) {
+      s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: pick } } };
+    }
+  }
+
   // 「材料刷点」范式（P1-2·types/chart.ts ChartPoi.openEventPool）：POI 带 openEventPool ⇒ 入潜从池里
   // **轮替**取一个开场事件——rotation by runsCompleted（每潜递进 ⇒ 反复来刷时每次不同 beat·"能刷但别
   // 反复同一段剧情"），确定性 ⇒ 可被 playthrough-farm-poi 钉死。纯读 profile·不写 flag（同上方强制开场）。
   // 与 openEventId 互斥（check-farm-pois 守门）；这里加 `!poi.openEventId` 兜底＝剧情强制开场优先于刷点轮替。
-  if (!poi.openEventId && poi.openEventPool && poi.openEventPool.length > 0) {
+  if (!poi.openEventId && !poi.storyOpenEvents && poi.openEventPool && poi.openEventPool.length > 0) {
     const pool = poi.openEventPool;
     const idx = ((state.profile.runsCompleted % pool.length) + pool.length) % pool.length;
     s = {
