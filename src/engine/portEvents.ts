@@ -20,9 +20,11 @@ export function eventDoneFlag(eventId: string): string {
 const FLAG_RETURN_TRIGGERS: Array<{ whenFlag: string; eventId: string; unlessFlag?: string }> = [
   // 精确路径：拿到图筒后自愿上浮（tutorial.deeper → ascend_now 设此 flag）
   { whenFlag: 'flag.tutorial_ascended', eventId: 'tutorial.ending_safe', unlessFlag: 'flag.tutorial_complete' },
-  // 兜底：教学已开场（ch1.hook 在 prologue 即设）但未完成时——逃跑/提前上浮等边缘路径均由此收口。
+  // 兜底：prologue 已见但教学未完成——逃跑/提前上浮等边缘路径均由此收口。
+  // event_seen:tutorial.prologue 由引擎机制写（oncePerSave resolveOption）比 story.ch1.hook（内容 setProfileFlags）
+  // 更可靠：旧存档只要跑过 prologue 就一定有此 flag，不受内容字段加入时间影响。
   // tutorial.ending_safe 的 eventDoneFlag 防止与上条双播；flag.tutorial_complete 防止教学后重触。
-  { whenFlag: 'story.ch1.hook', eventId: 'tutorial.ending_safe', unlessFlag: 'flag.tutorial_complete' },
+  { whenFlag: 'event_seen:tutorial.prologue', eventId: 'tutorial.ending_safe', unlessFlag: 'flag.tutorial_complete' },
 ];
 
 /**
