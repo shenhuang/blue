@@ -63,9 +63,9 @@
         "name": "蓝洞群",
         "blurb": "进了洞就不能想上就上——头上是岩，要么从另一头出来。氧气备足，看见亮的地方就往亮处走。",
         "distance": 1,
-        "owner": "lighthouse.ch1_trench_outpost",
-        "mapX": -0.01,
-        "mapY": -0.04,
+        "owner": "lighthouse.home",
+        "mapX": 0.18,
+        "mapY": -0.1,
         "persistent": true,
         "requiresFlags": [
           "flag.tutorial_complete"
@@ -77,9 +77,9 @@
         "name": "横岩廊",
         "blurb": "这洞几乎不往下走——一直往里。水浅，气省，省到你容易忘了：来路有多长，回头的路就有多长。老规矩，气用掉三分之一就掉头。",
         "distance": 1,
-        "owner": "lighthouse.ch1_trench_outpost",
-        "mapX": 0.02,
-        "mapY": -0.09,
+        "owner": "lighthouse.home",
+        "mapX": 0.21,
+        "mapY": -0.07,
         "persistent": true,
         "requiresFlags": [
           "flag.tutorial_complete"
@@ -220,7 +220,13 @@
           "flag.tutorial_complete",
           "story.ch1.whalefall_found"
         ],
-        "modifier": { "depthRange": [80, 100], "current": "mild" }
+        "modifier": {
+          "depthRange": [
+            80,
+            100
+          ],
+          "current": "mild"
+        }
       },
       {
         "id": "poi.anchor.whalefall_enrichment",
@@ -236,7 +242,13 @@
           "flag.tutorial_complete",
           "story.ch1.whalefall_found"
         ],
-        "modifier": { "depthRange": [85, 105], "visibility": "murky" }
+        "modifier": {
+          "depthRange": [
+            85,
+            105
+          ],
+          "visibility": "murky"
+        }
       },
       {
         "id": "poi.anchor.whalefall_bones",
@@ -252,7 +264,408 @@
           "flag.tutorial_complete",
           "story.ch1.whalefall_found"
         ],
-        "modifier": { "depthRange": [95, 110], "visibility": "dark" }
+        "modifier": {
+          "depthRange": [
+            95,
+            110
+          ],
+          "visibility": "dark"
+        }
+      },
+      {
+        "id": "poi.anchor.reef_pocket",
+        "zoneId": "zone.reef_pocket",
+        "name": "礁穴",
+        "blurb": "礁盘下面蚀出来的一道穴，洞口比看起来深，进去要侧身，头上是礁。",
+        "distance": 1,
+        "owner": "lighthouse.home",
+        "mapX": 0.06,
+        "mapY": -0.05,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ]
+      },
+      {
+        "id": "poi.anchor.kelp_hollow",
+        "zoneId": "zone.kelp_hollow",
+        "name": "藻洞",
+        "blurb": "海藻把洞口堵成缝，要拨开才能进——里面比外面安静得多，光从藻叶缝隙透不进去。",
+        "distance": 1,
+        "owner": "lighthouse.home",
+        "mapX": 0.09,
+        "mapY": 0.02,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "visibility": "murky"
+        }
+      },
+      {
+        "id": "poi.anchor.tidal_seam",
+        "zoneId": "zone.tidal_seam",
+        "name": "潮缝",
+        "blurb": "退潮后顶部露出的横缝，进去能感到潮位每隔几分钟往下推一下。别在涨潮时往里游。",
+        "distance": 1,
+        "owner": "lighthouse.home",
+        "mapX": 0.05,
+        "mapY": 0.1,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "current": "mild"
+        }
+      },
+      {
+        "id": "poi.anchor.tidal_bore_cave",
+        "zoneId": "zone.tidal_bore_cave",
+        "name": "浪涌穴",
+        "blurb": "涌浪冲成的水道，海况差时水流把人往里推，省力，但出来要顶流——气要留够回程。",
+        "distance": 1,
+        "owner": "lighthouse.home",
+        "mapX": 0.08,
+        "mapY": -0.09,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "current": "strong"
+        }
+      },
+      {
+        "id": "poi.anchor.limestone_slot",
+        "zoneId": "zone.limestone_slot",
+        "name": "石缝",
+        "blurb": "礁盘外缘的竖向石灰岩缝，要侧身才能过，壁面光滑得像磨过的。坐标见导师日志附图。",
+        "distance": 2,
+        "owner": "lighthouse.home",
+        "mapX": 0.14,
+        "mapY": -0.06,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "flag.cave_chart_page"
+        ]
+      },
+      {
+        "id": "poi.anchor.submerged_arch",
+        "zoneId": "zone.submerged_arch",
+        "name": "沉拱厅",
+        "blurb": "坍塌的石拱在水里还保持着弧，穿过拱门是另一段水道，拱的另侧出口通向外海一侧。",
+        "distance": 2,
+        "owner": "lighthouse.home",
+        "mapX": 0.13,
+        "mapY": 0.07,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ]
+      },
+      {
+        "id": "poi.anchor.moonpool_cavern",
+        "zoneId": "zone.moonpool_cavern",
+        "name": "月池穴",
+        "blurb": "洞顶有一处圆形开口，满月时光从那里送进来——但那个口进不去，要从水下另一条路走。",
+        "distance": 1,
+        "owner": "lighthouse.home",
+        "mapX": 0.11,
+        "mapY": 0.19,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ]
+      },
+      {
+        "id": "poi.anchor.wreck_hold",
+        "zoneId": "zone.wreck_hold",
+        "name": "舱格",
+        "blurb": "沉船货舱的隔板锈穿了，内部连通成可以穿行的空间——边角全是生锈的铁和陈年淤泥。",
+        "distance": 1,
+        "owner": "lighthouse.ch1_wreck_outpost",
+        "mapX": 0.02,
+        "mapY": 0.08,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ]
+      },
+      {
+        "id": "poi.anchor.anchor_hollow",
+        "zoneId": "zone.anchor_hollow",
+        "name": "锚坑",
+        "blurb": "船锚磨出来的沟壑，礁石塌了一段后能进人，壁上还留着铁锚刮过的痕迹。",
+        "distance": 1,
+        "owner": "lighthouse.ch1_wreck_outpost",
+        "mapX": -0.06,
+        "mapY": -0.01,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ]
+      },
+      {
+        "id": "poi.anchor.silt_alcove",
+        "zoneId": "zone.silt_alcove",
+        "name": "淤积凹室",
+        "blurb": "淤泥堆出来的凹室，踩下去没过膝盖——什么都是灰的，形状要靠摸才分得清。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_wreck_outpost",
+        "mapX": 0.07,
+        "mapY": 0.04,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ],
+        "modifier": {
+          "visibility": "murky"
+        }
+      },
+      {
+        "id": "poi.anchor.sandfall_cave",
+        "zoneId": "zone.sandfall_cave",
+        "name": "沙瀑洞",
+        "blurb": "白沙从顶部裂缝慢慢往下沉，像把一场雪封进水里。坐标见导师日志，说深处看不见沙从哪里来。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_wreck_outpost",
+        "mapX": -0.02,
+        "mapY": 0.07,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "flag.cave_chart_page"
+        ]
+      },
+      {
+        "id": "poi.anchor.ossuary_passage",
+        "zoneId": "zone.ossuary_passage",
+        "name": "骨道",
+        "blurb": "礁壁里嵌着动物骨骼——鱼骨、鸟骨，还有一些说不上来是什么形状的。导师日志后段有这条路的草图。",
+        "distance": 3,
+        "owner": "lighthouse.ch1_wreck_outpost",
+        "mapX": -0.08,
+        "mapY": 0.08,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "story.ch1.anchor.wreck"
+        ],
+        "modifier": {
+          "depthOffset": 5
+        }
+      },
+      {
+        "id": "poi.anchor.shaft_crack",
+        "zoneId": "zone.shaft_crack",
+        "name": "竖穴裂缝",
+        "blurb": "孤立海山上被蚀开的一道竖向裂缝，从顶往下看不见底——进去要垂直下降，出口在更深的侧壁上。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_midwater_outpost",
+        "mapX": -0.05,
+        "mapY": -0.05,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "flag.cave_chart_page"
+        ]
+      },
+      {
+        "id": "poi.anchor.blind_alley",
+        "zoneId": "zone.blind_alley",
+        "name": "暗礁巷",
+        "blurb": "海山侧面两道礁壁夹出的水道，顶封死——不能往上走，只能往里或往外，气要算好回程。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_midwater_outpost",
+        "mapX": 0.07,
+        "mapY": 0.09,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "flag.cave_chart_page"
+        ]
+      },
+      {
+        "id": "poi.anchor.blue_throat",
+        "zoneId": "zone.blue_throat",
+        "name": "蓝喉",
+        "blurb": "海山岩体上一处蓝色洞口——光折射让里面比外面蓝一个等级，进去以后蓝色就不见了。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_midwater_outpost",
+        "mapX": -0.09,
+        "mapY": 0.12,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "flag.cave_chart_page"
+        ]
+      },
+      {
+        "id": "poi.anchor.chamber_network",
+        "zoneId": "zone.chamber_network",
+        "name": "蜂房洞",
+        "blurb": "孤峰内部被蚀空成连通的腔室，多个出口朝不同方向——据说导师队在这里走散过一次，用绳才找回来。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_midwater_outpost",
+        "mapX": 0.1,
+        "mapY": -0.07,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "flag.cave_chart_page"
+        ]
+      },
+      {
+        "id": "poi.anchor.murk_gallery",
+        "zoneId": "zone.murk_gallery",
+        "name": "浑水廊",
+        "blurb": "能见度只有一两米——水不是浑的，是暗的，光在这里消耗得比别处快。越往里越不够用。",
+        "distance": 3,
+        "owner": "lighthouse.ch1_midwater_outpost",
+        "mapX": -0.13,
+        "mapY": -0.1,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "story.ch1.anchor.midwater"
+        ],
+        "modifier": {
+          "visibility": "dark"
+        }
+      },
+      {
+        "id": "poi.anchor.mirror_maze",
+        "zoneId": "zone.mirror_maze",
+        "name": "镜廊",
+        "blurb": "浅色石壁反光，让人以为某条水道还有一条对称的——有人在这里走失了，找到时已经不在我们进去的那一层。",
+        "distance": 3,
+        "owner": "lighthouse.ch1_midwater_outpost",
+        "mapX": 0.14,
+        "mapY": 0.1,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "story.ch1.anchor.midwater"
+        ]
+      },
+      {
+        "id": "poi.anchor.serpentine_deep",
+        "zoneId": "zone.serpentine_deep",
+        "name": "蛇行深处",
+        "blurb": "水道一直在转，很难辨认来路。向导手册把这种地形叫「蛇形」，旁边标了红色。",
+        "distance": 3,
+        "owner": "lighthouse.ch1_midwater_outpost",
+        "mapX": 0.08,
+        "mapY": 0.18,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "story.ch1.anchor.midwater"
+        ]
+      },
+      {
+        "id": "poi.anchor.flooded_gallery",
+        "zoneId": "zone.flooded_gallery",
+        "name": "漫水回廊",
+        "blurb": "横向延伸的长廊，不往下走——一直往里。来路有多长，回头就有多长，加上流向在里头会转。",
+        "distance": 3,
+        "owner": "lighthouse.ch1_midwater_outpost",
+        "mapX": -0.15,
+        "mapY": 0.08,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "story.ch1.anchor.midwater"
+        ],
+        "modifier": {
+          "current": "mild"
+        }
+      },
+      {
+        "id": "poi.anchor.drowned_well",
+        "zoneId": "zone.drowned_well",
+        "name": "沉井",
+        "blurb": "以前是陆地上的水井，海平面涨上来淹掉了。井壁很窄，往下看是黑色，没有底——水非常非常凉。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_vent_outpost",
+        "mapX": -0.08,
+        "mapY": -0.06,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "flag.cave_chart_page"
+        ],
+        "modifier": {
+          "visibility": "dark"
+        }
+      },
+      {
+        "id": "poi.anchor.thermal_pocket",
+        "zoneId": "zone.thermal_pocket",
+        "name": "热水窟",
+        "blurb": "热液从岩壁裂缝里渗出来，水是温的——矿物的味道隔着调节器还是尝得到。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_vent_outpost",
+        "mapX": 0.04,
+        "mapY": 0.07,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete"
+        ]
+      },
+      {
+        "id": "poi.anchor.lava_branch",
+        "zoneId": "zone.lava_branch",
+        "name": "熔管岔道",
+        "blurb": "火山熔岩管道被海水灌进来，分岔处的形状像是从里面撑开的——多个方向，坐标见记录。",
+        "distance": 2,
+        "owner": "lighthouse.ch1_vent_outpost",
+        "mapX": -0.04,
+        "mapY": 0.1,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "flag.cave_chart_page"
+        ]
+      },
+      {
+        "id": "poi.anchor.collapsed_caldera",
+        "zoneId": "zone.collapsed_caldera",
+        "name": "塌陷火口",
+        "blurb": "火山口坍塌后灌了海水，熔岩凝固时留下的蜂巢形状还在。非常热，温跃层在入口处就能感到。",
+        "distance": 3,
+        "owner": "lighthouse.ch1_vent_outpost",
+        "mapX": 0.1,
+        "mapY": -0.05,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "story.ch1.anchor.vent"
+        ],
+        "modifier": {
+          "depthOffset": 10
+        }
+      },
+      {
+        "id": "poi.anchor.black_basin",
+        "zoneId": "zone.black_basin",
+        "name": "黑水盆",
+        "blurb": "盆地形的深穴，水从四周往里聚，没有出水口——水就停在这里，非常非常凉。",
+        "distance": 3,
+        "owner": "lighthouse.ch1_vent_outpost",
+        "mapX": -0.1,
+        "mapY": -0.01,
+        "persistent": true,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "story.ch1.anchor.vent"
+        ],
+        "modifier": {
+          "visibility": "dark"
+        }
       }
     ],
     "roamingTemplates": [
@@ -299,9 +712,9 @@
         "name": "蓝洞暗河口",
         "blurb": "洞群更里面的一处岔口，光进不去。当地人说水声在那儿是反着的。",
         "distance": 2,
-        "owner": "lighthouse.ch1_trench_outpost",
-        "mapX": -0.03,
-        "mapY": 0.05,
+        "owner": "lighthouse.home",
+        "mapX": 0.19,
+        "mapY": -0.04,
         "weight": 2,
         "requiresFlags": [
           "flag.tutorial_complete"

@@ -231,13 +231,14 @@ for (const id of [
 ]) {
   assert(c1.pois.some((p) => p.id === id), `教学后剧情锚点恒显: ${id}`);
 }
-for (const z of ['zone.blue_caves', 'zone.wreck_graveyard']) {
+// blue_caves 已迁 owner=lighthouse.home（§7·cave-chart）：教学后随家区出现，不再在残骸/海沟门控列表
+for (const z of ['zone.wreck_graveyard']) {
   assert(
     !c1.pois.some((p) => p.zoneId === z && p.persistent && !p.story),
     `教学后 ${z} 区未解锁 → 其非剧情 anchor 应不揭示`,
   );
 }
-L(`  教学后家区 anchor + 剧情锚点恒显；残骸/海沟区门控 ✓`);
+L(`  教学后家区 anchor + 剧情锚点恒显；残骸区门控 ✓`);
 
 // ============================================
 // 2. 抵达门控（家灯塔船坞 requiresLighthouseUpgrade）
@@ -299,8 +300,8 @@ L(`  前哨点亮远端 + reach ${reachHome}→${reachOutpost} ✓`);
 // (d) 锚点从 home 算的 reach 与写死 distance 一致（不破手感）
 const anchorReach: [string, number, number, number][] = [
   ['zone.east_reef', 0.18, 0.5, 0],
-  ['zone.blue_caves', 0.46, 0.3, 1],
-  ['zone.blue_caves', 0.38, 0.22, 1], // 横岩廊（平廊侧口·#114 续·#118 挪开与蓝洞群的视觉重叠）
+  ['zone.blue_caves', 0.24, 0.4, 1],  // 蓝洞群（§7 迁 home·offset(0.18,-0.10)+home(0.06,0.5)）
+  ['zone.blue_caves', 0.27, 0.43, 1], // 横岩廊（§7 迁 home·offset(0.21,-0.07)+home(0.06,0.5)）
   ['zone.old_lighthouse_reef', 0.44, 0.72, 1],
   ['zone.wreck_graveyard', 0.72, 0.55, 2],
   // St1 一章锚点四点（#117·剧情 SPEC §4.1）
@@ -394,11 +395,11 @@ L(`  起始：深度 ${st.run!.currentDepth}m / 氧 ${st.run!.stats.oxygen} / tu
 // 5b. 平廊 POI（#114 续）：modifier=GenOpts 薄投影——窄 span + 长图 + 剖面 k 直通 mapgen
 // ============================================
 L('\n========== 5b. 平廊 POI（横岩廊·窄 span/长图/剖面 k 直通）==========');
-// 区域揭示门控：横岩廊/蓝洞群在海沟区——需该区揭示才在海图上。用全区揭示档（剧情全推进等价）。
+// 区域揭示门控：横岩廊/蓝洞群已迁 owner=lighthouse.home（§7·cave-chart）——家区教学后即揭示。用全区揭示档验其他 POI。
 const revealedProfile = withHomeDockyard(fullyRevealedProfile());
 const chartG = generateChart({ profile: revealedProfile });
 const galleryPoi = chartG.pois.find((p) => p.id === 'poi.anchor.flat_gallery');
-assert(galleryPoi, '横岩廊 anchor 应在海图上（海沟区已揭示）');
+assert(galleryPoi, '横岩廊 anchor 应在海图上（home 区·教学后即揭示）');
 let gs: GameState = { ...createInitialGameState(), profile: revealedProfile };
 gs = startDiveFromPoi(gs, galleryPoi);
 assert(gs.phase.kind === 'dive', '平廊 POI 应进入 dive phase');
@@ -525,9 +526,10 @@ assert(fogRoam <= 2, `7: 浓雾机会点 ≤2（实际 ${fogRoam}）`);
 // 只数真·zone/story 锚点（排除 #131 派生的深度柱深入 POI——它们也 persistent·但属档位制·不是天气轴）。
 const anchorCount = (c: { pois: { persistent: boolean; columnId?: string }[] }) =>
   c.pois.filter((p) => p.persistent && p.columnId === undefined).length;
+// 23 = 旧 13 + 新 10 直接可见洞穴 anchor（cave-chart §3：home 6 + wreck 3 + vent 1·intel/story 门控洞不计）
 assert(
-  anchorCount(fogChart) === 13 && anchorCount(calmChart) === 13,
-  `7: 锚点不受天气遮蔽（期望 13·实际 fog ${anchorCount(fogChart)}/calm ${anchorCount(calmChart)}·含鲸落 found 后 3 生态点·#137·守进度安全·#117 四锚点入列·P1-2 鲨鱼刷点 anchor reef_shark_shoals 入列）`,
+  anchorCount(fogChart) === 23 && anchorCount(calmChart) === 23,
+  `7: 锚点不受天气遮蔽（期望 23·实际 fog ${anchorCount(fogChart)}/calm ${anchorCount(calmChart)}·含鲸落 found 后 3 生态点·#137·守进度安全·#117 四锚点入列·P1-2 鲨鱼刷点 anchor reef_shark_shoals 入列）`,
 );
 assert(fogChart.conditions.weather === 'fog' && calmChart.conditions.weather !== 'fog', '7: SeaChart.conditions 落返回结构');
 L(`  海况确定性 + 随回合变 + 浓雾遮一处（run ${fogRun} 雾→${fogRoam} / run ${calmRun} ${calmChart.conditions.weather}→${calmRoam}）+ 锚点不受影响 ✓`);
