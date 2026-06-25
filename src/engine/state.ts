@@ -27,7 +27,9 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // 形状变（profile/run 多 Map 容器·序列化加 __map 分支）；按 quirk #99 不写迁移、bump 弃旧档从头开始。
 // 9→10（多口持久洞·方案 B·2026-06-25）：profile.caveMaps（Map<caveId, PersistentCave{map,explored:Set,portals}>）+ run.caveId 新增——
 // 形状变（profile 多一个嵌 DiveMap+Set 的 Map 容器·序列化复用 __map/__set 分支·零新代码）；按 quirk #99 不写迁移、bump 弃旧档从头开始。
-const SAVE_VERSION = 10;
+// 10→11（温度系统接线·2026-06-25）：Stats 加 thermalStress（0–100·热/冷双极环境债·见 engine/temperature.ts）——
+// 形状变（run.stats 多一字段）；按 quirk #99 不写迁移、bump 弃旧档从头开始（createNewRun 种默认 0）。
+const SAVE_VERSION = 11;
 
 /** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile 用。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
@@ -206,6 +208,7 @@ export function createInitialStats(): Stats {
     oxygen: 60, // 蓝鳍 Mk.I 基础值
     sanity: 100,
     nitrogen: 0,
+    thermalStress: 0, // 温度系统：起手无热应力（仅热/冷极洞累积·见 engine/temperature.ts）
   };
 }
 
@@ -352,6 +355,7 @@ export function clampStats(stats: Stats, max: { stamina: number; oxygen: number 
     oxygen: Math.max(0, Math.min(stats.oxygen, max.oxygen)),
     sanity: Math.max(0, Math.min(stats.sanity, 100)),
     nitrogen: Math.max(0, Math.min(stats.nitrogen, 100)),
+    thermalStress: Math.max(0, Math.min(stats.thermalStress, 100)),
   };
 }
 

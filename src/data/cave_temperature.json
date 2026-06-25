@@ -1,44 +1,44 @@
 {
-  "version": 1,
-  "_doc": "温度侧表（热/冷双极门控）·按 zoneId 旁挂·不进 zones.json。只列非中性洞（未命中=中性全可探·懒默认）。intensity 占位待作者调（SPEC §9）。reach 由 intensity 在 BASELINE_INSULATION 下派生·此处标注=机制门校验对象（SPEC §3/§8.5）。引用的 zoneId 随 cave-bmap/Batch 0 落 zones.json·zoneId⊆zones.json 校验门留 T2 接线。见 docs/spec/深海回响_温度系统_SPEC.md。",
+  "version": 2,
+  "_doc": "温度侧表（热/冷双极门控）·按 zoneId 旁挂·不进 zones.json。只列非中性洞（未命中=中性全可探·懒默认）。intensity 占位待作者调（SPEC §9）。reach 由 intensity 在 BASELINE_INSULATION 下派生·此处标注=机制门校验对象（SPEC §3/§8.5）。zoneId 用 zones.json 的规范全 id（zone.* 前缀）·= run.zoneId 同口径（接线后 getCaveTemperature(run.zoneId) 才命中）·zoneId⊆zones.json 由 playthrough-temperature §7 守门。见 docs/spec/深海回响_温度系统_SPEC.md。",
   "entries": [
     {
-      "zoneId": "thermal_pocket",
+      "zoneId": "zone.thermal_pocket",
       "polarity": "hot",
       "intensity": 55,
       "reach": "partial",
       "note": "热极·热水窟·热液渗入（复用现有 vent 池）。多数探不全。"
     },
     {
-      "zoneId": "lava_branch",
+      "zoneId": "zone.lava_branch",
       "polarity": "hot",
       "intensity": 60,
       "reach": "partial",
       "note": "热极·熔管岔道。探不全。"
     },
     {
-      "zoneId": "collapsed_caldera",
+      "zoneId": "zone.collapsed_caldera",
       "polarity": "hot",
       "intensity": 80,
       "reach": "entry_blocked",
       "note": "热极·塌陷火口（大）。个别入口不可达=过热封口（§6）。"
     },
     {
-      "zoneId": "black_basin",
+      "zoneId": "zone.black_basin",
       "polarity": "cold",
       "intensity": 50,
       "reach": "partial",
       "note": "冷极·黑水盆。设定原文「水非常非常凉」。探不全。"
     },
     {
-      "zoneId": "the_deep_gate",
+      "zoneId": "zone.the_deep_gate",
       "polarity": "cold",
       "intensity": 60,
       "reach": "partial",
       "note": "冷极·深门核心冷。「核心不可达」另由远双锁/剧情门负责·温度只给核心冷·不耦合那套门。"
     },
     {
-      "zoneId": "drowned_well",
+      "zoneId": "zone.drowned_well",
       "polarity": "cold",
       "intensity": 45,
       "reach": "partial",

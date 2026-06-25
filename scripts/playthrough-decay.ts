@@ -23,7 +23,7 @@ function makeCorpseWith(itemIds: string[]): GameState {
       runId: 'test-run',
       zoneId: 'zone.old_lighthouse_reef',
       map: null,
-      stats: { stamina: 0, oxygen: 0, sanity: 100, nitrogen: 30 },
+      stats: { stamina: 0, oxygen: 0, sanity: 100, nitrogen: 30, thermalStress: 0 },
       staminaMax: 100,
       oxygenMax: 60,
       equipment: { tank: null, suit: null, light: null, tool: null, charm: null },

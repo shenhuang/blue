@@ -17,6 +17,13 @@ export interface Stats {
   oxygen: number; // 0–oxygenMax（按"剩余回合数"计）
   sanity: number; // 0–100
   nitrogen: number; // 0–100
+  /**
+   * 热应力（温度系统·热/冷双极局部环境债·0–100·见 engine/temperature.ts）。
+   * 只在热极/冷极洞累积（按 run.zoneId 查侧表·潜服 insulation 抵消）、离开即恢复；过 WARN 后扣体力。
+   * 与 nitrogen 正交（氮气=深度/时间全局债·温度=按洞双极局部债）。**非事件可投递 stat**——环境驱动，
+   * 故不进 `Stat` 联合（事件 stat-delta 枚举数组无需改）。形状变 → SAVE_VERSION 10→11（quirk #99·bump 弃旧档）。
+   */
+  thermalStress: number; // 0–100
 }
 
 /** 玩家档案（永久数据，跨次下潜保留） */

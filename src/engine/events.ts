@@ -13,12 +13,13 @@ import type {
 } from '@/types';
 import { addToInventory, addToPoiSetMap, appendLog, clampStats, totalRunInventoryWeight } from './state';
 import { getItemDef, harvestPersistOf, weightForItem } from './items';
-import { equipmentUnlocksAction } from './equipment';
+import { equipmentUnlocksAction, loadoutInsulation } from './equipment';
 import { EQUIPMENT_SLOTS } from '@/types/items';
 import { restoreLighthouse, advanceOutpost } from './lighthouses';
 import { lampPowerDrain, alertDelta, ALERT_MAX } from './clarity';
 import { effectiveStaminaMax } from './modifiers';
 import { stepNitrogen, narcosisSanityDrain } from './nitrogen';
+import { getCaveTemperature, stepThermalStress, thermalStaminaDrain } from './temperature';
 
 // —— 数据装载 ——
 // 单一事件库是 zones.ts::EVENT_DB（含全部 zone 的事件）。getEvent 直接委托给它，
@@ -377,11 +378,18 @@ export function tickTurns(
   const depthFactor = 1 + depth / 50;
   const oxygenDrain = turns * 1 * depthFactor * (opts?.o2CostMult ?? 1);
 
+  // 温度：按洞双极局部债（按 run.zoneId 查侧表·潜服 insulation 抵消·深度无关）·见 engine/temperature.ts。
+  // 中性洞（侧表未命中·绝大多数 zone）→ intensity 0 → ceiling 0 → thermalStress 趋 0（恢复）⇒ 行为逐字节不变。
+  const thermalIntensity = getCaveTemperature(run.zoneId).intensity;
+  const insulation = loadoutInsulation(run.equipment);
+
   const stats: Stats = {
     ...run.stats,
     oxygen: Math.max(0, run.stats.oxygen - oxygenDrain),
     // 氮气：饱和模型（深度定 ceiling·停留定逼近·同一式同管吸/排）·见 engine/nitrogen.ts
     nitrogen: stepNitrogen(run.stats.nitrogen, depth, turns),
+    // 温度：指数逼近 ceiling（同管累积/恢复）·逐回合 step == 一次性 step(turns)（守 stalker 一致性·同氮气）
+    thermalStress: stepThermalStress(run.stats.thermalStress, thermalIntensity, insulation, turns),
   };
   // 深度→理智的「即时压抑」基础衰减（与氮气无关·一沉到深就压）
   if (depth >= 30) {
@@ -397,6 +405,12 @@ export function tickTurns(
   const visDrain = visibilitySanityDrain(run.diveModifier?.visibility, turns);
   if (visDrain > 0) {
     stats.sanity = Math.max(0, stats.sanity - visDrain);
+  }
+  // 温度超阈后果（温度 SPEC §5）：热应力过 WARN → 扣体力（热极脱力 / 冷极麻木·叙事分极性·数学同款）。
+  // 用进入本段前的应力估算（与 narcosis 同口径·确定性）。中性洞应力恒 0 ⇒ drain 0 ⇒ 体力不动（逐字节不变）。
+  const thermalDrain = thermalStaminaDrain(run.stats.thermalStress, turns);
+  if (thermalDrain > 0) {
+    stats.stamina = Math.max(0, stats.stamina - thermalDrain);
   }
 
   // 深水区 Phase 0a：灯耗电（清水因子 0＝有自然光不点灯；黑水/微浊才耗；归零 → clarity 强制摸黑）。

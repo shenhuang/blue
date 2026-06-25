@@ -5,6 +5,8 @@
 //   4. thermalStaminaDrain：随 stress 单调、WARN 以下 = 0、锚点
 //   5. 数据↔标注一致性：侧表每条 reach == expectedReach(intensity)
 //   6. 侧表合法性：polarity ∈ {hot,cold}、intensity ∈ [0,100]、zoneId 无重复
+//   7. 接线门：侧表 zoneId ⊆ zones.json（SPEC §0·接线后才有意义）
+//   8. 接线门：tickTurns 逐回合 == 一次性（thermalStress 不变量·守 stalker 口径）+ 中性洞恒 0（行为不变）
 //
 // 跑法： npx tsx scripts/playthrough-temperature.ts
 
@@ -20,6 +22,10 @@ import {
   expectedReach,
   thermalStaminaDrain,
 } from '../src/engine/temperature';
+import zonesData from '../src/data/zones.json';
+import { createNewRun, createStarterLoadout } from '../src/engine/state';
+import { tickTurns } from '../src/engine/events';
+import { loadoutInsulation } from '../src/engine/equipment';
 
 const log: string[] = [];
 const L = (s: string) => log.push(s);
@@ -102,6 +108,41 @@ for (const e of caveTemperatureEntries()) {
 const neutral = getCaveTemperature('__not_in_table__');
 assert(neutral.polarity === 'neutral' && neutral.intensity === 0 && neutral.reach === 'full', '未命中 → 中性全可探默认');
 L(`  ${seen.size} 条合法 + 未命中走中性默认 ✓`);
+
+// ── 7. 接线门：侧表 zoneId ⊆ zones.json（SPEC §0）──
+// 接线后 getCaveTemperature(run.zoneId) 才命中 → 侧表 zoneId 必须是 zones.json 的规范全 id（zone.* 前缀·= run.zoneId 口径）。
+L('========== 7. 侧表 zoneId ⊆ zones.json（接线校验门）==========');
+const zoneIds = new Set((zonesData as { zones: { id: string }[] }).zones.map((z) => z.id));
+for (const e of caveTemperatureEntries()) {
+  assert(zoneIds.has(e.zoneId), `${e.zoneId}: 侧表 zoneId 不在 zones.json（接线后须是规范 zone.* id·否则 getCaveTemperature 永不命中）`);
+}
+L(`  ${caveTemperatureEntries().length} 条侧表 zoneId 全在 zones.json ✓`);
+
+// ── 8. 接线门：tickTurns 端到端 thermalStress 不变量 ──
+// 守「逐回合 step == 一次性 step(turns)」指数不变量（与 stepNitrogen 同款回归口径）· + 中性洞恒 0（不破坏现有行为）。
+L('========== 8. tickTurns 逐回合 == 一次性（thermalStress 不变量）==========');
+const HOT = 'zone.thermal_pocket'; // 侧表 hot·intensity 55·baseline insulation 30 → ceiling 25·持续累积
+// 逐回合 ×6
+let runA = createNewRun({ zoneId: HOT });
+for (let i = 0; i < 6; i++) runA = tickTurns(runA, 1);
+// 一次性 ×6
+let runB = createNewRun({ zoneId: HOT });
+runB = tickTurns(runB, 6);
+assert(
+  near(runA.stats.thermalStress, runB.stats.thermalStress, 1e-9),
+  `tickTurns 逐回合 ×6 == 一次性(6)（thermalStress 逐字节同数·守 stalker 口径）`,
+);
+assert(runA.stats.thermalStress > 0, '热极洞 tickTurns 应累积 thermalStress（>0）');
+// 中性洞：thermalStress 恒 0（侧表未命中 → ceiling 0 → 不积累 → 现有 playthrough 逐字节不变）
+let runN = createNewRun({ zoneId: 'zone.east_reef' });
+runN = tickTurns(runN, 20);
+assert(runN.stats.thermalStress === 0, '中性洞 tickTurns thermalStress 恒 0（行为不变）');
+// insulation 桥接：起手潜服无 insulation 词条 → loadoutInsulation == BASELINE（兜底口径）
+assert(
+  loadoutInsulation(createStarterLoadout()) === TEMP_BASELINE_INSULATION,
+  `起手潜服无保温词条 → loadoutInsulation == BASELINE(${TEMP_BASELINE_INSULATION})`,
+);
+L(`  逐回合=${runA.stats.thermalStress.toFixed(6)} 一次性=${runB.stats.thermalStress.toFixed(6)} 中性=0 insulation=${loadoutInsulation(createStarterLoadout())} ✓`);
 
 console.log(log.join('\n'));
 console.log('\n温度系统回归门 ✓ 全通过');

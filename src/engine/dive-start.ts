@@ -28,7 +28,8 @@ import {
   RUN_CARRY_WEIGHT,
 } from './state';
 import { getItemDef, weightForItem } from './items';
-import { isOverloaded } from './equipment';
+import { isOverloaded, loadoutInsulation } from './equipment';
+import { getCaveTemperature, thermalAccess } from './temperature';
 import { getRunBonuses, getLighthouseBonuses } from './lighthouses';
 import type { RunStartBonuses } from './lighthouses';
 import { getColumn } from './columns';
@@ -81,6 +82,21 @@ export function startDive(
   if (!state.run) {
     console.warn('Cannot startDive without a RunState');
     return state;
+  }
+
+  // 温度入潜门控（温度系统接线·SPEC §3/§7）：进洞口前查 thermalAccess——净暴露(intensity − insulation)派生三档。
+  // entry_blocked（过热/过冷封口·deficit>40）→ 不让下潜（保温=钥匙·升级保温才进得去）；full/partial 放行
+  // （partial「探不全」由逐回合 thermalStress 累积 + 过阈扣体力的软门承接·见 events.ts::tickTurns）。
+  // 全部下潜路径（zone/POI/band/持久洞 prebuiltMap）统一过此唯一闸（startDive 是单一汇流点）；中性洞 intensity 0 ⇒ 恒 full ⇒ 放行（逐字节不变）。
+  const thermalReach = thermalAccess(
+    getCaveTemperature(zoneId).intensity,
+    loadoutInsulation(state.run.equipment),
+  ).reach;
+  if (thermalReach === 'entry_blocked') {
+    return appendLog(state, {
+      tone: 'system',
+      text: `${zone.name}的温度太过极端——现有潜服扛不住，连洞口都靠不近。升级保温再来。`,
+    });
   }
 
   // 固定资源耗尽（POI 固定资源耗尽·2026-06-25）：POI 下潜（run.poiId 有值·createNewRun 落）解析两层「已采尽」信息

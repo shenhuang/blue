@@ -18,6 +18,7 @@ import type { GameState, EquipmentLoadout, EquipmentInstance, PlayerProfile } fr
 import type { EquipmentEffect, UpgradeStep, EquipmentSlot, ItemDef, WeaponModMeta } from '@/types/items';
 import { getItemDef, allItems, itemSetsFlags } from './items';
 import { appendLog, countInInventory, removeFromInventory, addToInventory } from './state';
+import { TEMP_BASELINE_INSULATION } from './temperature';
 
 /** 装备升级累计加成（EquipmentEffect 的数值 kind·unlocksAction/unlockSonar 非数值不计）。 */
 export interface EquipmentStats {
@@ -25,6 +26,8 @@ export interface EquipmentStats {
   staminaMaxBonus: number;
   physicalArmor: number;
   sanityResist: number;
+  /** 潜服保温累计（温度系统·喂 loadoutInsulation→温度纯函数抵消洞强度·见 engine/temperature.ts）。 */
+  insulation: number;
   lightRadius: number;
   // 声呐件升级增量（段2·作者 2026-06-19）：随 sonar 件 upgradeSteps 累加；
   // getRunBonuses 把这四项喂进 deriveSensorTuning（同名字段·下游形状不变·只换来源）。
@@ -46,7 +49,7 @@ export interface EquipmentStats {
 
 export function emptyEquipmentStats(): EquipmentStats {
   return {
-    oxygenMaxBonus: 0, staminaMaxBonus: 0, physicalArmor: 0, sanityResist: 0, lightRadius: 0,
+    oxygenMaxBonus: 0, staminaMaxBonus: 0, physicalArmor: 0, sanityResist: 0, insulation: 0, lightRadius: 0,
     sonarPingCostReduction: 0, sonarRobustness: 0, sonarRangeBonus: 0, sonarScanRangeBonus: 0,
     lampEfficiency: 0, lampRobustness: 0, lampRangeBonus: 0, signatureReduction: 0,
     soundAbsorbBonus: 0, camoBonus: 0, powerMaxBonus: 0, weaponDamage: 0,
@@ -63,6 +66,7 @@ function addEffects(acc: EquipmentStats, effects: EquipmentEffect[], isBase: boo
       case 'staminaMaxBonus': acc.staminaMaxBonus += e.value; break;
       case 'physicalArmor': acc.physicalArmor += e.value; break;
       case 'sanityResist': acc.sanityResist += e.value; break;
+      case 'insulation': acc.insulation += e.value; break;
       case 'lightRadius': acc.lightRadius += e.value; break;
       case 'lampEfficiency': acc.lampEfficiency += e.value; break;
       case 'lampRobustness': acc.lampRobustness += e.value; break;
@@ -119,6 +123,16 @@ export function getEquipmentStats(loadout: EquipmentLoadout): EquipmentStats {
     }
   }
   return acc;
+}
+
+/**
+ * 整套潜服的「保温标量」（温度系统接线·SPEC §7 insulation 源）：BASELINE_INSULATION 兜底 + 装备 insulation 累计。
+ * 喂温度纯函数（thermalAccess / stepThermalStress 的 insulation 参数·intensity − insulation = 净暴露）——
+ * **温度↔装备唯一桥接点**（temperature.ts 不耦合 equipment 类型·只收标量·SPEC §2）。本棒单标量·不分热/冷保温。
+ * 当前无装备声明 insulation kind ⇒ 恒返回 BASELINE_INSULATION；未来热/冷保温服加 {kind:'insulation'} 即自动并入。
+ */
+export function loadoutInsulation(loadout: EquipmentLoadout): number {
+  return TEMP_BASELINE_INSULATION + getEquipmentStats(loadout).insulation;
 }
 
 /**

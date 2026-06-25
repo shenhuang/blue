@@ -246,6 +246,7 @@ function buildInitialState(input: CombatScenarioInput): GameState {
     oxygen: run.oxygenMax,
     sanity: 100,
     nitrogen: 0,
+    thermalStress: 0,
   };
   run.stats = { ...defaultStats, ...(input.stats ?? {}) };
 
@@ -366,7 +367,7 @@ function diffInventory(before: InventoryItem[], after: InventoryItem[]): Invento
 // ---------------------------------------------------------------------------
 
 function emptyStats(): Stats {
-  return { stamina: 0, oxygen: 0, sanity: 0, nitrogen: 0 };
+  return { stamina: 0, oxygen: 0, sanity: 0, nitrogen: 0, thermalStress: 0 };
 }
 
 function makeEmptySummary(reason: CombatScenarioOutcome, state: GameState): CombatScenarioSummary {

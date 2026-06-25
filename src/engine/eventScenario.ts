@@ -284,6 +284,7 @@ function buildInitialState(input: ScenarioInput, ev: DiveEvent): GameState {
     oxygen: run.oxygenMax,
     sanity: 100,
     nitrogen: 0,
+    thermalStress: 0,
   };
   run.stats = { ...defaultStats, ...(input.stats ?? {}) };
 

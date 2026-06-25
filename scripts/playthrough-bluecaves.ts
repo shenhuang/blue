@@ -186,7 +186,7 @@ state = {
     map: sampleMap,
     currentNodeId: interiorNode!.id, // 内部非 ascent 节点（入口现在是 ascent_point，不会 block）
     currentDepth: 30,
-    stats: { stamina: 80, oxygen: 30, sanity: 70, nitrogen: 25 },
+    stats: { stamina: 80, oxygen: 30, sanity: 70, nitrogen: 25, thermalStress: 0 },
   },
 };
 assert(isAscentBlocked(state.run!), '前置：必须仍在 block 区');
@@ -271,7 +271,7 @@ cs = {
     map: miniMap(),
     currentNodeId: 'air',
     currentDepth: 40,
-    stats: { stamina: 50, oxygen: 30, sanity: 60, nitrogen: 20 },
+    stats: { stamina: 50, oxygen: 30, sanity: 60, nitrogen: 20, thermalStress: 0 },
   },
 };
 const o0 = cs.run!.stats.oxygen;
@@ -304,7 +304,7 @@ cc = {
     map: miniMap(),
     currentNodeId: 'camp',
     currentDepth: 42,
-    stats: { stamina: 40, oxygen: 40, sanity: 50, nitrogen: 30 },
+    stats: { stamina: 40, oxygen: 40, sanity: 50, nitrogen: 30, thermalStress: 0 },
   },
 };
 const runBeforeShort = cc.run!;
@@ -325,7 +325,7 @@ cl = {
     map: miniMap(),
     currentNodeId: 'camp',
     currentDepth: 42,
-    stats: { stamina: 40, oxygen: 50, sanity: 50, nitrogen: 30 },
+    stats: { stamina: 40, oxygen: 50, sanity: 50, nitrogen: 30, thermalStress: 0 },
   },
 };
 const runBeforeLong = cl.run!;
