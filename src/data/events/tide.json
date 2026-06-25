@@ -1,1 +1,304 @@
-{ "events": [] }
+{
+  "events": [
+    {
+      "id": "tide.surge",
+      "depthRange": [8, 28],
+      "zoneTags": ["tide"],
+      "weight": 7,
+      "cooldown": 3,
+      "title": "推流",
+      "body": "水道里的水压紧了一下——没有声音——然后你整个人往里移了半米。\n不是波浪，是整体的水在升。\n脚边的礁棱还够得到。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "fight_current",
+          "label": "扣住礁棱，顶着推流往出口方向退",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你单手扣死一块礁棱，一寸一寸地顶。推力比流还均匀——但你退出去了。两条小臂都在酸。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "你扣不住，被推过了下一个弯。等推力稍停，手才抠进一道窄缝站住，比来路深了好几米。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -6 }
+            }
+          }
+        },
+        {
+          "id": "ride_surge",
+          "label": "收起手脚，让它推，看推到哪停",
+          "outcome": {
+            "text": "推流送你过了一道弯，在前面稍宽的地方散了。你停住，水还在涨。来路在身后，比刚才远一段。"
+          }
+        },
+        {
+          "id": "grip_and_wait",
+          "label": "抓住岩壁，等推流稳住再判断",
+          "outcome": {
+            "text": "你扣死岩棱，撑着。推劲一阵比一阵均匀，没有减——是涨潮，不是浪，等不到头。该走了。",
+            "oxygenTurnCost": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "tide.barnacle_ceiling",
+      "depthRange": [10, 30],
+      "zoneTags": ["tide"],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "高水线",
+      "body": "顶上密排着藤壶，但比藤壶更显眼的是它们上方那道线。\n岩石在那里改了颜色——上灰下黑，线很整齐，像用尺子划的。\n满潮的时候，这里的顶是淹没的。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "measure_line",
+          "label": "贴着顶，量水线到当前深度的差",
+          "outcome": {
+            "text": "你把灯贴着顶扫了一遍。高水线到你现在的深度，还有将近两米。不多，但还没到。你记下这个数。",
+            "oxygenTurnCost": 1
+          }
+        },
+        {
+          "id": "pry_barnacles",
+          "label": "用刀把顶上的藤壶撬下来几枚",
+          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "outcome": {
+            "text": "你把刀尖抵进藤壶根部，一撬一个。壳底面是粗的，腥味在水里散了一圈。装进网兜，分量不轻。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.8 },
+              { "itemId": "item.flint_nodule", "qty": [1, 1], "chance": 0.3 }
+            ]
+          }
+        },
+        {
+          "id": "note_and_pass",
+          "label": "记住位置，不耽搁",
+          "outcome": {
+            "text": "你看了水线一眼，把这道颜色记进脑子里，游走了。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tide.trapped_air",
+      "depthRange": [12, 32],
+      "zoneTags": ["tide"],
+      "weight": 4,
+      "cooldown": 6,
+      "oncePerRun": true,
+      "title": "老气",
+      "body": "顶上有道凹槽，平水面在晃——有个气腔。\n不大，头伸进去能换两口。\n这个深度的洞，顶上封住的气是涨潮前就关进来的，闷了一段时间了。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "breathe_stale",
+          "label": "凑进去换气",
+          "outcome": {
+            "text": "你把头送进凹槽。气有股旧味——不是臭，是闷，像拧紧盖子的铁罐。能用。你换了两口，把这口气压进肺里。",
+            "deltas": { "oxygen": 4, "sanity": -2 }
+          }
+        },
+        {
+          "id": "vent_first",
+          "label": "先呼出一口，让旧气散一散，再换",
+          "hideCheck": true,
+          "check": {
+            "stat": "stamina",
+            "dc": 11,
+            "onSuccess": {
+              "text": "你呼出一大口，把凹槽里最旧的那段气挤出去，等了几秒再进。气还是有点闷，但好多了。",
+              "deltas": { "oxygen": 4, "sanity": -1 }
+            },
+            "onFailure": {
+              "text": "你呼多了，凹槽给你的气还没换好，自己先吸进一口旧气，咳了半下才压住。",
+              "oxygenTurnCost": 1,
+              "deltas": { "stamina": -3 }
+            }
+          }
+        },
+        {
+          "id": "skip_pocket",
+          "label": "不进去，记下位置",
+          "outcome": {
+            "text": "你没有进去。记下凹槽在洞里的位置，继续走。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tide.tidal_creature",
+      "depthRange": [16, 40],
+      "zoneTags": ["tide"],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "等潮的",
+      "body": "出口那侧的礁石下，有东西缩着。\n不是礁石的形状——是生物的形状，收得很紧，头的方向对着潮流来的那边。\n它不动，耐心得像一块石头。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "lamp_close",
+          "label": "把灯压低，靠近看清楚",
+          "hideCheck": true,
+          "check": {
+            "stat": "sanity",
+            "dc": 48,
+            "onSuccess": {
+              "text": "是一条大的花纹蛸，八条臂收成一坨，等着涨潮冲进来的食物。它转了一只眼过来看你，没动。你绕开出去了。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "灯扫过它的时候，它忽然展开了——整个礁石的阴影里都是它，大得没有预期。你退了几步才站住。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5, "stamina": -3 }
+            }
+          }
+        },
+        {
+          "id": "skirt_wall",
+          "label": "贴对面的壁，绕过出口",
+          "outcome": {
+            "text": "你贴着对面的礁壁往出口方向挪。游过它那侧的时候，水压有一下很轻的变化——它收紧了一下臂。你没停。",
+            "oxygenTurnCost": 2
+          }
+        },
+        {
+          "id": "knock_rock",
+          "label": "用刀柄敲一下旁边的礁石",
+          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "outcome": {
+            "text": "石头的回响在洞里弹了一圈。那坨黑影炸开了。",
+            "triggerCombatId": "combat.cave_octopus_solo"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tide.pressure_shift",
+      "depthRange": [20, 44],
+      "zoneTags": ["tide"],
+      "weight": 6,
+      "cooldown": 3,
+      "title": "水在涨",
+      "body": "没有声音，没有流——\n但你的鼓膜有一下很轻的平衡，又平了回去。\n深度表没动，可你知道涨潮开始了。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "head_out",
+          "label": "调头往出口走",
+          "outcome": {
+            "text": "你调头。后边有一点顺流在帮你，微弱的。你没停下来感受它，直接出去了。",
+            "oxygenTurnCost": 2
+          }
+        },
+        {
+          "id": "count_interval",
+          "label": "按住洞壁，数下一次压变多久来",
+          "outcome": {
+            "text": "你扣住一块礁棱，等着。数到二十九，第二次轻微的平衡来了。节拍很稳——是活跃的涨潮，不是回流。你把这个数收进脑子里，游走了。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -1 }
+          }
+        },
+        {
+          "id": "feel_pressure",
+          "label": "把手掌贴上洞壁，感受一下",
+          "outcome": {
+            "text": "你的手掌贴着岩石。什么也感不到——岩石是岩石，涨潮是你的鼓膜记的，不是手。你放开，游走了。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "tide.silt_bloom",
+      "depthRange": [22, 44],
+      "zoneTags": ["tide"],
+      "weight": 7,
+      "cooldown": 3,
+      "title": "泥雾",
+      "body": "你踢了一脚沙底，下面的泥沙像烟柱一样往上翻。\n一片化成两片，扩到洞的整个宽度。\n灯前只剩白雾，能见度到零。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "hold_wall",
+          "label": "扣住洞壁，等泥雾沉下去",
+          "outcome": {
+            "text": "你按住一块礁棱，停住不动，让泥雾自己往底下坠。视野一点点回来，洞还是原来的样子。",
+            "oxygenTurnCost": 2
+          }
+        },
+        {
+          "id": "feel_out",
+          "label": "手扶着壁，往来路方向摸",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你闭上了没用的眼，单凭手底岩壁的走向一节一节往外摸。等泥散开，你在来路上了。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "摸到一处分叉，你进了错的那边。等泥沉下来，来路不在你面前了，洞壁的花纹也不对。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -4, "sanity": -3 }
+            }
+          }
+        },
+        {
+          "id": "sift_silt",
+          "label": "等泥沉定，扒一把搅起来的沙底",
+          "outcome": {
+            "text": "你等泥雾沉下去，把手插进被翻开的沙底。多数是烂泥，指尖碰到几块带棱的硬东西。",
+            "oxygenTurnCost": 3,
+            "loot": [
+              { "itemId": "item.flint_nodule", "qty": [1, 1], "chance": 0.5 },
+              { "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.4 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "tide.watermark",
+      "depthRange": [10, 28],
+      "zoneTags": ["tide"],
+      "weight": 5,
+      "cooldown": 5,
+      "title": "年线",
+      "body": "洞壁的颜色不止一道。\n最低的那道是黑的，往上是棕，是灰，是浅灰，是几乎看不出来的白。\n你数了数，五道，每道都是某一年的高潮线。\n你现在的位置，夹在第三道和第四道之间。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "touch_highest",
+          "label": "把手放上去，摸最高的那道",
+          "outcome": {
+            "text": "你把手放在最高那道白线上。触感和旁边的礁石没什么不同，但那道线上的东西比岩石要软一点——是藻干了又泡、很多年叠起来的层。",
+            "oxygenTurnCost": 1
+          }
+        },
+        {
+          "id": "mark_now",
+          "label": "用刀在最高水线旁边划一刀",
+          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
+          "outcome": {
+            "text": "你在那道白线旁边划了一刀。刀口是白的，很新。旁边那些颜色对比之下都是旧的——你的这一刀，和别的那些年一样，留在这里了。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -1 }
+          }
+        },
+        {
+          "id": "move_on",
+          "label": "继续往里走",
+          "outcome": {
+            "text": "你游走了。那些颜色留在身后，一道一道，由深到浅，由早到晚。"
+          }
+        }
+      ]
+    }
+  ]
+}
