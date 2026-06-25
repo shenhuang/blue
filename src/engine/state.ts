@@ -10,6 +10,7 @@ import type {
   InventoryItem,
   LogEntry,
   Lighthouse,
+  PickupBox,
 } from '@/types';
 import { POWER_MAX, deriveSensorTuning } from './clarity';
 import { itemSetsFlags, weightForItem } from './items';
@@ -168,6 +169,7 @@ export function createInitialGameState(): GameState {
     run: null,
     phase: { kind: 'port' },
     log: [],
+    pendingPickups: [],
   };
 }
 
@@ -333,6 +335,37 @@ export function appendLog(state: GameState, entry: Omit<LogEntry, 'id' | 'turn'>
   };
 }
 
+/**
+ * 获得物品提示入队（单点·见 GameState.pendingPickups）。一次「捡到东西」的动作调一次，传本次动作获得的
+ * 全部物品（批量一格·不每件一弹）。空数组直接返回原 state（不入空格）。同 itemId 在本格内合并数量。
+ * 队列封顶（保末 8 格·阻塞弹窗逐格出队、正常不堆积；防极端异常无限涨）。**别接「回港入库结算」**
+ * （acquireIntoProfile 是把 run 背包整批搬进仓库·非新获得·会刷屏）**与「商店购买」**（Mira 已有 flash）。
+ */
+const PICKUP_QUEUE_CAP = 8;
+export function enqueuePickup(
+  state: GameState,
+  items: InventoryItem[],
+  source?: string,
+): GameState {
+  const merged: InventoryItem[] = [];
+  for (const it of items) {
+    if (it.qty <= 0) continue;
+    const existing = merged.find((m) => m.itemId === it.itemId);
+    if (existing) existing.qty += it.qty;
+    else merged.push({ itemId: it.itemId, qty: it.qty });
+  }
+  if (merged.length === 0) return state;
+  const box: PickupBox = { id: `pickup-${state.pendingPickups.length}-${Date.now()}`, items: merged, source };
+  const next = [...state.pendingPickups, box];
+  return { ...state, pendingPickups: next.slice(-PICKUP_QUEUE_CAP) };
+}
+
+/** 出队最前一格提示（玩家点「继续」后·UI 调）。 */
+export function dismissPickup(state: GameState): GameState {
+  if (state.pendingPickups.length === 0) return state;
+  return { ...state, pendingPickups: state.pendingPickups.slice(1) };
+}
+
 /** 给当前 run 的 inventory 加物品 */
 export function addToInventory(
   inventory: InventoryItem[],
@@ -420,12 +453,14 @@ export function hydrateGameState(state: GameState): GameState {
       ? { ...createStarterLoadout(), ...state.profile.equipment }
       : createStarterLoadout(),
   };
-  if (!state.run) return { ...state, profile };
+  // 获得提示队列 transient·不从存档恢复（reload 不重弹·见 GameState.pendingPickups）：两条返回路径都强制清空。
+  if (!state.run) return { ...state, profile, pendingPickups: [] };
   const run = state.run;
   const powerMax = run.powerMax ?? POWER_MAX;
   return {
     ...state,
     profile,
+    pendingPickups: [],
     run: {
       ...run,
       // 旧档（格制·inventoryCapacity）→ 缺 carryWeightLimit 单点补 RUN_CARRY_WEIGHT（#资源重量制·不 bump SAVE_VERSION·quirk #99）。

@@ -2081,6 +2081,19 @@ html, body, #root {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px 14px;
+  /* 三个 departStep 内容高度不同，按钮会闪：flex 列 + min-height + margin-top:auto 把按钮钉底 */
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+}
+
+.chart-info-actions {
+  margin-top: auto;
+  padding-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .chart-info.locked {
@@ -2746,4 +2759,76 @@ button.locker-coord-row:hover {
   margin-top: 4px;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+/* ── 获得物品弹窗（PickupModal·2026-06-25）：阻塞弹窗·复用 ItemCell 格子·盖在所有阶段之上（z 高于 changelog）。 */
+.pickup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 9, 16, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1100;
+  cursor: pointer; /* 整屏可点关闭（作者定·无专门关闭按钮） */
+  animation: pickup-fade 0.16s ease-out;
+}
+@keyframes pickup-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pickup-modal {
+  background: var(--bg-elev);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 20px 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(78, 209, 193, 0.12);
+  animation: pickup-rise 0.18s ease-out;
+}
+@keyframes pickup-rise {
+  from { transform: translateY(8px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.pickup-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.pickup-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+.pickup-source {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* 等大方格居中陈列（UI 工整偏好·与背包/储物柜同一种 ItemCell）。 */
+.pickup-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-height: 50vh;
+  overflow-y: auto;
+  margin-bottom: 18px;
+}
+
+.pickup-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  opacity: 0.8;
 }

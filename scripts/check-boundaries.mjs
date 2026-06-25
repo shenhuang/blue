@@ -112,6 +112,8 @@ for (const file of uiFiles) {
 // src/styles.css 里 `overflow(-y): auto|scroll` 只允许出现在白名单类上：
 //   .panel-shell-body（内容型界面统一壳的滚动体·ui/PanelShell.tsx）
 //   .changelog-body （更新日志弹窗·壳之前的既有先例）
+//   .pickup-grid （获得物品弹窗的物品格容器·2026-06-25）：与 .changelog-body 同类——独立模态弹窗，
+//     非内容型主视图，不归 PanelShell 管；头部「获得物品」+ 底部提示固定、中间物品格滚（极端多件兜底）。
 //   .dive-header.has-dive-panel .dive-panel（下潜 HUD 移动端全屏面板·物品栏/装备 SPEC §6）：
 //     状态条 + 传感器/面板开关由 .dive-header(flex 列) 钉顶、只面板内容滚——已满足「头部固定/内容滚」之意。
 // 其余选择器一律违例——内容型视图要内部滚动＝用 PanelShell 包（头部状态固定/内容滚/
@@ -119,7 +121,7 @@ for (const file of uiFiles) {
 // 范围只限 src/styles.css（玩家界面）；src/ui/dev/*.css 是 dev 工具自留地，不管。
 // 解析假设：styles.css 是扁平 CSS——声明上方最近的 `selector {` 行即其归属；
 // @media 块内仍有选择器行，不会把声明算到 @media 头上。注释行（行内含 `*`）跳过。
-const SCROLL_WHITELIST = ['.panel-shell-body', '.changelog-body', '.dive-header.has-dive-panel .dive-panel'];
+const SCROLL_WHITELIST = ['.panel-shell-body', '.changelog-body', '.pickup-grid', '.dive-header.has-dive-panel .dive-panel'];
 const SCROLL_DECL_RE = /\boverflow(?:-y)?\s*:\s*(?:auto|scroll)\b/;
 const cssPath = resolve(ROOT, 'src/styles.css');
 const scrollViolations = [];

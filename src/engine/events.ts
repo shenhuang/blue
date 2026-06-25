@@ -10,8 +10,9 @@ import type {
   Condition,
   Stats,
   Visibility,
+  InventoryItem,
 } from '@/types';
-import { addToInventory, addToPoiSetMap, appendLog, clampStats, totalRunInventoryWeight } from './state';
+import { addToInventory, addToPoiSetMap, appendLog, clampStats, enqueuePickup, totalRunInventoryWeight } from './state';
 import { getItemDef, harvestPersistOf, weightForItem } from './items';
 import { equipmentUnlocksAction, loadoutInsulation } from './equipment';
 import { EQUIPMENT_SLOTS } from '@/types/items';
@@ -170,6 +171,7 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
     // savePersistItems ＝ harvestPersist:'save' 的件（暂存 run.harvestedSaveItems·回港永久入账）。
     let harvestedAnything = false;
     const savePersistItems: string[] = [];
+    const gained: InventoryItem[] = []; // 本事件实际拾到的件·收齐后批量一格弹「获得物品」（enqueuePickup·见 state.ts）
     for (const roll of outcome.loot) {
       const chance = roll.chance ?? 1;
       if (Math.random() <= chance) {
@@ -186,6 +188,7 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
             continue;
           }
           inv = addToInventory(inv, roll.itemId, qty);
+          gained.push({ itemId: roll.itemId, qty });
           if (s.run) {
             harvestedAnything = true;
             if (harvestPersistOf(roll.itemId) === 'save') savePersistItems.push(roll.itemId);
@@ -209,6 +212,9 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
     } else {
       s = { ...s, profile: { ...s.profile, inventory: inv } };
     }
+    // 获得物品提示（玩家感知·2026-06-25）：dive 拾取 + 港口事件发物（如教学收尾导师日志）都弹；
+    // 超载跳过的件不在 gained 里（已单独日志提示）。
+    s = enqueuePickup(s, gained, '事件');
   }
 
   // ---- Flags ----

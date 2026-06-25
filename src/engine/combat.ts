@@ -17,10 +17,11 @@ import type {
   Stats,
   BossPhase,
   LootTable,
+  InventoryItem,
 } from '@/types';
 import actionData from '@/data/actions.json';
 import { ENEMY_FILE_MODULES } from '@/data/enemies/registry.generated';
-import { appendLog, addToInventory, removeFromInventory, clampStats } from './state';
+import { appendLog, addToInventory, enqueuePickup, removeFromInventory, clampStats } from './state';
 import {
   getEquipmentStats,
   weaponDamageForSlot,
@@ -936,6 +937,7 @@ function finalizeVictory(state: GameState): CombatTurnResult {
   let s = state;
 
   // 战利品（尸衣者按 wornSkin 替换 loot·普通敌人 effectiveLoot 恒回 def.loot ⇒ 逐字节不变）
+  const looted: InventoryItem[] = []; // 本次战斗所有掉落·收齐后批量一格弹「获得物品」（enqueuePickup·见 state.ts）
   for (const e of combat.enemies) {
     const def = ENEMY_DEFS.get(e.defId);
     if (!def) continue;
@@ -944,9 +946,11 @@ function finalizeVictory(state: GameState): CombatTurnResult {
       const qty = randRange(l.qty);
       if (qty > 0 && s.run) {
         s = { ...s, run: { ...s.run, inventory: addToInventory(s.run.inventory, l.itemId, qty) } };
+        looted.push({ itemId: l.itemId, qty });
       }
     }
   }
+  s = enqueuePickup(s, looted, '战利品');
 
   s = appendLog(s, { tone: 'realistic', text: `战斗结束。` });
 
@@ -1329,12 +1333,15 @@ function maybeMetamorphosis(state: GameState): GameState {
     } else if (stage === 'cocoon' && e.hp <= 0) {
       // 茧被击破
       if (meta.cocoonBreakBonus && s.run) {
+        const bonusLoot: InventoryItem[] = [];
         for (const bonus of meta.cocoonBreakBonus) {
           const qty = randRange(bonus.qty);
           if (qty > 0 && s.run) {
             s = { ...s, run: { ...s.run!, inventory: addToInventory(s.run.inventory, bonus.itemId, qty) } };
+            bonusLoot.push({ itemId: bonus.itemId, qty });
           }
         }
+        s = enqueuePickup(s, bonusLoot, '战利品');
       }
       // 成体复活（HP 恢复 adultHp·清除护甲覆盖·换攻击表）
       s = setCombat(s, (c) => ({

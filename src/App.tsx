@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { GameState } from '@/types';
-import { createInitialGameState, loadGame, saveGame, clearSave } from '@/engine/state';
+import { createInitialGameState, loadGame, saveGame, clearSave, dismissPickup } from '@/engine/state';
 import { handleReturnToPort as handleReturnToPortFn } from '@/engine/port';
 import { toPort } from '@/engine/transitions';
 import { TUTORIAL_COMPLETE_FLAG } from '@/engine/story';
@@ -14,6 +14,7 @@ import { CorpseView, FuneralView } from '@/ui/CorpseView';
 import { PreCombatView } from '@/ui/PreCombatView';
 import { ResolutionView, GameOverView } from '@/ui/ResolutionView';
 import { ChangelogModal } from '@/ui/ChangelogModal';
+import { PickupModal } from '@/ui/PickupModal';
 
 // DEV_TOOLS（?dev 运行时门·单一来源 ui/devMode.ts·#109）：这里仅 withDevTutorialSkip 用。
 // dev 面板/编辑器已迁出游戏、收进 ?editor 工作台（EditorApp·见 main.tsx + dev工作台 SPEC）——
@@ -183,6 +184,15 @@ export default function App() {
       </footer>
 
       {changelogOpen && <ChangelogModal onClose={() => setChangelogOpen(false)} />}
+
+      {/* 获得物品弹窗（玩家感知·2026-06-25）：逐格消费 state.pendingPickups（队列/入队单点见 engine/state.ts）。
+          盖在所有阶段之上（dive/port 通吃）；点「继续」出队下一格。 */}
+      {state.pendingPickups.length > 0 && (
+        <PickupModal
+          box={state.pendingPickups[0]}
+          onDismiss={() => setState((s) => dismissPickup(s))}
+        />
+      )}
     </div>
   );
 }

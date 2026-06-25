@@ -541,6 +541,18 @@ export interface GameState {
   run: RunState | null; // 不在下潜时为 null
   phase: GamePhase;
   log: LogEntry[]; // 文本叙事日志
+  // 获得物品提示队列（玩家感知·2026-06-25）：每次「真正捡到东西」的动作（战利品/事件发物/建造发物）入一格，
+  // 一格＝一次动作里所有物品（批量·不每件一弹）。**transient·不从存档恢复**（hydrateGameState 强制清空）——
+  // reload 不该重弹；纯加字段不 bump SAVE_VERSION（quirk #99）。UI 侧 PickupModal 阻塞弹窗逐格出队。
+  // 不接「回港入库结算」（结算屏已汇总）与「商店购买」（Mira 已有 flash）——见动作侧注释。
+  pendingPickups: PickupBox[];
+}
+
+/** 一次获得动作的物品提示（批量一格·见 GameState.pendingPickups）。 */
+export interface PickupBox {
+  id: string;
+  items: InventoryItem[]; // 本次动作获得的所有物品（{itemId, qty}）
+  source?: string; // 来源标签（如 '战利品' / '事件' / '建造'）——纯展示
 }
 
 export interface LogEntry {

@@ -25,7 +25,7 @@ import type {
   PlayerProfile,
 } from '@/types';
 import lighthouseData from '@/data/lighthouse_upgrades.json';
-import { appendLog, removeFromInventory, addToInventory, HOME_LIGHTHOUSE_ID, HOME_LIGHTHOUSE_POS } from './state';
+import { appendLog, removeFromInventory, addToInventory, enqueuePickup, HOME_LIGHTHOUSE_ID, HOME_LIGHTHOUSE_POS } from './state';
 import { materialShortfall, describeUpgradeCost, getUpgradeBonuses } from './upgrades';
 import { ch1AnchorFlag, TUTORIAL_COMPLETE_FLAG, type Ch1Anchor } from './story';
 import { regionRadius } from './regions';
@@ -181,6 +181,10 @@ export function buildAtLighthouse(
     tone: 'system',
     text: `灯塔修缮（${lighthouse.name}）：${def.name}（${describeUpgradeCost(def.cost)}）。`,
   });
+  // 获得物品提示（玩家感知·2026-06-25）：capstone 建造授予关键道具时弹一格（dev 免料路径不弹·见 devBuildAtLighthouse）。
+  if (def.grantsItem) {
+    next = enqueuePickup(next, [{ itemId: def.grantsItem.itemId, qty: def.grantsItem.qty }], '建造');
+  }
   return next;
 }
 
