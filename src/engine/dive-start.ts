@@ -12,9 +12,12 @@ import type {
   ZoneTag,
   InventoryItem,
   DepthBand,
+  DiveMap,
+  PersistentCave,
 } from '@/types';
-import { generateDiveMap } from './mapgen';
+import { generateDiveMap, generatePersistentCaveMap, applyCaveOverlays, cavePortalsOf, caveSeededRng, caveHash } from './mapgen';
 import { getZone } from './zones';
+import { getCave } from './caves';
 import {
   appendLog,
   createNewRun,
@@ -62,6 +65,12 @@ export function startDive(
      * anchor / 深度柱 / mimic / 教学下潜缺省 undefined ⇒ 零影响（带 poiId 的事件仍只命中 run.poiId 精确匹配）。
      */
     poiTemplateId?: string;
+    /**
+     * 持久洞预建地图（多口持久洞 SPEC §4.1）：caveEntry 路径下潜时由 startDiveIntoCave 传入「已加载 + overlay」
+     * 的图副本（startNodeId 已设为绑定入口节点）。给了 ⇒ startDive 跳过 generateDiveMap、直接用它（不再读 poiId 的
+     * harvest——cave overlay 已在副本上叠加）。缺省（zone/band 路径）→ 走 generateDiveMap 每潜重生（旧行为不变）。
+     */
+    prebuiltMap?: DiveMap;
   },
 ): GameState {
   const zone = getZone(zoneId);
@@ -81,28 +90,31 @@ export function startDive(
   const harvestedItemIds = poiId ? state.profile.harvestedResources.get(poiId) : undefined;
   const harvestedNodeIds = poiId ? state.run.harvestedNodes.get(poiId) : undefined;
 
-  const map = generateDiveMap({
-    zone,
-    profileFlags: state.profile.flags,
-    deaths: state.profile.deaths,
-    poiId,
-    // roaming 专属内容（2026-06-25）：稳定模板身份直透 buildEventPool（缺省 undefined＝anchor/教学零影响）。
-    poiTemplateId: opts?.poiTemplateId,
-    harvestedItemIds,
-    harvestedNodeIds,
-    depthOffset: opts?.depthOffset,
-    depthRange: opts?.depthRange,
-    layerCount: opts?.layerCount,
-    depthCurve: opts?.depthCurve,
-    bandTags: opts?.bandTags,
-    maxRoomFeatures: opts?.maxRoomFeatures,
-    // 大房间出现率加成（声呐与房间 §6/§8.3 续·升级派生）：只在 maxRoomFeatures>1 的深 band 生效；缺省 0＝旧图不变。
-    roomFeatureChanceBonus: state.run.sensorTuning.roomFeatureChanceBonus,
-    sonarDeception: opts?.sonarDeception,
-    targetCorpseId: opts?.targetCorpseId,
-    // 洞穴一致性（SPEC §6①·#98）：透传地点身份串 → mapgen 据此派生确定性 rng（同地点同图）。
-    seedKey: opts?.seedKey,
-  });
+  // 持久洞（§4.1）：预建图直接用、跳过每潜重生（cave overlay 已在副本上叠加·不再读 poiId harvest）。
+  const map =
+    opts?.prebuiltMap ??
+    generateDiveMap({
+      zone,
+      profileFlags: state.profile.flags,
+      deaths: state.profile.deaths,
+      poiId,
+      // roaming 专属内容（2026-06-25）：稳定模板身份直透 buildEventPool（缺省 undefined＝anchor/教学零影响）。
+      poiTemplateId: opts?.poiTemplateId,
+      harvestedItemIds,
+      harvestedNodeIds,
+      depthOffset: opts?.depthOffset,
+      depthRange: opts?.depthRange,
+      layerCount: opts?.layerCount,
+      depthCurve: opts?.depthCurve,
+      bandTags: opts?.bandTags,
+      maxRoomFeatures: opts?.maxRoomFeatures,
+      // 大房间出现率加成（声呐与房间 §6/§8.3 续·升级派生）：只在 maxRoomFeatures>1 的深 band 生效；缺省 0＝旧图不变。
+      roomFeatureChanceBonus: state.run.sensorTuning.roomFeatureChanceBonus,
+      sonarDeception: opts?.sonarDeception,
+      targetCorpseId: opts?.targetCorpseId,
+      // 洞穴一致性（SPEC §6①·#98）：透传地点身份串 → mapgen 据此派生确定性 rng（同地点同图）。
+      seedKey: opts?.seedKey,
+    });
 
   const run0: RunState = {
     ...state.run,
@@ -150,6 +162,80 @@ export function startDive(
 
   // 否则直接显示下一节点选择
   return enterNodeSelection({ ...state, run });
+}
+
+// ── 持久多口洞下潜（多口持久洞 SPEC §4·方案 B）─────────────────────────────
+
+/** DiveMap 深拷贝（纯数据·JSON 安全）：本潜工作副本——别改 caveMaps 里的冻结原图（§4.1）。 */
+function cloneDiveMap(map: DiveMap): DiveMap {
+  return JSON.parse(JSON.stringify(map)) as DiveMap;
+}
+
+/**
+ * 解析 caveEntry → 入口节点 id（多口持久洞 SPEC §2.3·确定性·零 rng）：
+ *   显式 entryNodeId（须命中 entrance 门户）> regionBias 筛 > mouthDepth 取最近 > 全 entrance 里 FNV(caveId::poiId) 挑。
+ * 候选空（无 entrance 门户·坏数据）→ 回退 map.startNodeId 防白屏（check-cave-bindings 守门会先把这种焊成红）。
+ */
+function resolveCaveEntryNode(
+  cave: PersistentCave,
+  entry: NonNullable<ChartPoi['caveEntry']>,
+  poiId: string,
+): string {
+  const entrances = cave.portals.filter((p) => p.kind === 'entrance');
+  if (entrances.length === 0) return cave.map.startNodeId;
+  if (entry.entryNodeId && entrances.some((p) => p.nodeId === entry.entryNodeId)) return entry.entryNodeId;
+  let pool = entrances;
+  if (entry.regionBias) {
+    const biased = entrances.filter((p) => p.region === entry.regionBias);
+    if (biased.length) pool = biased;
+  } else if (entry.mouthDepth != null) {
+    const md = entry.mouthDepth;
+    pool = [entrances.reduce((best, p) => (Math.abs(p.depth - md) < Math.abs(best.depth - md) ? p : best))];
+  }
+  return pool[caveHash(`${entry.caveId}::${poiId}`) % pool.length].nodeId;
+}
+
+/**
+ * 从 caveEntry POI 进持久洞（§4.1）：load-or-generate caveMaps[caveId] → 解析入口节点 → 本潜工作副本 + 加载 overlay
+ * （尸体 + save 级采尽·by caveId）→ createNewRun(caveId) → startDive(prebuiltMap) 走统一收尾。
+ * 首次进生成并冻结进 profile.caveMaps（写存档·#98 家族确定性）；再进（含换口进）加载续上次（料/尸/已探）。
+ */
+function startDiveIntoCave(state: GameState, poi: ChartPoi): GameState {
+  const entry = poi.caveEntry!;
+  const params = getCave(entry.caveId)!; // 调用方已判存在
+  const zone = getZone(params.zoneId);
+  if (!zone) {
+    console.warn(`Cave ${entry.caveId} 的 zone ${params.zoneId} 不存在`);
+    return state;
+  }
+
+  let profile = state.profile;
+  let cave = profile.caveMaps.get(entry.caveId);
+  if (!cave) {
+    const genMap = generatePersistentCaveMap(
+      { zone, profileFlags: profile.flags, rng: caveSeededRng(entry.caveId) },
+      params,
+    );
+    cave = { caveId: entry.caveId, map: genMap, explored: new Set<string>(), portals: cavePortalsOf(genMap) };
+    const caveMaps = new Map(profile.caveMaps);
+    caveMaps.set(entry.caveId, cave);
+    profile = { ...profile, caveMaps };
+  }
+
+  const startNodeId = resolveCaveEntryNode(cave, entry, poi.id);
+  const workMap = cloneDiveMap(cave.map);
+  workMap.startNodeId = startNodeId;
+  applyCaveOverlays(workMap, {
+    deaths: profile.deaths,
+    zoneId: params.zoneId,
+    rng: caveSeededRng(`${entry.caveId}::overlay`),
+    harvestedItemIds: profile.harvestedResources.get(entry.caveId),
+  });
+
+  let run = createNewRun({ zoneId: params.zoneId, bonuses: getRunBonuses(profile), equipment: profile.equipment, poiId: poi.id, caveId: entry.caveId });
+  run = { ...run, diveModifier: poi.modifier };
+  const s: GameState = { ...state, profile, run };
+  return startDive(s, params.zoneId, { prebuiltMap: workMap });
 }
 
 /**
@@ -212,6 +298,12 @@ export function startDiveFromPoi(
   // 单点判据 isOverloaded（与战斗全行动封锁同源）；UI 出发按钮也据此禁用（防御性双保险）。起手装＝轻·不受影响。
   if (state.profile.equipment && isOverloaded(state.profile.equipment)) {
     return appendLog(state, { tone: 'system', text: '负重过载——你几乎浮不起来。卸下些装备再出发。' });
+  }
+
+  // 持久多口洞（多口持久洞 SPEC §4.1·方案 B）：POI 带 caveEntry ⇒ 走持久洞路径（load-or-generate caveMaps[caveId]·
+  // 起手 = 绑定入口节点），先于 bandId/zone 判（互斥）。caveId 未登记 → 落回下方旧路径防白屏（check-cave-bindings 守门）。
+  if (poi.caveEntry && getCave(poi.caveEntry.caveId)) {
+    return startDiveIntoCave(state, poi);
   }
 
   // 深入潜点（灯塔/蛙跳重构 step ②·#125）：POI 带 bandId ⇒ 走 band 绝对 depthRange 路径（与旧前哨蛙跳

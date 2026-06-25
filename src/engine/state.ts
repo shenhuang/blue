@@ -25,7 +25,9 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // 旧档残留 lighthouse.hydro.lv1 已无 def（getLighthouseUpgradeDef→undefined·静默跳过）；按 quirk #99 bump 弃旧档、从头开始。
 // 8→9（POI 固定资源耗尽·2026-06-25）：profile.harvestedResources / run.harvestedNodes（Map<poiId,Set>）+ run.poiId 新增——
 // 形状变（profile/run 多 Map 容器·序列化加 __map 分支）；按 quirk #99 不写迁移、bump 弃旧档从头开始。
-const SAVE_VERSION = 9;
+// 9→10（多口持久洞·方案 B·2026-06-25）：profile.caveMaps（Map<caveId, PersistentCave{map,explored:Set,portals}>）+ run.caveId 新增——
+// 形状变（profile 多一个嵌 DiveMap+Set 的 Map 容器·序列化复用 __map/__set 分支·零新代码）；按 quirk #99 不写迁移、bump 弃旧档从头开始。
+const SAVE_VERSION = 10;
 
 /** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile 用。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
@@ -75,6 +77,8 @@ export function createInitialProfile(): PlayerProfile {
     equipment: createStarterLoadout(),
     // 固定资源永久耗尽追踪（POI 固定资源耗尽·2026-06-25）：起手空 Map（无 POI 被采尽）。
     harvestedResources: new Map(),
+    // 持久洞地图（多口持久洞·方案 B·2026-06-25）：起手空 Map（还没进过任何洞·首次进各自生成冻结）。
+    caveMaps: new Map(),
   };
 }
 
@@ -212,6 +216,11 @@ export function createNewRun(opts: {
    * 固定资源耗尽记账按它做 key。非 POI 下潜（教学/港口 zone/scenario）省略 ⇒ run.poiId undefined ⇒ 不记账。
    */
   poiId?: string;
+  /**
+   * 本次下潜所属持久洞 id（多口持久洞 SPEC §4.2）：caveEntry 路径下潜传 caveId。
+   * 出洞结算据它把 explored/harvest 写回 caveMaps[caveId]。非洞下潜（缺省）→ run.caveId undefined。
+   */
+  caveId?: string;
   /** 背包承载上限覆写（kg·缺省＝RUN_CARRY_WEIGHT·脚本/测试可调）。 */
   carryWeightLimit?: number;
   /** 来自 profile.equipment 的持久装备配置（Otto P3·缺省＝导师起始件）。 */
@@ -271,6 +280,8 @@ export function createNewRun(opts: {
     zoneId: opts.zoneId,
     // POI 固定资源耗尽（2026-06-25）：固定地图 POI 下潜带 poi.id；非 POI（缺省）→ undefined ⇒ harvest 记账 no-op。
     poiId: opts.poiId,
+    // 持久洞所属（多口持久洞·方案 B·2026-06-25）：caveEntry 路径下潜带 caveId；非洞下潜（缺省）→ undefined。
+    caveId: opts.caveId,
     map: null,
     stats,
     staminaMax,
@@ -397,6 +408,8 @@ export function hydrateGameState(state: GameState): GameState {
     outpostState: state.profile.outpostState ?? {},
     // 固定资源永久耗尽容器（POI 固定资源耗尽·2026-06-25）：旧档/缺失单点补空 Map（#107 同 shopStock）。
     harvestedResources: state.profile.harvestedResources ?? new Map(),
+    // 持久洞地图容器（多口持久洞·方案 B·2026-06-25）：缺失单点补空 Map（同 harvestedResources·#107）。
+    caveMaps: state.profile.caveMaps ?? new Map(),
     // 装备：缺则种起始件；已有则与起始件合并补齐「新增槽」（如 ranged·作者 2026-06-18 拆武器槽）——
     // 已穿戴槽以存档为准、缺的新槽取起始默认（null）·additive·不 bump SAVE_VERSION（#99）·旧档不作废。
     equipment: state.profile.equipment

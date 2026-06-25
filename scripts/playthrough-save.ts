@@ -72,6 +72,30 @@ s = {
         timestamp: 0,
       },
     ],
+    // 多口持久洞（方案 B·2026-06-25）：一个冻结洞——验证 Map<caveId,{map, explored:Set, portals}> 的
+    // 嵌套 Set + DiveMap 纯对象 round-trip（复用 __map/__set·零新序列化代码）。
+    caveMaps: new Map([
+      [
+        'cave.test',
+        {
+          caveId: 'cave.test',
+          map: {
+            zoneId: 'zone.blue_caves',
+            generatedAt: 123,
+            startNodeId: 'node.0',
+            nodes: {
+              'node.0': { id: 'node.0', layer: 0, depth: 10, zoneTag: 'cave' as const, kind: 'ascent_point' as const, portalKind: 'entrance' as const, connectsTo: ['node.1'], preview: '洞口' },
+              'node.1': { id: 'node.1', layer: 1, depth: 30, zoneTag: 'cave' as const, kind: 'event' as const, eventId: 'bluecaves.x', connectsTo: ['node.0'], preview: '一处水道' },
+            },
+          },
+          explored: new Set(['node.0']),
+          portals: [
+            { nodeId: 'node.0', kind: 'entrance' as const, depth: 10, region: 'rim' as const },
+            { nodeId: 'node.1', kind: 'exit' as const, depth: 30, region: 'deep' as const },
+          ],
+        },
+      ],
+    ]),
   },
   run: {
     // 深水区 Phase 0 升级轨：给非默认 bonuses，让 powerMax/sensorTuning 带可辨识值，验证它们也 round-trip。
@@ -155,7 +179,22 @@ assert(
   back!.run?.decoy?.nodeId === 'node.3' && back!.run?.decoy?.kind === 'sound' && back!.run?.decoy?.expiresTurn === 9,
   'run.decoy（猎手 §4·真条件字段·纯对象）应 round-trip',
 );
-L('  round-trip：三个 profile Set + run.activeFlags/sensors/power/sensorTuning + deaths + shopStock + lighthouses(Set) + 数值 全部还原 ✓');
+{
+  const cave = back!.profile.caveMaps?.get('cave.test');
+  assert(
+    back!.profile.caveMaps instanceof Map &&
+      !!cave &&
+      cave.explored instanceof Set &&
+      cave.explored.has('node.0') &&
+      cave.map.nodes['node.1'].depth === 30 &&
+      cave.map.nodes['node.0'].portalKind === 'entrance' &&
+      cave.portals.length === 2 &&
+      cave.portals[1].kind === 'exit' &&
+      cave.portals[1].region === 'deep',
+    'profile.caveMaps（多口持久洞·Map<caveId,{map, explored:Set, portals}>·嵌套 Set + DiveMap）应 round-trip',
+  );
+}
+L('  round-trip：三个 profile Set + run.activeFlags/sensors/power/sensorTuning + deaths + shopStock + lighthouses(Set) + caveMaps(Map+嵌套Set) + 数值 全部还原 ✓');
 
 // 2. 损坏 JSON → null
 assert(deserializeGameState('not json{') === null, '损坏 JSON 应返回 null');
@@ -205,7 +244,7 @@ L('  非浏览器环境 loadGame() → null ✓');
   // (c) 合法当前版本存档 → 正常读取、不删
   store[SAVE_KEY] = raw;
   const ok = loadGame();
-  assert(ok && ok.version === 9, '当前版本存档应正常读取');
+  assert(ok && ok.version === 10, '当前版本存档应正常读取');
   assert(SAVE_KEY in store, '合法存档不应被删除');
   delete (globalThis as { localStorage?: unknown }).localStorage;
 }
@@ -234,6 +273,7 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
   }
   delete old.profile.shopStock;
   delete old.profile.outpostState;
+  delete old.profile.caveMaps;
   const h = deserializeGameState(JSON.stringify(old));
   assert(h && h.run, '6: 同版本缺字段旧档应正常反序列化（hydrate 而非拒收）');
   // run 级 canonical 默认（与 createNewRun 种子一致）
@@ -267,6 +307,10 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
   assert(
     h.profile.outpostState && Object.keys(h.profile.outpostState).length === 0,
     '6: profile.outpostState 补 {}',
+  );
+  assert(
+    h.profile.caveMaps instanceof Map && h.profile.caveMaps.size === 0,
+    '6: profile.caveMaps 补空 Map（多口持久洞·#107 同 harvestedResources）',
   );
   // 幂等：hydrate 后的档再走一遍 serialize→deserialize 不再变
   const again = deserializeGameState(serializeGameState(h));

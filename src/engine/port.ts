@@ -36,13 +36,26 @@ export function handleReturnToPort(state: GameState): ReturnToPortResult {
   // 物品入袋统一入口：合并 run.inventory 并兑现被获得物品的 story.setsFlag（acquireIntoProfile·见 state.ts）。
   let acquired = acquireIntoProfile(state.profile, state.run.inventory);
   // 固定资源**永久**耗尽入账（POI 固定资源耗尽·2026-06-25）：生还回港才把本 run 采到的 save 级件
-  // 合并进 profile.harvestedResources[poiId]（死亡走 gameOver/funeral·不经此 ⇒ 资源留给下次·与物品入袋同走「生还才落袋」）。
-  if (state.run.poiId && state.run.harvestedSaveItems && state.run.harvestedSaveItems.size > 0) {
+  // 合并进 profile.harvestedResources[key]（死亡走 gameOver/funeral·不经此 ⇒ 资源留给下次·与物品入袋同走「生还才落袋」）。
+  // 持久洞（多口持久洞 §4.3/§4.4）：记账 key = caveId（资源空间是「洞」非「单口」·任一口进采都算同一洞采尽）；非洞 = poiId。
+  const harvestKey = state.run.caveId ?? state.run.poiId;
+  if (harvestKey && state.run.harvestedSaveItems && state.run.harvestedSaveItems.size > 0) {
     let harvested = acquired.harvestedResources;
     for (const itemId of state.run.harvestedSaveItems) {
-      harvested = addToPoiSetMap(harvested, state.run.poiId, itemId);
+      harvested = addToPoiSetMap(harvested, harvestKey, itemId);
     }
     acquired = { ...acquired, harvestedResources: harvested };
+  }
+  // 持久洞已探写回（多口持久洞 §4.4）：本潜访问过的节点并进 caveMaps[caveId].explored（生还才落袋·驱动再进「已探片」预亮）。
+  if (state.run.caveId) {
+    const cave = acquired.caveMaps.get(state.run.caveId);
+    if (cave) {
+      const explored = new Set(cave.explored);
+      for (const id of state.run.visitedNodeIds) explored.add(id);
+      const caveMaps = new Map(acquired.caveMaps);
+      caveMaps.set(state.run.caveId, { ...cave, explored });
+      acquired = { ...acquired, caveMaps };
+    }
   }
   const next: GameState = {
     ...state,

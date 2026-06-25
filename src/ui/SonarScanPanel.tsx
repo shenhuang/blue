@@ -20,6 +20,7 @@ import { nodeSonarView, sonarPhantoms, threatContact, sonarStandingOn } from '@/
 import { stalkerSonarBlip } from '@/engine/stalker';
 import { hash01, roomScale01 } from '@/engine/sonar';
 import { zoneAllowsBacktrack } from '@/engine/zones';
+import { persistentExploredForRun } from '@/engine/caves';
 
 /** 纵向取景窗（窄×高·#92 上浅下深）：只显当前节点周围一片（SPEC「默认放大、几乎看不到全貌」）。 */
 const VIEW_W = 220;
@@ -573,6 +574,9 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   const run: RunState | undefined = state.run ?? undefined;
   const map = run?.map ?? null;
   const memory = run?.scanMemory ?? {};
+  // 持久洞「已探片」预亮（多口持久洞 §6.1）：当前洞跨 run 已探节点叠加进「known」——同一张图、不同已探片。
+  // 非洞下潜（run.caveId 缺）→ undefined ⇒ known 计算逐字节不变（旧行为）。
+  const persistentExplored = persistentExploredForRun(state.profile, run);
   const scannedIds = map ? Object.keys(memory).filter((id) => map.nodes[id]) : [];
 
   // 换节点＝视角跟人走：清平移偏移（保留缩放档·玩家调好的倍率是偏好）。hooks 在早退前。
@@ -1056,8 +1060,9 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
               // POI 落点：已扫节点 → 偏心 + voidTrack 跟随扭曲后的洞；未扫但可去的相邻节点（作者 06-13）→
               // 吸附到敞口通道的水里（projectIntoWater·配合上面的敞口通道伸到该节点）＝落在开口处、不再浮在墙外。
               let m = { x: p.x, y: p.y };
-              // 已知＝落在某扫描圆里（几何·isRevealed）或脚下/锚点并入（你在那儿/回波证实）。未知＝可去但本局没扫到。
-              const known = isRevealed(p) || mergeIds.includes(c.nodeId);
+              // 已知＝落在某扫描圆里（几何·isRevealed）或脚下/锚点并入（你在那儿/回波证实）或**持久洞跨 run 已探**（§6.1 预亮）。
+              // 未知＝可去但本局没扫到、且非持久已探。非洞下潜 persistentExplored=undefined ⇒ 逐字节不变。
+              const known = isRevealed(p) || mergeIds.includes(c.nodeId) || (persistentExplored?.has(c.nodeId) ?? false);
               if (known) {
                 const o = poiOffset(c.nodeId, view.displayKind ?? node.kind);
                 m = voidTrack(p.x + o.dx, p.y + o.dy);

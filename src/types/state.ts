@@ -2,7 +2,7 @@
 // 与主 SPEC §3 四属性、§7 死亡与元进度对齐
 
 import type { EquipmentSlot, DecoyKind } from './items';
-import type { DiveMap, NodeKind } from './dive';
+import type { DiveMap, NodeKind, PersistentCave } from './dive';
 import type { CombatState } from './combat';
 import type { ActiveInjury } from './injuries';
 import type { PoiModifier } from './chart';
@@ -79,6 +79,14 @@ export interface PlayerProfile {
    * 序列化由 saveReplacer/saveReviver 的 Map 分支处理（同 Set·见 state.ts）。
    */
   harvestedResources: Map<string, Set<string>>;
+  /**
+   * 持久洞地图（多口持久洞 SPEC §2.1·方案 B）：caveId → 该洞的冻结地图 + 持久探索态。
+   * 首次进洞生成并冻结于此；再进（含换口进）从这里加载＝同一空间续上次（料/尸/已探）。
+   * 容器必填：createInitialProfile 种 new Map()，旧档缺它由 hydrateGameState 单点补（同 harvestedResources·#107）。
+   * 序列化由 saveReplacer/saveReviver 的 __map 分支处理（value 内含 DiveMap 纯对象 + explored:Set·自底向上 revive·零新代码）。
+   * SAVE_VERSION 9→10：形状变·按 #99 不写迁移、bump 弃旧档从头开始。
+   */
+  caveMaps: Map<string, PersistentCave>;
 }
 
 /** 死亡记录，用于尸体回收 */
@@ -299,6 +307,12 @@ export interface RunState {
    * 缺省（教学/港口 zone/scenario 下潜·非 POI）→ undefined ⇒ harvest 记账整段 no-op（真条件字段·不种不补）。
    */
   poiId?: string;
+  /**
+   * 本次下潜所属持久洞 id（多口持久洞 SPEC §4.2）：caveEntry 路径下潜时落 caveId。
+   * 出洞结算据它把 explored/harvest 写回正确的 caveMaps[caveId]（探/采记账 by caveId·资源空间是「洞」非「单口」）。
+   * 缺省（非洞下潜·zone/band/教学）→ undefined ⇒ 走 poiId 记账旧路径（真条件字段·不种不补）。
+   */
+  caveId?: string;
   map: DiveMap | null; // 随机生成的节点图；教学线性脚本下潜为 null
   stats: Stats;
   staminaMax: number;

@@ -101,6 +101,9 @@ tasks.push({ name: 'check-dive-refs', cmd: ['node', join('scripts', 'check-dive-
 // 材料刷点五条门（纯 node·openEventPool 挂 anchor + ≥3 不同 beat + 引用可解析 + beat 专属 + 与 openEventId 互斥，见 scripts/check-farm-pois.mjs）
 tasks.push({ name: 'check-farm-pois', cmd: ['node', join('scripts', 'check-farm-pois.mjs')] });
 
+// 持久多口洞绑定门（纯 node·caves.json 参数 sane + chart_pois caveEntry 不悬空·多口持久洞 SPEC §7·见 scripts/check-cave-bindings.mjs）
+tasks.push({ name: 'check-cave-bindings', cmd: ['node', join('scripts', 'check-cave-bindings.mjs')] });
+
 // append-only 文档门（纯 node·CHANGELOG/QUIRKS 只在 main 改、别在 feature/auto 分支碰·机制化 quirk #130·见 scripts/check-append-only-docs.mjs）
 tasks.push({ name: 'check-append-only-docs', cmd: ['node', join('scripts', 'check-append-only-docs.mjs')] });
 

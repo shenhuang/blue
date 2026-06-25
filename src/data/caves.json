@@ -1,0 +1,14 @@
+{
+  "_doc": "持久洞登记表（多口持久洞 SPEC §2.4·方案 B）。一个 zone 在此登记一条 CaveGenParams ⇒ 变成持久洞（走 generatePersistentCaveMap + caveMaps 存档路径）；没登记的 zone 保持每潜重生（#98）。加一个新持久洞 = 加一条 caves[] 条目（= 可扩展模型本身·不改码）。caveId 用独立命名空间 cave.<短名>。数值占位·留作者最后调（defer-number-tuning）。POI→入口绑定在 chart_pois.json 的 caveEntry（T3b）·此处只定洞本身。",
+  "caves": [
+    {
+      "caveId": "cave.blue_caves",
+      "zoneId": "zone.blue_caves",
+      "depthRange": [20, 60],
+      "sizeScale": 8,
+      "entrancePortals": 2,
+      "exitPortals": 1,
+      "depthCurveRange": [0.6, 1.8]
+    }
+  ]
+}

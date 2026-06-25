@@ -127,6 +127,14 @@ export interface DiveNode {
    */
   evadesSonar?: boolean;
   spoofsSonar?: string;
+  /**
+   * 多口持久洞（多口持久洞 SPEC §2.2）：该 ascent_point 是洞的哪类口。
+   *  - 'entrance'：带 POI 的入口（可下潜起手 + 上浮）。
+   *  - 'exit'：只能上浮的出口（非 POI·穿流泄流口/烟囱/塌口）。
+   * 缺省（undefined）＝普通 ascent_point（单口洞的「洞另一头出口」/ 开阔海域末层上浮口）＝旧语义逐字节不变。
+   * 用薄标注而非新 NodeKind：入口/出口在移动/上浮/可达性/声呐上与 ascent_point 全同，避免触动既有 kind 判据。
+   */
+  portalKind?: 'entrance' | 'exit';
 }
 
 /**
@@ -151,3 +159,68 @@ export type NodeKind =
   | 'corpse' // 尸体回收点
   | 'shop' // 水下黑市（后期）
   | 'boss'; // 区域 BOSS
+
+// ============================================================
+// 多口持久洞（方案 B · 多口持久洞 SPEC §2）—— 一个洞 = 一张冻结进存档的持久地图 + 多口绑定
+// ============================================================
+
+/** 门户口位的区域标签（多口持久洞 SPEC §2·按 depth 分桶派生）：浅缘 / 侧翼 / 深处。 */
+export type CaveRegion = 'rim' | 'flank' | 'deep';
+
+/** 一个门户口位——入口或出口（多口持久洞 SPEC §1/§2.1）。 */
+export interface CavePortal {
+  /** 对应 DiveMap.nodes 里的节点 id。 */
+  nodeId: string;
+  /** 'entrance' 可下潜起手 + 上浮；'exit' 仅上浮（非 POI·穿流口）。 */
+  kind: 'entrance' | 'exit';
+  /** 该口位的绝对深度（= 节点 depth·冗余存便于按深度选口/区域偏置）。 */
+  depth: number;
+  /** 口位区域（rim/flank/deep·区域偏置绑定用·生成时按 depth 分桶派生）。 */
+  region: CaveRegion;
+}
+
+/**
+ * 一个持久洞的存档记录（多口持久洞 SPEC §2.1·方案 B）。首次进洞生成并冻结于
+ * `profile.caveMaps[caveId]`；再进（含换口进）从这里加载＝同一空间续上次。
+ * 序列化：`saveReplacer/saveReviver` 的 __map 分支（value 内含 DiveMap 纯对象 + explored:Set
+ * 自底向上 revive）——零新序列化代码（同 harvestedResources 先例）。改洞设计＝全局 bump 弃档（#99·无单洞迁移）。
+ */
+export interface PersistentCave {
+  /** 稳定洞 id（= 生成 seed·= caveMaps key·= harvest 记账 key·命名空间 cave.<短名>）。 */
+  caveId: string;
+  /** 冻结的地图（首次进生成→冻结；运行时突变机制〔未来〕在此就地改写）。 */
+  map: DiveMap;
+  /** 曾被探明过的节点 id（跨 run 持久·驱动声呐图「已探片」预亮 + 海图认知）。 */
+  explored: Set<string>;
+  /** 生成时落定的入口/出口门户清单。绑定/渲染/守门读它，不必扫全图。 */
+  portals: CavePortal[];
+}
+
+/**
+ * 一个持久洞的生成参数（多口持久洞 SPEC §2.4·**数据驱动**·单一来源 data/caves.json·engine/caves.ts::getCave）。
+ * 这组数据＝生成器的**全部**输入：「加大洞」改 sizeScale/depthRange；「这洞将来要挂很多口」调大 entrancePortals。
+ * **没有任何口数/形状写死在 mapgen 代码里**——全是这张表（§5 可扩展硬要求落成机制·§7 守门）。
+ */
+export interface CaveGenParams {
+  /** 稳定洞 id（= 生成 seed·= caveMaps key·命名空间 cave.<短名>）。 */
+  caveId: string;
+  /** 复用哪个 zone 的内容池/标签/敌人（事件抽取走 buildEventPool(zone)·内容仍是 zone 的）。 */
+  zoneId: string;
+  /** 绝对深度窗口 [浅, 深]（核心钉 d1·入口/出口散布其间·§3.3 模型 B）。 */
+  depthRange: [number, number];
+  /** 图规模（节点数派生·N≈2×sizeScale·沿用 maze layerCount 语义·#175）。 */
+  sizeScale: number;
+  /** 要预留的**入口门户**数（≥ 预期挂口数·留余量给「以后别处加口」·§3.2/§3.4）。 */
+  entrancePortals: number;
+  /** 要预留的**出口门户**数（≥1·从不死胡同·穿流口·§1）。 */
+  exitPortals: number;
+  /**
+   * 入口门户的声明深度（可选·跨 beacon 洞用·如 [20,90]=reef 浅口 + vent 深口）。
+   * 缺省 → 在 [d0, d0+0.55·span] 浅—中段自动均布。绑定时 POI 的 mouthDepth 反挑最近的入口门户（§2.3）。
+   */
+  entranceDepths?: number[];
+  /** 出口门户的声明深度（可选）。缺省 → 在 [d0+0.35·span, ~d1) 中—深段自动均布。 */
+  exitDepths?: number[];
+  /** 深度密度剖面曲线 k 区间（沿用 #114 depthCurveRange·决定哪段深度节点多＝洞胖瘦·§3.3 模型 B）。 */
+  depthCurveRange?: [number, number];
+}

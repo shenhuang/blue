@@ -9,6 +9,8 @@
 //
 // 详见 src/engine/chart.ts 与 docs/STATUS.md §5「港口海图选点 UI」。
 
+import type { CaveRegion } from './dive';
+
 /** 洋流强度档位。MVP：仅叙事 + 落到 run.diveModifier 留接口；冲走/漂移效果待实装。 */
 export type CurrentStrength = 'none' | 'mild' | 'strong';
 
@@ -101,6 +103,30 @@ export interface ChartPoi {
    */
   columnId?: string;
   depthTier?: number;
+  /**
+   * 多口持久洞入口绑定（多口持久洞 SPEC §2.3）：设了 ⇒ 本 POI 是某持久洞的一个**入口**。
+   * 下潜走持久洞路径（load-or-generate caveMaps[caveId]·起手 = 解析出的入口节点），而非 zone/band 每潜重生路径。
+   * **解耦/数据驱动**：别处再开一个口 = 加一条带 caveEntry 的 POI 绑到现成入口门户，不重生、不改码。
+   * 与 bandId/columnId 路径互斥（dive-start 先判 caveEntry）。
+   */
+  caveEntry?: {
+    /** 目标洞稳定 id（= 持久图 seed·= caveMaps key·命名空间 cave.<短名>）。多口共享同一 caveId ⇒ 落同一张图。 */
+    caveId: string;
+    /**
+     * 显式绑定到地图的某入口门户节点 id（最稳·作者钉死「这个口落这个节点」）。
+     * 缺省 → 由 regionBias（或 mouthDepth 分桶）在该洞 entrance 门户里**确定性**派生（FNV(caveId::poiId)·零 rng·同口永远同节点）。
+     */
+    entryNodeId?: string;
+    /** 区域偏置（缺省 entryNodeId 时用·按口的地理把它落到 rim/flank/deep 的入口门户）。 */
+    regionBias?: CaveRegion;
+    /** 该入口的声明深度（reef 口浅/vent 口深·生成时门户钉此深度）。缺省 → 取绑定节点 depth。 */
+    mouthDepth?: number;
+    /**
+     * 入口被「封口」不可起手（上游 §5b/§6·温度过热过冷/只能当出口/得从别洞穿过去）：
+     * true ⇒ 海图标已知但 dim、不能从此下潜（仍可作为洞内上浮的出口）。T4 温度门控的接入点。
+     */
+    entranceBlocked?: boolean;
+  };
   /** true = 持久 anchor（永远在）；false = roaming（每次回港刷新） */
   persistent: boolean;
   /**
