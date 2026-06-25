@@ -8,6 +8,7 @@
 // 跑法： npx tsx scripts/playthrough-chart.ts
 
 import { readFileSync } from 'node:fs';
+import { POST_TUTORIAL_HOME_ANCHORS, POST_TUTORIAL_STORY_ANCHOR_IDS, POST_TUTORIAL_GATED_ZONES } from './test-fixtures/chart-baseline';
 import { createInitialGameState, createNewRun, HOME_LIGHTHOUSE_ID } from '../src/engine/state';
 import {
   generateChart,
@@ -223,16 +224,14 @@ const c1 = generateChart({ profile: postNoUp });
 for (const z of ['zone.east_reef', 'zone.old_lighthouse_reef']) {
   assert(c1.pois.some((p) => p.zoneId === z && p.persistent), `教学后家区应含 anchor: ${z}`);
 }
-for (const id of [
-  'poi.anchor.ch1_coral_grove',
-  'poi.anchor.ch1_temperate_wreck',
-  'poi.anchor.ch1_open_midwater',
-  'poi.anchor.ch1_vent_field',
-]) {
+for (const id of POST_TUTORIAL_STORY_ANCHOR_IDS) {
   assert(c1.pois.some((p) => p.id === id), `教学后剧情锚点恒显: ${id}`);
 }
-// blue_caves 已迁 owner=lighthouse.home（§7·cave-chart）：教学后随家区出现，不再在残骸/海沟门控列表
-for (const z of ['zone.wreck_graveyard']) {
+// home anchor（owner=lighthouse.home）：教学后随家区揭示（chart-baseline 单一真相·#171）
+for (const { id } of POST_TUTORIAL_HOME_ANCHORS) {
+  assert(c1.pois.some((p) => p.id === id), `教学后 home anchor 应随家区揭示: ${id}`);
+}
+for (const z of POST_TUTORIAL_GATED_ZONES) {
   assert(
     !c1.pois.some((p) => p.zoneId === z && p.persistent && !p.story),
     `教学后 ${z} 区未解锁 → 其非剧情 anchor 应不揭示`,

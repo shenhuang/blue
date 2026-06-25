@@ -380,9 +380,10 @@ function cmdLand(argv) {
     warn('沙箱（mount 不能 unlink·quirk #1）——不在沙箱跑 git rebase（会崩 + 残锁污染共享 .git、毒到 Mac 的 land）。');
     const gate = runGate(wtAbs, f.full);
     if (!gate.ok) { s.state = 'active'; writeLedger(led); stop(`绿门没过——先在 ${s.worktree} 修绿，再 psm land ${name}。`); }
-    s.state = 'ready'; s.updated = new Date().toISOString(); writeLedger(led);
+    // deferred 存入台账：psm merge / land --yes 在 Mac 上看到非空列表时会自动补跑（#171）
+    s.state = 'ready'; s.deferred = gate.deferred || []; s.updated = new Date().toISOString(); writeLedger(led);
     const dn = gate.deferred && gate.deferred.length
-      ? '\n  ' + C.dim(`Mac 上补跑受影响行为测：npm run regress -- --only-exact ${gate.deferred.join(',')}`)
+      ? '\n  ' + C.dim(`Mac 上将自动补跑受影响行为测（${gate.deferred.length} 个）：${gate.deferred.join(',')}`)
       : '';
     stop(`✓ 分支 ${C.bold(s.branch)} 绿门通过、已就绪（沙箱不 rebase / 不合并）。${dn}\n  在 ${C.bold('Mac 主树')} 跑 ${C.bold('node scripts/psm.mjs land ' + name + ' --yes')} 完成 rebase + ff（Mac 能 unlink）。${C.dim('（夜间任务也会在 Mac/CI 上自动收。）')}`);
   }
@@ -443,13 +444,11 @@ function cmdLand(argv) {
     if (!gate.ok) { s.state = 'active'; writeLedger(led); stop(`绿门没过——别合。先在 ${s.worktree} 修绿，再 psm land ${name}。`); }
   }
 
-  s.state = 'ready'; s.updated = new Date().toISOString(); writeLedger(led);
+  // Mac gate 已跑全量 affected（含沙箱 deferred）→ 清空 deferred，doMerge 不重复跑（#171）
+  s.state = 'ready'; s.deferred = []; s.updated = new Date().toISOString(); writeLedger(led);
 
   if (!f.yes) {
-    const deferredNote = gate.deferred && gate.deferred.length
-      ? '\n  ' + C.dim(`沙箱未跑的受影响行为测——Mac 上补：npm run regress -- --only-exact ${gate.deferred.join(',')}`)
-      : '';
-    info('\n' + C.green('✓ rebased + 绿门通过') + `（${s.branch} 基于 ${CFG.mainBranch}@${mainSha.slice(0, 8)}）` + deferredNote);
+    info('\n' + C.green('✓ rebased + 绿门通过') + `（${s.branch} 基于 ${CFG.mainBranch}@${mainSha.slice(0, 8)}）`);
     stop(`要把「${name}」ff 合进 ${CFG.mainBranch} 吗？确认就在 ${C.bold('main 树')} 跑：${C.bold('node scripts/psm.mjs land ' + name + ' --yes')}（或 psm merge ${name}）。`);
   }
 
@@ -475,6 +474,16 @@ function doMerge(name) {
   if (br !== CFG.mainBranch) stop(`合并要在 ${C.bold('main 树')}（当前分支 ${br}）跑——advance ${CFG.mainBranch} 会动 main 树文件，必须在那棵树上做。切到 main session 里 psm merge ${name}。`);
   const mainSha = shaOf(CFG.mainBranch);
   if (mainSha !== s.baseSha) stop(`${CFG.mainBranch} 在你 rebase 后又前进了（${s.baseSha.slice(0, 8)} → ${mainSha.slice(0, 8)}）——别的 session 抢先合了。重新 psm land ${name} 再合。`);
+  // 沙箱 deferred 行为测——Mac 上合并前补跑，防止 psm merge 绕过 gate（quirk #171）
+  if (s.deferred && s.deferred.length) {
+    const wtAbs = join(root, s.worktree);
+    const dCmd = `npm run regress -- --only-exact ${s.deferred.join(',')}`;
+    info(C.bold('\n补跑 deferred 行为测：') + ` ${dCmd}  ${C.dim('（沙箱未跑·Mac 补·quirk #171）')}`);
+    const dr = spawnSync(dCmd, { cwd: wtAbs, shell: true, stdio: 'inherit' });
+    if (dr.status !== 0) stop(`deferred 行为测没过——先修绿再 psm merge ${name}。`);
+    s.deferred = []; writeLedger(led);
+  }
+
   const lk = lockHolder(led);
   if (lk && lk.holder !== name) stop(`merge 锁被「${lk.holder}」持有（${lk.ts}）。等它合完，或 ${CFG.lockStaleMinutes}min 后自动释放。`);
   led.mergeLock = { holder: name, ts: new Date().toISOString() }; writeLedger(led);

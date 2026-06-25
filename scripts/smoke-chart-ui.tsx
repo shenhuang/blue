@@ -34,6 +34,7 @@ import { LockerView } from '../src/ui/LockerView';
 import type { GameState, InventoryItem, NodeChoice, FeatureChoice, DiveMap, ChartPoi } from '../src/types';
 import { generateChart, isPoiDepartable, resolveMarkedPois } from '../src/engine/chart';
 import { itemMarkedPois } from '../src/engine/items';
+import { POST_TUTORIAL_HOME_ANCHORS } from './test-fixtures/chart-baseline';
 
 const log: string[] = [];
 const L = (s: string) => log.push(s);
@@ -121,8 +122,11 @@ assert(htmlA.includes('旧灯塔礁'), 'A: 家区应含旧灯塔礁 POI');
 assert(htmlA.includes('东礁'), 'A: 家区应含东礁 POI');
 assert(htmlA.includes('需要「船坞 Lv.1」'), 'A: 旧灯塔礁应显示锁定原因（缺船坞·dim）');
 assert(htmlA.includes('出海'), 'A: 家区可去点应有出海按钮');
-// 区域揭示门控（区域揭示配置化 SPEC）：蓝洞群 owner 已迁 lighthouse.home（§7·cave-chart）→ 教学后随家区揭示。
-assert(htmlA.includes('蓝洞群'), 'A: 蓝洞群已迁 home（§7）→ 教学后随家区出现');
+// home anchor 可见性（chart-baseline 单一真相·#171）：owner=lighthouse.home → 教学后随家区揭示。
+// 渲染层专属：UI 字串在 markup 里。engine 层同步在 playthrough-chart.ts 断言 POI ID 在图内。
+for (const { id, name } of POST_TUTORIAL_HOME_ANCHORS) {
+  assert(htmlA.includes(name), `A: home anchor「${name}」(${id}) 教学后应随家区出现`);
+}
 // 剧情锚点（story·日志已知坐标·#117）恒显，不靠揭示圈。
 assert(htmlA.includes('温带商船残骸'), 'A: 剧情锚点温带商船残骸恒显（日志已知坐标）');
 // A2. 点 home 灯塔 → 开灯塔设施面板（灯塔/蛙跳重构 step ③·不再 HomeDivePopup 蛙跳列表）；SSR 不点击 → 断言 home 灯塔标记在。
