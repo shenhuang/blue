@@ -436,6 +436,7 @@
       "zoneTags": [
         "whalefall"
       ],
+      "poiId": "poi.anchor.whalefall_scavengers",
       "weight": 3,
       "cooldown": 6,
       "title": "先到的",
@@ -496,6 +497,7 @@
       "zoneTags": [
         "whalefall"
       ],
+      "poiId": "poi.anchor.whalefall_enrichment",
       "weight": 3,
       "cooldown": 6,
       "oncePerRun": true,
@@ -524,6 +526,26 @@
           }
         },
         {
+          "id": "sample_polychaete",
+          "label": "在最肥的那圈取一份多毛虫样本",
+          "outcome": {
+            "text": "你挑离尸体最近、黑得发亮的那圈泥，拿采样管连泥带虫收了一簇最肥的多毛类。\n取的地方很快被周围的毯子合拢补平——这片地皮年年自己织回来，少这一份不伤它的根。你把样本封好，这是带回去给手记续页的实证：一具尸体怎么把空海床养成谁都想落户的地方。",
+            "oxygenTurnCost": 2,
+            "deltas": {
+              "sanity": 1
+            },
+            "loot": [
+              {
+                "itemId": "item.whalefall_polychaete",
+                "qty": [
+                  1,
+                  1
+                ]
+              }
+            ]
+          }
+        },
+        {
           "id": "leave_enrich",
           "label": "不打扰这片地皮，绕过去",
           "outcome": {
@@ -542,6 +564,7 @@
       "zoneTags": [
         "whalefall"
       ],
+      "poiId": "poi.anchor.whalefall_bones",
       "weight": 3,
       "cooldown": 8,
       "oncePerRun": true,
@@ -582,6 +605,30 @@
             "deltas": {
               "sanity": 4
             }
+          }
+        },
+        {
+          "id": "pry_whale_bone",
+          "label": "用凿子从骨架上撬下一段鲸骨",
+          "visibleIf": {
+            "kind": "hasCapability",
+            "capability": "mine"
+          },
+          "outcome": {
+            "text": "你把凿尖卡进骨缝，避开还在摆的红须，一点点撬。骨头比你想的脆——年头和细菌已经把它从里头掏空了——一段连着干掉的须落进你手里，断面渗出那股甜里带硫的味道。\n你回头看那架骨头，缺了一截，红须断在原地，白菌毯沿着新的断口慢慢往里收。这段不会再长回来；这片海床往后就少了这一截。你把它收好，没有说服自己这是一件轻快的事。",
+            "oxygenTurnCost": 3,
+            "deltas": {
+              "sanity": -4
+            },
+            "loot": [
+              {
+                "itemId": "item.whale_bone",
+                "qty": [
+                  1,
+                  1
+                ]
+              }
+            ]
           }
         },
         {

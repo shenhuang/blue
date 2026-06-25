@@ -1213,6 +1213,29 @@
       "sellPrice": 5,
       "decay": "durable",
       "tier": 1
+    },
+    {
+      "id": "item.whalefall_polychaete",
+      "name": "鲸落多毛虫",
+      "category": "material",
+      "rarity": "common",
+      "description": "从富了的泥里取的一份样本——离尸体最近那圈黑得发亮的泥上，多毛类把泥面织成会动的毯，挑一簇最肥的连泥收进采样管。不是值钱货，是带回去给手记续页的实证：一具尸体怎么把贫瘠的海床养成谁都想落户的地皮。富集相年年自己织回来，取一份不伤这片地皮的根。Mira 说做记录的肯收，论份不论斤。",
+      "weight": 0.2,
+      "sellPrice": 4,
+      "decay": "organic",
+      "tier": 1
+    },
+    {
+      "id": "item.whale_bone",
+      "name": "鲸骨",
+      "category": "material",
+      "rarity": "uncommon",
+      "description": "从那架半埋在沉积里的骨头上撬下来的一段，骨缝里还嵌着干掉的红须，断面渗着一点甜里带硫的味道。这是它最后、也最长久的形状——肉是别人的几个月，骨头本该是别人的几十年。你撬走的这一段，不会再长回来，这片海床往后就少了这一截。沉甸甸的，压手，也压心。Mira 说识货的肯收，可你收钱的时候大概不会很痛快。",
+      "weight": 1.6,
+      "sellPrice": 34,
+      "decay": "durable",
+      "tier": 3,
+      "harvestPersist": "save"
     }
   ]
 }

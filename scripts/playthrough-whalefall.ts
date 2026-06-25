@@ -74,7 +74,13 @@ const MIDWATER_LH: Lighthouse = {
   builtUpgrades: new Set(),
 };
 
-const poolIds = (zoneId: string, depth: number, flags: string[], triggered: string[] = []): Set<string> =>
+const poolIds = (
+  zoneId: string,
+  depth: number,
+  flags: string[],
+  triggered: string[] = [],
+  poiId?: string,
+): Set<string> =>
   new Set(
     buildEventPool({
       zone: getZone(zoneId)!,
@@ -82,6 +88,7 @@ const poolIds = (zoneId: string, depth: number, flags: string[], triggered: stri
       sanity: 80,
       profileFlags: new Set(flags),
       triggeredEventIds: triggered,
+      poiId,
     }).map((e) => e.id),
   );
 
@@ -293,14 +300,32 @@ L('§6 zone.whalefall + 三相生态事件（[whalefall] 池）');
   const z = getZone('zone.whalefall');
   assert(z, '§6 zone.whalefall 应注册');
   assert(z!.zoneTagsByDepth.some((s) => s.tags.includes('whalefall' as never)), '§6 zone.whalefall 标 [whalefall] 池');
-  const ecoEv = ['whalefall.mobile_scavengers', 'whalefall.enrichment', 'whalefall.chemosynthetic'];
-  for (const id of ecoEv) {
+  // 三相演替事件钉了 poiId（#186 续·相位隔离）：各自只在对应 anchor POI 下潜进池，互不串；
+  // 4 条共享氛围（the_sleeper/the_outline/the_plume/the_years·无 poiId）仍是三相通用背景。
+  const phases: Array<{ poiId: string; eventId: string }> = [
+    { poiId: 'poi.anchor.whalefall_scavengers', eventId: 'whalefall.mobile_scavengers' },
+    { poiId: 'poi.anchor.whalefall_enrichment', eventId: 'whalefall.enrichment' },
+    { poiId: 'poi.anchor.whalefall_bones', eventId: 'whalefall.chemosynthetic' },
+  ];
+  const phaseIds = phases.map((p) => p.eventId);
+  for (const id of phaseIds) {
     const e = getEventById(id);
     assert(e && e.zoneTags?.includes('whalefall'), `§6 生态事件 ${id} 存在且为 [whalefall] 池`);
   }
-  const pool = poolIds('zone.whalefall', 90, [TUTORIAL_COMPLETE_FLAG]);
-  assert(ecoEv.every((id) => pool.has(id)), '§6 三相生态事件均在 zone.whalefall depth 90 池');
-  L('  zone.whalefall · 3 生态事件入 [whalefall] 池 ✓');
+  // 钉相：每相池含自己、不含另两相
+  for (const here of phases) {
+    const pool = poolIds('zone.whalefall', 90, [TUTORIAL_COMPLETE_FLAG], [], here.poiId);
+    assert(pool.has(here.eventId), `§6 ${here.poiId} 池含本相 ${here.eventId}`);
+    for (const other of phases) {
+      if (other.eventId !== here.eventId)
+        assert(!pool.has(other.eventId), `§6 ${here.poiId} 池不串入别相 ${other.eventId}`);
+    }
+  }
+  // 非 POI 下潜（poiId 缺省）：三相演替事件一律不进池；但共享氛围仍在
+  const ambient = poolIds('zone.whalefall', 90, [TUTORIAL_COMPLETE_FLAG]);
+  assert(phaseIds.every((id) => !ambient.has(id)), '§6 非 POI 下潜不漏三相演替事件（钉相生效）');
+  assert(ambient.has('whalefall.the_sleeper'), '§6 非 POI 下潜仍见共享氛围 the_sleeper（未钉相）');
+  L('  zone.whalefall · 3 相演替各钉 POI 互不串 · 氛围共享 ✓');
 }
 
 // ═══════════════════════════════════════════════════════════════
