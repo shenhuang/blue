@@ -44,9 +44,13 @@ export interface DiveEvent {
   sanityRange?: [number, number];
   weight: number; // 抽取权重；教程事件可设为 0（仅通过 forceTrigger 进入）
   /**
-   * POI 专属事件池（POI 固定资源耗尽 SPEC·2026-06-25）。设了 poiId ⇒ 本事件**只**在下潜该 POI
-   * （opts.poiId === poiId·当前仅 anchor 实例匹配）时进 buildEventPool；没设 ⇒ 照旧按 zoneTags/depthRange/flags
-   * 过滤（存量事件零影响）。poiId 必须命中 chart_pois.json 里的 id（scripts/check-event-poi.mjs 守成 regress 门）。
+   * POI 专属事件池（POI 固定资源耗尽 SPEC·2026-06-25 / roaming 内容·2026-06-25）。设了 poiId ⇒ 本事件**只**在
+   * 下潜该 POI 时进 buildEventPool；没设 ⇒ 照旧按 zoneTags/depthRange/flags 过滤（存量事件零影响）。匹配两条 lane：
+   *   - **anchor**：poiId ＝ anchor 的稳定 `id`（运行时 opts.poiId === poiId·精确匹配）。
+   *   - **roaming**：poiId ＝ roaming 模板的 `templateId`（实例 id `poi.roam.<runs>.<tpl>` 每次变、配不上静态值；
+   *     dive-start 另透传稳定 templateId·opts.poiTemplateId === poiId 即命中）。**roaming 内容按 templateId 钉**。
+   * poiId 必须命中 chart_pois.json 里的 `id`（anchors）或 `templateId`（roamingTemplates）——
+   * scripts/check-event-poi.mjs 守成 regress 门（拼错＝事件永不进池＝软锁·被挡）。
    */
   poiId?: string;
   cooldown?: number; // 同次下潜事件冷却（多少回合后才能再次抽取）

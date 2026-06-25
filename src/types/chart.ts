@@ -103,6 +103,14 @@ export interface ChartPoi {
   depthTier?: number;
   /** true = 持久 anchor（永远在）；false = roaming（每次回港刷新） */
   persistent: boolean;
+  /**
+   * roaming 机会点的**稳定模板身份**（roaming 专属内容·2026-06-25）：运行时 `id` 形如
+   * `poi.roam.<runsCompleted>.<templateId>` 每次出现都变（含 runsCompleted），无法被静态写的事件 `poiId`
+   * 匹配；故 generateChart 在构造 roaming POI 时把模板的 `templateId`（数据里稳定）原样带上。
+   * dive-start 透传给 buildEventPool（opts.poiTemplateId）做 POI 专属事件匹配——**roaming 内容按 templateId 钉**。
+   * anchor / 深度柱 / mimic POI 不设此字段（缺省 undefined·零影响·它们的 `id` 本就稳定、走 poiId 精确匹配）。
+   */
+  templateId?: string;
   /** 抵达能力门控：需要某全局升级（hasUpgrade）。未满足 → 海图上灰显可见但不能出海。 */
   requiresUpgrade?: string;
   /**

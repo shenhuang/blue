@@ -56,6 +56,12 @@ export function startDive(
     targetCorpseId?: string;
     /** 洞穴一致性（声呐渲染重做 SPEC §6①·#98）：地点身份串（POI.id / band.id）→ 同地点同图。缺省回退随机。 */
     seedKey?: string;
+    /**
+     * roaming 专属内容（roaming POI 内容·2026-06-25）：稳定模板身份（poi.templateId）。透传给 mapgen→buildEventPool
+     * 做 roaming 专属事件匹配（实例 run.poiId 每次变·配不上静态事件 poiId·故另走稳定 templateId）。
+     * anchor / 深度柱 / mimic / 教学下潜缺省 undefined ⇒ 零影响（带 poiId 的事件仍只命中 run.poiId 精确匹配）。
+     */
+    poiTemplateId?: string;
   },
 ): GameState {
   const zone = getZone(zoneId);
@@ -80,6 +86,8 @@ export function startDive(
     profileFlags: state.profile.flags,
     deaths: state.profile.deaths,
     poiId,
+    // roaming 专属内容（2026-06-25）：稳定模板身份直透 buildEventPool（缺省 undefined＝anchor/教学零影响）。
+    poiTemplateId: opts?.poiTemplateId,
     harvestedItemIds,
     harvestedNodeIds,
     depthOffset: opts?.depthOffset,
@@ -234,6 +242,8 @@ export function startDiveFromPoi(
         carryItems: opts?.carryItems,
         seedKey: poi.id,
         poiId: poi.id,
+        // roaming 专属内容（2026-06-25）：band 路径同样透传稳定模板身份（roaming 才有·anchor/柱缺省 undefined）。
+        poiTemplateId: poi.templateId,
       });
     }
   }
@@ -262,6 +272,8 @@ export function startDiveFromPoi(
     targetCorpseId: opts?.targetCorpseId,
     // 洞穴一致性（SPEC §6①·#98）：POI 身份＝种子 ⇒ 同一海图点再潜＝同一张洞穴图。
     seedKey: poi.id,
+    // roaming 专属内容（2026-06-25）：稳定模板身份（roaming 才有·anchor 缺省 undefined）→ buildEventPool 按它匹配。
+    poiTemplateId: poi.templateId,
   });
 
   const m = poi.modifier;
@@ -384,6 +396,8 @@ function diveIntoBand(
     seedKey: string;
     /** POI 固定资源耗尽（2026-06-25）：本次深入潜点的 POI id（=seedKey）→ 落 run.poiId 供耗尽记账。 */
     poiId?: string;
+    /** roaming 专属内容（2026-06-25）：稳定模板身份（roaming 才有）→ buildEventPool 匹配；anchor/柱缺省 undefined＝零影响。 */
+    poiTemplateId?: string;
   },
 ): GameState {
   let run = createNewRun({ zoneId: band.zoneId, bonuses: opts.bonuses, equipment: state.profile.equipment, poiId: opts.poiId });
@@ -418,6 +432,8 @@ function diveIntoBand(
     sonarDeception: band.sonarDeception,
     // 洞穴一致性（SPEC §6①·#98）：调用方给定身份串（蛙跳＝bandId / 深入 POI＝poi.id）⇒ 同地点同图。
     seedKey: opts.seedKey,
+    // roaming 专属内容（2026-06-25）：透传稳定模板身份（roaming 才有·anchor/柱缺省 undefined＝零影响）。
+    poiTemplateId: opts.poiTemplateId,
   });
 
   s = appendLog(s, {

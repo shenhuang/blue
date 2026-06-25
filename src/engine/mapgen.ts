@@ -90,6 +90,12 @@ interface GenOpts {
    */
   poiId?: string;
   /**
+   * 当前下潜的 POI **稳定模板身份**（roaming 专属内容·2026-06-25）：roaming 实例 poiId（`poi.roam.<runs>.<tpl>`）
+   * 每次出现都变、配不上静态事件 poiId；故另透传稳定的 templateId 给 buildEventPool 做匹配。
+   * 缺省（anchor / 深度柱 / 教学下潜）→ undefined ⇒ 零影响（事件 poiId 仍只命中 poiId 精确匹配）。
+   */
+  poiTemplateId?: string;
+  /**
    * 该 POI **永久**采尽的物品 id 集（save 级·来自 profile.harvestedResources[poiId]）：mapgen 生成后把
    * 产出这些物品的资源点抹平成空节点（玩家在地图上看不到已采完的点）。缺省/空 → 不抹平（向后兼容·零改动）。
    */
@@ -140,6 +146,8 @@ interface MultiFeatureArgs {
   triggeredFakeIds: string[];
   bandTags?: ZoneTag[];
   poiId?: string;
+  /** roaming 专属内容（2026-06-25）：稳定模板身份·随 poiId 一起透传给 buildEventPool。 */
+  poiTemplateId?: string;
   rng: () => number;
   maxFeatures: number;
   chanceBonus?: number;
@@ -171,6 +179,7 @@ function maybeMultiFeatureRoom(
       excludeIds: used,
       tagsOverride: args.bandTags,
       poiId: args.poiId,
+      poiTemplateId: args.poiTemplateId,
     });
     if (pool.length === 0) break; // 池子抽干（或同房可用事件用尽）→ 少给几个 feature
     const chosen = pickWeighted(pool, args.rng)!;
@@ -561,6 +570,7 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
           triggeredEventIds: triggeredFakeIds,
           tagsOverride: opts.bandTags,
           poiId: opts.poiId,
+          poiTemplateId: opts.poiTemplateId,
         });
         if (pool.length === 0) {
           // 没有匹配事件，退化为 rest
@@ -575,7 +585,7 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
         triggeredFakeIds.push(chosen.id); // 同 run 不再选
         // 多事件房间（S1）：偶尔升级成大房间（maxRoomFeatures>1 才进；缺省零额外 rng＝旧图不变）。
         const feats = maybeMultiFeatureRoom(chosen, {
-          zone, depth, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, poiId: opts.poiId, rng, maxFeatures: maxRoomFeatures, chanceBonus: roomFeatureChanceBonus,
+          zone, depth, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, poiId: opts.poiId, poiTemplateId: opts.poiTemplateId, rng, maxFeatures: maxRoomFeatures, chanceBonus: roomFeatureChanceBonus,
         });
         if (feats) {
           features = feats;
@@ -855,6 +865,7 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
           triggeredEventIds: triggeredFakeIds,
           tagsOverride: opts.bandTags,
           poiId: opts.poiId,
+          poiTemplateId: opts.poiTemplateId,
         });
         if (pool.length === 0) {
           kind = 'rest';
@@ -867,7 +878,7 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
           triggeredFakeIds.push(chosen.id);
           // 多事件房间（S1）：洞里大房间偶尔含多个 feature（maxRoomFeatures>1 才进；缺省零额外 rng＝旧迷路图不变）。
           const feats = maybeMultiFeatureRoom(chosen, {
-            zone, depth: depthI, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, poiId: opts.poiId, rng, maxFeatures: maxRoomFeatures, chanceBonus: roomFeatureChanceBonus,
+            zone, depth: depthI, profileFlags, triggeredFakeIds, bandTags: opts.bandTags, poiId: opts.poiId, poiTemplateId: opts.poiTemplateId, rng, maxFeatures: maxRoomFeatures, chanceBonus: roomFeatureChanceBonus,
           });
           if (feats) {
             features = feats;

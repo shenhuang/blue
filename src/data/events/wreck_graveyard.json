@@ -2703,6 +2703,76 @@
           }
         }
       ]
+    },
+    {
+      "id": "wreck_graveyard.collapse_drift",
+      "depthRange": [
+        24,
+        60
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 5,
+      "poiId": "roam.wreck_north_collapse",
+      "title": "背流的沙兜",
+      "body": "塌口北缘的急流在崖根打了个旋，把墓园上头冲松的小件全卷下来，堆在一处背流的沙兜里——铜衬、卡箍、断成节的舵链，半埋在打着转的细沙下。\n上回你记得这兜在偏东些；这回它挪了，沙位天天翻。捞得着是赶巧——明天这一兜就埋了，又换一批。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "dig_against_current",
+          "label": "顶着急流，把沙兜整个掏干",
+          "check": {
+            "stat": "stamina",
+            "dc": 13,
+            "onSuccess": {
+              "text": "你侧着身子卡进崖根背流处，急流在背后推，你就着这股劲一把把往外扒。沙呛得人睁不开眼，手指头碰着硬物就攥——铜的、铁的，连泥带件塞进网兜。掏到见了底，你蹬着崖壁退出旋流。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                {
+                  "itemId": "item.collapse_fitting",
+                  "qty": [
+                    2,
+                    3
+                  ]
+                }
+              ]
+            },
+            "onFailure": {
+              "text": "你伸手去够沙兜，急流斜里一推，把你整个甩出旋涡。胳膊在崖壁上刮过，网兜空着。沙又合上了那道口子——这一兜，等下回吧。",
+              "oxygenTurnCost": 2,
+              "deltas": {
+                "stamina": -8
+              }
+            }
+          }
+        },
+        {
+          "id": "skim_loose",
+          "label": "只撇浮在面上的那点，不跟流较劲",
+          "outcome": {
+            "text": "你不往深处探，只贴着沙兜表面撇了一把松的，捞着两三件就收手。流没顾上你，你也没贪。\n剩下的还埋在底下——明天它在不在，谁说得准。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              {
+                "itemId": "item.collapse_fitting",
+                "qty": [
+                  1,
+                  1
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "leave_drift",
+          "label": "记下沙兜方位，走",
+          "outcome": {
+            "text": "你看了眼旋流卷沙的样子，记下崖根这道背流口子的大致方位。沙天天翻，方位也是个大概——能不能再赶上，看潮。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
     }
   ]
 }

@@ -5,9 +5,12 @@
 // 拼错 poiId（指向不存在的 POI）＝静默失效：事件永不进任何池、也无报错 ⇒ 内容白写。
 // 本 lint 把它焊成 regress 门：扫所有事件的 poiId，确认命中 chart_pois.json 里某个真实 POI id，否则红。
 //
-// 注（先只做 anchor）：roaming 实例是运行时构造的 id（poi.<template>.<seed>），事件 poiId 当前只用于
-// anchor 匹配（运行时 poiId === anchor id）；本检查只要求 poiId 存在于 chart_pois.json 的 authored id
-// 集合（anchors + roamingTemplates 的 id），不做 roaming 实例匹配。
+// 匹配两条 lane（roaming 专属内容·2026-06-25 起）：
+//   ① anchor：运行时 poiId === anchor 的 `id`（写死·稳定）——事件 poiId 命中 anchor id。
+//   ② roaming：运行时实例 id 形如 `poi.roam.<runsCompleted>.<templateId>` 每次出现都变，故 roaming 专属事件
+//      的 poiId 钉**模板身份** `templateId`（buildEventPool 透传 opts.poiTemplateId 匹配·见 engine/zones.ts）。
+// 因此本 lint 把合法 poiId 集合 = chart_pois.json 里所有 `id`（anchors）**与** `templateId`（roamingTemplates）
+// 的并集；事件 poiId 命中其一即合法，否则红（拼错任一＝事件永不进池＝内容白写·静默软锁，仍被挡）。
 //
 // 在 scripts/regress.mjs 注册为 check-event-poi 任务（纯 node·与 check-event-dc 同类）。
 //
@@ -22,13 +25,18 @@ const ROOT = resolve(__dirname, '..');
 const EVENTS_DIR = resolve(ROOT, 'src/data/events');
 const POIS_FILE = resolve(ROOT, 'src/data/chart_pois.json');
 
-/** 递归收集 JSON 里所有 key==='id' 的字符串值（POI 对象 = anchors + roamingTemplates 的 id）。 */
+/**
+ * 递归收集 JSON 里所有合法 POI 身份串：
+ *   - key==='id'（anchor 的运行时稳定 id），与
+ *   - key==='templateId'（roaming 模板身份·roaming 专属事件按它钉·见脚本头注）。
+ * 两类都收进 out（事件 poiId 命中其一即合法）。注意 key 命中后仍递归其值无害（字符串不再下钻）。
+ */
 function collectIds(node, out) {
   if (Array.isArray(node)) {
     for (const x of node) collectIds(x, out);
   } else if (node && typeof node === 'object') {
     for (const [k, v] of Object.entries(node)) {
-      if (k === 'id' && typeof v === 'string') out.add(v);
+      if ((k === 'id' || k === 'templateId') && typeof v === 'string') out.add(v);
       else collectIds(v, out);
     }
   }
@@ -70,6 +78,6 @@ if (violations.length) {
 
 console.log(
   `✓ POI 专属事件门：扫 ${scanned} 事件，其中 ${withPoi} 个带 poiId，` +
-    `全部命中 chart_pois.json（${validPoiIds.size} 个 authored POI id）。`,
+    `全部命中 chart_pois.json（${validPoiIds.size} 个 authored 身份串＝anchor id + roaming templateId）。`,
 );
 process.exit(0);

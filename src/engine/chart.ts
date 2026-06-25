@@ -383,6 +383,9 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
   for (const t of picked) {
     const poi: ChartPoi = {
       id: `poi.roam.${profile.runsCompleted}.${t.templateId}`,
+      // 稳定模板身份（roaming 专属内容·2026-06-25）：实例 id 含 runsCompleted 每次变、事件 poiId 配不上；
+      // 带上 templateId 让 dive-start→buildEventPool 按它匹配 roaming 专属内容（anchor 不设此字段·走 id 精确匹配）。
+      templateId: t.templateId,
       zoneId: t.zoneId,
       name: t.name,
       blurb: t.blurb,

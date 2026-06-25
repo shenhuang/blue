@@ -1204,6 +1204,18 @@
       "harvestPersist": "save"
     },
     {
+      "id": "item.collapse_fitting",
+      "name": "塌口积件",
+      "category": "material",
+      "rarity": "common",
+      "description": "塌口北缘那道急流把墓园上头松脱的小件——铜衬、卡箍、断了的舵链节——一路冲下来，堆在背流的沙兜里。沙位天天翻，这一兜今天有、明天就被埋了又换一批，捞得着是赶巧。论分量不论件，Mira 说铸器铺添料用，碎归碎，是真铜真铁。",
+      "weight": 0.4,
+      "sellPrice": 7,
+      "decay": "durable",
+      "tier": 1,
+      "harvestPersist": "run"
+    },
+    {
       "id": "item.oyster_shell",
       "name": "牡蛎壳",
       "category": "material",

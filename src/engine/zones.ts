@@ -117,6 +117,13 @@ export function buildEventPool(opts: {
    * 没设 poiId 的事件不受影响（存量事件零影响）。缺省（非 POI 下潜）→ 所有带 poiId 的事件一律不进池。
    */
   poiId?: string;
+  /**
+   * 当前下潜的 POI **稳定模板身份**（roaming 专属内容·2026-06-25）：roaming 实例 id（`poi.roam.<runs>.<tpl>`·
+   * ＝传入的 poiId）每次出现都变，无法被静态写的事件 poiId 匹配；故 dive-start 另透传稳定的 templateId。
+   * 事件 poiId 命中 poiId **或** poiTemplateId 即进池（roaming 内容按 templateId 钉·anchor 仍走 poiId 精确匹配）。
+   * 缺省（anchor / 教学下潜）→ undefined ⇒ 不放宽（与旧行为逐字一致）。
+   */
+  poiTemplateId?: string;
 }): DiveEvent[] {
   const tags = new Set(opts.tagsOverride ?? tagsForDepth(opts.zone, opts.depth));
   const triggered = new Set(opts.triggeredEventIds);
@@ -127,9 +134,10 @@ export function buildEventPool(opts: {
     if (ev.weight <= 0) continue;
     if (exclude.has(ev.id)) continue;
 
-    // POI 专属事件（POI 固定资源耗尽·2026-06-25）：有 poiId 的事件只在下潜该 POI 时进池；
-    // 没设 poiId 的事件落到下面照旧按 zoneTags/depth/flags 过滤（存量事件零影响）。
-    if (ev.poiId && ev.poiId !== opts.poiId) continue;
+    // POI 专属事件（POI 固定资源耗尽·2026-06-25 / roaming 内容·2026-06-25）：有 poiId 的事件只在下潜该 POI
+    // 时进池——anchor 走 poiId 精确匹配；roaming 走稳定的 poiTemplateId（实例 poiId 每次变·配不上静态事件 poiId）。
+    // 任一命中即放行；两者皆不命中则跳过。没设 poiId 的事件落到下面照旧按 zoneTags/depth/flags 过滤（存量零影响）。
+    if (ev.poiId && ev.poiId !== opts.poiId && ev.poiId !== opts.poiTemplateId) continue;
 
     // 深度匹配
     if (opts.depth < ev.depthRange[0] || opts.depth > ev.depthRange[1]) continue;
