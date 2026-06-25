@@ -1,8 +1,8 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
+> **2026-06-25 chasm 事件池：史诗深裂隙 10 事件（E4 内容 session〔Cowork·Opus〕·#190·新 quirk #167·commit `30dd8b7`·沙箱 9/9 静态门 + Mac land 49/49）**：填 `chasm.json`（空 stub→10 事件·90–148m·`the_deep_gate` 深度带）；「越深越欺骗」轴——检定成功只换来「稳住自己」、不揭真相·失败把模糊推深；uncanny×6/cosmic×3/realistic×1·全 loot/combat/flag-free·5 oncePerRun。事件暂不可达（`the_deep_gate` 未接 chart·deferred）。
 > **2026-06-25 洞穴重规划数据侧：删 5 区 + lc 上调（交互 session〔Cowork〕·#184·纯数据·48/48·commit `f05479a`）**：`zones.json` 删 coral_grotto/sunken_chimney/sea_arch_cave/echo_cavern/trench_hall（28→23 区）；中型 lc→7–9·大型→12–14·史诗 the_deep_gate lc→70·depthRange→[70,148]；cave_zones_spec.md 同步（删块·标题·事件池表）。cave roadmap T1 完成。
-> **2026-06-25 roaming 机会点支持 POI 专属内容（交互 session〔Cowork〕·#188·新 quirk #166·48/48·commit `52d371e`）**：按 templateId（稳定）匹配·run 级耗尽·2 样板证机制（塌口采集+死烟囱叙事）。余 9 个 roaming 模板待铺。
 
 ## 1. 一句话状态
 
