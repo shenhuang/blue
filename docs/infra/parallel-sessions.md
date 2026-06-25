@@ -44,10 +44,14 @@ psm gc                                  # Mac 本机：清掉已合并 worktree
 - `psm status` —— 所有在飞 session：车道、与 main 的落差、merge 锁、待清理列表。
 - `psm check <glob[,glob...]>` —— 起手前自检：这条车道和谁重叠？
 - `psm land [name] [--yes]` —— rebase 最新 main → 跑绿门 → 绿了停下等确认（`--yes` 直接合）。red/冲突→停下不合。
-  不带 name 时从当前 worktree 推断。
-- `psm merge <name>` —— = `land --yes` 的合并那一步。**必须在 main 树、当前在 main 上跑**（advance main 会动 main 树文件）。
+  不带 name 时从当前 worktree 推断。**沙箱里跳过 rebase**（mount 不能 unlink·见下「沙箱约束」）：先 `doctor`
+  清残锁 → 跑绿门 → 停下让 **Mac** `land --yes` 收尾——**绝不在沙箱 rebase / 合并**。
+- `psm merge <name>` —— = `land --yes` 的合并那一步。**必须在 main 树、当前在 main 上跑**（advance main 会动 main 树文件）。沙箱拒绝（见下）。
 - `psm abort <name>` —— 放弃一条线（沙箱删不掉 worktree，留到 `gc`）。
 - `psm gc` —— **Mac 本机**清掉已合并/已弃的 worktree + 分支（沙箱拒绝·不能 unlink）。
+- `psm doctor` —— 清崩溃 / 中断留下的 git 残锁（`*.lock`）+ 中断 rebase 态（`rebase-merge`）。沙箱不能 unlink →
+  **只 mv 进 `.sandbox-junk`（可恢复）不删**；只碰 git 自己的锁、不碰 refs / objects / 工作树 / 台账串行锁。
+  卡死时（"another git process could not detach HEAD" / "cannot lock ref"）跑它自愈；`land` 起手也会自动先跑一遍。
 
 ## 沙箱约束（都已实测·别绕）
 
@@ -61,6 +65,12 @@ psm gc                                  # Mac 本机：清掉已合并 worktree
   `npm run regress -- --only typecheck,check`（typecheck + 全部 check-*·esbuild-free·实测 ~3s 全绿），并提示
   完整 playthrough/build 的语义绿留给 Mac/nightly 全量 `npm run regress`——与 CLAUDE.md「全量 regress 是 ship
   前的门、不是起手仪式」一致。要改跑什么编辑 `psm.config.json` 的 `gate`。
+- **沙箱绝不 rebase / merge（护栏·2026-06-21 加）**：`git rebase` 要删状态目录、`git merge --ff-only` 要替换/删
+  工作树文件——撞 unlink 就崩，且残锁（`HEAD.lock`/`index.lock`/`rebase-merge`）留在**共享** `.git` 里把后续所有
+  git 卡死、连 **Mac** 的 land 一起毒死（ch1-st2 那次反复卡死=此根因·级联）。所以 `land`/`doMerge` 一检测到沙箱
+  （`isSandbox()`）就**不 rebase / 不合并**：跑绿门 + 起手 `doctor` 自愈 → 停下让 Mac 收尾。沙箱要把分支「弄进
+  main」只两条正路：① 提交到 feature 分支 → **Mac / nightly** `land --yes`（首选）；② 真要沙箱自助，得走
+  unlink-free plumbing（`read-tree` 临时 index → `commit-tree` → CAS `update-ref`），psm **暂不自动做**（风险高·留作后续）。
 
 ## affected 选测（别每次全测·`gate.affected`·默认开）
 

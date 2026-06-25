@@ -25,13 +25,14 @@
 //   node scripts/psm.mjs merge <name>                    = land --yes 的合并那一步（须在 main 树跑）
 //   node scripts/psm.mjs abort <name>                    放弃一条线（沙箱里 worktree 留着·Mac 上 psm gc 清）
 //   node scripts/psm.mjs gc                              Mac 本机：移除已合并/已弃的 worktree + 清已并入 main 的 wip/* 分支（沙箱拒绝·不能 unlink）
+//   node scripts/psm.mjs doctor                          清残锁 / 中断 rebase 态（崩溃卡死后自愈·沙箱 mv 进 .sandbox-junk·可恢复）
 //
 // 退出码：成功 0；「警告即停·等你确认」用 3（区别于真错误 1）。
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, symlinkSync, rmSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve, join, relative as relPath, posix as ppath } from 'node:path';
+import { dirname, resolve, join, relative as relPath, posix as ppath, basename } from 'node:path';
 
 // ─────────────────────────── 基础 ───────────────────────────
 
@@ -89,6 +90,45 @@ function ROOT() { if (_root) return _root; try { _root = dirname(commonDir()); }
 function currentBranch(cwd) { try { return git(['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: cwd || ROOT() }); } catch { return null; } }
 function shaOf(ref) { try { return git(['rev-parse', ref]); } catch { return null; } }
 
+function junkDir() { const d = join(commonDir(), '.sandbox-junk'); if (!existsSync(d)) mkdirSync(d, { recursive: true }); return d; }
+
+function walkLockFiles(dir) {
+  const out = [];
+  if (!existsSync(dir)) return out;
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) out.push(...walkLockFiles(p));
+    else if (e.name.endsWith('.lock')) out.push(p);
+  }
+  return out;
+}
+
+// 把 git 残锁 / 中断 rebase 态 mv 进 .sandbox-junk（rename 移目录也行·无 unlink）。返回清掉的相对路径列表。
+// { verbose } 选项为真时逐条打印。沙箱和 Mac 通用（mv 不删·可恢复）。
+function clearStaleLocks({ verbose = false } = {}) {
+  const cd = commonDir();
+  const cleared = [];
+  const mvAside = (p) => {
+    if (!existsSync(p)) return;
+    try { renameSync(p, join(junkDir(), `${Date.now()}-${basename(p)}-${Math.random().toString(36).slice(2, 6)}`)); cleared.push(relPath(ROOT(), p)); }
+    catch { /* 别人正占着 / 已没了——跳过 */ }
+  };
+  // common .git 顶层锁 + refs 锁（含 refs/heads/feat/<x>.lock 嵌套·"cannot lock ref" 的来源）
+  for (const f of ['HEAD.lock', 'index.lock', 'packed-refs.lock', 'config.lock', 'ORIG_HEAD.lock']) mvAside(join(cd, f));
+  for (const p of walkLockFiles(join(cd, 'refs'))) mvAside(p);
+  // 各 worktree 的锁 + 中断的 rebase / cherry-pick / merge 态目录
+  const wtDir = join(cd, 'worktrees');
+  if (existsSync(wtDir)) for (const w of readdirSync(wtDir)) {
+    for (const f of ['HEAD.lock', 'index.lock', 'MERGE_HEAD.lock', 'rebase-merge', 'rebase-apply', 'CHERRY_PICK_HEAD.lock']) mvAside(join(wtDir, w, f));
+  }
+  if (verbose) {
+    if (cleared.length) { ok(`清了 ${cleared.length} 个残锁 / 中断 rebase 态（mv 进 .sandbox-junk·可恢复）：`); for (const t of cleared) info('  · ' + t); }
+    else ok('没有残锁 / 中断态——git 这边干净。');
+  }
+  return cleared;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // ─────────────────── 台账 / 锁（.git/psm/·跨 session 共享） ───────────────────
 
 function psmDir() { const d = join(commonDir(), 'psm'); if (!existsSync(d)) mkdirSync(d, { recursive: true }); return d; }
@@ -330,6 +370,23 @@ function cmdLand(argv) {
   const wtAbs = join(ROOT(), s.worktree);
   if (!existsSync(wtAbs)) die(`worktree 不在：${s.worktree}（换 session 或 Mac 上重建）。`);
 
+  // 沙箱护栏（mount 不能 unlink·quirk #1）：git rebase 必须删状态目录才能收尾——沙箱删不掉 → rebase 崩、
+  // 残锁（HEAD.lock / index.lock / rebase-merge）留在**共享** .git 里，连 Mac 的 land 一起毒死（正是 ch1-st2
+  // 那次级联卡死的根因）。所以沙箱**不在这里 rebase**：先 doctor 清掉上次留的残锁（自愈），跑分支自身绿门
+  // （沙箱自动降级静态门·CFG.gate.sandbox），停下让 **Mac** 收尾（Mac 能 unlink·rebase + ff 正常）。
+  if (isSandbox()) {
+    const cleared = clearStaleLocks();
+    if (cleared.length) ok(`doctor：先清了 ${cleared.length} 个残锁 / 中断 rebase 态（mv 进 .sandbox-junk·可恢复）。`);
+    warn('沙箱（mount 不能 unlink·quirk #1）——不在沙箱跑 git rebase（会崩 + 残锁污染共享 .git、毒到 Mac 的 land）。');
+    const gate = runGate(wtAbs, f.full);
+    if (!gate.ok) { s.state = 'active'; writeLedger(led); stop(`绿门没过——先在 ${s.worktree} 修绿，再 psm land ${name}。`); }
+    s.state = 'ready'; s.updated = new Date().toISOString(); writeLedger(led);
+    const dn = gate.deferred && gate.deferred.length
+      ? '\n  ' + C.dim(`Mac 上补跑受影响行为测：npm run regress -- --only-exact ${gate.deferred.join(',')}`)
+      : '';
+    stop(`✓ 分支 ${C.bold(s.branch)} 绿门通过、已就绪（沙箱不 rebase / 不合并）。${dn}\n  在 ${C.bold('Mac 主树')} 跑 ${C.bold('node scripts/psm.mjs land ' + name + ' --yes')} 完成 rebase + ff（Mac 能 unlink）。${C.dim('（夜间任务也会在 Mac/CI 上自动收。）')}`);
+  }
+
   const mainSha = shaOf(CFG.mainBranch);
   info(`rebase ${s.branch} → ${CFG.mainBranch}@${mainSha.slice(0, 8)} ...`);
   const rb = spawnSync('git', ['--no-optional-locks', 'rebase', CFG.mainBranch], { cwd: wtAbs, encoding: 'utf-8' });
@@ -349,8 +406,8 @@ function cmdLand(argv) {
 
   if (runningOnMac) {
     const root = ROOT();
-    // 先清沙箱残留 lock——Mac rm 没问题，沙箱留下的 *.lock 会挡 ff-merge
-    clearStaleLocks(root);
+    // 先清沙箱残留 lock——mv 沙箱/Mac 通用，不会留死 *.lock 挡 ff-merge
+    clearStaleLocks();
     const preFfSha = shaOf(CFG.mainBranch);
     const ffResult = spawnSync('git', ['merge', '--ff-only', s.branch], { cwd: root, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] });
     if (ffResult.status !== 0) {
@@ -395,6 +452,9 @@ function doMerge(name) {
   const led = readLedger();
   const s = led.sessions[name];
   if (!s) die(`没这条 session：${name}。`);
+  // 沙箱护栏（quirk #1）：`git merge --ff-only` 在沙箱里更新工作树/删文件会撞 unlink、崩了留残锁毒共享 .git。
+  // ff 合并只在 Mac 主树（能 unlink）做。
+  if (isSandbox()) stop(`沙箱不做 ff 合并（mount 不能 unlink·\`git merge\` 可能崩在工作树更新 / 残锁上、毒到 Mac）——在 ${C.bold('Mac 主树')}（能 unlink）跑 psm merge ${name} / land --yes。${C.dim('（或等夜间任务在 Mac/CI 上收。）')}`);
   if (s.state !== 'ready') stop(`「${name}」还没过绿门（state=${s.state}）。先 psm land ${name}。`);
   const br = currentBranch();
   if (br !== CFG.mainBranch) stop(`合并要在 ${C.bold('main 树')}（当前分支 ${br}）跑——advance ${CFG.mainBranch} 会动 main 树文件，必须在那棵树上做。切到 main session 里 psm merge ${name}。`);
@@ -415,59 +475,17 @@ function doMerge(name) {
 
 // ─────────────────────────── abort / gc ───────────────────────────
 
-// ─────────────────────────── unlock ───────────────────────────
-// 沙箱 mount 不能 unlink，git 崩溃后遗留 *.lock 文件挡住 Mac 操作。
-// Mac 本机 rm 没问题——这里统一清掉常见残留位置，避免手动找。
-function clearStaleLocks(root, { verbose = false } = {}) {
-  const candidates = [
-    join(root, '.git', 'HEAD.lock'),
-    join(root, '.git', 'index.lock'),
-    join(root, '.git', 'packed-refs.lock'),
-    join(root, '.git', 'COMMIT_EDITMSG.lock'),
-  ];
-  // worktree admin locks
-  const wtAdmin = join(root, '.git', 'worktrees');
-  if (existsSync(wtAdmin)) {
-    try {
-      for (const d of readdirSync(wtAdmin)) {
-        for (const f of ['HEAD.lock', 'index.lock', 'REBASE_HEAD.lock']) {
-          candidates.push(join(wtAdmin, d, f));
-        }
-      }
-    } catch { /* ignore */ }
-  }
-  // refs/heads/*.lock
-  const refsHeads = join(root, '.git', 'refs', 'heads');
-  if (existsSync(refsHeads)) {
-    try {
-      for (const f of readdirSync(refsHeads)) {
-        if (f.endsWith('.lock')) candidates.push(join(refsHeads, f));
-      }
-    } catch { /* ignore */ }
-  }
-  // refs/heads/feat/*.lock
-  const refsHeadsFeat = join(refsHeads, 'feat');
-  if (existsSync(refsHeadsFeat)) {
-    try {
-      for (const f of readdirSync(refsHeadsFeat)) {
-        if (f.endsWith('.lock')) candidates.push(join(refsHeadsFeat, f));
-      }
-    } catch { /* ignore */ }
-  }
-  let removed = 0;
-  for (const p of candidates) {
-    if (existsSync(p)) {
-      try { rmSync(p); removed++; if (verbose) ok(`清 lock：${p.replace(root + '/', '')}`); }
-      catch (e) { warn(`清 lock 失败（${p.replace(root + '/', '')}）：${e.message}`); }
-    }
-  }
-  return removed;
-}
+// ─────────────────────────── unlock / doctor ───────────────────────────
+// clearStaleLocks（上面已定义）用 mv（renameSync）——沙箱和 Mac 通用，不需要 unlink。
+// unlock：Mac 本机工具（语义上为 Mac 清理），调 clearStaleLocks 即可。
+// doctor：沙箱自愈工具·跨平台·同样调 clearStaleLocks（mv·可恢复）。
 function cmdUnlock() {
-  if (isSandbox()) die('unlock 要在 Mac 本机跑（沙箱不能 unlink）。');
-  const root = ROOT();
-  const n = clearStaleLocks(root, { verbose: true });
-  ok(`清理完成：共移除 ${n} 个 lock 文件。`);
+  if (isSandbox()) die('unlock 要在 Mac 本机跑（沙箱请用 psm doctor·mv 不删·可恢复）。');
+  clearStaleLocks({ verbose: true });
+}
+function cmdDoctor() {
+  clearStaleLocks({ verbose: true });
+  if (!isSandbox()) info(C.dim('（非沙箱：git 通常自己清锁·doctor 只在崩溃卡死后兜底。）'));
 }
 function cmdAbort(argv) {
   const name = parseFlags(argv)._[0]; if (!name) die('用法：psm abort <name>');
@@ -561,6 +579,7 @@ switch (cmd) {
   case 'abort': cmdAbort(rest); break;
   case 'gc': cmdGc(); break;
   case 'unlock': cmdUnlock(); break;
+  case 'doctor': cmdDoctor(); break;
   case 'hook': if (rest[0] === 'pre-commit') hookPreCommit(); else process.exit(0); break;
   default:
     info(C.bold('psm —— 并行 session 管理器'));
@@ -573,6 +592,7 @@ switch (cmd) {
     info('  abort <name>                  放弃一条线');
     info('  gc                            Mac 本机清理已合并/已弃 worktree + 已并入的 wip/* 分支');
     info('  unlock                        清沙箱遗留 *.lock 文件（land 会自动调·手动备用）');
+  info('  doctor                        清残锁 / 中断 rebase 态（崩溃卡死后自愈·只 mv 不删）');
     info('\n详见 docs/infra/parallel-sessions.md');
     process.exit(cmd ? 1 : 0);
 }
