@@ -1,9 +1,9 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
+> **2026-06-25 潜水刀两攻击并为单攻击（交互 session〔Cowork·Opus〕·#194·content commit `194ebea`·沙箱 48/48 全绿·待 push）**：核实「双攻击冗余」属实——刺击的 `ambushMultiplier` 引擎从未读（伏击 1.5× 来自 `ambushing` 状态·对任意攻击生效）、「处决失能」从未实装 → 删 `knife_stab`、留 `knife_slash`（数值不动·defer-number-tuning）、删死字段 `AttackEffect.ambushMultiplier`。两条拿 stab 当测试载体的 baseline 迁挥砍并按引擎重钉 pin（`reef_shark__normal_kill` slash×3·bleed@1→@2；`wreck_spider_crabs_pair` slash×7·文件 renamed `__knife_slash_kill`）。伏击连招变 ambush→挥砍。随手 commit grotto 漏掉的 QUIRKS #169/#170 回填（`d0aceaa`）。
 > **2026-06-25 grotto 事件池（7 事件）+ psm land auto-stash（E2 内容 session〔Cowork〕·#193·commit `87d66ed`+`fad3bad`·49/49）**：填 `grotto.json`（空 stub→7 事件·20–82m·grotto tag）；crystal_column/bone_bed/acoustic_node/moonpool_light/sulfur_seep/old_anchor/dark_corner；realistic×3+uncanny×4；moonpool_light 含 sanity +3 天井驻留；dark_corner sanityRange [0,70] 门控。psm.mjs land 新增 rebase 前 auto-stash（沙箱 index 残留 + 并发 session 推进 main 两类脏态均自动处理）。cave roadmap E2 完成。
 > **2026-06-25 deep_cave 事件池：深穴 8 事件 + 焊死 combat-scenarios flake（E3 内容 session〔Cowork〕·#192·无新 quirk·48/48·commit `b8ccf7f`+`1bebbed`）**：填 `deep_cave.json`（空 stub→8 事件·35–124m·一池兜大型深穴+中深窄道〔blind_alley/murk_gallery〕两类区）；核心＝黑暗+封闭+感知不可信·与空间大小无关·cosmic2/uncanny4/realistic2·地质细节具体（截面 70°/温差/回声秒数）·复用现有 loot/combat id·守 protagonist-voice。顺修 `playthrough-combat-scenarios` 未播种 Math.random 的 flake（`fissure_sphere__split_trigger` 偶 noActionProvided→makeLcg 锁定·#129/#157 套路·扫 1–25 均 34/34·不改 baseline）。事件暂不可达（27 洞未接 chart·T3·deferred）。
-> **2026-06-25 tide 事件池：潮间洞穴 7 事件（E1 内容 session〔Cowork〕·#191·commit `4961043`·沙箱 9/9 静态门·plumbing ff 进 main）**：填 `tide.json`（空 stub→7 事件·8–44m·tide tag·全 realistic）；tide.surge/barnacle_ceiling/trapped_air/tidal_creature/pressure_shift/silt_bloom/watermark；体感替代情绪·遵 protagonist-voice；无 poiId/flag/全局 loot·visibleIf 刀具 loot 点 2 处。cave roadmap E1 完成。
 
 ## 1. 一句话状态
 
@@ -261,7 +261,7 @@ dynamic import 当 dead code 消除了，整个 `src/ui/dev/` 不进 prod 包）
 # 1. quick mode（多回合 actions 顺序对齐）
 npx tsx scripts/combat-runner.ts combat.tutorial_shark \
     --action action.ambush --target 0 \
-    --action action.knife_stab --target 0 \
+    --action action.knife_slash --target 0 \
     --action action.knife_slash --target 0 \
     --seed 42
 
@@ -278,14 +278,14 @@ npx tsx scripts/combat-runner.ts --from scenarios/combat/reef_shark__normal_kill
 # 4. 辅助命令
 npx tsx scripts/combat-runner.ts --list
 npx tsx scripts/combat-runner.ts --show-enemy enemy.blind_eel
-npx tsx scripts/combat-runner.ts --show-action action.knife_stab
+npx tsx scripts/combat-runner.ts --show-action action.knife_slash
 ```
 
 **场景库 `scenarios/combat/*.json`**：
 
 - 命名规则：`<combatId 点改下划线>__<variant>.json`，例如 `reef_shark__normal_kill.json` / `blind_eel__sanity_attack_path.json`。
 - 一个文件 = 一份 `CombatScenarioInput` + 可选 `_comment` + 可选 `expect`。`expect` 给 `playthrough-combat-scenarios.ts` 做断言：`outcome` / `turnsElapsed` / `survived` / `finalPhase` / `enemiesAlive` / `lootGained` / `statsDelta`，加上 `sanityDeltaAtMost` / `hpDeltaAtMost` / `oxygenDeltaAtMost` 这种"至少损失这么多"软断言。
-- 目前 8 个 baseline scenario（reef_shark normal_kill + blind_eel sanity_attack_path + 沉船蛛蟹 solo normal_kill + 沉船蛛蟹 solo flee_retreat（territorial 撤退路径）+ 沉船蛛蟹 pair knife_stab_kill（**项目首个多体战斗**）+ reef_barracuda_solo normal_kill + cave_octopus_solo normal_kill（蓝洞深段 physical 攻坚 bruiser，seed 1 = 3 turns / stamina -28，knife_slash×4）+ **drowned_lantern_solo normal_kill**（墓园 cosmic 「理智消耗战」，seed 1 = 3 turns / stamina -20 / oxygen -3 / **sanity -10**，knife_slash×4——首个 sanity Δ 非零的战斗 baseline））。**添新敌人 / 新 encounter / 改平衡数值时建议至少加 1 个 baseline 进 scenarios/combat/**，保证以后改动不破坏既有行为。
+- 目前 8 个 baseline scenario（reef_shark normal_kill + blind_eel sanity_attack_path + 沉船蛛蟹 solo normal_kill + 沉船蛛蟹 solo flee_retreat（territorial 撤退路径）+ 沉船蛛蟹 pair knife_slash_kill（**项目首个多体战斗**）+ reef_barracuda_solo normal_kill + cave_octopus_solo normal_kill（蓝洞深段 physical 攻坚 bruiser，seed 1 = 3 turns / stamina -28，knife_slash×4）+ **drowned_lantern_solo normal_kill**（墓园 cosmic 「理智消耗战」，seed 1 = 3 turns / stamina -20 / oxygen -3 / **sanity -10**，knife_slash×4——首个 sanity Δ 非零的战斗 baseline））。**添新敌人 / 新 encounter / 改平衡数值时建议至少加 1 个 baseline 进 scenarios/combat/**，保证以后改动不破坏既有行为。
 
 **回归运行**：
 
