@@ -636,6 +636,15 @@ export function ChartInfo({
   const blockReason = overloaded ? '负重过载——卸下些装备再出发' : poiBlockReason(state.profile, poi);
   // 「→」（进 target 步）只在有打捞目标可选时出现
   const hasCorpseChoice = departable && corpses.length > 0;
+  // 没东西可带就跳过装包（作者拍板 2026-06-25）：仓库无可携带消耗品 ⇒「出海」不进 pack 步——
+  // 有打捞目标可选 → 直接 target 步；否则直接下潜。装包步只在确有东西可带时存在（单点决策·
+  // 与下方「← 装包/返回」回退目标同源 hasPack，免出现空装包面板）。
+  const hasPack = carryables.length > 0;
+  const beginDepart = () => {
+    if (hasPack) setDepartStep('pack');
+    else if (hasCorpseChoice) setDepartStep('target');
+    else onDepart(poi, undefined);
+  };
 
   // ── step: target ────────────────────────────────────────────────
   if (departStep === 'target') {
@@ -661,7 +670,9 @@ export function ChartInfo({
           </select>
         </label>
         <div className="chart-info-actions">
-          <button className="btn small secondary" onClick={() => setDepartStep('pack')}>← 装包</button>
+          <button className="btn small secondary" onClick={() => setDepartStep(hasPack ? 'pack' : 'none')}>
+            {hasPack ? '← 装包' : '← 返回'}
+          </button>
           <button className="btn small" onClick={() => onDepart(poi, target || undefined)}>
             {target ? '下潜（带目标）' : '下潜'}
           </button>
@@ -788,13 +799,15 @@ export function ChartInfo({
         </p>
       )}
 
-      {departable ? (
-        <button className="btn small" onClick={() => setDepartStep('pack')}>出海</button>
-      ) : (
-        <button className="btn small" disabled title={blockReason ?? undefined}>
-          {blockReason ?? '去不了'}
-        </button>
-      )}
+      <div className="chart-info-actions">
+        {departable ? (
+          <button className="btn small" onClick={beginDepart}>出海</button>
+        ) : (
+          <button className="btn small" disabled title={blockReason ?? undefined}>
+            {blockReason ?? '去不了'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
