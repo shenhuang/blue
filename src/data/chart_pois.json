@@ -690,20 +690,20 @@
       },
       {
         "templateId": "roam.lighthouse_trench",
-        "zoneId": "zone.old_lighthouse_reef",
-        "name": "灯塔礁深槽",
-        "blurb": "礁体侧面裂开的一道深槽，比礁顶冷得多。Mira 说底下沉过一条运瓷器的船。",
-        "distance": 2,
-        "owner": "lighthouse.home",
-        "mapX": 0.16,
-        "mapY": 0.08,
-        "weight": 2,
+        "zoneId": "zone.vent_trench",
+        "name": "暗流带",
+        "blurb": "竖井口外侧一股从深处打上来的暗流扫着岩壁。水是斜的，什么都往一个方向漂。深渊边上的气味——矿物和某种腐烂的东西混在一起。",
+        "distance": 4,
+        "owner": "lighthouse.ch1_trench_outpost",
+        "mapX": 0.05,
+        "mapY": -0.06,
+        "weight": 1,
         "requiresFlags": [
           "flag.tutorial_complete"
         ],
-        "requiresLighthouseUpgrade": "lighthouse.dockyard.lv1",
         "modifier": {
-          "depthOffset": 10
+          "current": "strong",
+          "visibility": "dark"
         }
       },
       {
