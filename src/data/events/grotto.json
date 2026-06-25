@@ -1,1 +1,312 @@
-{ "events": [] }
+{
+  "events": [
+    {
+      "id": "grotto.crystal_column",
+      "depthRange": [38, 68],
+      "zoneTags": ["grotto"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "不该是这个形状的柱",
+      "body": "一根矿物柱从地面接到洞顶，通体白，柱面有均匀的棱——十二条，你数了，真的是十二条。\n水慢慢沉积出来的东西不会长成这样。这种规律要么是结晶，要么是别的什么原因。\n柱子这么老，碰了也不知道会不会碎。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "mine_column",
+          "label": "用岩凿从棱缝里取一段样本",
+          "visibleIf": { "kind": "hasCapability", "capability": "mine" },
+          "outcome": {
+            "text": "你把岩凿对准两棱之间的缝，轻轻锤了两下。矿物裂开的声音在洞里转了一圈——柱子没倒，你手里多了一块白色的、截面很正的矿料。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.quartz_crystal", "qty": [1, 2], "chance": 0.8 },
+              { "itemId": "item.iron_concretion", "qty": [1, 1], "chance": 0.3 }
+            ]
+          }
+        },
+        {
+          "id": "circle_column",
+          "label": "绕着柱子转一圈，把每一面都看到",
+          "outcome": {
+            "text": "你慢慢绕了一圈。十二条棱，每条的间距一致，棱角利得像是用器具划出来的。你找不到一处节瘤或者偏角——这根柱子一路长到顶，没有偏过一下。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        },
+        {
+          "id": "pass_column",
+          "label": "数完就走，不去碰它",
+          "outcome": {
+            "text": "你绕开柱子，贴着洞壁过去。那十二条棱从你眼角退走。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grotto.bone_bed",
+      "depthRange": [42, 75],
+      "zoneTags": ["grotto"],
+      "weight": 7,
+      "cooldown": 4,
+      "title": "骨头铺的底",
+      "body": "洞底铺满了骨头——鱼脊骨、蟹爪、扁平的鳐鱼软骨，还有几节说不清是什么的长骨。骨头叠着骨头，中间夹着泥，踩不下去，只能浮着。\n这种密度不是自然死亡能积出来的。是什么把吃完的东西都带回这里。\n没有看到带回来的那个东西。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "search_bed",
+          "label": "翻找骨头层，看有没有夹着能用的东西",
+          "outcome": {
+            "text": "你把手伸进骨堆，往下摸。骨头轻轻浮起又落下。摸到底层的泥，指尖碰到了几块硬的、密度不像骨头的东西。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.crab_chitin", "qty": [1, 2], "chance": 0.7 },
+              { "itemId": "item.iron_concretion", "qty": [1, 1], "chance": 0.3 }
+            ]
+          }
+        },
+        {
+          "id": "identify_bones",
+          "label": "挑几块骨头仔细看，认认是什么动物",
+          "outcome": {
+            "text": "你捡起一节长骨，在灯下转了转。骨壁薄，是什么游得快的动物的骨头。旁边一截脊柱是鱼的，没问题；但压在最底下的那几节椎骨形状不对，太大，椎孔也不是鱼有的那种圆。你把它放回去。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -3 }
+          }
+        },
+        {
+          "id": "skirt_bed",
+          "label": "贴着洞壁边缘绕过去，不搅骨堆",
+          "outcome": {
+            "text": "你贴着壁边悬着身子绕过那片骨底，脚蹼离最上面那层骨头只有一掌宽。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grotto.acoustic_node",
+      "depthRange": [40, 78],
+      "zoneTags": ["grotto"],
+      "weight": 5,
+      "cooldown": 4,
+      "title": "声音回来的方向不对",
+      "body": "你用手背轻敲了一下岩壁。\n回声从左边来——可左边是实心的岩面，没有空腔，手贴上去感觉不到任何空鼓。\n你又敲了一下，右边，故意的。回声还是从左边来。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "map_acoustics",
+          "label": "沿着各面墙依次敲，用回声判断哪里有空洞",
+          "check": {
+            "stat": "sanity",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你沿四壁挨个敲了一遍，仔细记着声音从哪里回来。敲到第七下，回声方向突然对上了——那面壁后面是空的，可能通着什么。你记住这个位置。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "越敲越乱，回声的方向在洞里绕了又绕，对不准任何一面壁。你停下来，手指还搭在岩面上，脑子里那个声音的图已经散了。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -4 }
+            }
+          }
+        },
+        {
+          "id": "trust_wrong_echo",
+          "label": "朝声音回来的那个方向走，看看那里有什么",
+          "outcome": {
+            "text": "你朝左边那面实心岩走过去，把灯凑近。没有裂缝，没有口，但壁面的颜色和旁边的略有不同——像是比旁边薄，或者背后是另一种东西。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": -2 }
+          }
+        },
+        {
+          "id": "ignore_echo",
+          "label": "不去管它，继续走",
+          "outcome": {
+            "text": "你把那个错误的方向搁下。洞里的声学你猜不透，猜了也没用。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grotto.moonpool_light",
+      "depthRange": [20, 55],
+      "zoneTags": ["grotto"],
+      "weight": 6,
+      "cooldown": 5,
+      "title": "光进来的地方不是出口",
+      "body": "洞顶有一个圆形的开口，光从里面垂直送下来，白天的光，清晰到照见水里的颗粒。\n你往上游了几米。口的直径勉强能过一个人，但穿过口之后是另一层岩——天井，不通海面。光从更上面的细缝里折进来，一路折到这里，白白的，真实的，没有出路的。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "use_light",
+          "label": "在这片好光里把洞壁仔细查一遍",
+          "outcome": {
+            "text": "你在光柱里悬停，把周围的洞壁照了一圈。光够好，细节清楚——壁上的矿脉走向，墙根的缝隙，和一些只有在这种角度下才看得见的东西。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.quartz_crystal", "qty": [1, 1], "chance": 0.4 },
+              { "itemId": "item.coral_shard", "qty": [1, 2], "chance": 0.5 }
+            ]
+          }
+        },
+        {
+          "id": "float_in_shaft",
+          "label": "游进天井，在那段光里停一会儿",
+          "outcome": {
+            "text": "你挤进那个圆口，悬在天井里。光从顶上漫下来，把你照成白的。你没有出路，但光是真实的，比洞里的灯光淡，也更干净。你在里面停了一会儿才下来。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": 3 }
+          }
+        },
+        {
+          "id": "confirm_no_exit",
+          "label": "确认好不是出口，继续往里走",
+          "outcome": {
+            "text": "你把那个口看清楚——顶上是实心的，不是出口。记下位置，用光，继续往里。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grotto.sulfur_seep",
+      "depthRange": [48, 82],
+      "zoneTags": ["grotto"],
+      "weight": 6,
+      "cooldown": 4,
+      "title": "水的成分不一样了",
+      "body": "水在这一段换了质感——稍微滑了一点，手在水里划过去，阻力不太一样。\n硫磺，或者别的矿物，从某处岩缝里渗进来。气泡还是正常的，调节器没有报警，但你隔着面罩能感觉到嘴角有一点点不同的味道，像硬币，或者浸了很久的石头。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "find_seep",
+          "label": "顺着渗出方向找到源头，看有没有矿物沉积",
+          "outcome": {
+            "text": "你顺着那股气味找到岩缝，缝口周围结了一圈黄白色的沉积，有些地方已经厚到能用手指掰下一块。你取了几片，够用的。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.iron_concretion", "qty": [1, 2], "chance": 0.75 },
+              { "itemId": "item.quartz_crystal", "qty": [1, 1], "chance": 0.3 }
+            ]
+          }
+        },
+        {
+          "id": "probe_seep_deep",
+          "label": "往渗出浓的方向探，看能走多深",
+          "check": {
+            "stat": "stamina",
+            "dc": 12,
+            "onSuccess": {
+              "text": "你往气味最浓的方向多游了一段。岩壁的颜色变了，从灰变成了一种暗黄，沉积越来越厚，壁上还有几处在微微冒着白烟。你收了一大把料，退回来。",
+              "oxygenTurnCost": 3,
+              "loot": [
+                { "itemId": "item.iron_concretion", "qty": [2, 3], "chance": 0.85 },
+                { "itemId": "item.manganese_nodule", "qty": [1, 1], "chance": 0.4 }
+              ]
+            },
+            "onFailure": {
+              "text": "你往浓的方向多游了几下，气泡起来得快，头开始有点发沉——像是供气不稳，但表上没有显示。你没有坚持，退了回来。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -3, "sanity": -2 }
+            }
+          }
+        },
+        {
+          "id": "pass_seep",
+          "label": "屏住感觉，快过这段水",
+          "outcome": {
+            "text": "你加快通过，不在这段水里多停。那股质感和味道跟了你两个身位之后，换回正常的。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grotto.old_anchor",
+      "depthRange": [45, 80],
+      "zoneTags": ["grotto"],
+      "weight": 5,
+      "cooldown": 0,
+      "title": "不该在这里的锚",
+      "body": "洞底的泥里半埋着一只铁锚，锈透了，锚爪已经和泥连成了一体。锚链从锚爪往上伸了不到两米，断口锈死，没有继续往上的那一截。\n这里不是船能开进来的地方。锚比洞口还宽，横进来不可能。\n但它在这里已经很久了。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "trace_chain",
+          "label": "顺着断链的断口方向摸，找有没有一起带进来的东西",
+          "outcome": {
+            "text": "你沿着断链往下摸，在锚爪附近的泥里摸到了几件东西——一个铜质的管件，一根针，还有一个形状完整但指针不见了的罗盘壳。这些东西是怎么到这里来的，答案不在泥里。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.7 },
+              { "itemId": "item.rusty_compass", "qty": [1, 1], "chance": 0.5 }
+            ]
+          }
+        },
+        {
+          "id": "mine_anchor",
+          "label": "用岩凿撬松锚爪附近的泥，取底下的料",
+          "visibleIf": { "kind": "hasCapability", "capability": "mine" },
+          "outcome": {
+            "text": "你贴着锚爪下去，把周围的泥撬松了一圈。锚爪下面结着一层沉积，比泥要硬，颜色也不同——是锈渗进泥里这么多年压出来的。你取了一块，底下还有更多。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.iron_concretion", "qty": [1, 2], "chance": 0.8 },
+              { "itemId": "item.brass_fitting", "qty": [1, 1], "chance": 0.35 }
+            ]
+          }
+        },
+        {
+          "id": "pass_anchor",
+          "label": "绕过去，不停",
+          "outcome": {
+            "text": "你从锚的边上绕开，没去碰它。锚是铁的，泥是软的，它不会有答案。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grotto.dark_corner",
+      "depthRange": [44, 82],
+      "zoneTags": ["grotto"],
+      "sanityRange": [0, 70],
+      "weight": 5,
+      "cooldown": 3,
+      "title": "灯照不到的那个角",
+      "body": "洞里有一个角——不是特别深，不是特别远，但灯光到那里就停了。\n你换了两个位置，灯还是打不进那个角，像是光被什么吸走了，或者那个角的形状把光都拐走了。\n你没有去确认里面有什么。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "approach_corner",
+          "label": "游过去，正面把灯对准那个角",
+          "check": {
+            "stat": "sanity",
+            "dc": 14,
+            "onSuccess": {
+              "text": "你游到那个角前面，把灯直接对准。是一处内凹，岩面的角度刚好让光绕开——什么都没有，只有岩壁本身的纹路，和一道很深的、被水冲过的竖沟。你的手还是稳的。",
+              "oxygenTurnCost": 2
+            },
+            "onFailure": {
+              "text": "你游到离那个角还剩一米的时候，灯从你手里滑了一下——没有掉，但你下意识往后退了半米。你重新稳住，没有继续过去。角还在那里，还是照不进去。",
+              "oxygenTurnCost": 2,
+              "deltas": { "sanity": -5 }
+            }
+          }
+        },
+        {
+          "id": "skirt_corner",
+          "label": "贴着对面的壁走，远开那个角",
+          "outcome": {
+            "text": "你贴着对面的岩壁，从能被灯照到的那一半洞里穿过去，没有靠近那个角。那个角从你的视野角落里退走。你没有回头看它有没有变化。"
+          }
+        },
+        {
+          "id": "back_out_corner",
+          "label": "不经过那个角，退回来路",
+          "outcome": {
+            "text": "你倒退出去，找别的路绕。多走一段，不合算，但你不想背对着那个角经过。",
+            "oxygenTurnCost": 2,
+            "deltas": { "sanity": -1 }
+          }
+        }
+      ]
+    }
+  ]
+}
