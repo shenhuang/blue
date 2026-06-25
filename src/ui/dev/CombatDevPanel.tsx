@@ -451,7 +451,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
         <div className="dev-import-row">
           <textarea
             className="dev-input dev-textarea"
-            placeholder='粘贴 CombatScenarioInput JSON，例如 {"combatId":"combat.tutorial_shark","seed":1,"actions":[{"actionId":"action.knife_stab","targetIndex":0}]}'
+            placeholder='粘贴 CombatScenarioInput JSON，例如 {"combatId":"combat.tutorial_shark","seed":1,"actions":[{"actionId":"action.knife_slash","targetIndex":0}]}'
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
           />

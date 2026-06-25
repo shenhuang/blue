@@ -271,7 +271,7 @@ export function checkActionAvailability(
       return { available: false, reason: `需要装备：${slot}` };
     }
     // 武器解锁行动门（严格·作者 2026-06-20）：该槽的件必须解锁本行动——持刀只出刀法、持斧只出斧法、
-    // 持枪只出对应射击、盾不解锁任何攻击。起手刀解锁 knife_slash/knife_stab ⇒ 既有战斗逐字节不变。
+    // 持枪只出对应射击、盾不解锁任何攻击。起手刀解锁 knife_slash ⇒ 既有战斗逐字节不变。
     if (!equipmentUnlocksAction(run.equipment, slot, action.id)) {
       return { available: false, reason: '当前武器不支持此动作' };
     }

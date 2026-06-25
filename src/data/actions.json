@@ -16,22 +16,6 @@
       }
     },
     {
-      "id": "action.knife_stab",
-      "name": "潜水刀刺击",
-      "description": "蓄力一刀，对失能敌人附加处决伤害。",
-      "costStamina": 10,
-      "costOxygenTurns": 1,
-      "requiresEquipment": "tool",
-      "targeting": "single",
-      "effect": {
-        "kind": "attack",
-        "damage": [14, 22],
-        "damageType": "physical",
-        "noise": 1,
-        "ambushMultiplier": 1.5
-      }
-    },
-    {
       "id": "action.axe_chop",
       "name": "救援斧劈砍",
       "description": "抡起重斧的一记下劈。高伤、沉、响——挥空了很吃力。",

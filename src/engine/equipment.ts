@@ -438,7 +438,7 @@ export function isOverloaded(loadout: EquipmentLoadout): boolean {
 /**
  * 某槽装的件是否解锁了指定行动（读 equipment.effects 的 unlocksAction effect）。数据驱动·零硬编码武器 id。
  *   - combat：带 requiresEquipment 的攻击行动**严格**按此门控——持刀只出刀法、持斧只出斧法、持枪只出对应射击、
- *     盾不解锁任何攻击。起手刀解锁 knife_slash/knife_stab ⇒ 既有战斗逐字节不变。
+ *     盾不解锁任何攻击。起手刀解锁 knife_slash ⇒ 既有战斗逐字节不变。
  *   - 事件：hasEquipment{slot, actionId} 据此判「持救援斧（解锁 action.axe_pry）才有的撬门/破障选项」。
  */
 export function equipmentUnlocksAction(

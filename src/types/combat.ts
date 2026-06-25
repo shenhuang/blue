@@ -45,8 +45,6 @@ export interface AttackEffect {
   damageType: DamageType;
   /** 命中后给敌人附加状态 */
   applyStatusOnHit?: { kind: 'stunned' | 'bleeding' | 'frightened' | 'distracted'; turns: number };
-  /** 暴击的命中倍率（被屏息伏击触发） */
-  ambushMultiplier?: number;
   /** 攻击声响等级（影响增援触发） */
   noise?: number;
 }

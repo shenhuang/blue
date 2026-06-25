@@ -1,18 +1,19 @@
 {
-  "_comment": "教学战斗 baseline · knife_stab × 2 击杀 reef_shark.tutorial。验证基本伤害公式 + 战利品 + victoryEventId 跳转。seed=1 下确定性击杀。负伤接入后（鲨咬 injuryOnHit 0.35·#116）：seed 1 这两回合挨的咬恰 proc 一次 → 离场带 bleed@1（轻＝纯警告零数值效果·其余断言全程未动即旁证），实跑抄钉进 injuriesFinal。",
+  "_comment": "教学战斗 baseline · knife_slash × 3 击杀 reef_shark.tutorial。验证基本伤害公式 + 战利品 + victoryEventId 跳转。seed=1 下确定性击杀（潜水刀两攻击并为单攻击后·由 stab×2 改写为 slash×3·2026-06-25）。负伤接入后（鲨咬 injuryOnHit 0.35·#116）：seed 1 这三回合挨的咬 proc 并升档 → 离场带 bleed@2（中档·实跑抄钉进 injuriesFinal）。",
   "combatId": "combat.tutorial_shark",
   "seed": 1,
   "actions": [
-    { "actionId": "action.knife_stab", "targetIndex": 0 },
-    { "actionId": "action.knife_stab", "targetIndex": 0 }
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
   ],
   "expect": {
     "outcome": "victory",
-    "turnsElapsed": 2,
+    "turnsElapsed": 3,
     "survived": true,
     "finalPhase": "dive",
     "lootGained": { "item.shark_tooth": 1 },
     "enemiesAlive": 0,
-    "injuriesFinal": { "injury.bleed": 1 }
+    "injuriesFinal": { "injury.bleed": 2 }
   }
 }

@@ -16,10 +16,6 @@
           {
             "kind": "unlocksAction",
             "actionId": "action.knife_slash"
-          },
-          {
-            "kind": "unlocksAction",
-            "actionId": "action.knife_stab"
           }
         ],
         "upgradeSteps": [

@@ -182,10 +182,13 @@ const pairResult = runCombatScenario({
   combatId: 'combat.wreck_spider_crabs_pair',
   seed: 3,
   actions: [
-    { actionId: 'action.knife_stab', targetIndex: 0 },
-    { actionId: 'action.knife_stab', targetIndex: 0 },
-    { actionId: 'action.knife_stab', targetIndex: 1 },
-    { actionId: 'action.knife_stab', targetIndex: 1 },
+    { actionId: 'action.knife_slash', targetIndex: 0 },
+    { actionId: 'action.knife_slash', targetIndex: 0 },
+    { actionId: 'action.knife_slash', targetIndex: 0 },
+    { actionId: 'action.knife_slash', targetIndex: 0 },
+    { actionId: 'action.knife_slash', targetIndex: 1 },
+    { actionId: 'action.knife_slash', targetIndex: 1 },
+    { actionId: 'action.knife_slash', targetIndex: 1 },
   ],
 });
 assert(pairResult.errors.length === 0, `pair 战斗不应报错`);
