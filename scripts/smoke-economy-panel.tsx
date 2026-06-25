@@ -43,8 +43,8 @@ assert(beak && beak.srcCount === 1 && beak.bottleneck, '章鱼角喙 srcCount===
 const lantern = by.get('item.lantern_gland');
 assert(lantern && lantern.srcCount === 1 && lantern.bottleneck, '冷光腺 srcCount===1 且 bottleneck');
 const brass = by.get('item.brass_fitting');
-// srcCount 随内容增减（#175 加 shaft_crack/flooded_gallery 两处旧装具掉落 → 21→23；weekend merge 加 wreck_graveyard 一处 → 24；叙事审查移除 reef.keepers_footlocker brass → wreck_graveyard 同批 +2 源净抵消仍 24）；totalDemand 42→39（删水力发电设施·brass×3·2026-06-21）。
-assert(brass && brass.srcCount === 24 && brass.totalDemand === 39, '黄铜配件 srcCount===24 且 totalDemand===39');
+// srcCount 随内容增减（#175 加 shaft_crack/flooded_gallery 两处旧装具掉落 → 21→23；weekend merge 加 wreck_graveyard 一处 → 24；叙事审查移除 reef.keepers_footlocker brass → wreck_graveyard 同批 +2 源净抵消仍 24；Batch2 grotto.old_anchor 两处掉落 → 26）；totalDemand 42→39（删水力发电设施·brass×3·2026-06-21）。
+assert(brass && brass.srcCount === 26 && brass.totalDemand === 39, '黄铜配件 srcCount===26 且 totalDemand===39');
 const station = by.get('item.station_module');
 assert(station && !station.deadstock && station.srcCount === 1, '科考站升级模块非 deadstock 且单源（capstone 算源）');
 const idle = new Set(s.materials.filter((m) => m.idle).map((m) => m.name));
