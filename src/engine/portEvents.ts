@@ -14,9 +14,15 @@ export function eventDoneFlag(eventId: string): string {
  * flag 触发的港口 cutscene（与剧情物触发并行）：某些回港 cutscene 没有「带回的剧情物」做载体
  * （如教学「上浮（任务完成）」一路——没拿船长日志，但仍要在岸上把导师日志的四坐标圈上海图＝完成教学）。
  * 约定：profile 有 `whenFlag`、且 `unlessFlag`（若给）未置、且该事件没播过 → 触发。剧情物触发优先（先扫库存）。
+ *
+ * 顺序很重要：精确路径在前，兜底路径在后（后者被 eventDoneFlag 防重播屏蔽）。
  */
 const FLAG_RETURN_TRIGGERS: Array<{ whenFlag: string; eventId: string; unlessFlag?: string }> = [
+  // 精确路径：拿到图筒后自愿上浮（tutorial.deeper → ascend_now 设此 flag）
   { whenFlag: 'flag.tutorial_ascended', eventId: 'tutorial.ending_safe', unlessFlag: 'flag.tutorial_complete' },
+  // 兜底：教学已开场（ch1.hook 在 prologue 即设）但未完成时——逃跑/提前上浮等边缘路径均由此收口。
+  // tutorial.ending_safe 的 eventDoneFlag 防止与上条双播；flag.tutorial_complete 防止教学后重触。
+  { whenFlag: 'story.ch1.hook', eventId: 'tutorial.ending_safe', unlessFlag: 'flag.tutorial_complete' },
 ];
 
 /**

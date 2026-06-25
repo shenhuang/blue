@@ -243,6 +243,32 @@ L('§2b ending_safe 上浮一路（flag 触发·无剧情物）');
 }
 
 // ═══════════════════════════════════════════════════════════════
+// §2c 逃跑/提前上浮兜底路径（story.ch1.hook 兜底触发·无 tutorial_ascended）
+// ═══════════════════════════════════════════════════════════════
+L('§2c 逃跑兜底（story.ch1.hook → ending_safe，无 tutorial_ascended）');
+{
+  // 模拟：tutorial.prologue 开场置了 story.ch1.hook，随后玩家逃跑上浮，未经 tutorial.deeper
+  // → 无 flag.tutorial_ascended，无 item.captain_log → 旧实现 portEvent = null（bug）
+  // → 新实现由 story.ch1.hook 兜底触发 tutorial.ending_safe
+  const flags = new Set<string>([CH1_HOOK_FLAG]);
+  assert(pickFlagTrigger(flags) === 'tutorial.ending_safe',
+    '§2c story.ch1.hook 无 tutorial_ascended 应兜底触发 ending_safe');
+
+  // 兜底触发后同样防重播
+  flags.add(eventDoneFlag('tutorial.ending_safe'));
+  assert(pickFlagTrigger(flags) === null,
+    '§2c ending_safe 播过后 flag 触发不再重复');
+
+  // tutorial_complete 置位后两条都不再触发
+  flags.delete(eventDoneFlag('tutorial.ending_safe'));
+  flags.add(TUTORIAL_COMPLETE_FLAG);
+  assert(pickFlagTrigger(flags) === null,
+    '§2c tutorial_complete 置位后兜底不再触发');
+
+  L('  逃跑/提前上浮兜底 → ending_safe + 防重播 + tutorial_complete 双守 ✓');
+}
+
+// ═══════════════════════════════════════════════════════════════
 // §3 存档 round-trip：story flags 往返后派生不变
 // ═══════════════════════════════════════════════════════════════
 L('§3 存档 round-trip');
