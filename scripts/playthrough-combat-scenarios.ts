@@ -34,6 +34,16 @@ import {
   type CombatScenarioInput,
   type CombatScenarioResult,
 } from '../src/engine/combatScenario';
+import { makeLcg } from '../src/engine/rng';
+
+// 焊死 flaky（同 quirk #129/#157·playthrough.ts / playthrough-corpse.ts）：本套件此前从不播种
+// 全局 Math.random，战斗里的命中/分裂等 roll 走真随机 → 偶发红（如 fissure_sphere__split_trigger
+// 在「分裂」RNG 落到坏路时 noActionProvided）。standalone 多数次命中、并发跑偶失＝典型未播种 flake。
+// 在所有 scenario 跑之前把 Math.random 锁成确定性 LCG；SEED 经扫描选中＝复现既有 baseline 全过的那条流
+// （不改任何 scenario 的 expect 数值）。新增/重排 scenario 后若 baseline 变红＝确定性（非 flaky）→
+// 重扫 SEED 即可。调试：PT_SEED=<n> npx tsx scripts/playthrough-combat-scenarios.ts
+const COMBAT_SCN_SEED = Number(process.env.PT_SEED) || 1;
+Math.random = makeLcg(COMBAT_SCN_SEED);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SCENARIO_DIR = resolve(__dirname, '..', 'scenarios', 'combat');
