@@ -92,6 +92,12 @@
           "next": "aldo.about_mentor"
         },
         {
+          "id": "ask_tides",
+          "label": "潮汐有讲究？",
+          "next": "aldo.tide_intel",
+          "visibleIf": { "kind": "notHasFlag", "flag": "intel.aldo.lunar_tides" }
+        },
+        {
           "id": "leave",
           "label": "（再坐一会儿，然后起身）",
           "next": "end"
@@ -194,6 +200,16 @@
           ]
         },
         { "id": "back", "label": "（点头）", "next": "aldo.harbor_morning" }
+      ]
+    },
+    "aldo.tide_intel": {
+      "id": "aldo.tide_intel",
+      "text": "「月亮拉着海走。到了朔——新月那几天——大潮退得最狠。」\n\n他朝东礁那边偏了下头。\n\n「东礁外有片浅滩，平日没在水里，看不出。大潮退到底，礁盘露出来，那会儿才下得去。错过了，就等下一个朔。」\n\n「记着潮历。该等的时候，就等——海不催你，可它也不等你。」",
+      "onEnter": [
+        { "kind": "setFlag", "flag": "intel.aldo.lunar_tides" }
+      ],
+      "choices": [
+        { "id": "back", "label": "（记下了）", "next": "aldo.harbor_morning" }
       ]
     }
   }

@@ -22,6 +22,7 @@ import {
   effectiveDistance,
   describePoi,
   describeCaveShape,
+  roamingInLunarPool,
 } from '../src/engine/chart';
 import { regionForOwner, regionConfigErrors, flagGatedRegions, regionRadius } from '../src/engine/regions';
 import { ownerAnchorPos } from '../src/engine/lighthouses';
@@ -31,7 +32,7 @@ import { tickTurns, visibilitySanityDrain } from '../src/engine/events';
 import { getZone } from '../src/engine/zones';
 import { lunarPhase, moonAge, tideLevel } from '../src/engine/lunar';
 import { advanceDays, daysToNextLunarBoundary } from '../src/engine/port';
-import type { GameState, PlayerProfile, ChartPoi, RunState, Lighthouse } from '../src/types';
+import type { GameState, PlayerProfile, ChartPoi, RunState, Lighthouse, LunarPhase } from '../src/types';
 
 const log: string[] = [];
 const L = (s: string) => log.push(s);
@@ -716,6 +717,42 @@ L('  海况(phase/moonAge/tide)由 day 派生·与 lunar.ts 一致 ✓');
   const lrStory = poiBlockReason(offProf, storyPoi);
   assert(lrStory === null || !lrStory.includes('潮窗未到'), '11c: story 豁免——月相窗不拦剧情锚点');
   L('  月相窗门：已知窗外 dim+「潮窗未到·满月」/ 窗内放行 / story 豁免 ✓');
+}
+
+// ============================================
+// 12. 月相 roaming 选取池 + 情报降级（SPEC §4/§5·roamingInLunarPool + 东礁退潮浅滩内容）：
+//     窗内入 / 窗外秘密未知消失 / 窗外已知(intel)留→dim / 窗外 dim 默认留。Aldo 情报 flag = intel.aldo.lunar_tides。
+// ============================================
+L('\n========== 12. 月相 roaming 选取池（窗门 + 情报降级）==========');
+{
+  const TIDE_FLAG = 'intel.aldo.lunar_tides';
+  const at = (day: number, extra: string[] = []): PlayerProfile => ({
+    ...fullyRevealedProfile(0),
+    day,
+    flags: new Set(['flag.tutorial_complete', ...extra]),
+  });
+  const secret = { lunarWindow: ['new'] as LunarPhase[], lunarOffWindow: 'hidden' as const, intelFlag: TIDE_FLAG };
+  const openPt = { lunarWindow: ['new'] as LunarPhase[] }; // lunarOffWindow 缺省 = dim
+  // 纯函数（无选取干扰）：
+  assert(roamingInLunarPool({}, at(14)) === true, '12: 无窗模板恒入池');
+  assert(roamingInLunarPool(secret, at(0)) === true, '12: 窗内（day0=new）入池');
+  assert(roamingInLunarPool(secret, at(14)) === false, '12: 窗外（day14=full）+秘密+未知 → 不入池（消失·不占槽）');
+  assert(roamingInLunarPool(secret, at(14, [TIDE_FLAG])) === true, '12: 窗外+已知(intel) → 留池（poiRevealState 落 dim）');
+  assert(roamingInLunarPool(openPt, at(14)) === true, '12: 窗外+lunarOffWindow 默认 dim → 留池');
+  L('  纯函数：无窗恒入 / 窗内入 / 窗外秘密未知消失 / 窗外已知或 dim 留池 ✓');
+  // 端到端（东礁退潮浅滩·lunarWindow=[new]·hidden·intelFlag=潮汐情报）：
+  const fullNoIntel = generateChart({ profile: at(14) }); // 满月·无情报 → 秘密窗外·必消失（与选取无关）
+  assert(
+    !fullNoIntel.pois.some((p) => p.templateId === 'roam.east_ebb_shallows'),
+    '12: 满月（无 Aldo 情报）→ 东礁退潮浅滩消失（秘密窗外·绝对不入池）',
+  );
+  const newMoon = generateChart({ profile: at(0) }); // 新月 → 窗内·若入选应 lit
+  const ebbNew = newMoon.pois.find((p) => p.templateId === 'roam.east_ebb_shallows');
+  if (ebbNew) assert(ebbNew.revealState === 'lit', `12: 新月东礁退潮浅滩入选应 lit，实 ${ebbNew.revealState}`);
+  const fullIntel = generateChart({ profile: at(14, [TIDE_FLAG]) }); // 满月+情报 → 留池·若入选应 dim
+  const ebbDim = fullIntel.pois.find((p) => p.templateId === 'roam.east_ebb_shallows');
+  if (ebbDim) assert(ebbDim.revealState === 'dim', `12: 满月+情报东礁退潮浅滩入选应 dim，实 ${ebbDim.revealState}`);
+  L('  东礁退潮浅滩：满月无情报→消失 / 新月→lit / 满月+Aldo情报→dim（可规划「等到新月」）✓');
 }
 
 console.log(log.join('\n'));

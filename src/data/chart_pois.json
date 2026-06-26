@@ -847,7 +847,7 @@
         "templateId": "roam.east_ebb_shallows",
         "zoneId": "zone.east_reef",
         "name": "东礁退潮浅滩",
-        "blurb": "退潮把礁盘露出来一截，水浅得能看见底。洋流推着你走，省点力气。",
+        "blurb": "退潮把礁盘露出来一截，水浅得能看见底。洋流推着你走，省点力气。大潮退到底它才露，平日没在水里。",
         "distance": 0,
         "owner": "lighthouse.home",
         "mapX": 0.09,
@@ -856,6 +856,9 @@
         "requiresFlags": [
           "flag.tutorial_complete"
         ],
+        "lunarWindow": ["new"],
+        "lunarOffWindow": "hidden",
+        "intelFlag": "intel.aldo.lunar_tides",
         "modifier": {
           "current": "mild"
         }

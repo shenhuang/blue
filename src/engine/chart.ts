@@ -413,6 +413,24 @@ function roamingKey(runsCompleted: number, t: RoamingTemplate): number {
 }
 
 /**
+ * roaming 模板在当前相位是否进选取池（月相·SPEC §4/§5）。无窗 / 窗内 → 入池。
+ * **窗外**：仅当「已知」（持有 intelFlag 情报·§5）或 `lunarOffWindow:'dim'`（默认·公开机会点）才留池
+ * ——留池者会在 `poiRevealState` 落 `dim`（「等到 X 相」可规划）；窗外且未知的秘密点（`'hidden'`）不入池、
+ * 消失且不占 ROAMING_COUNT 选取槽（守「没情报连存在都不知道」+ 不挤掉别的机会点）。
+ * 注：roaming 运行时 id 含 day 不稳定 ⇒ marksPois/documentKnowsPoi 配不上它，故 roaming 的「已知」只认 intelFlag。
+ */
+export function roamingInLunarPool(
+  t: { lunarWindow?: LunarPhase[]; lunarOffWindow?: 'hidden' | 'dim'; intelFlag?: string },
+  profile: PlayerProfile,
+): boolean {
+  const win = t.lunarWindow;
+  if (!win || win.length === 0) return true;
+  if (win.includes(lunarPhase(chartSeed(profile)))) return true;
+  const known = t.intelFlag !== undefined && profile.flags.has(t.intelFlag);
+  return known || (t.lunarOffWindow ?? 'dim') === 'dim';
+}
+
+/**
  * 生成当前海图。纯函数、确定性（种子＝profile.runsCompleted）——roaming 选取 pool-independent
  * （roamingKey），故中途点亮灯塔重算时不重洗已显示的机会点（§6.5「即时新 POI 浮现」，#80 尾巴）。
  * @param opts.profile 玩家档案（门控 + 种子来源）
@@ -437,13 +455,11 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
 
   // roaming：从"已发现 + 已点亮（圈内）"模板取 roamingKey 最大的 ROAMING_COUNT 个（pool-independent·见 roamingKey）。
   // 天气遮蔽不再在此整点剔除，而是 per-poi 落进 poiRevealState（dim＝显示但去不了 / hidden＝彻底盖住·§10 C③）。
-  // 月相：带 lunarWindow 的 roaming 模板只在该相位入池（SPEC §4·机会点随相位浮现/消失 + 等待的机会成本）。
-  const phase = lunarPhase(seed);
-  const inLunarPool = (t: RoamingTemplate) =>
-    !t.lunarWindow || t.lunarWindow.length === 0 || t.lunarWindow.includes(phase);
+  // 月相：带 lunarWindow 的 roaming 模板按相位入池（SPEC §4/§5·roamingInLunarPool）——窗内入；窗外仅
+  // 「已知（intelFlag 情报）/ lunarOffWindow:'dim'」者留池（poiRevealState 显 dim·可规划），秘密未知点消失不占槽。
   const visibleTemplates = POIS.roamingTemplates
     .map(resolveOwnerCoords)
-    .filter((t) => flagsSatisfied(profile, t.requiresFlags) && isLit(profile, t) && inLunarPool(t));
+    .filter((t) => flagsSatisfied(profile, t.requiresFlags) && isLit(profile, t) && roamingInLunarPool(t, profile));
   const picked = [...visibleTemplates]
     .sort((a, b) => roamingKey(seed, b) - roamingKey(seed, a))
     .slice(0, ROAMING_COUNT);
