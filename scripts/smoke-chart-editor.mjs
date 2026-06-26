@@ -1,7 +1,8 @@
 // 海图 POI 调试器（ChartViewDevPanel·?editor=chartdev）SSR 冒烟 + engine parity 守门。
-//   ① ChartViewDevPanel SSR 渲染不抛错：标题 + 表格骨架 + 控制面板 + 真实 POI 行。
+//   ① ChartViewDevPanel SSR 渲染不抛错：标题 + 表格骨架 + 控制面板 + 真实 POI 行 + 深度柱 column 过滤项。
 //   ② parity：poiRevealState / effectiveDistance / describeModifier 对初始档案（家灯塔）
-//      的结果自洽（东礁·亮·reach=0；modifier 标签非空时正确生成）——
+//      的结果自洽（东礁·亮·reach=0；modifier 标签非空时正确生成）；
+//      ③ buildColumnPois 接入校验（#206 漂移修复：柱 POI 之前只在 generateChart 注入、被本面板漏掉）——
 //      把「engine POI 派生逻辑 == 调试面板期望」升成会红的门。
 //
 // CSS：ChartViewDevPanel import './dev-panel.css' → tsx/node 不认 .css →
@@ -16,6 +17,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { poiRevealState, effectiveDistance, describeModifier } from '../src/engine/chart.ts';
 import { createInitialProfile } from '../src/engine/state.ts';
+import { buildColumnPois, columnProbeUpgradeId, getColumnForLighthouse } from '../src/engine/columns.ts';
 
 function assert(cond, msg) {
   if (!cond) {
@@ -41,6 +43,8 @@ assert(html.includes('修正'), '表头应含「修正」列');
 assert(html.includes('东礁'), '应渲染真实 POI 行（东礁）');
 // 类型徽章
 assert(html.includes('dev-chart-badge-anchor'), '应渲染锚点类型徽章');
+// 深度柱 column 过滤项（柱 POI kind 已接入面板·#206 漂移修复）
+assert(html.includes('深度柱 column'), '过滤下拉应含「深度柱 column」选项（柱 POI kind 接入）');
 
 // ── ② parity：engine POI 派生自洽 ───────────────────────────────────────────────────────────
 
@@ -97,6 +101,24 @@ const trenchPoi = {
 const trenchState = poiRevealState(profile, trenchPoi);
 assert(trenchState === 'hidden', `前哨未建时 POI 应为 hidden·got: ${trenchState}`);
 
+// ── ③ 深度柱 POI 接入（#206 漂移修复·柱 POI 之前漏出面板）─────────────────────────────────────
+// 家礁柱建满 → buildColumnPois 应产出带 columnId 的柱 POI（ChartViewDevPanel 的 rows 现接它·见面板内 buildColumnPois 循环）。
+const colProfile = createInitialProfile();
+colProfile.flags.add('flag.tutorial_complete');
+const homeCol = getColumnForLighthouse('lighthouse.home');
+assert(homeCol, '家灯塔应有深度柱（col.home·depth_columns.json）');
+const homeLh = colProfile.lighthouses.find((l) => l.id === 'lighthouse.home');
+assert(homeLh, '初始档案应含家灯塔');
+for (let t = 1; t <= homeCol.tiers.length; t++) {
+  homeLh.builtUpgrades.add(columnProbeUpgradeId(homeCol.id, t));
+}
+const colPois = buildColumnPois(colProfile);
+assert(colPois.length > 0, `家礁柱建满后 buildColumnPois 应产出柱 POI·got ${colPois.length}`);
+assert(
+  colPois.some((p) => p.columnId === homeCol.id),
+  '柱 POI 应含家礁柱 columnId（面板靠 buildColumnPois 展示这些点·别再退回只读 chart_pois.json）',
+);
+
 console.log(
-  '✓ smoke-chart-editor: SSR + engine parity 通过（标题/表格/控件/真实行 + revealState/effectiveDistance/describeModifier 自洽）',
+  '✓ smoke-chart-editor: SSR + engine parity 通过（标题/表格/控件/真实行/深度柱过滤项 + revealState/effectiveDistance/describeModifier + buildColumnPois 接入自洽）',
 );

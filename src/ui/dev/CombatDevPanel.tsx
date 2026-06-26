@@ -1054,8 +1054,9 @@ function ActionsEditor({ form, actions, turns, updateRow, removeRow }: ActionsEd
 // ---------------------------------------------------------------------------
 
 function CombatPreview({ result }: { result: CombatScenarioResult }) {
-  // 战场压力读出（environmentalPressure·每回合漏单独读出·按本场出现过的 boss 类型聚合）
-  const distinctDefIds = Array.from(new Set(result.summary.enemiesFinal.map((e) => e.defId)));
+  // 战场压力读出（environmentalPressure·每回合漏单独读出·按**存活** boss 类型聚合——
+  // 与引擎 applyEnvironmentalPressure 只累计 hp>0 的 boss 一致·别把已死敌人算进去虚报·check-dev-panels 守）
+  const distinctDefIds = Array.from(new Set(result.summary.enemiesAlive.map((e) => e.defId)));
   const env = sumEnvPressure(distinctDefIds);
   return (
     <div className="dev-preview">

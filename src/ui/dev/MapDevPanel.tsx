@@ -40,8 +40,18 @@ function kindClass(node: DiveNode, startId: string): string {
       return 'dev-map-fill-air';
     case 'camp':
       return 'dev-map-fill-camp';
-    default:
+    case 'event':
       return 'dev-map-fill-event';
+    // shop/boss 当前 mapgen 不给 DiveNode 派（仅 GamePhase 用·潜在）·复用既有色占位。
+    case 'shop':
+      return 'dev-map-fill-event';
+    case 'boss':
+      return 'dev-map-fill-corpse';
+    default: {
+      // 穷尽断言：NodeKind 加成员 → typecheck 在此报、逼这里补一笔色（别再静默落 default）。
+      const _exhaustive: never = node.kind;
+      return _exhaustive;
+    }
   }
 }
 
@@ -60,8 +70,15 @@ function kindGlyph(node: DiveNode, startId: string): string {
       return '营';
     case 'event':
       return '事';
-    default:
-      return '?';
+    case 'shop':
+      return '市';
+    case 'boss':
+      return '王';
+    default: {
+      // 穷尽断言：NodeKind 加成员 → typecheck 在此报（与 kindClass 同·守 dev 标注不漏新 kind）。
+      const _exhaustive: never = node.kind;
+      return _exhaustive;
+    }
   }
 }
 

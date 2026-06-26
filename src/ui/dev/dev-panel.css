@@ -421,6 +421,10 @@
   padding: 10px 12px;
 }
 
+.dev-step-tone-realistic {
+  border-color: var(--text-muted);
+}
+
 .dev-step-tone-uncanny {
   border-color: #5a4970;
 }
@@ -992,7 +996,8 @@
 }
 
 .dev-chart-badge-anchor,
-.dev-chart-badge-roam {
+.dev-chart-badge-roam,
+.dev-chart-badge-col {
   display: inline-block;
   padding: 1px 5px;
   border-radius: 3px;
@@ -1009,6 +1014,11 @@
 .dev-chart-badge-roam {
   background: rgba(210, 162, 76, 0.12);
   color: #d2a24c;
+}
+
+.dev-chart-badge-col {
+  background: rgba(122, 140, 220, 0.14);
+  color: #8a9cdc;
 }
 
 .dev-chart-lit  { color: var(--green, #5fb98e); }

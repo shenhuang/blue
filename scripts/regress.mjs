@@ -136,6 +136,9 @@ tasks.push({ name: 'check-data-schema', cmd: ['node', join('scripts', 'check-dat
 // POI 固定资源 save 级别名门（纯 node·同 POI 内两条 save 脉不得共享 itemId·quirk #163）
 tasks.push({ name: 'check-poi-resources', cmd: ['node', join('scripts', 'check-poi-resources.mjs')] });
 
+// dev 工作台漂移门（纯 node·柱 POI 接入 / 战场压力存活聚合 / tone 档位样式·把 #206 dev 面板↔引擎漂移焊成会红的检查·见 scripts/check-dev-panels.mjs）
+tasks.push({ name: 'check-dev-panels', cmd: ['node', join('scripts', 'check-dev-panels.mjs')] });
+
 // 海图 UI SSR smoke
 tasks.push({ name: 'smoke-chart-ui', cmd: [tsx, join('scripts', 'smoke-chart-ui.tsx')] });
 

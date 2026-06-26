@@ -51,7 +51,12 @@ export interface EventDevPanelProps {
   onClose?: () => void;
 }
 
-const ALL_ZONE_TAGS = ['tutorial', 'reef', 'cave', 'wreck', 'shallow', 'deep'] as const;
+// 从真实事件数据聚合所有出现过的 zoneTag（单一源·数据驱动·消灭手抄漂移：新区/新 tag 自动进过滤、已删 tag 自动消失）。
+// 原硬编码 6 项含幽灵 'deep'、漏 ~17 个真 tag。投影 zoneTags 为 string[]（其有效性由 DiveEvent 的 ZoneTag 类型 +
+// check-data-schema 上游守）；这里直接聚合 + 排序，过滤项即「数据里真实存在的 tag」。
+const ALL_ZONE_TAGS: readonly string[] = Array.from(
+  new Set(listAllEvents().flatMap((e) => e.zoneTags ?? [])),
+).sort();
 const STAT_KEYS: Stat[] = ['stamina', 'oxygen', 'sanity', 'nitrogen'];
 const SLOT_KEYS = EQUIPMENT_SLOTS;
 

@@ -23,6 +23,8 @@ import {
 } from '@/engine/chart';
 import { getOutposts, nearestLighthouse, ownerAnchorPos } from '@/engine/lighthouses';
 import { createInitialProfile } from '@/engine/state';
+import { buildColumnPois, getColumnForLighthouse, columnProbeUpgradeId } from '@/engine/columns';
+import { TUTORIAL_COMPLETE_FLAG } from '@/engine/story';
 import type { ChartPoi, PoiModifier, PoiRevealState, Lighthouse } from '@/types';
 import chartData from '@/data/chart_pois.json';
 
@@ -85,7 +87,7 @@ function templateToPoi(t: RoamingTemplate, runsCompleted: number): ChartPoi {
 
 // ── 行数据类型 ────────────────────────────────────────────────────────────────────────────────
 
-type PoiKind = 'anchor' | 'roaming';
+type PoiKind = 'anchor' | 'roaming' | 'column';
 
 interface PoiRow {
   id: string;
@@ -107,6 +109,45 @@ interface PoiRow {
 // ── 常量 ─────────────────────────────────────────────────────────────────────────────────────
 
 const OUTPOST_DEFS = getOutposts();
+
+/** 某灯塔按「探深级数」派生应已建的 probe 升级 id 集合（喂 builtUpgrades → columnBuiltLevel → 柱 POI 揭示态）。
+ *  无深度柱的灯塔 → 空集（不影响）。之前面板恒填 new Set() → 柱探深永远 0。 */
+function buildProbeUpgrades(lighthouseId: string, level: number): Set<string> {
+  const col = getColumnForLighthouse(lighthouseId);
+  const set = new Set<string>();
+  if (col) for (let t = 1; t <= level; t++) set.add(columnProbeUpgradeId(col.id, t));
+  return set;
+}
+
+/** 家灯塔（常驻）的探深输入行——家礁柱也是一根 column，独立于前哨勾选。 */
+function HomeProbeRow({
+  probeLevels,
+  setProbe,
+}: {
+  probeLevels: Map<string, number>;
+  setProbe: (lighthouseId: string, level: number, maxTier: number) => void;
+}) {
+  const maxTier = getColumnForLighthouse('lighthouse.home')?.tiers.length ?? 0;
+  if (maxTier <= 0) return null;
+  return (
+    <div className="dev-row" style={{ gap: 6, marginBottom: 6, alignItems: 'center' }}>
+      <span style={{ fontSize: 12 }}>家灯塔（常驻）</span>
+      <span className="dev-faint" style={{ fontSize: 11, marginLeft: 'auto' }}>
+        探深{' '}
+        <input
+          className="dev-input dev-input-num"
+          type="number"
+          min={0}
+          max={maxTier}
+          style={{ width: 44 }}
+          value={probeLevels.get('lighthouse.home') ?? 0}
+          onChange={(e) => setProbe('lighthouse.home', Number(e.target.value) || 0, maxTier)}
+        />
+        /{maxTier}
+      </span>
+    </div>
+  );
+}
 
 const STATE_LABEL: Record<PoiRevealState, string> = {
   lit: '亮·可去',
@@ -132,11 +173,30 @@ export function ChartViewDevPanel({ onClose }: ChartViewDevPanelProps) {
   const [builtOutposts, setBuiltOutposts] = useState<Set<string>>(new Set());
   const [filterKind, setFilterKind] = useState<'all' | PoiKind>('all');
   const [filterReveal, setFilterReveal] = useState<'all' | PoiRevealState>('all');
+  // 教学门（buildColumnPois 压在 flag.tutorial_complete 后）——默认开：柱 POI 浮现；关＝海图全空（pre-tutorial）。
+  // 注：poiRevealState 对 anchor/roaming 不依赖此 flag，故此开关只影响柱 POI、不扰动锚点显示。
+  const [tutorialDone, setTutorialDone] = useState(true);
+  // 各灯塔探深级数（key=lighthouseId）：驱动 builtUpgrades → columnBuiltLevel → 柱 POI 揭示态。
+  const [probeLevels, setProbeLevels] = useState<Map<string, number>>(new Map());
+
+  function setProbe(lighthouseId: string, level: number, maxTier: number) {
+    setProbeLevels((prev) => {
+      const next = new Map(prev);
+      next.set(lighthouseId, Math.max(0, Math.min(maxTier, level)));
+      return next;
+    });
+  }
 
   // 按控制状态构建模拟档案（createInitialProfile 含家灯塔·勾选的前哨灯塔追加进 lighthouses）
   const profile = useMemo(() => {
     const p = createInitialProfile();
     p.runsCompleted = runsCompleted;
+    if (tutorialDone) p.flags.add(TUTORIAL_COMPLETE_FLAG);
+    // 档案里已有的灯塔（家灯塔）按探深级数填 builtUpgrades（之前恒空 → 家礁柱探深永远 0）。
+    for (const lh of p.lighthouses) {
+      lh.builtUpgrades = buildProbeUpgrades(lh.id, probeLevels.get(lh.id) ?? 0);
+    }
+    // 勾选的前哨灯塔（各按其探深级数填 builtUpgrades）
     for (const def of OUTPOST_DEFS) {
       if (!builtOutposts.has(def.id)) continue;
       const lh: Lighthouse = {
@@ -145,12 +205,12 @@ export function ChartViewDevPanel({ onClose }: ChartViewDevPanelProps) {
         mapX: def.result.mapX,
         mapY: def.result.mapY,
         level: def.result.level,
-        builtUpgrades: new Set(),
+        builtUpgrades: buildProbeUpgrades(def.result.id, probeLevels.get(def.result.id) ?? 0),
       };
       p.lighthouses.push(lh);
     }
     return p;
-  }, [runsCompleted, builtOutposts]);
+  }, [runsCompleted, builtOutposts, tutorialDone, probeLevels]);
 
   const conditions = useMemo(() => chartConditions(profile), [profile]);
 
@@ -211,6 +271,32 @@ export function ChartViewDevPanel({ onClose }: ChartViewDevPanelProps) {
       });
     }
 
+    // 深度柱深入 POI（#131）——buildColumnPois 已带档位制 revealState（gated by flag.tutorial_complete + 宿主灯塔在场 +
+    // columnBuiltLevel 决定档位）。之前完全漏掉：flattenAll 只读 chart_pois.json，不含 generateChart 在 chart.ts 注入的柱 POI。
+    // check-dev-panels 守「本面板引用 buildColumnPois」；smoke-chart-editor 守「柱 POI 实际渲染出来」。
+    for (const poi of buildColumnPois(profile)) {
+      const near =
+        poi.mapX != null && poi.mapY != null
+          ? nearestLighthouse(profile, poi.mapX, poi.mapY)
+          : null;
+      result.push({
+        id: poi.id,
+        kind: 'column',
+        name: poi.name,
+        zoneId: poi.zoneId,
+        owner: poi.owner,
+        rawMapX: undefined,
+        rawMapY: undefined,
+        mapX: poi.mapX,
+        mapY: poi.mapY,
+        requiresFlags: poi.requiresFlags,
+        revealState: poi.revealState ?? poiRevealState(profile, poi),
+        reach: effectiveDistance(profile, poi),
+        nearestName: near?.lighthouse.name ?? null,
+        modTags: describeModifier(poi.modifier),
+      });
+    }
+
     return result;
   }, [profile, runsCompleted]);
 
@@ -231,6 +317,7 @@ export function ChartViewDevPanel({ onClose }: ChartViewDevPanelProps) {
       hidden: rows.filter((r) => r.revealState === 'hidden').length,
       anchor: rows.filter((r) => r.kind === 'anchor').length,
       roaming: rows.filter((r) => r.kind === 'roaming').length,
+      column: rows.filter((r) => r.kind === 'column').length,
     }),
     [rows],
   );
@@ -281,31 +368,64 @@ export function ChartViewDevPanel({ onClose }: ChartViewDevPanelProps) {
                 </span>
               </div>
             </div>
+            <label className="dev-row" style={{ cursor: 'pointer', gap: 6, marginTop: 8 }}>
+              <input
+                type="checkbox"
+                checked={tutorialDone}
+                onChange={(e) => setTutorialDone(e.target.checked)}
+              />
+              <span style={{ fontSize: 12 }}>
+                教学已过（flag.tutorial_complete）
+                <span className="dev-faint"> · 关＝海图全空 · 开＝柱 POI 浮现</span>
+              </span>
+            </label>
           </div>
 
-          <h3 className="dev-col-title">已建前哨灯塔</h3>
+          <h3 className="dev-col-title">已建前哨灯塔 + 探深</h3>
           <div className="dev-section">
             <div className="dev-faint" style={{ marginBottom: 6 }}>
               家灯塔（home）始终在档案里。前哨勾选后 push 进 profile.lighthouses → 影响
               owner-anchored 点亮 + 揭示圈。
             </div>
-            {OUTPOST_DEFS.map((def) => (
-              <label
-                key={def.id}
-                className="dev-row"
-                style={{ cursor: 'pointer', gap: 6, marginBottom: 4 }}
-              >
-                <input
-                  type="checkbox"
-                  checked={builtOutposts.has(def.id)}
-                  onChange={() => toggleOutpost(def.id)}
-                />
-                <span style={{ fontSize: 12 }}>
-                  {def.name}
-                  <span className="dev-faint"> {def.result.mapX.toFixed(2)},{def.result.mapY.toFixed(2)}</span>
-                </span>
-              </label>
-            ))}
+            <HomeProbeRow probeLevels={probeLevels} setProbe={setProbe} />
+            {OUTPOST_DEFS.map((def) => {
+              const built = builtOutposts.has(def.id);
+              const maxTier = getColumnForLighthouse(def.result.id)?.tiers.length ?? 0;
+              return (
+                <div
+                  key={def.id}
+                  className="dev-row"
+                  style={{ gap: 6, marginBottom: 4, alignItems: 'center' }}
+                >
+                  <label className="dev-row" style={{ cursor: 'pointer', gap: 6 }}>
+                    <input
+                      type="checkbox"
+                      checked={built}
+                      onChange={() => toggleOutpost(def.id)}
+                    />
+                    <span style={{ fontSize: 12 }}>
+                      {def.name}
+                      <span className="dev-faint"> {def.result.mapX.toFixed(2)},{def.result.mapY.toFixed(2)}</span>
+                    </span>
+                  </label>
+                  {built && maxTier > 0 && (
+                    <span className="dev-faint" style={{ fontSize: 11, marginLeft: 'auto' }}>
+                      探深{' '}
+                      <input
+                        className="dev-input dev-input-num"
+                        type="number"
+                        min={0}
+                        max={maxTier}
+                        style={{ width: 44 }}
+                        value={probeLevels.get(def.result.id) ?? 0}
+                        onChange={(e) => setProbe(def.result.id, Number(e.target.value) || 0, maxTier)}
+                      />
+                      /{maxTier}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <h3 className="dev-col-title">过滤</h3>
@@ -320,6 +440,7 @@ export function ChartViewDevPanel({ onClose }: ChartViewDevPanelProps) {
                 <option value="all">全部（{rows.length}）</option>
                 <option value="anchor">锚点 anchor（{counts.anchor}）</option>
                 <option value="roaming">漂移 roaming（{counts.roaming}）</option>
+                <option value="column">深度柱 column（{counts.column}）</option>
               </select>
             </div>
             <div className="dev-stack" style={{ marginTop: 6 }}>
@@ -378,10 +499,14 @@ export function ChartViewDevPanel({ onClose }: ChartViewDevPanelProps) {
                     <td>
                       <span
                         className={
-                          row.kind === 'anchor' ? 'dev-chart-badge-anchor' : 'dev-chart-badge-roam'
+                          row.kind === 'anchor'
+                            ? 'dev-chart-badge-anchor'
+                            : row.kind === 'roaming'
+                              ? 'dev-chart-badge-roam'
+                              : 'dev-chart-badge-col'
                         }
                       >
-                        {row.kind === 'anchor' ? '锚' : '漂'}
+                        {row.kind === 'anchor' ? '锚' : row.kind === 'roaming' ? '漂' : '柱'}
                       </span>
                     </td>
                     <td
