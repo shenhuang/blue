@@ -577,9 +577,8 @@ function diveIntoBand(
   run = carry.run;
 
   // 作者 2026-06-14：删掉距离预耗氧——从第一回合起算损耗（无 turn 偏移 / 路上耗气；与 startDiveFromPoi 同口径）。
-  // Phase 2 · 月相：大潮叠加洋流（SPEC §8·有效 = POI 派生 ⊕ 月相(phase)·只升不降）。
-  const bandMod = bandDiveModifier(band);
-  const m = lunarDiveModifier(bandMod, state.profile.day ?? state.profile.runsCompleted) ?? bandMod;
+  // 月相洋流**不接**深潜 band 路径（作者 2026-06-26：潮汐是水面现象·深度柱深潜不吃·只水面 POI 下潜吃 lunarDiveModifier·见 startDiveFromPoi）。
+  const m = bandDiveModifier(band);
   run = {
     ...run,
     diveModifier: m,
