@@ -946,6 +946,7 @@
 .eco-method-mine { color: #cda94c; border-color: #8a6f2e; }
 .eco-method-enemy { color: #c2746a; border-color: #8a4a42; }
 .eco-method-col { color: #7fa9c0; border-color: #45667a; }
+.eco-method-event { color: #7fb08a; border-color: #4a7a55; }
 .eco-empty-d { color: var(--text-faint); font-size: 11px; padding: 4px 0; }
 
 /* ── ChartViewDevPanel（?editor=chartdev）─────────────────────────────────────────────────── */

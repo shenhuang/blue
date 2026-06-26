@@ -1210,6 +1210,14 @@ function CombatSummaryBlock({ result }: { result: CombatScenarioResult }) {
             </td>
           </tr>
           <tr>
+            <td>injuries</td>
+            <td>
+              {s.injuriesFinal.length === 0
+                ? '—'
+                : s.injuriesFinal.map((i) => `${i.defId}(t${i.tier})`).join(', ')}
+            </td>
+          </tr>
+          <tr>
             <td>enemies alive</td>
             <td>
               {s.enemiesAlive.length === 0

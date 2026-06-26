@@ -89,6 +89,22 @@ function templateToPoi(t: RoamingTemplate, runsCompleted: number): ChartPoi {
 
 type PoiKind = 'anchor' | 'roaming' | 'column';
 
+/** 下潜路由标志：柱 > cave > band > abs > —（调试 startDive 走哪条路径的辅助列）。 */
+function routeHintOf(poi: {
+  columnId?: string;
+  depthTier?: number;
+  bandId?: string;
+  caveEntry?: { caveId: string };
+  absolute?: boolean;
+}): string {
+  if (poi.columnId != null)
+    return `柱:${poi.columnId.replace(/^col\./, '')}${poi.depthTier != null ? `·t${poi.depthTier}` : ''}`;
+  if (poi.caveEntry) return `cave:${poi.caveEntry.caveId.replace(/^cave\./, '')}`;
+  if (poi.bandId) return `band:${poi.bandId.replace(/^band\./, '')}`;
+  if (poi.absolute) return 'abs';
+  return '—';
+}
+
 interface PoiRow {
   id: string;
   kind: PoiKind;
@@ -104,6 +120,7 @@ interface PoiRow {
   reach: number; // effectiveDistance（有坐标走几何·无则写死 poi.distance）
   nearestName: string | null;
   modTags: string[];
+  routeHint: string; // 下潜路由标志（柱/cave/band/abs/—·调试走哪条 startDive 路径）
 }
 
 // ── 常量 ─────────────────────────────────────────────────────────────────────────────────────
@@ -229,6 +246,7 @@ export function ChartViewDevPanel({ onClose }: ChartViewDevPanelProps) {
       result.push({
         id: poi.id,
         kind: 'anchor',
+        routeHint: routeHintOf(poi),
         name: poi.name,
         zoneId: poi.zoneId,
         owner: poi.owner,
@@ -256,6 +274,7 @@ export function ChartViewDevPanel({ onClose }: ChartViewDevPanelProps) {
       result.push({
         id: raw.templateId,
         kind: 'roaming',
+        routeHint: '—', // roaming 模板无 band/柱/cave 路由字段（经 owner 锚点定位）
         name: raw.name,
         zoneId: raw.zoneId,
         owner: raw.owner,
@@ -282,6 +301,7 @@ export function ChartViewDevPanel({ onClose }: ChartViewDevPanelProps) {
       result.push({
         id: poi.id,
         kind: 'column',
+        routeHint: routeHintOf(poi),
         name: poi.name,
         zoneId: poi.zoneId,
         owner: poi.owner,
@@ -488,6 +508,7 @@ export function ChartViewDevPanel({ onClose }: ChartViewDevPanelProps) {
                   <th>揭示态</th>
                   <th title="effectiveDistance = 最近灯塔距离 ÷ REACH_NORM_PER_TIER">Reach</th>
                   <th title="modifier.depthOffset / current / visibility">修正</th>
+                  <th title="下潜路由：柱/band/cave/abs（startDive 走哪条路径）">路由</th>
                 </tr>
               </thead>
               <tbody>
@@ -566,11 +587,14 @@ export function ChartViewDevPanel({ onClose }: ChartViewDevPanelProps) {
                         <span className="dev-faint">—</span>
                       )}
                     </td>
+                    <td className="dev-faint dev-mono" style={{ fontSize: 10, whiteSpace: 'nowrap' }}>
+                      {row.routeHint}
+                    </td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="dev-faint" style={{ textAlign: 'center', padding: 16 }}>
+                    <td colSpan={11} className="dev-faint" style={{ textAlign: 'center', padding: 16 }}>
                       过滤后无结果
                     </td>
                   </tr>

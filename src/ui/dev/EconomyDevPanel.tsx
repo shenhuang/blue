@@ -313,6 +313,7 @@ function methodCls(method: string): string {
   if (method === '挖矿') return 'eco-method eco-method-mine';
   if (method === '敌人') return 'eco-method eco-method-enemy';
   if (method === '深度柱') return 'eco-method eco-method-col';
+  if (method === '事件') return 'eco-method eco-method-event';
   return 'eco-method';
 }
 
