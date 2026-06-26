@@ -26,7 +26,7 @@
 //
 // 详见 docs/STATUS.md "战斗回归框架（Phase 3）" 一节。
 
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import {
@@ -41,9 +41,33 @@ import { makeLcg } from '../src/engine/rng';
 // 在「分裂」RNG 落到坏路时 noActionProvided）。standalone 多数次命中、并发跑偶失＝典型未播种 flake。
 // 在所有 scenario 跑之前把 Math.random 锁成确定性 LCG；SEED 经扫描选中＝复现既有 baseline 全过的那条流
 // （不改任何 scenario 的 expect 数值）。新增/重排 scenario 后若 baseline 变红＝确定性（非 flaky）→
-// 重扫 SEED 即可。调试：PT_SEED=<n> npx tsx scripts/playthrough-combat-scenarios.ts
+// 重扫 SEED 即可（或见下 per-scenario seed）。调试：PT_SEED=<n> npx tsx scripts/playthrough-combat-scenarios.ts
 const COMBAT_SCN_SEED = Number(process.env.PT_SEED) || 1;
+
+// per-scenario seed（默认关·Agent 审计 #3）：单一全局 seed 的脆点＝新增/重排 scenario 会移动**别人**脚下的
+// 全局 Math.random 连续流 → 无关 scenario 莫名变红、逼人重扫 SEED（甚至诱导把 expect 改成"现状"＝静默祝福回归）。
+// 置 PT_PER_SCENARIO_SEED=1：每个 scenario 的全局 Math.random 流由**文件名**派生·彼此独立·新增/重排互不影响。
+// 代价：启用后所有 baseline 的 RNG 流改变 → 必须在 **Mac** 跑一遍 `--bless` 重生机械 expect 并复核 diff 再提交
+// （沙箱无 esbuild·跑不了 tsx 战斗）。默认关＝现有 baseline 与连续流逐字节不变·gate 绿。
+const PER_SCENARIO_SEED = process.env.PT_PER_SCENARIO_SEED === '1';
+function hashStr(s: string): number {
+  let h = 2166136261 >>> 0; // FNV-1a
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function seedFor(file: string): number {
+  return PER_SCENARIO_SEED ? hashStr(file) || 1 : COMBAT_SCN_SEED;
+}
+// 默认（per-scenario 关）：单一全局 seed·连续流（现有 baseline 即此流·逐字节不变）。
 Math.random = makeLcg(COMBAT_SCN_SEED);
+
+// CLI：--bless 重生「机械派生」expect（保留人写意图字段·见 blessOne）；位置参数 = 只跑/只 bless 名字含该子串的 scenario。
+const _argv = process.argv.slice(2);
+const BLESS = _argv.includes('--bless');
+const FILTER_TERMS = _argv.filter((a) => !a.startsWith('--'));
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SCENARIO_DIR = resolve(__dirname, '..', 'scenarios', 'combat');
@@ -73,6 +97,9 @@ function fail(name: string, msg: string): never {
 
 function runOne(file: string): { name: string; result: CombatScenarioResult; scenario: ScenarioFile } {
   const name = file;
+  // per-scenario seed 启用时：每个 scenario 跑前把全局 Math.random 重置成由文件名派生的独立流
+  // （默认关 → 不重置·沿用模块加载时的单一连续流·现有 baseline 即此流）。
+  if (PER_SCENARIO_SEED) Math.random = makeLcg(seedFor(file));
   const raw = readFileSync(resolve(SCENARIO_DIR, file), 'utf8');
   const scenario = JSON.parse(raw) as ScenarioFile;
   const { _comment, expect, ...input } = scenario;
@@ -181,6 +208,96 @@ function assertScenario(name: string, result: CombatScenarioResult, expect: Scen
 }
 
 // ---------------------------------------------------------------------------
+// --bless：重生机械派生 expect 字段（保留人写意图字段）
+// ---------------------------------------------------------------------------
+// 机械字段＝可从一次确定性跑派生。意图字段＝人写的阈值/叙事（*DeltaAtMost / logIncludes / notes / _comment）·bless 绝不动。
+// 只刷新 expect 里**已存在**的机械字段（不新增·不改断言粒度），取代「手抄 --out json」的易错（Agent 审计 #3）。
+const MECHANICAL_FIELDS = [
+  'outcome', 'turnsElapsed', 'survived', 'finalPhase', 'enemiesAlive', 'lootGained', 'statsDelta', 'injuriesFinal',
+] as const;
+
+function mechanicalValue(field: (typeof MECHANICAL_FIELDS)[number], s: CombatScenarioResult['summary']): unknown {
+  switch (field) {
+    case 'outcome': return s.outcome;
+    case 'turnsElapsed': return s.turnsElapsed;
+    case 'survived': return s.survived;
+    case 'finalPhase': return s.finalPhase;
+    case 'enemiesAlive': return s.enemiesAlive.length;
+    case 'lootGained': return Object.fromEntries(s.lootGained.map((l) => [l.itemId, l.qty]));
+    case 'statsDelta': return s.statsDelta;
+    case 'injuriesFinal': return Object.fromEntries(s.injuriesFinal.map((i) => [i.defId, i.tier]));
+  }
+}
+
+// 风格化序列化：叶子集合（值全为基元的对象/数组）压单行·否则 2 空格展开——复刻既有 baseline 手写风格
+// （statsDelta/lootGained 单行·actions 数组多行而元素单行）→ 无值变更的 bless = 逐字节不变·零格式 churn。
+function stringifyStyled(value: unknown, indent = 0): string {
+  const pad = '  '.repeat(indent);
+  const padIn = '  '.repeat(indent + 1);
+  if (Array.isArray(value)) {
+    if (value.length === 0) return '[]';
+    if (value.every((v) => v === null || typeof v !== 'object')) return '[' + value.map((v) => JSON.stringify(v)).join(', ') + ']';
+    return '[\n' + value.map((v) => padIn + stringifyStyled(v, indent + 1)).join(',\n') + '\n' + pad + ']';
+  }
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>);
+    if (entries.length === 0) return '{}';
+    if (entries.every(([, v]) => v === null || typeof v !== 'object')) {
+      return '{ ' + entries.map(([k, v]) => `${JSON.stringify(k)}: ${JSON.stringify(v)}`).join(', ') + ' }';
+    }
+    return '{\n' + entries.map(([k, v]) => padIn + JSON.stringify(k) + ': ' + stringifyStyled(v, indent + 1)).join(',\n') + '\n' + pad + '}';
+  }
+  return JSON.stringify(value);
+}
+
+function blessOne(file: string): string[] {
+  const path = resolve(SCENARIO_DIR, file);
+  const scenario = JSON.parse(readFileSync(path, 'utf8')) as ScenarioFile;
+  const { _comment, expect, ...input } = scenario;
+  if (PER_SCENARIO_SEED) Math.random = makeLcg(seedFor(file));
+  const result = runCombatScenario(input as CombatScenarioInput);
+  if (result.errors.length > 0) throw new Error(`errors 非空·拒绝 bless：${result.errors.join(' | ')}`);
+  if (!expect) return []; // 无 expect → 不主动加断言
+  const s = result.summary;
+  const changed: string[] = [];
+  for (const field of MECHANICAL_FIELDS) {
+    if (!(field in expect)) continue; // 只刷新已有机械断言·不新增
+    const fresh = mechanicalValue(field, s);
+    if (JSON.stringify((expect as Record<string, unknown>)[field]) !== JSON.stringify(fresh)) {
+      (expect as Record<string, unknown>)[field] = fresh;
+      changed.push(field);
+    }
+  }
+  if (changed.length > 0) {
+    const out: Record<string, unknown> = {};
+    if (_comment !== undefined) out._comment = _comment;
+    Object.assign(out, input);
+    out.expect = expect;
+    writeFileSync(path, stringifyStyled(out) + '\n');
+  }
+  return changed;
+}
+
+function runBless(files: string[]) {
+  console.log(`========== --bless 重生机械 expect (${files.length} scenarios${PER_SCENARIO_SEED ? '·per-scenario seed' : ''}) ==========`);
+  let blessed = 0;
+  const errs: string[] = [];
+  for (const f of files) {
+    try {
+      const changed = blessOne(f);
+      if (changed.length) { blessed++; console.log(`  ~ ${f}  重写：${changed.join(', ')}`); }
+      else console.log(`  · ${f}  无变化`);
+    } catch (err) {
+      errs.push(`[${f}] ${err instanceof Error ? err.message : String(err)}`);
+      console.log(`  ✗ ${f}  ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  console.log('');
+  if (errs.length) { console.log(`✗ bless 中 ${errs.length} 个 scenario 报错（未写）`); process.exitCode = 1; return; }
+  console.log(`✓ bless 完成：${blessed} 个文件更新机械 expect（意图字段 *AtMost/logIncludes 未动）·复核 git diff 再提交。`);
+}
+
+// ---------------------------------------------------------------------------
 // main
 // ---------------------------------------------------------------------------
 
@@ -199,11 +316,14 @@ function main() {
     return;
   }
   files.sort();
+  if (FILTER_TERMS.length) files = files.filter((f) => FILTER_TERMS.some((t) => f.includes(t)));
   if (files.length === 0) {
-    console.error(`scenarios/combat/ 目录里没有 .json 文件`);
+    console.error(`scenarios/combat/ 没有匹配的 .json${FILTER_TERMS.length ? `（过滤：${FILTER_TERMS.join(',')}）` : ''}`);
     process.exitCode = 1;
     return;
   }
+
+  if (BLESS) { runBless(files); return; }
 
   console.log(`========== 战斗回归 (${files.length} scenarios) ==========`);
   let okCount = 0;

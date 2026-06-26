@@ -17,14 +17,15 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 import { roadmapDrift } from './check-roadmap-stale.mjs';
+import { isSandbox } from './lib/env.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const N = parseInt(process.argv[2], 10) || 8;
 const CHANGELOG_TITLES_N = 12; // handoff 末尾只列最近这么多条 CHANGELOG「标题」（正文留盘·见 recentChangelogTitles·省上下文）
 
-// 沙箱路径判定（同 psm.mjs::isSandbox·若改两处同步——env 检测本就分散在 regress/psm 各处·#1/#165）。
-const inSandbox = ROOT.startsWith('/sessions/') || ROOT.includes('/mnt/');
+// 沙箱路径判定收口 lib/env.mjs（单点真相·取代此前散在 psm/handoff/setup-weekend 的复制粘贴·#1/#165）。
+const inSandbox = isSandbox(ROOT);
 
 function hr(title) {
   return `\n${'═'.repeat(64)}\n  ${title}\n${'═'.repeat(64)}`;

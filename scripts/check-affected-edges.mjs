@@ -24,6 +24,12 @@ import { computeAffected, buildGraph } from './affected-tests.mjs';
 const PINS = [
   { fixture: 'src/data/chart_pois.json', mustSelect: ['playthrough-chart', 'smoke-chart-ui'] },
   { fixture: 'src/data/chart_regions.json', mustSelect: ['playthrough-chart', 'smoke-chart-ui'] },
+  // scenario 基线目录 → 对应 *-scenarios runner（钉死 affected-tests.scenarioTaskFor·别再退化成「改 scenarios/** → ALL」）。
+  // 选择按目录前缀（与文件是否存在无关）·用代表路径即可。
+  { fixture: 'scenarios/combat/cave_octopus_solo__normal_kill.json', mustSelect: ['playthrough-combat-scenarios'] },
+  { fixture: 'scenarios/mapgen/sample.json', mustSelect: ['playthrough-mapgen-scenarios'] },
+  { fixture: 'scenarios/lighthouse/sample.json', mustSelect: ['playthrough-lighthouse-scenarios'] },
+  { fixture: 'scenarios/reef_blue_hour__watch_success.json', mustSelect: ['playthrough-scenarios'] },
 ];
 
 const graph = buildGraph();

@@ -33,6 +33,11 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, symlinkSync, rmSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join, relative as relPath, posix as ppath, basename } from 'node:path';
+import { isSandbox as _isSandbox } from './lib/env.mjs';
+import { parseFlags } from './lib/args.mjs';
+import { matchesAnyLane, lanesOverlap } from './lib/glob.mjs';
+// 车道匹配/重叠判定单点真相在 lib/glob.mjs；re-export 兼容任何外部曾从 psm import 的引用。
+export { laneToRegExp, matchesAnyLane, lanesOverlap } from './lib/glob.mjs';
 
 // ─────────────────────────── 基础 ───────────────────────────
 
@@ -70,7 +75,8 @@ function loadConfig() {
 }
 const CFG = loadConfig();
 
-function isSandbox(p) { const x = p || ROOT(); return x.startsWith('/sessions/') || x.includes('/mnt/'); }
+// 沙箱判定收口 lib/env.mjs（单点真相·#1/#165）；psm 默认按仓库主树根 ROOT() 判。
+const isSandbox = (p) => _isSandbox(p || ROOT());
 
 // ─────────────────────────── git ───────────────────────────
 
@@ -147,46 +153,37 @@ function lockHolder(led) {
   return lk;
 }
 
-// ─────────────────────────── 车道匹配 ───────────────────────────
+// ── pendingFf 意图标记（land/merge 的 ff 崩溃原子性·守 main 不停在未验证 tip）──
+// cmdLand(Mac)/doMerge 的 `git merge --ff-only` 把 main 推到分支 tip。若进程在「ff 之后、收尾确认之前」
+// 被 ^C/崩溃，main 会停在**未验证**的 tip 且无任何记录（最坏：未跑绿门的代码上了唯一要守的 main）。
+// pendingFf 在 ff 前落一个安全回滚点；收尾（回滚 or 正式落地）清掉；doctor 检测「标记在 + main 已前进」
+// = 未确认的 land，给出回滚/接受两条出路。
+function setPendingFf(led, name, rollbackSha) {
+  if (led.pendingFf) return; // 已有更早（更安全）的标记（cmdLand 先于 doMerge 设）——别覆盖成已前进的 sha
+  led.pendingFf = { name, rollbackSha, ts: new Date().toISOString() };
+  writeLedger(led);
+}
+function clearPendingFf(led) {
+  if (!led.pendingFf) return;
+  led.pendingFf = null;
+  writeLedger(led);
+}
+// null=无标记；{stale:true}=标记在但 main 未前进（安全·清即可）；{stale:false,main}=未确认的 land。
+function inspectPendingFf(led) {
+  const pf = led.pendingFf;
+  if (!pf) return null;
+  const main = shaOf(CFG.mainBranch);
+  if (!main || main === pf.rollbackSha) return { stale: true, pf };
+  return { stale: false, pf, main };
+}
 
-// glob → RegExp：支持 ** / * / ?；无通配且不以 / 结尾的当「目录前缀」（lane 自身及其下全部）。
-export function laneToRegExp(lane) {
-  let g = String(lane).trim().replace(/^\.?\//, '').replace(/\/+$/, '');
-  if (!/[*?]/.test(g)) g = g + '/**|' + g;
-  const toRe = (glob) => {
-    let re = '';
-    for (let i = 0; i < glob.length; i++) {
-      const c = glob[i];
-      if (c === '*') { if (glob[i + 1] === '*') { re += '.*'; i++; if (glob[i + 1] === '/') i++; } else re += '[^/]*'; }
-      else if (c === '?') re += '[^/]';
-      else re += c.replace(/[.+^${}()|[\]\\]/g, '\\$&');
-    }
-    return re;
-  };
-  return new RegExp('^(?:' + g.split('|').map(toRe).join('|') + ')$');
-}
-export function matchesAnyLane(file, lanes) { const f = String(file).replace(/^\.?\//, ''); return lanes.some((l) => laneToRegExp(l).test(f)); }
-// 两组车道是否可能重叠（保守：去掉通配后取目录前缀，前缀相交即判重叠）。
-export function lanesOverlap(a, b) {
-  const norm = (l) => String(l).trim().replace(/^\.?\//, '').replace(/\/+$/, '').replace(/\/?\*\*?$/, '').replace(/\/[^/]*\*[^/]*$/, '');
-  for (const x of a) for (const y of b) {
-    const nx = norm(x), ny = norm(y);
-    if (nx === ny || nx === '' || ny === '' || nx.startsWith(ny + '/') || ny.startsWith(nx + '/')) return true;
-  }
-  return false;
-}
+// ─────────────────────────── 车道匹配 ───────────────────────────
+// 车道 glob 匹配 + 重叠判定收口 lib/glob.mjs（顶部 import + re-export）。旧手搓 lanesOverlap
+// 用「去通配取目录前缀」近似——对中段通配（src/*/items.json vs src/data/items.json）漏判重叠
+// ＝两条 session 静默撞车（最坏方向）。新实现走分段 glob 交集非空·见 lib/glob.mjs + __tests__/glob.test.mjs。
 
 // ─────────────────────────── flags ───────────────────────────
-
-function parseFlags(argv) {
-  const out = { _: [] };
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a.startsWith('--')) { const k = a.slice(2); if (i + 1 < argv.length && !argv[i + 1].startsWith('--')) out[k] = argv[++i]; else out[k] = true; }
-    else out._.push(a);
-  }
-  return out;
-}
+// parseFlags 收口 lib/args.mjs（单点真相·与 regress/affected 同源·见顶部 import）。
 
 // ─────────────────────────── install ───────────────────────────
 
@@ -307,6 +304,8 @@ function staleLandedNote(s) {
 }
 function cmdStatus() {
   const led = readLedger();
+  const pend = inspectPendingFf(led);
+  if (pend && !pend.stale) warn(`未确认的 land「${pend.pf.name}」——${CFG.mainBranch} 已前进过 ff 但没收尾。${C.bold('psm doctor')} 看怎么办。`);
   const sessions = Object.entries(led.sessions);
   info(C.bold('psm status') + C.dim(`  · 主干 ${CFG.mainBranch}@${(shaOf(CFG.mainBranch) || '?').slice(0, 8)}  · ${isSandbox() ? '沙箱' : 'Mac 本机'}`));
   const active = sessions.filter(([, s]) => s.state === 'active' || s.state === 'ready');
@@ -355,13 +354,16 @@ function resolveSessionFromCwd(led) {
 function gatePlan(cwd, forceFull) {
   const sb = isSandbox(cwd);
   const fallback = sb ? CFG.gate.sandbox : CFG.gate.full;
+  // 沙箱跑静态子集时行为测全没跑——「回退/affected→ALL」分支用 ['ALL'] 哨兵交接 Mac 补跑**全量**，
+  // 否则 affected→ALL 的改动会在 Mac merge 时零行为覆盖就合入（#2 洞）。Mac 上 fallback 本就是全量·deferred 留空。
+  const fallbackDeferred = sb ? ['ALL'] : [];
   if (forceFull) return { cmd: CFG.gate.full, note: '全量（--full）', deferred: [] };
-  if (!CFG.gate.affected) return { cmd: fallback, note: sb ? '沙箱静态子集' : '全量', deferred: [] };
+  if (!CFG.gate.affected) return { cmd: fallback, note: sb ? '沙箱静态子集' : '全量', deferred: fallbackDeferred };
   let res = null;
   const r = spawnSync('node', ['scripts/affected-tests.mjs', '--since', CFG.mainBranch, '--json'], { cwd, encoding: 'utf-8' });
   if (r.status === 0) { try { res = JSON.parse(r.stdout); } catch { /* */ } }
-  if (!res) return { cmd: fallback, note: '选测不可用·回退' + (sb ? '静态子集' : '全量'), deferred: [] };
-  if (res.mode === 'all') return { cmd: fallback, note: `affected→ALL（${res.reason}）·跑${sb ? '静态子集' : '全量'}`, deferred: [] };
+  if (!res) return { cmd: fallback, note: '选测不可用·回退' + (sb ? '静态子集' : '全量'), deferred: fallbackDeferred };
+  if (res.mode === 'all') return { cmd: fallback, note: `affected→ALL（${res.reason}）·跑${sb ? '静态子集' : '全量'}`, deferred: fallbackDeferred };
   const beh = res.tasks || [];
   if (!beh.length) return { cmd: 'npm run regress -- --only typecheck,check', note: '无受影响行为测·只跑静态门', deferred: [] };
   const runnable = !sb || !!process.env.ESBUILD_BINARY_PATH;
@@ -439,8 +441,10 @@ function cmdLand(argv) {
     // 先清沙箱残留 lock——mv 沙箱/Mac 通用，不会留死 *.lock 挡 ff-merge
     clearStaleLocks();
     const preFfSha = shaOf(CFG.mainBranch);
+    setPendingFf(led, name, preFfSha); // ff 前落安全回滚点（崩溃原子性·崩在下面随时可被 doctor 检测/回滚）
     const ffResult = spawnSync('git', ['merge', '--ff-only', s.branch], { cwd: root, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] });
     if (ffResult.status !== 0) {
+      clearPendingFf(led); // ff 没发生·main 未动
       warn((ffResult.stderr || ffResult.stdout || '').trim());
       stop(`ff 预合并失败（main 树有未提交改动？或分支不可 ff？）`);
     }
@@ -448,6 +452,7 @@ function cmdLand(argv) {
     // 两种情况需要回滚 temp ff：绿门没过，或绿门过了但用户还没确认（无 --yes）
     if (!gate.ok || !f.yes) {
       spawnSync('git', ['reset', '--hard', preFfSha], { cwd: root, stdio: 'inherit' });
+      clearPendingFf(led); // 已回到安全点
     }
     if (!gate.ok) {
       s.state = 'active'; writeLedger(led);
@@ -491,8 +496,11 @@ function doMerge(name) {
   // 沙箱 deferred 行为测——Mac 上合并前补跑，防止 psm merge 绕过 gate（quirk #171）
   if (s.deferred && s.deferred.length) {
     const wtAbs = join(root, s.worktree);
-    const dCmd = `npm run regress -- --only-exact ${s.deferred.join(',')}`;
-    info(C.bold('\n补跑 deferred 行为测：') + ` ${dCmd}  ${C.dim('（沙箱未跑·Mac 补·quirk #171）')}`);
+    // 'ALL' 哨兵（沙箱 affected→ALL/回退·见 gatePlan）→ Mac 补跑全量行为测（--skip build：build 的 esbuild 在
+    // worktree 启动有 ENOEXEC·由 Mac cmdLand 主树路径 / nightly 覆盖·#147）。否则按受影响精确补跑（#171）。
+    const isAll = s.deferred.includes('ALL');
+    const dCmd = isAll ? 'npm run regress -- --skip build' : `npm run regress -- --only-exact ${s.deferred.join(',')}`;
+    info(C.bold('\n补跑 deferred 行为测：') + ` ${dCmd}  ${C.dim(`（沙箱未跑·Mac 补·quirk #171${isAll ? '·ALL 哨兵：沙箱当时无法收窄→全量' : ''}）`)}`);
     const dr = spawnSync(dCmd, { cwd: wtAbs, shell: true, stdio: 'inherit' });
     if (dr.status !== 0) stop(`deferred 行为测没过——先修绿再 psm merge ${name}。`);
     s.deferred = []; writeLedger(led);
@@ -503,9 +511,11 @@ function doMerge(name) {
   led.mergeLock = { holder: name, ts: new Date().toISOString() }; writeLedger(led);
 
   info(`ff 合并 ${s.branch} → ${CFG.mainBranch} ...`);
+  setPendingFf(led, name, shaOf(CFG.mainBranch)); // 独立 cmdMerge 路径的安全回滚点（cmdLand --yes 已设则不覆盖）
   const m = spawnSync('git', ['merge', '--ff-only', s.branch], { cwd: root, encoding: 'utf-8' });
-  if (m.status !== 0) { led.mergeLock = null; writeLedger(led); warn((m.stderr || m.stdout || '').trim().split('\n').slice(-6).join('\n')); stop(`ff 合并没成（${CFG.mainBranch} 可能动过）。重新 psm land ${name}。`); }
+  if (m.status !== 0) { clearPendingFf(led); led.mergeLock = null; writeLedger(led); warn((m.stderr || m.stdout || '').trim().split('\n').slice(-6).join('\n')); stop(`ff 合并没成（${CFG.mainBranch} 可能动过）。重新 psm land ${name}。`); }
   s.state = 'landed'; s.updated = new Date().toISOString(); led.mergeLock = null; writeLedger(led);
+  clearPendingFf(led); // 正式落地·收尾确认
   ok(`「${name}」已 ff 合进 ${CFG.mainBranch}@${shaOf(CFG.mainBranch).slice(0, 8)}。`);
   info(C.dim(`  worktree ${s.worktree} 留在原地（沙箱不能删）。Mac 本机收：node scripts/psm.mjs gc`));
   info(C.dim('  追加 CHANGELOG/QUIRKS、push origin：照你现有 main 流程走（psm 不碰 append-only 文档·免冲突）。'));
@@ -521,8 +531,22 @@ function cmdUnlock() {
   if (isSandbox()) die('unlock 要在 Mac 本机跑（沙箱请用 psm doctor·mv 不删·可恢复）。');
   clearStaleLocks({ verbose: true });
 }
-function cmdDoctor() {
+function cmdDoctor(argv = []) {
+  const f = parseFlags(argv);
   clearStaleLocks({ verbose: true });
+  // 未确认的 land 检测（ff 后崩在收尾确认前·main 可能停在未验证 tip·pendingFf 标记）
+  const led = readLedger();
+  const pend = inspectPendingFf(led);
+  if (pend && pend.stale) { clearPendingFf(led); ok('清掉一个陈旧 pendingFf 标记（main 未前进·安全）。'); }
+  else if (pend) {
+    if (f['accept-landed']) { clearPendingFf(led); ok(`已接受「${pend.pf.name}」为正常落地·清掉 pendingFf 标记。`); }
+    else {
+      warn(`未确认的 land：「${pend.pf.name}」ff 后未收尾（${pend.pf.ts}）。`);
+      info(`  ${CFG.mainBranch} 现在 ${pend.main.slice(0, 8)}，该 land 的安全回滚点 = ${pend.pf.rollbackSha.slice(0, 8)}。`);
+      info(`  · 那次 land 没跑完绿门 / 没确认 → 在 main 树 ${C.bold('git reset --hard ' + pend.pf.rollbackSha)} 撤回未验证 tip。`);
+      info(`  · 其实已正常落地 → ${C.bold('node scripts/psm.mjs doctor --accept-landed')} 清掉标记。`);
+    }
+  }
   if (!isSandbox()) info(C.dim('（非沙箱：git 通常自己清锁·doctor 只在崩溃卡死后兜底。）'));
 }
 function cmdAbort(argv) {
@@ -617,7 +641,7 @@ switch (cmd) {
   case 'abort': cmdAbort(rest); break;
   case 'gc': cmdGc(); break;
   case 'unlock': cmdUnlock(); break;
-  case 'doctor': cmdDoctor(); break;
+  case 'doctor': cmdDoctor(rest); break;
   case 'hook': if (rest[0] === 'pre-commit') hookPreCommit(); else process.exit(0); break;
   default:
     info(C.bold('psm —— 并行 session 管理器'));

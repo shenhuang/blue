@@ -77,7 +77,8 @@ psm gc                                  # Mac 本机：清掉已合并 worktree
 `land` 不再无脑跑全量行为测，而是**从「改了哪些文件」沿依赖图算出「哪些 playthrough 可能被波及」，只精确跑那些**（`scripts/affected-tests.mjs`）。心法见本文档顶部的讨论：**车道是写边界，波及面是依赖闭包**，按依赖图选才健全，按车道名硬映射会漏。
 
 - **静态 import 图**：解析 import/from/dynamic-import/require（`@/`→`src`·补扩展名·静态 `.json` import 也算边界）。
-- **动态依赖**：扫每个「入口可达文件」里的路径字面量，抓 `fs` 读的 fixture——`scenarios/**`（combat/lighthouse/mapgen 场景测）、`playthrough-chart.ts` 读的 `src/data/chart_pois.json` 等。纯 import 图看不见这些，漏了就是漏测。
+- **动态依赖**：扫每个「入口可达文件」里的路径字面量，抓 `fs` 读的 fixture——`playthrough-chart.ts` 读的 `src/data/chart_pois.json` 等。纯 import 图看不见这些，漏了就是漏测。
+- **scenario 目录显式边**（`affected-tests.scenarioTaskFor`）：四个 `*-scenarios` runner 用 `resolve(__dirname,'..','scenarios','combat')` 拼目录（**无含 `/` 的路径字面量** → 动态腿看不见 → 此前 `scenarios/**` 一律落 ALL，与下方「只选 1 个」的承诺相悖）。改为显式声明这条精确边：`scenarios/combat|mapgen|lighthouse/` 子目录各 → 对应 runner，根下 flat `*.json` → `playthrough-scenarios`；由 `check-affected-edges` 钉死（每 runner 只读自己那个目录 → 精选健全·漏选风险零·未知子目录走安全网 ALL）。
 - **健全回退（宁可多跑不漏跑）**：任何「依赖图里解释不了的改动」（CSS、动态加载、新孤儿）或**全局触发**（`tsconfig`/`package.json`/`vite.config`/`regress.mjs` 本身）→ 直接 **ALL**，回退全量。
 - `typecheck` + 全部 `check-*`（纯 node·全局不变量）**永远跑**，不参与选择；affected 只挑贵的 tsx 行为测。
 

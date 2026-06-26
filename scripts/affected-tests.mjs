@@ -47,6 +47,23 @@ function isEntry(relPath) {
 }
 function taskName(relPath) { return relPath.replace(/^scripts\//, '').replace(/\.(ts|tsx|mjs)$/, ''); }
 
+// scenario 基线目录 → 唯一读取它的行为测（精确边）。消除「改 scenarios/** 一律保守回退 ALL」：
+// 四个 *-scenarios runner 用 resolve(__dirname,'..','scenarios','combat') 拼目录（无含 / 的路径字面量）→
+// 动态腿（resolveLiteralPath 的 slash 守卫）看不见这条边 → scenarios/ 落进 unexplained → ALL（doc 曾宣称
+// 「改 scenarios/lighthouse/* → 只选 1 个」实为假）。这里显式声明：子目录优先·根下 flat *.json = 事件基线。
+// 每个 runner 只读自己那个目录 → 映射是健全的「精选」而非冒进（漏选风险零·新子目录走下面 null→安全网 ALL）。
+const SCENARIO_DIR_TASK = [
+  ['scenarios/combat/', 'playthrough-combat-scenarios'],
+  ['scenarios/mapgen/', 'playthrough-mapgen-scenarios'],
+  ['scenarios/lighthouse/', 'playthrough-lighthouse-scenarios'],
+];
+export function scenarioTaskFor(c) {
+  if (!c.startsWith('scenarios/')) return null;
+  for (const [prefix, task] of SCENARIO_DIR_TASK) if (c.startsWith(prefix)) return task;
+  if (/^scenarios\/[^/]+\.json$/.test(c)) return 'playthrough-scenarios'; // 根下 flat 事件基线
+  return null; // scenarios 下未知形态（非 .json / 未知子目录）→ 交回原逻辑（unexplained→ALL·安全网）
+}
+
 function walk(dir, root, out) {
   let ents; try { ents = readdirSync(dir, { withFileTypes: true }); } catch { return out; }
   for (const e of ents) {
@@ -153,6 +170,9 @@ export function computeAffected(changed, graphOrRoot) {
   for (const c of list) {
     if (INERT.some((re) => re.test(c))) continue;
     let explained = false;
+    // scenario 基线目录 → 对应 runner（精确边·见 scenarioTaskFor·消除「改 scenarios/** 一律 ALL」）
+    const scTask = scenarioTaskFor(c);
+    if (scTask) { affected.add(scTask); explained = true; }
     // 改的就是某个入口本身
     if (isEntry(c)) { affected.add(taskName(c)); explained = true; }
     for (const e of g.entries) {

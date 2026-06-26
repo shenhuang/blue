@@ -26,6 +26,7 @@ import { readdirSync, mkdtempSync, existsSync, mkdirSync, renameSync } from 'nod
 import { tmpdir, cpus } from 'node:os';
 import { dirname, join, resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { getFlag } from './lib/args.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -36,11 +37,8 @@ const vite = join(BIN, 'vite');
 
 // ---- argv ----
 const argv = process.argv.slice(2);
-function flag(name) {
-  const i = argv.indexOf(name);
-  if (i === -1) return null;
-  return argv[i + 1] ?? '';
-}
+// 解析收口 lib/args.mjs（getFlag 与旧 flag() 逐字等价·与 psm/affected 同源）。
+const flag = (name) => getFlag(argv, name);
 const onlyArg = flag('--only');
 const skipArg = flag('--skip');
 const listOnly = argv.includes('--list');
@@ -120,6 +118,21 @@ tasks.push({ name: 'check-affected-edges', cmd: ['node', join('scripts', 'check-
 // append-only 文档门（纯 node·CHANGELOG/QUIRKS 只在 main 改、别在 feature/auto 分支碰·机制化 quirk #130·见 scripts/check-append-only-docs.mjs）
 tasks.push({ name: 'check-append-only-docs', cmd: ['node', join('scripts', 'check-append-only-docs.mjs')] });
 
+// 工具链自测门（纯 node·node:test·守 check-branch/append-only/affected 等纯函数 + lib/{glob,args,env}·见 scripts/__tests__·Agent 审计 #6）
+tasks.push({ name: 'check-tooling', cmd: ['node', join('scripts', 'run-tooling-tests.mjs')] });
+
+// STATUS.md 新鲜度门（纯 node·顶部 blockquote 在/带日期 + 行数上限 + 点名脚本存在·机制化 CLAUDE.md 文档维护约定 + handoff 依赖）
+tasks.push({ name: 'check-status-fresh', cmd: ['node', join('scripts', 'check-status-fresh.mjs')] });
+
+// flag setter scope 门（纯 node·applyFlags〔下潜域〕置位却被持久消费 → 本该 setProfileFlags·quirk #160/#161·incident #184）
+tasks.push({ name: 'check-flag-setter', cmd: ['node', join('scripts', 'check-flag-setter.mjs')] });
+
+// 数据结构门（纯 node·src/data+scenarios 全 *.json 可解析 + id 集合无重复·防新字段/坏数据静默上车）
+tasks.push({ name: 'check-data-schema', cmd: ['node', join('scripts', 'check-data-schema.mjs')] });
+
+// POI 固定资源 save 级别名门（纯 node·同 POI 内两条 save 脉不得共享 itemId·quirk #163）
+tasks.push({ name: 'check-poi-resources', cmd: ['node', join('scripts', 'check-poi-resources.mjs')] });
+
 // 海图 UI SSR smoke
 tasks.push({ name: 'smoke-chart-ui', cmd: [tsx, join('scripts', 'smoke-chart-ui.tsx')] });
 
@@ -185,13 +198,20 @@ if (listOnly) {
 }
 
 // ---- runner ----
+// 每任务输出限尾部 256KB（断言一般在末尾·末 4k 才打印）。防跑飞/死循环 task 把 out 无界累加撑爆内存
+// （40+ 并行 task 时这是最大活内存风险·Agent 审计）。
+const MAX_TASK_OUTPUT = 256 * 1024;
 function runOnce(task) {
   return new Promise((res) => {
     const [exe, ...args] = task.cmd;
     const child = spawn(exe, args, { cwd: ROOT, env: process.env });
     let out = '';
-    child.stdout.on('data', (d) => (out += d));
-    child.stderr.on('data', (d) => (out += d));
+    const append = (d) => {
+      out += d;
+      if (out.length > MAX_TASK_OUTPUT) out = out.slice(out.length - MAX_TASK_OUTPUT);
+    };
+    child.stdout.on('data', append);
+    child.stderr.on('data', append);
     child.on('error', (err) => res({ code: 1, out: out + '\n' + String(err) }));
     child.on('close', (code) => res({ code: code ?? 1, out }));
   });
@@ -258,8 +278,14 @@ async function main() {
   const failed = results.filter((r) => !r.ok);
   const flaked = results.filter((r) => r.ok && r.attempt > 1);
   console.log('─'.repeat(48));
+  // 沙箱子集（deferredTsx 非空）绝不打「全绿」——一眼扫过容易误读成可发布。打 SUBSET·不可发布。
+  const headline = failed.length
+    ? `失败 ${failed.length} ✗`
+    : deferredTsx.length
+      ? 'SUBSET ✓（子集·不可发布）'
+      : '全绿 ✓';
   console.log(
-    `${failed.length === 0 ? '全绿 ✓' : `失败 ${failed.length} ✗`}` +
+    headline +
       ` · ${results.length - failed.length}/${results.length} 通过` +
       (flaked.length ? ` · ${flaked.length} 个重试后过` : '') +
       ` · 墙钟 ${((Date.now() - wall) / 1000).toFixed(1)}s`,

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 架构边界检查（五条规则，命中任一即打印 file:line 并退出 1）：
+// 架构边界检查（六条规则，命中任一即打印 file:line 并退出 1）：
 //
 // 规则一：engine ↛ ui —— 引擎层不得依赖 UI 层 / React。
 //   扫 src/engine/**/*.ts(x) 的模块说明符：
@@ -27,6 +27,12 @@
 // 规则五：game ↛ dev —— 游戏入口/UI（App.tsx + src/ui 下非 dev 文件）不得 import dev 工具
 //   （src/ui/dev/** + MapEditor/StoryEditor/EditorApp/EditorShell）。dev 工具只经 ?editor 工作台
 //   （EditorApp·main.tsx 不扫）入口；把「dev 不进游戏主包/不揭整张图」从散文升成机制（dev工作台 SPEC §6）。
+//
+// 规则六：nitrogen 债务写口收窄（氮气单写口·quirk #128·仿规则四 run.injuries）。
+//   氮气债（深度/时间）的计算单点在 engine/nitrogen.ts（stepNitrogen/narcosis）+ ascent.ts（上升减压）。
+//   nitrogen 到处被「读」（computeRequiredStops 等·合法）→ 只查「写」：就地变异 x.nitrogen=/+=/-=/++/--，
+//   或 stat 构造里内联 +/- 债务算术 nitrogen:<…±…>。白名单（nitrogen/ascent/events/state）外的
+//   src/engine 命中即违例（当前 0 处：step 走 stepNitrogen()、clamp 走 Math、fixture 只写 0）。
 //
 // 把此前靠散文（CLAUDE.md / 评审记忆）维持的解耦约定做成会在 `npm run regress`
 // 里失败的门。现状 0 违例 → 直接绿；以后谁越界，这个门会红——不再靠下一个
@@ -196,6 +202,29 @@ for (const file of gameFiles) {
   }
 }
 
+// ── 规则六：nitrogen 债务写口收窄（氮气单写口·quirk #128·仿规则四）──
+// 只查「写」（nitrogen 到处被读·合法）：就地变异 x.nitrogen=/+=/-=/++/-- 或 stat 构造内联 +/- 债务算术。
+// `=(?!=)` 排除 == / === 比较；构造分支要求 `nitrogen:` 后同行出现 +/-（step 用 stepNitrogen()、clamp 用 Math·均不含 +/-）。
+const NITROGEN_MUT_RE = /\bnitrogen\s*(?:\+\+|--|[-+*/]?=(?!=))|\bnitrogen\s*:\s*[^,}\n]*[-+][^,}\n]*/;
+const NITROGEN_WHITELIST = new Set([
+  'src/engine/nitrogen.ts', // 氮气债数学单点（step / narcosis）
+  'src/engine/ascent.ts',   // 上升减压（nitrogen 债的另一正当写者）
+  'src/engine/events.ts',   // 每回合 step 构造（走 stepNitrogen）
+  'src/engine/state.ts',    // createNewRun 种子 + hydrate clamp
+]);
+const nitrogenViolations = [];
+for (const file of engineFiles) {
+  const rel = relative(ROOT, file).split('\\').join('/');
+  if (NITROGEN_WHITELIST.has(rel)) continue;
+  const lines = readFileSync(file, 'utf-8').split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const code = lines[i].replace(/\/\/.*$/, ''); // 去行尾注释
+    const t = code.trimStart();
+    if (t.startsWith('*') || t.startsWith('/*')) continue; // 块注释行
+    if (NITROGEN_MUT_RE.test(code)) nitrogenViolations.push({ file: rel, line: i + 1 });
+  }
+}
+
 let failed = false;
 
 if (importViolations.length) {
@@ -262,6 +291,18 @@ if (devImportViolations.length) {
   );
 }
 
+if (nitrogenViolations.length) {
+  failed = true;
+  console.error('✘ nitrogen 债务写口违例：氮气债计算单点在 engine/nitrogen.ts（+ ascent 减压）\n');
+  for (const v of nitrogenViolations) {
+    console.error(`  ${v.file}:${v.line}  直接写 / 内联算 nitrogen 债务`);
+  }
+  console.error(
+    `\n共 ${nitrogenViolations.length} 处。氮气债（步进/减压）走 engine/nitrogen.ts 的 stepNitrogen / narcosis` +
+      `\n（+ ascent.ts 上升减压）；别在别处就地变异 nitrogen 或散写 +/- 债务算术（quirk #128·仿 run.injuries 规则四）。\n`,
+  );
+}
+
 if (failed) process.exit(1);
 
 console.log(
@@ -269,6 +310,7 @@ console.log(
     `；src/ui 无 phase 字面量（src/ui+App ${uiFiles.length} 文件·0 违例）` +
     `；styles.css 滚动容器全在白名单（${SCROLL_WHITELIST.join(' / ')}）` +
     `；run.injuries 触碰面收口（engine 内仅 injuries/modifiers/state/combatScenario）` +
-    `；game ↛ dev（游戏侧 ${gameFiles.length} 文件不 import dev 工具）`,
+    `；game ↛ dev（游戏侧 ${gameFiles.length} 文件不 import dev 工具）` +
+    `；nitrogen 债务写口收窄（engine 内仅 nitrogen/ascent/events/state 写）`,
 );
 process.exit(0);

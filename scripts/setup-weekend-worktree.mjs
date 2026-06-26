@@ -16,6 +16,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, writeFileSync, symlinkSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
+import { isSandbox } from './lib/env.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const WT_REL = '.worktrees/weekend';
@@ -23,7 +24,7 @@ const WT = join(ROOT, WT_REL);
 const BRANCH = 'auto/weekend';
 
 // 沙箱护栏：worktree 的 gitdir 会记绝对路径，沙箱路径到 Mac 失效 → 硬停。
-if (ROOT.startsWith('/sessions/') || ROOT.includes('/mnt/')) {
+if (isSandbox(ROOT)) {
   console.error(
     `✘ 检测到沙箱路径（${ROOT}）。\n` +
       `  git worktree add 会把绝对路径写进 .git/worktrees/，沙箱路径到你 Mac 上会失效。\n` +

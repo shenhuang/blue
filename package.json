@@ -22,7 +22,9 @@
     "gen:enemies": "node scripts/gen-enemy-registry.mjs",
     "check:enemies": "node scripts/gen-enemy-registry.mjs --check",
     "check:dive": "node scripts/check-dive-refs.mjs",
-    "audit:materials": "tsx scripts/material-audit.ts"
+    "audit:materials": "tsx scripts/material-audit.ts",
+    "bless:combat": "tsx scripts/playthrough-combat-scenarios.ts --bless",
+    "test:tooling": "node scripts/run-tooling-tests.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
