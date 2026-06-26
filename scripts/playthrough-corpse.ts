@@ -73,7 +73,7 @@ if (state.profile.deaths.length > 0) {
   L(`死者：${d.diverName} · ${d.depthAtDeath}m · ${d.cause}`);
   L(`留下的物品：${d.inventorySnapshot.map(i => `${i.itemId}×${i.qty}`).join(', ')}`);
   L(`金币留在海里：${d.goldAtDeath}`);
-  L(`diveAge=${d.diveAge}`);
+  L(`diedOnDay=${d.diedOnDay} (age=${(state.profile.day ?? state.profile.runsCompleted) - d.diedOnDay} 天)`);
 }
 
 if (state.phase.kind !== 'funeral') throw new Error('应进入 funeral，实际：' + state.phase.kind);

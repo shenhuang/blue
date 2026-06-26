@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { GameState, DeathRecord, InventoryItem, DecayTier } from '@/types';
-import { recoverFromCorpse } from '@/engine/death';
+import { corpseAge, recoverFromCorpse } from '@/engine/death';
 import { enterNodeSelection } from '@/engine/dive';
 import { appendLog, totalRunInventoryWeight } from '@/engine/state';
 import { getItemDef } from '@/engine/items';
@@ -88,7 +88,7 @@ export function CorpseView({ state, deathRecordId, onStateChange }: Props) {
             <div className="corpse-meta">
               死于 {record.depthAtDeath}m · {record.cause}
               <br />
-              已在水下 {record.diveAge} 次出海
+              已在水下 {corpseAge(record, state.profile.day ?? state.profile.runsCompleted)} 天
             </div>
           </div>
           <p className="dim">

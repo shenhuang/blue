@@ -7,8 +7,10 @@
 
 import type { GameState, InventoryItem, MaterialTier, PlayerProfile } from '@/types';
 import { pickReturnTrigger } from './portEvents';
-import { acquireIntoProfile, addToPoiSetMap, removeFromInventory } from './state';
+import { acquireIntoProfile, addToPoiSetMap, appendLog, removeFromInventory } from './state';
 import { allItems, getItemDef } from './items';
+import { ageAndDecayDeaths, getPreservationBonus } from './death';
+import { daysToNextPhase, lunarPhase, lunarPhaseLabel } from './lunar';
 
 export interface ReturnToPortResult {
   state: GameState;
@@ -67,6 +69,35 @@ export function handleReturnToPort(state: GameState): ReturnToPortResult {
       : { kind: 'port' },
   };
   return { state: next, cutsceneEventId: trigger };
+}
+
+/**
+ * 港口「等待」动作（月相潮汐 SPEC §6）：推进世界 n 天但**不计一次 run**（day 与 runsCompleted 在此分离）。
+ * 等的那几天海底尸体照样腐烂（ageAndDecayDeaths 按新 day 重算·路径无关＝逐天走≡一次跳·SPEC §2.2/§7）；
+ * 月相/潮汐/机会点随 day 自动变（纯派生·下次 generateChart 即新）。停在 {kind:'port'}、不新增 GamePhase。
+ * 仅港口（无 run）可等·n≤0 原样返回。
+ */
+export function advanceDays(state: GameState, n: number): GameState {
+  if (state.run || n <= 0) return state;
+  const profile = state.profile;
+  const newDay = (profile.day ?? profile.runsCompleted) + n;
+  const agedDeaths = ageAndDecayDeaths(
+    profile.deaths,
+    newDay,
+    getPreservationBonus(profile.unlockedUpgrades),
+    profile.unlockedUpgrades.has('upgrade.salvage_guild.lv3'),
+  );
+  let s: GameState = { ...state, profile: { ...profile, deaths: agedDeaths, day: newDay } };
+  s = appendLog(s, {
+    tone: 'realistic',
+    text: `你在港口等了 ${n} 天。海面换了脸色——${lunarPhaseLabel(lunarPhase(newDay))}。`,
+  });
+  return s;
+}
+
+/** 「等到下一相位边界」还要几天（港口等待主形式·UI 按钮 + advanceDays 入参·SPEC §6）。 */
+export function daysToNextLunarBoundary(profile: PlayerProfile): number {
+  return daysToNextPhase(profile.day ?? profile.runsCompleted);
 }
 
 /** Mira 收购价系数：sellPrice 是市场价，Mira 转手收 0.8 折 */

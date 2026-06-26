@@ -68,7 +68,7 @@ s = {
         inventorySnapshot: [{ itemId: 'item.eel_skin', qty: 1 }],
         goldAtDeath: 0,
         recovered: false,
-        diveAge: 2,
+        diedOnDay: 0,
         timestamp: 0,
       },
     ],
@@ -203,7 +203,7 @@ L('  损坏 JSON → null ✓');
 // 3. 版本不等于当前 SAVE_VERSION（更高 / 更低 / 缺失）→ null（未发布不迁移 · quirk #99）
 const future = JSON.stringify({ ...JSON.parse(raw), version: 999 });
 assert(deserializeGameState(future) === null, '更高 version 应拒绝（返回 null）');
-for (const oldV of [0, 1, 2, 3, 4]) {
+for (const oldV of [0, 1, 2, 3, 4, 11]) {
   const oldObj = JSON.parse(raw);
   oldObj.version = oldV;
   assert(
@@ -214,7 +214,7 @@ for (const oldV of [0, 1, 2, 3, 4]) {
 const noVer = JSON.parse(raw);
 delete noVer.version;
 assert(deserializeGameState(JSON.stringify(noVer)) === null, '缺 version 应视为不兼容（返回 null）');
-L('  版本不符（999 / v0-3 / 缺失）→ null（未发布不迁移 · 直接弃）✓');
+L('  版本不符（999 / v0-4,11 / 缺失）→ null（未发布不迁移 · 直接弃）✓');
 
 // 4. node 环境无 localStorage → loadGame() 返回 null（feature-detect 不崩）
 assert(loadGame() === null, '非浏览器环境 loadGame() 应返回 null');
@@ -244,7 +244,7 @@ L('  非浏览器环境 loadGame() → null ✓');
   // (c) 合法当前版本存档 → 正常读取、不删
   store[SAVE_KEY] = raw;
   const ok = loadGame();
-  assert(ok && ok.version === 11, '当前版本存档应正常读取');
+  assert(ok && ok.version === 12, '当前版本存档应正常读取');
   assert(SAVE_KEY in store, '合法存档不应被删除');
   delete (globalThis as { localStorage?: unknown }).localStorage;
 }

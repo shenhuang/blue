@@ -5,13 +5,14 @@
 import type { GameState, DeathRecord, DecayTier } from '@/types';
 import { appendLog } from './state';
 import { getItemDef } from './items';
+import { hashString } from './rng';
 
 function getDecayTier(id: string): DecayTier {
   return getItemDef(id)?.decay ?? 'material';
 }
 
-// —— 衰减阈值（无升级时） ——
-// diveAge 达到/超过此值，对应档位的物品消失
+// —— 衰减阈值（无升级时·单位＝天·SPEC §2.2「腐烂挂天不挂次」） ——
+// age（天）达到/超过此值，对应档位的物品消失。数值仍是占位、待作者统一调（defer-number-tuning·SPEC §11）。
 const BASE_DECAY_THRESHOLDS: Record<DecayTier, number> = {
   organic: 2,
   consumable: 5,
@@ -28,12 +29,12 @@ const PRESERVATION_BONUS: Record<string, number> = {
   'upgrade.salvage_guild.lv3': 10,
 };
 
-// 海流冲走概率（每 run 每件非永恒物品）
+// 海流冲走的「每天」基率（喂给确定性累积谓词 deterministicSwept·非每潜随机·占位待调·SPEC §11）
 const BASE_SWEEP_CHANCE = 0.06;
 // Lv.3 完全免疫海流
 const SWEEP_IMMUNITY_UPGRADE = 'upgrade.salvage_guild.lv3';
 
-// 尸体在海底"还能被找到"的最大 diveAge（超过则视作彻底散失，不再生成节点）
+// 尸体在海底"还能被找到"的最大 age（天·超过则视作彻底散失·收口进 recovered·见 ageAndDecayDeaths）
 const CORPSE_VISIBLE_AGE = 25;
 
 /** 计算当前的保鲜加成（来自港口升级） */
@@ -45,11 +46,28 @@ export function getPreservationBonus(unlockedUpgrades: Set<string>): number {
   return bonus;
 }
 
-/** 物品是否还在尸体上（diveAge < 阈值） */
-function itemSurvives(itemId: string, diveAge: number, preservationBonus: number): boolean {
+/** 物品是否还在尸体上（age 天 < 阈值） */
+function itemSurvives(itemId: string, age: number, preservationBonus: number): boolean {
   const tier = getDecayTier(itemId);
   const threshold = BASE_DECAY_THRESHOLDS[tier] + preservationBonus;
-  return diveAge < threshold;
+  return age < threshold;
+}
+
+/**
+ * 海流是否已在 age 天内冲走某件物品：确定性、随 age 单调置真的谓词（取代旧的「每潜 Math.random」）。
+ * u = hashString(`deathId|itemId`)/2³² ∈ [0,1)；累积冲走概率 = 1 − (1−p)^age（与旧每潜 p 模型同期望）。
+ * 单调 ⇒ 一旦冲走永不复现 ⇒「跳到第 N 天」≡「逐天走 N 次」（SPEC §7 jump≡step·路径无关·去不可测随机）。
+ * 注：同 (deathId,itemId) 的多件同物共命运（按 SPEC §2.2 键，不区分 entry）。
+ */
+function deterministicSwept(deathId: string, itemId: string, age: number): boolean {
+  if (age <= 0) return false;
+  const u = hashString(`${deathId}|${itemId}`) / 0x100000000;
+  return u < 1 - Math.pow(1 - BASE_SWEEP_CHANCE, age);
+}
+
+/** 尸体年龄（天）＝ 纯派生 day − diedOnDay。给 UI/读点用（取代旧存储 diveAge）。 */
+export function corpseAge(record: DeathRecord, day: number): number {
+  return day - record.diedOnDay;
 }
 
 // 程生姓名池 —— 早期用真名营造"不同的人"
@@ -79,8 +97,8 @@ function pickName(seed: number): string {
 
 /**
  * 死亡时调用。
- * 1) 把当前 run 快照成 DeathRecord 入 profile.deaths
- * 2) 把已有的 deaths.diveAge 全部 +1
+ * 1) 把当前 run 快照成 DeathRecord 入 profile.deaths（diedOnDay = 当天·age 纯派生）
+ * 2) 把已有 deaths 老化到当天（按 diedOnDay 派生 age·SPEC §2.2）
  * 3) run 置空，phase 切到 funeral
  *
  * 注：元进度已从"建设值"换成"材料经济"（基建地图 SPEC Phase A）——死亡不再发放任何点数，
@@ -89,6 +107,8 @@ function pickName(seed: number): string {
 export function executeDeath(state: GameState, cause: string): GameState {
   if (!state.run) return state;
   const run = state.run;
+  // 月相时间：死亡也算过了一天（SPEC §2.1）。新尸体 diedOnDay = 当天 ⇒ 此刻 age=0。
+  const newDay = (state.profile.day ?? state.profile.runsCompleted) + 1;
 
   const record: DeathRecord = {
     id: `death-${state.profile.deaths.length}-${run.runId}`,
@@ -102,13 +122,14 @@ export function executeDeath(state: GameState, cause: string): GameState {
     inventorySnapshot: [...run.inventory.map((i) => ({ ...i }))],
     goldAtDeath: run.gold,
     recovered: false,
-    diveAge: 0,
+    diedOnDay: newDay,
     timestamp: Date.now(),
   };
 
-  // 现有死者：diveAge +1 并应用衰减
+  // 现有死者：老化到当天 + 衰减（按 diedOnDay 派生 age）
   const agedDeaths = ageAndDecayDeaths(
     state.profile.deaths,
+    newDay,
     getPreservationBonus(state.profile.unlockedUpgrades),
     state.profile.unlockedUpgrades.has(SWEEP_IMMUNITY_UPGRADE),
   );
@@ -125,7 +146,7 @@ export function executeDeath(state: GameState, cause: string): GameState {
       ...state.profile,
       deaths: [...agedDeaths, record],
       runsCompleted: state.profile.runsCompleted + 1,
-      day: (state.profile.day ?? state.profile.runsCompleted) + 1, // 月相时间：死亡也算过了一天（SPEC §2.1）
+      day: newDay,
       flags: newFlags,
     },
     phase: { kind: 'funeral', record },
@@ -136,23 +157,20 @@ export function executeDeath(state: GameState, cause: string): GameState {
 }
 
 /**
- * 一具尸体此刻是否"值得回收"：同 zone、未被全部回收、diveAge 在可见区间、且身上还有东西。
+ * 一具尸体此刻是否"值得回收"：同 zone、未被全部回收/未散失、且身上还有东西。
  * 给海图的出海前选目标（打捞行会 Lv.2）+ mapgen 强制布点共用同一判据。
+ * 年龄门（age ≥ CORPSE_VISIBLE_AGE 散失）已在 ageAndDecayDeaths 收口进 recovered ⇒ 此处不读 day（SPEC §2.2·零 mapgen 改动半径）。
  */
 export function isRecoverableCorpse(d: DeathRecord, zoneId: string): boolean {
-  return (
-    d.zoneId === zoneId &&
-    !d.recovered &&
-    d.diveAge < CORPSE_VISIBLE_AGE &&
-    d.inventorySnapshot.length > 0
-  );
+  return d.zoneId === zoneId && !d.recovered && d.inventorySnapshot.length > 0;
 }
 
 /** 列出某 zone 当前所有可回收尸体（最老的在前，制造紧迫感）。海图选目标用。 */
 export function listRecoverableCorpses(deaths: DeathRecord[], zoneId: string): DeathRecord[] {
+  // 最老的在前（紧迫感）＝ diedOnDay 最小在前（age 最大·相对序无需当天 day）。
   return deaths
     .filter((d) => isRecoverableCorpse(d, zoneId))
-    .sort((a, b) => b.diveAge - a.diveAge);
+    .sort((a, b) => a.diedOnDay - b.diedOnDay);
 }
 
 /** 找一具可被"本次 run 在此 zone"回收的尸体（用于 mapgen） */
@@ -162,7 +180,7 @@ export function findRecoverableCorpse(
   targetDepth: number,
   alreadyPlaced: Set<string>,
 ): DeathRecord | undefined {
-  // 复用 isRecoverableCorpse（同 zone / 未回收 / diveAge 在可见区间 / 还有物品），再加深度窗 + 本图去重
+  // 复用 isRecoverableCorpse（同 zone / 未回收 / 未散失 / 还有物品），再加深度窗 + 本图去重
   const candidates = deaths.filter(
     (d) =>
       isRecoverableCorpse(d, zoneId) &&
@@ -170,43 +188,49 @@ export function findRecoverableCorpse(
       !alreadyPlaced.has(d.id),
   );
   if (candidates.length === 0) return undefined;
-  // 优先最老的（紧迫感）
-  return candidates.sort((a, b) => b.diveAge - a.diveAge)[0];
+  // 优先最老的（紧迫感）＝ diedOnDay 最小
+  return candidates.sort((a, b) => a.diedOnDay - b.diedOnDay)[0];
 }
 
 /**
- * 给所有 DeathRecord 老化一年，并应用衰减规则：
- *  - 阈值衰减：物品按档位 + 升级加成判定生存
- *  - 海流冲走：每件非永恒物品有 BASE_SWEEP_CHANCE 概率被冲走（除非有免疫）
- *  - 全部消失的 record 标为 recovered（即"被海流完全冲散，下次不再生成"）
+ * 把所有 DeathRecord 老化「到当天 day」并应用衰减规则（按 age = day − diedOnDay 纯派生）：
+ *  - 阈值衰减：物品按档位 + 升级加成判定生存（itemSurvives·按天）
+ *  - 海流冲走：非永恒物品由确定性单调谓词 deterministicSwept 判定（取代旧每潜 Math.random）
+ *  - 物品全失 **或** age ≥ CORPSE_VISIBLE_AGE 散失 → recovered=true（不再可回收）
+ * 阈值/冲走都随 age 单调 ⇒ 死亡/上浮逐天调用 与 港口等待一次跳 N 天 结果逐字节相同（SPEC §7 jump≡step）。
  */
 export function ageAndDecayDeaths(
   deaths: DeathRecord[],
+  day: number,
   preservationBonus: number,
   sweepImmune: boolean,
 ): DeathRecord[] {
   return deaths.map((d) => {
-    if (d.recovered) return d;
-    const newAge = d.diveAge + 1;
+    // 玩家取空 / 衰减清空的尸体维持空（不复活物品）。**年龄散失（age≥CORPSE_VISIBLE_AGE）不在此早退**——
+    // 留给下方按当天 age 重算 snapshot，保证内容路径无关 ⇒ jump≡step 对任意 N 成立（含跨可见年龄边界）。
+    if (d.recovered && d.inventorySnapshot.length === 0) return d;
+    const age = day - d.diedOnDay;
 
-    // 1) 阈值衰减
+    // 1) 阈值衰减（按天）
     let snapshot = d.inventorySnapshot.filter((it) =>
-      itemSurvives(it.itemId, newAge, preservationBonus),
+      itemSurvives(it.itemId, age, preservationBonus),
     );
 
-    // 2) 海流冲走
+    // 2) 海流冲走（确定性·路径无关）
     if (!sweepImmune) {
-      snapshot = snapshot.filter((it) => {
-        if (getDecayTier(it.itemId) === 'eternal') return true;
-        return Math.random() >= BASE_SWEEP_CHANCE;
-      });
+      snapshot = snapshot.filter(
+        (it) =>
+          getDecayTier(it.itemId) === 'eternal' || !deterministicSwept(d.id, it.itemId, age),
+      );
     }
+
+    // 物品全失 / 超过可见年龄散失 → 不再可回收（年龄门收口于此·isRecoverableCorpse 不读 day）
+    const lost = snapshot.length === 0 || age >= CORPSE_VISIBLE_AGE;
 
     return {
       ...d,
-      diveAge: newAge,
       inventorySnapshot: snapshot,
-      recovered: snapshot.length === 0 ? true : d.recovered,
+      recovered: lost ? true : d.recovered,
     };
   });
 }

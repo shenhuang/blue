@@ -51,6 +51,12 @@ export interface PoiModifier {
  */
 export type PoiRevealState = 'lit' | 'dim' | 'hidden';
 
+/**
+ * 月相（4 相·等分 7 天/相·SPEC §3）。类型落 types 层（foundational）；纯函数/常量在 engine/lunar.ts
+ * （moonAge/lunarPhase/tideLevel·import 本类型）。给 ChartPoi.lunarWindow / ChartConditions.phase 用。
+ */
+export type LunarPhase = 'new' | 'waxing' | 'full' | 'waning';
+
 /** 海图上的一个兴趣点 */
 export interface ChartPoi {
   /** 运行时稳定 id（anchor 在数据里写死；roaming 形如 `poi.roam.<runsCompleted>.<templateId>`，按模板键稳定·中途点亮灯塔不重洗） */
@@ -205,6 +211,22 @@ export interface ChartPoi {
    */
   openEventPool?: string[];
   /**
+   * 月相潮窗（SPEC §2.3·additive·缺省＝不受月相限制·现有 POI 零改动）：本 POI 仅在这些相位「窗内」可达。
+   * 豁免 story/persistent/mimic（同 climateOcclusion·SPEC §2.3）——Ch.1 关键路径恒无窗（check-lunar-reach 守门）。
+   * roaming 模板带它＝只在该相位入池（generateChart 选取过滤·随相位浮现/消失）。
+   */
+  lunarWindow?: LunarPhase[];
+  /**
+   * 窗外表现（缺省 'dim'·守诚实轴）：'dim'＝可见不可去（「满月再来」·可规划）；'hidden'＝彻底消失
+   * （秘密/惊喜·仅在有情报时降级回 dim）。逐点拍·跟内容走（SPEC §2.3）。
+   */
+  lunarOffWindow?: 'hidden' | 'dim';
+  /**
+   * NPC/情报 flag（§5 可发现性·marksPois 之外的第二源）：profile.flags 含此 flag ⇒ 本 POI「已知」——
+   * 窗外从 hidden 降级成 dim（「知道这儿某相位有东西、值得等」）。NPC 进度对话 setsFlag 置位（内容侧·守灯人 Aldo 讲潮汐）。
+   */
+  intelFlag?: string;
+  /**
    * 运行时揭示态（generateChart 派生写入·区域揭示三态·§10）。只有进了 chart.pois 的点带它（'lit'|'dim'）；
    * 'hidden' 点不入结果。纯派生、不入存档（同 roaming 的运行时 id 一样按 profile 重算）。
    */
@@ -217,10 +239,14 @@ export interface ChartPoi {
  * 宏观偏「天气/潮汐的不全」、相对可信（欺骗留微观声呐 + mimic 假 POI）。
  */
 export interface ChartConditions {
-  /** 潮汐：涨潮 / 退潮（叙事 + 影响遮蔽）。 */
+  /** 潮汐：涨潮 / 退潮。月相潮汐 SPEC §3 起由 tideLevel(day) 符号派生（>0 flood / ≤0 ebb·大潮在新月/满月）。 */
   tide: 'flood' | 'ebb';
-  /** 天气：晴 / 薄雾 / 浓雾。浓雾时一处 roaming 机会点被一时盖住、这一拍不显（下次回港潮退又回来）。 */
+  /** 天气：晴 / 薄雾 / 浓雾。浓雾时一处 roaming 机会点被一时盖住、这一拍不显。天气与月相独立两轴（SPEC §1）。 */
   weather: 'clear' | 'mist' | 'fog';
+  /** 当前月相（SPEC §3·additive·UI 海况条显示月相盘）。派生自 day·不入存档。 */
+  phase?: LunarPhase;
+  /** 朔望相位龄 0..27（SPEC §3·additive·UI「下弦还有 N 天」周期带）。派生自 day。 */
+  moonAge?: number;
 }
 
 /** 一张生成出来的海图 */

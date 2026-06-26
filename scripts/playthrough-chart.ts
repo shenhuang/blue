@@ -29,6 +29,8 @@ import { generateDiveMap, analyzeMap, caveShapeBucket } from '../src/engine/mapg
 import { startDiveFromPoi, currentMoveCost } from '../src/engine/dive';
 import { tickTurns, visibilitySanityDrain } from '../src/engine/events';
 import { getZone } from '../src/engine/zones';
+import { lunarPhase, moonAge, tideLevel } from '../src/engine/lunar';
+import { advanceDays, daysToNextLunarBoundary } from '../src/engine/port';
 import type { GameState, PlayerProfile, ChartPoi, RunState, Lighthouse } from '../src/types';
 
 const log: string[] = [];
@@ -60,6 +62,9 @@ function profileWith(
     flags: new Set(flags),
     unlockedUpgrades: new Set(upgrades),
     runsCompleted,
+    // 月相 Phase 0a：海图时间种子＝profile.day（chartSeed·SPEC §3）。等待前 day 与 runsCompleted 同步推进
+    // （游戏里 ascent/death 各 +1 两者）——测试构造档也须同步，否则种子恒为初始 day(=0)、roaming 不刷新。
+    day: runsCompleted,
   };
 }
 
@@ -656,6 +661,62 @@ const litPoi: ChartPoi = {
 assert(poiRevealState(noDock, litPoi) === 'lit', '10b: 无能力门的剧情点应为 lit（可去）');
 assert(poiBlockReason(noDock, litPoi) === null, '10b: 可去点 poiBlockReason 应返回 null（没什么挡着）');
 L('  可去点：lit + blockReason=null ✓');
+
+// ============================================
+// 11. 月相潮汐（SPEC §3/§4/§6）：海况派生自 day · 港口等待推进 day（不计 run）· 月相窗门 + 情报降级。
+// ============================================
+L('\n========== 11. 月相潮汐（day 派生海况 / 港口等待 / 月相窗门）==========');
+// 11a：chartConditions 的 phase/moonAge/tide 由 day 派生、与 lunar.ts 一致（取代旧 condHash tide）。
+for (const N of [0, 5, 7, 14, 21, 28, 35]) {
+  const c = chartConditions({ ...fullyRevealedProfile(0), day: N });
+  assert(c.phase === lunarPhase(N), `11a: day=${N} → phase=${lunarPhase(N)}，实 ${c.phase}`);
+  assert(c.moonAge === moonAge(N), `11a: day=${N} → moonAge=${moonAge(N)}，实 ${c.moonAge}`);
+  const expTide = tideLevel(N) > 0 ? 'flood' : 'ebb';
+  assert(c.tide === expTide, `11a: day=${N} → tide=${expTide}（tideLevel 符号派生），实 ${c.tide}`);
+}
+L('  海况(phase/moonAge/tide)由 day 派生·与 lunar.ts 一致 ✓');
+
+// 11b：港口等待 advanceDays「等到下一相位」——推进 day、不计 run、相位推进；出海中/n≤0 不动。
+{
+  const base = createInitialGameState();
+  const portState: GameState = {
+    ...base,
+    run: null,
+    profile: { ...base.profile, flags: new Set(['flag.tutorial_complete']), day: 3, runsCompleted: 3 },
+  };
+  const waitN = daysToNextLunarBoundary(portState.profile); // day3=新月段·还 4 天到上弦
+  const waited = advanceDays(portState, waitN);
+  assert(waited.profile.day === 3 + waitN, `11b: 等待推进 day=${3 + waitN}，实 ${waited.profile.day}`);
+  assert(waited.profile.runsCompleted === 3, '11b: 等待不计一次 run（runsCompleted 不变·day 与 run 解耦）');
+  assert(
+    waitN > 0 && lunarPhase(waited.profile.day) !== lunarPhase(3),
+    `11b: 「等到下一相位」跨过相位边界（${lunarPhase(3)}→${lunarPhase(waited.profile.day)}）`,
+  );
+  assert(advanceDays(portState, 0).profile.day === 3, '11b: n≤0 不推进');
+  const inRun: GameState = { ...portState, run: createNewRun({ zoneId: 'zone.old_lighthouse_reef' }) };
+  assert(advanceDays(inRun, 5).profile.day === 3, '11b: 出海中（有 run）不可等待·day 不变');
+  L(`  等到下一相位：day 3→${waited.profile.day}（${lunarPhase(3)}→${lunarPhase(waited.profile.day)}）·runsCompleted 不变·出海中守卫 ✓`);
+}
+
+// 11c：月相窗门 + 情报降级（§4/§5）。非豁免点带 lunarWindow：已知（intelFlag）窗外→dim+「潮窗未到」；窗内→月相不拦；story 豁免。
+{
+  const lunarPoi: ChartPoi = {
+    id: 'probe.lunar', zoneId: 'zone.wreck_graveyard', name: '潮窗点', blurb: '', distance: 2,
+    mapX: 0.85, mapY: 0.64, persistent: false, lunarWindow: ['full'], intelFlag: 'intel.lunar_test',
+  };
+  const offProf = { ...profileWith(['flag.tutorial_complete', 'intel.lunar_test']), day: 0 }; // 新月·窗外
+  assert(poiRevealState(offProf, lunarPoi) === 'dim', '11c: 已知(intelFlag) + 窗外 → dim（可规划·不 hidden）');
+  const lr = poiBlockReason(offProf, lunarPoi);
+  assert(lr !== null && lr.includes('潮窗未到') && lr.includes('满月'), `11c: 窗外暗点提示含「潮窗未到/满月」，实 ${lr}`);
+  const onProf = { ...profileWith(['flag.tutorial_complete', 'intel.lunar_test']), day: 14 }; // 满月·窗内
+  const lrOn = poiBlockReason(onProf, lunarPoi);
+  assert(lrOn === null || !lrOn.includes('潮窗未到'), `11c: 窗内 → 月相不再拦（blockReason 无「潮窗未到」），实 ${lrOn}`);
+  // 豁免：同样的窗挂在 story 锚点上 → 月相不拦（守「默认不锁主线」§2.3/§7）。
+  const storyPoi: ChartPoi = { ...lunarPoi, id: 'probe.lunar_story', story: { anchor: 'wreck', eventId: 'test.x' } };
+  const lrStory = poiBlockReason(offProf, storyPoi);
+  assert(lrStory === null || !lrStory.includes('潮窗未到'), '11c: story 豁免——月相窗不拦剧情锚点');
+  L('  月相窗门：已知窗外 dim+「潮窗未到·满月」/ 窗内放行 / story 豁免 ✓');
+}
 
 console.log(log.join('\n'));
 console.log('\n✓ 海图 playthrough 完成');

@@ -11,3 +11,18 @@ export function makeLcg(seed: number): () => number {
     return s / 0x100000000;
   };
 }
+
+/**
+ * 确定性字符串哈希（FNV-1a → uint32）。给"走字符串入参的确定性随机"用——
+ * 如尸体海流冲走判定（death.ts::deterministicSwept·按 `deathId|itemId` 派生一个稳定 u∈[0,1)）。
+ * 纯函数、可复现、不入存档（同 makeLcg 族·quirk #22）。注：chart.ts 另有数值版 condHash（seed+salt），
+ * 若日后要统一字符串/数值哈希再收口到此处。
+ */
+export function hashString(str: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}

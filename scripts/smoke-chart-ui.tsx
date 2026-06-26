@@ -543,7 +543,7 @@ function stateWithDeath(upgrades: string[]): GameState {
     inventorySnapshot: [{ itemId: 'item.eel_skin', qty: 1 }],
     goldAtDeath: 0,
     recovered: false,
-    diveAge: 1,
+    diedOnDay: 0,
     timestamp: 0,
   };
   return {
@@ -629,7 +629,7 @@ function deathRec(id: string) {
   return {
     id, runId: 'r', diverName: 'Marek', depthAtDeath: 40,
     zoneId: 'zone.blue_caves', zoneTag: 'cave', cause: '氧气耗尽',
-    inventorySnapshot: [], goldAtDeath: 0, recovered: false, diveAge: 0, timestamp: 0,
+    inventorySnapshot: [], goldAtDeath: 0, recovered: false, diedOnDay: 0, timestamp: 0,
   };
 }
 function funeralState(deathCount: number, revealed: boolean): GameState {

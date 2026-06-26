@@ -165,9 +165,11 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
   // 推进到结算
   const lootValue = computeLootValue(run);
 
-  // 这次 run 结束：海底所有死者老化一次 + 衰减
+  // 这次 run 结束：海底所有死者老化到当天 + 衰减（按 diedOnDay 派生 age）
+  const newDay = (s.profile.day ?? s.profile.runsCompleted) + 1; // 月相时间：生还上浮推进一天（SPEC §2.1）
   const agedDeaths = ageAndDecayDeaths(
     s.profile.deaths,
+    newDay,
     getPreservationBonus(s.profile.unlockedUpgrades),
     s.profile.unlockedUpgrades.has('upgrade.salvage_guild.lv3'),
   );
@@ -178,7 +180,7 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
       ...s.profile,
       deaths: agedDeaths,
       runsCompleted: s.profile.runsCompleted + 1,
-      day: (s.profile.day ?? s.profile.runsCompleted) + 1, // 月相时间：生还上浮推进一天（SPEC §2.1）
+      day: newDay,
     },
     phase: {
       kind: 'resolution',

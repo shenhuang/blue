@@ -30,7 +30,9 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // 形状变（profile 多一个嵌 DiveMap+Set 的 Map 容器·序列化复用 __map/__set 分支·零新代码）；按 quirk #99 不写迁移、bump 弃旧档从头开始。
 // 10→11（温度系统接线·2026-06-25）：Stats 加 thermalStress（0–100·热/冷双极环境债·见 engine/temperature.ts）——
 // 形状变（run.stats 多一字段）；按 quirk #99 不写迁移、bump 弃旧档从头开始（createNewRun 种默认 0）。
-const SAVE_VERSION = 11;
+// 11→12（月相潮汐 Phase 0b·2026-06-26）：DeathRecord.diveAge → diedOnDay（尸体腐烂挂「天」不挂「次」·
+// age = profile.day − diedOnDay 纯派生·SPEC §2.2）；形状变（reshape，非纯加字段）→ 按 quirk #99 不写迁移、bump 弃旧档。
+const SAVE_VERSION = 12;
 
 /** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile 用。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';

@@ -4,7 +4,7 @@
 // 实际出海走 engine/dive.ts::startDiveFromPoi。坐标来自 ChartPoi.mapX/mapY（缺省按 distance 兜底）。
 
 import { useMemo, useState, useEffect, useRef } from 'react';
-import type { GameState, ChartPoi, InventoryItem } from '@/types';
+import type { GameState, ChartPoi, InventoryItem, ChartConditions } from '@/types';
 import { generateChart, poiLockReason, poiBlockReason, isPoiDepartable, describeModifier, describeCaveShape } from '@/engine/chart';
 import { startDiveFromPoi, carryWeightLimitFor } from '@/engine/dive';
 import { toPort } from '@/engine/transitions';
@@ -30,6 +30,8 @@ import { getUpgradeBonuses } from '@/engine/upgrades';
 import { getItemDef, weightForItem } from '@/engine/items';
 import { isOverloaded } from '@/engine/equipment';
 import { listRecoverableCorpses } from '@/engine/death';
+import { advanceDays, daysToNextLunarBoundary } from '@/engine/port';
+import { lunarPhaseLabel } from '@/engine/lunar';
 import { LighthouseBuildPanel } from './LighthouseBuildPanel';
 import { ChartViewport, type ChartContentBox } from './ChartViewport';
 import { HOME_LIGHTHOUSE_ID } from '@/engine/state';
@@ -94,12 +96,16 @@ function poiSweepDelay(
   return Number.isFinite(best) ? best : null;
 }
 
-/** 海况一行文案（§6.5「活的海图」）：潮汐 + 天气；浓雾时提示「有处机会点这一拍没显出来」。 */
-function conditionLine(c: { tide: 'flood' | 'ebb'; weather: 'clear' | 'mist' | 'fog' }): string {
+/** 海况一行文案（§6.5「活的海图」+ 月相潮汐 §8）：月相·大小潮 + 潮汐 + 天气；浓雾时提示「有处机会点这一拍没显出来」。 */
+function conditionLine(c: ChartConditions): string {
   const tide = c.tide === 'flood' ? '涨潮' : '退潮';
   const weather = c.weather === 'clear' ? '晴' : c.weather === 'mist' ? '薄雾' : '浓雾';
   const fog = c.weather === 'fog' ? '——浓雾压着，有处地方这一拍看不见，潮一退就回来' : '';
-  return `${tide} · ${weather}${fog}`;
+  // 月相 + 大小潮（spring 大潮在新月/满月·neap 小潮在上/下弦·SPEC §3）。天气与月相独立两轴（§1）。
+  const moon = c.phase
+    ? `${lunarPhaseLabel(c.phase)}·${c.phase === 'new' || c.phase === 'full' ? '大潮' : '小潮'} · `
+    : '';
+  return `${moon}${tide} · ${weather}${fog}`;
 }
 
 export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
@@ -314,7 +320,17 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
         <p className="port-sub">摊在长桌上的旧海图，铅笔印一层盖一层。挑一个点。</p>
         <p className="chart-conditions">{conditionLine(chart.conditions)}</p>
         <div className="port-meta">
-          银行 {state.profile.bankedGold} 金币
+          银行 {state.profile.bankedGold} 金币 · 第 {state.profile.day ?? state.profile.runsCompleted} 天
+          {!state.run && (
+            <button
+              type="button"
+              className="btn small chart-wait-btn"
+              onClick={() => onStateChange(advanceDays(state, daysToNextLunarBoundary(state.profile)))}
+              title="在港口等到下一个月相边界——海底遗存按天继续流失，机会点随相位换一批（SPEC §6）"
+            >
+              等到下一相位（还 {daysToNextLunarBoundary(state.profile)} 天）
+            </button>
+          )}
         </div>
       </header>
 

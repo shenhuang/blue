@@ -5,7 +5,7 @@
 //   2. 两级门控：requiresFlags = 发现（不满足不出现）；requiresUpgrade = 抵达能力
 //      （不满足则海图上灰显可见但不能出海）。
 
-import type { ChartPoi, PoiModifier, PlayerProfile, SeaChart, ChartConditions, PoiRevealState } from '@/types';
+import type { ChartPoi, PoiModifier, PlayerProfile, SeaChart, ChartConditions, PoiRevealState, LunarPhase } from '@/types';
 import chartData from '@/data/chart_pois.json';
 import { getUpgradeDef } from './upgrades';
 import { caveDepthCurveForPlace, caveShapeBucket } from './mapgen';
@@ -24,6 +24,7 @@ import {
 import { flagGatedRegions } from './regions';
 import { buildColumnPois, columnBuiltLevel, depthTierRevealState } from './columns';
 import { poisKnownFromItems } from './items';
+import { lunarPhase, moonAge, tideLevel, lunarPhaseLabel, daysUntilAnyPhase } from './lunar';
 
 /**
  * 归一化海图距离 → "distance 档"的换算系数（reach，SPEC §4/§9 tunable）。
@@ -51,6 +52,10 @@ interface RoamingTemplate {
   requiresUpgrade?: string;
   requiresLighthouseUpgrade?: string;
   modifier?: PoiModifier;
+  /** 月相潮窗（SPEC §2.3）：设了 ⇒ 只在这些相位入 roaming 选取池（generateChart 过滤·随相位浮现/消失）。 */
+  lunarWindow?: LunarPhase[];
+  lunarOffWindow?: 'hidden' | 'dim';
+  intelFlag?: string;
 }
 
 /** 一张地图（mapId）的 POI 段。 */
@@ -127,11 +132,12 @@ function chartSeed(profile: PlayerProfile): number {
  * 分布：晴 ~55% / 薄雾 ~27% / 浓雾 ~18%（雾少见＝遮蔽是偶发的张力，不是常态）。
  */
 export function chartConditions(profile: PlayerProfile): ChartConditions {
-  const run = chartSeed(profile);
-  const tide: ChartConditions['tide'] = condHash(run, 'tide') % 2 === 0 ? 'ebb' : 'flood';
-  const w = condHash(run, 'weather') % 100;
+  const day = chartSeed(profile);
+  // 潮汐改由月相派生（SPEC §3）：tideLevel(day)∈[-1,1]·>0 涨 / ≤0 退（大潮在新月/满月）。天气仍独立随机轴（§1）。
+  const tide: ChartConditions['tide'] = tideLevel(day) > 0 ? 'flood' : 'ebb';
+  const w = condHash(day, 'weather') % 100;
   const weather: ChartConditions['weather'] = w < 55 ? 'clear' : w < 82 ? 'mist' : 'fog';
-  return { tide, weather };
+  return { tide, weather, phase: lunarPhase(day), moonAge: moonAge(day) };
 }
 
 /** requiresFlags 是否全满足 */
@@ -149,6 +155,39 @@ function flagsSatisfied(profile: PlayerProfile, requiresFlags?: string[]): boole
  */
 function documentKnowsPoi(profile: PlayerProfile, poi: ChartPoi): boolean {
   return poisKnownFromItems(profile).has(poi.id);
+}
+
+/** 月相窗门豁免谓词（SPEC §2.3·同 climateOcclusion）：剧情锚点 / 持久 anchor / mimic 不受月相限制。 */
+function lunarExempt(poi: ChartPoi): boolean {
+  return !!poi.persistent || !!poi.story || !!poi.mimic;
+}
+
+/**
+ * POI 是否「已知」（§5 可发现性·把窗外 hidden 降级 dim 的依据）：文献坐标（marksPois·documentKnowsPoi）
+ * 或 NPC/情报 flag（poi.intelFlag 已置）。一条规则、多来源（marksPois 之外接 NPC 进度对话）。
+ */
+function poiKnownByIntel(profile: PlayerProfile, poi: ChartPoi): boolean {
+  return (
+    documentKnowsPoi(profile, poi) ||
+    (poi.intelFlag !== undefined && profile.flags.has(poi.intelFlag))
+  );
+}
+
+/**
+ * 月相窗门态（SPEC §4·仿深度柱分支）。非豁免 POI 带 lunarWindow 且本相位不在窗内：
+ *   已知（§5）→ 'dim'（可规划「满月再来」）；未知 → poi.lunarOffWindow ?? 'dim'（秘密点 'hidden'＝连存在都不知道）。
+ * 窗内 / 无窗 / 豁免 → null（不拦·继续天气/能力门）。
+ */
+function lunarWindowState(
+  profile: PlayerProfile,
+  poi: ChartPoi,
+  known: boolean,
+): 'dim' | 'hidden' | null {
+  if (lunarExempt(poi)) return null;
+  const win = poi.lunarWindow;
+  if (!win || win.length === 0) return null;
+  if (win.includes(lunarPhase(chartSeed(profile)))) return null;
+  return known ? 'dim' : (poi.lunarOffWindow ?? 'dim');
 }
 
 /** 深水区 Phase 3 mimic 假 POI 的运行时 id + 它引向的兑现事件。 */
@@ -270,10 +309,15 @@ export function poiRevealState(profile: PlayerProfile, poi: ChartPoi): PoiReveal
   // 发现门（位置是否已知）：持有标记此点的文献（物品即解锁·marksPois ⇒ reveal）⇒ 已知·绕发现门；
   // 否则走常规发现（requiresFlags 发现 flag + isPoiLit 灯塔网/揭示圈/story 已知点）。文献短路只绕「发现」，
   // 不绕下面的能力门/天气（知道 ≠ 去得了）——缺设施/装备的已知点照样落 dim（resolveMarkedPois 据此给「去不了」原因）。
-  if (!documentKnowsPoi(profile, poi)) {
+  const known = poiKnownByIntel(profile, poi);
+  if (!known) {
     if (!flagsSatisfied(profile, poi.requiresFlags)) return 'hidden';
     if (!isPoiLit(profile, poi)) return 'hidden'; // 圈外不出现（reveal-gated·A①·勘测圈已删→非点亮一律 hidden）
   }
+  // 月相窗门（SPEC §4）：本相位不在 POI 潮窗内 → 已知 dim（可规划）/ 未知 lunarOffWindow（秘密点 hidden）。
+  // 排在天气/能力之前（§8 显示优先级：未知 hidden > 月相未到 > 缺能力 > 天气遮）。
+  const lunar = lunarWindowState(profile, poi, known);
+  if (lunar) return lunar;
   const occ = climateOcclusion(profile, poi);
   if (occ !== 'none') return occ;
   return poiLockReason(profile, poi) === null ? 'lit' : 'dim';
@@ -335,6 +379,14 @@ export function poiBlockReason(profile: PlayerProfile, poi: ChartPoi): string | 
   if (poi.columnId !== undefined && poi.depthTier !== undefined) {
     return '声呐探得到，但还没有路。低频声呐升一级，这里才能落脚。';
   }
+  // 月相窗门暗点（SPEC §4·§8·排在能力/天气前）：本相位不在 POI 潮窗内 → 「等到 X 相·还 N 天」。
+  if (!lunarExempt(poi) && poi.lunarWindow && poi.lunarWindow.length > 0) {
+    const day = chartSeed(profile);
+    if (!poi.lunarWindow.includes(lunarPhase(day))) {
+      const target = poi.lunarWindow.map(lunarPhaseLabel).join('/');
+      return `潮窗未到：要等${target}（还 ${daysUntilAnyPhase(day, poi.lunarWindow)} 天）。`;
+    }
+  }
   // 已点亮（在可去圈内、已发现）但仍 dim：先报能力门，否则是天气遮（勘测圈已删·非 lit 一律 hidden 不到这里）。
   const lock = poiLockReason(profile, poi);
   if (lock) return lock;
@@ -385,9 +437,13 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
 
   // roaming：从"已发现 + 已点亮（圈内）"模板取 roamingKey 最大的 ROAMING_COUNT 个（pool-independent·见 roamingKey）。
   // 天气遮蔽不再在此整点剔除，而是 per-poi 落进 poiRevealState（dim＝显示但去不了 / hidden＝彻底盖住·§10 C③）。
+  // 月相：带 lunarWindow 的 roaming 模板只在该相位入池（SPEC §4·机会点随相位浮现/消失 + 等待的机会成本）。
+  const phase = lunarPhase(seed);
+  const inLunarPool = (t: RoamingTemplate) =>
+    !t.lunarWindow || t.lunarWindow.length === 0 || t.lunarWindow.includes(phase);
   const visibleTemplates = POIS.roamingTemplates
     .map(resolveOwnerCoords)
-    .filter((t) => flagsSatisfied(profile, t.requiresFlags) && isLit(profile, t));
+    .filter((t) => flagsSatisfied(profile, t.requiresFlags) && isLit(profile, t) && inLunarPool(t));
   const picked = [...visibleTemplates]
     .sort((a, b) => roamingKey(seed, b) - roamingKey(seed, a))
     .slice(0, ROAMING_COUNT);
@@ -409,6 +465,9 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
       requiresUpgrade: t.requiresUpgrade,
       requiresLighthouseUpgrade: t.requiresLighthouseUpgrade,
       requiresFlags: t.requiresFlags,
+      lunarWindow: t.lunarWindow,
+      lunarOffWindow: t.lunarOffWindow,
+      intelFlag: t.intelFlag,
     };
     const st = poiRevealState(profile, poi);
     if (st !== 'hidden') pois.push({ ...poi, revealState: st });

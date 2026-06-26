@@ -133,6 +133,9 @@ tasks.push({ name: 'check-flag-setter', cmd: ['node', join('scripts', 'check-fla
 // 数据结构门（纯 node·src/data+scenarios 全 *.json 可解析 + id 集合无重复·防新字段/坏数据静默上车）
 tasks.push({ name: 'check-data-schema', cmd: ['node', join('scripts', 'check-data-schema.mjs')] });
 
+// 月相窗门「无软锁 + schema」门（纯 node·lunarWindow 合法相位 + Ch.1 主线 anchor 无月相窗·SPEC §7·月相潮汐）
+tasks.push({ name: 'check-lunar-reach', cmd: ['node', join('scripts', 'check-lunar-reach.mjs')] });
+
 // POI 固定资源 save 级别名门（纯 node·同 POI 内两条 save 脉不得共享 itemId·quirk #163）
 tasks.push({ name: 'check-poi-resources', cmd: ['node', join('scripts', 'check-poi-resources.mjs')] });
 

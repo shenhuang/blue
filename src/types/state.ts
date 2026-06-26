@@ -117,10 +117,14 @@ export interface DeathRecord {
   cause: string; // 死亡原因（窒息/失血/疯狂上浮/...）
   inventorySnapshot: InventoryItem[];
   goldAtDeath: number;
-  /** 已被回收 = 所有物品都被拿走 */
+  /** 已被回收 = 所有物品都被拿走，**或**已超过 CORPSE_VISIBLE_AGE 天散失（两种「不再可回收」收口同一 flag·death.ts） */
   recovered: boolean;
-  /** 距离死亡经过的 run 数（用于衰减） */
-  diveAge: number;
+  /**
+   * 死亡当天的世界日（= 当时 profile.day）。尸体「年龄」是纯派生 age = profile.day − diedOnDay
+   * （SPEC §2.2「腐烂挂天不挂次」）——不再存 diveAge，等潮的那几天尸体也在烂。死亡/上浮/港口等待都推进 day。
+   * 形状变 → SAVE 11→12（state.ts·quirk #99 不写迁移）。
+   */
+  diedOnDay: number;
   timestamp: number;
 }
 
