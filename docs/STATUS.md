@@ -1,6 +1,7 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。近期 session（新→旧）：
+> **2026-06-26 月相 HUD（交互〔Cowork·Opus+Sonnet〕·#217·不 bump SAVE·沙箱 63/63 绿·commit 040d0b4/4e6d22a·待 push）**：把月相做成界面（前作文字行→正式 HUD·经 3 轮 mockup）。新 `ui/MoonDisc.tsx`（4 相 SVG·实心=受光·currentColor 继承旧海图皮）；`SeaChartView` 海况条＝月相盘 + 「{相位}·第N天」+「{大/小潮}·{涨/退潮}·{天气}」+「等一天」/「等到下一相位」双钮；dim 窗点 pin 加月相徽标；删金币/世界天数/海图副标题。`lunar.dayWithinPhase`。月相只水面（§8）。并发 #216 同活 main·path-scoped commit 只落 UI·#217 doc 待 Mac 补。
 > **2026-06-26 科考队七人档案设计（交互 session〔Cowork·Sonnet〕·#216·无代码改动·纯叙事设计）**：设计全部 7 名科考队成员背景与命运。导师/Théo/科技派AB/生物派AB·两派对称（科技感性/生物理性）·AI吸收科技派A灵魂·科技派B被主角无意送死·生物派B不敢直面老师名字→日志改编号。产出：`docs/spec/深海回响_科考队_SPEC.md`。
 > **2026-06-26 月相内容 #1：东礁退潮浅滩窗 + Aldo 潮汐情报（交互 session〔Cowork·Opus〕·#215·不 bump SAVE·沙箱全量 63/63 绿·待 push）**：让月相在游戏里显形。引擎小重构 `chart.ts::roamingInLunarPool`（roaming 窗外：已知/'dim' 留池→dim·秘密未知消失不占槽·补 Phase 1 intel→dim 缺口·#186 续）。内容：`roam.east_ebb_shallows` 加 `lunarWindow:['new']`+hidden+`intelFlag`（只新月大潮露·平日消失）；`aldo.json` 加 `aldo.tide_intel` beat·`setFlag intel.aldo.lunar_tides`。闭环＝Aldo 提潮汐→退潮浅滩显 dim→「等到下一相位」钮→新月 lit→下潜。playthrough-chart §12。push 待 Mac/nightly。
 ## 1. 一句话状态
