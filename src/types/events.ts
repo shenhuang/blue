@@ -57,6 +57,16 @@ export interface DiveEvent {
   oncePerRun?: boolean;
   oncePerSave?: boolean;
   prereqEventIds?: string[];
+  /**
+   * 钉放剧情变体专用「禁经过事件」门（forbiddenFlags 的事件版·镜像 prereqEventIds）：
+   * 列出的事件**任一**已被见过（profile.flags 有 `event_seen:<id>`）⇒ 本事件不合规、跳过。
+   * 与 prereqEventIds 同样**只在 dive-start.ts::startDiveFromPoi 的 storyOpenEvents 选择处生效**
+   * （weight<=0 钉放变体不进 buildEventPool·见 zones.ts 注释）。用于「同一地点·进度互斥的两个节拍」：
+   * 一个 prereqEventIds:[X]（X 后才出），另一个 forbiddenEventIds:[X]（X 前才出）——
+   * 用引擎自维护的 `event_seen:` 做单一真相，免去靠手写 flag 在每个 outcome 里记得置位（那正是
+   * `flag.seen_first_uncanny` 漏在 grab_log 没置、二次重访静默断链的根因·quirk #174/#189）。
+   */
+  forbiddenEventIds?: string[];
   prereqFlags?: string[];
   forbiddenFlags?: string[];
 

@@ -1,9 +1,9 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。**活数字（事件 / 敌人 / 脚本 / scenario 计数）以 `npm run handoff` 的 git 真值为准·本档不再硬抄**（防 STATUS 随内容 churn 漂移）。近期 session（新→旧）：
+> **2026-06-27 东礁资格区二次重访修复 + 重访「短·直奔沉船」重做（交互〔Cowork·Opus〕·#220·新 quirk #189·不 bump SAVE·沙箱全绿·待 push）**：作者报「资格区第二次去没修好·反复很多次」。**gate 修**（`event_seen:captain_quarters` 单一真相 + 新 `forbiddenEventIds`·#189·导航式 §D 守）；Chrome 驱动作者**实机**复核揭真症＝**可达性**（沉船在 26m·东礁浅区中层撒「↑上浮口」节点埋住剧情·gate 从来不是作者症结）；**#3** `chooseLayeredNodeKind` free-ascend 中层删 `ascent_point`（全 5 浅区·`wreckyard` 翻面守）；**B** east_reef `layerCount 5→3` ＝ 重访短下潜**直奔沉船**（30m·= 教学船长室同深度·`§2d` 守结构）。POI 审计：`storyOpenEvents` 深埋点仅 east_reef 用·其余叙事 POI 全开场触发。push 待 Mac/nightly。
 > **2026-06-27 月相收尾 polish：等待得失三连预览 + dim-pin 图例（交互〔Cowork·Opus+Sonnet〕·#218·不 bump SAVE·沙箱 63/63 绿·待 push）**：SPEC §6「看得见账」。`port.waitPreview(state,n)`（targetPhase + 海底遗存流失件数 + 已知潮窗点开/关·`chart.knownLunarPoints` 不剧透秘密）→ `ConditionBar`「等到下一相位」钮下一行 muted 预览；`.chart-legend` 加 dim-pin 月相徽标图例。**月相 arc 收圆**（0b/1/2/内容#1/HUD/预览·商店解耦）。push 待 Mac/nightly。
 > **2026-06-26 月相 HUD（交互〔Cowork·Opus+Sonnet〕·#217·不 bump SAVE·沙箱 63/63 绿·commit 040d0b4/4e6d22a·待 push）**：把月相做成界面（前作文字行→正式 HUD·经 3 轮 mockup）。新 `ui/MoonDisc.tsx`（4 相 SVG·实心=受光·currentColor 继承旧海图皮）；`SeaChartView` 海况条＝月相盘 + 「{相位}·第N天」+「{大/小潮}·{涨/退潮}·{天气}」+「等一天」/「等到下一相位」双钮；dim 窗点 pin 加月相徽标；删金币/世界天数/海图副标题。`lunar.dayWithinPhase`。月相只水面（§8）。并发 #216 同活 main·path-scoped commit 只落 UI·#217 doc 待 Mac 补。
-> **2026-06-26 科考队七人档案设计（交互 session〔Cowork·Sonnet〕·#216·无代码改动·纯叙事设计）**：设计全部 7 名科考队成员背景与命运。导师/Théo/科技派AB/生物派AB·两派对称（科技感性/生物理性）·AI吸收科技派A灵魂·科技派B被主角无意送死·生物派B不敢直面老师名字→日志改编号。产出：`docs/spec/深海回响_科考队_SPEC.md`。
 
 ---
 

@@ -201,6 +201,7 @@
 
     {
       "id": "tutorial.captain_quarters",
+      "_doc": "船长室（教学 deeper→go_deeper 或 重访 captain_revisit→go_down 进来·oncePerSave→ 进过即写 event_seen:tutorial.captain_quarters）。**该 event_seen 是「下过船长室」的单一真相**·重访两变体的进/退场门都读它（见 captain_revisit / _empty）。注意：`flag.seen_first_uncanny` 只在 look_closer 置位（grab_log 不置）——按教学关剧本 §5 它表「盯着看了那东西」、**保留给未来深海事件**·别再把它当重访门（那是 quirk #189 的旧 bug 根因）·也别因「没人读」当死 flag 删掉。",
       "depthRange": [30, 30],
       "zoneTags": ["tutorial"],
       "weight": 0,
@@ -248,13 +249,13 @@
 
     {
       "id": "tutorial.captain_revisit",
-      "_doc": "weight 0：剧情重访·只经 poi.anchor.east_reef.storyOpenEvents 强制开场（不进随机池·否则被内容库淹没=命中率个位数%·quirk #174）。",
+      "_doc": "weight 0：剧情重访（还没下过船长室·「你上次没有下去」）·只经 poi.anchor.east_reef.storyOpenEvents 强制开场（不进随机池·否则被内容库淹没=命中率个位数%·quirk #174）。退场门＝forbiddenEventIds:[captain_quarters]（进过船长室就让位给 _empty 变体）·**不再用 flag.seen_first_uncanny**（那 flag 只在 look_closer 置位·grab_log 不置位→旧版二次重访静默断链·quirk #189）。",
       "depthRange": [24, 30],
       "zoneTags": ["reef", "wreck"],
       "weight": 0,
       "oncePerSave": true,
       "prereqFlags": ["story.ch1.hook"],
-      "forbiddenFlags": ["flag.seen_first_uncanny"],
+      "forbiddenEventIds": ["tutorial.captain_quarters"],
       "title": "旧沉船",
       "body": "你又游回了这里。\n\n锈蚀的桅杆还斜着，淤泥还埋到了二分之一，图筒的位置空了——上次带走的。\n\n船舱往下那道更暗的入口还在。你上次没有下去。\n\n灯扫过去，照不到底。和上次一样。",
       "tone": "uncanny",
@@ -280,12 +281,13 @@
 
     {
       "id": "tutorial.captain_revisit_empty",
-      "_doc": "weight 0：剧情重访（见过怪相后·空了）·只经 poi.anchor.east_reef.storyOpenEvents 强制开场（不进随机池·quirk #174）。",
+      "_doc": "weight 0：剧情重访（已下过船长室·这次空了）·只经 poi.anchor.east_reef.storyOpenEvents 强制开场（不进随机池·quirk #174）。出现门＝prereqEventIds:[captain_quarters]（进过船长室才出·grab_log/look_closer 任一路径都算·引擎自维护 event_seen 单一真相）·**不再用 flag.seen_first_uncanny**（grab_log 不置该 flag→旧版此变体永不解锁·quirk #189）。",
       "depthRange": [24, 30],
       "zoneTags": ["reef", "wreck"],
       "weight": 0,
       "oncePerSave": true,
-      "prereqFlags": ["story.ch1.hook", "flag.seen_first_uncanny"],
+      "prereqFlags": ["story.ch1.hook"],
+      "prereqEventIds": ["tutorial.captain_quarters"],
       "title": "旧沉船",
       "body": "你又游回了这里。\n\n入口还在。你这次下去了。\n\n水温骤降，和上次一样。灯扫过去——什么都没有。淤泥没有被扰动过，一道脚印都没有。上次你看到的东西不在这里。\n\n也许从来就不在。",
       "tone": "uncanny",

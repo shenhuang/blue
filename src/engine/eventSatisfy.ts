@@ -41,6 +41,7 @@ export interface EventGate {
   prereqFlags: string[];
   forbiddenFlags: string[];
   prereqEventIds: string[];
+  forbiddenEventIds: string[];
   oncePerRun: boolean;
   oncePerSave: boolean;
   cooldown: number | null;
@@ -63,6 +64,7 @@ export function eventGate(
     prereqFlags: ev.prereqFlags ?? [],
     forbiddenFlags: ev.forbiddenFlags ?? [],
     prereqEventIds: ev.prereqEventIds ?? [],
+    forbiddenEventIds: ev.forbiddenEventIds ?? [],
     oncePerRun: !!ev.oncePerRun,
     oncePerSave: !!ev.oncePerSave,
     cooldown: ev.cooldown ?? null,
@@ -270,6 +272,7 @@ export function satisfyEvent(eventId: string, opts: SatisfyOptions = {}): Satisf
         prereqFlags: [],
         forbiddenFlags: [],
         prereqEventIds: [],
+        forbiddenEventIds: [],
         oncePerRun: false,
         oncePerSave: false,
         cooldown: null,
@@ -416,6 +419,7 @@ export function describeEventGate(gate: EventGate): string[] {
   if (gate.prereqFlags.length > 0) lines.push(`需要 flag：${gate.prereqFlags.join(', ')}`);
   if (gate.forbiddenFlags.length > 0) lines.push(`禁止 flag：${gate.forbiddenFlags.join(', ')}`);
   if (gate.prereqEventIds.length > 0) lines.push(`需先经过事件：${gate.prereqEventIds.join(', ')}`);
+  if (gate.forbiddenEventIds.length > 0) lines.push(`禁止已经过事件：${gate.forbiddenEventIds.join(', ')}`);
   if (gate.oncePerSave) lines.push('本存档只触发一次');
   if (gate.oncePerRun) lines.push('本次下潜只触发一次');
   if (gate.cooldown !== null) lines.push(`冷却 ${gate.cooldown} 回合`);

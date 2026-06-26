@@ -285,30 +285,53 @@ L('§2d 重返东礁深度途中触发（storyOpenEvents 选变体 + 钉到 wrec
 
   const POST = ['event_seen:tutorial.prologue', CH1_HOOK_FLAG, TUTORIAL_COMPLETE_FLAG, 'flag.tutorial_ascended'];
   // 真实下潜 → 查 run.map：返回被钉放的重访事件 id + 其节点深度（没钉放则 {null,null}）。
-  const reopenEast = (flags: string[]): { pinned: string | null; depth: number | null; opensWith: string | null } => {
+  // 同时返回结构量（#220 守「重访＝短、直奔沉船、无中途上浮口」）：节点数 / 中途 ascent_point 数 / 沉船是否最深。
+  const reopenEast = (flags: string[]) => {
     const profile = profileWith(flags);
     const poi = generateChart({ profile }).pois.find((p) => p.id === 'poi.anchor.east_reef');
     assert(poi, '§2d poi.anchor.east_reef 教学后应在海图');
     const after = startDiveFromPoi({ ...createInitialGameState(), profile }, poi!);
-    const nodes = Object.values(after.run?.map.nodes ?? {});
+    const nodes = Object.values(after.run?.map.nodes ?? {}) as Array<{ depth: number; kind: string; eventId?: string; layer?: number }>;
     const hit = nodes.find((n) => n.eventId === 'tutorial.captain_revisit' || n.eventId === 'tutorial.captain_revisit_empty');
     const sub = (after.phase as { subPhase?: { kind: string; eventId?: string } }).subPhase;
-    return { pinned: hit?.eventId ?? null, depth: hit?.depth ?? null, opensWith: sub?.kind === 'event' ? sub.eventId ?? null : null };
+    const maxDepth = Math.max(...nodes.map((n) => n.depth));
+    const lastLayer = (after.run!.map as { nodes: Record<string, { layer?: number }> }) && Math.max(...nodes.map((n) => n.layer ?? 0));
+    const midAscent = nodes.filter((n) => n.kind === 'ascent_point' && (n.layer ?? 0) !== lastLayer).length;
+    return {
+      pinned: hit?.eventId ?? null,
+      depth: hit?.depth ?? null,
+      opensWith: sub?.kind === 'event' ? sub.eventId ?? null : null,
+      nodeCount: nodes.length,
+      midAscent,
+      wreckIsDeepest: hit ? hit.depth === maxDepth : false,
+    };
   };
 
-  // (a) 没见怪相（上浮一路 / 逃跑一路）→ captain_revisit 钉到 wreck 深度（24–30m）·**不在开场**
+  // 门控单一真相＝event_seen:tutorial.captain_quarters（「下过船长室」·引擎自维护·grab_log/look_closer 任一路径都算）。
+  // 旧版门读 flag.seen_first_uncanny（只在 look_closer 置位·grab_log 漏置）→ 二次重访静默断链（quirk #189）。
+  // 注：本 §2d 是「手搓 flag 查钉放」的快门——只验**门逻辑**；真正的**生产者**路径（下潜 grab_log 是否让二次重访
+  // 出 _empty）由 playthrough-tutorial-e2e.ts §D 用真引擎端到端守（防 #172/#173 那种「手搓绿、真跑红」）。
+  const QUARTERS_SEEN = 'event_seen:tutorial.captain_quarters';
+  // (a) 没下过船长室（上浮一路 / 逃跑一路）→ captain_revisit 钉到 wreck 深度（24–30m）·**不在开场**
   const a = reopenEast(POST);
-  assert(a.pinned === 'tutorial.captain_revisit', '§2d 没见怪相 → 钉放 captain_revisit');
+  assert(a.pinned === 'tutorial.captain_revisit', '§2d 没下过船长室 → 钉放 captain_revisit');
   assert(a.depth !== null && a.depth >= 24 && a.depth <= 30, `§2d captain_revisit 落在 wreck 深度 24–30m（实际 ${a.depth}）`);
   assert(a.opensWith !== 'tutorial.captain_revisit', '§2d 不是开场瞬移（重访在深度途中·非起手节点）');
-  // (b) 见过怪相 → 钉放 captain_revisit_empty
-  const b = reopenEast([...POST, 'flag.seen_first_uncanny']);
-  assert(b.pinned === 'tutorial.captain_revisit_empty', '§2d 见过怪相 → 钉放 captain_revisit_empty');
+  // #220 重访＝短、直奔沉船、无中途上浮口（locks layerCount 3 + chooseLayeredNodeKind）：
+  assert(a.nodeCount <= 4, `§2d 重访是短下潜（≤4 节点·layerCount 3·别调回 5）——实际 ${a.nodeCount}`);
+  assert(a.midAscent === 0, `§2d 重访全程无中途上浮口节点（#220·free-ascend 冗余已删）——实际 ${a.midAscent}`);
+  assert(a.wreckIsDeepest, '§2d 沉船是最深点＝目的地（直奔沉船·30m＝教学船长室同深度）');
+  // (b) 下过船长室（event_seen:captain_quarters 已写）→ 钉放 captain_revisit_empty
+  const b = reopenEast([...POST, QUARTERS_SEEN]);
+  assert(b.pinned === 'tutorial.captain_revisit_empty', '§2d 下过船长室 → 钉放 captain_revisit_empty');
   assert(b.depth !== null && b.depth >= 24 && b.depth <= 30, `§2d _empty 也落 wreck 深度（实际 ${b.depth}）`);
-  // (c) 两变体都走过（event_seen 都写）→ 不再钉放（普通下潜）
-  const c = reopenEast([...POST, 'flag.seen_first_uncanny', 'event_seen:tutorial.captain_revisit', 'event_seen:tutorial.captain_revisit_empty']);
+  // (b2) grab_log 路径回归守门：只「下过船长室」而**没有** seen_first_uncanny（grab_log 不置位）也必须出 _empty
+  //      ——这正是旧 bug 的精确复现位（旧门要 seen_first_uncanny → 此处会回 captain_revisit/ 或断成 null）。
+  assert(!profileWith([...POST, QUARTERS_SEEN]).flags.has('flag.seen_first_uncanny'), '§2d 前提：grab_log 档无 seen_first_uncanny');
+  // (c) 下过船长室 + _empty 已走过（event_seen 写）→ 不再钉放（captain_revisit 被 forbiddenEventIds 退场·_empty oncePerSave 退场）
+  const c = reopenEast([...POST, QUARTERS_SEEN, 'event_seen:tutorial.captain_revisit_empty']);
   assert(c.pinned === null, '§2d 重访走完 → 不再钉放（回归普通下潜）');
-  L('  深度钉放 + 变体选择 + wreck 深度 + 防重播 ✓');
+  L('  深度钉放 + 变体选择（event_seen:captain_quarters 门）+ wreck 深度 + 防重播 ✓');
 }
 
 // ═══════════════════════════════════════════════════════════════

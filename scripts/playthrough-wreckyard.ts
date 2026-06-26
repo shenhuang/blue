@@ -80,11 +80,18 @@ for (let seed = 1; seed <= 10; seed++) {
   if (hasLastAscent) lastLayerAscentMaps++;
 }
 L(`  ${totalMaps} 张 map：中间层 ascent_point 出现于 ${middleAscentPointMapCount} 张；末层 ascent_point ${lastLayerAscentMaps} 张`);
-// 沉船墓园是开阔水域，中间层至少有一些 ascent_point（与蓝洞群形成对照）
-// 不强求每张都有——mapgen 按 10% 概率，6 层中 5 个中间层 × 10% × 2~3 nodes ≈ 期望 1~1.5 次/map
+// #220：free-ascend 区中间层**不再**生成 ascent_point 节点——你随时可「此处上浮」，再放一个要先游过去的
+// 上浮口节点纯属冗余 + 误导（还会把更深的剧情点埋在身后·见 east_reef 重访沉船）。故现在与蓝洞群一样：
+// 中间层 0 个 ascent_point；二者区别只在「能否随处上浮」（free-ascend vs isAscentBlocked），不在节点种类。
+// 这条断言＝chooseLayeredNodeKind「free-ascend 中层不放 ascent_point」的回归门。
 assert(
-  middleAscentPointMapCount >= 1,
-  '开阔水域应至少在某些 map 的中间层生成 ascent_point（与蓝洞群 0 个对照）',
+  middleAscentPointMapCount === 0,
+  `free-ascend 区中间层不应再有 ascent_point 节点（#220·冗余+误导已删）——实际 ${middleAscentPointMapCount}/${totalMaps} 张有`,
+);
+// 末层 ascent_point（图尽头出口）仍保留——10 张全有。
+assert(
+  lastLayerAscentMaps === totalMaps,
+  `末层 ascent_point（图尽头出口）应每张都在——实际 ${lastLayerAscentMaps}/${totalMaps}`,
 );
 
 // ============================================

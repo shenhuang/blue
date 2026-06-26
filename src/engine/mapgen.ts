@@ -544,9 +544,10 @@ function chooseLayeredNodeKind(
   if (layer === totalLayers - 1) return 'ascent_point';
   const roll = rng();
   if (opts.canFreeAscend) {
-    if (roll < 0.8) return 'event';
-    if (roll < 0.9) return 'rest';
-    return 'ascent_point';
+    // free-ascend 区随时可「此处上浮」（RestView「↑此处上浮」）→ 中间层再生成一个要先游过去的 ascent_point
+    // 节点纯属冗余 + 误导：玩家把它当「出口」提前撤，还会把更深的剧情点（如东礁重访的沉船）挡在身后
+    // （#220 续·作者「在能上浮的地方还能去一个上浮口似乎很没必要」）。中层只放 event/rest；末层仍 ascent_point（line 544）。
+    return roll < 0.8 ? 'event' : 'rest';
   }
   // 洞穴 / canFreeAscend=false：中间层不再生成 ascent_point。
   if (roll < 0.9) return 'event';

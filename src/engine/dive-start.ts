@@ -416,6 +416,7 @@ export function startDiveFromPoi(
     if (ev.prereqFlags && !ev.prereqFlags.every((x) => f.has(x))) return false;
     if (ev.forbiddenFlags && ev.forbiddenFlags.some((x) => f.has(x))) return false;
     if (ev.prereqEventIds && !ev.prereqEventIds.every((e) => f.has(`event_seen:${e}`))) return false;
+    if (ev.forbiddenEventIds && ev.forbiddenEventIds.some((e) => f.has(`event_seen:${e}`))) return false;
     return true;
   });
 

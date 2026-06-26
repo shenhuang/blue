@@ -20,6 +20,8 @@ import { generateDiveMap } from '../src/engine/mapgen';
 import { startCombat, applyPlayerAction } from '../src/engine/combat';
 import { executeAscent } from '../src/engine/ascent';
 import { handleReturnToPort } from '../src/engine/port';
+import { startDiveFromPoi, enterNodeSelection, moveToNode } from '../src/engine/dive';
+import { generateChart, getPoiById } from '../src/engine/chart';
 import { eventDoneFlag, pickReturnTrigger } from '../src/engine/portEvents';
 import { toPort } from '../src/engine/transitions';
 import { makeLcg } from '../src/engine/rng';
@@ -138,4 +140,115 @@ L('§C 船长日志一路（grab_log → ending_log）');
   L('  船长日志一路 → tutorial_complete ✓');
 }
 
-console.log('playthrough-tutorial-e2e ✓ — §0 脚本起点 / §A 上浮 / §B 逃跑 / §C 船长日志 三路均自然产生 tutorial_complete');
+// §D 重访东礁「二次下潜」真引擎**导航式**端到端（quirk #189 回归门）
+//   旧 bug：`tutorial.captain_quarters` 的 grab_log 出口**不**置 `flag.seen_first_uncanny`（按教学剧本 §5 该 flag
+//   只在 look_closer 置位·保留给未来深海事件），而旧版重访门用它 gate `captain_revisit_empty` → 走 grab_log 进过
+//   船长室后，二次重访静默回普通下潜（_empty 永不解锁·「资格区第二次去没修好」）。三次「修」都只动 §2d 手搓 flag、
+//   没接这条真路径（#184/#200/#200-cont）→ 反复回归。门键已改 `event_seen:tutorial.captain_quarters`（引擎自维护·
+//   单一真相·grab_log/look_closer 皆算）。**本 §D 不再"直接结算钉放事件"·而是像玩家一样逐节点导航下潜**——
+//   复刻 EventView.handleChoose 的 next.kind 分发 + 节点选择 + RestView「继续下潜」（中途上浮口往深走、不提前撤），
+//   断言玩家**真的遇到**（而非仅"钉到图上"）正确的重访变体。这把"钉了但导航到不了"（如剧情点被早一层上浮口挡住·
+//   2026-06-27 实跑发现）也一并纳入守门。
+
+// 像玩家一样把一整潜导航到水面：复刻 EventView next.kind + 节点选择 + RestView；记录途中遇到的 story 事件 id。
+function diveDeepToSurface(state: GameState, picks: Record<string, string>): { state: GameState; seen: string[] } {
+  const STORY = ['tutorial.captain_revisit', 'tutorial.captain_revisit_empty', 'tutorial.captain_quarters'];
+  let s = state;
+  const seen: string[] = [];
+  for (let guard = 0; guard < 300; guard++) {
+    const ph = s.phase as { kind: string; subPhase?: { kind: string; eventId?: string; choices?: Array<{ nodeId: string; depth: number; isAscentPoint: boolean; visited: boolean }> } };
+    if (ph.kind === 'ascent') { s = executeAscent(s, 'normal').state; return { state: s, seen }; }
+    if (ph.kind === 'gameOver') return { state: s, seen };
+    if (ph.kind === 'combat') {
+      for (let t = 0; t < 40 && (s.phase as { kind: string }).kind === 'combat'; t++) {
+        const r = applyPlayerAction(s, 'action.flee'); s = r.state;
+        if (r.outcome === 'flee' || r.outcome === 'emergency_ascend') break;
+        if ((s.phase as { kind: string }).kind === 'gameOver') return { state: s, seen };
+      }
+      continue;
+    }
+    if (ph.kind !== 'dive') return { state: s, seen };
+    const sub = ph.subPhase!;
+    if (sub.kind === 'event') {
+      if (STORY.includes(sub.eventId!)) seen.push(sub.eventId!);
+      const r = driveEvent(s, sub.eventId!, (ev) => picks[ev.id] ?? ev.options[0].id);
+      let next = r.state;
+      if (r.next.kind === 'continueEvent') next = { ...next, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: (r.next as { eventId: string }).eventId } } };
+      else if (r.next.kind === 'startCombat') next = startCombat(next, (r.next as { combatId: string }).combatId);
+      else if (r.next.kind === 'forceAscend') next = { ...next, phase: { kind: 'ascent', targetDepth: 0 } };
+      else if (r.next.kind === 'death') next = { ...next, phase: { kind: 'gameOver', reason: 'died' } as GameState['phase'] };
+      else if (r.next.kind === 'remainOnEvent') next = next.run?.map ? enterNodeSelection(next) : next;
+      s = next; continue;
+    }
+    if (sub.kind === 'nodeSelect') {
+      const choices = sub.choices ?? [];
+      const forward = choices.filter((c) => !c.isAscentPoint && !c.visited).sort((a, b) => b.depth - a.depth);
+      const target = forward[0] ?? choices.find((c) => c.isAscentPoint) ?? choices[0];
+      if (!target) { s = { ...s, phase: { kind: 'ascent', targetDepth: 0 } }; continue; }
+      s = moveToNode(s, target.nodeId); continue;
+    }
+    // rest/corpse/其它：复刻 RestView「继续下潜」往深走（最深死端时 enterNodeSelection 自然转 ascent）。
+    s = s.run?.map ? enterNodeSelection(s) : { ...s, phase: { kind: 'ascent', targetDepth: 0 } };
+  }
+  return { state: s, seen };
+}
+
+// 重访资格区并像玩家一样下潜到底：startDiveFromPoi（= SeaChartView 出海）→ 导航 → 回港。返回途中遇到的 story 事件。
+function revisitQualZone(state: GameState, picks: Record<string, string>): { state: GameState; seen: string[]; pinned: string | null } {
+  const poi = getPoiById(generateChart({ profile: state.profile }), 'poi.anchor.east_reef');
+  assert(poi, '§D east_reef anchor（东礁·资格区）教学后应在海图');
+  const dived = startDiveFromPoi(state, poi!);
+  const hit = Object.values(dived.run?.map.nodes ?? {}).find(
+    (n) => n.eventId === 'tutorial.captain_revisit' || n.eventId === 'tutorial.captain_revisit_empty',
+  );
+  const run = diveDeepToSurface(dived, picks);
+  const back = surfaceAndReturn(run.state);
+  return { state: back.state, seen: run.seen, pinned: hit?.eventId ?? null };
+}
+
+// 重访潜水时的统一选择：撞上 captain_revisit→下去；进船长室→抓日志走（旧 bug 精确路径·不置 seen_first_uncanny）；空房间→出来。
+const REVISIT_PICKS = { 'tutorial.captain_revisit': 'go_down', 'tutorial.captain_quarters': 'grab_log', 'tutorial.captain_revisit_empty': 'leave' };
+
+L('§D 重访东礁二次下潜·导航式真跑（grab_log 路径必"遇到"_empty·quirk #189）');
+{
+  // 种子化焊死 flaky（quirk #129）：§D 跑在 §A/§B/§C 之后·全局 Math.random 已被消耗；每个场景前重置到
+  // 确定性种子，保证教学含潜行检定 + 重访图生成可复现（导航能稳定走到 captain_revisit·与单跑无关）。
+  Math.random = makeLcg(20260627);
+  // —— 场景 A：教学只上浮（没下船长室）→ 重访#1 真遇到 captain_revisit（下去 grab_log）→ 重访#2 必遇到 _empty ——
+  const outA = diveUntilExit(freshRun(), { 'tutorial.prologue': 'dive_in', 'tutorial.descent': 'continue', 'tutorial.grouper': 'sneak', 'tutorial.wreck': 'stealth_grab', 'tutorial.deeper': 'ascend_now' });
+  let s = surfaceAndReturn(outA.state).state;
+  assert(s.profile.flags.has('flag.tutorial_complete'), '§D/A 教学完成（海图解锁）');
+  assert(!s.profile.flags.has('event_seen:tutorial.captain_quarters'), '§D/A 教学未下船长室');
+
+  const a1 = revisitQualZone(s, REVISIT_PICKS); s = a1.state;
+  assert(a1.pinned === 'tutorial.captain_revisit', `§D/A 重访#1 钉放 captain_revisit（实际 ${a1.pinned}）`);
+  assert(a1.seen.includes('tutorial.captain_revisit'), `§D/A 重访#1 玩家**真遇到** captain_revisit（实际途中 story=[${a1.seen.join(',')}]·若空＝被早层上浮口挡住没导航到）`);
+  assert(a1.seen.includes('tutorial.captain_quarters'), '§D/A 重访#1 下去后进了船长室（grab_log）');
+  assert(s.profile.flags.has('event_seen:tutorial.captain_quarters'), '§D/A grab_log 写 event_seen:captain_quarters（门键）');
+  assert(!s.profile.flags.has('flag.seen_first_uncanny'), '§D/A grab_log 不置 seen_first_uncanny（正是旧门失灵处·门已不依赖它）');
+
+  const a2 = revisitQualZone(s, REVISIT_PICKS); s = a2.state;
+  assert(a2.pinned === 'tutorial.captain_revisit_empty', `§D/A 重访#2 钉放 _empty（旧 bug 回 ${a2.pinned}）`);
+  assert(a2.seen.includes('tutorial.captain_revisit_empty'), `§D/A 重访#2 玩家**真遇到** _empty（"第二次去"·旧 bug 此处什么都没有·实际 story=[${a2.seen.join(',')}]）`);
+
+  const a3 = revisitQualZone(s, REVISIT_PICKS); s = a3.state;
+  assert(a3.pinned === null, `§D/A 重访#3 不再钉放（实际 ${a3.pinned}）`);
+  assert(!a3.seen.includes('tutorial.captain_revisit') && !a3.seen.includes('tutorial.captain_revisit_empty'), '§D/A 重访#3 普通下潜·无重访剧情');
+  L('  场景A：教学上浮 → 重访#1 真遇 revisit→grab_log → 重访#2 真遇 _empty → 重访#3 普通 ✓');
+
+  // —— 场景 C：教学就下到船长室抓日志走（grab_log·旧 bug 触发路径）→ 重访#1 直接遇到 _empty ——
+  Math.random = makeLcg(20260627); // 同上·场景独立可复现
+  const outC = diveUntilExit(freshRun(), { 'tutorial.prologue': 'dive_in', 'tutorial.descent': 'continue', 'tutorial.grouper': 'sneak', 'tutorial.wreck': 'stealth_grab', 'tutorial.deeper': 'go_deeper', 'tutorial.captain_quarters': 'grab_log' });
+  let sc = surfaceAndReturn(outC.state).state;
+  assert(sc.profile.flags.has('event_seen:tutorial.captain_quarters'), '§D/C 教学经 grab_log 进过船长室');
+  assert(!sc.profile.flags.has('flag.seen_first_uncanny'), '§D/C grab_log 教学路径同样不置 seen_first_uncanny');
+  const c1 = revisitQualZone(sc, REVISIT_PICKS); sc = c1.state;
+  assert(c1.pinned === 'tutorial.captain_revisit_empty', `§D/C 重访#1 钉放 _empty（教学已下船长室·实际 ${c1.pinned}）`);
+  assert(c1.seen.includes('tutorial.captain_revisit_empty'), `§D/C 重访#1 玩家**真遇到** _empty（实际 story=[${c1.seen.join(',')}]）`);
+  assert(!c1.seen.includes('tutorial.captain_revisit'), '§D/C 重访#1 不再误放"你上次没有下去"的 captain_revisit（旧 bug：grab_log 没置 flag→错放 revisit）');
+  const c2 = revisitQualZone(sc, REVISIT_PICKS); sc = c2.state;
+  assert(c2.pinned === null && !c2.seen.includes('tutorial.captain_revisit_empty'), '§D/C 重访#2 普通下潜');
+  L('  场景C：教学 grab_log 进船长室 → 重访#1 真遇 _empty → 重访#2 普通 ✓');
+}
+
+console.log('playthrough-tutorial-e2e ✓ — §0 起点 / §A 上浮 / §B 逃跑 / §C 船长日志 → tutorial_complete / §D 导航式重访：A 真遇 revisit→_empty→普通·C 真遇 _empty→普通（#189）');
