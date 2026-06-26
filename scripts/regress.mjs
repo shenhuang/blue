@@ -127,6 +127,9 @@ tasks.push({ name: 'check-tooling', cmd: ['node', join('scripts', 'run-tooling-t
 // STATUS.md 新鲜度门（纯 node·顶部 blockquote 在/带日期 + 行数上限 + 点名脚本存在·机制化 CLAUDE.md 文档维护约定 + handoff 依赖）
 tasks.push({ name: 'check-status-fresh', cmd: ['node', join('scripts', 'check-status-fresh.mjs')] });
 
+// 文档死链门（README/STATUS 导航 markdown 链接不烂·纯 node·见 scripts/check-doc-links.mjs·2026-06-27 文档治理）
+tasks.push({ name: 'check-doc-links', cmd: ['node', join('scripts', 'check-doc-links.mjs')] });
+
 // flag setter scope 门（纯 node·applyFlags〔下潜域〕置位却被持久消费 → 本该 setProfileFlags·quirk #160/#161·incident #184）
 tasks.push({ name: 'check-flag-setter', cmd: ['node', join('scripts', 'check-flag-setter.mjs')] });
 

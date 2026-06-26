@@ -15,8 +15,7 @@
 - [`docs/spec/深海回响_SPEC.md`](docs/spec/深海回响_SPEC.md) — 主设计文档
 - [`docs/spec/深海回响_战斗系统_SPEC.md`](docs/spec/深海回响_战斗系统_SPEC.md) — 战斗系统专题
 - [`docs/spec/深海回响_教学关剧本.md`](docs/spec/深海回响_教学关剧本.md) — 教学剧本
-- [`docs/STATUS.md`](docs/STATUS.md) — **当前实装状态 + 下次接手指南**
-- [`docs/legacy/`](docs/legacy/) — 早期草案
+- [`docs/STATUS.md`](docs/STATUS.md) — **当前实装状态**
 
 ## 技术栈
 
@@ -31,19 +30,13 @@ npm run typecheck  # tsc --noEmit
 npm run build      # 生产构建
 ```
 
-## 验证脚本
-
-四条端到端 playthrough，调用项目自身引擎模块，跑完整 timeline：
+## 验证
 
 ```bash
-npx tsx scripts/playthrough.ts         # 教学 + 随机图 + 上浮
-npx tsx scripts/playthrough-combat.ts  # 战斗路径
-npx tsx scripts/playthrough-corpse.ts  # 死亡 + 尸体回收
-npx tsx scripts/playthrough-decay.ts   # 物品衰减 + 升级保鲜
-node scripts/verify-tutorial.mjs       # 数据图引用完整性
+npm run regress    # 全绿门：typecheck + 全部 playthrough + 数据/边界校验门 + 生产构建
 ```
 
-每次改完代码或数据建议跑一遍。
+`node scripts/regress.mjs --list` 列全部检查；迭代用 `--only <子串>` 跑子集。每次改完代码/数据跑一遍。
 
 ## 目录结构
 
@@ -56,15 +49,9 @@ src/
 └── App.tsx    顶层 phase 路由
 ```
 
-## 接下来要做的
+## 路线图
 
-按 `docs/STATUS.md` §5 顺序：
-
-1. **港口升级 UI**（meta-loop 最后一公里）
-2. **教学结尾日志在港口触发**
-3. **战利品变卖**
-4. **D-reveal 文本故障化**
-5. **更多敌人 + 理智伤害实装**
+当前状态与待办见 [`docs/STATUS.md`](docs/STATUS.md)；完整进度史见 [`docs/archive/CHANGELOG.md`](docs/archive/CHANGELOG.md)。
 
 ## License
 
