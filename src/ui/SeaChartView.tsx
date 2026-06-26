@@ -366,7 +366,6 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
     <div className="port sea-chart">
       <header className="port-header">
         <h1>海图</h1>
-        <p className="port-sub">摊在长桌上的旧海图，铅笔印一层盖一层。挑一个点。</p>
         <ConditionBar c={chart.conditions} state={state} onStateChange={onStateChange} />
       </header>
 
