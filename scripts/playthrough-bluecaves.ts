@@ -236,8 +236,6 @@ assert(
   state.profile.inventory.find((i) => i.itemId === 'item.eel_skin')?.qty === 1,
   '盲鳗皮应合并到 profile.inventory',
 );
-// 月相价格浮动（Phase 3·SPEC §8）：本测验 bluecaves 战利品收益、非月相定价 → 钉中性相位（上弦·×1.0）使基线 expectedLoot 成立。
-state = { ...state, profile: { ...state.profile, day: 9 } };
 const before = state.profile.bankedGold;
 state = sellItemToMira(state, 'item.eel_skin', 1);
 state = sellItemToMira(state, 'item.coral_shard', 2);
