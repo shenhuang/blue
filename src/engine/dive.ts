@@ -13,7 +13,7 @@
 // 子模块依赖单向（start→select；sensors→select；move→sensors/stalker/select；actions→select），
 // 别从本 barrel 回 import（自引用环）。
 
-export { startDive, startDiveFromPoi, carryWeightLimitFor } from './dive-start';
+export { startDive, startDiveFromPoi, carryWeightLimitFor, lunarDiveModifier } from './dive-start';
 export { enterNodeSelection } from './dive-select';
 export { setLight, pingSonar, setSonarNext } from './dive-sensors';
 export { currentMoveCost, moveToNode } from './dive-move';

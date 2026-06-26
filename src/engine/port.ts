@@ -11,6 +11,7 @@ import { acquireIntoProfile, addToPoiSetMap, appendLog, removeFromInventory } fr
 import { allItems, getItemDef } from './items';
 import { ageAndDecayDeaths, getPreservationBonus } from './death';
 import { daysToNextPhase, lunarPhase, lunarPhaseLabel } from './lunar';
+import type { LunarPhase } from './lunar';
 
 export interface ReturnToPortResult {
   state: GameState;
@@ -103,6 +104,38 @@ export function daysToNextLunarBoundary(profile: PlayerProfile): number {
 /** Mira 收购价系数：sellPrice 是市场价，Mira 转手收 0.8 折 */
 export const MIRA_BUY_RATIO = 0.8;
 
+// ============================================================
+// 月相价格浮动（Phase 3 MVP · SPEC §8 · lunar-econ 车道）
+// ============================================================
+//
+// 月相驱动的价格乘子：对 Mira 的收购价（sellItemToMira）和回购买价（buyFromMira）各施一次
+// 浮动，使某相位「资源更丰/更贵」产生微感。乘子用纯函数派生自 profile.day（确定性、无状态）。
+//
+// 占位数值（defer-number-tuning）：
+//   new    → ×1.10（新月大潮，深海浮材多，Mira 出价高）
+//   full   → ×0.90（满月大潮，港口客多，Mira 压价）
+//   waxing / waning → ×1.00（小潮平期，中性）
+// 效果已 BOUNDED：min/max 夹 [0.8, 1.2] 防数值溢出；收购价再经 floor→整数，恒 ≥ 1（isSellableToMira 已保证 sellPrice>0）。
+
+/** 各月相对应的 Mira 价格浮动乘子（占位数值·defer-number-tuning·SPEC §8 Phase 3）。 */
+const LUNAR_PRICE_MULTIPLIER: Record<LunarPhase, number> = {
+  new: 1.1,    // 新月大潮：深海资源丰，Mira 出价高  // 占位·defer-number-tuning
+  waxing: 1.0, // 上弦小潮：平期                      // 占位·defer-number-tuning
+  full: 0.9,   // 满月大潮：港口热闹，Mira 压价        // 占位·defer-number-tuning
+  waning: 1.0, // 下弦小潮：平期                      // 占位·defer-number-tuning
+};
+
+/**
+ * 当天月相推导的价格乘子（纯函数·确定性·SPEC §8 Phase 3）。
+ * day 未定义（早期存档）时回退 1.0（不影响基线）。
+ * 结果已 BOUNDED 在 [0.8, 1.2]（双重安全网·占位数值本身已在范围内）。
+ */
+export function lunarPriceMultiplier(day: number | undefined): number {
+  if (day === undefined) return 1.0;
+  const raw = LUNAR_PRICE_MULTIPLIER[lunarPhase(day)] ?? 1.0;
+  return Math.min(1.2, Math.max(0.8, raw)); // BOUNDED：占位·defer-number-tuning
+}
+
 /** 单件物品在 Mira 这里能换到的金币（向下取整，0 表示她不收）。 */
 export function miraOfferFor(itemId: string): number {
   const def = getItemDef(itemId);
@@ -149,8 +182,12 @@ export function sellItemToMira(
   const have = inv.find((i) => i.itemId === itemId)?.qty ?? 0;
   const sellQty = Math.min(have, qty);
   if (sellQty <= 0) return state;
-  const unitPrice = miraOfferFor(itemId);
-  if (unitPrice <= 0) return state;
+  const basePrice = miraOfferFor(itemId);
+  if (basePrice <= 0) return state;
+  // 月相浮动：同一天同一物品价格确定性派生（SPEC §8 Phase 3）。 // 占位·defer-number-tuning
+  // 注意：用 profile.day（不 ?? runsCompleted）——无 day 字段的早期存档回退 1.0 中性，不映射到随机相位。
+  const multiplier = lunarPriceMultiplier(state.profile.day);
+  const unitPrice = Math.max(1, Math.floor(basePrice * multiplier));
 
   return {
     ...state,
@@ -301,8 +338,12 @@ export function listMiraBuyables(profile: PlayerProfile): {
 export function buyFromMira(state: GameState, itemId: string, qty: number): GameState {
   if (qty <= 0) return state;
   if (!isBuyableFromMira(itemId)) return state;
-  const unitPrice = miraBuyPriceFor(itemId);
-  if (unitPrice <= 0) return state;
+  const basePrice = miraBuyPriceFor(itemId);
+  if (basePrice <= 0) return state;
+  // 月相浮动：买价与卖价方向相同（Mira 涨价时出货也贵·SPEC §8 Phase 3）。 // 占位·defer-number-tuning
+  // 注意：用 profile.day（不 ?? runsCompleted）——无 day 字段的早期存档回退 1.0 中性。
+  const multiplier = lunarPriceMultiplier(state.profile.day);
+  const unitPrice = Math.max(1, Math.floor(basePrice * multiplier));
 
   const stock = getShopStock(state.profile, itemId);
   const affordable = Math.floor(state.profile.bankedGold / unitPrice);

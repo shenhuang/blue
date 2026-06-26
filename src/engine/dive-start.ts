@@ -38,6 +38,36 @@ import { getBand, bandDiveModifier } from './bands';
 import { MIMIC_DIVE_EVENT_ID } from './chart';
 import { ch1Story, CH1_ANCHORS, type Ch1Anchor } from './story';
 import { enterNodeSelection } from './dive-select';
+import { tideLevel } from './lunar';
+import type { PoiModifier, CurrentStrength } from '@/types';
+
+/**
+ * 月相对洋流强度的升档映射（月相强度 Phase 2 · SPEC §8「有效 = POI 派生 ⊕ 月相(phase)」）。
+ * 纯加法：只升档不降档（strong 不变·mild 不变·none/未设 → mild）。
+ * 阈值 SPRING_TIDE_THRESHOLD·占位·defer-number-tuning。
+ */
+const SPRING_TIDE_THRESHOLD = 0.7; // 占位·defer-number-tuning：大潮触发线（tideLevel ∈[-1,1]·新/满月接近 1）
+
+/** 洋流升档：only goes up, never down. */
+function upgradeCurrent(existing: CurrentStrength | undefined): CurrentStrength {
+  if (existing === 'strong') return 'strong';
+  if (existing === 'mild') return 'mild';
+  return 'mild'; // 占位·defer-number-tuning：大潮新增洋流档位（目前上限 mild；可调为 strong）
+}
+
+/**
+ * Phase 2 · 月相潮汐 → 潜水环境修正（SPEC §8）。
+ * 纯函数·无副作用·确定性（给定 day 结果唯一）。
+ * 合成规则：大潮（`tideLevel(day) ≥ SPRING_TIDE_THRESHOLD`）时升档洋流；其余字段直传 POI 原值。
+ * **只升不降**（additive·不覆盖·如 POI 已设 strong，结果仍 strong）。
+ * 小潮 / 非大潮阶段：原样返回——月相对洋流无额外贡献（静水）。
+ */
+export function lunarDiveModifier(poi: PoiModifier | undefined, day: number): PoiModifier | undefined {
+  const tide = tideLevel(day);
+  if (tide < SPRING_TIDE_THRESHOLD) return poi; // 小潮 / 非大潮 → 零贡献
+  // 大潮：升档洋流（加法·不碰其他字段）
+  return { ...poi, current: upgradeCurrent(poi?.current) };
+}
 
 /**
  * 在港口选定 zone，开始一次下潜。
@@ -371,7 +401,8 @@ export function startDiveFromPoi(
   run = carry.run;
 
   // 作者 2026-06-14：删掉「出海更近」/距离预耗氧机制——每个潜点都从第一回合起算损耗（不再有 turn 偏移 / 路上耗气）。
-  run = { ...run, diveModifier: poi.modifier };
+  // Phase 2 · 月相：大潮叠加洋流（SPEC §8·有效 = POI 派生 ⊕ 月相(phase)·只升不降）。
+  run = { ...run, diveModifier: lunarDiveModifier(poi.modifier, state.profile.day ?? state.profile.runsCompleted) };
 
   // 「故事重访变体」按深度途中触发（quirk #174）：从 poi.storyOpenEvents 里按各事件**自身**门控
   // （prereq/forbidden/oncePerSave event_seen/prereqEventIds）选第一个合规变体，透传 startDive→mapgen
@@ -404,11 +435,19 @@ export function startDiveFromPoi(
     poiTemplateId: poi.templateId,
   });
 
-  const m = poi.modifier;
+  // Phase 2 · 月相叙事：用 run.diveModifier（= POI ⊕ 月相·已合成）做叙事判定，
+  // 额外在大潮新增洋流时给出月相专属日志（区别于 POI 固有洋流日志）。
+  const m = run.diveModifier; // 合成后修正（含月相升档·Phase 2 SPEC §8）
+  const poiCurrent = poi.modifier?.current;
+  const lunarAddedCurrent = m?.current && (!poiCurrent || poiCurrent === 'none') && m.current !== 'none';
   if (m?.current && m.current !== 'none') {
     s = appendLog(s, {
       tone: 'realistic',
-      text: m.current === 'strong' ? '一股急流斜斜地推着你，得用力才稳得住。' : '水里有股缓慢的洋流。',
+      text: lunarAddedCurrent
+        ? '大潮——水里多了几分莫名的涌动。' // 月相专属（POI 原本无洋流·大潮新增）
+        : m.current === 'strong'
+          ? '一股急流斜斜地推着你，得用力才稳得住。'
+          : '水里有股缓慢的洋流。',
     });
   }
   s = appendVisibilityLog(s, m?.visibility, run.sensors.sonarUnlocked);
@@ -538,7 +577,9 @@ function diveIntoBand(
   run = carry.run;
 
   // 作者 2026-06-14：删掉距离预耗氧——从第一回合起算损耗（无 turn 偏移 / 路上耗气；与 startDiveFromPoi 同口径）。
-  const m = bandDiveModifier(band);
+  // Phase 2 · 月相：大潮叠加洋流（SPEC §8·有效 = POI 派生 ⊕ 月相(phase)·只升不降）。
+  const bandMod = bandDiveModifier(band);
+  const m = lunarDiveModifier(bandMod, state.profile.day ?? state.profile.runsCompleted) ?? bandMod;
   run = {
     ...run,
     diveModifier: m,
