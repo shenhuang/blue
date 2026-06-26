@@ -107,6 +107,9 @@ tasks.push({ name: 'check-story-open-events', cmd: ['node', join('scripts', 'che
 // 持久多口洞绑定门（纯 node·caves.json 参数 sane + chart_pois caveEntry 不悬空·多口持久洞 SPEC §7·见 scripts/check-cave-bindings.mjs）
 tasks.push({ name: 'check-cave-bindings', cmd: ['node', join('scripts', 'check-cave-bindings.mjs')] });
 
+// 受影响选择器·关键 fixture 覆盖门（纯 node·改 chart 数据 fixture 必须选出 chart 行为测·把 #195/#196 焊成会红的检查·见 scripts/check-affected-edges.mjs）
+tasks.push({ name: 'check-affected-edges', cmd: ['node', join('scripts', 'check-affected-edges.mjs')] });
+
 // append-only 文档门（纯 node·CHANGELOG/QUIRKS 只在 main 改、别在 feature/auto 分支碰·机制化 quirk #130·见 scripts/check-append-only-docs.mjs）
 tasks.push({ name: 'check-append-only-docs', cmd: ['node', join('scripts', 'check-append-only-docs.mjs')] });
 

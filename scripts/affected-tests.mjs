@@ -72,9 +72,29 @@ function resolveSpec(fromRel, spec, root) {
   return null;
 }
 
+// 裸 fixture 文件名（无 `/`）解析锚点：约定上所有数据 fixture 都住 src/data/。
+// 引擎/测试常以 `readFileSync('chart_pois.json')` / `readJson('chart_pois.json')`（DATA=src/data）这种
+// 裸名读取 fixture——这类字面量不带 `/`，下面 resolveLiteralPath 的 slash 守卫本会放过它，
+// 于是「改 src/data/chart_pois.json → 漏选 playthrough-chart/smoke-chart-ui」（#195/#196 中招的缺口）。
+// 把裸 `<名>.json` 锚到 src/data/ 再 existsSync 校验：只有真实存在的 fixture 才连边，零误报
+// （随手出现的 'tsconfig.json' 不会因 src/data/tsconfig.json 不存在而误连）。这是「健全性优先于
+// 最小性」的通用安全网，不是两文件硬编码——任何 src/data/*.json 被裸名读取都覆盖，且与引擎当前用
+// 静态 import 还是运行时 fs 读取无关（静态 import 那条边由 import 图覆盖；这条防住改回 fs 读取的回归）。
+const BARE_FIXTURE_DIRS = ['src/data'];
+const BARE_FIXTURE_RE = /^[\w.-]+\.json$/; // 仅纯文件名·无路径分隔符·.json fixture
+
 // 把字符串字面量当可能的动态路径解析成仓库内路径（文件或目录·解析不到→null）
 function resolveLiteralPath(fromRel, lit, root) {
-  if (!lit.includes('/') || lit.startsWith('http') || lit.includes('${') || lit.includes('*')) return null;
+  if (lit.startsWith('http') || lit.includes('${') || lit.includes('*')) return null;
+  if (!lit.includes('/')) {
+    // 裸文件名：只认 src/data/ 下真实存在的 *.json fixture（见上），其余一律放过。
+    if (!BARE_FIXTURE_RE.test(lit)) return null;
+    for (const dir of BARE_FIXTURE_DIRS) {
+      const cand = resolve(root, dir, lit);
+      try { if (existsSync(cand) && statSync(cand).isFile()) return pp.normalize(relative(root, cand).split('\\').join('/')); } catch { /* */ }
+    }
+    return null;
+  }
   for (const base of [resolve(root, dirname(fromRel), lit), resolve(root, lit)]) {
     try { if (existsSync(base)) return pp.normalize(relative(root, base).split('\\').join('/')); } catch { /* */ }
   }
