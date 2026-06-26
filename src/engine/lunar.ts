@@ -59,6 +59,15 @@ export function lunarPhaseLabel(phase: LunarPhase): string {
 }
 
 /**
+ * 当前相位内第几天（1..CYCLE/4）：moonAge % seg + 1。
+ * UI 海况条「下弦 · 第 N 天」·纯派生·无副作用。
+ */
+export function dayWithinPhase(day: number): number {
+  const seg = LUNAR_CYCLE_DAYS / PHASES.length;
+  return (moonAge(day) % seg) + 1;
+}
+
+/**
  * 从 day 到「相位 ∈ phases」最近还要几天（港口等待 / 暗点「还 N 天」·SPEC §4/§6）。
  * 已在窗内 → 0；否则最小 n≥1（上限一个周期·空 phases → 0）。
  */

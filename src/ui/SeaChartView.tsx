@@ -31,7 +31,8 @@ import { getItemDef, weightForItem } from '@/engine/items';
 import { isOverloaded } from '@/engine/equipment';
 import { listRecoverableCorpses } from '@/engine/death';
 import { advanceDays, daysToNextLunarBoundary } from '@/engine/port';
-import { lunarPhaseLabel } from '@/engine/lunar';
+import { lunarPhaseLabel, dayWithinPhase } from '@/engine/lunar';
+import { MoonDisc } from './MoonDisc';
 import { LighthouseBuildPanel } from './LighthouseBuildPanel';
 import { ChartViewport, type ChartContentBox } from './ChartViewport';
 import { HOME_LIGHTHOUSE_ID } from '@/engine/state';
@@ -96,16 +97,64 @@ function poiSweepDelay(
   return Number.isFinite(best) ? best : null;
 }
 
-/** 海况一行文案（§6.5「活的海图」+ 月相潮汐 §8）：月相·大小潮 + 潮汐 + 天气；浓雾时提示「有处机会点这一拍没显出来」。 */
-function conditionLine(c: ChartConditions): string {
-  const tide = c.tide === 'flood' ? '涨潮' : '退潮';
-  const weather = c.weather === 'clear' ? '晴' : c.weather === 'mist' ? '薄雾' : '浓雾';
-  const fog = c.weather === 'fog' ? '——浓雾压着，有处地方这一拍看不见，潮一退就回来' : '';
-  // 月相 + 大小潮（spring 大潮在新月/满月·neap 小潮在上/下弦·SPEC §3）。天气与月相独立两轴（§1）。
-  const moon = c.phase
-    ? `${lunarPhaseLabel(c.phase)}·${c.phase === 'new' || c.phase === 'full' ? '大潮' : '小潮'} · `
-    : '';
-  return `${moon}${tide} · ${weather}${fog}`;
+/** 海况条 JSX（§6.5「活的海图」+ 月相潮汐 §8 + 月相 HUD）：
+ *  左：月相盘 + 月相/相内天数 + 大小潮/涨退/天气；右：等一天 + 等到下一相位。
+ *  guard: !state.run（仅港口）同原来的单按钮。
+ */
+function ConditionBar({
+  c,
+  state,
+  onStateChange,
+}: {
+  c: ChartConditions;
+  state: GameState;
+  onStateChange: (s: GameState) => void;
+}) {
+  const phase = c.phase ?? 'new';
+  const day = state.profile.day ?? state.profile.runsCompleted ?? 0;
+  const phaseDay = dayWithinPhase(day);
+  const springNeap = phase === 'new' || phase === 'full' ? '大潮' : '小潮';
+  const tideLabel = c.tide === 'flood' ? '涨潮' : '退潮';
+  const weatherLabel = c.weather === 'clear' ? '晴' : c.weather === 'mist' ? '薄雾' : '浓雾';
+  const daysLeft = daysToNextLunarBoundary(state.profile);
+
+  return (
+    <div className="chart-conditions">
+      {/* Left: moon disc + two text lines */}
+      <div className="chart-conditions-moon">
+        <MoonDisc phase={phase} size={34} />
+        <div className="chart-conditions-text">
+          <span className="chart-conditions-phase">
+            {lunarPhaseLabel(phase)} · 第 {phaseDay} 天
+          </span>
+          <span className="chart-conditions-detail">
+            {springNeap} · {tideLabel} · {weatherLabel}
+          </span>
+        </div>
+      </div>
+      {/* Right: wait buttons (port only) */}
+      {!state.run && (
+        <div className="chart-conditions-actions">
+          <button
+            type="button"
+            className="btn small chart-wait-btn"
+            onClick={() => onStateChange(advanceDays(state, 1))}
+            title="在港口等一天"
+          >
+            等一天
+          </button>
+          <button
+            type="button"
+            className="btn small chart-wait-btn"
+            onClick={() => onStateChange(advanceDays(state, daysLeft))}
+            title="在港口等到下一个月相边界——机会点随相位换一批（SPEC §6）"
+          >
+            等到下一相位 · 还 {daysLeft} 天
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
@@ -318,20 +367,7 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
       <header className="port-header">
         <h1>海图</h1>
         <p className="port-sub">摊在长桌上的旧海图，铅笔印一层盖一层。挑一个点。</p>
-        <p className="chart-conditions">{conditionLine(chart.conditions)}</p>
-        <div className="port-meta">
-          银行 {state.profile.bankedGold} 金币 · 第 {state.profile.day ?? state.profile.runsCompleted} 天
-          {!state.run && (
-            <button
-              type="button"
-              className="btn small chart-wait-btn"
-              onClick={() => onStateChange(advanceDays(state, daysToNextLunarBoundary(state.profile)))}
-              title="在港口等到下一个月相边界——海底遗存按天继续流失，机会点随相位换一批（SPEC §6）"
-            >
-              等到下一相位（还 {daysToNextLunarBoundary(state.profile)} 天）
-            </button>
-          )}
-        </div>
+        <ConditionBar c={chart.conditions} state={state} onStateChange={onStateChange} />
       </header>
 
       {/* dev 直接解锁任意大区（作者 2026-06-14）：不必先在地图上找哨站标记点开——这里一键解锁本图任一章节区。
@@ -510,6 +546,11 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
               ]
                 .filter(Boolean)
                 .join(' ');
+              // 暗点 + 有月相窗门 → 角标月相盘（让玩家一眼看出是潮窗锁·详细原因在右侧信息面板）
+              const showMoonBadge =
+                poi.revealState === 'dim' &&
+                poi.lunarWindow != null &&
+                poi.lunarWindow.length > 0;
               return (
                 <button
                   key={poi.id}
@@ -521,6 +562,11 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
                 >
                   <span className="chart-dot" />
                   <span className="chart-poi-name">{poi.name}</span>
+                  {showMoonBadge && (
+                    <span className="chart-poi-moon-badge" aria-hidden="true">
+                      <MoonDisc phase={poi.lunarWindow![0]} size={14} />
+                    </span>
+                  )}
                 </button>
               );
             })}

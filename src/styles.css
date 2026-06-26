@@ -1739,12 +1739,73 @@ html, body, #root {
     transform: translate(-50%, -50%) scale(calc(var(--chart-cscale, 1) * 0.6));
   }
 }
-/* 海况一行（活的海图）：潮汐 + 天气，淡、斜体，置于副标下。 */
+/* 海况 HUD 条（活的海图 §6.5 + 月相潮汐 §8）：左侧月相盘 + 文案·右侧等待按钮。
+   整体 flex row，与港口标题对齐，置于副标下方。 */
 .chart-conditions {
-  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 0;
   color: var(--text-faint);
-  font-style: italic;
-  margin: 2px 0 0;
+}
+
+/* 左区：月相盘 + 两行文字 */
+.chart-conditions-moon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.chart-conditions-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* 主行：月相名 + 相内第几天 */
+.chart-conditions-phase {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+/* 副行：大小潮 · 涨退 · 天气 */
+.chart-conditions-detail {
+  font-size: 13px;
+  color: var(--text-faint);
+  line-height: 1.2;
+}
+
+/* 右区：等待按钮组 */
+.chart-conditions-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* 海图等待按钮：比普通 btn 紧凑（fit-content 宽·单行） */
+.chart-wait-btn {
+  width: auto;
+  padding: 6px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* 暗点月相角标：定位于 chart-dot 右上角·极小·继承暗色 */
+.chart-poi-moon-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  pointer-events: none;
+  line-height: 0;
 }
 
 /* 灯塔节点 + 点亮范围（reveal）。半径用归一化坐标渲染成圆，置于 POI 之下、不拦点击。 */
