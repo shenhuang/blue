@@ -460,10 +460,15 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
   const visibleTemplates = POIS.roamingTemplates
     .map(resolveOwnerCoords)
     .filter((t) => flagsSatisfied(profile, t.requiresFlags) && isLit(profile, t) && roamingInLunarPool(t, profile));
-  const picked = [...visibleTemplates]
+  // 带 lunarWindow 的点＝「有意安排·可规划」的潮窗点（窗内 lit / 窗外已知或公开 dim）——**恒显·不挤随机
+  // top-2 机会点槽**（#218 玩测：已知潮窗点随 roamingKey 闪进闪出、规划靠不住·#219 修）；无窗点照旧抢 ROAMING_COUNT 随机槽。
+  const isWindowed = (t: RoamingTemplate) => !!t.lunarWindow && t.lunarWindow.length > 0;
+  const windowedShown = visibleTemplates.filter(isWindowed);
+  const picked = visibleTemplates
+    .filter((t) => !isWindowed(t))
     .sort((a, b) => roamingKey(seed, b) - roamingKey(seed, a))
     .slice(0, ROAMING_COUNT);
-  for (const t of picked) {
+  for (const t of [...picked, ...windowedShown]) {
     const poi: ChartPoi = {
       id: `poi.roam.${seed}.${t.templateId}`,
       // 稳定模板身份（roaming 专属内容·2026-06-25）：实例 id 含 runsCompleted 每次变、事件 poiId 配不上；

@@ -333,7 +333,8 @@ const roamB = rB.pois.filter((p) => !p.persistent).map((p) => p.name).join('|');
 assert(roamA === roamB, `同 runsCompleted 的 roaming 应一致：${roamA} vs ${roamB}`);
 // 机会点数随海况：晴/雾 2、浓雾遮一处 → 1（§6.5）。从 chartConditions 派生期望值＝seed 无关、robust。
 const cond3 = chartConditions(fullyRevealedProfile(3));
-const roam3 = rA.pois.filter((p) => !p.persistent);
+// 排除潮窗点（lunarWindow·#219 起恒显·非随机机会点·不占 ROAMING_COUNT 槽）；本断言只数随机机会点。
+const roam3 = rA.pois.filter((p) => !p.persistent && !(p.lunarWindow && p.lunarWindow.length > 0));
 // 机会点 ≤ ROAMING_COUNT(2)；非浓雾＝两个全显；浓雾按 per-poi 概率遮掉一部分（§6.5·不强求恰好遮 1 个）。
 assert(roam3.length <= 2, `roaming 数应 ≤2（实际 ${roam3.length}·天气 ${cond3.weather}）`);
 if (cond3.weather !== 'fog') {
@@ -523,8 +524,9 @@ assert(fogRun >= 0 && calmRun >= 0, '7: 40 run 内浓雾与非浓雾都出现');
 // 全区揭示档（12 锚点全在范围内·含鲸落 found 后的 3 个生态点·#137）→ 才能验「天气不遮锚点」（区域门控≠天气遮蔽，两轴分开）。
 const fogChart = generateChart({ profile: fullyRevealedProfile(fogRun) });
 const calmChart = generateChart({ profile: fullyRevealedProfile(calmRun) });
-const fogRoam = fogChart.pois.filter((p) => !p.persistent && !p.mimic).length;
-const calmRoam = calmChart.pois.filter((p) => !p.persistent && !p.mimic).length;
+// 排除潮窗点（lunarWindow·#219 起恒显·非随机机会点）；本断言只数随机机会点。
+const fogRoam = fogChart.pois.filter((p) => !p.persistent && !p.mimic && !(p.lunarWindow && p.lunarWindow.length > 0)).length;
+const calmRoam = calmChart.pois.filter((p) => !p.persistent && !p.mimic && !(p.lunarWindow && p.lunarWindow.length > 0)).length;
 // 非浓雾＝两个机会点全显；浓雾按 per-poi 概率遮一部分（≤2·不强求恰好遮 1·见 §3 robust 同理）。
 assert(calmRoam === 2, `7: 非浓雾应满 2 个机会点（实际 ${calmRoam}）`);
 assert(fogRoam <= 2, `7: 浓雾机会点 ≤2（实际 ${fogRoam}）`);
