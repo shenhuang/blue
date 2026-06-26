@@ -116,7 +116,7 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
       )
       .sort()
       .join('|');
-    return `${p.runsCompleted}#${lh}#${[...p.flags].sort().join(',')}`;
+    return `${p.runsCompleted}#${p.day ?? p.runsCompleted}#${lh}#${[...p.flags].sort().join(',')}`;
   }, [state.profile]);
   const chart = useMemo(
     () => generateChart({ profile: state.profile }),

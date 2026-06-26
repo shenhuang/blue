@@ -73,6 +73,8 @@ export function createInitialProfile(): PlayerProfile {
     loreEntries: new Set(),
     deaths: [],
     runsCompleted: 0,
+    day: 0, // 月相潮汐时间（SPEC §2.1）：起步第 0 天
+
     inventory: [],
     shopStock: {},
     lighthouses: [createHomeLighthouse()],
@@ -441,6 +443,8 @@ export function serializeGameState(state: GameState): string {
 export function hydrateGameState(state: GameState): GameState {
   const profile: PlayerProfile = {
     ...state.profile,
+    // 月相时间（SPEC §2.1）：旧档缺 day → 单点补 day=runsCompleted（迁移前两钟相等·逐字节不变·#107）。
+    day: state.profile.day ?? state.profile.runsCompleted,
     shopStock: state.profile.shopStock ?? {},
     outpostState: state.profile.outpostState ?? {},
     // 固定资源永久耗尽容器（POI 固定资源耗尽·2026-06-25）：旧档/缺失单点补空 Map（#107 同 shopStock）。

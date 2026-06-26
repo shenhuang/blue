@@ -112,12 +112,22 @@ function condHash(runsCompleted: number, salt: string): number {
 }
 
 /**
- * 当前海况（潮汐 + 天气），派生自 runsCompleted（§6.5「POI 不总全揭、随回合变」）。
+ * 海图「时间种子」单一访问点（月相潮汐·SPEC §3）：chart 的海况/遮蔽/roaming 全以它为时钟。
+ * ＝ `profile.day`（hydrate 后≡runsCompleted·港口等待推进后两钟分离）；缺 day（旧档 / dev 面板裸 profile）
+ * → 回退 runsCompleted（守逐字节不变·不动并发编辑中的 ChartViewDevPanel——它拨 runsCompleted 滑杆即驱动）。
+ */
+function chartSeed(profile: PlayerProfile): number {
+  return profile.day ?? profile.runsCompleted;
+}
+
+/**
+ * 当前海况（潮汐 + 天气），派生自 day（§6.5「POI 不总全揭、随回合变」；月相潮汐 SPEC §3 种子 runsCompleted→day·
+ * tide 月相重派生留 Phase 1）。
  * 纯函数、不入存档；UI 据此显示「活的海图」，浓雾时遮蔽一处机会点（见 generateChart）。
  * 分布：晴 ~55% / 薄雾 ~27% / 浓雾 ~18%（雾少见＝遮蔽是偶发的张力，不是常态）。
  */
 export function chartConditions(profile: PlayerProfile): ChartConditions {
-  const run = profile.runsCompleted;
+  const run = chartSeed(profile);
   const tide: ChartConditions['tide'] = condHash(run, 'tide') % 2 === 0 ? 'ebb' : 'flood';
   const w = condHash(run, 'weather') % 100;
   const weather: ChartConditions['weather'] = w < 55 ? 'clear' : w < 82 ? 'mist' : 'fog';
@@ -237,7 +247,7 @@ function climateOcclusion(profile: PlayerProfile, poi: ChartPoi): 'none' | 'dim'
   if (poi.persistent || poi.story || poi.mimic) return 'none';
   const { weather } = chartConditions(profile);
   if (weather === 'clear') return 'none';
-  const h = condHash(profile.runsCompleted, `occlude:${poi.id}`) % 100;
+  const h = condHash(chartSeed(profile), `occlude:${poi.id}`) % 100;
   if (weather === 'mist') return h < 22 ? 'dim' : 'none'; // 薄雾：少数机会点「认得出、去不了」
   return h < 30 ? 'hidden' : h < 50 ? 'dim' : 'none'; // 浓雾：多数彻底盖住(无)、一部分显示但过不去(暗)
 }
@@ -357,6 +367,7 @@ function roamingKey(runsCompleted: number, t: RoamingTemplate): number {
  */
 export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
   const { profile } = opts;
+  const seed = chartSeed(profile); // 海图时间种子＝day（SPEC §3·dev 裸 profile 回退 runsCompleted）
   const conditions = chartConditions(profile);
 
   const pois: ChartPoi[] = [];
@@ -378,11 +389,11 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
     .map(resolveOwnerCoords)
     .filter((t) => flagsSatisfied(profile, t.requiresFlags) && isLit(profile, t));
   const picked = [...visibleTemplates]
-    .sort((a, b) => roamingKey(profile.runsCompleted, b) - roamingKey(profile.runsCompleted, a))
+    .sort((a, b) => roamingKey(seed, b) - roamingKey(seed, a))
     .slice(0, ROAMING_COUNT);
   for (const t of picked) {
     const poi: ChartPoi = {
-      id: `poi.roam.${profile.runsCompleted}.${t.templateId}`,
+      id: `poi.roam.${seed}.${t.templateId}`,
       // 稳定模板身份（roaming 专属内容·2026-06-25）：实例 id 含 runsCompleted 每次变、事件 poiId 配不上；
       // 带上 templateId 让 dive-start→buildEventPool 按它匹配 roaming 专属内容（anchor 不设此字段·走 id 精确匹配）。
       templateId: t.templateId,
@@ -411,7 +422,7 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
   // 恒 lit（诱饵）：isPoiLit 恒真 · isPoiExplainedByLighthouse 恒假 → UI 给「不在你网里」的宏观 tell。
   if (shouldLureMimic(profile)) pois.push({ ...makeMimicPoi(), revealState: 'lit' });
 
-  return { generatedForRun: profile.runsCompleted, pois, conditions };
+  return { generatedForRun: seed, pois, conditions };
 }
 
 /** 从一张海图里按 id 取 POI */

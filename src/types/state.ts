@@ -36,6 +36,13 @@ export interface PlayerProfile {
   deaths: DeathRecord[]; // 历次死亡记录（驱动尸体回收）
   runsCompleted: number;
   /**
+   * 世界天数（月相潮汐时间系统·SPEC `docs/spec/深海回响_月相潮汐_SPEC.md` §2.1）：潜一次 +1，
+   * 起步＝runsCompleted；港口「等待」可单独推进（Phase 1）⇒ 与 runsCompleted 分离（两个时钟）。
+   * additive·**optional**：旧档 / 未 hydrate（如 dev 面板建的裸 profile）缺它 → 读点走
+   * `?? runsCompleted` 回退（守逐字节不变·不 bump SAVE·#99）。hydrateGameState 单点补 day=runsCompleted（#107）。
+   */
+  day?: number;
+  /**
    * 港口仓库。run 结束回港时 run.inventory 合并到这里：eternal 物品天然长存，
    * 其它物品要么主动卖给 Mira 要么放着。dive 中的临时背包是 run.inventory，不要和这里搞混。
    */

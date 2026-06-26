@@ -178,6 +178,7 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
       ...s.profile,
       deaths: agedDeaths,
       runsCompleted: s.profile.runsCompleted + 1,
+      day: (s.profile.day ?? s.profile.runsCompleted) + 1, // 月相时间：生还上浮推进一天（SPEC §2.1）
     },
     phase: {
       kind: 'resolution',

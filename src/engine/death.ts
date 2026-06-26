@@ -125,6 +125,7 @@ export function executeDeath(state: GameState, cause: string): GameState {
       ...state.profile,
       deaths: [...agedDeaths, record],
       runsCompleted: state.profile.runsCompleted + 1,
+      day: (state.profile.day ?? state.profile.runsCompleted) + 1, // 月相时间：死亡也算过了一天（SPEC §2.1）
       flags: newFlags,
     },
     phase: { kind: 'funeral', record },
