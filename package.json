@@ -14,6 +14,7 @@
     "psm": "node scripts/psm.mjs",
     "affected": "node scripts/affected-tests.mjs",
     "handoff": "node scripts/handoff.mjs",
+    "roadmap:check": "node scripts/check-roadmap-stale.mjs",
     "check:branch": "node scripts/check-branch.mjs",
     "weekend:start": "node scripts/set-writer.mjs weekend",
     "main:resume": "node scripts/set-writer.mjs interactive",

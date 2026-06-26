@@ -77,6 +77,13 @@ if (canBuild) {
   console.log('⚠  build 自动跳过（沙箱缺 rollup-linux-arm64-gnu·#147·nightly 单独处理）');
 }
 
+// tsx 任务（smoke-*/playthrough*）靠 esbuild 转译 TS 起子进程。沙箱（Linux）的 node_modules 是 macOS
+// 装的 → esbuild 平台失配，这批会齐刷刷红（纯环境噪声·与改动无关），逼出「全红＝沙箱限制、忽略」的人工论证。
+// 除非 ESBUILD_BINARY_PATH 指向 Linux esbuild（[[blue_regress_sandbox]] 的 /tmp fix·nightly 用），否则下面
+// 自动把它们剔出本次运行、留给 Mac/nightly 全绿——判定与 psm gatePlan 的 runnable 同源（quirk #165）、与上面
+// canBuild 同范式（quirk #147）。typecheck（tsc）+ check-*（node）+ verify-tutorial（node）不靠 esbuild·照跑。
+const canRunTsx = process.platform !== 'linux' || !!process.env.ESBUILD_BINARY_PATH;
+
 // 端到端教学验证（纯 node，不走 tsx）
 tasks.push({ name: 'verify-tutorial', cmd: ['node', join('scripts', 'verify-tutorial.mjs')] });
 
@@ -143,6 +150,19 @@ for (const f of playthroughs) {
   const name = basename(f, '.ts'); // e.g. playthrough-sonar
   // 全部 playthrough 已种子化（确定性·quirk #129）→ 不再重试：失败即真红，别拿 retry 盖回归。
   tasks.push({ name, cmd: [tsx, join('scripts', f)] });
+}
+
+// ---- 沙箱无 esbuild → 剔出 tsx 任务（保 typecheck + 静态门 + verify-tutorial 跑·全量留 Mac/nightly）----
+// 按「可执行文件 == tsx」精确判定（非名字模式）：自动覆盖将来任何 tsx 任务·且不误伤 node 跑的 verify-tutorial。
+let deferredTsx = [];
+if (!canRunTsx) {
+  deferredTsx = tasks.filter((t) => t.cmd[0] === tsx).map((t) => t.name);
+  for (let i = tasks.length - 1; i >= 0; i--) if (tasks[i].cmd[0] === tsx) tasks.splice(i, 1);
+  if (deferredTsx.length)
+    console.log(
+      `⚠  沙箱无可用 esbuild → 跳过 ${deferredTsx.length} 个 tsx 行为测/smoke（typecheck+静态门照跑）。\n` +
+        '   全量留 Mac/nightly：npm run regress（或本机设 ESBUILD_BINARY_PATH 后再跑）。',
+    );
 }
 
 // ---- 过滤 ----
@@ -244,6 +264,11 @@ async function main() {
       (flaked.length ? ` · ${flaked.length} 个重试后过` : '') +
       ` · 墙钟 ${((Date.now() - wall) / 1000).toFixed(1)}s`,
   );
+
+  if (deferredTsx.length)
+    console.log(
+      `⚠  以上为沙箱子集 · ${deferredTsx.length} 个 tsx 行为测/smoke 未跑（无 esbuild）→ 须 Mac/nightly 全绿补跑·别据此判「全绿可发布」。`,
+    );
 
   sweepViteTimestampJunk();
 

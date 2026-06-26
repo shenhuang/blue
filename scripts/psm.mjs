@@ -293,6 +293,18 @@ function driftFromMain(baseSha) {
   const mainSha = shaOf(CFG.mainBranch); if (!mainSha || !baseSha) return '?';
   try { return git(['rev-list', '--count', `${baseSha}..${mainSha}`]); } catch { return '?'; }
 }
+// 台账 flag 可能 stale（沙箱不能可靠回写台账·并发 session 推进 main）——用 git 真值核对：分支的活已全
+// 在 main（main..branch == 0）且分支确实有过提交（baseSha..branch > 0）= 实际已 land。返回提示串 or null。
+// 守效率复盘 #4：别照台账 active/ready 判「在飞」，git 才是真相（同 #96 定位轴·同 mergedWipBranches 思路）。
+function staleLandedNote(s) {
+  if (!s.branch) return null;
+  try {
+    const ahead = git(['rev-list', '--count', `${CFG.mainBranch}..${s.branch}`]);
+    const work = s.baseSha ? git(['rev-list', '--count', `${s.baseSha}..${s.branch}`]) : '0'; // base 未知→不冒「已 land」误报
+    if (ahead === '0' && work !== '0') return `台账标 ${s.state} 但分支已并入 main——实际已 land（Mac 上 psm gc 清台账）。`;
+  } catch { /* 分支不可解析（异常 worktree）→ 不判 */ }
+  return null;
+}
 function cmdStatus() {
   const led = readLedger();
   const sessions = Object.entries(led.sessions);
@@ -304,6 +316,8 @@ function cmdStatus() {
     info(`  ${C.bold(n)}  [${s.state === 'ready' ? C.green('ready') : 'active'}]  ${s.branch}`);
     info(`      车道 [${s.lanes.join(', ')}]`);
     info(C.dim(`      worktree ${s.worktree} · 基线落后 main ${drift} commit${drift !== '0' && drift !== '?' ? '（land 会先 rebase）' : ''}`));
+    const sl = staleLandedNote(s);
+    if (sl) warn(`      ⚠ ${sl}`);
   }
   const names = active.map(([n]) => n);
   for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++)

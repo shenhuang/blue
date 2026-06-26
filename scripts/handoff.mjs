@@ -16,11 +16,15 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
+import { roadmapDrift } from './check-roadmap-stale.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const N = parseInt(process.argv[2], 10) || 8;
 const CHANGELOG_TITLES_N = 12; // handoff 末尾只列最近这么多条 CHANGELOG「标题」（正文留盘·见 recentChangelogTitles·省上下文）
+
+// 沙箱路径判定（同 psm.mjs::isSandbox·若改两处同步——env 检测本就分散在 regress/psm 各处·#1/#165）。
+const inSandbox = ROOT.startsWith('/sessions/') || ROOT.includes('/mnt/');
 
 function hr(title) {
   return `\n${'═'.repeat(64)}\n  ${title}\n${'═'.repeat(64)}`;
@@ -81,6 +85,16 @@ function topBlockquote(text) {
 
 console.log('深海回响 · 交接定位（从 git + 报告 + STATUS/CHANGELOG 再生·纯只读）');
 
+// —— 0. 运行环境边界（一次说清·省得每 session 重问「这步要不要我自己敲」）——
+if (inSandbox) {
+  console.log(
+    '\n运行环境：沙箱（mount 不能 unlink）——push / `psm gc` / `psm land` 的 rebase+ff 都留 Mac 本机或夜间；\n' +
+      '  沙箱内 `npm run regress` 自动跑 esbuild-free 子集（typecheck+静态门），tsx 行为测留 Mac/nightly（regress.mjs·#165）。',
+  );
+} else {
+  console.log('\n运行环境：Mac 本机（可 push / gc / ff·regress 跑全量行为测）。');
+}
+
 // —— 1. git 定位 ——
 console.log(hr(`git log（最近 ${N}）+ status`));
 console.log(git(['log', '--oneline', '-' + N]));
@@ -128,6 +142,21 @@ console.log(
       '（append-only 文档〔CHANGELOG/QUIRKS〕只在 main 整合时写·别在 feature 树里碰＝免 merge 冲突。）',
     );
   }
+}
+
+// —— 1d. roadmap 漂移自检（当前状态 banner vs git·别照抄 stale banner·见 #3）——
+try {
+  const rd = roadmapDrift(ROOT);
+  if (rd.ok && rd.moved.length) {
+    console.log(hr('roadmap 漂移自检（banner vs git）'));
+    console.log(
+      `cave_roadmap 当前状态 banner（${rd.date}）之后，以下车道文件在 main 有新提交 → 这些任务可能已推进/落地，\n` +
+        '核对其 ⬜/✓ 再规划，别照抄 banner（全量 `npm run roadmap:check`）：',
+    );
+    for (const mv of rd.moved) console.log(`  · ${mv.name}  (${mv.count})  最新：${mv.latest}`);
+  }
+} catch {
+  /* 漂移自检失败绝不影响定位 */
 }
 
 // —— 2. 最新 nightly REPORT 头部 ——
