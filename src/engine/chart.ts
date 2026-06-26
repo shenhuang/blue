@@ -593,6 +593,31 @@ export function describeCaveShape(poi: ChartPoi): string | null {
   }
 }
 
+/**
+ * 玩家已知的月相潮窗点（不暴露秘密·waitPreview 用）：
+ * 扫描所有 roamingTemplates（和带 lunarWindow 的 anchors）中：
+ *   - 有非空 lunarWindow
+ *   - 且 intelFlag 已置于 profile.flags（玩家通过情报"知道"它）
+ * 返回 { name, window }。纯函数·无副作用。
+ */
+export function knownLunarPoints(profile: PlayerProfile): { name: string; window: LunarPhase[] }[] {
+  const out: { name: string; window: LunarPhase[] }[] = [];
+  // roaming templates
+  for (const t of POIS.roamingTemplates) {
+    if (!t.lunarWindow || t.lunarWindow.length === 0) continue;
+    if (!t.intelFlag || !profile.flags.has(t.intelFlag)) continue;
+    out.push({ name: t.name, window: t.lunarWindow });
+  }
+  // anchors（有 lunarWindow 且 intelFlag 已知）
+  for (const a of POIS.anchors) {
+    const aa = a as ChartPoi & { intelFlag?: string };
+    if (!aa.lunarWindow || aa.lunarWindow.length === 0) continue;
+    if (!aa.intelFlag || !profile.flags.has(aa.intelFlag)) continue;
+    out.push({ name: aa.name, window: aa.lunarWindow });
+  }
+  return out;
+}
+
 /** CLI / 日志用的一行描述 */
 export function describePoi(profile: PlayerProfile, poi: ChartPoi): string {
   const d = effectiveDistance(profile, poi);

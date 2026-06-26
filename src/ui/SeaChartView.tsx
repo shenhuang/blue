@@ -30,7 +30,7 @@ import { getUpgradeBonuses } from '@/engine/upgrades';
 import { getItemDef, weightForItem } from '@/engine/items';
 import { isOverloaded } from '@/engine/equipment';
 import { listRecoverableCorpses } from '@/engine/death';
-import { advanceDays, daysToNextLunarBoundary } from '@/engine/port';
+import { advanceDays, daysToNextLunarBoundary, waitPreview } from '@/engine/port';
 import { lunarPhaseLabel, dayWithinPhase } from '@/engine/lunar';
 import { MoonDisc } from './MoonDisc';
 import { LighthouseBuildPanel } from './LighthouseBuildPanel';
@@ -118,6 +118,25 @@ function ConditionBar({
   const weatherLabel = c.weather === 'clear' ? '晴' : c.weather === 'mist' ? '薄雾' : '浓雾';
   const daysLeft = daysToNextLunarBoundary(state.profile);
 
+  // 「等到下一相位」的得失预览（SPEC §6：等待是看得见账的决定）
+  const preview = !state.run ? waitPreview(state, daysLeft) : null;
+  const previewParts: string[] = [];
+  if (preview) {
+    const nextSpringNeap = preview.targetPhase === 'new' || preview.targetPhase === 'full' ? '大潮' : '小潮';
+    previewParts.push(`等 ${preview.days} 天 → ${lunarPhaseLabel(preview.targetPhase)}·${nextSpringNeap}`);
+    if (preview.corpseItemsLost > 0) {
+      previewParts.push(`海底遗存 −${preview.corpseItemsLost} 件`);
+    }
+    for (const name of preview.closing) {
+      previewParts.push(`${name} 关`);
+    }
+    for (const name of preview.opening) {
+      previewParts.push(`${name} 开`);
+    }
+  }
+  // 只在有非平凡信息时显示（至少有遗存损耗或潮窗变化）
+  const showPreview = preview !== null && previewParts.length > 1;
+
   return (
     <div className="chart-conditions">
       {/* Left: moon disc + two text lines */}
@@ -132,7 +151,7 @@ function ConditionBar({
           </span>
         </div>
       </div>
-      {/* Right: wait buttons (port only) */}
+      {/* Right: wait buttons + preview (port only) */}
       {!state.run && (
         <div className="chart-conditions-actions">
           <button
@@ -143,14 +162,21 @@ function ConditionBar({
           >
             等一天
           </button>
-          <button
-            type="button"
-            className="btn small chart-wait-btn"
-            onClick={() => onStateChange(advanceDays(state, daysLeft))}
-            title="在港口等到下一个月相边界——机会点随相位换一批（SPEC §6）"
-          >
-            等到下一相位 · 还 {daysLeft} 天
-          </button>
+          <div className="chart-wait-phase-group">
+            <button
+              type="button"
+              className="btn small chart-wait-btn"
+              onClick={() => onStateChange(advanceDays(state, daysLeft))}
+              title="在港口等到下一个月相边界——机会点随相位换一批（SPEC §6）"
+            >
+              等到下一相位 · 还 {daysLeft} 天
+            </button>
+            {showPreview && (
+              <span className="chart-wait-preview">
+                {previewParts.join(' · ')}
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -594,6 +620,10 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
             <span><i className="chart-swatch anchor" />已知地点</span>
             <span><i className="chart-swatch roam" />随潮出现</span>
             <span><i className="chart-swatch locked" />还到不了</span>
+            <span className="chart-legend-lunar">
+              <MoonDisc phase="new" size={14} />
+              月相徽标 = 该点潮窗；灰 pin = 知道但当下去不了（潮窗未到）
+            </span>
           </div>
 
           {/* popup（点灯塔/前哨标记）或 POI 详情（点 POI），二者互斥。

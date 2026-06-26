@@ -6,11 +6,13 @@
 // 把这些从 App.tsx / UI 里拎出来的好处：playthrough 脚本能直接调，行为与 UI 一致。
 
 import type { GameState, InventoryItem, MaterialTier, PlayerProfile } from '@/types';
+import type { LunarPhase } from '@/types';
 import { pickReturnTrigger } from './portEvents';
 import { acquireIntoProfile, addToPoiSetMap, appendLog, removeFromInventory } from './state';
 import { allItems, getItemDef } from './items';
 import { ageAndDecayDeaths, getPreservationBonus } from './death';
 import { daysToNextPhase, lunarPhase, lunarPhaseLabel } from './lunar';
+import { knownLunarPoints } from './chart';
 
 export interface ReturnToPortResult {
   state: GameState;
@@ -98,6 +100,66 @@ export function advanceDays(state: GameState, n: number): GameState {
 /** 「等到下一相位边界」还要几天（港口等待主形式·UI 按钮 + advanceDays 入参·SPEC §6）。 */
 export function daysToNextLunarBoundary(profile: PlayerProfile): number {
   return daysToNextPhase(profile.day ?? profile.runsCompleted);
+}
+
+/**
+ * 等待预览（SPEC §6：等待是看得见账的决定）。纯函数·无副作用。
+ * 告知玩家等 n 天之后的三项变化：
+ *   - targetPhase: 等完之后的月相
+ *   - corpseItemsLost: 海底遗存上当前还有、等完就没了的物品件数（sum of qty·≥0）
+ *   - opening: 玩家已知的潮窗点中，等完进入其窗（现在窗外 → 等完窗内）
+ *   - closing: 玩家已知的潮窗点中，等完离开其窗（现在窗内 → 等完窗外）
+ */
+export interface WaitPreview {
+  /** 等待的天数 */
+  days: number;
+  /** 等完之后的月相 */
+  targetPhase: LunarPhase;
+  /** 海底遗存：可回收尸体上「现在还在、等完就没了」的物品件数（≥0） */
+  corpseItemsLost: number;
+  /** 玩家「已知」的潮窗点中，等完进入其窗的点名字列表 */
+  opening: string[];
+  /** 玩家「已知」的潮窗点中，等完离开其窗的点名字列表 */
+  closing: string[];
+}
+
+export function waitPreview(state: GameState, n: number): WaitPreview {
+  const profile = state.profile;
+  const day = profile.day ?? profile.runsCompleted ?? 0;
+  const currentPhase = lunarPhase(day);
+  const targetPhase = lunarPhase(day + n);
+
+  // 海底遗存损耗：现在的 inventorySnapshot 总件数 vs 等完之后
+  const preservationBonus = getPreservationBonus(profile.unlockedUpgrades);
+  const sweepImmune = profile.unlockedUpgrades.has('upgrade.salvage_guild.lv3');
+
+  // 当前可回收尸体（未 recovered）的当前物品总数
+  const recoverableDeaths = profile.deaths.filter((d) => !d.recovered && d.inventorySnapshot.length > 0);
+
+  const nowTotal = recoverableDeaths.reduce((sum, d) => {
+    return sum + d.inventorySnapshot.reduce((s, it) => s + it.qty, 0);
+  }, 0);
+
+  // 等完之后的物品总数（只看这些可回收的尸体）
+  const agedSet = ageAndDecayDeaths(recoverableDeaths, day + n, preservationBonus, sweepImmune);
+  const thenTotal = agedSet.reduce((sum, d) => {
+    return sum + d.inventorySnapshot.reduce((s, it) => s + it.qty, 0);
+  }, 0);
+
+  const corpseItemsLost = Math.max(0, nowTotal - thenTotal);
+
+  // 潮窗点变化（只看玩家已知的点）
+  const knownPoints = knownLunarPoints(profile);
+  const opening: string[] = [];
+  const closing: string[] = [];
+  for (const pt of knownPoints) {
+    const nowIn = pt.window.includes(currentPhase);
+    const thenIn = pt.window.includes(targetPhase);
+    if (!nowIn && thenIn) opening.push(pt.name);
+    if (nowIn && !thenIn) closing.push(pt.name);
+  }
+
+  return { days: n, targetPhase, corpseItemsLost, opening, closing };
 }
 
 /** Mira 收购价系数：sellPrice 是市场价，Mira 转手收 0.8 折 */

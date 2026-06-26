@@ -1795,6 +1795,31 @@ html, body, #root {
   white-space: nowrap;
 }
 
+/* 「等到下一相位」按钮 + 等待预览一组（垂直排列·按钮在上·预览在下） */
+.chart-wait-phase-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+/* 「等到下一相位」等待预览：一行静音提示（SPEC §6：等待是看得见账的决定） */
+.chart-wait-preview {
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  line-height: 1.3;
+  opacity: 0.85;
+}
+
+/* 图例：月相徽标说明条目 */
+.chart-legend-lunar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-faint);
+}
+
 /* 暗点月相角标：定位于 chart-dot 右上角·极小·继承暗色 */
 .chart-poi-moon-badge {
   position: absolute;
