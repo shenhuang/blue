@@ -1,39 +1,32 @@
 // MapDevPanel —— 地图调试器 dev 面板（仅 import.meta.env.DEV 下挂载）
 //
 // 目的：可视化迭代迷路 mapgen 的布局，不用反复编译跑 playthrough。
-//   左栏：zone / seed / depthOffset 控制 + 结构读数（analyzeMap 的全部性质，按迷路不变量着色）
-//   右栏：节点图 SVG —— 按 layer(到入口的树距) 分列，连边，按 kind 配色，标注最深点 / 死路 / 回边
+//   左栏：ZONE 选择（洞穴/开阔水域两组·分类条可收起各自 zone 列表）
+//   中栏：节点图 SVG / 声呐洞穴图 —— 按 layer(到入口的树距) 分列连边、按 kind 配色，标注最深点/死路/回边
+//   右栏：zone 信息（depthRange/layerCount）+ 结构读数（analyzeMap 全部性质·按迷路不变量着色）·单开一栏
 //
 // 设计（沿用 quirk #23/#24 套路，与 Event/Combat 面板一致）：
 //   - 所有计算走 engine：generateDiveMap + analyzeMap，绝不在 UI 里复刻拓扑逻辑
 //   - 不写新 GamePhase；devPanel 开关只在 App.tsx 顶层 useState 里管（DevPanelKind 加 'map'）
 //   - 只读 import.meta.env.DEV；prod build 时 App.tsx 的 lazy + DEV 守卫让本文件不进 bundle
-//   - seeded LCG 与 scripts/playthrough-*.ts 同算法，seed 与回归脚本对得上
+//   - 布局确定性：固定 LCG(1)（与 scripts/playthrough-*.ts 同算法）·同 zone 同图
 //
 // 详见 docs/STATUS.md「真'迷路' mapgen」+「地图调试器 dev 面板」。
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import './map-panel.css';
-import { generateDiveMap, analyzeMap } from '@/engine/mapgen';
+import { generateDiveMap, analyzeMap, resolveLayoutStyle } from '@/engine/mapgen';
 import { ZONES, zoneAllowsBacktrack } from '@/engine/zones';
 import { makeLcg } from '@/engine/rng';
 import { deriveMapLayout } from '../mapLayout';
 import { buildCaveGeometry, bakeCaveRGBA, SONAR_PX_PER_M, SONAR_COL_W, CAVE_GEOM_MARGIN } from '../SonarScanPanel';
-import type { DiveMap, DiveNode, ZoneDef, LayoutStyle } from '@/types';
+import type { DiveMap, DiveNode, ZoneDef } from '@/types';
 
 export interface MapDevPanelProps {
   onClose?: () => void;
 }
 
 const FLAGS = new Set(['flag.tutorial_complete']);
-
-/** 布局风格下拉（'' = 用 zone 盖章的默认·见 mapLayout/LayoutStyle）。纯渲染覆盖·不重生地图。 */
-const LAYOUT_STYLES: Array<{ value: '' | LayoutStyle; label: string }> = [
-  { value: '', label: 'zone 默认' },
-  { value: 'vertical', label: '竖向 vertical' },
-  { value: 'horizontal', label: '横向 horizontal' },
-  { value: 'serpentine', label: '蛇行 serpentine' },
-];
 
 function kindClass(node: DiveNode, startId: string): string {
   if (node.id === startId) return 'dev-map-fill-entrance';
@@ -95,22 +88,44 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
     () => [...ZONES.values()].filter((z) => z.generation === 'random'),
     [],
   );
+  // 按渲染类型分两类（作者 2026-06-27「洞穴和开阔水域就行」）：洞穴=maze→声呐图 / 开阔水域=layered→节点图。
+  // 判据同 zoneAllowsBacktrack；左侧 tab 据此切，zone 列表只列当前类（替代旧下拉·按类型区分）。
+  const caveZones = useMemo(() => randomZones.filter((z) => z.mapShape === 'maze'), [randomZones]);
+  const openZones = useMemo(() => randomZones.filter((z) => z.mapShape !== 'maze'), [randomZones]);
   const [zoneId, setZoneId] = useState<string>(
     randomZones.find((z) => z.mapShape === 'maze')?.id ?? randomZones[0]?.id ?? '',
   );
-  const [seed, setSeed] = useState<number>(1);
-  const [depthOffset, setDepthOffset] = useState<number>(0);
-  // 剖面曲线 k（洞型谱·maze 专用）：空 = k=1 旧线性（dev 面板传显式 rng 无 seedKey，不走地点派生）。
-  const [depthCurveStr, setDepthCurveStr] = useState<string>('');
-  const depthCurve = (() => {
-    const v = Number(depthCurveStr);
-    return depthCurveStr.trim() !== '' && Number.isFinite(v) && v > 0 ? v : undefined;
-  })();
-  // 布局风格覆盖（'' = 用 map 盖章的默认）：纯渲染·切换即换形状·不重生地图（看 zone 的各种形状用）。
-  const [styleOverride, setStyleOverride] = useState<'' | LayoutStyle>('');
-  const styleOpt: LayoutStyle | undefined = styleOverride || undefined;
+  // seed / ΔDEPTH / 剖面k 调试旋钮全撤（作者 2026-06-27「都没用了·seed 也多余」）：布局按固定 LCG(1)
+  // 确定性生成——每座 zone 只看其确定性布局 + 结构读数；以后要看不同随机图，加回一个 reseed 即可。
+  // 左栏两组（洞穴/开阔水域）各自可收起列表（「tab 做成列表上方·可收起该列表」）；初始非当前类收起（初始 zone = 洞穴）。
+  const [collapsed, setCollapsed] = useState<Record<'open' | 'cave', boolean>>({ open: true, cave: false });
 
   const zone = ZONES.get(zoneId);
+
+  // 左侧两类 tab + 当前类 zone 列表（zoneId 单一真相·activeCat 由它派生·不另存 state）。
+  // 渲染风格游戏里按 zone 固定（resolveLayoutStyle）·不再给可选下拉（作者 2026-06-27：给「选择」纯属误导）；
+  // 每座的实际风格在 zone 列表项 + 中栏图标题里只读展示。
+  const TABS: Array<{ id: 'open' | 'cave'; label: string; hint: string; zones: ZoneDef[] }> = [
+    { id: 'cave', label: '洞穴', hint: '声呐图', zones: caveZones },
+    { id: 'open', label: '开阔水域', hint: '节点图', zones: openZones },
+  ];
+  const activeCat: 'open' | 'cave' = zone?.mapShape === 'maze' ? 'cave' : 'open';
+  const toggleCat = (cat: 'open' | 'cave') => setCollapsed((c) => ({ ...c, [cat]: !c[cat] }));
+  const renderZoneItem = (z: ZoneDef) => (
+    <li
+      key={z.id}
+      className={`dev-event-item ${z.id === zoneId ? 'selected' : ''}`}
+      onClick={() => setZoneId(z.id)}
+    >
+      <div className="dev-event-id">{z.name}</div>
+      <div className="dev-event-meta">
+        <span className="dev-faint">
+          {z.depthRange[0]}–{z.depthRange[1]}m · {resolveLayoutStyle(z)}
+          {z.canFreeAscend === false ? ' · 封闭' : ''}
+        </span>
+      </div>
+    </li>
+  );
 
   const map: DiveMap | null = useMemo(() => {
     if (!zone) return null;
@@ -118,16 +133,14 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
       zone,
       profileFlags: FLAGS,
       deaths: [],
-      rng: makeLcg(seed),
-      depthOffset,
-      depthCurve,
+      rng: makeLcg(1),
     });
-  }, [zone, seed, depthOffset, depthCurve]);
+  }, [zone]);
 
   const analysis = useMemo(() => (map ? analyzeMap(map) : null), [map]);
 
   // —— 布局：抽到共享 deriveMapLayout（声呐探索图 SonarScanPanel 与本面板同一套铺点，避免漂移）——
-  const layout = useMemo(() => (map ? deriveMapLayout(map, { layoutStyle: styleOpt }) : null), [map, styleOpt]);
+  const layout = useMemo(() => (map ? deriveMapLayout(map) : null), [map]);
 
   const deepestSet = useMemo(() => new Set(analysis?.deepestNodeIds ?? []), [analysis]);
   const deadEndSet = useMemo(() => new Set(analysis?.deadEndIds ?? []), [analysis]);
@@ -136,8 +149,8 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
   // 用与玩家取景窗同一套布局比例（SONAR_PX_PER_M/COL_W）＝洞看起来和游戏里一致（只是整图全揭、无雾无扫）。
   const isOpenWater = zone ? !zoneAllowsBacktrack(zone.id) : false;
   const caveLayout = useMemo(
-    () => (map ? deriveMapLayout(map, { pxPerMeter: SONAR_PX_PER_M, colW: SONAR_COL_W, layoutStyle: styleOpt }) : null),
-    [map, styleOpt],
+    () => (map ? deriveMapLayout(map, { pxPerMeter: SONAR_PX_PER_M, colW: SONAR_COL_W }) : null),
+    [map],
   );
   // 烤洞穴的世界取景框＝节点包围盒四周再扩 CAVE_GEOM_MARGIN：有机洞穴的房间/散瓣/域扭曲会鼓出节点包围盒，
   // 不留这圈则画布边缘把上下左右的洞壁裁掉（dev 把整图烤进固定画布才暴露·游戏内移动取景窗不会·margin 单一来源见 SonarScanPanel）。
@@ -204,16 +217,10 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
         <div>
           <div className="dev-panel-title">地图调试器 · MapDevPanel</div>
           <div className="dev-panel-sub">
-            generateDiveMap + analyzeMap · seed 与回归脚本同 LCG · Shift+M 切换 / Esc 关闭
+            generateDiveMap + analyzeMap · 确定性布局 LCG(1) · Shift+M 切换 / Esc 关闭
           </div>
         </div>
         <div className="dev-panel-header-actions">
-          <button className="dev-btn" onClick={() => setSeed((s) => s + 1)}>
-            seed +1
-          </button>
-          <button className="dev-btn" onClick={() => setSeed(Math.floor(Math.random() * 1_000_000))}>
-            🎲 随机 seed
-          </button>
           {onClose && (
             <button className="dev-btn dev-btn-quiet" onClick={onClose}>
               关闭 ✕
@@ -223,122 +230,40 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
       </div>
 
       <div className="dev-panel-body dev-map-body">
-        {/* 左：控制 + 读数 */}
-        <div className="dev-col dev-col-form">
-          <h3 className="dev-col-title">生成参数</h3>
-          <div className="dev-section">
-            <div className="dev-stack">
-              <span>ZONE</span>
-              <select className="dev-input" value={zoneId} onChange={(e) => setZoneId(e.target.value)}>
-                {randomZones.map((z) => (
-                  <option key={z.id} value={z.id}>
-                    {z.name} · {z.mapShape ?? 'layered'}
-                    {z.canFreeAscend === false ? ' · 封闭' : ''}
-                  </option>
-                ))}
-              </select>
+        {/* 左：ZONE 选择（单独一栏·两组分类条可收起各自 zone 列表） */}
+        <div className="dev-col dev-col-form dev-map-zone-col">
+          <h3 className="dev-col-title">ZONE 选择</h3>
+          <div className="dev-section dev-map-acc">
+            <div className="dev-faint" style={{ marginBottom: 6 }}>
+              点分类条收起/展开列表 · 点条目选关卡
             </div>
-            <div className="dev-stack">
-              <span>布局风格 LAYOUT（纯渲染·换形状看）</span>
-              <select
-                className="dev-input"
-                value={styleOverride}
-                onChange={(e) => setStyleOverride(e.target.value as '' | LayoutStyle)}
-              >
-                {LAYOUT_STYLES.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="dev-row">
-              <label className="dev-inline">
-                <span>SEED</span>
-                <input
-                  className="dev-input dev-input-num"
-                  type="number"
-                  value={seed}
-                  onChange={(e) => setSeed(Number(e.target.value) || 0)}
-                />
-              </label>
-              <label className="dev-inline">
-                <span>ΔDEPTH</span>
-                <input
-                  className="dev-input dev-input-num"
-                  type="number"
-                  value={depthOffset}
-                  onChange={(e) => setDepthOffset(Number(e.target.value) || 0)}
-                />
-              </label>
-              <label className="dev-inline">
-                <span>剖面 k</span>
-                <input
-                  className="dev-input dev-input-num"
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  placeholder="1"
-                  value={depthCurveStr}
-                  onChange={(e) => setDepthCurveStr(e.target.value)}
-                />
-              </label>
-            </div>
-            {zone && (
-              <div className="dev-faint" style={{ marginTop: 6 }}>
-                depthRange {zone.depthRange[0]}–{zone.depthRange[1]}m
-                {depthOffset ? ` (偏移后 ${zone.depthRange[0] + depthOffset}–${zone.depthRange[1] + depthOffset}m)` : ''}
-                {' · '}layerCount {zone.layerCount}
-                {zone.mapShape === 'maze' && (
-                  <>
-                    {' · '}剖面 k：空=1 线性 · k&lt;1 井+廊 · k&gt;1 廊+坑
-                    {zone.depthCurveRange
-                      ? ` · 实潜按 POI 派生 ${zone.depthCurveRange[0]}–${zone.depthCurveRange[1]}`
-                      : ''}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
-          <h3 className="dev-col-title">结构读数 · analyzeMap</h3>
-          {analysis && (
-            <div className="dev-section">
-              {check('全节点从起点可达', analysis.allReachable, `${analysis.reachableCount}/${analysis.nodeCount}`)}
-              {check('双向边（无向）', analysis.isUndirected)}
-              {check('存在环 / 回边', analysis.hasCycle, `环秩 ${analysis.cycleRank}`)}
-              {check('存在死路', analysis.hasDeadEnd, `${analysis.deadEndIds.length} 处`)}
-              {check('多个最深点', analysis.deepestNodeIds.length >= 2, `${analysis.deepestNodeIds.length} @ ${analysis.maxDepth}m`)}
-              {check('局部深度极大', analysis.localMaximaIds.length >= 2, `${analysis.localMaximaIds.length} 处`)}
-              {check('上浮口全部可达', analysis.allAscentReachable, `${analysis.reachableAscentCount}/${analysis.ascentPointIds.length}`)}
-              {check('入口即上浮口', analysis.entranceIsAscent)}
-              <div className="dev-map-check">
-                <span className="dev-map-check-key">节点 / 边</span>
-                <span>{analysis.nodeCount} / {analysis.edgeCount}</span>
-              </div>
-              <div className="dev-map-check">
-                <span className="dev-map-check-key">剖面 meanDepthFrac</span>
-                <span>
-                  {analysis.meanDepthFrac.toFixed(2)}
-                  {analysis.meanDepthFrac <= 0.42
-                    ? ' · 廊+坑'
-                    : analysis.meanDepthFrac >= 0.58
-                      ? ' · 井+廊'
-                      : ' · 匀速下行'}
-                </span>
-              </div>
-            </div>
-          )}
-          <div className="dev-faint">
-            注：迷路不变量（可达/双向/环/死路/多最深点/入口=口）应全绿；选层状 zone 时部分项天然为
-            ✗（层状图起点是同层多入口之一、入口非上浮口），这是正常对照。
+            {TABS.map((t) => {
+              const isOpen = !collapsed[t.id];
+              return (
+                <div className="dev-map-acc-group" key={t.id}>
+                  <button
+                    type="button"
+                    className={`dev-map-acc-head ${activeCat === t.id ? 'on' : ''}`}
+                    aria-expanded={isOpen}
+                    onClick={() => toggleCat(t.id)}
+                  >
+                    <span className="dev-map-acc-chevron">{isOpen ? '▾' : '▸'}</span>
+                    <span className="dev-map-acc-label">{t.label}</span>
+                    <span className="dev-map-acc-hint">{t.hint} · {t.zones.length}</span>
+                  </button>
+                  {isOpen && (
+                    <ul className="dev-event-list dev-map-zone-list">{t.zones.map(renderZoneItem)}</ul>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* 右：图 */}
+        {/* 中：图（节点图 / 声呐洞穴图） */}
         <div className="dev-col dev-map-canvas-col">
           <h3 className="dev-col-title">
-            {showCave ? '声呐洞穴图' : '节点图'} · {map?.zoneId} · 布局 {styleOverride || map?.layoutStyle || 'vertical'}{' '}
+            {showCave ? '声呐洞穴图' : '节点图'} · {map?.zoneId} · 布局 {map?.layoutStyle || 'vertical'}{' '}
             <span className="dev-faint">
               {showCave
                 ? '（声呐有机洞穴·整图全揭·与游戏内同一渲染·确定性同图同洞）'
@@ -408,13 +333,7 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
           ) : (
           <>
           <div className="dev-map-svg-wrap dev-map-cave-wrap">
-            {isOpenWater ? (
-              <div className="dev-map-cave-empty">
-                这是<b>开阔水域</b>（层状·非洞穴）——声呐图里没有洞壁可循，只有黑暗里的接触。
-                选 mapShape = maze 的 zone（如蓝洞群「迷路」）看有机洞穴剖面。
-              </div>
-            ) : (
-              map &&
+            {map &&
               caveLayout &&
               caveRect &&
               caveGeom && (
@@ -445,7 +364,6 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
                     })}
                   </svg>
                 </div>
-              )
             )}
           </div>
           <div className="dev-map-legend">
@@ -456,6 +374,50 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
           </div>
           </>
           )}
+        </div>
+
+        {/* 右：结构读数（analyzeMap·单独一栏） */}
+        <div className="dev-col dev-map-readout-col">
+          <h3 className="dev-col-title">结构读数 · analyzeMap</h3>
+          {zone && (
+            <div className="dev-faint" style={{ marginBottom: 8 }}>
+              depthRange {zone.depthRange[0]}–{zone.depthRange[1]}m · layerCount {zone.layerCount}
+              {zone.mapShape === 'maze' && zone.depthCurveRange
+                ? ` · 剖面 k（实潜按 POI 派生）${zone.depthCurveRange[0]}–${zone.depthCurveRange[1]}`
+                : ''}
+            </div>
+          )}
+          {analysis && (
+            <div className="dev-section">
+              {check('全节点从起点可达', analysis.allReachable, `${analysis.reachableCount}/${analysis.nodeCount}`)}
+              {check('双向边（无向）', analysis.isUndirected)}
+              {check('存在环 / 回边', analysis.hasCycle, `环秩 ${analysis.cycleRank}`)}
+              {check('存在死路', analysis.hasDeadEnd, `${analysis.deadEndIds.length} 处`)}
+              {check('多个最深点', analysis.deepestNodeIds.length >= 2, `${analysis.deepestNodeIds.length} @ ${analysis.maxDepth}m`)}
+              {check('局部深度极大', analysis.localMaximaIds.length >= 2, `${analysis.localMaximaIds.length} 处`)}
+              {check('上浮口全部可达', analysis.allAscentReachable, `${analysis.reachableAscentCount}/${analysis.ascentPointIds.length}`)}
+              {check('入口即上浮口', analysis.entranceIsAscent)}
+              <div className="dev-map-check">
+                <span className="dev-map-check-key">节点 / 边</span>
+                <span>{analysis.nodeCount} / {analysis.edgeCount}</span>
+              </div>
+              <div className="dev-map-check">
+                <span className="dev-map-check-key">剖面 meanDepthFrac</span>
+                <span>
+                  {analysis.meanDepthFrac.toFixed(2)}
+                  {analysis.meanDepthFrac <= 0.42
+                    ? ' · 廊+坑'
+                    : analysis.meanDepthFrac >= 0.58
+                      ? ' · 井+廊'
+                      : ' · 匀速下行'}
+                </span>
+              </div>
+            </div>
+          )}
+          <div className="dev-faint">
+            注：迷路不变量（可达/双向/环/死路/多最深点/入口=口）应全绿；选开阔水域（层状）时部分项
+            天然为 ✗（层状图起点是同层多入口之一、入口非上浮口），这是正常对照。
+          </div>
         </div>
       </div>
     </div>

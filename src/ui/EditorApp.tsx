@@ -56,7 +56,7 @@ const NAV: EditorNavGroup[] = [
     items: [
       { key: 'chart', label: '海图' },
       { key: 'chartdev', label: 'POI 调试' },
-      { key: 'map', label: '关卡 mapgen' },
+      { key: 'map', label: '地图调试' },
     ],
   },
 ];

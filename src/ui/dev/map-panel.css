@@ -9,9 +9,60 @@
 
 @import './dev-panel.css';
 
-/* 两栏：左控制 + 结构读数，右图可视化 */
+/* 三栏：左 ZONE 选择 + 生成参数 · 中 节点图/声呐图 · 右 结构读数
+   （作者 2026-06-27：结构读数单开一栏·ZONE 选择单独一栏） */
 .dev-map-body {
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 280px 1fr 240px;
+  /* 单行拉满 body 高度＝三栏（尤其中间地图）延伸到底·不随左栏条目数缩小（作者 2026-06-27） */
+  grid-template-rows: minmax(0, 1fr);
+}
+.dev-map-readout-col {
+  background: var(--bg);
+}
+
+/* —— zone 选择：左竖向 tab（洞穴/开阔水域）+ 右 zone 列表（替旧下拉·作者 2026-06-27）—— */
+/* 分类条在列表上方·点条收起/展开各自列表（手风琴·作者 2026-06-27「tab 做成列表上方·可收起该列表」） */
+.dev-map-acc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dev-map-acc-group {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.dev-map-acc-head {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.dev-map-acc-head:hover { background: var(--bg-elev); }
+.dev-map-acc-head.on {
+  background: var(--bg-elev-2);
+  color: var(--text);
+  border-left: 2px solid var(--accent);
+}
+.dev-map-acc-chevron { width: 10px; font-size: 10px; color: var(--text-faint); }
+.dev-map-acc-label { font-size: 12px; font-weight: 600; }
+.dev-map-acc-hint { margin-left: auto; font-size: 10px; color: var(--text-faint); }
+.dev-map-zone-list {
+  min-width: 0;
+  max-height: 42vh;
+  overflow-y: auto;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
 }
 
 .dev-map-canvas-col {
@@ -160,13 +211,4 @@
   stroke: rgba(0, 0, 0, 0.7);
   stroke-width: 2px;
 }
-.dev-map-cave-empty {
-  margin: auto;
-  max-width: 320px;
-  padding: 24px;
-  text-align: center;
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--text-muted);
-}
-.dev-map-cave-empty b { color: var(--text); }
+/* （已删 .dev-map-cave-empty：开阔水域空状态在 showCave=false 分支走节点图·那段提示永不可达·2026-06-27） */

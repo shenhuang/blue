@@ -7,7 +7,7 @@
 //
 // 布局风格（LayoutStyle·见 types/dive.ts + docs/spec/深海回响_地图渲染补全_SPEC.md）：
 //   渲染层是「形状」的唯一瓶颈——同一张拓扑图按不同 style 铺成不同形状。style 由 map.layoutStyle（mapgen 盖章）决定，
-//   dev 面板可经 opts.layoutStyle 临时覆盖看各形状。**'vertical' 是默认且逐字节复现旧图**（所有不声明的 zone/旧图走这条）。
+//   `opts.layoutStyle` 仍可临时覆盖（纯渲染·当前无 UI 暴露——MapDevPanel 已撤「换形状」下拉·2026-06-27/#229）。**'vertical' 是默认且逐字节复现旧图**（所有不声明的 zone/旧图走这条）。
 //   - vertical：纵轴＝真实深度（#92·上浅下深·y∝depth）·横轴＝同深兄弟摊开（x 无方向语义·纯避重叠）。
 //   - horizontal：进洞树距(layer)→横轴（进来多远＝主压力轴）·深度退成纵向弱带（配 orientation='horizontal'）。
 //   - serpentine：层按行蛇形折返（盘绕·难辨来路）。
@@ -39,7 +39,7 @@ export interface MapLayoutOpts {
   padX?: number;
   padY?: number;
   r?: number;
-  /** 覆盖 map.layoutStyle（dev 面板下拉「换形状看」用·缺省走 map 盖章的 style）。 */
+  /** 覆盖 map.layoutStyle（纯渲染·缺省走 map 盖章的 style；MapDevPanel 已撤「换形状」下拉·#229·当前无 consumer 用此覆盖）。 */
   layoutStyle?: LayoutStyle;
 }
 
