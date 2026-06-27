@@ -144,7 +144,7 @@ while (nextEv && !nextEv.startsWith('__')) {
   nextEv = runEvent(id, (ev) => {
     if (ev.id === 'tutorial.prologue') return 'dive_in'; // St0 开场钩「半本日志」（#115）
     if (ev.id === 'tutorial.descent') return 'continue';
-    if (ev.id === 'tutorial.grouper') return 'sneak';
+    if (ev.id === 'tutorial.wreck_approach') return 'press_on';
     if (ev.id === 'tutorial.wreck') return 'stealth_grab'; // 走潜行成功路径
     if (ev.id === 'tutorial.deeper') return 'go_deeper';
     if (ev.id === 'tutorial.captain_quarters') return 'grab_log';

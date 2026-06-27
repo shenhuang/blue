@@ -16,7 +16,7 @@
       "scriptedStartEventId": "tutorial.prologue",
       "scriptedNodeEvents": [
         { "layer": 0, "eventId": "tutorial.prologue" },
-        { "layer": 1, "eventId": "tutorial.grouper", "preview": "倒伏的钢梁" },
+        { "layer": 1, "eventId": "tutorial.wreck_approach", "preview": "倒伏的钢梁" },
         { "layer": 2, "eventId": "tutorial.deeper", "preview": "更暗的入口" }
       ]
     },

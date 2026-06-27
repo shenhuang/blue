@@ -49,8 +49,8 @@ walkDialogTo('npc.aldo', {
 snap('after-startDive');
 
 // 走教学事件链直到 wreck，然后选 engage。
-// 教学关 node 化（#221+）：descent→grouper 已是**节点边界**（非 triggerEventId·靠走到下一节点）；本测只为测鲨鱼战斗，
-// 直接从 grouper 入口起（grouper→wreck 是节点内 triggerEventId 链·仍连）⇒ grouper→sneak→wreck→engage→combat。
+// 教学关 node 化（#221+/#222）：descent→wreck_approach 已是**节点边界**（非 triggerEventId·靠走到下一节点）；本测只为测鲨鱼战斗，
+// 直接从 wreck_approach 入口起（wreck_approach→wreck 是节点内 triggerEventId 链·仍连）⇒ wreck_approach→press_on→wreck→engage→combat。
 function runEvent(id: string, optionId: string): string {
   const ev = getEventById(id)!;
   log.push(`event ${ev.id} → ${ev.options.find((o) => o.id === optionId)?.label}`);
@@ -71,9 +71,9 @@ function runEvent(id: string, optionId: string): string {
   return '';
 }
 
-let ev = 'tutorial.grouper';
+let ev = 'tutorial.wreck_approach';
 while (ev && !ev.startsWith('__')) {
-  ev = runEvent(ev, ev === 'tutorial.descent' ? 'continue' : ev === 'tutorial.grouper' ? 'sneak' : ev === 'tutorial.wreck' ? 'engage' : ev === 'tutorial.deeper' ? 'ascend_now' : ev === 'tutorial.captain_quarters' ? 'grab_log' : 'continue');
+  ev = runEvent(ev, ev === 'tutorial.descent' ? 'continue' : ev === 'tutorial.wreck_approach' ? 'press_on' : ev === 'tutorial.wreck' ? 'engage' : ev === 'tutorial.deeper' ? 'ascend_now' : ev === 'tutorial.captain_quarters' ? 'grab_log' : 'continue');
 }
 snap('after-tutorial-events');
 log.push(`reached: ${ev}`);

@@ -74,49 +74,31 @@
     },
 
     {
-      "id": "tutorial.grouper",
-      "depthRange": [20, 20],
+      "id": "tutorial.wreck_approach",
+      "_doc": "教学关 node 化（#222 续）：node.1.0（21m·沉船入口前）。**无生物·纯氛围**——原 `tutorial.grouper`（石斑鱼·避让生物）紧接鲨鱼战斗，给新手前置「打生物」的误导印象（作者拍：『石斑鱼后续接战斗很容易对新手造成误导』）。改成接近沉船的不安铺垫，教游戏的恐惧/氛围轴；鲨鱼（tutorial.wreck）成为**唯一且干净**的战斗课（含 stealth_grab 潜行避战）。两选项都 triggerEventId tutorial.wreck（节点内链·节点间转移靠 wreck 链尾删 trigger）。",
+      "depthRange": [21, 21],
       "zoneTags": ["tutorial"],
       "weight": 0,
       "oncePerSave": true,
-      "title": "石斑鱼",
-      "body": "你贴着海底向北游，前方是一片倒伏的钢梁。\n一只巨型石斑鱼挡在你和沉船之间，颚部张合着。\n它有领地意识，但显然不是冲你来的。",
+      "title": "倒伏的钢梁",
+      "body": "你贴着海底向北游。\n一片倒伏的钢梁从淤泥里斜插出来，像谁的肋骨。水温在这儿低了一截，灯光打过去，悬浮物把光拢成一团，照不远。\n钢梁那头，是沉船的影子。\n\n四下没有别的动静——只是你听见自己呼吸器的声音，比刚才响了些。",
       "tone": "realistic",
       "options": [
         {
-          "id": "sneak",
-          "label": "缓慢绕开（氧气 -2）",
+          "id": "press_on",
+          "label": "贴着钢梁过去（氧气 -2）",
           "outcome": {
-            "text": "你压低身体，让气瓶贴近沙底，慢慢移到了它的盲区。",
+            "text": "你压低身体，从钢梁下钻过去。锈簌簌地落在面镜上。",
             "oxygenTurnCost": 2,
             "triggerEventId": "tutorial.wreck"
           }
         },
         {
-          "id": "scare",
-          "label": "用刀柄敲击金属吓走它",
-          "hideCheck": true,
-          "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
-          "check": {
-            "stat": "stamina",
-            "dc": 12,
-            "onSuccess": {
-              "text": "金属声在水里闷响。石斑鱼一晃，向深处去了。",
-              "triggerEventId": "tutorial.wreck"
-            },
-            "onFailure": {
-              "text": "它没被吓住，反而朝你撞了一下。你后退，肋下生疼。",
-              "deltas": { "stamina": -5 },
-              "triggerEventId": "tutorial.wreck"
-            }
-          }
-        },
-        {
-          "id": "rush",
-          "label": "直接游近（体力 -8）",
+          "id": "look",
+          "label": "停一下，看清那片影子再走（氧气 -1）",
           "outcome": {
-            "text": "你硬游过去，它向你扑了一下又躲开。气息有点乱。",
-            "deltas": { "stamina": -8 },
+            "text": "你停下，让灯慢慢扫过去。是条船——侧翻着，桅杆还戳在淤泥里。",
+            "oxygenTurnCost": 1,
             "triggerEventId": "tutorial.wreck"
           }
         }

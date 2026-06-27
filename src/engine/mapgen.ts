@@ -717,7 +717,7 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
     const row = layerNodes[layer];
     if (!ev || !row?.length) continue;
     const nid = row[0];
-    // 节点预览＝**地点**（preview 显式给·缺省回退 ev.title）：剧情事件 title 常是「事件/生物名」（tutorial.grouper="石斑鱼"），
+    // 节点预览＝**地点**（preview 显式给·缺省回退 ev.title）：剧情事件 title 有时是「事件名」而非地点，
     // 当节点名读着别扭、且与别的「地点型」节点（"可以喘息的水域"/"旧沉船"）不对称。scriptedNodeEvents 配地点 preview 修对称（#222 续）。
     nodes[nid] = { ...nodes[nid], kind: 'event', eventId, features: undefined, preview: preview ?? ev.title };
   }
