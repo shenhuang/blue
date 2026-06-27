@@ -137,21 +137,43 @@ pretty('after-startDive');
 if (state.phase.kind !== 'dive') throw new Error('应进入 dive，实际 ' + state.phase.kind);
 log.push(`zone=${state.run!.zoneId}`);
 
-// 教学事件链
-let nextEv: string = (state.phase as any).subPhase.eventId;
-while (nextEv && !nextEv.startsWith('__')) {
-  const id: string = nextEv;
-  nextEv = runEvent(id, (ev) => {
-    if (ev.id === 'tutorial.prologue') return 'dive_in'; // St0 开场钩「半本日志」（#115）
-    if (ev.id === 'tutorial.descent') return 'continue';
-    if (ev.id === 'tutorial.wreck_approach') return 'press_on';
-    if (ev.id === 'tutorial.wreck') return 'stealth_grab'; // 走潜行成功路径
-    if (ev.id === 'tutorial.deeper') return 'go_deeper';
-    if (ev.id === 'tutorial.captain_quarters') return 'grab_log';
-    return ev.options[0].id;
-  });
+// 教学事件链 —— node-aware 导航（#222 教学 node 化：descent→wreck_approach / wreck→deeper 是**节点边界**·
+// 事件链尾不再 triggerEventId 续接·须像玩家一样落 node-select 逐节点前进·见 quirk #191 +
+// playthrough-tutorial-e2e §D 同款驱动。旧版纯事件链 walk 走到节点边界即停 → 卡 dive 到不了 forceAscend）。
+const tutorialPick = (ev: DiveEvent): string => {
+  if (ev.id === 'tutorial.prologue') return 'dive_in'; // St0 开场钩「半本日志」（#115）
+  if (ev.id === 'tutorial.descent') return 'continue';
+  if (ev.id === 'tutorial.wreck_approach') return 'press_on';
+  if (ev.id === 'tutorial.wreck') return 'stealth_grab'; // 走潜行成功路径（不进战斗）
+  if (ev.id === 'tutorial.deeper') return 'go_deeper';
+  if (ev.id === 'tutorial.captain_quarters') return 'grab_log';
+  return ev.options[0].id;
+};
+let navGuard = 0;
+while (state.phase.kind === 'dive' && navGuard++ < 40) {
+  const sub = (state.phase as any).subPhase;
+  if (sub.kind === 'event') {
+    const ret = runEvent(sub.eventId, tutorialPick);
+    if (ret === '__FORCE_ASCEND__' || ret === '__DEATH__') break;
+    if (ret === '__COMBAT__') { state = enterNodeSelection(state); continue; }
+    // 非空非'__' = continueEvent（runEvent 已把 phase 设到下一事件·节点内 triggerEventId 链）→ 继续处理；
+    // '' = 事件链尾（remainOnEvent / 无后续）→ 落 node-select 前进到下一节点（这正是旧 walk 漏掉的一步）。
+    if (!ret) state = enterNodeSelection(state);
+    continue;
+  }
+  if (sub.kind === 'nodeSelect') {
+    const choices = sub.choices ?? [];
+    const forward = choices.filter((c) => !c.isAscentPoint);
+    const target = forward[0] ?? choices[0];
+    if (!target) { state = { ...state, phase: { kind: 'ascent', targetDepth: 0 } }; break; }
+    log.push(`节点前进: ${target.depth}m "${target.preview}"`);
+    state = moveToNode(state, target.nodeId);
+    continue;
+  }
+  // rest/其它子相位：继续下潜（最深死端 enterNodeSelection 自然转 ascent）。
+  state = state.run?.map ? enterNodeSelection(state) : { ...state, phase: { kind: 'ascent', targetDepth: 0 } };
 }
-pretty(`after-events (${nextEv})`);
+pretty(`after-events (${state.phase.kind})`);
 
 if (state.phase.kind !== 'ascent') throw new Error('应在上浮，实际 ' + state.phase.kind);
 const plan = planAscent(state.run!);
