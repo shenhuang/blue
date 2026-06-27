@@ -1,0 +1,7 @@
+reports/
+# Stray empty scratch stubs from a prior agent — the sandbox mount cannot
+# unlink them, so ignore them defensively: an accidental `git add -A` must NOT
+# sweep debug*.ts into the commit (only the real harness files belong).
+debug*.ts
+# Per-run token/state files (callers pass --token /tmp/...; default lives here).
+*token*.json
