@@ -117,7 +117,7 @@ interface GenOpts {
    * 只在「教学首潜 + zone.scriptedNodeEvents」时由 generateDiveMap 喂；重访不喂 ⇒ 裸图 + pinnedEventId（captain_revisit）。
    * 缺省 undefined ⇒ 零影响（byte-identical·所有非教学下潜不受影响）。
    */
-  scriptedNodeEvents?: Array<{ layer: number; eventId: string }>;
+  scriptedNodeEvents?: Array<{ layer: number; eventId: string; preview?: string }>;
 }
 
 function randInt(min: number, max: number, rng = Math.random): number {
@@ -712,12 +712,14 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
   // 教学关 node 化（#221+·SPEC 深海回响_教学关node化）：把脚本 beats 按**显式 layer 索引**钉到各层首节点（复用 pinnedEventId
   // 同款覆盖·在它之后落＝脚本布局优先）。仅教学首潜喂（generateDiveMap 门控·重访不喂）。末层（ascent_point）也可被覆盖成
   // 事件——教学靠 forceAscend 事件退出·不摸上浮口钮（见 SPEC·ascentLocked）。节点 id/深度/连边不动 ⇒ 与重访共用同一布局。
-  for (const { layer, eventId } of opts.scriptedNodeEvents ?? []) {
+  for (const { layer, eventId, preview } of opts.scriptedNodeEvents ?? []) {
     const ev = getEventById(eventId);
     const row = layerNodes[layer];
     if (!ev || !row?.length) continue;
     const nid = row[0];
-    nodes[nid] = { ...nodes[nid], kind: 'event', eventId, features: undefined, preview: ev.title };
+    // 节点预览＝**地点**（preview 显式给·缺省回退 ev.title）：剧情事件 title 常是「事件/生物名」（tutorial.grouper="石斑鱼"），
+    // 当节点名读着别扭、且与别的「地点型」节点（"可以喘息的水域"/"旧沉船"）不对称。scriptedNodeEvents 配地点 preview 修对称（#222 续）。
+    nodes[nid] = { ...nodes[nid], kind: 'event', eventId, features: undefined, preview: preview ?? ev.title };
   }
 
   return {

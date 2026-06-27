@@ -27,7 +27,7 @@ export interface ZoneDef {
    * （layer 索引 → eventId）。配了它 ⇒ 教学首潜走 layered 多节点图（与重访**共用同一布局**）而非旧单节点图；节点间靠
    * forceAscend 事件退出（玩家被 `run.ascentLocked` 锁住、只能沿单向图前进）。仅首潜生效（mapgen 按 `event_seen:scriptedStartEventId` 门控·重访不钉）。
    */
-  scriptedNodeEvents?: Array<{ layer: number; eventId: string }>;
+  scriptedNodeEvents?: Array<{ layer: number; eventId: string; preview?: string }>;
   /**
    * 随机图（generation='random'）的拓扑形态。与 canFreeAscend 正交：
    *  - 'layered'（默认，缺省即此）：层状 DAG——每层 2–3 节点、深度单调递增、只连下一层。
