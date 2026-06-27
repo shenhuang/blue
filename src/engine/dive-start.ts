@@ -192,6 +192,17 @@ export function startDive(
     run = autoScanOnArrival({ ...state, run }).run!;
   }
 
+  // 教学首潜锁上浮（教学关 node 化·#221+·SPEC 深海回响_教学关node化）：linearScripted zone 且其 scriptedStart 未见过＝首潜
+  // ⇒ run.ascentLocked（isAscentBlocked 恒挡 + UI 藏自愿上浮钮 ⇒ 玩家只能沿单向图前进、靠 forceAscend 事件退出）。
+  // 重访（同 zone·scriptedStart 已见 → mapgen 落普通 layered）不锁——east_reef 重访仍 free-ascend。门控与 mapgen tutorialFirstDive 同源。
+  if (
+    zone.generation === 'linearScripted' &&
+    zone.scriptedStartEventId != null &&
+    !state.profile.flags.has(`event_seen:${zone.scriptedStartEventId}`)
+  ) {
+    run = { ...run, ascentLocked: true };
+  }
+
   // 教学关 / 脚本下潜：直接进入起始事件
   if (zone.generation === 'linearScripted' && startNode.eventId) {
     return {

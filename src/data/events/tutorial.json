@@ -47,8 +47,7 @@
           "id": "continue",
           "label": "继续下沉",
           "outcome": {
-            "text": "你继续向下，水越来越冷。",
-            "triggerEventId": "tutorial.grouper"
+            "text": "你继续向下，水越来越冷。"
           }
         },
         {
@@ -57,8 +56,7 @@
           "outcome": {
             "text": "你定在水中，珊瑚的颜色比你记忆里更浓。一只小章鱼在岩缝里看你。它的眼睛比你想象的聪明。",
             "deltas": { "sanity": 2 },
-            "oxygenTurnCost": 2,
-            "triggerEventId": "tutorial.grouper"
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -69,8 +67,7 @@
             "deltas": { "stamina": -2 },
             "loot": [
               { "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.6 }
-            ],
-            "triggerEventId": "tutorial.grouper"
+            ]
           }
         }
       ]
@@ -155,8 +152,7 @@
               "text": "你按住浮力，缓慢得像是水的一部分。手伸进去——图筒到手。鲨鱼没有动。",
               "oxygenTurnCost": 3,
               "loot": [{ "itemId": "item.old_chart", "qty": [1, 1] }],
-              "applyFlags": ["flag.tutorial_chart_obtained"],
-              "triggerEventId": "tutorial.deeper"
+              "applyFlags": ["flag.tutorial_chart_obtained"]
             },
             "onFailure": {
               "text": "你的气泡出卖了你。它转向。",
@@ -174,9 +170,10 @@
       "zoneTags": ["tutorial"],
       "weight": 0,
       "oncePerSave": true,
+      "_doc": "教学关 node 化（#221+）：钉在 east_reef layer 2（node.2.0·= 重访沉船同位）·scriptedNodeEvents 无条件放·moveToNode 到站即触发（prereqFlags 不在此路径校验·保留作语义文档 + quirk #161 例）。§B 鲨鱼 flee 路径也会到这（无图筒）→ body 不假设拿到图筒。ascend_now→ending_safe / go_deeper→captain_quarters→ending_log。",
       "prereqFlags": ["flag.tutorial_chart_obtained"],
       "title": "再深一点",
-      "body": "你拿到那只图筒了。任务完成。\n但船舱往下还有一个更暗的入口，\n你的灯照进去，照不到底。\n\nAldo 说过别贪。",
+      "body": "船舱往下还有一个更暗的入口。\n你的灯照进去，照不到底。\n\nAldo 说过别贪。",
       "tone": "uncanny",
       "options": [
         {

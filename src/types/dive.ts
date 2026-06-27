@@ -23,6 +23,12 @@ export interface ZoneDef {
   /** 线性脚本下潜的起始事件 id */
   scriptedStartEventId?: string;
   /**
+   * 教学关 node 化（#221+·SPEC docs/spec/深海回响_教学关node化_SPEC.md）：把脚本 beats 钉到 layered 图的指定层首节点
+   * （layer 索引 → eventId）。配了它 ⇒ 教学首潜走 layered 多节点图（与重访**共用同一布局**）而非旧单节点图；节点间靠
+   * forceAscend 事件退出（玩家被 `run.ascentLocked` 锁住、只能沿单向图前进）。仅首潜生效（mapgen 按 `event_seen:scriptedStartEventId` 门控·重访不钉）。
+   */
+  scriptedNodeEvents?: Array<{ layer: number; eventId: string }>;
+  /**
    * 随机图（generation='random'）的拓扑形态。与 canFreeAscend 正交：
    *  - 'layered'（默认，缺省即此）：层状 DAG——每层 2–3 节点、深度单调递增、只连下一层。
    *    旧灯塔礁 / 沉船墓园等开阔海域用这套。

@@ -1,5 +1,5 @@
 import type { GameState } from '@/types';
-import { executeAscent, planAscent, isAscentBlocked } from '@/engine/ascent';
+import { executeAscent, planAscent, isZoneAscentBlocked } from '@/engine/ascent';
 import { cancelAscent } from '@/engine/transitions';
 import { StatusBar } from './StatusBar';
 
@@ -14,7 +14,9 @@ export function AscentView({ state, onStateChange }: Props) {
   const oxygenLeft = state.run.stats.oxygen;
   const normalSafe = oxygenLeft >= plan.normalTurns;
   const rushedSafe = oxygenLeft >= plan.rushedTurns;
-  const blocked = isAscentBlocked(state.run);
+  // 用「区域物理封口」而非含教学锁的 isAscentBlocked：教学首潜的 forceAscend 退出落 east_reef（free-ascend）
+  // → 不挡 → 仍能 normal 上浮（脚本退出不该被逼成应急上浮）。区域封口（蓝洞等）行为不变。
+  const blocked = isZoneAscentBlocked(state.run);
   // 主动上浮才带 returnTo（NodeSelect / Rest 的来处）；带了就给「取消」按钮回到原地。
   // 事件强制 / 战斗应急 / 走到死路的自动上浮无 returnTo → 不出取消（不可反悔）。
   const returnTo = state.phase.kind === 'ascent' ? state.phase.returnTo : undefined;

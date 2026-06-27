@@ -20,7 +20,7 @@ import { generateDiveMap } from '../src/engine/mapgen';
 import { startCombat, applyPlayerAction } from '../src/engine/combat';
 import { executeAscent } from '../src/engine/ascent';
 import { handleReturnToPort } from '../src/engine/port';
-import { startDiveFromPoi, enterNodeSelection, moveToNode } from '../src/engine/dive';
+import { startDive, startDiveFromPoi, enterNodeSelection, moveToNode } from '../src/engine/dive';
 import { generateChart, getPoiById } from '../src/engine/chart';
 import { eventDoneFlag, pickReturnTrigger } from '../src/engine/portEvents';
 import { toPort } from '../src/engine/transitions';
@@ -54,20 +54,56 @@ function drivePortEvent(state: GameState, eventId: string): GameState {
   return toPort({ ...result.state, profile: { ...result.state.profile, flags }, run: null });
 }
 
-function diveUntilExit(state: GameState, picks: Record<string, string>) {
+// 节点导航驱动（教学关 node 化·#221+·SPEC 深海回响_教学关node化）：像玩家一样逐节点把教学潜到「上浮」相位——
+// 复刻 EventView next.kind 分发 + nodeSelect 前进（强制单向：locked ⇒ choices 里没有上浮·只一个前进节点）+ 战斗 flee。
+// 记录：途中 tutorial beats / 是否全程锁上浮（run.ascentLocked）/ 每个 nodeSelect 是否都恰一个前进选择（强制线性）/ 打过哪场战斗。
+// **不**执行上浮——到 phase==='ascent' 即返回·由调用方 surfaceAndReturn 走 executeAscent + 回港（避免双执行）。
+function driveTutorialToSurface(state: GameState, picks: Record<string, string>) {
   let s = state;
-  let cur = 'tutorial.prologue';
-  for (let guard = 0; guard < 30; guard++) {
-    const result = driveEvent(s, cur, (ev) => picks[ev.id] ?? ev.options[0].id);
-    s = result.state;
-    const next = result.next;
-    if (next.kind === 'continueEvent') { cur = next.eventId; continue; }
-    if (next.kind === 'forceAscend') return { state: s, ended: 'ascend' as const };
-    if (next.kind === 'startCombat') return { state: s, ended: 'combat' as const, combatId: next.combatId };
-    if (next.kind === 'death') return { state: s, ended: 'death' as const };
-    return { state: s, ended: 'stuck' as const };
+  const beats: string[] = [];
+  let lockedThroughout = true;
+  let forcedLinear = true;
+  let sawCombat: string | null = null;
+  for (let guard = 0; guard < 200; guard++) {
+    const ph = s.phase as { kind: string; combatId?: string; subPhase?: { kind: string; eventId?: string; choices?: Array<{ nodeId: string; depth: number; isAscentPoint: boolean }> } };
+    if (ph.kind === 'dive' && s.run && !s.run.ascentLocked) lockedThroughout = false;
+    if (ph.kind === 'ascent') return { state: s, beats, lockedThroughout, forcedLinear, sawCombat, ended: 'surfaced' as const };
+    if (ph.kind === 'gameOver') return { state: s, beats, lockedThroughout, forcedLinear, sawCombat, ended: 'died' as const };
+    if (ph.kind === 'combat') {
+      if (ph.combatId) sawCombat = ph.combatId;
+      let fled = false;
+      for (let t = 0; t < 40 && (s.phase as { kind: string }).kind === 'combat'; t++) {
+        const r = applyPlayerAction(s, 'action.flee'); s = r.state;
+        if (r.outcome === 'flee' || r.outcome === 'emergency_ascend') { fled = true; break; }
+        if ((s.phase as { kind: string }).kind === 'gameOver') return { state: s, beats, lockedThroughout, forcedLinear, sawCombat, ended: 'died' as const };
+      }
+      if (!fled) return { state: s, beats, lockedThroughout, forcedLinear, sawCombat, ended: 'stuck-combat' as const };
+      continue;
+    }
+    if (ph.kind !== 'dive') return { state: s, beats, lockedThroughout, forcedLinear, sawCombat, ended: `phase:${ph.kind}` as const };
+    const sub = ph.subPhase!;
+    if (sub.kind === 'event') {
+      if (sub.eventId!.startsWith('tutorial.')) beats.push(sub.eventId!.replace('tutorial.', ''));
+      const r = driveEvent(s, sub.eventId!, (ev) => picks[ev.id] ?? ev.options[0].id);
+      let next = r.state;
+      if (r.next.kind === 'continueEvent') next = { ...next, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: r.next.eventId } } };
+      else if (r.next.kind === 'startCombat') { sawCombat = r.next.combatId; next = startCombat(next, r.next.combatId); }
+      else if (r.next.kind === 'forceAscend') next = { ...next, phase: { kind: 'ascent', targetDepth: 0 } };
+      else if (r.next.kind === 'death') next = { ...next, phase: { kind: 'gameOver', reason: 'died' } as GameState['phase'] };
+      else if (r.next.kind === 'remainOnEvent') next = next.run?.map ? enterNodeSelection(next) : next;
+      s = next; continue;
+    }
+    if (sub.kind === 'nodeSelect') {
+      const choices = sub.choices ?? [];
+      const forward = choices.filter((c) => !c.isAscentPoint);
+      if (forward.length !== 1) forcedLinear = false; // 强制线性：恰好一个前进节点（locked ⇒ choices 里无上浮逃·见 NodeSelectView gate）
+      const target = forward[0] ?? choices[0];
+      if (!target) { s = { ...s, phase: { kind: 'ascent', targetDepth: 0 } }; continue; }
+      s = moveToNode(s, target.nodeId); continue;
+    }
+    s = s.run?.map ? enterNodeSelection(s) : { ...s, phase: { kind: 'ascent', targetDepth: 0 } };
   }
-  return { state: s, ended: 'stuck' as const };
+  return { state: s, beats, lockedThroughout, forcedLinear, sawCombat, ended: 'guard' as const };
 }
 
 function surfaceAndReturn(state: GameState): { state: GameState; trigger: string | null } {
@@ -79,26 +115,36 @@ function surfaceAndReturn(state: GameState): { state: GameState; trigger: string
   return { state: s, trigger: ret.cutsceneEventId };
 }
 
+// 教学首潜：走真 startDive（教学关 node 化·#221+ ⇒ layered 3-node 图 + scriptedNodeEvents 钉 beats + run.ascentLocked 锁上浮）。
 function freshRun(): GameState {
   const base = createInitialGameState();
-  return { ...base, run: createNewRun({ zoneId: 'zone.east_reef' }), phase: { kind: 'dive', subPhase: { kind: 'event', eventId: 'tutorial.prologue' } } };
+  const run = createNewRun({ zoneId: 'zone.east_reef', equipment: base.profile.equipment });
+  return startDive({ ...base, run }, 'zone.east_reef');
 }
 
-// §0 east_reef 首次脚本起点 = tutorial.prologue
-L('§0 east_reef 脚本起点');
+// §0 教学首潜＝3-node 图·beats 钉到各层（与重访共用布局·#221+ 教学关 node 化）
+L('§0 教学首潜 node 图（prologue@0 / grouper@1 / deeper@2·与重访共用布局）');
 {
   const map = generateDiveMap({ zone: getZone('zone.east_reef')!, profileFlags: new Set<string>() });
-  assert(map.nodes[map.startNodeId]?.eventId === 'tutorial.prologue', '§0 首次 east_reef startNode = tutorial.prologue');
-  L('  scripted start ✓');
+  const nodes = Object.values(map.nodes);
+  const byLayer = (layer: number) => nodes.find((n) => n.layer === layer);
+  assert(nodes.length === 3, `§0 教学首潜应 3 节点（与重访共用布局·实际 ${nodes.length}）`);
+  assert(map.nodes[map.startNodeId]?.eventId === 'tutorial.prologue', '§0 起点节点 = tutorial.prologue');
+  assert(byLayer(1)?.eventId === 'tutorial.grouper', '§0 layer 1 = tutorial.grouper');
+  assert(byLayer(2)?.eventId === 'tutorial.deeper', '§0 layer 2 = tutorial.deeper');
+  L('  3-node scripted layout ✓');
 }
 
-// §A 上浮一路
-L('§A 上浮一路（ascend_now → ending_safe）');
+// §A 上浮一路（node 导航·deeper.ascend_now → ending_safe）
+L('§A 上浮一路（node 导航·ascend_now → ending_safe）');
 {
-  const out = diveUntilExit(freshRun(), { 'tutorial.prologue': 'dive_in', 'tutorial.descent': 'continue', 'tutorial.grouper': 'sneak', 'tutorial.wreck': 'stealth_grab', 'tutorial.deeper': 'ascend_now' });
-  assert(out.ended === 'ascend', `§A 应强制上浮（实际 ${out.ended}）`);
+  const out = driveTutorialToSurface(freshRun(), { 'tutorial.prologue': 'dive_in', 'tutorial.descent': 'continue', 'tutorial.grouper': 'sneak', 'tutorial.wreck': 'stealth_grab', 'tutorial.deeper': 'ascend_now' });
+  assert(out.ended === 'surfaced', `§A 应正常上浮（实际 ${out.ended}）`);
+  assert(out.lockedThroughout, '§A 教学全程 run.ascentLocked（强制下行·锁自愿上浮）');
+  assert(out.forcedLinear, '§A 每个 nodeSelect 恰一个前进节点（强制单向·无上浮逃）');
+  assert(out.beats.join(',') === 'prologue,descent,grouper,wreck,deeper', `§A beats 顺序应 prologue→descent→grouper→wreck→deeper（实际 ${out.beats.join(',')}）`);
   assert(out.state.profile.flags.has('event_seen:tutorial.prologue'), '§A prologue 写 event_seen:tutorial.prologue');
-  assert(out.state.profile.flags.has('flag.tutorial_ascended'), '§A ascend_now 写 flag.tutorial_ascended');
+  assert(out.state.profile.flags.has('flag.tutorial_ascended'), '§A deeper.ascend_now 写 flag.tutorial_ascended');
   const { state, trigger } = surfaceAndReturn(out.state);
   assert(trigger === 'tutorial.ending_safe', `§A 回港触发 ending_safe（实际 ${trigger}）`);
   assert(state.profile.flags.has('flag.tutorial_complete'), '§A flag.tutorial_complete 落 profile（海图解锁）');
@@ -106,33 +152,29 @@ L('§A 上浮一路（ascend_now → ending_safe）');
   L('  上浮一路 → tutorial_complete ✓');
 }
 
-// §B 逃跑一路（真战斗）
-L('§B 逃跑一路（真战斗 → 兜底 ending_safe）');
+// §B 鲨鱼一路（node 导航·engage→真战斗 flee→锁着续行 deeper.ascend_now→ending_safe）
+L('§B 鲨鱼一路（node 导航·engage→flee→续行→ending_safe）');
 {
-  const out = diveUntilExit(freshRun(), { 'tutorial.prologue': 'dive_in', 'tutorial.descent': 'continue', 'tutorial.grouper': 'sneak', 'tutorial.wreck': 'engage' });
-  assert(out.ended === 'combat' && out.combatId === 'combat.tutorial_shark', `§B wreck/engage → 战斗（实际 ${out.ended}/${(out as any).combatId}）`);
-  assert(out.state.profile.flags.has('event_seen:tutorial.prologue'), '§B prologue 写 event_seen');
-  let s = startCombat(out.state, out.combatId!);
-  let fled = false;
-  for (let t = 0; t < 30 && s.phase.kind === 'combat'; t++) {
-    const r = applyPlayerAction(s, 'action.flee');
-    s = r.state;
-    if (r.outcome === 'flee' || r.outcome === 'emergency_ascend') { fled = true; break; }
-    if (s.phase.kind === 'gameOver') break;
-  }
-  assert(fled, '§B 逃跑脱战成功');
-  assert(!s.profile.flags.has('flag.tutorial_ascended'), '§B 逃跑一路无 tutorial_ascended（未经 deeper）');
-  const { state, trigger } = surfaceAndReturn(s);
-  assert(trigger === 'tutorial.ending_safe', `§B 逃跑回港兜底 ending_safe（实际 ${trigger}）`);
+  const out = driveTutorialToSurface(freshRun(), { 'tutorial.prologue': 'dive_in', 'tutorial.descent': 'continue', 'tutorial.grouper': 'sneak', 'tutorial.wreck': 'engage', 'tutorial.deeper': 'ascend_now' });
+  assert(out.ended === 'surfaced', `§B 应正常上浮（实际 ${out.ended}）`);
+  assert(out.sawCombat === 'combat.tutorial_shark', `§B wreck/engage → 真战斗（实际 ${out.sawCombat}）`);
+  assert(out.lockedThroughout, '§B 全程锁上浮（含战斗·不给应急上浮逃出教学）');
+  assert(out.forcedLinear, '§B flee 脱战后仍强制单向续行到 deeper（不能就地上浮）');
+  assert(!out.state.profile.flags.has('flag.seen_first_uncanny'), '§B 没进船长室·无 seen_first_uncanny');
+  assert(!out.state.run?.inventory.some((i) => i.itemId === 'item.captain_log'), '§B 无 captain_log（→ ending_safe 非 log）');
+  const { state, trigger } = surfaceAndReturn(out.state);
+  assert(trigger === 'tutorial.ending_safe', `§B 回港 ending_safe（实际 ${trigger}）`);
   assert(state.profile.flags.has('flag.tutorial_complete'), '§B flag.tutorial_complete 落 profile');
-  L('  逃跑一路 → tutorial_complete ✓');
+  L('  鲨鱼一路 → tutorial_complete ✓');
 }
 
-// §C 船长日志一路
-L('§C 船长日志一路（grab_log → ending_log）');
+// §C 船长日志一路（node 导航·deeper.go_deeper → captain_quarters → grab_log → ending_log）
+L('§C 船长日志一路（node 导航·grab_log → ending_log）');
 {
-  const out = diveUntilExit(freshRun(), { 'tutorial.prologue': 'dive_in', 'tutorial.descent': 'continue', 'tutorial.grouper': 'sneak', 'tutorial.wreck': 'stealth_grab', 'tutorial.deeper': 'go_deeper', 'tutorial.captain_quarters': 'grab_log' });
-  assert(out.ended === 'ascend', `§C 应强制上浮（实际 ${out.ended}）`);
+  const out = driveTutorialToSurface(freshRun(), { 'tutorial.prologue': 'dive_in', 'tutorial.descent': 'continue', 'tutorial.grouper': 'sneak', 'tutorial.wreck': 'stealth_grab', 'tutorial.deeper': 'go_deeper', 'tutorial.captain_quarters': 'grab_log' });
+  assert(out.ended === 'surfaced', `§C 应正常上浮（实际 ${out.ended}）`);
+  assert(out.lockedThroughout, '§C 教学全程锁上浮');
+  assert(out.beats.includes('captain_quarters'), '§C 真进了船长室（go_deeper → captain_quarters）');
   assert(out.state.run?.inventory.some((i) => i.itemId === 'item.captain_log'), '§C run.inventory 含 captain_log');
   const { state, trigger } = surfaceAndReturn(out.state);
   assert(trigger === 'tutorial.ending_log', `§C 回港触发 ending_log（实际 ${trigger}）`);
@@ -215,7 +257,7 @@ L('§D 重访东礁二次下潜·导航式真跑（grab_log 路径必"遇到"_em
   // 确定性种子，保证教学含潜行检定 + 重访图生成可复现（导航能稳定走到 captain_revisit·与单跑无关）。
   Math.random = makeLcg(20260627);
   // —— 场景 A：教学只上浮（没下船长室）→ 重访#1 真遇到 captain_revisit（下去 grab_log）→ 重访#2 必遇到 _empty ——
-  const outA = diveUntilExit(freshRun(), { 'tutorial.prologue': 'dive_in', 'tutorial.descent': 'continue', 'tutorial.grouper': 'sneak', 'tutorial.wreck': 'stealth_grab', 'tutorial.deeper': 'ascend_now' });
+  const outA = driveTutorialToSurface(freshRun(), { 'tutorial.prologue': 'dive_in', 'tutorial.descent': 'continue', 'tutorial.grouper': 'sneak', 'tutorial.wreck': 'stealth_grab', 'tutorial.deeper': 'ascend_now' });
   let s = surfaceAndReturn(outA.state).state;
   assert(s.profile.flags.has('flag.tutorial_complete'), '§D/A 教学完成（海图解锁）');
   assert(!s.profile.flags.has('event_seen:tutorial.captain_quarters'), '§D/A 教学未下船长室');
@@ -238,7 +280,7 @@ L('§D 重访东礁二次下潜·导航式真跑（grab_log 路径必"遇到"_em
 
   // —— 场景 C：教学就下到船长室抓日志走（grab_log·旧 bug 触发路径）→ 重访#1 直接遇到 _empty ——
   Math.random = makeLcg(20260627); // 同上·场景独立可复现
-  const outC = diveUntilExit(freshRun(), { 'tutorial.prologue': 'dive_in', 'tutorial.descent': 'continue', 'tutorial.grouper': 'sneak', 'tutorial.wreck': 'stealth_grab', 'tutorial.deeper': 'go_deeper', 'tutorial.captain_quarters': 'grab_log' });
+  const outC = driveTutorialToSurface(freshRun(), { 'tutorial.prologue': 'dive_in', 'tutorial.descent': 'continue', 'tutorial.grouper': 'sneak', 'tutorial.wreck': 'stealth_grab', 'tutorial.deeper': 'go_deeper', 'tutorial.captain_quarters': 'grab_log' });
   let sc = surfaceAndReturn(outC.state).state;
   assert(sc.profile.flags.has('event_seen:tutorial.captain_quarters'), '§D/C 教学经 grab_log 进过船长室');
   assert(!sc.profile.flags.has('flag.seen_first_uncanny'), '§D/C grab_log 教学路径同样不置 seen_first_uncanny');

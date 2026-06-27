@@ -401,6 +401,12 @@ export interface RunState {
    */
   huntEnabled: boolean;
   /**
+   * 教学首潜「强制下行」锁（教学关 node 化·#221+·SPEC docs/spec/深海回响_教学关node化_SPEC.md）：
+   * true ⇒ `isAscentBlocked` 整潜恒挡（先于 zone.canFreeAscend）+ UI 藏「此处上浮 / 从此上浮」钮 ⇒ 玩家只能沿单向图前进、靠 forceAscend 事件退出。
+   * run 级·真条件字段（不种不补·absent＝不锁）·不 bump SAVE。仅 `dive-start.ts` 教学 node 化分支置 true；重访/普通潜不置（east_reef 重访仍 free-ascend）。
+   */
+  ascentLocked?: boolean;
+  /**
    * 当前追猎你的猎手（猎手 SPEC Phase 1）。run 级·派生·不入 profile·`?? undefined` 兜底·不 bump SAVE_VERSION。
    * 仅 huntEnabled 时由 engine/stalker.ts 生成/推进；纯对象（无 Set）→ JSON 自动 round-trip。
    */

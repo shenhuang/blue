@@ -4,7 +4,7 @@
       "id": "zone.east_reef",
       "name": "东礁",
       "description": "公会的资格潜水海域。浅、平、平淡。",
-      "_doc": "layerCount 3（短）＝重访「直奔沉船」：教学首潜走 linearScripted 事件链（不吃 layerCount）；教学后落回 random layered 时，3 层＝入口(12)→1 段礁(21)→沉船(30·= 教学船长室同深度)，剧情点（storyOpenEvents captain_revisit/_empty）钉在最深层＝目的地·几步即达·不再被泛礁填充与中途上浮口埋住（作者『重访该直接点沉船 / 同一个地方该认得出来』·#220·配合 chooseLayeredNodeKind 删 free-ascend 中层上浮口）。别擅自调回 5——playthrough-story §2d / tutorial-e2e §D 守『重访 ≤N 步达沉船』。",
+      "_doc": "layerCount 3 ＝ 教学首潜与重访**共用同一 3-node 布局**（#221+ 教学关 node 化·SPEC docs/spec/深海回响_教学关node化_SPEC.md）：入口(12)→礁(21)→沉船/船长室(30)。教学首潜走 `scriptedNodeEvents`（prologue→descent / grouper→wreck / deeper→captain_quarters 钉到 layer 0/1/2·节点内 triggerEventId 链·节点间靠落 node-selection 前进·`run.ascentLocked` 强制单向下行·靠 forceAscend 事件退出）；重访走裸 layered + `storyOpenEvents`（captain_revisit/_empty 钉最深层＝目的地·#220）。`chooseLayeredNodeKind` 删 free-ascend 中层上浮口（#220）。**别擅自调 layerCount / scriptedNodeEvents**——tutorial-e2e §0/§A-§D + playthrough-story §2d 守『教学 3-node 强制单向 / 重访 ≤4 步达沉船』。",
       "depthRange": [12, 30],
       "layerCount": 3,
       "nodesPerLayer": [1, 1],
@@ -13,7 +13,12 @@
         { "minDepth": 24, "tags": ["reef", "wreck"] }
       ],
       "generation": "linearScripted",
-      "scriptedStartEventId": "tutorial.prologue"
+      "scriptedStartEventId": "tutorial.prologue",
+      "scriptedNodeEvents": [
+        { "layer": 0, "eventId": "tutorial.prologue" },
+        { "layer": 1, "eventId": "tutorial.grouper" },
+        { "layer": 2, "eventId": "tutorial.deeper" }
+      ]
     },
     {
       "id": "zone.old_lighthouse_reef",

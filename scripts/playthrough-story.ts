@@ -189,7 +189,7 @@ L('§2b ending_safe 上浮一路（flag 触发·无剧情物）');
   // （setProfileFlags·不是 applyFlags——后者 dive 中只进 run.activeFlags、回港即丢＝海图永不解锁的真凶 06-13）。
   {
     let s: GameState = createInitialGameState();
-    s = { ...s, run: createNewRun({ zoneId: 'zone.tutorial_reef' }) };
+    s = { ...s, run: createNewRun({ zoneId: 'zone.east_reef' }) }; // 修：旧 'zone.tutorial_reef' 早不存在·只 resolveOption 不查 zone 故无害·#221+ 顺手清
     const deeper = getEventById('tutorial.deeper')!;
     const ascend = deeper.options.find((o) => o.id === 'ascend_now')!;
     const r = resolveOption(s, ascend);

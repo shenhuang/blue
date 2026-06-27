@@ -48,10 +48,12 @@ export function computeRequiredStops(nitrogen: number): 0 | 1 | 2 | 3 {
 }
 
 /**
- * 当前 run 是否处于"封闭水域"（如蓝洞群），且不在 ascent_point 上。
- * 此时 normal / rushed 不允许（头上是岩顶）；只剩 emergency。
+ * **区域物理封口**：当前 run 在"封闭水域"（如蓝洞群·`canFreeAscend===false`）且不在 ascent_point 上。
+ * 此时 normal / rushed 不允许（头上是岩顶）；只剩 emergency。**只看区域物理·不含教学锁**——
+ * 供 AscentView 的 normal/rushed 禁用判定用：教学首潜的 `forceAscend` 退出落在 east_reef（free-ascend），
+ * 此处不挡 ⇒ 玩家仍能正常上浮（教学锁只藏「自愿上浮」入口·不该把脚本退出逼成应急上浮·见教学关 node 化 SPEC）。
  */
-export function isAscentBlocked(run: RunState): boolean {
+export function isZoneAscentBlocked(run: RunState): boolean {
   const zone = getZone(run.zoneId);
   if (!zone) return false;
   if (zone.canFreeAscend !== false) return false; // 默认 true → 不挡
@@ -59,6 +61,16 @@ export function isAscentBlocked(run: RunState): boolean {
   const node = run.map.nodes[run.currentNodeId];
   // 在 ascent_point 上就放行（那是洞另一头的开口）
   return node?.kind !== 'ascent_point';
+}
+
+/**
+ * 「玩家此刻能否**自行**上浮」的否定：教学首潜锁（`run.ascentLocked`·强制下行）**或**区域物理封口。
+ * 用于**藏自愿上浮入口**（NodeSelectView「此处上浮」/ RestView「从此上浮」）+ 战斗应急上浮逃（CombatView）。
+ * 注意：**不**用于 AscentView 的 normal/rushed 禁用——那走 `isZoneAscentBlocked`（否则教学 forceAscend 退出会被逼应急上浮）。
+ */
+export function isAscentBlocked(run: RunState): boolean {
+  if (run.ascentLocked) return true; // 教学首潜：强制下行·整潜锁自愿上浮（先于区域判·#221+·教学关 node 化）
+  return isZoneAscentBlocked(run);
 }
 
 /** 减压病分级判定 */

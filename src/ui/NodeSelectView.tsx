@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { GameState, NodeChoice, FeatureChoice } from '@/types';
 import { moveToNode, exploreFeature, standAndFight, deployDecoy, beginAscentFromDive } from '@/engine/dive';
+import { isAscentBlocked } from '@/engine/ascent';
 import { clarity, ALERT_WARN, ALERT_THRESHOLD } from '@/engine/clarity';
 import { activeDecoy } from '@/engine/stalker';
 import { getItemDef } from '@/engine/items';
@@ -207,11 +208,13 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
               </li>
             );
           })}
-          <li>
-            <button className="btn event-option ascend" onClick={handleAscendNow}>
-              ↑ 此处上浮
-            </button>
-          </li>
+          {!isAscentBlocked(run) && (
+            <li>
+              <button className="btn event-option ascend" onClick={handleAscendNow}>
+                ↑ 此处上浮
+              </button>
+            </li>
+          )}
         </ul>
       </article>
     </div>

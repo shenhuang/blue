@@ -111,6 +111,13 @@ interface GenOpts {
    * 缺省 undefined → 不放置（所有非剧情下潜零影响·byte-identical）。仅 layered 图实现（reef/wreck·东礁重访）。
    */
   pinnedEventId?: string;
+  /**
+   * 教学关 node 化（#221+·SPEC docs/spec/深海回响_教学关node化_SPEC.md）：把指定事件按**显式 layer 索引**钉到该层首节点。
+   * 与单数 pinnedEventId 正交（那个按 depthRange 选最深非末层放一枚；这个按 layer 放多枚）。仅 layered 路径实现。
+   * 只在「教学首潜 + zone.scriptedNodeEvents」时由 generateDiveMap 喂；重访不喂 ⇒ 裸图 + pinnedEventId（captain_revisit）。
+   * 缺省 undefined ⇒ 零影响（byte-identical·所有非教学下潜不受影响）。
+   */
+  scriptedNodeEvents?: Array<{ layer: number; eventId: string }>;
 }
 
 function randInt(min: number, max: number, rng = Math.random): number {
@@ -412,38 +419,44 @@ export function generateDiveMap(opts: GenOpts): DiveMap {
   const baseD0 = Math.max(0, range[0] + depthOffset);
   const baseD1 = Math.max(baseD0 + 1, range[1] + depthOffset);
 
-  if (zone.generation === 'linearScripted') {
-    // 教学关首次：单节点指向起始事件。
-    // 若 oncePerSave 起始事件已见（event_seen 已写），fall through 到普通 layered 生成。
-    const tutorialSeen =
-      zone.scriptedStartEventId != null &&
-      opts.profileFlags.has(`event_seen:${zone.scriptedStartEventId}`);
-    if (!tutorialSeen) {
-      const startNode: DiveNode = {
-        id: 'scripted.start',
-        layer: 0,
-        depth: baseD0,
-        zoneTag: 'tutorial',
-        kind: 'event',
-        eventId: zone.scriptedStartEventId,
-        connectsTo: [],
-        preview: '出发。',
-      };
-      return {
-        zoneId: zone.id,
-        generatedAt: Date.now(),
-        nodes: { [startNode.id]: startNode },
-        startNodeId: startNode.id,
-      };
-    }
-    // 教学已完成 → 当普通 layered zone 处理（zoneTagsByDepth 已换成 shallow/reef/wreck）
+  // 教学首潜判定（linearScripted zone·其 scriptedStart 未见过）——决定走教学图还是普通 layered（重访）。
+  const tutorialFirstDive =
+    zone.generation === 'linearScripted' &&
+    zone.scriptedStartEventId != null &&
+    !opts.profileFlags.has(`event_seen:${zone.scriptedStartEventId}`);
+
+  // 教学首潜 + **未配** node 化 ⇒ 旧单节点教学图（事件链驱动·其它 linearScripted zone 若有）。
+  // 配了 scriptedNodeEvents（#221+ 教学关 node 化）⇒ fall through 到下方 layered + 把 beats 钉到节点（首潜限定·重访不钉）。
+  if (tutorialFirstDive && !zone.scriptedNodeEvents) {
+    const startNode: DiveNode = {
+      id: 'scripted.start',
+      layer: 0,
+      depth: baseD0,
+      zoneTag: 'tutorial',
+      kind: 'event',
+      eventId: zone.scriptedStartEventId,
+      connectsTo: [],
+      preview: '出发。',
+    };
+    return {
+      zoneId: zone.id,
+      generatedAt: Date.now(),
+      nodes: { [startNode.id]: startNode },
+      startNodeId: startNode.id,
+    };
   }
+  // 教学已完成（重访）→ 当普通 layered zone 处理（zoneTagsByDepth 已换成 shallow/reef/wreck）。
 
   // 洞穴一致性（SPEC §6①·#98）：未显式传 rng 时，若有 seedKey 则用「地点派生」的确定性 rng（同地点同图）；
   // 否则回退 Math.random（旧行为·每潜不同）。把解析后的 rng 注回 opts ⇒ 两个子生成器 destructure 即取到、无需各自再判。
   const rng =
     opts.rng ?? (opts.seedKey != null ? makeSeededRng(zone.id, opts.seedKey, depthOffset) : Math.random);
-  const genOpts: GenOpts = { ...opts, rng };
+  const genOpts: GenOpts = {
+    ...opts,
+    rng,
+    // 教学关 node 化（#221+）：教学首潜把 beats 钉到节点；重访（!tutorialFirstDive）不带 ⇒ 裸 layered + pinnedEventId（captain_revisit·§2d 不破）。
+    scriptedNodeEvents: tutorialFirstDive ? zone.scriptedNodeEvents : undefined,
+  };
 
   // 随机图：按 mapShape 分流（缺省 = layered，保持现有 zone 行为不变）
   const map =
@@ -694,6 +707,17 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
         nodes[nid] = { ...nodes[nid], kind: 'event', eventId: opts.pinnedEventId, features: undefined, preview: ev.title };
       }
     }
+  }
+
+  // 教学关 node 化（#221+·SPEC 深海回响_教学关node化）：把脚本 beats 按**显式 layer 索引**钉到各层首节点（复用 pinnedEventId
+  // 同款覆盖·在它之后落＝脚本布局优先）。仅教学首潜喂（generateDiveMap 门控·重访不喂）。末层（ascent_point）也可被覆盖成
+  // 事件——教学靠 forceAscend 事件退出·不摸上浮口钮（见 SPEC·ascentLocked）。节点 id/深度/连边不动 ⇒ 与重访共用同一布局。
+  for (const { layer, eventId } of opts.scriptedNodeEvents ?? []) {
+    const ev = getEventById(eventId);
+    const row = layerNodes[layer];
+    if (!ev || !row?.length) continue;
+    const nid = row[0];
+    nodes[nid] = { ...nodes[nid], kind: 'event', eventId, features: undefined, preview: ev.title };
   }
 
   return {

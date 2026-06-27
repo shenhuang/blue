@@ -1,5 +1,6 @@
 import type { GameState } from '@/types';
 import { enterNodeSelection, restAtNode, breatheAtAirPocket, campAtNode, beginAscentFromDive } from '@/engine/dive';
+import { isAscentBlocked } from '@/engine/ascent';
 import { DiveHeader } from './DiveHeader';
 
 interface Props {
@@ -93,7 +94,7 @@ export function RestView({ state, onStateChange }: Props) {
               继续下潜
             </button>
           </li>
-          {isAscentPoint && (
+          {isAscentPoint && !isAscentBlocked(state.run) && (
             <li>
               <button className="btn event-option ascend" onClick={handleAscendHere}>
                 ↑ 从此上浮

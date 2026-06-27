@@ -241,37 +241,42 @@ while (dialog && safety++ < 20) {
 }
 err(zoneStarted === 'zone.east_reef', `教学关：应进入 zone.east_reef，实际 ${zoneStarted}`);
 
-// 走完教学关事件链 + 拿浮标 + 看船长室
-// 起始事件从 zones.json 再生（别手钉 id——St0 起脚本链头是 tutorial.prologue 半本日志开场钩，
-// 以后再换开场也不用回来改这里）；默认每步选 options[0]，prologue 两个选项都接 descent。
+// 走完教学关 node 链 + 看船长室（教学关 node 化·#221+·SPEC 深海回响_教学关node化）。
+// 教学首潜＝layered 3-node 图：beats 钉到 scriptedNodeEvents 的各层（prologue@0 / grouper@1 / deeper@2），
+// **节点内**靠 triggerEventId 链（prologue→descent / grouper→wreck / deeper→captain_quarters），**节点间**靠走到
+// 下一个 scriptedNodeEvents 入口事件（链尾无 triggerEventId＝节点边界）。模拟：逐节点跟节点内链到链尾→跳下一节点入口；
+// 末节点链应到 forceAscend。起始事件 + 各节点 beats 都从 zones.json 再生（别手钉 id）；wreck→stealth_grab、deeper→go_deeper（接 captain_quarters）。
 const tutorialZone = zones.find((z) => z.id === 'zone.east_reef');
 err(tutorialZone?.scriptedStartEventId, '教学 zone 应有 scriptedStartEventId');
-let evId = tutorialZone.scriptedStartEventId;
+const nodeBeats = (tutorialZone.scriptedNodeEvents ?? [])
+  .slice()
+  .sort((a, b) => a.layer - b.layer)
+  .map((e) => e.eventId);
+err(nodeBeats.length > 0, '教学 zone 应有 scriptedNodeEvents（node 化布局·#221+）');
+err(nodeBeats[0] === tutorialZone.scriptedStartEventId, '教学 scriptedNodeEvents[0] 应＝scriptedStartEventId（起点节点）');
 let endReason = null;
-let depth = 12;
 safety = 0;
-while (evId && safety++ < 20) {
-  const ev = findEvent(evId);
-  err(ev, `教学关：${evId} 未找到`);
-  if (!ev) break;
-  log.push(`event:${ev.id}`);
-  let opt;
-  if (ev.id === 'tutorial.wreck') opt = ev.options.find(o => o.id === 'stealth_grab');
-  else if (ev.id === 'tutorial.deeper') opt = ev.options.find(o => o.outcome?.triggerEventId === 'tutorial.captain_quarters');
-  else opt = ev.options[0];
-  log.push(`  → ${opt.label}`);
-  const out = opt.check?.onSuccess ?? opt.outcome;
-  for (const f of out.applyFlags ?? []) profileFlags.add(f);
-  for (const f of out.setProfileFlags ?? []) profileFlags.add(f); // 持久 profile flag（story.ch1.hook 走这条）
-  if (out.endDive === 'forceAscend' || out.endDive === 'death') {
-    endReason = out.endDive;
-    break;
+for (let ni = 0; ni < nodeBeats.length && !endReason && safety < 40; ni++) {
+  let evId = nodeBeats[ni];
+  while (evId && safety++ < 40) {
+    const ev = findEvent(evId);
+    err(ev, `教学关：${evId} 未找到`);
+    if (!ev) break;
+    log.push(`node${ni} event:${ev.id}`);
+    let opt;
+    if (ev.id === 'tutorial.wreck') opt = ev.options.find((o) => o.id === 'stealth_grab');
+    else if (ev.id === 'tutorial.deeper') opt = ev.options.find((o) => o.outcome?.triggerEventId === 'tutorial.captain_quarters');
+    else opt = ev.options[0];
+    log.push(`  → ${opt.label}`);
+    const out = opt.check?.onSuccess ?? opt.outcome;
+    for (const f of out.applyFlags ?? []) profileFlags.add(f);
+    for (const f of out.setProfileFlags ?? []) profileFlags.add(f); // 持久 profile flag（story.ch1.hook 走这条）
+    if (out.endDive === 'forceAscend' || out.endDive === 'death') { endReason = out.endDive; break; }
+    if (!out.triggerEventId) break; // 链尾无 trigger＝节点边界 → 跳下一节点入口 beat
+    evId = out.triggerEventId;
   }
-  if (!out.triggerEventId) break;
-  evId = out.triggerEventId;
-  if (out.deltas?.nitrogen) {} // ignore
 }
-err(endReason === 'forceAscend', `教学关：应 forceAscend，实际 ${endReason}`);
+err(endReason === 'forceAscend', `教学关 node 链：应在末节点 forceAscend，实际 ${endReason}`);
 err(profileFlags.has('story.ch1.hook'),
   '教学关：半本日志开场钩应在链上置位 story.ch1.hook（St0·engine/story.ts CH1_HOOK_FLAG）');
 
