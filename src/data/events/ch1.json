@@ -1,5 +1,5 @@
 {
-  "_doc": "一章锚点节拍事件（St1·剧情 SPEC §4.1·#117）。四锚点 POI（chart_pois.json story 字段）入潜强制开场（#69 mimic 模板：weight 0·无 zoneTags=永不入池·oncePerRun 兜底·真正的防重播靠 story flag——dive-start.ts 只在锚点 flag 未置位时强制开场）。任意顺序（作者拍 2026-06-12）；vent=结局分歧，需其余三锚点齐（门在 dive-start 接线，不在事件数据）。锚点置位只走 setProfileFlags + 字面量必须等于 engine/story.ts::ch1AnchorFlag/ch1EndingFlag 输出（quirk #118·playthrough-story 守门）。每锚点配一种原创鱼（§3.3 一站一种·真实物种打底）：①萤光背礁鳚（教学日志已预埋草图+「白天别去找它」批注）②锈甲沉船鲷③幻光流帆鱼④热液岩鳞鱼——先事件+lore 形态（lore.ch1.* 自由串），图鉴系统后置。圆满结局按「当时为真」写，四条低调 tells（不摘面罩/站太干净/队友只在余光与反光/台词全出自日志句子）只做回读伏笔不抢戏（quirk #117）。一二章对失联真相/断片说零泄漏。伤害走一章轻量教学档（负伤 SPEC §6.3：本批纯 stat 代价·事件 addInjury op 是 Wave 2 章节批次的活）。全部文案 [待过稿]（quirk #117·机制+草稿先行·作者事后逐拍）。 St2 续（#171）：ending_blank=留白结局——圆满两选项顺带 loot 破损饰品(item.ch1.steadying_charm_broken)+置 story.ch1.charm_found；之后持饰品重访 vent POI 由 dive-start 据 chart_pois POI.story.revisit*（revisitRequiresFlag=charm_found·= fulfilled-first 保证圆满在前）强制开场 ending_blank·空站+完整图鉴+录音第1段（导师真声·刻意留白不泄失联·回收 tells T4「台词全出自日志」的反证）·设 story.ch1.ending.blank+story.ch1.recording.1+forceAscend。够深必出幻觉(scoped 本事件+二章)+饰品宝石材料修复(一章钻石/二章群宝·新材料类)留二章——剧情 SPEC §4.4。",
+  "_doc": "一章锚点节拍事件（St1·剧情 SPEC §4.1·#117）。四锚点 POI（chart_pois.json story 字段）入潜强制开场（#69 mimic 模板：weight 0·无 zoneTags=永不入池·oncePerRun 兜底·真正的防重播靠 story flag——dive-start.ts 只在锚点 flag 未置位时强制开场）。任意顺序（作者拍 2026-06-12）；vent=结局分歧，需其余三锚点齐（门在 dive-start 接线，不在事件数据）。锚点置位只走 setProfileFlags + 字面量必须等于 engine/story.ts::ch1AnchorFlag/ch1EndingFlag 输出（quirk #118·playthrough-story 守门）。每锚点配一种原创鱼（§3.3 一站一种·真实物种打底）：①萤光背礁鳚（教学日志已预埋草图+「天黑了才找得见」批注）②锈甲沉船鲷③幻光流帆鱼④热液岩鳞鱼——先事件+lore 形态（lore.ch1.* 自由串），图鉴系统后置。圆满结局按「当时为真」写，四条低调 tells（不摘面罩/站太干净/队友只在余光与反光/台词全出自日志句子）只做回读伏笔不抢戏（quirk #117）。一二章对失联真相/断片说零泄漏。伤害走一章轻量教学档（负伤 SPEC §6.3：本批纯 stat 代价·事件 addInjury op 是 Wave 2 章节批次的活）。全部文案 [待过稿]（quirk #117·机制+草稿先行·作者事后逐拍）。 St2 续（#171）：ending_blank=留白结局——圆满两选项顺带 loot 破损饰品(item.ch1.steadying_charm_broken)+置 story.ch1.charm_found；之后持饰品重访 vent POI 由 dive-start 据 chart_pois POI.story.revisit*（revisitRequiresFlag=charm_found·= fulfilled-first 保证圆满在前）强制开场 ending_blank·空站+完整图鉴+录音第1段（导师真声·刻意留白不泄失联·回收 tells T4「台词全出自日志」的反证）·设 story.ch1.ending.blank+story.ch1.recording.1+forceAscend。够深必出幻觉(scoped 本事件+二章)+饰品宝石材料修复(一章钻石/二章群宝·新材料类)留二章——剧情 SPEC §4.4。",
   "events": [
     {
       "id": "ch1.anchor_reef",
@@ -14,7 +14,7 @@
           "id": "pry_the_box",
           "label": "把标本盒从珊瑚里起出来",
           "outcome": {
-            "text": "你用刀背一点点撬，避开活珊瑚——这是导师教的手法，你的手自己记得。\n密封圈还有弹性，十年了，它咬得很紧。盒里是一管固定液，液里一条小鱼，背鳍上一道淡蓝的纹路，在你的灯下仍然发光。标签上的字迹你认得：\n「萤光背礁鳚·标本 No.7。活体群落仍在此丛——白天别去找它。」\n坐标对得上。原来日志一句没乱写。你把盒子收好，手有点抖。",
+            "text": "你用刀背一点点撬，避开活珊瑚——这是导师教的手法，你的手自己记得。\n密封圈还有弹性，十年了，它咬得很紧。盒里是一管固定液，液里一条小鱼，背鳍上一道淡蓝的纹路，在你的灯下仍然发光。标签上的字迹你认得：\n「萤光背礁鳚·标本 No.7。活体群落仍在此丛——天黑了才找得见。」\n坐标对得上。原来日志一句没乱写。你把盒子收好，手有点抖。",
             "oxygenTurnCost": 1,
             "deltas": { "sanity": 4 },
             "loreEntry": "lore.ch1.anchor_reef",
