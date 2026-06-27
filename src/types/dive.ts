@@ -3,6 +3,19 @@
 
 import type { ZoneTag } from './events';
 
+/**
+ * 地图布局风格（**纯渲染**·决定节点图怎么"铺"·不改拓扑/深度/存档）。**三者纵轴 Y 都＝真实深度**
+ * （#92「位置即深度」·绝不脱钩·2026-06-27 作者拍），只是横轴 X 用法不同。
+ * 单一来源在渲染层 `ui/mapLayout.ts`（按此分派铺点）；engine 只「盖章」到 DiveMap.layoutStyle 让渲染自描述。
+ *  - 'vertical'（默认）：X＝同深兄弟摊开（#92 历史行为·所有不声明的 zone 走这条·逐字节不变）。
+ *  - 'horizontal'：X＝进洞树距(layer)·铺宽。仅深度锁带(orientation='horizontal')的洞才呈横向条带；
+ *    深度爬升的洞用它会如实呈斜（故那种洞不该横）。
+ *  - 'serpentine'：X 随深度三角波左右折返＝下行 switchback（横→下降→反向横·Y 仍是真实深度）。
+ * （radial / spiral 已废——它们把深度塞进半径/角度、违反「位置即深度」。）
+ * 「宽」布局（非 vertical）POI 普遍更多——见 mapgen `nodeCountMultiplier`。
+ */
+export type LayoutStyle = 'vertical' | 'horizontal' | 'serpentine';
+
 /** Zone 定义 —— 一个海域 */
 export interface ZoneDef {
   id: string;
@@ -46,6 +59,12 @@ export interface ZoneDef {
    *    depthRange 在此模式下表示「基准深度 ± span/2」，而非单调下行窗口。
    */
   orientation?: 'vertical' | 'horizontal';
+  /**
+   * 地图布局风格（纯渲染·见 LayoutStyle）。缺省时由渲染层兜底：
+   * `layoutStyle ?? (orientation==='horizontal' ? 'horizontal' : 'vertical')`。
+   * 想让某 zone 在调试器/声呐图里长成特定形状＝在这里声明一条，别改渲染码。
+   */
+  layoutStyle?: LayoutStyle;
   /**
    * 洞穴剖面曲线指数 k 的派生区间（仅 mapShape='maze' 生效·洞型谱机制）：
    * 迷路图深度按 depth = d0 + span·frac^k 赋值（frac=树距比例），k 决定「落差发生在行进的哪一段」：
@@ -93,6 +112,13 @@ export interface DiveMap {
   nodes: Record<string, DiveNode>;
   startNodeId: string;
   /** 教学关固定指向第一个事件；随机图指向第一层第一个节点 */
+  /**
+   * 渲染自描述（mapgen 生成时盖章·纯渲染·不入存档/不影响拓扑）：
+   * 让 `deriveMapLayout` 与所有消费者（dev 面板/声呐图/猎手 blip）无需拿到 zone 就知道这张图该怎么铺。
+   * 缺省（旧图/教学单节点）→ 渲染层兜底 vertical。
+   */
+  layoutStyle?: LayoutStyle;
+  orientation?: 'vertical' | 'horizontal';
 }
 
 /** 节点 */

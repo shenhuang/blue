@@ -155,6 +155,7 @@
     },
     {
       "id": "zone.chamber_network",
+      "layoutStyle": "serpentine",
       "name": "蜂房洞",
       "description": "一连串圆鼓鼓的水下石室，彼此用窄道串着，像被水掏空的蜂巢。室与室之间岔得很开，走两步就分不清来路。Aldo 说进去的人多半不是被困住的，是绕晕的。",
       "depthRange": [34, 80],
@@ -174,6 +175,7 @@
     },
     {
       "id": "zone.flooded_gallery",
+      "orientation": "horizontal",
       "name": "漫水回廊",
       "description": "一道淹了顶的长石廊，石柱一根接一根撑着低矮的拱，望不到头。这里不深，但很长——往里走得越远，回头那口气就越要算着花。尽头据说塌下去一个直坑，没人量过底。",
       "depthRange": [56, 86],
@@ -191,10 +193,11 @@
     },
     {
       "id": "zone.reef_pocket",
+      "orientation": "horizontal",
       "name": "礁穴",
       "description": "礁盘下面蚀出来的一道穴，从外面看不出深浅，进去才知道里面有多宽。",
       "depthRange": [12, 28],
-      "layerCount": 3,
+      "layerCount": 6,
       "nodesPerLayer": [1, 2],
       "zoneTagsByDepth": [{ "minDepth": 0, "tags": ["cave"] }],
       "requiresFlags": ["flag.tutorial_complete"],
@@ -208,6 +211,7 @@
     },
     {
       "id": "zone.tidal_seam",
+      "orientation": "horizontal",
       "name": "潮缝",
       "description": "退潮后会露出顶部的横向裂缝，涨潮时水从里面往外压。在里面能感到潮位每几分钟动一下。",
       "depthRange": [8, 25],
@@ -240,6 +244,7 @@
     },
     {
       "id": "zone.anchor_hollow",
+      "orientation": "horizontal",
       "name": "锚坑",
       "description": "船锚磨出来的沟壑，礁石塌了一段后变成能进人的空间，壁上还留着铁锚刮过的痕迹。",
       "depthRange": [18, 38],
@@ -272,6 +277,7 @@
     },
     {
       "id": "zone.tidal_bore_cave",
+      "orientation": "horizontal",
       "name": "浪涌穴",
       "description": "涌浪把礁石里的泥沙冲成了一条水道，海况差时水流能把人推进去，推得比自己想去的还深。",
       "depthRange": [8, 28],
@@ -321,6 +327,7 @@
     },
     {
       "id": "zone.blind_alley",
+      "orientation": "horizontal",
       "name": "暗礁巷",
       "description": "两面都是礁壁、中间刚好够一个人游的水道，顶部封死——不能直接往上走，只能往里或往外。",
       "depthRange": [45, 80],
@@ -368,6 +375,7 @@
     },
     {
       "id": "zone.ossuary_passage",
+      "orientation": "horizontal",
       "name": "骨道",
       "description": "水道两侧的礁壁里嵌着动物骨骼——鱼骨、鸟骨，还有一些说不上来是什么形状的。",
       "depthRange": [42, 78],
@@ -400,6 +408,7 @@
     },
     {
       "id": "zone.blue_throat",
+      "layoutStyle": "serpentine",
       "name": "蓝喉",
       "description": "洞口是蓝色的——光在水里折射让里面比外面蓝一个等级。进去以后蓝色不见了。",
       "depthRange": [32, 72],
@@ -432,6 +441,7 @@
     },
     {
       "id": "zone.submerged_arch",
+      "orientation": "horizontal",
       "name": "沉拱厅",
       "description": "坍塌的石拱还保持着弧形，在水里没有倒。穿过拱门是另一段水道，拱顶上面是实心的。",
       "depthRange": [15, 48],
@@ -447,6 +457,7 @@
     },
     {
       "id": "zone.lava_branch",
+      "layoutStyle": "serpentine",
       "name": "熔管岔道",
       "description": "火山熔岩管道被海水灌进来，分岔处的形状像是被什么东西从里面撑开的。",
       "depthRange": [55, 90],
@@ -462,6 +473,7 @@
     },
     {
       "id": "zone.murk_gallery",
+      "orientation": "horizontal",
       "name": "浑水廊",
       "description": "能见度只有一两米。水不是浑的，是暗的——光在这里消耗得比别处快，越往里越不够用。",
       "depthRange": [48, 84],
@@ -492,6 +504,7 @@
     },
     {
       "id": "zone.serpentine_deep",
+      "layoutStyle": "serpentine",
       "name": "蛇行深处",
       "description": "水道一直在转，很难辨认来路。向导手册里把这种地形叫做「蛇形」，旁边标了红色。",
       "depthRange": [35, 82],
@@ -522,6 +535,7 @@
     },
     {
       "id": "zone.mirror_maze",
+      "layoutStyle": "serpentine",
       "name": "镜廊",
       "description": "石壁是浅色的，反光效果让人以为某条水道还有另一条对称的。有人在这里走失了。",
       "depthRange": [28, 70],

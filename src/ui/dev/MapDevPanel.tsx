@@ -19,13 +19,21 @@ import { ZONES, zoneAllowsBacktrack } from '@/engine/zones';
 import { makeLcg } from '@/engine/rng';
 import { deriveMapLayout } from '../mapLayout';
 import { buildCaveGeometry, bakeCaveRGBA, SONAR_PX_PER_M, SONAR_COL_W, CAVE_GEOM_MARGIN } from '../SonarScanPanel';
-import type { DiveMap, DiveNode, ZoneDef } from '@/types';
+import type { DiveMap, DiveNode, ZoneDef, LayoutStyle } from '@/types';
 
 export interface MapDevPanelProps {
   onClose?: () => void;
 }
 
 const FLAGS = new Set(['flag.tutorial_complete']);
+
+/** 布局风格下拉（'' = 用 zone 盖章的默认·见 mapLayout/LayoutStyle）。纯渲染覆盖·不重生地图。 */
+const LAYOUT_STYLES: Array<{ value: '' | LayoutStyle; label: string }> = [
+  { value: '', label: 'zone 默认' },
+  { value: 'vertical', label: '竖向 vertical' },
+  { value: 'horizontal', label: '横向 horizontal' },
+  { value: 'serpentine', label: '蛇行 serpentine' },
+];
 
 function kindClass(node: DiveNode, startId: string): string {
   if (node.id === startId) return 'dev-map-fill-entrance';
@@ -98,6 +106,9 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
     const v = Number(depthCurveStr);
     return depthCurveStr.trim() !== '' && Number.isFinite(v) && v > 0 ? v : undefined;
   })();
+  // 布局风格覆盖（'' = 用 map 盖章的默认）：纯渲染·切换即换形状·不重生地图（看 zone 的各种形状用）。
+  const [styleOverride, setStyleOverride] = useState<'' | LayoutStyle>('');
+  const styleOpt: LayoutStyle | undefined = styleOverride || undefined;
 
   const zone = ZONES.get(zoneId);
 
@@ -116,7 +127,7 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
   const analysis = useMemo(() => (map ? analyzeMap(map) : null), [map]);
 
   // —— 布局：抽到共享 deriveMapLayout（声呐探索图 SonarScanPanel 与本面板同一套铺点，避免漂移）——
-  const layout = useMemo(() => (map ? deriveMapLayout(map) : null), [map]);
+  const layout = useMemo(() => (map ? deriveMapLayout(map, { layoutStyle: styleOpt }) : null), [map, styleOpt]);
 
   const deepestSet = useMemo(() => new Set(analysis?.deepestNodeIds ?? []), [analysis]);
   const deadEndSet = useMemo(() => new Set(analysis?.deadEndIds ?? []), [analysis]);
@@ -125,8 +136,8 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
   // 用与玩家取景窗同一套布局比例（SONAR_PX_PER_M/COL_W）＝洞看起来和游戏里一致（只是整图全揭、无雾无扫）。
   const isOpenWater = zone ? !zoneAllowsBacktrack(zone.id) : false;
   const caveLayout = useMemo(
-    () => (map ? deriveMapLayout(map, { pxPerMeter: SONAR_PX_PER_M, colW: SONAR_COL_W }) : null),
-    [map],
+    () => (map ? deriveMapLayout(map, { pxPerMeter: SONAR_PX_PER_M, colW: SONAR_COL_W, layoutStyle: styleOpt }) : null),
+    [map, styleOpt],
   );
   // 烤洞穴的世界取景框＝节点包围盒四周再扩 CAVE_GEOM_MARGIN：有机洞穴的房间/散瓣/域扭曲会鼓出节点包围盒，
   // 不留这圈则画布边缘把上下左右的洞壁裁掉（dev 把整图烤进固定画布才暴露·游戏内移动取景窗不会·margin 单一来源见 SonarScanPanel）。
@@ -227,6 +238,20 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
                 ))}
               </select>
             </div>
+            <div className="dev-stack">
+              <span>布局风格 LAYOUT（纯渲染·换形状看）</span>
+              <select
+                className="dev-input"
+                value={styleOverride}
+                onChange={(e) => setStyleOverride(e.target.value as '' | LayoutStyle)}
+              >
+                {LAYOUT_STYLES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="dev-row">
               <label className="dev-inline">
                 <span>SEED</span>
@@ -313,7 +338,7 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
         {/* 右：图 */}
         <div className="dev-col dev-map-canvas-col">
           <h3 className="dev-col-title">
-            {showCave ? '声呐洞穴图' : '节点图'} · {map?.zoneId}{' '}
+            {showCave ? '声呐洞穴图' : '节点图'} · {map?.zoneId} · 布局 {styleOverride || map?.layoutStyle || 'vertical'}{' '}
             <span className="dev-faint">
               {showCave
                 ? '（声呐有机洞穴·整图全揭·与游戏内同一渲染·确定性同图同洞）'

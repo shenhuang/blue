@@ -9,7 +9,7 @@
 // 不论哪种拓扑：depthOffset（海图 POI 修正）都先平移 depthRange 再生成；corpse pass 仍按
 // depth ±10m 匹配 findRecoverableCorpse。analyzeMap() 是纯结构分析器，给 dev 面板 + 回归脚本复用。
 
-import type { DiveMap, DiveNode, NodeFeature, ZoneDef, NodeKind, ZoneTag, DeathRecord, CavePortal, CaveRegion, CaveGenParams } from '@/types';
+import type { DiveMap, DiveNode, NodeFeature, ZoneDef, NodeKind, ZoneTag, DeathRecord, CavePortal, CaveRegion, CaveGenParams, LayoutStyle } from '@/types';
 import { buildEventPool, eventLootItemIds, getEventById, pickWeighted, tagsForDepth } from './zones';
 import { findRecoverableCorpse, isRecoverableCorpse } from './death';
 
@@ -410,6 +410,24 @@ function placeCorpses(
   }
 }
 
+/**
+ * 解析一张图的渲染布局风格（**单一来源**·渲染铺点与 POI 数都读它·见 types `LayoutStyle`）：
+ * 显式 `zone.layoutStyle` 优先；否则 `orientation==='horizontal'` → 'horizontal'；再否则 'vertical'。
+ * 纯函数·零 rng（绝不移动任何 seed 的生成顺序）。
+ */
+export function resolveLayoutStyle(zone: ZoneDef): LayoutStyle {
+  return zone.layoutStyle ?? (zone.orientation === 'horizontal' ? 'horizontal' : 'vertical');
+}
+
+/**
+ * 节点数（POI）随布局「宽度」缩放（作者 2026-06-27：**宽的洞穴 POI 普遍比竖着的多**）：
+ * 竖向 ×2（＝历史公式·**逐字节复现旧图**）；非竖向（横/蛇行/环/螺旋＝横向铺得开的洞）×3。
+ * 只读 style ⇒ 竖向 zone 的 N 公式与 rng 消耗一字不差（不破 mapgen 场景快照）。
+ */
+function nodeCountMultiplier(style: LayoutStyle): number {
+  return style === 'vertical' ? 2 : 3;
+}
+
 export function generateDiveMap(opts: GenOpts): DiveMap {
   const { zone, depthOffset = 0 } = opts;
 
@@ -463,6 +481,10 @@ export function generateDiveMap(opts: GenOpts): DiveMap {
     zone.mapShape === 'maze'
       ? generateMazeMap(genOpts, baseD0, baseD1)
       : generateLayeredMap(genOpts, baseD0, baseD1);
+  // 渲染自描述盖章（纯渲染·不入存档·不影响拓扑/rng）：让 deriveMapLayout 与所有消费者无需拿 zone 即知形状。
+  // 层状开阔水域天然走 vertical（resolveLayoutStyle 兜底）；只有声明了 layoutStyle/orientation 的 zone 变形。
+  map.layoutStyle = resolveLayoutStyle(zone);
+  map.orientation = zone.orientation;
   // 不可信声呐失真（声呐与房间 S2）：深 band 给部分内部节点挂 spoofs/evades（确定性·零 rng·gated）。
   // 放在分流之后＝两种拓扑共用一条欺骗 pass；chance=0（缺省）时 no-op、不耗 rng、逐字节复现旧图。
   applySonarDeception(map, opts.sonarDeception ?? 0);
@@ -751,8 +773,9 @@ function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap
   const d1 = baseD1;
   const canFreeAscend = zone.canFreeAscend !== false;
 
-  // —— 节点数：从 zone 派生，规模与层状图相当（layerCount 6 → 12–16）；opts.layerCount 可覆盖（平廊拉长图）——
-  const minN = Math.max(8, (opts.layerCount ?? zone.layerCount) * 2);
+  // —— 节点数：从 zone 派生（layerCount × 布局倍率）；opts.layerCount 可覆盖（平廊拉长图）。
+  // 竖向 ×2（历史规模·逐字节不变）；宽布局（横/蛇行/环/螺旋）×3＝POI 更多（作者 2026-06-27·见 nodeCountMultiplier）。——
+  const minN = Math.max(8, (opts.layerCount ?? zone.layerCount) * nodeCountMultiplier(resolveLayoutStyle(zone)));
   const maxN = minN + 4;
   const N = randInt(minN, maxN, rng);
 
@@ -1055,22 +1078,39 @@ export function generatePersistentCaveMap(opts: GenOpts, params: CaveGenParams):
   //   索引分配：0=核心(d1·唯一最深)；1..nE=入口；nE+1..nE+nX=出口；其余=内部。
   const depth = new Array<number>(N).fill(d0);
   depth[0] = d1;
-  const entDepths = spreadPortalDepths(params.entranceDepths, nE, d0, d0 + 0.55 * span);
-  const exitDepths = spreadPortalDepths(params.exitDepths, nX, d0 + 0.35 * span, d1 - Math.max(1, 0.05 * span));
-  for (let j = 0; j < nE; j++) depth[1 + j] = clamp(Math.round(entDepths[j]), d0, d1 - 1);
-  for (let j = 0; j < nX; j++) depth[1 + nE + j] = clamp(Math.round(exitDepths[j]), d0, d1 - 1);
-  const interiorStart = 1 + nE + nX;
-  const interiorCount = N - interiorStart;
-  for (let m = 0; m < interiorCount; m++) {
-    const frac = (m + 0.5) / Math.max(1, interiorCount);
-    const shaped = kCurve === 1 ? frac : Math.pow(frac, kCurve);
-    const jitter = (rng() * 2 - 1) * span * 0.04;
-    // 内部不触 d1（核心独占最深）；横向再多也只是同一 [d0,d1] 里多采几个点·不加深（横向不污染深度·§3.3）。
-    depth[interiorStart + m] = clamp(Math.round(d0 + span * shaped + jitter), d0, d1 - 1);
+  const flat = resolveLayoutStyle(zone) === 'horizontal';
+  if (flat) {
+    // 横向洞：深度在 [d0,d1] 带内**随机散布**（与 generateMazeMap 的 isHorizontal 同算法·作者验好看·图 51–54）。
+    // **不强制核心独占 d1**——那会把一个节点吊到底、拖出一条斜下去的长隧道（作者「奇怪的斜向」·图 82）。
+    // 配 mapLayout 的 horizontal（X=进洞树距铺宽）⇒「房间 + 可见隧道」的横洞，而非细扁线。
+    const baseMid = (d0 + d1) / 2;
+    const hVar = (d1 - d0) / 2;
+    for (let i = 0; i < N; i++) depth[i] = clamp(Math.round(baseMid + (rng() * 2 - 1) * hVar), d0, d1);
+  } else {
+    // 模型 B（竖向/默认·**逐字节同旧**）：核心独占 d1·门户按声明深度散布·内部按 k 剖面采样。
+    depth[0] = d1;
+    const entDepths = spreadPortalDepths(params.entranceDepths, nE, d0, d0 + 0.55 * span);
+    const exitDepths = spreadPortalDepths(params.exitDepths, nX, d0 + 0.35 * span, d1 - Math.max(1, 0.05 * span));
+    for (let j = 0; j < nE; j++) depth[1 + j] = clamp(Math.round(entDepths[j]), d0, d1 - 1);
+    for (let j = 0; j < nX; j++) depth[1 + nE + j] = clamp(Math.round(exitDepths[j]), d0, d1 - 1);
+    const interiorStart = 1 + nE + nX;
+    const interiorCount = N - interiorStart;
+    for (let m = 0; m < interiorCount; m++) {
+      const frac = (m + 0.5) / Math.max(1, interiorCount);
+      const shaped = kCurve === 1 ? frac : Math.pow(frac, kCurve);
+      const jitter = (rng() * 2 - 1) * span * 0.04;
+      // 内部不触 d1（核心独占最深）；横向不污染深度·§3.3。
+      depth[interiorStart + m] = clamp(Math.round(d0 + span * shaped + jitter), d0, d1 - 1);
+    }
   }
 
-  // —— 2. 按深度排名建连通（边连深度相邻 ⇒ 剖面平滑·横廊等深·不依赖 hop）——
-  const order = Array.from({ length: N }, (_, i) => i).sort((a, b) => depth[a] - depth[b]);
+  // —— 2. 建连通 ——
+  // 非横向（默认）：按**深度排名**连（边连深度相邻 ⇒ 剖面平滑·不依赖 hop·§3.3·逐字节同旧）。
+  // 横向：按**原始 index**连（同 generateMazeMap 的随机树）⇒ 进洞树距(layer)与深度脱钩 ⇒ 配 mapLayout horizontal
+  //   摊成 2D 团（房间+可见隧道·图 51–54），不再因「连线追着深度走」被拖成斜线（图 82/91）。
+  const order = flat
+    ? Array.from({ length: N }, (_, i) => i)
+    : Array.from({ length: N }, (_, i) => i).sort((a, b) => depth[a] - depth[b]);
   const rankOf = new Array<number>(N);
   order.forEach((idx, r) => (rankOf[idx] = r));
   const adj: Set<number>[] = Array.from({ length: N }, () => new Set<number>());
@@ -1169,6 +1209,10 @@ export function generatePersistentCaveMap(opts: GenOpts, params: CaveGenParams):
   return {
     zoneId: zone.id,
     generatedAt: Date.now(),
+    // 渲染自描述（与 generateDiveMap 同·盖章 layoutStyle）——**持久洞走这条路径**，不盖的话洞在真实游戏里
+    // 一律按 vertical 渲染、形状只在 dev 面板可见（dev↔游戏脱节·2026-06-27 修）。cloneDiveMap 是 JSON 深拷贝·会带上。
+    layoutStyle: resolveLayoutStyle(zone),
+    orientation: zone.orientation,
     nodes,
     // 默认起手 = 第一个入口门户（idOf(1)）；load 时按绑定入口（caveEntry 解析·§2.3/§4.1）覆盖 currentNodeId。
     startNodeId: idOf(1),
