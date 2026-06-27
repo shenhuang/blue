@@ -34,7 +34,12 @@ function roomFeatureChoices(run: RunState): FeatureChoice[] {
 /** 事件结束后，进入"选择下一节点"阶段 */
 export function enterNodeSelection(state: GameState): GameState {
   const run = state.run;
-  if (!run || !run.map || !run.currentNodeId) return state;
+  if (!run) return state;
+  // 无图 / 无当前节点（剧情编辑器合成态·createNewRun 不进图）：没有节点图可回，事件结束就退化到 rest
+  // 子阶段＝离开事件流（别停在原事件被 oxygenTurnCost 反复空耗氧）。游戏内所有调用点都带图·不命中此分支。
+  if (!run.map || !run.currentNodeId) {
+    return { ...state, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
+  }
 
   const nextChoices = getNextChoices(run.map, run.currentNodeId);
   // 当前房间内未探的 feature（多事件房间 S1）：与去往别处的出口并列摆出（一房可连探付氧、选出口走人）。

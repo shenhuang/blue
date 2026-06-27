@@ -10,8 +10,9 @@
 
 import { EVENT_DB } from '../src/engine/zones';
 import { satisfyEvent } from '../src/engine/eventSatisfy';
-import { runEventScenario } from '../src/engine/eventScenario';
+import { runEventScenario, buildScenarioState } from '../src/engine/eventScenario';
 import { eventArc, eventRoots, outgoingEdges } from '../src/engine/eventGraph';
+import { enterNodeSelection } from '../src/engine/dive';
 
 const log: string[] = [];
 const L = (s: string) => log.push(s);
@@ -96,5 +97,23 @@ L('§2 eventArc 图重建 + 引用完整');
   L(`  全库引用完整·prologue 弧 ${arc!.nodes.length} 节点 ${arc!.edges.length} 边·弧头识别 ✓`);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// §3 无图态（剧情编辑器合成态）事件结束应离场到 rest，而非停在原事件空耗氧
+// （守 EventView remainOnEvent → enterNodeSelection 无图退化·别回退成「停在原地」）
+// ═══════════════════════════════════════════════════════════════
+L('§3 无图态 remainOnEvent 离场 rest');
+{
+  const someId = [...EVENT_DB.keys()][0];
+  const s = buildScenarioState(satisfyEvent(someId).input);
+  assert(s, '应能合成 scenario state');
+  assert(!s!.run?.map, '前提：剧情编辑器合成态无 map');
+  const after = enterNodeSelection(s!);
+  assert(
+    after.phase.kind === 'dive' && after.phase.subPhase.kind === 'rest',
+    '无图态 enterNodeSelection 应退化 dive/rest（事件结束离场·不停原地空耗氧）',
+  );
+  L('  无图态离场到 rest ✓');
+}
+
 console.log(log.join('\n'));
-console.log('\n✓ playthrough-satisfy：§1 一键满足保证 / §2 图重建+引用完整 全部通过');
+console.log('\n✓ playthrough-satisfy：§1 一键满足保证 / §2 图重建+引用完整 / §3 无图态离场 全部通过');

@@ -48,10 +48,10 @@ export function EventView({ state, eventId, onStateChange }: Props) {
         next = toGameOver(next, '在深处死去');
         break;
       case 'remainOnEvent':
-        // 事件无显式后续 → 进入节点选择（linearScripted 教学链从不返回 remainOnEvent；layered 图包括东礁二次下潜都需要此路径）
-        if (next.run?.map) {
-          next = enterNodeSelection(next);
-        }
+        // 事件无显式后续 → 交给引擎转移：有图进节点选择；无图（剧情编辑器合成态）退化到 rest ＝离开事件流，
+        // 别停在同一事件被 oxygenTurnCost 反复空耗氧。（linearScripted 教学链从不返回 remainOnEvent；
+        // layered 图包括东礁二次下潜都走 enterNodeSelection 的正常分支。）
+        next = enterNodeSelection(next);
         break;
     }
 

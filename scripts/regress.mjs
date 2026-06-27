@@ -157,6 +157,12 @@ tasks.push({ name: 'smoke-map-editor', cmd: [tsx, join('scripts', 'smoke-map-edi
 // 剧情编辑器（dev 工具·?storyeditor）SSR smoke（守事件 schema / EVENT_DB 演进别静默打挂编辑器）
 tasks.push({ name: 'smoke-story-editor', cmd: [tsx, join('scripts', 'smoke-story-editor.tsx')] });
 
+// 战斗续接图门：事件 triggerCombatId→encounter.victoryEventId 必须进 eventArc/eventRoots（弧树别断在战斗处·victoryEventId 别成假弧头·见 scripts/smoke-event-combat-arc.tsx）
+tasks.push({ name: 'smoke-event-combat-arc', cmd: [tsx, join('scripts', 'smoke-event-combat-arc.tsx')] });
+
+// POI 事件集门：剧情编辑器「POI 走查」依赖的 POI→事件集 自洽（open/story 引用完整 + poiId 专属事件均可归位·见 scripts/smoke-poi-events.tsx）
+tasks.push({ name: 'smoke-poi-events', cmd: [tsx, join('scripts', 'smoke-poi-events.tsx')] });
+
 // 装备纸娃娃（Otto 改装 / 下潜查看装备）SSR smoke（守装备 schema / 9 槽位演进别静默打挂）
 tasks.push({ name: 'smoke-equipment-ui', cmd: [tsx, join('scripts', 'smoke-equipment-ui.tsx')] });
 

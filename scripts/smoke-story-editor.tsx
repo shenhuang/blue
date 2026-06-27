@@ -7,6 +7,7 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import StoryEditor from '../src/ui/StoryEditor';
+import { listPoiEventSets, poiEventIds } from '../src/engine/poiEvents';
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) {
@@ -19,8 +20,11 @@ const html = renderToStaticMarkup(<StoryEditor />);
 assert(html.includes('剧情编辑器'), 'editor 标题应渲染');
 assert(html.includes('链 / 分支树'), '右栏「链/分支树」应渲染');
 assert(html.includes('幻觉模式'), '幻觉模式开关应渲染');
-assert(html.includes('只看弧头'), '只看弧头开关应渲染');
-// 左列应读到剧情库（tutorial.prologue 标题「半本日志」·#115）
-assert(html.includes('半本日志'), '左库应渲染事件标题「半本日志」（读 EVENT_DB）');
-assert(html.includes('tutorial.prologue'), '左库应渲染事件 id（tutorial.prologue）');
-console.log('✓ smoke-story-editor: 剧情编辑器初始渲染通过（三栏骨架 + 左库读 EVENT_DB + 满足/幻觉/弧头入口）');
+// 注：只看弧头 / 调性 / 区域 facet 仅「按事件」模式渲染（默认按 POI·SSR 不在此模式·见 StoryEditor browseMode）。
+// 左栏双模式（默认按 POI 走查·单看叶子没意义）+ POI 名读 chart_pois.json
+assert(html.includes('按 POI'), 'POI/事件 模式切换「按 POI」应渲染');
+assert(html.includes('按事件'), 'POI/事件 模式切换「按事件」应渲染');
+const firstPoi = listPoiEventSets().filter((p) => poiEventIds(p).length > 0)[0];
+assert(firstPoi, '应有带事件集的 POI 可走查');
+assert(html.includes(firstPoi.name), `按 POI 默认应渲染 POI 名「${firstPoi?.name}」`);
+console.log('✓ smoke-story-editor: 剧情编辑器初始渲染通过（三栏骨架 + 按 POI 走查默认 + 过滤栏 + 满足/幻觉/弧头入口）');

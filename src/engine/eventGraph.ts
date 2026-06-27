@@ -1,4 +1,4 @@
-// 剧情编辑器支撑（纯叶子·只读 EVENT_DB / 不引 UI）—— 事件链/分支图重建。
+// 剧情编辑器支撑（只读 EVENT_DB + 战斗 encounter·不引 UI）—— 事件链/分支图重建。
 //
 // 一段「剧情」= 从某个 root 事件出发、顺着 triggerEventId 能走到的事件子图。
 // 节点 = DiveEvent；有向边 = 一个选项（或检定成/败分支、或 onEnter）指向的下一个事件。
@@ -9,12 +9,15 @@
 //   - option.outcome.triggerEventId                  branch='option'
 //   - option.check.onSuccess.triggerEventId          branch='success'
 //   - option.check.onFailure.triggerEventId          branch='failure'
+//   - {onEnter|option|成败}.triggerCombatId → 该 encounter.victoryEventId   branch='combatVictory'
+//     （战斗胜利后回流的事件·combat.ts::finalizeVictory；无 victoryEventId=战斗后回普通下潜·不连边）
 // triggerEventId 指向不存在的事件 → edge.missing=true（check-dive-refs 已在 regress 守引用完整性）。
 
 import type { DiveEvent, Tone, ZoneTag } from '@/types';
 import { EVENT_DB, getEventById } from './zones';
+import { getEncounter } from './combat';
 
-export type ArcBranch = 'onEnter' | 'option' | 'success' | 'failure';
+export type ArcBranch = 'onEnter' | 'option' | 'success' | 'failure' | 'combatVictory';
 
 export interface ArcEdge {
   from: string;
@@ -26,6 +29,8 @@ export interface ArcEdge {
   branch: ArcBranch;
   /** to 在库中找不到（断链）。 */
   missing: boolean;
+  /** combatVictory 边专属：经哪场战斗续接（option→triggerCombatId→该 encounter.victoryEventId）。 */
+  combatId?: string;
 }
 
 export interface ArcNode {
@@ -63,20 +68,36 @@ function allEvents(events?: Map<string, DiveEvent>): DiveEvent[] {
   return events ? [...events.values()] : [...EVENT_DB.values()];
 }
 
-/** 一个事件能流向的所有下一个事件（含 onEnter / outcome / check 成败分支）。 */
+/**
+ * 一个事件能流向的所有下一个事件：
+ *   - triggerEventId（onEnter / outcome / check 成败）直接续接；
+ *   - triggerCombatId 经战斗续接——连到该 encounter 的 victoryEventId（战斗胜利后回流的事件·
+ *     combat.ts::finalizeVictory 单一来源）。无 victoryEventId（战斗后回普通下潜·无剧情续接）⇒ 不连边。
+ */
 export function outgoingEdges(ev: DiveEvent, resolve: Resolver = makeResolver()): ArcEdge[] {
   const edges: ArcEdge[] = [];
   const push = (to: string | undefined, optionId: string, label: string, branch: ArcBranch) => {
     if (!to) return;
     edges.push({ from: ev.id, to, optionId, label, branch, missing: !resolve(to) });
   };
+  // 战斗续接：triggerCombatId → 该战斗 encounter 的 victoryEventId（与引擎胜利路由同址·别在事件侧重写跳转）。
+  const pushCombat = (combatId: string | undefined, optionId: string, label: string) => {
+    if (!combatId) return;
+    const to = getEncounter(combatId)?.victoryEventId;
+    if (!to) return;
+    edges.push({ from: ev.id, to, optionId, label: `${label} · 战斗胜利`, branch: 'combatVictory', missing: !resolve(to), combatId });
+  };
 
   push(ev.onEnter?.triggerEventId, '(onEnter)', '进入即触发', 'onEnter');
+  pushCombat(ev.onEnter?.triggerCombatId, '(onEnter)', '进入即战斗');
   for (const opt of ev.options) {
     push(opt.outcome?.triggerEventId, opt.id, opt.label, 'option');
+    pushCombat(opt.outcome?.triggerCombatId, opt.id, opt.label);
     if (opt.check) {
       push(opt.check.onSuccess.triggerEventId, opt.id, `${opt.label} · 成功`, 'success');
+      pushCombat(opt.check.onSuccess.triggerCombatId, opt.id, `${opt.label} · 成功`);
       push(opt.check.onFailure.triggerEventId, opt.id, `${opt.label} · 失败`, 'failure');
+      pushCombat(opt.check.onFailure.triggerCombatId, opt.id, `${opt.label} · 失败`);
     }
   }
   return edges;
