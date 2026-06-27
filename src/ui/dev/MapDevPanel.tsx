@@ -18,7 +18,7 @@ import { generateDiveMap, analyzeMap } from '@/engine/mapgen';
 import { ZONES, zoneAllowsBacktrack } from '@/engine/zones';
 import { makeLcg } from '@/engine/rng';
 import { deriveMapLayout } from '../mapLayout';
-import { buildCaveGeometry, bakeCaveRGBA, SONAR_PX_PER_M, SONAR_COL_W } from '../SonarScanPanel';
+import { buildCaveGeometry, bakeCaveRGBA, SONAR_PX_PER_M, SONAR_COL_W, CAVE_GEOM_MARGIN } from '../SonarScanPanel';
 import type { DiveMap, DiveNode, ZoneDef } from '@/types';
 
 export interface MapDevPanelProps {
@@ -128,6 +128,20 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
     () => (map ? deriveMapLayout(map, { pxPerMeter: SONAR_PX_PER_M, colW: SONAR_COL_W }) : null),
     [map],
   );
+  // 烤洞穴的世界取景框＝节点包围盒四周再扩 CAVE_GEOM_MARGIN：有机洞穴的房间/散瓣/域扭曲会鼓出节点包围盒，
+  // 不留这圈则画布边缘把上下左右的洞壁裁掉（dev 把整图烤进固定画布才暴露·游戏内移动取景窗不会·margin 单一来源见 SonarScanPanel）。
+  const caveRect = useMemo(
+    () =>
+      caveLayout
+        ? {
+            x: -CAVE_GEOM_MARGIN,
+            y: -CAVE_GEOM_MARGIN,
+            w: caveLayout.width + 2 * CAVE_GEOM_MARGIN,
+            h: caveLayout.height + 2 * CAVE_GEOM_MARGIN,
+          }
+        : null,
+    [caveLayout],
+  );
   const caveGeom = useMemo(() => {
     if (!map || !caveLayout || isOpenWater) return null;
     const ids = Object.keys(map.nodes);
@@ -141,25 +155,26 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
   const caveCanvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     const canvas = caveCanvasRef.current;
-    if (!canvas || !caveLayout || !caveGeom) return;
+    if (!canvas || !caveRect || !caveGeom) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    // 内部分辨率（0.75×·长边封顶防深图卡顿）；CSS 再放大到布局尺寸＝与节点覆盖层对齐。
+    // 内部分辨率（0.75×·长边封顶防深图卡顿）；CSS 再放大到 caveRect 尺寸＝与节点覆盖层对齐。
     const SCALE = 0.75;
     const CAP = 1200;
-    let ow = Math.max(1, Math.round(caveLayout.width * SCALE));
-    let oh = Math.max(1, Math.round(caveLayout.height * SCALE));
+    let ow = Math.max(1, Math.round(caveRect.w * SCALE));
+    let oh = Math.max(1, Math.round(caveRect.h * SCALE));
     if (oh > CAP) {
       ow = Math.max(1, Math.round((ow * CAP) / oh));
       oh = CAP;
     }
     canvas.width = ow;
     canvas.height = oh;
-    const rgba = bakeCaveRGBA(caveGeom, { x: 0, y: 0, w: caveLayout.width, h: caveLayout.height }, ow, oh);
+    // rect 含四周 margin（覆盖洞穴鼓出·见 caveRect 注）＝边缘洞壁不再被画布裁掉。
+    const rgba = bakeCaveRGBA(caveGeom, caveRect, ow, oh);
     const img = ctx.createImageData(ow, oh);
     img.data.set(rgba);
     ctx.putImageData(img, 0, 0);
-  }, [caveLayout, caveGeom]);
+  }, [caveRect, caveGeom]);
 
   function check(label: string, ok: boolean, detail?: string) {
     return (
@@ -376,17 +391,18 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
             ) : (
               map &&
               caveLayout &&
+              caveRect &&
               caveGeom && (
                 <div
                   className="dev-map-cave-stack"
-                  style={{ width: caveLayout.width, height: caveLayout.height }}
+                  style={{ width: caveRect.w, height: caveRect.h }}
                 >
                   <canvas ref={caveCanvasRef} className="dev-map-cave-canvas" />
                   <svg
                     className="dev-map-cave-overlay"
-                    viewBox={`0 0 ${caveLayout.width} ${caveLayout.height}`}
-                    width={caveLayout.width}
-                    height={caveLayout.height}
+                    viewBox={`${caveRect.x} ${caveRect.y} ${caveRect.w} ${caveRect.h}`}
+                    width={caveRect.w}
+                    height={caveRect.h}
                   >
                     {Object.values(map.nodes).map((n) => {
                       const p = caveLayout.pos[n.id];
