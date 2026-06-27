@@ -1572,11 +1572,31 @@ export function triggerEmergencyAscent(state: GameState): GameState {
 }
 
 /**
+ * 是否「手里有能用的武器攻击」——存在任一**非兜底**攻击行动，其装备解锁门 + 弹药持有门都过。
+ * 只看**持有**（装备解锁 / 弹药在背包）·**不看**体/氧 affordability：体力不够 ≠ 没武器（该去调息/闪避
+ * 回体力，而非露出赤手）。fallbackOnly 行动（拳脚扭打）上清单门控的单一判据。纯函数·零 RNG。
+ */
+function hasUsableWeaponAttack(state: GameState): boolean {
+  const run = state.run;
+  if (!run) return false;
+  return listActions().some((a) => {
+    if (a.effect.kind !== 'attack' || a.fallbackOnly) return false;
+    if (a.requiresEquipment && !equipmentUnlocksAction(run.equipment, a.requiresEquipment, a.id)) return false;
+    if (a.requiresItemId && (run.inventory.find((i) => i.itemId === a.requiresItemId)?.qty ?? 0) <= 0) return false;
+    return true;
+  });
+}
+
+/**
  * 暴露给 UI：当前可见的所有 actions。
  * 带道具的行动（use_medkit / use_decoy_*）**没货就不上清单**（而非常驻灰按钮——道具行动会随内容增多，
  * 全部摊开＝每场战斗一排「缺少物品」噪音）；有货但氧/体不足仍列出置灰给理由。applyPlayerAction 仍自校验。
+ * **fallbackOnly 行动（拳脚扭打）**：仅在 hasUsableWeaponAttack=false（无解锁武器 + 无弹药）时上清单——
+ * 有武器时它被严格压制成死按钮，故隐藏（option 1·2026-06-27）。注意此门只动**可见菜单**：
+ * checkActionAvailability / applyPlayerAction 不读它，故 scenario 直接 invoke fist 仍照常生效（baseline 不受影响）。
  */
 export function listAvailableActions(state: GameState): Array<{ action: CombatAction; availability: ActionAvailability }> {
+  const hasWeapon = hasUsableWeaponAttack(state);
   return listActions()
     .filter(
       (a: CombatAction) =>
@@ -1590,5 +1610,7 @@ export function listAvailableActions(state: GameState): Array<{ action: CombatAc
         !a.requiresEquipment ||
         (state.run != null && equipmentUnlocksAction(state.run.equipment, a.requiresEquipment, a.id)),
     )
+    // 兜底攻击（fallbackOnly·拳脚扭打）：有可用武器攻击就隐藏——否则常驻一颗被武器严格压制的死按钮（option 1·2026-06-27）。
+    .filter((a: CombatAction) => !a.fallbackOnly || !hasWeapon)
     .map((a: CombatAction) => ({ action: a, availability: checkActionAvailability(state, a) }));
 }

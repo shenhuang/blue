@@ -23,6 +23,14 @@ export interface CombatAction {
   /** 解锁该行动的等级（用于潜水刀的"刺击"等高阶动作） */
   minEquipmentLevel?: number;
 
+  /**
+   * 兜底攻击（拳脚扭打）：仅在「手里没有任何可用武器攻击」（无解锁武器 + 无弹药）时才上可见清单；
+   * 有刀/斧/带弹远程时**隐藏**——避免被武器严格压制（伤更低·体/氧更贵·噪声更高）的死按钮常驻菜单。
+   * 缺省 false ＝ 照常显示。判据单点见 combat.ts::hasUsableWeaponAttack（只看持有·不看体/氧）。
+   * 仅影响**可见菜单**：checkActionAvailability/applyPlayerAction 不读此字段 ⇒ 直接 invoke 仍照常生效。
+   */
+  fallbackOnly?: boolean;
+
   /** 目标 */
   targeting: 'single' | 'self' | 'all_enemies';
 

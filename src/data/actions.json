@@ -70,6 +70,7 @@
       "description": "最后手段。低伤，可能被反咬。",
       "costStamina": 12,
       "costOxygenTurns": 2,
+      "fallbackOnly": true,
       "targeting": "single",
       "effect": {
         "kind": "attack",
