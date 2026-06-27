@@ -100,6 +100,9 @@ tasks.push({ name: 'check-event-poi', cmd: ['node', join('scripts', 'check-event
 // 主角语调门（纯 node·禁直白情绪/生理戏剧化命名·扫事件正文+日志页·把 [[protagonist-voice]] 散文落成会红的门·漂移修 quirk #184·见 scripts/check-protagonist-voice.mjs）
 tasks.push({ name: 'check-protagonist-voice', cmd: ['node', join('scripts', 'check-protagonist-voice.mjs')] });
 
+// 术语单一来源门（纯 node·禁 live 内容〔src+scenarios〕出现「穿尸」·逼回与代码/敌人库对齐的「尸衣者」·收口 #224·见 scripts/check-terminology.mjs）
+tasks.push({ name: 'check-terminology', cmd: ['node', join('scripts', 'check-terminology.mjs')] });
+
 // 敌人库四条门（纯 node·registry 不过期 + 引用完整 + 无孤儿 + 有 baseline，见 scripts/check-enemy-refs.mjs）
 tasks.push({ name: 'check-enemy-refs', cmd: ['node', join('scripts', 'check-enemy-refs.mjs')] });
 

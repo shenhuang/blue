@@ -3,10 +3,9 @@
 > 真相源 = `cave_zones_spec.md` 的「设计章 v2」。本文件只排**怎么执行**。
 > 各 prompt 粘贴到新 session 起手即可；PSM 命令在 main 树跑。
 
-> **当前状态（2026-06-25 核对·按 main 实有）**：roadmap 全部任务**仍未落 main**（T1 五区还在且 lc 未上调 · E1–E4 四池仍 0 事件 · T2/T4 无 SPEC/代码 · T3 未接 27 洞）——所以本计划**整体仍按原样可跑**。两点先处理：
-> 1. **`cave-zones`（active）占着 `zones.json + events/**` 车道**，与 **T1（zones.json）+ E1–E4（events/*.json）冲突** → 这几条**不能与 cave-zones 并行**，先把 cave-zones land/abort（或缩窄其车道）再起。
-> 2. **orientation（#176 横向洞）已 land** → T2 的「确认 cave-mapgen orientation 已 land」前置**已满足**。
-> 删除前置仍干净：五个待删 zone 在 `zones.json` 外 **0 引用**。
+> **当前状态（2026-06-27 核对·按 main 实有）**：roadmap **9/10 项已落 main**——T1、E1–E4、T2、T4、T3a、T3b 全部实装并合入（逐条证据 commit 见下表「状态」列）；五个待删 zone 已删（`zones.json` 外 0 引用）。**唯一未做＝T2b 深门循环再生洞**（一直排为最后期·`the_deep_gate` 仍只在 zones.json 留占位·无 `cave-deepgate` 提交/引擎模块），符合计划设计。
+> 注：自 06-25 起 main 另有多笔 tutorial(#220/#222)/lunar(#212–#215) 提交**顺带碰过**本 roadmap 关联文件（dive.ts / chart_pois.json / zones.json 等），那些**不是** cave-roadmap 项落地，已甄别排除。
+> 实质收口工作只剩 T2b；其余仅留数值/手感调（统一最后调·见 defer-number-tuning）。
 
 ---
 
@@ -45,16 +44,16 @@
 
 | 任务 | 模型 · 强度 | 状态 | 依赖 | PSM 车道（关键文件） |
 |---|---|---|---|---|
-| **T1** 数据 cut+lc | Sonnet · **Low** | ⬜ 未做 | — | `zones.json` · `cave_zones_spec.md` |
-| **E1** tide 池 | Sonnet · **High** | ⬜ 未做（0 事件） | — | `events/tide.json` |
-| **E2** grotto 池 | Sonnet · **High** | ⬜ 未做（0 事件） | — | `events/grotto.json` |
-| **E3** deep_cave 池 | Opus · **High** | ⬜ 未做（0 事件） | — | `events/deep_cave.json` |
-| **E4** chasm 池 | Opus · **High** | ⬜ 未做（0 事件） | — | `events/chasm.json` |
-| **T2** B 持久多口图 | Opus · **Max** | ⬜ 未做 | —（独占 mapgen·orientation #176 已 land ✓） | `engine/mapgen.ts` · `types/dive.ts` · `engine/state.ts` · `ui/SonarScanPanel.ts` |
-| **T2b** 深门循环再生洞 | Opus · **Max** | ⬜ 未做（最后期） | T2 · ⏳ | 新 `engine/<深门循环洞模块>` |
-| **T4** 温度系统 | Opus · **High** | ⬜ 未做 | T1 + 协调 T2（解耦侧表则并行） | 新 `engine/temperature.ts` · 温度侧表/类型 |
-| **T3a** chart 基础接线 | Sonnet · **High** | ⬜ 未做 | T1 | `data/chart_pois.json` · `chart_regions.json` |
-| **T3b** 跨 beacon 多口 | Opus · **High** | ⬜ 未做 | T2+T3a（深门口需 T2b） | `data/chart_pois.json` |
+| **T1** 数据 cut+lc | Sonnet · **Low** | ✓ 已落 main（`f05479a` 删 5 区→23 + lc 上调） | — | `zones.json` · `cave_zones_spec.md` |
+| **E1** tide 池 | Sonnet · **High** | ✓ 已落 main（`4961043` tide 池 7 事件） | — | `events/tide.json` |
+| **E2** grotto 池 | Sonnet · **High** | ✓ 已落 main（`87d66ed` grotto 池 7 事件） | — | `events/grotto.json` |
+| **E3** deep_cave 池 | Opus · **High** | ✓ 已落 main（`b8ccf7f` deep_cave 池 8 事件） | — | `events/deep_cave.json` |
+| **E4** chasm 池 | Opus · **High** | ✓ 已落 main（`30dd8b7` chasm 池 10 事件） | — | `events/chasm.json` |
+| **T2** B 持久多口图 | Opus · **Max** | ✓ 已落 main（`d4bde53` 方案 B A/B/C/D·SAVE 9→10） | —（独占 mapgen·orientation #176 已 land ✓） | `engine/mapgen.ts` · `types/dive.ts` · `engine/state.ts` · `ui/SonarScanPanel.ts` |
+| **T2b** 深门循环再生洞 | Opus · **Max** | ⬜ 未做（最后期·`the_deep_gate` 仍占位） | T2 · ⏳ | 新 `engine/<深门循环洞模块>` |
+| **T4** 温度系统 | Opus · **High** | ✓ 已落 main（`4c9e977` 双极门控 + `829611b` 接线 dive/state·SAVE 10→11） | T1 + 协调 T2（解耦侧表则并行） | 新 `engine/temperature.ts` · 温度侧表/类型 |
+| **T3a** chart 基础接线 | Sonnet · **High** | ✓ 已落 main（`5e07da5` 27 洞接 beacon 单口 + trench 清空 + blue_caves 迁 home） | T1 | `data/chart_pois.json` · `chart_regions.json` |
+| **T3b** 跨 beacon 多口 | Opus · **High** | ✓ 已落 main（`7cee379` 4 洞副口 + 穿越发现 flag） | T2+T3a（深门口需 T2b） | `data/chart_pois.json` |
 
 模型逻辑：纯数据/配置/浅水文案 → Sonnet；深水叙事（deep_cave/chasm·氮醉/欺骗轴）+ 引擎架构（B/温度）+ 跨 beacon 图推理 → Opus。强度按上表：唯二 **Max** ＝ T2 / T2b（架构 epic），唯一 **Low** ＝ T1（纯数据），其余 **High**。
 
@@ -229,8 +228,10 @@ node scripts/psm.mjs start cave-multimouth --lane "src/data/chart_pois.json"
 
 ## 推荐起手顺序
 
-1. **现在（先清场）**：`cave-zones`（active）占 `zones.json + events/**` 车道·撞 T1/E1–E4 → **先 land/abort cave-zones**；清场后 T1（Sonnet·Low）+ E1/E2（Sonnet·High）+ E3/E4（Opus·High）五条并行 + T2（Opus·Max·先写子-spec·**长杆·尽早起**·orientation #176 已 land·mapgen 可独占）。
-2. **T1 land 后**：T3a（Sonnet）+ T4（温度·Opus·需 T1 的 zones 标注；与 T2 协调 dive/state·或解耦成侧表提前并行）。
-3. **T2 land 后**：T3b（普通跨 beacon 多口·Opus·**不含深门**）。
-4. **最后期**：T2b 深门循环再生洞（初期完全不做）。
-5. 全部收口后，洞穴系统（数据/事件/多口持久图/温度/海图/最后深门）成闭环。
+> **2026-06-27 更新**：步骤 1–3 已全部完成落 main（见顶部 banner + 状态表证据列）。**当前只剩步骤 4＝T2b**；下面原始顺序留作历史参考。
+
+1. ~~**现在（先清场）**：`cave-zones`（active）占 `zones.json + events/**` 车道·撞 T1/E1–E4 → **先 land/abort cave-zones**；清场后 T1（Sonnet·Low）+ E1/E2（Sonnet·High）+ E3/E4（Opus·High）五条并行 + T2（Opus·Max·先写子-spec·**长杆·尽早起**·orientation #176 已 land·mapgen 可独占）。~~ ✓ 已完成
+2. ~~**T1 land 后**：T3a（Sonnet）+ T4（温度·Opus·需 T1 的 zones 标注；与 T2 协调 dive/state·或解耦成侧表提前并行）。~~ ✓ 已完成
+3. ~~**T2 land 后**：T3b（普通跨 beacon 多口·Opus·**不含深门**）。~~ ✓ 已完成
+4. **最后期（← 当前唯一待办）**：T2b 深门循环再生洞（初期完全不做·前置 T2 已 land·可起手）。
+5. 全部收口后，洞穴系统（数据/事件/多口持久图/温度/海图/最后深门）成闭环——**届时仅差 T2b 即闭环**。
