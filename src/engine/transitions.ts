@@ -23,10 +23,19 @@ export function toPort(state: GameState): GameState {
 /** 开始上浮回水面（选点处主动上浮 / 休整点上浮 / 战斗应急上浮 / 事件强制上浮）。
  *  returnTo＝主动上浮时来处的 dive 子阶段（NodeSelect / Rest），只主动上浮路径传——给上浮界面
  *  一个「取消」回退点；战斗应急 / 事件强制 / 走到死路的自动上浮不传 → 上浮界面不出取消按钮（不可反悔）。 */
-export function beginAscent(state: GameState, returnTo?: DiveSubPhase): GameState {
+export function beginAscent(
+  state: GameState,
+  returnTo?: DiveSubPhase,
+  opts?: { duress?: boolean },
+): GameState {
   return {
     ...state,
-    phase: { kind: 'ascent', targetDepth: 0, ...(returnTo ? { returnTo } : {}) },
+    phase: {
+      kind: 'ascent',
+      targetDepth: 0,
+      ...(returnTo ? { returnTo } : {}),
+      ...(opts?.duress ? { duress: true as const } : {}),
+    },
   };
 }
 

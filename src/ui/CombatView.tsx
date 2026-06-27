@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import type { GameState, EnemyInstance, CombatAction } from '@/types';
-import {
-  applyPlayerAction,
-  listAvailableActions,
-  getEnemyDef,
-  triggerEmergencyAscent,
-} from '@/engine/combat';
+import { applyPlayerAction, listAvailableActions, getEnemyDef } from '@/engine/combat';
 import { frontmostLivingSegment } from '@/engine/chain-eel';
 import { beginAscent } from '@/engine/transitions';
 import { isAscentBlocked } from '@/engine/ascent';
@@ -43,11 +38,10 @@ export function CombatView({ state, onStateChange }: Props) {
     onStateChange(result.state);
   }
 
+  // 弃战上浮：转身向上脱离战斗 → 进上浮屏（带 duress·正被咬着 ⇒ resolveAscent 否决干净上浮·SPEC §5）。
+  // 不在这里二次确认——上浮屏的单按钮按状态自决（危急/致命才弹确认·避免双重确认 + 文案打架）。
   function handleEmergencyAscent() {
-    if (!confirm('应急上浮会跳过减压，深处几乎必死。确定？')) return;
-    let s = triggerEmergencyAscent(state);
-    s = beginAscent(s);
-    onStateChange(s);
+    onStateChange(beginAscent(state, undefined, { duress: true }));
   }
 
   return (
@@ -117,7 +111,7 @@ export function CombatView({ state, onStateChange }: Props) {
           {!ascentBlocked && (
             <li>
               <button className="btn event-option danger" onClick={handleEmergencyAscent}>
-                ↑ 应急上浮（深处必死）
+                ↑ 上浮（弃战脱离）
               </button>
             </li>
           )}

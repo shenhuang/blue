@@ -73,6 +73,87 @@ export function isAscentBlocked(run: RunState): boolean {
   return isZoneAscentBlocked(run);
 }
 
+/**
+ * 上浮屏要渲染的「唯一一个上浮动作」（上浮系统 SPEC §2 结果表）。
+ * `ready`＝给一个按钮；`blocked`＝闭合水域离开上浮口、先摸回「↑」（UI 在无退路时兜失保 emergency）。
+ */
+export type AscentResolution =
+  | {
+      kind: 'ready';
+      mode: AscentMode;
+      /** 按钮文案（已把代价如实写进去） */
+      label: string;
+      /** 危急/可能致死 → UI 弹一道确认防误点 */
+      needsConfirm: boolean;
+      confirmText?: string;
+      /** 是否被追（供 UI 着色/措辞·非禁用判据） */
+      hunted: boolean;
+    }
+  | {
+      kind: 'blocked';
+      reason: string;
+    };
+
+/**
+ * **上浮单点真相**（上浮系统 SPEC §2）：把 (氧气, 氮气, 深度, 是否被追) 映射到唯一一个上浮动作——
+ * 删掉旧的「正常/强行/应急」并列假选择（根因见 SPEC §0：上浮即结算、氧气不结转 ⇒ 省氧无下家 ⇒
+ * 「氧气↔减压病」只在快淹死时才分叉）。纯函数·不读随机·不入档；UI 只渲染它 + 一个按钮。
+ *
+ * 行 F（猎手贴邻）**不在此处**：由 dive-stalker.ts::beginAscentFromDive 在进上浮屏前拦成接触伏击（决策②）。
+ * ⇒ 走到这里时 `run.stalker` 为真 == 「被追但拉开了一跳以上」。
+ */
+export function resolveAscent(run: RunState, opts?: { duress?: boolean }): AscentResolution {
+  // 闭合水域离开上浮口（蓝洞·头上岩顶）：先摸回「↑」。失保 emergency 由 AscentView 在无退路时兜。
+  if (isZoneAscentBlocked(run)) {
+    return {
+      kind: 'blocked',
+      reason: '头上是岩顶，水道在收窄——回到标着「↑」的上浮口才能上浮。',
+    };
+  }
+
+  const plan = planAscent(run);
+  const stops = computeRequiredStops(run.stats.nitrogen);
+  const oxygen = run.stats.oxygen;
+  const hunted = !!run.stalker;
+  const duress = opts?.duress === true;
+  // 「没法安稳悬停减压」：被追且仍有氮债（决策①：0 停留＝无悬停窗口可被趁）·或弃战逃上浮（duress·正被咬着上浮·SPEC §5）。
+  // ⇒ 否决干净 normal、落 rushed（氧再够也带伤）。战斗清掉 stalker，故弃战靠 duress 而非 hunted 兜。
+  const denyClean = (hunted && stops >= 1) || duress;
+
+  // 选 mode（氧气兜底优先于 deny）：氧 < rushedTurns ⇒ 连强行都不够 ⇒ emergency；
+  // 否则 denyClean / 氧不够走完减压 ⇒ rushed；否则 normal。
+  let mode: AscentMode;
+  if (oxygen < plan.rushedTurns) mode = 'emergency';
+  else if (denyClean || oxygen < plan.normalTurns) mode = 'rushed';
+  else mode = 'normal';
+
+  // 诚实性：预测减压病分级·IV 型＝会死 → 任何 mode 都弹死亡确认（别让按钮静默送命·尤其高氮 rushed→IV）。
+  const lethal = determineBends(run.stats.nitrogen, mode, run.currentDepth) >= 4;
+
+  let label: string;
+  if (mode === 'normal') {
+    // 不在文案里许诺「无减压病」——残余氮 ≥ TWO_STOP 仍给 I 型（determineBends 兜）。D＝被追但 0 停留·直上甩开。
+    label = hunted ? `正常上浮（直上甩开 · ${plan.normalTurns} 回合）` : `正常上浮（${plan.normalTurns} 回合）`;
+  } else if (mode === 'rushed') {
+    label = duress
+      ? '强行上浮（弃战 · 必得减压病）'
+      : hunted
+        ? '强行上浮（甩开猎手 · 必得减压病）'
+        : `上浮（氧气不足 · 跳过减压 · 必得减压病 · ${plan.rushedTurns} 回合）`;
+  } else {
+    label = duress ? '应急上浮（弃战 · 可能死于减压病）' : '上浮（氧气危急 · 可能死于减压病）';
+  }
+
+  const needsConfirm = mode === 'emergency' || lethal;
+  const confirmText = !needsConfirm
+    ? undefined
+    : mode === 'emergency'
+      ? '氧气见底，这一程几乎必得重度减压病、深处可能致死。仍要上浮？'
+      : '你体内氮气太多——这样硬冲上去，减压病会要命。仍要上浮？';
+
+  return { kind: 'ready', mode, label, needsConfirm, confirmText, hunted };
+}
+
 /** 减压病分级判定 */
 function determineBends(
   nitrogenAtStart: number,

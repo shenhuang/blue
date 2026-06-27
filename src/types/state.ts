@@ -486,7 +486,7 @@ export type GamePhase =
   | { kind: 'shop'; shopId: string } // 港口商店（目前只有 Mira）
   | { kind: 'dive'; subPhase: DiveSubPhase }
   | { kind: 'combat'; combat: CombatState }
-  | { kind: 'ascent'; targetDepth: number; returnTo?: DiveSubPhase } // returnTo：主动上浮（beginAscentFromDive）记下的来处子阶段·给上浮界面「取消」回退点；forced 上浮（事件/战斗应急/走到死路自动）不带 → 不可取消
+  | { kind: 'ascent'; targetDepth: number; returnTo?: DiveSubPhase; duress?: boolean } // returnTo：主动上浮（beginAscentFromDive）记下的来处子阶段·给上浮界面「取消」回退点；forced 上浮（事件/战斗应急/走到死路自动）不带 → 不可取消。duress：弃战逃上浮（战斗→上浮·正被咬着）→ resolveAscent 否决干净上浮（上浮系统 SPEC §5）
   | { kind: 'resolution'; outcome: RunOutcome }
   | { kind: 'funeral'; record: DeathRecord }
   | { kind: 'gameOver'; reason: string };

@@ -1,5 +1,5 @@
 import type { GameState } from '@/types';
-import { executeAscent, planAscent, isZoneAscentBlocked } from '@/engine/ascent';
+import { resolveAscent, executeAscent, type AscentMode } from '@/engine/ascent';
 import { cancelAscent } from '@/engine/transitions';
 import { StatusBar } from './StatusBar';
 
@@ -8,84 +8,81 @@ interface Props {
   onStateChange: (s: GameState) => void;
 }
 
+/**
+ * 上浮屏（上浮系统 SPEC §2）：**只渲染一个按钮**——它的文案与结果由引擎单点 `resolveAscent(run)` 按
+ * (氧气, 氮气, 深度, 是否被追) 算出（删掉旧的「正常/强行/应急」三选一假选择·根因见 SPEC §0）。
+ * 贴邻猎手（决策②）在进这屏前已被 dive-stalker.ts::beginAscentFromDive 拦成接触伏击——到这里不会再有「贴脸」态。
+ */
 export function AscentView({ state, onStateChange }: Props) {
   if (!state.run) return null;
-  const plan = planAscent(state.run);
-  const oxygenLeft = state.run.stats.oxygen;
-  const normalSafe = oxygenLeft >= plan.normalTurns;
-  const rushedSafe = oxygenLeft >= plan.rushedTurns;
-  // 用「区域物理封口」而非含教学锁的 isAscentBlocked：教学首潜的 forceAscend 退出落 east_reef（free-ascend）
-  // → 不挡 → 仍能 normal 上浮（脚本退出不该被逼成应急上浮）。区域封口（蓝洞等）行为不变。
-  const blocked = isZoneAscentBlocked(state.run);
-  // 主动上浮才带 returnTo（NodeSelect / Rest 的来处）；带了就给「取消」按钮回到原地。
+  const run = state.run;
+  // 弃战逃上浮（战斗→上浮·phase.duress）→ resolveAscent 否决干净上浮（SPEC §5）。
+  const duress = state.phase.kind === 'ascent' && state.phase.duress === true;
+  const res = resolveAscent(run, { duress });
+  // 主动上浮才带 returnTo（NodeSelect / Rest 的来处）；带了就给「取消」回原地。
   // 事件强制 / 战斗应急 / 走到死路的自动上浮无 returnTo → 不出取消（不可反悔）。
   const returnTo = state.phase.kind === 'ascent' ? state.phase.returnTo : undefined;
 
-  function ascend(mode: 'normal' | 'rushed' | 'emergency') {
-    const result = executeAscent(state, mode);
-    onStateChange(result.state);
+  function ascend(mode: AscentMode, confirmText?: string) {
+    if (confirmText && !confirm(confirmText)) return;
+    onStateChange(executeAscent(state, mode).state);
   }
+
+  // 单按钮视觉档（沿用旧 .event-option）：normal→ascend（安全绿）·emergency→danger·rushed→默认。
+  const modeClass = (mode: AscentMode) =>
+    mode === 'normal' ? 'ascend' : mode === 'emergency' ? 'danger' : '';
 
   return (
     <div className="dive ascent-screen">
       {/* 左栏（桌面双栏）/ 钉顶（手机）：上浮屏状态栏锁定（氧气/氮关键值常显·与战斗同款 .dive-pinned·无抽屉）。 */}
       <div className="dive-pinned">
-        <StatusBar run={state.run} />
+        <StatusBar run={run} />
       </div>
       <article className="event tone-realistic">
         <h2 className="event-title">上浮选择</h2>
         <div className="event-body">
           <p>
-            当前深度 {state.run.currentDepth}m，氮气浓度{' '}
-            {Math.round(state.run.stats.nitrogen)} / 100。
+            当前深度 {run.currentDepth}m，氮气浓度{' '}
+            {Math.round(run.stats.nitrogen)} / 100。
           </p>
-          {blocked ? (
+          {res.kind === 'blocked' && (
             <p className="warn">
-              头上是岩顶，水道在收窄——这里上不去。<br />
-              回到标着「↑」的上浮口才能上浮；摸不回去，氧气就会在下面耗尽。
-            </p>
-          ) : (
-            <p className="dim">
-              需要 {plan.stops} 次减压停留 ・ 正常上浮共耗{' '}
-              <strong>{plan.normalTurns}</strong> 回合 ・ 强行上浮{' '}
-              <strong>{plan.rushedTurns}</strong> 回合（无减压）
+              {res.reason}
+              <br />
+              摸不回上浮口，氧气就会在下面耗尽。
             </p>
           )}
         </div>
 
         <ul className="event-options">
-          <li>
-            <button
-              className="btn event-option ascend"
-              onClick={() => ascend('normal')}
-              disabled={!normalSafe || blocked}
-            >
-              ↑ 正常上浮（{plan.normalTurns} 回合 氧气）
-              {blocked && <span className="warn"> ⚠ 洞顶挡着</span>}
-              {!blocked && !normalSafe && <span className="warn"> ⚠ 氧气不够</span>}
-            </button>
-          </li>
-          <li>
-            <button
-              className="btn event-option"
-              onClick={() => ascend('rushed')}
-              disabled={!rushedSafe || blocked}
-            >
-              强行上浮（{plan.rushedTurns} 回合 氧气，必得减压病）
-              {blocked && <span className="warn"> ⚠ 洞顶挡着</span>}
-              {!blocked && !rushedSafe && <span className="warn"> ⚠ 氧气不够</span>}
-            </button>
-          </li>
-          {/* 封闭水域离开上浮口 → 不给紧急上浮（删「凿穿洞顶」虚构·氮气 SPEC §4）。
-              !returnTo 的失保分支：万一被 forced/自动上浮塞进 blocked 屏（regress 守不该发生），
-              仍留一手避免无按钮卡死。 */}
-          {(!blocked || !returnTo) && (
+          {res.kind === 'ready' && (
+            <li>
+              <button
+                className={`btn event-option ${modeClass(res.mode)}`}
+                onClick={() =>
+                  ascend(res.mode, res.needsConfirm ? res.confirmText : undefined)
+                }
+              >
+                {res.mode === 'normal' ? '↑ ' : ''}
+                {res.label}
+              </button>
+            </li>
+          )}
+          {/* 闭合水域离开上浮口：有退路 → 只给「取消」回去摸上浮口（先摸回「↑」才能上浮）；
+              无退路（失保·万一被 forced/自动上浮塞进 blocked 屏·regress 守不该发生）→ 留一手凿顶应急
+              避免无按钮卡死（同旧 AscentView 失保分支·氮气 SPEC §4）。 */}
+          {res.kind === 'blocked' && !returnTo && (
             <li>
               <button
                 className="btn event-option danger"
-                onClick={() => ascend('emergency')}
+                onClick={() =>
+                  ascend(
+                    'emergency',
+                    '头上是岩顶——硬凿上浮几乎必得重度减压病、深处可能致死。仍要上浮？',
+                  )
+                }
               >
-                应急上浮（1 回合，深处必死）
+                应急上浮（凿顶 · 深处必死）
               </button>
             </li>
           )}

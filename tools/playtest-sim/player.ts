@@ -11,7 +11,7 @@ import {
   startDive, moveToNode, enterNodeSelection, beginAscentFromDive,
   exploreFeature, restAtNode,
 } from '@/engine/dive';
-import { planAscent, executeAscent, isAscentBlocked } from '@/engine/ascent';
+import { resolveAscent, executeAscent, isAscentBlocked } from '@/engine/ascent';
 import { startCombat, applyPlayerAction, listAvailableActions } from '@/engine/combat';
 import { makeLcg } from '@/engine/rng';
 import itemsData from '@/data/items.json';
@@ -172,12 +172,9 @@ export function playDive(state0: any, opts: PlayOpts): RunResult {
         rec.depthAtTurnaround = state.run.currentDepth;
       }
       const run = state.run;
-      const plan = planAscent(run);
-      const blocked = isAscentBlocked(run);
-      let mode: 'normal' | 'rushed' | 'emergency' = 'normal';
-      if (blocked) mode = 'emergency';
-      else if (run.stats.oxygen < plan.normalTurns) mode = 'rushed';
-      if (!blocked && run.stats.oxygen < plan.rushedTurns) mode = 'emergency';
+      // 上浮 mode 收口到引擎单点 resolveAscent（上浮系统 SPEC §2·删本地拷贝）：blocked→失保 emergency·弃战 duress 透传。
+      const r = resolveAscent(run, { duress: ph.duress });
+      const mode = r.kind === 'blocked' ? 'emergency' : r.mode;
       const res = executeAscent(state, mode);
       state = res.state;
       rec.bends = res.bendsType ?? rec.bends;
