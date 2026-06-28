@@ -1,5 +1,5 @@
 {
-  "_doc": "远洋中层 [midwater] 氛围池（St1·zone.open_midwater·锚点③专属 zone 的最小事件池——稠密度留周末引擎按 #102 法补批）。母题：没有参照物的水——上蓝下黑、悬浮无依、距离与气量都不可信（中氮醉档·剧情 SPEC §4.1：发光体/气量误读）。全 loot-free·叙述永不交底（#54）·无脚本死（每条都有诚实退路）。文案 [待过稿]（quirk #117）。",
+  "_doc": "远洋中层 [midwater] 氛围池（St1·zone.open_midwater·锚点③专属 zone 的最小事件池——稠密度留周末引擎按 #102 法补批）。母题：没有参照物的水——上蓝下黑、悬浮无依、距离与气量都不可信（中氮醉档·剧情 SPEC §4.1：发光体/气量误读）。漂浮残骸打捞 loot（#233①·brass_fitting/scrap_alloy/old_fishing_net·深度梯度由 lootFactor 自动加权）·生命/失向事件仍 loot-free·叙述永不交底（#54·残骸只是残骸·不交代来历）·无脚本死（每条都有诚实退路）。文案 [待过稿]（quirk #117）。",
   "events": [
     {
       "id": "midwater.krill_column",
@@ -2434,6 +2434,146 @@
             "deltas": {
               "sanity": -2
             }
+          }
+        }
+      ]
+    },
+    {
+      "id": "midwater.drifting_net",
+      "depthRange": [60, 95],
+      "zoneTags": ["midwater"],
+      "weight": 2,
+      "cooldown": 9,
+      "title": "挂着的网",
+      "body": "一团网衣挂在水里，不沉不浮，停在和你一样的深度。\n旧的，尼龙的，半边糊着生物膜，缠着几块说不清原来是什么的金属，配重还在，所以它停在这一层，不上不下。\n没有船。没有线通向上面。它就在这儿挂着，挂了多久，你看不出来。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "cut_it_down",
+          "label": "割下能用的——网和缠着的金属",
+          "check": {
+            "stat": "stamina",
+            "dc": 16,
+            "onSuccess": {
+              "text": "你拽住网衣，刀贴着配重割。生物膜在手套上留下一层滑，金属块比看着的沉，割下来的时候网往你这边塌了一下，又停回原来的深度。\n你收起能收的，剩下的半团继续挂在那儿，不上不下。",
+              "oxygenTurnCost": 2,
+              "loot": [
+                { "itemId": "item.old_fishing_net", "qty": [1, 2], "chance": 0.85 },
+                { "itemId": "item.scrap_alloy", "qty": [1, 2], "chance": 0.6 }
+              ]
+            },
+            "onFailure": {
+              "text": "网缠得比你以为的深。你割了两刀，整团往你身上裹过来，配重拖着你往下沉了半米。\n你蹬开，退出来，手里什么都没留住，只多费了一段气。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -6 }
+            }
+          }
+        },
+        {
+          "id": "check_for_trapped",
+          "label": "先看网里有没有还活着的东西",
+          "outcome": {
+            "text": "你绕着网看了一圈。几只小鱼在网格里进出，没被缠住，是它们自己选了这儿待着。\n网中央有个更大的影，不动——等你灯转过去，只是一块裹满膜的金属。这里没什么需要你救。",
+            "oxygenTurnCost": 1
+          }
+        },
+        {
+          "id": "leave_the_net",
+          "label": "不碰，绕过去",
+          "outcome": {
+            "text": "你从网边绕开，让它留在视野外缘。它不上不下地挂着，等你回头，它已经和背景的蓝化在了一起。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "midwater.suspended_drum",
+      "depthRange": [95, 150],
+      "zoneTags": ["midwater"],
+      "weight": 2,
+      "cooldown": 10,
+      "title": "停在中途的桶",
+      "body": "一只金属桶悬在你面前的水里，立着，不沉。\n锈到看不出原来的颜色，一头鼓起，一头瘪进去——里头一半进了水，一半还封着气，两边较着劲，把它钉在这个深度。\n你绕到另一面，没有标记，没有字，锈把一切都吃平了。它从哪条船上掉下来、掉了多少年，水不告诉你。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "salvage_fittings",
+          "label": "撬下桶箍和还成形的金属件",
+          "check": {
+            "stat": "stamina",
+            "dc": 18,
+            "onSuccess": {
+              "text": "你卡住桶箍，撬。封着的那头嘶地漏了一串气，桶歪过来又被自己的配平拽回去。箍崩开，连着几块还算成形的黄铜件落进你掌心，沉。\n空了气的桶慢慢往下走了，你看着它沉进黑里，没追。",
+              "oxygenTurnCost": 3,
+              "loot": [
+                { "itemId": "item.brass_fitting", "qty": [1, 2], "chance": 0.8 },
+                { "itemId": "item.scrap_alloy", "qty": [1, 2], "chance": 0.5 }
+              ]
+            },
+            "onFailure": {
+              "text": "你撬得太急。封着的那头整个泄了气，桶猛地往下坠，差点把你的手一起带走。\n你松手。它翻着滚进下面的黑里，你手里只剩一道勒红的印和少掉的一口气。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -7, "sanity": -2 }
+            }
+          }
+        },
+        {
+          "id": "leave_drum",
+          "label": "不动它——让它自己决定沉浮",
+          "outcome": {
+            "text": "你从桶边退开。它立在那儿，两头较着劲，谁也没赢。\n你走的时候它还停在原处，等下一口气漏完，它会自己往下去，不用你帮。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "midwater.hanging_plate",
+      "depthRange": [150, 205],
+      "zoneTags": ["midwater"],
+      "weight": 2,
+      "cooldown": 11,
+      "title": "悬着的板",
+      "body": "灯够不到底，也够不到顶。前方挂着一块板。\n你估不准多大——可能是一扇舱门，离你三米；也可能是半张甲板，离你三十米。这个深度没有东西帮你定标，它就是一块灰的、平的、边缘卷起的金属，悬在黑里。\n你往它去。它没有变近，然后忽然就到了——比你以为的小，离你比你以为的近。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "strip_the_plate",
+          "label": "把边上松动的配件拆下来",
+          "check": {
+            "stat": "stamina",
+            "dc": 20,
+            "onSuccess": {
+              "text": "你扶住板沿——比看着的薄，一推就晃。卷边的地方挂着几枚还成形的配件，铜的，没烂透。你逐个拧下来收好。\n板被你借的力推得慢慢转过去，露出背面，背面和正面一样，什么都没写。",
+              "oxygenTurnCost": 3,
+              "loot": [
+                { "itemId": "item.brass_fitting", "qty": [1, 2], "chance": 0.8 },
+                { "itemId": "item.scrap_alloy", "qty": [1, 1], "chance": 0.5 }
+              ]
+            },
+            "onFailure": {
+              "text": "你刚搭上手，板比你想的轻，整个翻过来扇了你一下，卷口划过装具。\n你后撤，配件还在板上，板转着远离你，转进灯够不到的地方。你数了数气，决定不追。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -6, "sanity": -3 }
+            }
+          }
+        },
+        {
+          "id": "use_as_reference",
+          "label": "拿它当一次参照，对准方向就走",
+          "outcome": {
+            "text": "你不拆它，只借它定了一次方向——这是这片水里半天来唯一一个不动的东西。\n你对好航向，记下这块板大概的深度，离开。它在你身后悬着，很快又分不清是三米还是三十米。",
+            "oxygenTurnCost": 1,
+            "deltas": { "sanity": 1 }
+          }
+        },
+        {
+          "id": "leave_plate",
+          "label": "不靠近，绕开",
+          "outcome": {
+            "text": "你绕开它。够不到底也够不到顶，中间挂着一块说不清大小的板，你把它留在原处。\n灯扫过去最后一眼，它已经成了黑里一块更黑的影。",
+            "oxygenTurnCost": 1
           }
         }
       ]

@@ -466,7 +466,17 @@
               "oxygenTurnCost": 3,
               "deltas": {
                 "sanity": -2
-              }
+              },
+              "loot": [
+                {
+                  "itemId": "item.whalefall_polychaete",
+                  "qty": [
+                    1,
+                    3
+                  ],
+                  "chance": 0.75
+                }
+              ]
             },
             "onFailure": {
               "text": "你穿进去才发现端足类有多密。它们不咬你，可它们糊住你的面镜，你的灯只剩一拳远，四面八方都是细小的撞击和蠕动。\n你凭气泡的方向钻出来，出口不在你以为的那侧。出来后你抹了半天面镜。",
@@ -539,8 +549,9 @@
                 "itemId": "item.whalefall_polychaete",
                 "qty": [
                   1,
-                  1
-                ]
+                  3
+                ],
+                "chance": 0.75
               }
             ]
           }
@@ -625,8 +636,9 @@
                 "itemId": "item.whale_bone",
                 "qty": [
                   1,
-                  1
-                ]
+                  2
+                ],
+                "chance": 0.5
               }
             ]
           }

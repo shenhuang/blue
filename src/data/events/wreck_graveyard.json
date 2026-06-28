@@ -1560,6 +1560,14 @@
                   2
                 ],
                 "chance": 0.6
+              },
+              {
+                "itemId": "item.wreck_bronze",
+                "qty": [
+                  1,
+                  2
+                ],
+                "chance": 0.5
               }
             ]
           }
@@ -2498,6 +2506,14 @@
                   2
                 ],
                 "chance": 0.6
+              },
+              {
+                "itemId": "item.wreck_bronze",
+                "qty": [
+                  1,
+                  2
+                ],
+                "chance": 0.5
               }
             ]
           }
@@ -2596,6 +2612,14 @@
                     1
                   ],
                   "chance": 0.3
+                },
+                {
+                  "itemId": "item.wreck_bronze",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 0.5
                 }
               ]
             },

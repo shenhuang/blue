@@ -1,5 +1,5 @@
 {
-  "_doc": "海沟热液场 [vent] 氛围池（St1·zone.vent_trench·锚点④专属 zone 的最小事件池——稠密度留周末引擎补批）。母题：温水里的假生机——黑烟柱/化能群落/灯的间距不对（重氮醉档·剧情 SPEC §4.1：鮟鱇灯=导师探照灯）。全 loot-free·叙述永不交底（#54）·无脚本死。锚点④节拍事件在 ch1.json，这里只做氛围；「探照灯角度的灯」是节拍前的低强度预回声，不置任何 flag。文案 [待过稿]（quirk #117）。",
+  "_doc": "海沟热液场 [vent] 氛围池（St1·zone.vent_trench·锚点④专属 zone 的最小事件池——稠密度留周末引擎补批）。母题：温水里的假生机——黑烟柱/化能群落/灯的间距不对（重氮醉档·剧情 SPEC §4.1：鮟鱇灯=导师探照灯）。硫化物打捞 loot（#233①·item.vent_sulfide·岩凿门·活/死烟囱皆可凿·深度由 lootFactor 自动加权）·氛围/欺骗事件仍 loot-free·叙述永不交底（#54·凿矿不交代灯的真相）·无脚本死。锚点④节拍事件在 ch1.json，这里只做氛围；「探照灯角度的灯」是节拍前的低强度预回声，不置任何 flag。文案 [待过稿]（quirk #117）。",
   "events": [
     {
       "id": "vent.the_smokers",
@@ -47,6 +47,27 @@
             "oxygenTurnCost": 1,
             "deltas": {
               "sanity": -4
+            }
+          }
+        },
+        {
+          "id": "mine_smoker_base",
+          "label": "在喷口下风处凿烟柱根部的矿壳（氧气 -3）",
+          "visibleIf": { "kind": "hasCapability", "capability": "mine" },
+          "check": {
+            "stat": "stamina",
+            "dc": 18,
+            "onSuccess": {
+              "text": "你绕到喷口的下风一侧，热流被柱体挡掉大半，才敢贴上去。岩凿沿着根部那圈最厚的矿壳啃，硫化物结得密，崩下来的块还带着地底的温。\n你收了几块就退，没贪——这东西脚下就是几百度的水。",
+              "oxygenTurnCost": 3,
+              "loot": [
+                { "itemId": "item.vent_sulfide", "qty": [1, 2], "chance": 0.8 }
+              ]
+            },
+            "onFailure": {
+              "text": "你凿到一半，一股横流绕过柱体扫过来，热得你整条手臂缩回。岩凿脱手，沉进喷口边的黑里。\n你蹬开，退到温水带外面，空手，喘。这种地方，矿是矿，命是命。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -8, "sanity": -2 }
             }
           }
         },
@@ -1640,6 +1661,27 @@
               "deltas": {
                 "sanity": -5
               }
+            }
+          }
+        },
+        {
+          "id": "mine_dead_chimney",
+          "label": "趁它死透了，凿一块矿壁带走（氧气 -3）",
+          "visibleIf": { "kind": "hasCapability", "capability": "mine" },
+          "check": {
+            "stat": "stamina",
+            "dc": 15,
+            "onSuccess": {
+              "text": "死的烟囱不烫了，你贴着矿壁凿。岩凿啃进去，硫化物的层一块块崩下来，断口是干的，没有热，没有渗水——这根柱子早把自己结成了石头。\n你收起几块，沉，带着硫磺的涩味。它长成用了几十年，你取走用了两分钟。",
+              "oxygenTurnCost": 3,
+              "loot": [
+                { "itemId": "item.vent_sulfide", "qty": [1, 2], "chance": 0.85 }
+              ]
+            },
+            "onFailure": {
+              "text": "你凿的位置不对，整段矿壁酥了，碎成粉落进黑水里，没接住几块。\n死了的东西也有死了的脾气，你多费一口气才认了。",
+              "oxygenTurnCost": 3,
+              "deltas": { "stamina": -5 }
             }
           }
         },
