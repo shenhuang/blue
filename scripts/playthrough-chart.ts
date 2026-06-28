@@ -26,6 +26,7 @@ import {
 } from '../src/engine/chart';
 import { regionForOwner, regionConfigErrors, flagGatedRegions, regionRadius } from '../src/engine/regions';
 import { ownerAnchorPos } from '../src/engine/lighthouses';
+import { getColumns } from '../src/engine/columns';
 import { generateDiveMap, analyzeMap, caveShapeBucket } from '../src/engine/mapgen';
 import { startDiveFromPoi, currentMoveCost } from '../src/engine/dive';
 import { tickTurns, visibilitySanityDrain } from '../src/engine/events';
@@ -224,6 +225,50 @@ L('\n========== 0b. owner 归属守门 + owner POI 落在 owner radius 内 =====
     `0b: resolve 管线应 == owner 声明坐标 + 偏移（spot=横岩廊·实际 ${spotPoi!.mapX},${spotPoi!.mapY}）`,
   );
   L('  resolve 管线正确性（owner 声明坐标 + 偏移·spot=横岩廊）✓');
+}
+
+// ============================================
+// 0c. POI 不落陆（陆海分界守门·机制门·CLAUDE.md「约定落成机制」·2026-06-28）
+//   病：漆号珊瑚丛(col.home.storyTier) mapX=0.04 < 家港口 0.06 → 渲染落到海岸/陆地侧（作者「跑到岸上了」）。
+//   根因 1：depth_columns 的 storyTier/tier 是**绝对坐标**、不经 owner resolve，0b（只 validate chart_pois
+//           相对偏移 + owner 圈）整条覆盖不到；根因 2：home 是 coast 半圆·圈含左半（陆地侧）→ 即便查「落在
+//           owner 圈内」也挡不住向陆偏（0.04 距 home 0.122 < 半径 0.26·照样过 0b·c）。
+//   不变量：任何潜点（绝对坐标）必须在**家港口以东**（mapX > 港口 mapX）。家港口＝海图最左的人造点 / on-shore
+//           基地（state.ts：POI 在港口之东），故「> 港口 mapX」≡「在水里、不在岸上」。
+//   两路覆盖：(A) depth_columns 显式绝对坐标（病灶 lane·手写绝对数·含不可见档 / 脱簇远摆的 capstone）；
+//            (B) generateChart resolve 后玩家**实际所见**的每个点（chart_pois 相对偏移 resolve + 主线 beat）。
+//   只查离岸、不查 owner 圈：capstone 故意脱簇摆远（见 columns.ts::tierPoi 注释）→ 在圈外是合法的；owner 圈
+//   归属由 0b 管 chart_pois，column 一侧豁免圈、只守「不落陆」。
+// ============================================
+L('\n========== 0c. POI 不落陆（mapX > 家港口·陆海分界）==========');
+{
+  const coastEdge = ownerAnchorPos(HOME_LIGHTHOUSE_ID)!.mapX; // 家港口＝on-shore 基地＝陆海分界（海图最左人造点）
+  // (A) depth_columns 显式绝对坐标（storyTier + 带显式 mapX 的 tier）——病灶 lane（手写绝对数·不经 resolve）。
+  let columnChecked = 0;
+  for (const c of getColumns()) {
+    const probes: { label: string; mapX: number | undefined }[] = [
+      ...(c.storyTier ? [{ label: `${c.id}.storyTier「${c.storyTier.label}」`, mapX: c.storyTier.mapX }] : []),
+      ...c.tiers.map((t) => ({ label: `${c.id}.t${t.tier}「${t.label}」`, mapX: t.mapX })),
+    ];
+    for (const p of probes) {
+      if (typeof p.mapX !== 'number') continue; // 缺省＝host 旁自动布点（恒离岸·trusted·见 columns.ts）
+      columnChecked++;
+      assert(
+        p.mapX > coastEdge,
+        `0c: 深度柱潜点「${p.label}」mapX=${p.mapX} ≤ 家港口 ${coastEdge}（落到海岸/陆地侧·应摆港口以东的水里）`,
+      );
+    }
+  }
+  // (B) generateChart resolve 后玩家实际所见的每个点（chart_pois 相对偏移已 resolve 成绝对 + 4 条主线 beat）。
+  const seen = generateChart({ profile: withLogbook(fullyRevealedProfile()) }).pois;
+  for (const p of seen) {
+    if (typeof p.mapX !== 'number') continue;
+    assert(
+      p.mapX > coastEdge,
+      `0c: 海图点「${p.id}」resolve 后 mapX=${p.mapX.toFixed(3)} ≤ 家港口 ${coastEdge}（玩家会看到它落在岸上）`,
+    );
+  }
+  L(`  ${columnChecked} 个深度柱显式坐标 + ${seen.length} 个 resolve 后海图点：均在家港口以东（不落陆）✓`);
 }
 
 // ============================================
