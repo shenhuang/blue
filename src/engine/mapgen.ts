@@ -568,6 +568,22 @@ function applyHarvestDepletion(
 // 层状 DAG（开阔海域）—— 行为与重写前完全一致，只是抽成独立函数
 // ============================================================
 
+// 同层并列的 rest / ascent_point 节点曾共用同一句 preview → 同深同描述、玩家无从区分（playtest 报告④/⑤
+// 「两个一模一样的可以喘息的水域」）。按同层兄弟序号 i 取不同句：纯派生·不耗 rng·不改 node kind ⇒ 不动
+// analyzeMap 结构基线（preview 不入任何回归基线·已核对 scenarios/ + playthrough-*）。ascent_point 文案同时
+// 说清「歇脚 + 可从这里折返上浮」，破「[上升点] 却更深又 resolve 成 rest」的误读（dive-move 把 ascent_point
+// 路由到 rest 子阶段·RestView 在该处给上浮钮）。
+const REST_PREVIEWS = [
+  '一片可以喘息的水域。',
+  '水流在这里慢下来，可以停一停。',
+  '一道背流的石壁后，水几乎是静的。',
+];
+const ASCENT_PREVIEWS = [
+  '一道斜向上的礁脊——可以歇脚，也能从这里折返上浮。',
+  '最深处，水开始回暖；一道缓坡通向上方，能从这儿折返。',
+  '岩壁裂开一道朝上的缝，光从那头漏下来——可由此上浮。',
+];
+
 function chooseLayeredNodeKind(
   layer: number,
   totalLayers: number,
@@ -648,9 +664,11 @@ function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number): Dive
           preview = roomPreview(feats.length);
         }
       } else if (kind === 'rest') {
-        preview = '一片可以喘息的水域。';
+        // 同层多个 rest 取不同句（i=0 仍是原句·常见单 rest 逐字不变）——破「无从区分」。
+        preview = REST_PREVIEWS[i % REST_PREVIEWS.length];
       } else if (kind === 'ascent_point') {
-        preview = '一道斜向上的礁脊，可以从这里上浮。';
+        // 末层并列的 ascent_point 同理差异化 + 文案点明「歇脚＋折返上浮」（破误读·见上方常量注释）。
+        preview = ASCENT_PREVIEWS[i % ASCENT_PREVIEWS.length];
       }
 
       nodes[id] = {

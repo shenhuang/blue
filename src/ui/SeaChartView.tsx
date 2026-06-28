@@ -434,7 +434,13 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
       )}
 
       {chart.pois.length === 0 ? (
-        <p className="dim chart-empty">海图上还没有你能去的点。先完成资格潜水。</p>
+        // 教学前海图本就空（潜点全压在 flag.tutorial_complete 后）——别让先点海图的玩家以为卡住：
+        // 指回 Aldo（首潜唯一入口·playtest 报告 ②）。教学后仍空属边缘态，保留原提示。
+        <p className="dim chart-empty">
+          {state.profile.flags.has('flag.tutorial_complete')
+            ? '海图上还没有你能去的点。先完成资格潜水。'
+            : '海图还是空的——先去长椅那头找 Aldo（守灯人）谈谈，他会带你出第一趟资格潜水。'}
+        </p>
       ) : (
         <div className="chart-2d">
           <ChartViewport contentBox={contentBox} minSpan={MIN_VIEW_SPAN} fitKey={chartSig}>

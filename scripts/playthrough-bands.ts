@@ -270,12 +270,13 @@ assert(
 L(`  数据升序 / 落 run / alertDelta 放大(${dNone}→${dT1.toFixed(1)}→${dT2.toFixed(1)}) / 消退买不断(${decayT2}) ✓`);
 
 // ============================================================
-// 14. 柱派生 band 注册表（#131·§10）：columnBands() 把 depth_columns.json 各柱每级派生成 band 并进 bands.ts。
-//     home(2)+wreck(3)+midwater(6)+vent(4)+trench(4) = 19 档；海沟 t4 电梯 capstone band 在表、深度窗口正确。
+// 14. 柱派生 band 注册表（#131·§10 + 主线柱迁移）：columnBands() 把 depth_columns.json 各柱派生成 band 并进 bands.ts。
+//     刷怪档 home(2)+wreck(3)+midwater(6)+vent(4)+trench(4) = 19 + 主线 story beat band（home/wreck/midwater/vent
+//     各一·band.<短名>.story）4 = 共 23；海沟 t4 电梯 capstone band 在表、深度窗口正确。
 // ============================================================
-L('\n========== 14. 柱派生 band 注册表（#131·§10）==========');
+L('\n========== 14. 柱派生 band 注册表（#131·§10 + 主线柱迁移）==========');
 const colBands = columnBands();
-assert(colBands.length === 19, `14: columnBands() = 19（home2+wreck3+midwater6+vent4+trench4），实际 ${colBands.length}`);
+assert(colBands.length === 23, `14: columnBands() = 23（刷怪 19 + 主线 story 4），实际 ${colBands.length}`);
 // 每个柱派生 band 都进了合并注册表（getBand 命中·按 id + 关键旋钮等价；不查对象 identity——
 // bands.ts 加载时调一次 columnBands() 建索引，这里再调一次是各自的新对象、结构等价即证明并表正确）。
 for (const cb of colBands) {

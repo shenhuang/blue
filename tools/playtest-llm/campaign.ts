@@ -233,7 +233,7 @@ function replayPortSession(token: CampaignToken, actions: string[]): PortSession
         const visible = ev.options.filter((o: any) => isOptionVisible(state, o));
         if (visible.length === 1) {
           // Single forced option — auto-advance
-          const res = resolveOption(state, visible[0]);
+          const res = resolveOption(state, visible[0], ev);
           state = { ...res.state, phase: { kind: 'port' } };
           continue;
         }
@@ -243,7 +243,7 @@ function replayPortSession(token: CampaignToken, actions: string[]): PortSession
             const raw = actions[actionIdx++];
             const idx = parseInt(raw.replace('port-event:', ''), 10);
             const opt = visible[isNaN(idx) ? 0 : idx] ?? visible[0];
-            const res = resolveOption(state, opt);
+            const res = resolveOption(state, opt, ev);
             state = { ...res.state, phase: { kind: 'port' } };
             continue;
           }
@@ -514,6 +514,19 @@ function buildMetaLegalActions(
 ): LegalAction[] {
   const ph = state.phase;
   const actions: LegalAction[] = [];
+
+  // portEvent（港口过场/抉择事件）：多选项过场停在这里等 agent 选——把可见选项铺成 port-event:N
+  // （replayPortSession 同款 id 解析·见上方 apply 路径）。单选项过场已被 replayPortSession 自动推进、不落到这。
+  // 没这个 case 时 portEvent 阶段会掉到末尾 `return []` → agent 见空 legalActions、得再 step 一次刷新（playtest 报告 ⑤）。
+  if (ph.kind === 'portEvent') {
+    const ev = getEventById(ph.eventId);
+    const visible = ev ? ev.options.filter((o: any) => isOptionVisible(state, o)) : [];
+    visible.forEach((opt: any, i: number) => {
+      actions.push({ id: `port-event:${i}`, label: opt.label ?? `选项${i}`, detail: `[过场] ${ph.eventId}` });
+    });
+    if (actions.length === 0) actions.push({ id: 'port-event:0', label: '继续', detail: `[过场] ${ph.eventId}` });
+    return actions;
+  }
 
   if (ph.kind === 'port') {
     // Bug A fix: when the player is mid-conversation on a specific dialog node
@@ -936,6 +949,12 @@ function cmdApply(tokenPath: string, actionId: string): void {
     const chart = generateChart({ profile: state.profile });
     const poi = chart.pois.find((p: any) => p.id === poiId);
     if (!poi || !isPoiDepartable(state.profile, poi)) {
+      // 干净 JSON 错误（agent 读 stdout·别只往 stderr 吐让它看到半截报错）：roam 潜点 id 含 diveCount·
+      // 每潜都变 → 粘上一潜旧 id 会命中这里 → 提示重读海图（playtest 报告 ⑤·坏 id 不再崩解析器）。
+      const hint = poiId.includes('roam') ? '（roam 潜点 id 每潜变·先 open-chart 重读当前 id 再 depart）' : '';
+      process.stdout.write(
+        JSON.stringify({ done: false, error: `POI 不可出海或不存在：${poiId}`, hint, kind: 'bad-action' }, null, 2) + '\n',
+      );
       process.stderr.write(`[campaign] POI not departable: ${poiId}\n`);
       process.exit(1);
     }
@@ -1131,4 +1150,11 @@ function main(): void {
   }
 }
 
-main();
+try {
+  main();
+} catch (err) {
+  // 兜底：任何未捕获异常 → 干净 JSON（别让 play.sh 吐裸 Node stack·agent 解析器会崩·playtest 报告 ⑤）。
+  const msg = err instanceof Error ? `${err.message}` : String(err);
+  process.stdout.write(JSON.stringify({ done: false, error: msg, kind: 'engine-error' }, null, 2) + '\n');
+  process.exit(1);
+}

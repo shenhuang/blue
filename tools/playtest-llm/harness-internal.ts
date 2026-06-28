@@ -18,7 +18,8 @@ import {
   exploreFeature,
   restAtNode,
 } from '@/engine/dive';
-import { planAscent, executeAscent, isAscentBlocked } from '@/engine/ascent';
+import { resolveAscent, executeAscent, isAscentBlocked } from '@/engine/ascent';
+import { nitrogenStatus } from '@/engine/nitrogen';
 import { startCombat, applyPlayerAction, listAvailableActions } from '@/engine/combat';
 import { makeLcg } from '@/engine/rng';
 import * as fs from 'node:fs';
@@ -162,12 +163,9 @@ export function replayActionsFromState(
     // ── ascent: always auto-advance ──────────────────────────────────────────
     if (ph.kind === 'ascent') {
       const run = state.run;
-      const plan = planAscent(run);
-      const blocked = isAscentBlocked(run);
-      let mode: 'normal' | 'rushed' | 'emergency' = 'normal';
-      if (blocked) mode = 'emergency';
-      else if (run.stats.oxygen < plan.normalTurns) mode = 'rushed';
-      if (!blocked && run.stats.oxygen < plan.rushedTurns) mode = 'emergency';
+      // 上浮 mode 收口到引擎单点 resolveAscent（上浮系统 SPEC §2·删本地拷贝）：blocked→失保 emergency·弃战 duress 透传。
+      const r = resolveAscent(run, { duress: ph.duress });
+      const mode = r.kind === 'blocked' ? 'emergency' : r.mode;
       const res = executeAscent(state, mode);
       ctx.state = res.state;
       continue;
@@ -317,7 +315,7 @@ export function replayActionsFromState(
           return ctx;
         }
 
-        const res = resolveOption(state, opt);
+        const res = resolveOption(state, opt, ev);
         ctx.state = res.state;
         actionIdx++;
 
@@ -467,7 +465,7 @@ export function buildLegalActions(state: any): LegalAction[] {
     if (sub.kind === 'rest') {
       const run = state.run;
       const reserve = ascentReserve(run.currentDepth, run.stats.nitrogen);
-      actions.push({ id: 'rest', label: '休息', detail: `恢复体力（O₂ ${run.stats.oxygen}，上升保留 ${reserve}）` });
+      actions.push({ id: 'rest', label: '休息', detail: `恢复体力（O₂ ${fmtStat(run.stats.oxygen)}，上升保留 ${fmtStat(reserve)}）` });
       actions.push({ id: 'leave', label: '离开', detail: '放弃休息，返回节点选择' });
       return actions;
     }
@@ -482,7 +480,7 @@ export function buildLegalActions(state: any): LegalAction[] {
         actions.push({
           id: 'ascend',
           label: '开始上升',
-          detail: `从深度 ${run.currentDepth}m 开始上升（O₂ ${run.stats.oxygen}，保留 ${reserve}）`,
+          detail: `从深度 ${run.currentDepth}m 开始上升（O₂ ${fmtStat(run.stats.oxygen)}，保留 ${fmtStat(reserve)}）`,
         });
       }
 
@@ -511,6 +509,15 @@ export function buildLegalActions(state: any): LegalAction[] {
 }
 
 // ── build summary ─────────────────────────────────────────────────────────────
+
+/**
+ * 数值显示：四舍五入到 1 位小数·去尾零（step 摘要喂给 player-agent·别灌全精度浮点）。
+ * 氧/精神/体力/氮 都在事件里按倍率分数累减 ⇒ 裸打会出「氮 0.9982382441532973」这种噪声（playtest 报告 ⑤）。
+ */
+function fmtStat(n: number): string {
+  return Number.isFinite(n) ? String(Math.round(n * 10) / 10) : String(n);
+}
+
 export function buildSummary(state: any, _ctx: ReplayContext): string {
   const ph = state.phase;
   const run = state.run;
@@ -520,10 +527,12 @@ export function buildSummary(state: any, _ctx: ReplayContext): string {
   const parts: string[] = [];
   parts.push(`第 ${run.turn} 回合`);
   parts.push(`深度 ${run.currentDepth}m`);
-  parts.push(`O₂ ${stats.oxygen}`);
-  parts.push(`精神 ${stats.sanity}`);
-  parts.push(`体力 ${stats.stamina}`);
-  parts.push(`氮 ${stats.nitrogen}`);
+  parts.push(`O₂ ${fmtStat(stats.oxygen)}`);
+  parts.push(`精神 ${fmtStat(stats.sanity)}`);
+  parts.push(`体力 ${fmtStat(stats.stamina)}`);
+  // 氮债攒起来时显化状态（裸数字看不出「氮气是债」·playtest 报告④）：safe 只打数字·过 SAFE 阈给减压提示。
+  const n2 = nitrogenStatus(stats.nitrogen);
+  parts.push(`氮 ${fmtStat(stats.nitrogen)}${n2.stops > 0 ? `·${n2.label}` : ''}`);
 
   if (ph.kind === 'combat') {
     const enemies = ph.combat?.enemies ?? [];
@@ -535,7 +544,7 @@ export function buildSummary(state: any, _ctx: ReplayContext): string {
       .map((e: any) => `${e.defId} ${e.hp}hp${e.stance ? `/${e.stance}` : ''}`)
       .join('，');
     parts.push(
-      `战斗中（回合 ${ph.combat?.turn ?? 0}·${alive.length} 敌：${enemyState || '—'}·体力 ${stats.stamina}）`,
+      `战斗中（回合 ${ph.combat?.turn ?? 0}·${alive.length} 敌：${enemyState || '—'}·体力 ${fmtStat(stats.stamina)}）`,
     );
   } else if (ph.kind === 'dive') {
     const sub = ph.subPhase;

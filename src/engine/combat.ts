@@ -196,15 +196,34 @@ export interface ActionAvailability {
 }
 
 /**
+ * 屏息潜逃的「纠缠代价」体力加成（机制·playtest 报告①「对警戒鲨 0 体力直接脱逃·无风险脱战」）：
+ * 每个**已警戒 / 进攻**的活敌 +FLEE_STAMINA_PER_ENGAGED 体力——逃离已咬住你的猎手要拼真体力、不再零成本白嫖；
+ * unaware 敌不计（偷偷溜走本就便宜·守住 flee「对警戒度低的敌人代价低」轴）。系数占位·defer-number-tuning。
+ */
+const FLEE_STAMINA_PER_ENGAGED = 3; // 占位·defer-number-tuning（作者最终统一调手感）
+function fleeEngagedSurcharge(enemies: readonly EnemyInstance[] | undefined): number {
+  if (!enemies) return 0;
+  const engaged = enemies.filter((e) => e.hp > 0 && (e.stance === 'alerted' || e.stance === 'attacking')).length;
+  return engaged * FLEE_STAMINA_PER_ENGAGED;
+}
+
+/**
  * 行动的实际资源消耗（负伤 SPEC §5：costStamina × staminaCostMult、costOxygenTurns × o2CostMult，
  * 向上取整）。无伤时乘数恒 1 → ceil(整数×1) 逐字节不变。availability 与扣费共用本函数＝面板诚实。
+ * flee 额外叠加 fleeEngagedSurcharge（仅 effect.kind==='flee' 且传了 enemies 时生效·非 flee/无敌 ⇒ +0 逐字节不变）。
  */
-function actionCosts(run: RunState, action: CombatAction): { stamina: number; oxygen: number } {
+function actionCosts(
+  run: RunState,
+  action: CombatAction,
+  enemies?: readonly EnemyInstance[],
+): { stamina: number; oxygen: number } {
   const mods = computeModifiers(run);
   // 负重档位体力倍率（武器系统·作者 2026-06-20）：与负伤 staminaCostMult 相乘。轻档 ×1 ⇒ ceil(整数×1×1) 逐字节不变。
   const wMult = weightStaminaMult(run.equipment);
+  // 屏息潜逃纠缠代价（机制·见 fleeEngagedSurcharge）：与基础 costStamina 相加后同过负伤/负重乘子。
+  const fleeSurcharge = action.effect.kind === 'flee' ? fleeEngagedSurcharge(enemies) : 0;
   return {
-    stamina: Math.ceil(action.costStamina * mods.staminaCostMult * wMult),
+    stamina: Math.ceil((action.costStamina + fleeSurcharge) * mods.staminaCostMult * wMult),
     oxygen: Math.ceil(action.costOxygenTurns * mods.o2CostMult),
   };
 }
@@ -259,7 +278,7 @@ export function checkActionAvailability(
     return { available: false, reason: '负重过载，无法行动' };
   }
 
-  const costs = actionCosts(run, action);
+  const costs = actionCosts(run, action, state.phase.kind === 'combat' ? state.phase.combat.enemies : undefined);
   if (run.stats.stamina < costs.stamina) {
     return { available: false, reason: `体力不足（需 ${costs.stamina}）` };
   }
@@ -365,7 +384,7 @@ export function applyPlayerAction(
   // 仅带 splitBehavior 的敌人进分支；普通敌人逐字节不变。
   s = maybeEnemySplit(s);
   // —— 1. 扣资源（负伤修正后的实际消耗·与 availability 同一函数） ——
-  const costs = actionCosts(s.run!, action);
+  const costs = actionCosts(s.run!, action, s.phase.kind === 'combat' ? s.phase.combat.enemies : undefined);
   s = applyStatsDelta(s, {
     stamina: -costs.stamina,
     oxygen: -costs.oxygen,
@@ -414,7 +433,7 @@ export function applyPlayerAction(
 
   // —— 6. 检查应急上浮 ——
   if (s.phase.kind === 'combat' && s.phase.combat.pendingEmergencyAscent) {
-    return { state: { ...s, phase: { kind: 'ascent', targetDepth: 0 } }, outcome: 'emergency_ascend' };
+    return { state: { ...s, phase: { kind: 'ascent', targetDepth: 0, duress: true } }, outcome: 'emergency_ascend' };
   }
 
   // —— 7. 敌人回合 ——

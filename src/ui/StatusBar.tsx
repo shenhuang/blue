@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { RunState } from '@/types';
 import { describeInjury, type InjuryBadge } from '@/engine/injuries';
 import { effectiveStaminaMax } from '@/engine/modifiers';
+import { computeRequiredStops } from '@/engine/ascent';
 
 interface Props {
   run: RunState;
@@ -21,15 +22,9 @@ export function StatusBar({ run }: Props) {
   const [openInjuryId, setOpenInjuryId] = useState<string | null>(null);
   const openBadge = badges.find((b) => b.defId === openInjuryId) ?? null;
 
-  // 估算上浮安全所需的最小回合数（占位：每 10m 需 1 个减压停留，30m 以下不需要）
-  const stopsNeeded =
-    stats.nitrogen < 40
-      ? 0
-      : stats.nitrogen < 60
-        ? 1
-        : stats.nitrogen < 80
-          ? 2
-          : 3;
+  // 上浮安全所需最小回合数：减压停留数走 computeRequiredStops（与上浮屏 / 减压病判定同源·同读 N2 阈值·
+  // 不再本地复刻 40/60/80 那串会漂移的字面量·氮气 SPEC）。
+  const stopsNeeded = computeRequiredStops(stats.nitrogen);
   const ascentTurns = Math.ceil(currentDepth / 5) + stopsNeeded;
 
   const overstayed = remainingOxygenTurns < ascentTurns;

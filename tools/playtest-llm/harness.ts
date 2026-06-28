@@ -128,14 +128,16 @@ function cmdStep(tokenPath: string, zone: string, o2: number): void {
   const summary = buildSummary(ctx.state, ctx);
   const ph = ctx.state.phase;
   const run = ctx.state.run;
+  // 读模型数值四舍五入到 1 位小数（agent 读 JSON·别灌全精度浮点·playtest 报告 ⑤）；保持 number 类型供下游计算。
+  const r1 = (n: number): number => Math.round(n * 10) / 10;
   const result: StepContinue = {
     done: false,
     phase: ph.kind === 'dive' ? `dive.${ph.subPhase?.kind}` : ph.kind,
-    depth: run?.currentDepth ?? 0,
-    o2: run?.stats.oxygen ?? 0,
-    sanity: run?.stats.sanity ?? 0,
-    stamina: run?.stats.stamina ?? 0,
-    nitrogen: run?.stats.nitrogen ?? 0,
+    depth: r1(run?.currentDepth ?? 0),
+    o2: r1(run?.stats.oxygen ?? 0),
+    sanity: r1(run?.stats.sanity ?? 0),
+    stamina: r1(run?.stats.stamina ?? 0),
+    nitrogen: r1(run?.stats.nitrogen ?? 0),
     turn: run?.turn ?? 0,
     summary,
     legalActions,

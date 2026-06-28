@@ -348,22 +348,28 @@ assert(
   '教学前海图不应出现沉船墓园（发现门控）',
 );
 
-// 教学后：沉船墓园 anchor 出现且可出海（开阔水域，无升级门，与蓝洞群一致）
+// 教学后 + 残骸前哨已建（owner=lighthouse.ch1_wreck_outpost 揭示残骸区）：沉船墓园 anchor 出现且可出海
+// （开阔水域·无升级门·与蓝洞群一致）。注：主线柱迁移退役了 ch1_temperate_wreck story 锚点（曾以「恒显」
+// 顺带让 wreck_graveyard 区在教学后即现）；沉船墓园本身 owner=残骸前哨——建好残骸前哨该区才揭示（区域揭示正轨）。
 const postProfile = {
   ...createInitialGameState().profile,
   flags: new Set(['flag.tutorial_complete']),
+  lighthouses: [
+    ...createInitialGameState().profile.lighthouses,
+    { id: 'lighthouse.ch1_wreck_outpost', name: '残骸前哨', mapX: 0.288, mapY: 0.781, level: 1, builtUpgrades: new Set<string>() },
+  ],
 };
 const postChart = generateChart({ profile: postProfile });
 const wreckPoi = postChart.pois.find(
-  (p) => p.zoneId === 'zone.wreck_graveyard' && p.persistent,
+  (p) => p.zoneId === 'zone.wreck_graveyard' && p.persistent && p.columnId === undefined,
 );
-assert(wreckPoi, '教学后海图应有沉船墓园 anchor POI');
+assert(wreckPoi, '建残骸前哨后海图应有沉船墓园 anchor POI（残骸区揭示）');
 assert(
   !poiLockReason(postProfile, wreckPoi!),
   '沉船墓园 anchor 不应有升级门（与蓝洞群一致）',
 );
-L(`  海图：教学后出现「${wreckPoi!.name}」→ zone.wreck_graveyard，无升级门 ✓`);
-L(`  发现门控 = flag.tutorial_complete`);
+L(`  海图：建残骸前哨后出现「${wreckPoi!.name}」→ zone.wreck_graveyard，无升级门 ✓`);
+L(`  发现门控 = flag.tutorial_complete + 残骸区揭示（残骸前哨 owner）`);
 
 // ============================================
 // Phase 10: roaming 专属内容相位隔离（roaming POI 内容·2026-06-25）

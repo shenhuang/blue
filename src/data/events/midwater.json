@@ -2398,7 +2398,7 @@
         "midwater"
       ],
       "weight": 3,
-      "poiId": "poi.anchor.ch1_open_midwater",
+      "poiId": "poi.dive.midwater.story",
       "title": "会折光的薄膜",
       "body": "日志在这条坐标上写过一种东西：会折光的薄膜。\n你悬在没有底的水里，前方几十米，那些光点又成对地亮、成对地灭。靠近一档，它们不退也不近，只是把你这一侧的水折得弯了一弯——像隔着一层动的玻璃看，玻璃后面什么都歪。\n导师队追过它。日志没写追上没有。",
       "tone": "cosmic",
