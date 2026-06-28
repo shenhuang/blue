@@ -39,16 +39,18 @@ const s = computeMaterialStats();
 const by = new Map(s.materials.map((m) => [m.id, m]));
 
 const beak = by.get('item.cave_octopus_beak');
-assert(beak && beak.srcCount === 1 && beak.bottleneck, '章鱼角喙 srcCount===1 且 bottleneck');
+// 材料主题 2026-06-28：章鱼角喙退出灯塔/深度柱建造（bio 不当结构）→ 建造需求 16→6（只剩 upgrades.json 装备线）→ <8 阈值·由 bottleneck 降为 single（仍单源）。
+assert(beak && beak.srcCount === 1 && beak.totalDemand === 6 && !beak.bottleneck, '章鱼角喙 单源·退出建造后 totalDemand===6（<8·非 bottleneck）');
 const lantern = by.get('item.lantern_gland');
 assert(lantern && lantern.srcCount === 1 && lantern.bottleneck, '冷光腺 srcCount===1 且 bottleneck');
 const brass = by.get('item.brass_fitting');
 // srcCount 随内容增减（#175 加 shaft_crack/flooded_gallery 两处旧装具掉落 → 21→23；weekend merge 加 wreck_graveyard 一处 → 24；叙事审查移除 reef.keepers_footlocker brass → wreck_graveyard 同批 +2 源净抵消仍 24；Batch2 grotto.old_anchor（同事件去重=1源）→ 25）；totalDemand 42→39（删水力发电设施·brass×3·2026-06-21）。
-assert(brass && brass.srcCount === 25 && brass.totalDemand === 39, '黄铜配件 srcCount===25 且 totalDemand===39');
+assert(brass && brass.srcCount === 25 && brass.totalDemand === 41, '黄铜配件 srcCount===25 且 totalDemand===41（材料主题 2026-06-28·热液前哨 s1 鳗皮→黄铜 +2）');
 const station = by.get('item.station_module');
 assert(station && !station.deadstock && station.srcCount === 1, '科考站升级模块非 deadstock 且单源（capstone 算源）');
 const idle = new Set(s.materials.filter((m) => m.idle).map((m) => m.name));
-for (const n of ['锰结核', '铁锰结壳', '热液硫化矿']) assert(idle.has(n), `idle 应含「${n}」`);
+// 材料主题 2026-06-28：锰结核（中层柱）/热液硫化矿（多柱）进建造账单 → 不再 idle；铁锰结壳仍未入任何账单（idle）。
+for (const n of ['铁锰结壳']) assert(idle.has(n), `idle 应含「${n}」`);
 
 // 新矩阵自洽：消耗矩阵行和 === 总消耗（消耗按设施所在区归位·无遗漏）
 s.materials.forEach((m, mi) => {

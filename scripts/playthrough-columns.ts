@@ -291,7 +291,7 @@ L('\n========== 9. 海沟科考站电梯 capstone ==========');
     profile: {
       ...s3.profile,
       inventory: [
-        { itemId: 'item.cave_octopus_beak', qty: 5 },
+        { itemId: 'item.vent_sulfide', qty: 5 },
         { itemId: 'item.lantern_gland', qty: 5 },
       ],
       bankedGold: 1000,
@@ -345,8 +345,8 @@ L('\n========== 10. 热液 capstone 产出核心 + 情报 ==========');
     profile: {
       ...s3.profile,
       inventory: [
-        { itemId: 'item.cave_octopus_beak', qty: 5 },
-        { itemId: 'item.eel_skin', qty: 5 },
+        { itemId: 'item.vent_sulfide', qty: 5 },
+        { itemId: 'item.iron_concretion', qty: 5 },
       ],
       bankedGold: 1000,
     },

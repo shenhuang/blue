@@ -61,6 +61,17 @@ export type DecayTier =
 export type MaterialTier = 1 | 2 | 3 | 4;
 
 /**
+ * 材料功能角色（材料主题一致性·2026-06-28·E/F 组·见 docs/playtest-findings.md）——仅 category==='material' 标。
+ * 把「这块料是拿来做什么的」做成单一来源，供 check-build-material-theming 守门（结构档须 structural·禁纯生物料当结构）：
+ *   - 'structural'：矿物/金属/硬壳——承重、塔基、锚位、井台（黄铜/铁结核/硫化矿/废合金/蛛蟹甲壳…）。
+ *   - 'optic'     ：发光/透光件——灯室点亮、感知（冷光腺·离水不灭的灯芯）。
+ *   - 'organic'   ：动物部件/食物/绳网/可卖货——非结构（鳗皮/章鱼喙/鲨牙/珊瑚〔货币〕…）。
+ *   - 'special'   ：跨区/剧情特殊件（科考站模块）。
+ * 设计准则：结构档吃 structural、点亮档吃 optic；生物料退出结构（回流装备/声呐/食物）。缺省＝未分类（视作非结构）。
+ */
+export type MaterialRole = 'structural' | 'optic' | 'organic' | 'special';
+
+/**
  * Decoy 类型（猎手 SPEC §4）：投放后骗哪种感官——声诱（骗声感）/ 光诱（骗光感）。
  * 双感猎手「光声任一都锁定」（§2.2）→ 任一种都上钩（难甩〔§3 取 min〕但易诱＝同一语义的两面）。
  * 定义放本文件（item 维度）避免 types/state ↔ types/items 循环（state.ts 已 import 本文件）。
@@ -90,6 +101,9 @@ export interface ItemDef {
   decay?: DecayTier;
   /** 材料深度分档（仅 material 物品有；引擎按它做升级稀有度门控 + Mira 回购门控） */
   tier?: MaterialTier;
+
+  /** 材料功能角色（仅 material·材料主题一致性 E/F 组·check-build-material-theming 守门）。缺省＝未分类（视作非结构）。 */
+  role?: MaterialRole;
 
   /**
    * 固定资源耗尽追踪的持久层级（POI 固定资源耗尽 SPEC·2026-06-25）。该 loot 物品被采集后，

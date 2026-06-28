@@ -97,7 +97,7 @@
           "cost": {
             "materials": [
               { "itemId": "item.crab_chitin", "qty": 2 },
-              { "itemId": "item.eel_skin", "qty": 1 }
+              { "itemId": "item.wreck_bronze", "qty": 1 }
             ],
             "gold": 100
           }
@@ -157,7 +157,7 @@
           "maxRoomFeatures": 2,
           "blurb": "氧最少层。不闻不见，但深度计和气量都对不上。开阔水里没有可躲的缝。",
           "danger": "被盯上了，只能靠速度——这里没有岩壁让你贴。",
-          "cost": { "materials": [{ "itemId": "item.eel_skin", "qty": 2 }], "gold": 140 }
+          "cost": { "materials": [{ "itemId": "item.vent_sulfide", "qty": 2 }], "gold": 140 }
         },
         {
           "tier": 5,
@@ -172,7 +172,7 @@
           "danger": "没有上和下，只有发光的浮屑替你标出你正在移动。它们标的方向未必是真的。",
           "cost": {
             "materials": [
-              { "itemId": "item.eel_skin", "qty": 2 },
+              { "itemId": "item.manganese_nodule", "qty": 2 },
               { "itemId": "item.lantern_gland", "qty": 1 }
             ],
             "gold": 175
@@ -192,8 +192,8 @@
           "danger": "这里没有可贴的岩壁。被盯上，只能靠速度，而你已经很深了。",
           "cost": {
             "materials": [
-              { "itemId": "item.cave_octopus_beak", "qty": 1 },
-              { "itemId": "item.eel_skin", "qty": 2 }
+              { "itemId": "item.manganese_nodule", "qty": 1 },
+              { "itemId": "item.vent_sulfide", "qty": 2 }
             ],
             "gold": 210
           }
@@ -240,7 +240,7 @@
           "alertFactor": 1.2,
           "lootFactor": 1.3,
           "blurb": "黑烟柱成片立着，水温忽高忽低。硫磺加划火柴的气味从换气湿气里渗进来。",
-          "cost": { "materials": [{ "itemId": "item.eel_skin", "qty": 2 }], "gold": 100 }
+          "cost": { "materials": [{ "itemId": "item.vent_sulfide", "qty": 2 }], "gold": 100 }
         },
         {
           "tier": 3,
@@ -255,7 +255,7 @@
           "cost": {
             "materials": [
               { "itemId": "item.lantern_gland", "qty": 1 },
-              { "itemId": "item.eel_skin", "qty": 1 }
+              { "itemId": "item.vent_sulfide", "qty": 2 }
             ],
             "gold": 140
           }
@@ -279,8 +279,8 @@
           "danger": "急流、热水、循着体温摸过来的东西。这个深度，回波也开始不老实了。",
           "cost": {
             "materials": [
-              { "itemId": "item.cave_octopus_beak", "qty": 1 },
-              { "itemId": "item.eel_skin", "qty": 2 }
+              { "itemId": "item.vent_sulfide", "qty": 2 },
+              { "itemId": "item.iron_concretion", "qty": 2 }
             ],
             "gold": 180
           }
@@ -339,8 +339,8 @@
           "danger": "下得来，未必上得去。黑里有东西在你扫不到的地方挪。",
           "cost": {
             "materials": [
-              { "itemId": "item.cave_octopus_beak", "qty": 1 },
-              { "itemId": "item.eel_skin", "qty": 3 }
+              { "itemId": "item.wreck_bronze", "qty": 1 },
+              { "itemId": "item.vent_sulfide", "qty": 2 }
             ],
             "gold": 200
           }
@@ -362,7 +362,7 @@
           "cost": {
             "materials": [
               { "itemId": "item.station_module", "qty": 1 },
-              { "itemId": "item.cave_octopus_beak", "qty": 2 },
+              { "itemId": "item.vent_sulfide", "qty": 2 },
               { "itemId": "item.lantern_gland", "qty": 2 }
             ],
             "gold": 400

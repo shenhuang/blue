@@ -230,8 +230,9 @@ let sE = withGate(
       { itemId: 'item.scrap_alloy', qty: 2 }, // s1（coral→scrap·经济 2026-06-28）
       { itemId: 'item.crab_chitin', qty: 4 }, // s2 建造×2 + 制氧机×2
       { itemId: 'item.brass_fitting', qty: 4 }, // s2 建造×2 + 充电桩×2
-      { itemId: 'item.lantern_gland', qty: 3 }, // s3 建造×2 + 制氧机×1
-      { itemId: 'item.eel_skin', qty: 1 }, // 充电桩
+      { itemId: 'item.lantern_gland', qty: 2 }, // s3 建造×2（制氧机改吃铁结核·材料主题 2026-06-28）
+      { itemId: 'item.quartz_crystal', qty: 1 }, // 充电桩（鳗皮→石英·2026-06-28）
+      { itemId: 'item.iron_concretion', qty: 1 }, // 制氧机（冷光腺→铁结核·2026-06-28）
     ],
     500,
   ),

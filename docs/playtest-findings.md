@@ -17,6 +17,8 @@
 > 数值（掉率/价格/base 氧）仍按 `defer-number-tuning` 约定留最后统一调——**本节只列机制**。
 > 与下方 2026-06-21 的 P1-1/P1-3/P1-5/P1-8 是同一组症状的「方向收口」，旧条目作执行细节参考。
 
+**✅ 实装进度（2026-06-28）**：D-1/S（coral/scrap 拆双职 + 深度加权 lootFactor）+ 经济可达性/主线可达性/harness-resolveoption 三门已在 #233/#234 落 main。**E + F 本 session 落地**：① 材料加 `role`（structural/optic/organic/special·`items.ts` + `items.json` 27 标）；② 五柱 9 档 + 哨站/轨道/废墟成本 bio→矿物（eel/beak 退出结构·点亮档留 lantern）；③ 跨区门：中层 t4/t6←`vent_sulfide`(热液)、热液 t4←`iron_concretion`(残骸)、海沟 t3←`wreck_bronze`、capstone `station_module` 链不变；④ 新门 `check-build-material-theming`（Rule A 结构件用对料 + Rule B 早期不压深矿）已挂 `regress.mjs`。沙箱验证：`tsc --noEmit` + 全部 `check-*` 绿；3 处 playthrough 种子（vent/trench capstone + 哨站补给设施）已同步改新料。Mac 首跑 `npm run regress` 暴露 2 处随经济漂移的 tsx 夹具（沙箱跑不了 esbuild）·已按 `walkDemand` 真实计算值修：`smoke-economy-panel`（beak bottleneck→single·demand 16→6 仍 upgrades.json 装备线·brass 39→41·idle 去锰结核/热液硫化矿）+ `playthrough-lighthouse-scenarios`（ruin 修复种子 beak→iron）。**待 Mac 复跑确认 75/75 → closeout 提交**（CHANGELOG/QUIRKS 收录新门 + role 约定）。数值仍 defer。
+
 ### 报告纠偏（两条头条结论站不住·别照着改）
 - **brass_fitting 不缺来源**：`reef.json` / `wreck_graveyard.json` 各有几十处掉点（＋`grotto`/`flooded_gallery`/`shaft_crack`）。那局没掉＝掉点大多挂在战斗/检定/「撬黄铜」选项之后，而锚点剧情潜绕开了它们。→ **不要「加 brass 来源」**，要让主路径碰得到现有来源（见 S 组）。
 - **event_seen 已持久化**：`oncePerSave` 选项写进 `profile.flags`（`events.ts:348`·跨 run 持久）。报告「存档 0 个 event_seen」八成是 LLM harness（`tools/playtest-llm`）快照没透传 `profile.flags`，或某教学选项没带 `event` 参数走 `resolveOption`。→ 列为 **I-1 待核实**，可能只是 harness 的锅、非正式存档 bug。

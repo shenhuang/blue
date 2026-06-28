@@ -91,11 +91,11 @@ function ruinState(profileInv: InventoryItem[], gold: number): GameState {
     phase: { kind: 'dive', subPhase: { kind: 'event', eventId: 'lighthouse.ruin_north' } },
   };
 }
-// 账单 = brass×4, crab_chitin×2, cave_octopus_beak×1 ＋ 80 金（来自 data/lighthouse_upgrades.json::ruins）
+// 账单 = brass×4, crab_chitin×2, iron_concretion×1 ＋ 80 金（来自 data/lighthouse_upgrades.json::ruins·材料主题 2026-06-28 beak→iron）
 const fullInv: InventoryItem[] = [
   { itemId: 'item.brass_fitting', qty: 5 },
   { itemId: 'item.crab_chitin', qty: 2 },
-  { itemId: 'item.cave_octopus_beak', qty: 1 },
+  { itemId: 'item.iron_concretion', qty: 1 },
 ];
 const ruinEvent = getEvent('lighthouse.ruin_north')!;
 const restoreOpt = ruinEvent.options.find((o) => o.id === 'restore')!;
@@ -110,7 +110,7 @@ assert(outpost!.builtUpgrades instanceof Set && outpost!.builtUpgrades.size === 
 assert(outpost!.mapX === ruin.result.mapX && outpost!.level === ruin.result.level, '新灯塔坐标/等级取自 ruin.result');
 assert(countInInventory(after.profile.inventory, 'item.brass_fitting') === 1, 'brass 应扣 4（5→1）');
 assert(countInInventory(after.profile.inventory, 'item.crab_chitin') === 0, 'crab 应扣 2 清空');
-assert(countInInventory(after.profile.inventory, 'item.cave_octopus_beak') === 0, 'beak 应扣 1 清空');
+assert(countInInventory(after.profile.inventory, 'item.iron_concretion') === 0, 'iron_concretion 应扣 1 清空');
 assert(after.profile.bankedGold === 100 - 80, '应扣 80 金');
 assert(after.profile.flags.has(ruinRestoredFlag(RUIN_ID)), '应置 flag.lighthouse_restored.ruin.north_beacon（门控事件不再重复）');
 L(`  修复成功：+${OUTPOST_ID} @ (${outpost!.mapX},${outpost!.mapY}) / 扣料扣金 / 置 flag ✓`);
