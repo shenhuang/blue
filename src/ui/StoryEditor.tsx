@@ -16,10 +16,16 @@
 import { useMemo, useState, lazy, Suspense, type CSSProperties, type ReactNode } from 'react';
 import type { GameState, EventOption } from '@/types';
 import { listAllEvents, describeCondition, buildScenarioState } from '@/engine/eventScenario';
-import { satisfyEvent, describeEventGate } from '@/engine/eventSatisfy';
+import { satisfyEvent, describeEventGate, eventGate } from '@/engine/eventSatisfy';
 import type { SatisfyResult } from '@/engine/eventSatisfy';
 import { eventArc, eventRoots, type EventArc, type ArcEdge } from '@/engine/eventGraph';
-import { listPoiEventSets, poiEventIds, type PoiEventSet } from '@/engine/poiEvents';
+import {
+  listPoiEventSets,
+  poiEventIds,
+  derivePoiRouting,
+  derivePoiDivePool,
+  type PoiEventSet,
+} from '@/engine/poiEvents';
 import { getEventById } from '@/engine/zones';
 import { EventView } from './EventView';
 // 懒加载：StatsDevPanel 静态 import 会把 dev-panel.css 拉进 StoryEditor 模块图，而
@@ -129,10 +135,15 @@ export default function StoryEditor() {
 
   // 「按 POI」走查：每个 POI（anchor + roaming 机会点）的事件集（开场/变体/专属·引擎同源派生）。
   const poiSets = useMemo(() => listPoiEventSets(), []);
+  // 可走查 = 有静态钩子 或 能定位下潜路由（后者让「无钩子但真有随机池」的 POI 也进列表·Q2）。routing 派生 cheap·无 DB 扫描。
+  const poiRouting = useMemo(
+    () => new Map(poiSets.map((p) => [p.key, derivePoiRouting(p.key)] as const)),
+    [poiSets],
+  );
   const filteredPoiSets = useMemo(() => {
     const q = filter.trim().toLowerCase();
     return poiSets.filter((p) => {
-      if (poiEventIds(p).length === 0) return false; // 无事件集的 POI 不可走查·略
+      if (poiEventIds(p).length === 0 && !poiRouting.get(p.key)) return false; // 既无钩子又定位不到 zone → 不可走查
       if (!q) return true;
       if (p.name.toLowerCase().includes(q) || p.key.toLowerCase().includes(q)) return true;
       return poiEventIds(p).some((id) => {
@@ -140,7 +151,7 @@ export default function StoryEditor() {
         return id.toLowerCase().includes(q) || (ev?.title.toLowerCase().includes(q) ?? false);
       });
     });
-  }, [poiSets, filter]);
+  }, [poiSets, poiRouting, filter]);
 
   // satisfyEvent 结果（条件读出 + 起点 state 来源）
   const sat: SatisfyResult | null = useMemo(
@@ -455,40 +466,99 @@ function Section({
 }
 
 // ── POI 的事件集（开场/变体/专属·每行点进去走查·剧情编辑器「按 POI」模式）──────
+const VIA_LABEL: Record<string, string> = { zone: '区域池', band: '深度带', cave: '持久洞' };
+const CURRENT_LABEL: Record<string, string> = { none: '无', mild: '缓流', strong: '急流' };
+const VIS_LABEL: Record<string, string> = { clear: '清', murky: '浑浊', dark: '黑水' };
+
+/**
+ * 门控标注（Q1「全量目录+门控标注」）：一条事件的运行态门槛压成一行紧凑串——解释「为什么这条在某次下潜里没出现」。
+ * 复用 eventGate（单一真相·不自己重读字段）；深度/zoneTag 由路由头覆盖、此处略，只留 sanity/flag/once/强制。
+ */
+function gateHint(id: string): string | null {
+  const g = eventGate(id);
+  if (!g) return null;
+  const bits: string[] = [];
+  if (g.sanityRange && (g.sanityRange[0] > 0 || g.sanityRange[1] < 100)) bits.push(`san ${g.sanityRange[0]}–${g.sanityRange[1]}`);
+  if (g.prereqFlags.length) bits.push(`需 ${g.prereqFlags.join(',')}`);
+  if (g.forbiddenFlags.length) bits.push(`禁 ${g.forbiddenFlags.join(',')}`);
+  if (g.prereqEventIds.length) bits.push(`需经 ${g.prereqEventIds.join(',')}`);
+  if (g.forbiddenEventIds.length) bits.push(`禁经 ${g.forbiddenEventIds.join(',')}`);
+  if (g.oncePerSave) bits.push('存档一次');
+  if (g.oncePerRun) bits.push('单潜一次');
+  if (g.forceOnly) bits.push('强制开场·随机抽不到');
+  return bits.length ? bits.join(' · ') : null;
+}
+
 function PoiEvents({ p, selectedId, onPick }: { p: PoiEventSet; selectedId: string | null; onPick: (id: string) => void }) {
+  // 真·下潜派生（懒算·只在本 POI 展开时·memoized）：路由修正头 + 实际随机池（Q2）。
+  const dive = useMemo(() => derivePoiDivePool(p.key), [p.key]);
+  const r = dive.routing;
   const roles: [string, string[]][] = [
     ['开场', p.open],
     ['变体', p.story],
     ['专属', p.scoped],
   ];
+  const hasHooks = roles.some(([, ids]) => ids.length > 0);
+  const renderEvent = (role: string, id: string) => {
+    const ev = getEventById(id);
+    const gate = gateHint(id);
+    return (
+      <button
+        key={`${role}:${id}`}
+        onClick={() => onPick(id)}
+        style={{ ...S.libItem, ...(id === selectedId ? S.libItemSel : null) }}
+        title={id}
+      >
+        <span style={S.roleTag}>{role}</span>{' '}
+        <span style={{ color: TONE_COLOR[ev?.tone ?? ''] ?? '#cfe3ea' }}>●</span>{' '}
+        <span style={{ fontWeight: 600 }}>{ev?.title ?? '(事件缺失)'}</span>
+        <div style={S.libId}>{id}</div>
+        {gate && <div style={S.gateHint}>{gate}</div>}
+      </button>
+    );
+  };
   return (
     <div style={{ width: '100%' }}>
       <div style={S.poiMeta}>
         {p.kind === 'anchor' ? '锚点' : '机会点'}
         {p.zoneId ? ` · ${p.zoneId}` : ''} · {p.key}
       </div>
+      {/* 路由修正头（真·POI 下潜·Q2）：让编辑器点对齐海图点——实际下潜路由（zone/band/洞）· 有效深度区间 · tags · 修正。 */}
+      {r && (
+        <div style={S.poiRoute}>
+          <div>
+            <span style={S.routeVia}>{VIA_LABEL[r.via] ?? r.via}</span>{' '}
+            {r.zoneName ?? r.zoneId}
+            {r.bandId ? ` · band ${r.bandId}` : ''}
+            {r.caveId ? ` · 洞 ${r.caveId}` : ''}
+          </div>
+          <div style={S.routeMeta}>
+            深度 {r.depthRange[0]}–{r.depthRange[1]}m
+            {r.depthOffset ? ` · Δ深 ${r.depthOffset > 0 ? '+' : ''}${r.depthOffset}` : ''}
+            {r.tags.length ? ` · ${r.tags.join('/')}` : ''}
+            {r.current && r.current !== 'none' ? ` · 洋流 ${CURRENT_LABEL[r.current] ?? r.current}` : ''}
+            {r.visibility && r.visibility !== 'clear' ? ` · 能见 ${VIS_LABEL[r.visibility] ?? r.visibility}` : ''}
+            {r.lunarMayUpgradeCurrent ? ' · 大潮可升洋流' : ''}
+          </div>
+        </div>
+      )}
       {roles
         .filter(([, ids]) => ids.length > 0)
         .map(([role, ids]) => (
-          <div key={role}>
-            {ids.map((id) => {
-              const ev = getEventById(id);
-              return (
-                <button
-                  key={`${role}:${id}`}
-                  onClick={() => onPick(id)}
-                  style={{ ...S.libItem, ...(id === selectedId ? S.libItemSel : null) }}
-                  title={id}
-                >
-                  <span style={S.roleTag}>{role}</span>{' '}
-                  <span style={{ color: TONE_COLOR[ev?.tone ?? ''] ?? '#cfe3ea' }}>●</span>{' '}
-                  <span style={{ fontWeight: 600 }}>{ev?.title ?? '(事件缺失)'}</span>
-                  <div style={S.libId}>{id}</div>
-                </button>
-              );
-            })}
-          </div>
+          <div key={role}>{ids.map((id) => renderEvent(role, id))}</div>
         ))}
+      {/* 实际随机池（buildEventPool 全量目录派生·已减钩子）：钩子之外、按深度/tag/poiId 真能抽到的事件。 */}
+      {dive.randomIds.length > 0 && (
+        <div>
+          <div style={S.poolHead}>随机池 · {dive.randomIds.length}</div>
+          {dive.randomIds.map((id) => renderEvent('随机', id))}
+        </div>
+      )}
+      {!hasHooks && dive.randomIds.length === 0 && (
+        <div style={{ ...S.faint, padding: '4px 10px' }}>
+          {r ? '（无钩子、随机池也为空——门控/深度无交集）' : '（定位不到 zone·无法派生）'}
+        </div>
+      )}
     </div>
   );
 }
@@ -636,5 +706,10 @@ const S: Record<string, CSSProperties> = {
   modeBtnSel: { background: '#15422c', border: '1px solid #2f7a4f', color: '#d6f2e0' },
   poiMeta: { fontSize: 10.5, color: '#5f7c88', padding: '2px 8px 4px', fontFamily: 'ui-monospace, monospace' },
   roleTag: { fontSize: 9.5, color: '#6f8a96', border: '1px solid #28505d', borderRadius: 4, padding: '0 4px' },
+  poiRoute: { fontSize: 11, color: '#9fb8c2', padding: '3px 10px 5px', borderBottom: '1px solid #142730', lineHeight: 1.5 },
+  routeVia: { fontSize: 9.5, color: '#d6f2e0', background: '#15422c', border: '1px solid #2f7a4f', borderRadius: 4, padding: '0 4px' },
+  routeMeta: { color: '#6f8a96', fontSize: 10.5, fontFamily: 'ui-monospace, monospace', marginTop: 1 },
+  poolHead: { padding: '4px 10px', fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: '#5f7c88', background: '#0b1419' },
+  gateHint: { color: '#8a7553', fontSize: 10, marginTop: 1, fontFamily: 'ui-monospace, monospace' },
   listSearch: { padding: 8 },
 };

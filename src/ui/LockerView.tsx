@@ -156,27 +156,28 @@ export function LockerView({
             <div className="locker-coords">
               <h4 className="dim locker-subhead">最后是 {marked.length} 个坐标：</h4>
               {marked.map((m) => {
-                // 可达坐标＝整行可点·直接跳海图选中（onOpenChartAt）；去不了＝纯陈列 + 一句原因。
+                // 可达坐标＝整行可点·坐标号 accent·直接跳海图选中（onOpenChartAt）；
+                // 去不了＝整行灰显·纯陈列（「怎么去」不挤进这条列表·选中海图上的点时再给·见 chart.ts::poiBlockReason）。
                 const canGo = m.departable && !!onOpenChartAt;
+                const rowClass = `locker-coord-row${m.surveyed ? ' surveyed' : ''}`;
                 const inner = (
                   <>
                     <span className="locker-coord-num">{m.displayCoord ?? '坐标不明'}</span>
                     {m.onChart && <span className="locker-coord-name dim">{m.name}</span>}
-                    {!canGo && <span className="dim">{m.blockReason ?? '还去不了'}</span>}
                   </>
                 );
                 return canGo ? (
                   <button
                     key={m.id}
                     type="button"
-                    className="locker-coord-row clickable"
+                    className={`${rowClass} clickable`}
                     onClick={() => onOpenChartAt!(m.id)}
-                    title={`前往 ${m.name}`}
+                    title={m.surveyed ? `重访 ${m.name}（已勘）` : `前往 ${m.name}`}
                   >
                     {inner}
                   </button>
                 ) : (
-                  <div key={m.id} className="locker-coord-row">
+                  <div key={m.id} className={rowClass}>
                     {inner}
                   </div>
                 );

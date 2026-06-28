@@ -103,11 +103,23 @@ tasks.push({ name: 'check-protagonist-voice', cmd: ['node', join('scripts', 'che
 // 术语单一来源门（纯 node·禁 live 内容〔src+scenarios〕出现「穿尸」·逼回与代码/敌人库对齐的「尸衣者」·收口 #224·见 scripts/check-terminology.mjs）
 tasks.push({ name: 'check-terminology', cmd: ['node', join('scripts', 'check-terminology.mjs')] });
 
+// 文案草稿泄漏门（纯 node·src/data/events 玩家可见字段禁 [待过稿]·playtest 报告⑤ 根治·见 scripts/check-draft-leak.mjs）
+tasks.push({ name: 'check-draft-leak', cmd: ['node', join('scripts', 'check-draft-leak.mjs')] });
+
+// harness resolveOption 三参门（纯 node·tools/playtest-llm 内 resolveOption 必传父事件·堵教学复播根因·playtest 报告③·见 scripts/check-harness-resolveoption.mjs）
+tasks.push({ name: 'check-harness-resolveoption', cmd: ['node', join('scripts', 'check-harness-resolveoption.mjs')] });
+
 // 敌人库四条门（纯 node·registry 不过期 + 引用完整 + 无孤儿 + 有 baseline，见 scripts/check-enemy-refs.mjs）
 tasks.push({ name: 'check-enemy-refs', cmd: ['node', join('scripts', 'check-enemy-refs.mjs')] });
 
 // 深入潜点四条门（纯 node·bandId 完整 + 探深↔POI 配对 + 无孤儿 + onlyLighthouse 合法，见 scripts/check-dive-refs.mjs）
 tasks.push({ name: 'check-dive-refs', cmd: ['node', join('scripts', 'check-dive-refs.mjs')] });
+
+// 经济可达性门 v1（纯 node·建造/升级/配方 cost 材料必在册 + 有获取源〔事件/敌人掉落·柱产出·Mira 可买 T1-2〕·把「资源跟得上」钉成会红的检查·2026-06-27 D-2/E/F 护栏·见 scripts/check-economy-reachability.mjs）
+tasks.push({ name: 'check-economy-reachability', cmd: ['node', join('scripts', 'check-economy-reachability.mjs')] });
+
+// 主线可达性门（纯 node·前哨解锁链无环/无死结 + columnStory 主线 beat host/引用/跨柱 item 门可达·把「起点→章尾可达」钉成会红的检查·2026-06-27 D-2 M 组·见 scripts/check-mainline-reachable.mjs）
+tasks.push({ name: 'check-mainline-reachable', cmd: ['node', join('scripts', 'check-mainline-reachable.mjs')] });
 
 // 材料刷点五条门（纯 node·openEventPool 挂 anchor + ≥3 不同 beat + 引用可解析 + beat 专属 + 与 openEventId 互斥，见 scripts/check-farm-pois.mjs）
 tasks.push({ name: 'check-farm-pois', cmd: ['node', join('scripts', 'check-farm-pois.mjs')] });

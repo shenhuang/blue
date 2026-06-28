@@ -2668,6 +2668,7 @@ html, body, #root {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 8px;
+  padding: 2px 4px; /* 与可点行同 padding → 灰显行 / 可点行 左缘 + 行高对齐 */
 }
 /* 可达坐标＝整行可点（直接跳海图选中·作者 #142「点坐标直接跳过去」）：按钮重置成行样式 + hover 提示。 */
 button.locker-coord-row {
@@ -2677,7 +2678,6 @@ button.locker-coord-row {
   font: inherit;
   text-align: left;
   cursor: pointer;
-  padding: 2px 4px;
   border-radius: 4px;
 }
 button.locker-coord-row:hover {
@@ -2686,7 +2686,17 @@ button.locker-coord-row:hover {
 .locker-coord-num {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
+  color: var(--text-faint); /* 默认灰显＝去不了的坐标（「看得到去不了」一眼可辨） */
+}
+/* 可达坐标行：坐标号点亮成 accent，与灰显的去不了坐标区分。 */
+button.locker-coord-row .locker-coord-num {
   color: var(--accent);
+}
+/* 已勘坐标＝「划掉」（去过·拿到关键结果）：删除线·保留本色·仍可点重访（区别于灰显的「去不了」）。 */
+.locker-coord-row.surveyed .locker-coord-num,
+.locker-coord-row.surveyed .locker-coord-name {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
 }
 .locker-coord-name {
   font-size: 0.9rem;

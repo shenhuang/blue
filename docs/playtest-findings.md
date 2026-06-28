@@ -10,6 +10,91 @@
 
 ---
 
+## 2026-06-27　经济「不 grind 化」方案（方向：两者都要·砍价＋主线供料）
+
+> 触发：2026-06-27 LLM 战役报告（`tools/playtest-llm/reports/CAMPAIGN-2026-06-27T14-27-32.txt`）＋作者确认「资源跟不上建造、不想要 grind」。
+> 方向拍板＝**两者都要**：建造可选且便宜 ＋ 主线路径保底供料。
+> 数值（掉率/价格/base 氧）仍按 `defer-number-tuning` 约定留最后统一调——**本节只列机制**。
+> 与下方 2026-06-21 的 P1-1/P1-3/P1-5/P1-8 是同一组症状的「方向收口」，旧条目作执行细节参考。
+
+### 报告纠偏（两条头条结论站不住·别照着改）
+- **brass_fitting 不缺来源**：`reef.json` / `wreck_graveyard.json` 各有几十处掉点（＋`grotto`/`flooded_gallery`/`shaft_crack`）。那局没掉＝掉点大多挂在战斗/检定/「撬黄铜」选项之后，而锚点剧情潜绕开了它们。→ **不要「加 brass 来源」**，要让主路径碰得到现有来源（见 S 组）。
+- **event_seen 已持久化**：`oncePerSave` 选项写进 `profile.flags`（`events.ts:348`·跨 run 持久）。报告「存档 0 个 event_seen」八成是 LLM harness（`tools/playtest-llm`）快照没透传 `profile.flags`，或某教学选项没带 `event` 参数走 `resolveOption`。→ 列为 **I-1 待核实**，可能只是 harness 的锅、非正式存档 bug。
+
+### 根因（结构性·非数值）
+1. 经济与 ch1 通关**完全解耦**：`mentor_logbook` 点亮四锚点即可便宜通关（这局 6 金/0 升级一路到 85m 结局），主路径从不经过产料 → 整套升级/前哨/声呐树在一章里「无动机」、建造像没回报的杂活。←「跟不上/像 grind」的**根因**。
+2. `coral_shard` **一物两职**：货币（卖 10）＋早期主力建材（船坞/各前哨第一阶/深度柱第一档）·「建」与「变现」天然对冲。
+3. **深区纯 sink**：midwater/whalefall 0 敌 0 料·却正是柱/前哨的花费区（越深越亏·见 P1-3/P1-5）。
+4. 锚点/剧情潜**本身不发料**：主路径按当前设计就是干的。
+
+### S 组｜主线供料（边走边给够·免专门刷）
+- **S-1　深区各档产本档素材**（midwater/whalefall/vent band）：给这些 band 的 tag 事件池补「保底采集」事件（镜像 reef/wreck 既有材料事件·`band.tags` 即专属池·见 `dive-start.ts` diveIntoBand）。data-only。合 P1-3/P1-5。
+- **S-2　四锚点潜保底一笔材料**：锚点强制开场事件（`dive-start.ts:481` 派发 `poi.story.eventId`）尾部挂固定材料 grant·让走主线＝自然攒到第一批建材。data（事件 outcome）＋可选薄引擎。
+- **S-3　剧情里程碑给材料包**：复用 item-as-unlock（`items.json` 的 `story.setsFlag`/`marksPois` 那套）·锚点完成/`charm_found` 等里程碑发一小包对应建材·让建造树「沿途付得起」。
+
+### D 组｜建造接回主线（让建造有动机）＋ coral 分流
+- **D-1　coral 货币↔建材分流**：把各建造**第一阶**的 `coral_shard` 改指向近乎无售价的散料（已有 `oyster_shell`(5)/`collapse_fitting`(7)/`whalefall_polychaete`(4)/`flint_nodule`(6)）·coral 退回纯货币。data-only·不动数值大小、只换 itemId。（与 E-2 角色重指派合并考虑·同改 `items.json`/账单。）
+- **D-2　主线＝灯塔门控的「带 story 的深度柱阶梯」（重新耦合·复用现机制·作者 2026-06-27 定 A 案）**：放弃旧「维持解耦」设想——根因①的对治＝**有意重新耦合**。主线 beat 做成**带 `story` 字段的深度柱 tier**（住 `depth_columns.json`·一根柱＝该区由浅到深的主线阶梯·**一区可多 beat**），零造新门、复用现成四件套：
+  - **隶属灯塔＋灯塔在才现**：`buildColumnPois`（host 未建→潜点不现·`columns.ts`）。
+  - **升级灯塔解锁下一更深 beat**：`depthTierRevealState`（tier≤已建级=lit｜+1=dim｜更深 hidden）＝「升前一区哨站→开更深主线 POI」。
+  - **跨区门**：复用现成 item/flag 跨柱依赖（先例：热液柱 capstone 产 `station_module`→海沟柱 tier4 cost 要它）。
+  - **reveal/reach 分离**：日志 `marksPois` 早揭示坐标；能不能下＝灯塔 tier 门。
+  - **改动①（唯一代码触点）**：`isPoiLit` 现对 `poi.story` 短路成「揭示即可下」（`chart.ts:257`）→ 揭示保留、但 `depthTierRevealState` 的 reach 门**也作用到带 columnId/depthTier 的 story POI**。
+  - **改动②（解死锁·必须）**：前哨「可建门」`outpostUnlocked`（`lighthouses.ts:511` 现要「潜过本区锚点」）→ 改为「**上一步**进度 flag」（wreck←reef、midwater←wreck、vent←midwater）；reef owner=home＝天然免费起点。否则「建才能潜／潜才能建」互锁。
+  - **改动③（结局判定推广）**：从硬编码「4 锚点 flag 齐」（`ch1.json` ending_station）→ 读主线链「最后一个 beat 已过」。
+  - **后果**：主线现多层吃**建造＋升级** → S 组 / 可达性门**必须覆盖升级（probe tier）成本**·否则越深越 grind。与 E 组同改 `depth_columns.json`/`items.json` → 并入车道 B。
+
+### M 组｜把约定落成 regress 门（CLAUDE.md：能变成 `npm run regress` 失败的检查就那样做）
+- **★ check-economy-reachability**：把「资源跟得上」钉成静态检查·红＝供需断裂·纯结构不查数值 → 兼容 `defer-number-tuning`。
+  - **✅ v1 已实装（2026-06-27·`scripts/check-economy-reachability.mjs`·已接 regress·当前绿·100 成本/13 材料）**：全部建造/升级/配方 cost 材料（items upgradeSteps/craftCost · upgrades.json · lighthouse_upgrades outposts/ruins/tracks · depth_columns 各 tier）必 ① 在 items.json 在册 ② ≥1 获取源（事件/敌人掉落 · 柱 grantsItem · Mira 可买 T1-2）。源收集宽·零误报优先·负向自测过（注入死材料→红→字节还原）。
+  - **v2 待做**：升 DAG——按**区域/灯塔解锁序**校验「X 区/档要的料须在该步或更早可得」+ 六公理（单调/无结/有路…）·待 E 组重指派 ＋「材料→tier→各柱档」映射表。
+- **check-no-sink-only-region**：任何承载建造成本 sink（outpost/column）的区域必须 ≥1 材料/loot 源（专抓 midwater/whalefall 纯 sink）。
+- **★ check-mainline-reachable**：沿 `depth_columns.json` 柱/tier ＋ 灯塔解锁序走主线链——每个主线 beat 的 reach 门（host 灯塔建成／probe tier 已升／跨区 item·flag）都能被**前面步骤**满足·**无环、无死结、起点→结局可达**（替代旧「起手装可达」的 ending-reach-check：D-2 后主线改为建造链可达）。
+- check-currency-material-split（弱·可选）：第一阶建材 ≠ 顶档货币物（编码 D-1）。
+
+### I 组｜待核实
+- **I-1　教学重播 ＋ mentor_logbook 复制**：核实是 harness（`tools/playtest-llm` 快照漏透 `profile.flags`）还是正式存档 bug。若正式版复现 → 它把 roam 刷料循环整个顶掉（报告 ③）·优先级升 P0。查点：`dive-start.ts:422` pinnedStoryEvent 选择 × portSnapshot 持久化 × `resolveOption` 是否带 `event` 参数。
+- C 类旁记（非经济·暂记）：屏息潜逃零代价脱战（战斗可白嫖跳过）；「氮气是债」到 85m 无可见惩罚（机制没咬人）。
+
+### E 组｜材料主题一致性（升级账单「讲得通」）
+> 触发：作者 2026-06-27 指出哨站升级大量吃**生物材料**、解释不通。核实属实（账单见 `lighthouse_upgrades.json`）。
+- **症状**：生物料在干结构/机电的活——`eel_skin`×2「在岩架上**凿出**锚位」（皮凿不动岩）、`cave_octopus_beak`「**通电**点亮」（喙与电无关·其设定是硬切削/雕件料）、`crab_chitin` 在残骸当承重浮筒、在中层又当「点亮」（同料异职＝账单临时凑）。**唯一讲得通的反而最妙**：`lantern_gland`（设定「离水过夜不灭、不腐」）做「点亮」＝天然不灭灯芯，**保留并强化**。
+- **根因**：材料无「功能角色」概念，账单按「该区/该档手头有啥」填、非按「该部件用啥做」。且矿物/金属 roster（`quartz`/`iron_concretion`/`manganese`/`vent_sulfide`/`wreck_bronze`…）这些天然结构料**整张哨站账单一处没用**——料用反了。
+- **E-1　材料加 `role` 标签**（structural｜salvage｜optic/bio-light｜organic）·单一真相落 itemDef（`items.json`）。
+- **✅ 已拍：A（工程感）**。B（有机灯塔·就地取材的诡异手作）**留第二章**，ch1 不做。
+- **E-2　按「功能＋采集门」重指派账单（早/中期分层·作者 2026-06-27）**：
+  - **早期（ch1·L1 建造）＝打捞为主、几乎不压「需开采」的矿**：`brass_fitting`（旧灯塔拆的金属·非开采）/`coral_shard`/`crab_chitin`/`collapse_fitting`/`oyster_shell` ＋ 少量 T1/T2 矿（`iron_concretion`/`quartz_crystal`/`manganese_nodule`）。
+  - **矿物＝中期产物**：开采需岩凿（`rock_drill`·`grantsCapability 'mine'`·见 capability_mechanism）。深档 **T3/T4 矿（`vent_sulfide`/`wreck_bronze`/`bluecave_geode`/`abyssal_crust`·Mira 不卖）** 才压到中后期账单。
+  - **点亮＝全程 `lantern_gland`**（不灭灯芯·保留强化）。
+- **E-2b　Mira 卖矿＝早期「买矿」逃生阀（现成机制·零新增）**：`isBuyableFromMira`（`port.ts`）现已让 **T1/T2 材料**上架（买价＝卖价×`MIRA_BUY_MARKUP`=2·按 `SHOP_STOCK_BY_TIER` 限量、回港补满）→ 早期建造要的少量矿**没岩凿也能花金币买**，岩凿只是「自采更省」的中期自给。要让某 T3 矿提前可买＝调 `SHOP_STOCK_BY_TIER`（数值·SPEC §9·defer）。
+- **E-3　重写阶段 label/narrative** 把每笔卖圆（`lantern_gland` 那条 description 已示范笔力）。
+- **★ check-build-material-theming（regress 门）**：① 建造阶段 role 必须与材料 role 相容（structural 阶不得纯靠 bio）；② **早期门**：L1/ch1-早期建造**不得要求需开采的 T3+ 矿**（只许 T1/T2 ＋ salvage ＋ bio-light）——把「前期不压矿物」钉成检查。
+- **可达性联动**：M 组 `check-economy-reachability` 把「`isBuyableFromMira` 可买」算作合法来源；账单含 T3/T4 矿 ⟹ 须 mining-in-region 可达（深/中期）。
+- **协同/调度**：给矿物 roster 真 sink（→ 挖矿/岩凿有意义）、生物料回流光/装备、与 S/D-1 **同改 `lighthouse_upgrades.json`/`items.json`** → **并入车道 B**（非独立并行）；其 check 并入车道 A。早期账单若只用 T1/T2＋salvage＋lantern → **Mira 侧零引擎改动**（纯账单 itemId 选择）。
+
+### F 组｜进度门与资源分布（解锁↔资源 DAG·作者 2026-06-27）
+> 设计意图：把深度柱做成「去别处变强再回来」的进度网——X 柱的更深档要 Y 区才产的材料（例：中层低档解锁 → 去热液拿更高级料 → 才解得开中层更深档）。现存种子＝热液柱 capstone 产 `station_module` → 海沟 capstone 必需（depth_columns.json 唯一跨柱硬依赖）。
+> 「合理」＝下面六条公理同时成立·且**全部静态可判** → 并入 `check-economy-reachability`（把柱按 (tier,depth) 排成 DAG·违反即 CI 红，分布不靠手感盯）：
+- **F1 单调**：到深度 D 的档，成本材料 tier ≤ 该档 tier；深档绝不要求「比自己更深才产」的料（防「要先深才能变深」的循环/grind）。
+- **F2 无结（最关键）**：跨区门指向的前置料，须来自**当前解锁下已可达**的区+档（如中层 t4 要热液料 → 取自热液 t1–2 这种浅档·非热液 capstone）。
+- **F3 有路**：每笔料有 in-reach 来源 **或** Mira 可买兜底（`isBuyableFromMira`·T1/T2）；T3/T4 矿不可买 → 须对应区 mining-in-reach。
+- **F4 稀疏**：跨区门每柱 1–2 处（中/深档）·不织稠密网（否则又变 grind/迷惑）。template＝station_module。
+- **F5 tier≈源深**：材料 tier 对齐产出深度（quartz/coral=T1 浅·iron/manganese/brass=T2·vent_sulfide/bronze/geode=T3·abyssal=T4）；capstone 才放「稀有·单源·跨区」特殊料。
+- **F6 bio=光**（同 E 组）：结构档吃矿/打捞·只有「点亮/感知」档吃发光生物料（lantern）；eel/beak 退出结构、回流装备/声呐。
+> **现状缺口（depth_columns.json 实读·5 根柱）**：① 五根柱**零矿物**·深档几乎全 bio（midwater t4–6 全 eel/lantern/beak·vent/trench 同）＝E 组「用反料」在柱里同样存在；② **midwater 纯 sink**（无原生矿·`manganese_nodule`「深处泥地凿起·靠上面不多见」lore 正好可作其原生深矿）；③ 跨柱 interleave 仅 1 处（vent→trench）·作者要的网未织。
+- **落点（待起草「材料→tier→各柱档」映射表）**：F5 给矿物定 tier 表 → F1/F6 重写各柱档成本（结构矿＋点亮 lantern）→ F2/F4 织 1–2 处跨区门（如中层 t4 需 vent_sulfide·热液 t3 需 wreck 的 iron/manganese）→ `check-economy-reachability` 升 DAG 守 F1–F3。并入车道 B；数值 defer。
+
+### 实装顺序 / 并行 / 模型建议（待你点「动手」再开）
+- **顺序＝机制先行**：先写 ★check-economy-reachability（会红）→ 再用 S/D 组数据把它转绿（TDD 式·符合 CLAUDE.md 机制优先）。
+- **并行车道（psm·互不重叠·见 `docs/infra/parallel-sessions.md`）**：
+  - 车道 A｜regress 检查（`scripts/check-economy-reachability.mjs` ＋接 regress）——纯新文件·零冲突·**可独立并行**。
+  - 车道 B｜经济数据（`lighthouse_upgrades`/`depth_columns`/`items`/`upgrades` ＋各区 event loot）——S-1/S-2/D-1 集中在 data·**内部串行**（共享 `items.json`/events）。
+  - 车道 C｜I-1 bug 核实（engine `dive-start`/`events` ＋ harness）——独立·**可并行**。
+  - A、C 与 B 三线可并行；A 先红、B 后绿需轻同步（B 合并后 A 自然转绿）。沙箱 worktree isolation 不可用 → 若派 subagent 走共享主树＋严格无重叠车道＋Opus 整合·**合并后必跑完整 regress**。
+  - 模型/精力：车道 A/B＝**Opus·中**（结构＋数据·需全局一致）；车道 C＝**Opus·高**（跨 run/harness 状态推理·易错）；最后统一数值调＝**Opus·高**（手感·一次性）。
+
+---
+
 ## 🔴 P0-1　避战打法软锁战役（待你定边界）
 - **现象**：所有动物素材（eel_skin/beak/lantern_gland/crab/shark_tooth…）只从战斗掉落；事件 loot 一次都不给（扫了全部 12 个 event JSON）。Mira 只回购 T1/T2（`port.ts:7`），T3/T4（eel/beak/lantern）只卖不买。→ 全程用「潜行/绕过」选项的玩家拿不到 T3/T4，建不了 沉船 T3 / 中层 T4+ / 热液 T2+ / 海沟 T3+ / 打捞行会 Lv3+ / 任何要 lantern 的前哨阶段 → 主线推不动。
 - **方向（已拍）**：接受「战斗=进度」，但要**有获取途径多样性**，不强制反复同一剧情。即靠 P1-1（遭遇量/剧情）+ 适度提爆率解决，而非给非战斗路。

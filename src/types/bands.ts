@@ -40,6 +40,12 @@ export interface DepthBand {
    */
   alertFactor?: number;
   /**
+   * 战利品深度倍率（经济·2026-06-28·镜像 alertFactor 的单一来源派生）：× 每次 loot roll 的整数 qty（events.ts 消费）。
+   * 越深越值钱——浅档 1.0、深档逐级抬（depth_columns.json 各 tier 一个数）。乘后 Math.round 收回整数。
+   * 缺省（reef_deep / 非 band 的 POI 下潜 / 浅水开阔水）→ 1，行为与本字段前逐字节一致（守浅水/无柱区 loot 不变）。
+   */
+  lootFactor?: number;
+  /**
    * 本 band 的专属事件 tag 池（深水区内容期）：**覆盖** zone.zoneTagsByDepth，让 band 用自己的
    * 事件池、与「借来的」zone 内容隔离（trench 借蓝洞 mapgen 形状，但事件走 twilight/midnight 专属池）。
    * 约定**附加而非纯替换**——列表里带上 zone 自身的 tag（如 cave）＝保留 zone 回退池 + 叠加 band 专属，

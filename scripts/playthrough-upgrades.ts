@@ -40,10 +40,10 @@ function assert(cond: unknown, msg: string) {
 
 // 升级账单（与 data/upgrades.json 对齐，改动数值时同步）
 //   tankhouse.lv1    = shark_tooth×4, lobster×4          ＋ 25 金
-//   salvage_guild.lv1= coral_shard×5, brass_fitting×3    ＋ 30 金
+//   salvage_guild.lv1= scrap_alloy×3, brass_fitting×3    ＋ 30 金（coral→scrap·经济 2026-06-28）
 //   salvage_guild.lv2= brass_fitting×4, crab_chitin×3, cave_octopus_beak×2 ＋ 70 金
 // 灯塔设施（家灯塔，data/lighthouse_upgrades.json）：
-//   lighthouse.dockyard.lv1 = coral_shard×6, old_fishing_net×3 ＋ 20 金（给 +1 消耗品槽）
+//   lighthouse.dockyard.lv1 = scrap_alloy×3, old_fishing_net×3 ＋ 20 金（给 +1 消耗品槽·coral→scrap·经济 2026-06-28）
 const DOCK_FACILITY = 'lighthouse.dockyard.lv1';
 const tankLv1 = 'upgrade.tankhouse.lv1';
 const tankLv2_NotExist = 'upgrade.tankhouse.lv2';
@@ -134,10 +134,10 @@ assert(!avOwned.ok && avOwned.reason === 'alreadyOwned', '已购买应返回 alr
 
 log.push('\n========== 4. 升级线进度（材料账单 lv1→lv2） ==========');
 const salvageLine = lines.find((l) => l.id === 'line.salvage_guild')!;
-// 给足 salvage lv1（coral×5, brass×3 +30）+ lv2（brass×4, chitin×3, beak×2 +70）
+// 给足 salvage lv1（scrap×3, brass×3 +30·coral→scrap 经济 2026-06-28）+ lv2（brass×4, chitin×3, beak×2 +70）
 state = withProfile(
   [
-    { itemId: 'item.coral_shard', qty: 5 },
+    { itemId: 'item.scrap_alloy', qty: 3 },
     { itemId: 'item.brass_fitting', qty: 7 },
     { itemId: 'item.crab_chitin', qty: 3 },
     { itemId: 'item.cave_octopus_beak', qty: 2 },

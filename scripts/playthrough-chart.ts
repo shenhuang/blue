@@ -8,7 +8,7 @@
 // 跑法： npx tsx scripts/playthrough-chart.ts
 
 import { readFileSync } from 'node:fs';
-import { POST_TUTORIAL_HOME_ANCHORS, POST_TUTORIAL_STORY_ANCHOR_IDS, POST_TUTORIAL_GATED_ZONES } from './test-fixtures/chart-baseline';
+import { POST_TUTORIAL_HOME_ANCHORS, POST_LOGBOOK_STORY_BEAT_POI_IDS, POST_TUTORIAL_GATED_ZONES } from './test-fixtures/chart-baseline';
 import { createInitialGameState, createNewRun, HOME_LIGHTHOUSE_ID } from '../src/engine/state';
 import {
   generateChart,
@@ -67,6 +67,14 @@ function profileWith(
     // （游戏里 ascent/death 各 +1 两者）——测试构造档也须同步，否则种子恒为初始 day(=0)、roaming 不刷新。
     day: runsCompleted,
   };
+}
+
+// 导师日志道具 id（reveal 单一来源·内容自洽回归·#117 续）：marksPois 带四主线 beat 派生 story 潜点坐标。
+// 「持日志」＝把它放进 profile.inventory（取代旧「置 coords_known flag」·reveal 机制已改回文献坐标）。
+const MENTOR_LOGBOOK_ITEM_ID = 'item.mentor_logbook';
+/** 把导师日志塞进 profile.inventory（让 poisKnownFromItems 揭示四主线 beat 坐标）。 */
+function withLogbook(profile: PlayerProfile): PlayerProfile {
+  return { ...profile, inventory: [...profile.inventory, { itemId: MENTOR_LOGBOOK_ITEM_ID, qty: 1 }] };
 }
 
 /** 在家灯塔建上「船坞」设施（Phase C：dockyard 迁灯塔后旧灯塔礁的抵达门）。 */
@@ -179,23 +187,28 @@ L('\n========== 0b. owner 归属守门 + owner POI 落在 owner radius 内 =====
   L(`  ${authored.length} 个 authored POI：owner 合法 + 落在各自 owner radius 内 ✓`);
 
   // (c2) 文献坐标守门（物品即解锁·marksPois ⇒ reveal·作者 2026-06-19·CLAUDE.md「约定落成机制」）：
-  //   每个 item.story.marksPois 必须命中一个 authored anchor id——拼错＝文献静默不揭示＝软锁，焊成 regress 红。
-  //   导师日志（4 锚点）/ 鲸落手记（3 生态点）都过此门。引擎 reveal 路径见 engine/chart.ts::documentKnowsPoi。
+  //   每个 item.story.marksPois 必须命中一个**有效海图点 id**——拼错＝文献静默不揭示＝软锁，焊成 regress 红。
+  //   有效 id ＝ ① authored anchor id（chart_pois.json）∪ ② 派生主线柱 story 潜点 id（POST_LOGBOOK_STORY_BEAT_POI_IDS·
+  //   = poi.dive.<短名>.story·主线 beat 迁柱后由 buildColumnPois 注入·2026-06-28 内容自洽回归：导师日志恢复带这四条坐标·#117 续）。
+  //   导师日志（4 柱 story 潜点）/ 鲸落手记（3 生态点 authored）都过此门。引擎 reveal 路径见 engine/chart.ts::documentKnowsPoi。
   const itemsRaw = JSON.parse(
     readFileSync(new URL('../src/data/items.json', import.meta.url), 'utf-8'),
   ) as { items: Array<{ id: string; story?: { marksPois?: string[] } }> };
-  const anchorIds = new Set(rawAnchors.map((a) => a.id).filter((x): x is string => typeof x === 'string'));
+  const validMarkIds = new Set<string>([
+    ...rawAnchors.map((a) => a.id).filter((x): x is string => typeof x === 'string'),
+    ...POST_LOGBOOK_STORY_BEAT_POI_IDS, // 派生主线柱 story 潜点（单一来源·chart-baseline fixture）
+  ]);
   let markedRefs = 0;
   for (const it of itemsRaw.items) {
     for (const poiId of it.story?.marksPois ?? []) {
       markedRefs++;
       assert(
-        anchorIds.has(poiId),
-        `0b: 道具「${it.id}」marksPois 引用了不存在的 anchor「${poiId}」（文献坐标须命中 authored anchor·拼错＝静默不揭示＝软锁）`,
+        validMarkIds.has(poiId),
+        `0b: 道具「${it.id}」marksPois 引用了无效海图点「${poiId}」（须命中 authored anchor 或派生柱 story 潜点 poi.dive.<短名>.story·拼错＝静默不揭示＝软锁）`,
       );
     }
   }
-  L(`  文献坐标 marksPois（${markedRefs} 个引用）⊆ authored anchor ids（物品即解锁守门）✓`);
+  L(`  文献坐标 marksPois（${markedRefs} 个引用）⊆ authored anchor ids ∪ 派生柱 story 潜点（物品即解锁守门）✓`);
 
   // (d) resolve 管线正确性（不写死坐标·拖动不失效）：generateChart resolve 出的 owner POI 绝对坐标
   //     必须 == owner 声明坐标(ownerAnchorPos) + 原始偏移（挡 resolveOwnerCoords/ownerAnchorPos 接错·
@@ -225,13 +238,14 @@ const postNoUp = profileWith(['flag.tutorial_complete']);
 // roaming 现为 pool-independent 确定性选取（runsCompleted 种子），不再需要注入 rng（§6.5 即时新 POI 浮现）
 const c1 = generateChart({ profile: postNoUp });
 // 区域揭示配置化 SPEC：教学后只点亮「家·珊瑚区」（home 灯塔覆盖近岸）。
-// east_reef / old_lighthouse_reef 在家区内可见；剧情锚点（story·日志已知坐标·#117）恒显；
-// 残骸/海沟区的**非剧情** anchor（沉船墓园/蓝洞群）在对应章节前哨建成前为 hidden。
+// east_reef / old_lighthouse_reef 在家区内可见；残骸/海沟区的非剧情 anchor 在对应章节前哨建成前为 hidden。
 for (const z of ['zone.east_reef', 'zone.old_lighthouse_reef']) {
   assert(c1.pois.some((p) => p.zoneId === z && p.persistent), `教学后家区应含 anchor: ${z}`);
 }
-for (const id of POST_TUTORIAL_STORY_ANCHOR_IDS) {
-  assert(c1.pois.some((p) => p.id === id), `教学后剧情锚点恒显: ${id}`);
+// 主线柱迁移：四条主线 beat 改由柱 storyTier 派生（poi.dive.<短名>.story）+ 日志早揭示门（导师日志 marksPois 文献坐标）——
+// **未拿日志**（裸 tutorial_complete·inventory 无导师日志）时四条全 hidden（旧 ch1_* chart_pois 锚点已退役·不再恒显）。
+for (const id of POST_LOGBOOK_STORY_BEAT_POI_IDS) {
+  assert(!c1.pois.some((p) => p.id === id), `教学后未拿日志 → 主线 beat 坐标 hidden（早揭示门未开）: ${id}`);
 }
 // home anchor（owner=lighthouse.home）：教学后随家区揭示（chart-baseline 单一真相·#171）
 for (const { id } of POST_TUTORIAL_HOME_ANCHORS) {
@@ -239,11 +253,34 @@ for (const { id } of POST_TUTORIAL_HOME_ANCHORS) {
 }
 for (const z of POST_TUTORIAL_GATED_ZONES) {
   assert(
-    !c1.pois.some((p) => p.zoneId === z && p.persistent && !p.story),
+    !c1.pois.some((p) => p.zoneId === z && p.persistent && !p.story && p.columnId === undefined),
     `教学后 ${z} 区未解锁 → 其非剧情 anchor 应不揭示`,
   );
 }
-L(`  教学后家区 anchor + 剧情锚点恒显；残骸区门控 ✓`);
+L(`  教学后家区 anchor + 主线 beat 坐标早揭示门（未拿日志 hidden）；残骸区门控 ✓`);
+
+// 主线柱迁移·日志早揭示（点 4·2026-06-28 内容自洽回归后）：持导师日志（inventory 有 item.mentor_logbook·其
+// marksPois 带四坐标）后，四条主线 beat 坐标在海图上**早早**显示——reef host=home 恒在 → lit（免费入口·教学完即可下）；
+// wreck/midwater/vent host 前哨未建 → dim（看得到去不了）。
+{
+  const withLog = withLogbook(profileWith(['flag.tutorial_complete']));
+  const cLog = generateChart({ profile: withLog });
+  const beatPoi = (id: string) => cLog.pois.find((p) => p.id === id);
+  const reef = beatPoi('poi.dive.home.story');
+  assert(reef && reef.revealState === 'lit', '主线①reef（host=home 恒在）→ 持日志即 lit（免费入口）');
+  assert(reef!.columnStory?.eventId === 'ch1.anchor_reef', '主线①reef 潜点带 columnStory（dive-start 强制开场 ch1.anchor_reef）');
+  const hostName: Record<string, string> = {
+    'poi.dive.wreck.story': '残骸前哨', 'poi.dive.midwater.story': '中层浮标', 'poi.dive.vent.story': '热液井台',
+  };
+  for (const id of ['poi.dive.wreck.story', 'poi.dive.midwater.story', 'poi.dive.vent.story']) {
+    const p = beatPoi(id);
+    assert(p && p.revealState === 'dim', `主线 beat ${id}（host 前哨未建）→ 持日志早揭示为 dim（看得到去不了）`);
+    const reason = poiBlockReason(withLog, p!);
+    // 暗点一句话指明「先建该区 host 前哨」——含该前哨名（残骸前哨/中层浮标/热液井台·lighthouse_upgrades.json 单一来源）。
+    assert(reason !== null && reason.includes(hostName[id]), `主线 beat ${id} dim 的 blockReason 应指明先建「${hostName[id]}」，实 ${reason}`);
+  }
+  L('  持日志早揭示：reef lit（免费入口）/ wreck·midwater·vent dim（需先建该区 host 前哨）✓');
+}
 
 // ============================================
 // 2. 抵达门控（家灯塔船坞 requiresLighthouseUpgrade）
@@ -270,15 +307,16 @@ L('  建家灯塔船坞后旧灯塔礁：解锁 ✓');
 // 2b. 灯塔 reveal（点亮）+ reach（最近灯塔算距离）
 // ============================================
 L('\n========== 2b. 灯塔 reveal + reach ==========');
-// (a) 无灯塔 → 灯塔 reveal 全灭，海图只剩日志抄来的一章锚点（#117：story 坐标=已知点，
-//     不走「发现」轴——灯全灭了，抄在纸上的坐标不会消失）
-const noLh: PlayerProfile = { ...profileWith(['flag.tutorial_complete']), lighthouses: [] };
+// (a) 无灯塔 + 持日志 → 灯塔 reveal 全灭，海图只剩日志抄来的四条主线 beat 坐标（主线柱迁移·承 #117 精神：
+//     日志坐标=已知点·灯全灭了，抄在纸上的坐标不会消失）。但**全 dim**——host 灯塔（含 home）都没了 → 哪条都下不去。
+const noLh: PlayerProfile = { ...withLogbook(profileWith(['flag.tutorial_complete'])), lighthouses: [] };
 const noLhPois = generateChart({ profile: noLh }).pois;
 assert(
-  noLhPois.length === 4 && noLhPois.every((p) => p.story !== undefined),
-  `无灯塔时海图应只剩 4 个日志锚点（story POI），实际 ${noLhPois.length}`,
+  noLhPois.length === 4 && noLhPois.every((p) => p.columnStory !== undefined),
+  `无灯塔+持日志时海图应只剩 4 个主线 beat 坐标（columnStory POI），实际 ${noLhPois.length}`,
 );
-L('  无灯塔 → 灯塔 reveal 全灭·只剩 4 个日志坐标 ✓');
+assert(noLhPois.every((p) => p.revealState === 'dim'), '无灯塔时四条主线坐标全 dim（host 灯塔含 home 都没了·哪条都下不去）');
+L('  无灯塔+持日志 → 只剩 4 个日志坐标·全 dim（纸上坐标不灭·但无 host 下不去）✓');
 
 // (b) home 点亮近端、不点亮远端（北缘 ≈0.80）
 const homeOnly = profileWith(['flag.tutorial_complete']);
@@ -530,13 +568,14 @@ const calmRoam = calmChart.pois.filter((p) => !p.persistent && !p.mimic && !(p.l
 // 非浓雾＝两个机会点全显；浓雾按 per-poi 概率遮一部分（≤2·不强求恰好遮 1·见 §3 robust 同理）。
 assert(calmRoam === 2, `7: 非浓雾应满 2 个机会点（实际 ${calmRoam}）`);
 assert(fogRoam <= 2, `7: 浓雾机会点 ≤2（实际 ${fogRoam}）`);
-// 只数真·zone/story 锚点（排除 #131 派生的深度柱深入 POI——它们也 persistent·但属档位制·不是天气轴）。
+// 只数真·zone 锚点（排除 #131 派生的深度柱深入 POI——它们也 persistent·但属档位制/主线柱·不是天气轴）。
 const anchorCount = (c: { pois: { persistent: boolean; columnId?: string }[] }) =>
   c.pois.filter((p) => p.persistent && p.columnId === undefined).length;
-// 23 = 旧 13 + 新 10 直接可见洞穴 anchor（cave-chart §3：home 6 + wreck 3 + vent 1·intel/story 门控洞不计）
+// 19 = 旧 23 − 4 退役的 ch1_* story 锚点（主线柱迁移：四主线 beat 改由柱 storyTier 派生·带 columnId·**本就被 anchorCount 排除**·
+// 与是否揭示无关——reveal 现走导师日志 marksPois·此处只数 columnId===undefined 的真 zone 锚点）。其余不变（home 6 + wreck 3 + vent 1 直接可见洞 + 鲸落 3 生态点 + …）。
 assert(
-  anchorCount(fogChart) === 23 && anchorCount(calmChart) === 23,
-  `7: 锚点不受天气遮蔽（期望 23·实际 fog ${anchorCount(fogChart)}/calm ${anchorCount(calmChart)}·含鲸落 found 后 3 生态点·#137·守进度安全·#117 四锚点入列·P1-2 鲨鱼刷点 anchor reef_shark_shoals 入列）`,
+  anchorCount(fogChart) === 19 && anchorCount(calmChart) === 19,
+  `7: 锚点不受天气遮蔽（期望 19·实际 fog ${anchorCount(fogChart)}/calm ${anchorCount(calmChart)}·含鲸落 found 后 3 生态点·#137·主线柱迁移退役 4 个 ch1_* 锚点）`,
 );
 assert(fogChart.conditions.weather === 'fog' && calmChart.conditions.weather !== 'fog', '7: SeaChart.conditions 落返回结构');
 L(`  海况确定性 + 随回合变 + 浓雾遮一处（run ${fogRun} 雾→${fogRoam} / run ${calmRun} ${calmChart.conditions.weather}→${calmRoam}）+ 锚点不受影响 ✓`);

@@ -40,6 +40,8 @@ export interface DepthColumnTier {
   tags?: ZoneTag[];
   /** 探测压力倍率（深档越凶·见 DepthBand.alertFactor）。缺省 1。 */
   alertFactor?: number;
+  /** 战利品深度倍率（深档越值钱·× loot roll 整数 qty·见 DepthBand.lootFactor）。缺省 1。 */
+  lootFactor?: number;
   /** 多事件「大房间」上限（深档 2–3·见 DepthBand.maxRoomFeatures）。缺省 1。 */
   maxRoomFeatures?: number;
   /** 不可信声呐失真强度 0..1（深档越骗·见 DepthBand.sonarDeception）。缺省 0。 */
@@ -88,6 +90,60 @@ export interface DepthColumnTier {
 }
 
 /**
+ * 主线剧情档（「主线柱迁移」·D-2·A 案·作者 2026-06-28）——挂在 DepthColumn 上、**与刷怪 `tiers[]` 梯子并列、
+ * 不进梯子**（区别于上一阶段把 story 塞进 DepthColumnTier 的草案：那会把主线 beat 拖进 probe 升级链 +
+ * 单调约束，使「reef 免费入口」与「探深档位制」打架·见 docs/spec/深海回响_主线柱迁移_提案 A-2 的 ⚠️）。
+ *
+ * **为什么单列而非进 tiers[]（设计摩擦的干净解）**：beat 落该区入口的**原深度**（reef 10–30m·vent 井缘…），
+ * 不受刷怪档「tier 连续 + 顶深单调」约束；reach 走「**host 灯塔建成**」一道门（链式 build-gate）而非 probe 档位
+ * （depthTierRevealState 是探深刷怪档的事·与主线无关）；reveal 走「日志早揭示」（revealFlag 持有即知坐标·先于建前哨）。
+ * 刷怪 tiers[] / probe 梯子 / columnBuiltLevel 全**逐字节不变**（不撕已测探深机制·CLAUDE.md「加法扩展」）。
+ *
+ * 复用上一阶段的 columnStory 下游管线（engine/columns.ts::storyTierPoi 透传到 ChartPoi.columnStory →
+ * dive-start.ts 据此把 eventId 作入潜强制开场·与 4 canon 锚点强制块同源但不占 canon 名额）。
+ */
+export interface ColumnStoryTier {
+  /** 该 beat 的绝对深度窗口（米·派生 story band 的 depthRange·落该区入口的原深度·不受刷怪档单调约束）。 */
+  depthRange: [number, number];
+  /** beat 档名（海图潜点名 + 派生 story band 名）。 */
+  label: string;
+  /** 入潜强制开场的主线节拍事件 id（dive-start.ts 据此设 forced open·getEventById 必解析·check-mainline-reachable 守）。 */
+  eventId: string;
+  /**
+   * 本 beat「完成」flag（节拍事件 outcome.setProfileFlags 置位·主线链「上一步做完没」据此判）。
+   * 必须 ∈ story.ts allStoryFlags()（playthrough-story §5「data story.* ⊆ allStoryFlags()」守门）。
+   */
+  beatFlag: string;
+  // reveal 门（日志早揭示·「主线柱迁移」点 4）已**不在此 schema 上**：reveal 的单一来源＝「日志文献坐标」——
+  // 导师日志（items.json mentor_logbook）的 story.marksPois 带这条柱的派生 story 潜点 id（poi.dive.<短名>.story·
+  // columnStoryDivePoiId）⇒ poisKnownFromItems 据此「知道坐标」；engine/columns.ts::storyPoiRevealState 用它派生
+  // hasReveal（不再裸 revealFlag）。揭示态（storyTierRevealState）：日志没标记 → hidden；标记且 host 未建 → dim
+  // （看得到去不了·blockReason「需先建〈host〉」）；host 已建 → lit（下得去）。reef host=lighthouse.home 恒在 →
+  // 教学完即 lit（免费入口）。「知道一个坐标」的唯一真相＝手里有没有写着它的那张纸（#117 续·物品即解锁同径）。
+  /** 标记为主线链尾（章尾 beat）：结局判定读「它的 beatFlag 已置」而非硬编码锚点齐（数据驱动·dive-start/story.ts）。 */
+  chainTail?: boolean;
+  /**
+   * 留白结局重访（St2·迁自旧 chart_pois 锚点 story.revisit*）：beat 已完成后再次入潜·持 revisitRequiresFlag
+   * 且未置 revisitDoneFlag ⇒ 强制开场 revisitEventId（dive-start 据此·镜像旧锚点重访块）。一章仅 vent beat 用。
+   * 三字段都 ∈ allStoryFlags() 范畴（revisitRequiresFlag/revisitDoneFlag 是 story.* flag·playthrough-story §5 守）。
+   */
+  revisitEventId?: string;
+  revisitRequiresFlag?: string;
+  revisitDoneFlag?: string;
+  /** 出潜叙事（派生 story band.blurb；缺省回退 column.blurb 或自动串）。 */
+  blurb?: string;
+  /** 危险提示（软门控·派生 story band.danger）。 */
+  danger?: string;
+  /** 能见度（缺省 clear·派生 story band.visibility）。 */
+  visibility?: Visibility;
+  /** 洋流（缺省 none·派生 story band.current）。 */
+  current?: CurrentStrength;
+  /** 显式海图坐标（归一化·覆盖默认「宿主灯塔附近扇开」自动布点）。缺省走自动布点。 */
+  mapX?: number;
+  mapY?: number;
+}
+
+/**
  * 一根深度柱：挂在一座灯塔（lighthouseId）上、借一个 zone（zoneId）提供内容、由若干 tier 组成。
  * 柱 id 形如 `col.<短名>`（短名用于派生 band id / probe 升级 id / 深入 POI id）。
  */
@@ -104,6 +160,13 @@ export interface DepthColumn {
   blurb?: string;
   /** 各深度档（索引顺序＝tier 升序·check-dive-refs 守连续单调）。 */
   tiers: DepthColumnTier[];
+  /**
+   * 主线剧情 beat（「主线柱迁移」·D-2）：设了 ⇒ 本柱**额外**承载一拍主线 beat（与刷怪 tiers[] 并列·不进梯子）。
+   * 派生 story band（id=band.<短名>.story）+ 海图 story 潜点（id=poi.dive.<短名>.story·带 columnStory → dive-start
+   * 入潜强制开场）；reach 走 host 灯塔建成（链式 build-gate）、reveal 走日志 revealFlag 早揭示——见 ColumnStoryTier。
+   * 不派生 probe 升级（主线 beat 非探深刷怪档）。缺省 ⇒ 无主线 beat（普通刷怪柱·逐字节不变）。
+   */
+  storyTier?: ColumnStoryTier;
 }
 
 /** depth_columns.json 顶层结构。 */

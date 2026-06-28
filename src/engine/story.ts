@@ -49,6 +49,12 @@ export type Ch1Ending = 'fulfilled' | 'blank';
 /** 教学钩：半本日志开场钩已种（教学关 tutorial.prologue 置位）。 */
 export const CH1_HOOK_FLAG = 'story.ch1.hook';
 
+// 主线四坐标「已知」的真相不再是一个裸 flag（旧 story.ch1.coords_known 已撤·2026-06-28 内容自洽回归）：
+// reveal 的单一来源＝「日志文献坐标」——导师日志（items.json mentor_logbook）的 story.marksPois 带四条柱派生
+// story 潜点 id（poi.dive.<短名>.story），poisKnownFromItems ⇒「知道坐标」；engine/columns.ts::storyPoiRevealState
+// 据此早揭示（dim/lit·host build-gate）。这恢复了 #117「story 锚点＝日志已知坐标·marksPois ⇒ reveal」已记录机制，
+// 与教学「照着日志把坐标逐条比对·圈下四个坐标」自洽（导师日志「携带」四坐标·而非置一个抽象 flag）。
+
 /** 一章锚点节拍位 flag（St1 锚点事件用 setProfileFlags 置位）。 */
 export function ch1AnchorFlag(anchor: Ch1Anchor): string {
   return `story.ch1.anchor.${anchor}`;

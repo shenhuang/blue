@@ -695,6 +695,17 @@
       "tier": 1
     },
     {
+      "id": "item.scrap_alloy",
+      "name": "废合金",
+      "category": "material",
+      "rarity": "common",
+      "description": "从沉船骨架上敲下来的杂合金块——铆钉、舱板、说不清来历的旧金属熔在一起，海水只在表面咬了层壳。当不了钱，却是搭塔基、焊架子最趁手的边角料。Mira 看不上，铸器铺却离不了。",
+      "weight": 0.3,
+      "sellPrice": 0,
+      "decay": "durable",
+      "tier": 1
+    },
+    {
       "id": "item.captain_log",
       "name": "航海日志",
       "category": "story",
@@ -720,10 +731,10 @@
       "story": {
         "unlocksLoreEntry": "lore.ch1.mentor_logbook",
         "marksPois": [
-          "poi.anchor.ch1_coral_grove",
-          "poi.anchor.ch1_temperate_wreck",
-          "poi.anchor.ch1_open_midwater",
-          "poi.anchor.ch1_vent_field"
+          "poi.dive.home.story",
+          "poi.dive.wreck.story",
+          "poi.dive.midwater.story",
+          "poi.dive.vent.story"
         ]
       }
     },

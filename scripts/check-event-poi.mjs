@@ -24,6 +24,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const EVENTS_DIR = resolve(ROOT, 'src/data/events');
 const POIS_FILE = resolve(ROOT, 'src/data/chart_pois.json');
+const COLUMNS_FILE = resolve(ROOT, 'src/data/depth_columns.json');
 
 /**
  * 递归收集 JSON 里所有合法 POI 身份串：
@@ -44,6 +45,18 @@ function collectIds(node, out) {
 
 const validPoiIds = new Set();
 collectIds(JSON.parse(readFileSync(POIS_FILE, 'utf-8')), validPoiIds);
+
+// ③ 深度柱**派生** POI（engine/columns.ts·非 chart_pois 手写·主线柱迁移 + #131）：刷怪档 poi.dive.<短名>.t<tier>
+//    与主线 beat poi.dive.<短名>.story。这些是 buildColumnPois 在运行时注入海图的稳定 id——POI 专属事件
+//    （如 reef.coral_grove_cutting 钉主线 beat 潜点）合法地以它们为 poiId（buildEventPool 走 run.poiId 精确匹配）。
+{
+  const short = (id) => String(id).replace(/^col\./, '');
+  const columnsFile = JSON.parse(readFileSync(COLUMNS_FILE, 'utf-8'));
+  for (const c of columnsFile.columns ?? []) {
+    for (const t of c.tiers ?? []) validPoiIds.add(`poi.dive.${short(c.id)}.t${t.tier}`);
+    if (c.storyTier) validPoiIds.add(`poi.dive.${short(c.id)}.story`);
+  }
+}
 
 const violations = [];
 let scanned = 0;

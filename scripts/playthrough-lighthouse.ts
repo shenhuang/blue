@@ -42,7 +42,7 @@ function assert(cond: unknown, msg: string): asserts cond {
 
 const HOME = 'lighthouse.home';
 // 主建造 fixture：船坞（lhtrack.dockyard·homeOnly·单级·requiresLighthouseLevel 1）。
-const DOCK = 'lighthouse.dockyard.lv1'; // coral×6 + old_fishing_net×3 + 20g → effect extraConsumableSlot 1
+const DOCK = 'lighthouse.dockyard.lv1'; // scrap_alloy×3 + old_fishing_net×3 + 20g → effect extraConsumableSlot 1（coral→scrap·经济 2026-06-28）
 // 两级链门控（needsPrev / 续级 lv2）借**派生探深轨**（lhtrack.probe.trench·#131 由 depth_columns.json 派生·lv1…lv6）——
 // 引擎 canBuildAt/buildAtLighthouse 不查 onlyLighthouse 放置（那是 UI 侧过滤·见 LighthouseBuildPanel），
 // 故在 home 上跑它只为验「同轨须先建低一级 + 续级」的纯逻辑（与原 beacon / probe_hadal 链等价）。
@@ -67,7 +67,7 @@ assert(home.builtUpgrades instanceof Set && home.builtUpgrades.size === 0, 'home
 assert(s.profile.lighthouses.length === 1, '初始应只有 1 座灯塔（home）');
 L(`  home: ${home.name} @ (${home.mapX},${home.mapY}) lv${home.level}`);
 // round-trip：先在 home 建一个 upgrade（船坞），确认 Set 成员被序列化还原
-let s1 = stateWith([{ itemId: 'item.coral_shard', qty: 6 }, { itemId: 'item.old_fishing_net', qty: 3 }], 100);
+let s1 = stateWith([{ itemId: 'item.scrap_alloy', qty: 3 }, { itemId: 'item.old_fishing_net', qty: 3 }], 100);
 s1 = buildAtLighthouse(s1, HOME, DOCK);
 const round = deserializeGameState(serializeGameState(s1));
 assert(round, 'deserialize 不应为 null');
@@ -80,18 +80,18 @@ L('  Lighthouse + builtUpgrades Set round-trip ✓');
 // 2. canBuildAt 双资源门控
 // ============================================
 L('\n========== 2. canBuildAt 门控 ==========');
-// (a) 空仓 + 满金 → 材料不足（缺口完整·船坞 coral×6 + old_fishing_net×3）
+// (a) 空仓 + 满金 → 材料不足（缺口完整·船坞 scrap×3 + old_fishing_net×3）
 s = stateWith([], 9999);
 const aNoMat = canBuildAt(s.profile, homeOf(s), DOCK);
 assert(!aNoMat.ok && aNoMat.reason === 'notEnoughMaterials', '只有金币没材料 → notEnoughMaterials');
 assert(
   aNoMat.reason === 'notEnoughMaterials' &&
-    aNoMat.shortfall.find((m) => m.itemId === 'item.coral_shard')?.qty === 6 &&
+    aNoMat.shortfall.find((m) => m.itemId === 'item.scrap_alloy')?.qty === 3 &&
     aNoMat.shortfall.find((m) => m.itemId === 'item.old_fishing_net')?.qty === 3,
-  'shortfall 应列完整缺口（coral×6, old_fishing_net×3）',
+  'shortfall 应列完整缺口（scrap×3, old_fishing_net×3）',
 );
 // (b) 材料够、金币不够 → notEnoughGold（船坞需 20·给 5 → 差 15）
-s = stateWith([{ itemId: 'item.coral_shard', qty: 6 }, { itemId: 'item.old_fishing_net', qty: 3 }], 5);
+s = stateWith([{ itemId: 'item.scrap_alloy', qty: 3 }, { itemId: 'item.old_fishing_net', qty: 3 }], 5);
 const aNoGold = canBuildAt(s.profile, homeOf(s), DOCK);
 assert(!aNoGold.ok && aNoGold.reason === 'notEnoughGold' && aNoGold.goldShort === 15, '材料够金币 5<20 → notEnoughGold 差 15');
 // (c) 跳级（没 lv1 先建 lv2）→ needsPrev（即便材料金币都够·借探深两级轨）
@@ -100,13 +100,13 @@ const aPrev = canBuildAt(s.profile, homeOf(s), PROBE2);
 assert(!aPrev.ok && aPrev.reason === 'needsPrev', 'lv2 在没建 lv1 前应被前置阻挡');
 // (d) 灯塔 level 不够 → needsLighthouseLevel（构造 level 0 的灯塔试船坞，requiresLighthouseLevel 1）
 const lowLh: Lighthouse = { ...createHomeLighthouse(), level: 0 };
-const aLvl = canBuildAt(stateWith([{ itemId: 'item.coral_shard', qty: 9 }, { itemId: 'item.old_fishing_net', qty: 9 }], 9999).profile, lowLh, DOCK);
+const aLvl = canBuildAt(stateWith([{ itemId: 'item.scrap_alloy', qty: 9 }, { itemId: 'item.old_fishing_net', qty: 9 }], 9999).profile, lowLh, DOCK);
 assert(!aLvl.ok && aLvl.reason === 'needsLighthouseLevel', '灯塔 level 0 < 要求 1 → needsLighthouseLevel');
 // (e) 不存在
 const aUnk = canBuildAt(s.profile, homeOf(s), 'lighthouse.nope');
 assert(!aUnk.ok && aUnk.reason === 'unknown', '未注册升级 → unknown');
 // (f) 材料金币都够 → ok
-s = stateWith([{ itemId: 'item.coral_shard', qty: 6 }, { itemId: 'item.old_fishing_net', qty: 3 }], 100);
+s = stateWith([{ itemId: 'item.scrap_alloy', qty: 3 }, { itemId: 'item.old_fishing_net', qty: 3 }], 100);
 assert(canBuildAt(s.profile, homeOf(s), DOCK).ok, '材料+金币都够 → ok');
 L('  alreadyBuilt/needsPrev/needsLighthouseLevel/材料/金币/unknown/ok 七态 ✓');
 
@@ -117,7 +117,7 @@ L('\n========== 3. buildAtLighthouse ==========');
 // 给 home 一个前哨邻居，确认建 home（船坞）不污染前哨。多塞一种料（brass）确认只扣账单内的料。
 let s3 = stateWith(
   [
-    { itemId: 'item.coral_shard', qty: 6 },
+    { itemId: 'item.scrap_alloy', qty: 3 },
     { itemId: 'item.old_fishing_net', qty: 3 },
     { itemId: 'item.brass_fitting', qty: 2 },
   ],
@@ -129,8 +129,8 @@ const goldB = s3.profile.bankedGold;
 s3 = buildAtLighthouse(s3, HOME, DOCK);
 const h = s3.profile.lighthouses.find((l) => l.id === HOME)!;
 const o = s3.profile.lighthouses.find((l) => l.id === 'lighthouse.outpost')!;
-L(`  建 home dockyard.lv1：coral ${countInInventory(s3.profile.inventory, 'item.coral_shard')}（应 0）, net ${countInInventory(s3.profile.inventory, 'item.old_fishing_net')}（应 0）, 金 ${goldB}→${s3.profile.bankedGold}（应 -20）`);
-assert(countInInventory(s3.profile.inventory, 'item.coral_shard') === 0, 'coral 应扣 6→剩 0');
+L(`  建 home dockyard.lv1：scrap ${countInInventory(s3.profile.inventory, 'item.scrap_alloy')}（应 0）, net ${countInInventory(s3.profile.inventory, 'item.old_fishing_net')}（应 0）, 金 ${goldB}→${s3.profile.bankedGold}（应 -20）`);
+assert(countInInventory(s3.profile.inventory, 'item.scrap_alloy') === 0, 'scrap 应扣 3→剩 0');
 assert(countInInventory(s3.profile.inventory, 'item.old_fishing_net') === 0, 'net 应扣 3→剩 0');
 assert(countInInventory(s3.profile.inventory, 'item.brass_fitting') === 2, '账单外的 brass 不应被动（仍剩 2）');
 assert(s3.profile.bankedGold === goldB - 20, '应扣 20 金');
@@ -212,7 +212,7 @@ const homeLvUp: Lighthouse = { ...createHomeLighthouse(), level: 3 };
 assert(Math.abs(revealRadius(homeLvUp) - regionRadius(homeBare.id)) < 1e-9, `level 3 的 home → 半径仍=区域配置·level 不扩，实际 ${revealRadius(homeLvUp)}`);
 L(`  半径：空 home ${revealRadius(homeBare)} / +探深升级 ${revealRadius(hc2).toFixed(2)} / level3 ${revealRadius(homeLvUp).toFixed(2)}（恒定·升级/level 均不扩扫描）✓`);
 // 船坞设施 → getLighthouseBonuses.extraConsumableSlot 1；getRunBonuses 把它并进随身加成
-let sDock = stateWith([{ itemId: 'item.coral_shard', qty: 6 }, { itemId: 'item.old_fishing_net', qty: 3 }], 50);
+let sDock = stateWith([{ itemId: 'item.scrap_alloy', qty: 3 }, { itemId: 'item.old_fishing_net', qty: 3 }], 50);
 sDock = buildAtLighthouse(sDock, HOME, DOCK);
 const homeDock = sDock.profile.lighthouses.find((l) => l.id === HOME)!;
 assert(getLighthouseBonuses(homeDock).extraConsumableSlot === 1, '船坞 → getLighthouseBonuses.extraConsumableSlot 1');

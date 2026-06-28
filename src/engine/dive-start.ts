@@ -342,6 +342,32 @@ export function applyCarryItems(
 }
 
 /**
+ * 主线柱 beat 的入潜强制开场（「主线柱迁移」·D-2·A 案·单一来源·band 路径与 zone 路径共用）。
+ * POI 带 columnStory（= DepthColumn.storyTier 派生·见 columns.ts::storyTierPoi）⇒ 入潜强制其 eventId 作开场，
+ * 直到 beatFlag 置位（节拍事件 setProfileFlags 一次性置·这里只读 flag 不写·quirk #118）；已置＝回流重访＝普通下潜。
+ * 触发只看 beatFlag——「能不能下到这一档」已由 reach 门（storyTierRevealState·host 建成 + 日志 marksPois 文献坐标·
+ * poiRevealState 的 columnStory 分支）在海图层挡住（dim/hidden 不可 departable·startDiveFromPoi 只对 lit 被调用），
+ * 故这里无需再查 reach。beatFlag 已置 + 带 revisit* ⇒ 留白结局重访（St2·迁自旧 chart_pois 锚点 story.revisit*）。
+ * 缺 columnStory ⇒ 原样返回（普通柱档/非主线 POI·零影响）。
+ */
+function applyColumnStoryOpen(s: GameState, poi: ChartPoi): GameState {
+  if (!poi.columnStory) return s;
+  if (!s.profile.flags.has(poi.columnStory.beatFlag)) {
+    return { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: poi.columnStory.eventId } } };
+  }
+  // 留白结局重访（beat 已完成·beatFlag 已置）：持 revisitRequiresFlag（charm_found·⟺ fulfilled-first·保证圆满在前、
+  // 第一次绝不跳过）+ 未置 revisitDoneFlag（ending.blank 未达）⇒ 强制留白结局事件。只读 flag 派生、不写。
+  if (poi.columnStory.revisitEventId) {
+    const reqOk = !poi.columnStory.revisitRequiresFlag || s.profile.flags.has(poi.columnStory.revisitRequiresFlag);
+    const notDone = !poi.columnStory.revisitDoneFlag || !s.profile.flags.has(poi.columnStory.revisitDoneFlag);
+    if (reqOk && notDone) {
+      return { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: poi.columnStory.revisitEventId } } };
+    }
+  }
+  return s;
+}
+
+/**
  * 从海图 POI 出海。封装出海前的全部准备：
  *   - createNewRun（带港口升级派生加成，与 dialog 的 startDive effect 一致）
  *   - 距离：每档 2 回合的"路上预耗氧" + 记到 run.turn（"远 = 多耗氧 / 多 turn"接口的首个实装）
@@ -390,7 +416,7 @@ export function startDiveFromPoi(
           };
         }
       }
-      return diveIntoBand(state, band, {
+      const dived = diveIntoBand(state, band, {
         bonuses,
         carryItems: opts?.carryItems,
         seedKey: poi.id,
@@ -398,6 +424,9 @@ export function startDiveFromPoi(
         // roaming 专属内容（2026-06-25）：band 路径同样透传稳定模板身份（roaming 才有·anchor/柱缺省 undefined）。
         poiTemplateId: poi.templateId,
       });
+      // 主线柱 beat（主线柱迁移）：story 潜点带 columnStory + bandId（走 story band 路径）⇒ band 路径**也要**
+      // 应用入潜强制开场（否则下方 zone 路径的 columnStory 块够不着·band 分支提前 return）。单一来源 applyColumnStoryOpen。
+      return applyColumnStoryOpen(dived, poi);
     }
   }
 
@@ -506,6 +535,10 @@ export function startDiveFromPoi(
       }
     }
   }
+
+  // 主线柱 beat 的「强制开场」（「主线柱迁移」·D-2·A 案）：band 路径（story 潜点带 bandId·上方 return 处）
+  // 与本 zone 路径共用单一来源 applyColumnStoryOpen——band 分支提前 return·必须在那边也调（见上）。
+  s = applyColumnStoryOpen(s, poi);
 
   // 通用脚本剧情潜点的「强制开场」（#137 鲸落找寻潜点·镜像上方 mimic/story 锚点模板，但不占 4 锚点名额）：
   // POI 带 openEventId ⇒ 入潜强制此事件作为开场，直到 openEventFlag 置位（一次性·置位归事件 setProfileFlags·

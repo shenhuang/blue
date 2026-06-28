@@ -259,14 +259,14 @@ if (trigger2 !== null) {
 log.push(`flag.tutorial_complete ✓ / lore.ch1.captains_page ✓ / story.ch1.hook ✓ / 重播被防住 ✓`);
 
 // ========== 港口修缮：买下船坞 Lv.1 解锁旧灯塔礁 ==========
-// 船坞 Lv.1 账单 = coral_shard×6, old_fishing_net×3 ＋ 20 金（基建地图 Phase A）。
+// 船坞 Lv.1 账单 = scrap_alloy×3, old_fishing_net×3 ＋ 20 金（基建地图 Phase A·coral→scrap·经济 2026-06-28）。
 // 教学关带不回这么多料，脚本里直接补足材料 + 金币以测试购买流程。
 state = {
   ...state,
   profile: {
     ...state.profile,
     inventory: mergeIntoInventory(state.profile.inventory, [
-      { itemId: 'item.coral_shard', qty: 6 },
+      { itemId: 'item.scrap_alloy', qty: 3 },
       { itemId: 'item.old_fishing_net', qty: 3 },
     ]),
     bankedGold: Math.max(state.profile.bankedGold, 20),

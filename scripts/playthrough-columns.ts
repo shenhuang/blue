@@ -18,12 +18,19 @@ import {
   columnProbeTracks,
   columnBuiltLevel,
   depthTierRevealState,
+  storyTierRevealState,
   columnTierBandId,
   columnProbeUpgradeId,
   columnDivePoiId,
+  columnStoryBandId,
+  columnStoryDivePoiId,
 } from '../src/engine/columns';
 import { generateChart, poiBlockReason, isPoiDepartable } from '../src/engine/chart';
 import type { GameState } from '../src/types';
+
+// 导师日志道具 id（reveal 单一来源·内容自洽回归·#117 续）：marksPois 带四主线 beat 派生 story 潜点坐标。
+// 「持日志」＝把它放进 profile.inventory（取代旧「置 coords_known flag」·reveal 机制已改回文献坐标）。
+const MENTOR_LOGBOOK_ITEM_ID = 'item.mentor_logbook';
 
 const log: string[] = [];
 const L = (s: string) => log.push(s);
@@ -87,7 +94,9 @@ L('  5 根柱（家2/残骸3/中层6/热液4/海沟4）+ 宿主反查 ✓');
 // ============================================================
 L('\n========== 2. 派生 band ==========');
 const cb = columnBands();
-assert(cb.length === 19, `2: 派生 band 共 19（2+3+6+4+4·实得 ${cb.length}）`);
+// 19 刷怪档 band（2+3+6+4+4）+ 4 主线 story beat band（主线柱迁移·home/wreck/midwater/vent 各一·band.<短名>.story）= 23。
+const STORY_BAND_COLS = ['col.home', 'col.wreck', 'col.midwater', 'col.vent'] as const;
+assert(cb.length === 23, `2: 派生 band 共 23（刷怪 19 + 主线 story 4·实得 ${cb.length}）`);
 for (const c of cols) {
   for (const t of c.tiers) {
     const bid = columnTierBandId(c.id, t.tier);
@@ -101,13 +110,25 @@ for (const c of cols) {
     assert(band!.order === t.depthRange[0], `2: ${bid} order = 顶深（全局按深度排序）`);
   }
 }
+// 主线 story band（主线柱迁移·与刷怪 band 同形·落 beat 原深度·不进刷怪 tiers[]）：4 根柱各一·可解析·depthRange 透传。
+for (const cid of STORY_BAND_COLS) {
+  const c = getColumn(cid)!;
+  assert(c.storyTier, `2: ${cid} 应带 storyTier（主线 beat）`);
+  const sb = getBand(columnStoryBandId(cid));
+  assert(sb, `2: getBand 解析主线 story band ${columnStoryBandId(cid)}`);
+  assert(sb!.zoneId === c.zoneId, `2: ${cid} story band zone = ${c.zoneId}`);
+  assert(
+    sb!.depthRange[0] === c.storyTier!.depthRange[0] && sb!.depthRange[1] === c.storyTier!.depthRange[1],
+    `2: ${cid} story band depthRange 透传（${c.storyTier!.depthRange.join('–')}m·beat 原深度）`,
+  );
+}
 const tCap = getBand(columnTierBandId('col.trench', 4))!;
 assert(tCap.depthRange[0] === 270 && tCap.depthRange[1] === 310, '2: 海沟 t4 电梯 capstone band = [270,310]（实际可达·名义 360）');
 const mwDeep = getBand(columnTierBandId('col.midwater', 6))!;
 assert(mwDeep.depthRange[0] === 180 && mwDeep.depthRange[1] === 210, '2: 中层 t6（主探索区最深）= [180,210]');
 // 预留 band 已删（SPEC §10·旧测试内容）：depth_bands.json 现为空表、所有 band 来自柱派生。
 assert(!getBand('band.abyssal') && !getBand('band.nameless'), '2: abyssal/nameless 预留 band 已删（SPEC §10·不再在册）');
-L('  19 派生 band 全可解析 + 顶深 order + 海沟 t4 capstone [270,310] + 预留 band 已删 ✓');
+L('  23 派生 band（刷怪 19 + 主线 story 4）全可解析 + 顶深 order + 海沟 t4 capstone [270,310] + 预留 band 已删 ✓');
 
 // ============================================================
 // 3. depthTierRevealState 纯函数（核心规则）
@@ -346,5 +367,82 @@ L('\n========== 10. 热液 capstone 产出核心 + 情报 ==========');
 }
 L('  热液 capstone 产出核心 ×1 + 情报 flag + 派生透传 + 跨柱依赖闭环（海沟电梯消费热液核心）✓');
 
+// ============================================================
+// 11. 主线 beat（storyTier·主线柱迁移）：与刷怪 tiers[]/probe 梯子**完全解耦**——
+//     ① storyTierRevealState 纯函数（host 建成 + 日志 marksPois 文献坐标）；② 早揭示端到端（reef 免费入口 / 其余建前哨前 dim·后 lit）；
+//     ③ 主线 beat **不**派生 probe 升级（不污染刷怪梯子）；④ story 潜点带 columnStory（dive-start 入潜强制开场）。
+// ============================================================
+L('\n========== 11. 主线 beat（storyTier·与 probe 梯子解耦） ==========');
+{
+  // ① storyTierRevealState 纯函数核心（hasReveal 现由「日志 marksPois 标记此坐标」派生·非裸 flag）：
+  //    日志没标记→hidden / 标记+host 未建→dim / host 已建→lit。
+  assert(storyTierRevealState(false, false) === 'hidden', '11: 日志没标记此坐标 → hidden（不知道坐标）');
+  assert(storyTierRevealState(false, true) === 'hidden', '11: 日志没标记此坐标 → hidden（即便 host 已建·没日志就不知道这条坐标）');
+  assert(storyTierRevealState(true, false) === 'dim', '11: 日志已标记 + host 未建 → dim（日志早揭示·看得到去不了）');
+  assert(storyTierRevealState(true, true) === 'lit', '11: 日志已标记 + host 已建 → lit（建好前哨·下得去）');
+
+  // ② 配置：4 柱带 storyTier·vent 是链尾（chainTail）+ 带留白重访字段；trench 无 storyTier（St1 留白）。
+  for (const cid of STORY_BAND_COLS) assert(getColumn(cid)!.storyTier, `11: ${cid} 带 storyTier`);
+  assert(!getColumn('col.trench')!.storyTier, '11: 海沟柱无 storyTier（St1 未接节拍·留白）');
+  assert(getColumn('col.vent')!.storyTier!.chainTail === true, '11: vent storyTier 是链尾（chainTail·结局判定读它）');
+  assert(
+    getColumn('col.vent')!.storyTier!.revisitEventId === 'ch1.ending_blank',
+    '11: vent storyTier 带留白重访 ch1.ending_blank（St2·迁自旧锚点 story.revisit*）',
+  );
+
+  // ③ 主线 beat 不进 probe 梯子：派生 probe 轨升级数 = 刷怪 tier 数（不含 story·EXPECTED 不变·主线 beat 非探深档）。
+  const tracks2 = columnProbeTracks();
+  for (const [cid, n] of Object.entries(EXPECTED)) {
+    const tr = tracks2.find((t) => t.id === `lhtrack.probe.${cid.replace('col.', '')}`)!;
+    assert(tr.upgrades.length === n, `11: ${cid} probe 轨 ${n} 级（= 刷怪 tier 数·主线 beat 不派生 probe·实 ${tr.upgrades.length}）`);
+  }
+
+  // ④ 早揭示端到端（海图）：教学后持导师日志（inventory 有 item.mentor_logbook·marksPois 带四坐标）——
+  //    reef host=home 恒在 → lit（免费入口）；wreck host 前哨未建 → dim；建残骸前哨后 → lit。
+  const coordsKnown = (lighthouses: GameState['profile']['lighthouses']): GameState =>
+    ({
+      ...createInitialGameState(),
+      profile: {
+        ...createInitialGameState().profile,
+        flags: new Set([TUT]),
+        inventory: [{ itemId: MENTOR_LOGBOOK_ITEM_ID, qty: 1 }],
+        lighthouses,
+      },
+    });
+  // 未拿日志：四条 beat 全 hidden（早揭示门未开）。
+  {
+    const noLog = { ...createInitialGameState(), profile: { ...createInitialGameState().profile, flags: new Set([TUT]) } };
+    const ids = generateChart({ profile: noLog.profile }).pois.map((p) => p.id);
+    for (const cid of STORY_BAND_COLS) assert(!ids.includes(columnStoryDivePoiId(cid)), `11: 未拿日志 → ${cid} 主线 beat hidden`);
+  }
+  // 持日志·只 home 在册：reef lit（免费入口）/ wreck·midwater·vent dim（host 前哨未建·早揭示）。
+  {
+    const s = coordsKnown(createInitialGameState().profile.lighthouses); // 只 home
+    const chart = generateChart({ profile: s.profile });
+    const reefPoi = chart.pois.find((p) => p.id === columnStoryDivePoiId('col.home'))!;
+    assert(reefPoi && reefPoi.revealState === 'lit', '11: 持日志 → reef（host=home 恒在）lit＝免费入口');
+    assert(reefPoi.columnStory?.eventId === 'ch1.anchor_reef', '11: reef story 潜点带 columnStory.eventId=ch1.anchor_reef（dive-start 强制开场）');
+    assert(reefPoi.bandId === columnStoryBandId('col.home'), '11: reef story 潜点带 story band id（走 band 路径）');
+    assert(reefPoi.depthTier === undefined, '11: 主线 beat 潜点不带 depthTier（不触发探深档位制·走 storyTierRevealState）');
+    const wreckPoi = chart.pois.find((p) => p.id === columnStoryDivePoiId('col.wreck'))!;
+    assert(wreckPoi && wreckPoi.revealState === 'dim', '11: 持日志 + 残骸前哨未建 → wreck beat dim（早揭示·看得到去不了）');
+    assert((poiBlockReason(s.profile, wreckPoi) ?? '').includes('前哨'), '11: wreck dim 的 blockReason 指明「先建该区前哨」');
+    // 从 lit 的 reef 主线 beat 下潜：走 story band 路径落 run（zone 透传）。
+    const after = startDiveFromPoi(s, reefPoi);
+    assert(after.run?.zoneId === getColumn('col.home')!.zoneId, '11: 从 reef 主线 beat 下潜 → run.zoneId = 柱 zone（走 story band 路径）');
+  }
+  // 持日志 + 残骸前哨在册：wreck beat 转 lit。
+  {
+    const lh = [
+      ...createInitialGameState().profile.lighthouses,
+      { id: 'lighthouse.ch1_wreck_outpost', name: '残骸前哨', mapX: 0.3, mapY: 0.7, level: 1, builtUpgrades: new Set<string>() },
+    ];
+    const s = coordsKnown(lh);
+    const wreckPoi = generateChart({ profile: s.profile }).pois.find((p) => p.id === columnStoryDivePoiId('col.wreck'))!;
+    assert(wreckPoi && wreckPoi.revealState === 'lit', '11: 建残骸前哨后 → wreck 主线 beat 转 lit（host 建成·下得去）');
+  }
+}
+L('  storyTierRevealState 纯函数 + 早揭示端到端（reef 免费入口/其余建前哨前 dim 后 lit）+ 不污染 probe 梯子 + story 潜点带 columnStory ✓');
+
 console.log(log.join('\n'));
-console.log('\n✓ 探深「深度柱」（#131·§10 定案）回归通过');
+console.log('\n✓ 探深「深度柱」（#131·§10 定案 + 主线柱迁移）回归通过');

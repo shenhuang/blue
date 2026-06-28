@@ -5,14 +5,18 @@
 //                            canBuildAt/buildAtLighthouse/设施面板零改消费·各级 cost=该 tier 账单·effects 空＝纯门控）；
 //   ③ buildColumnPois()    → 海图深入 POI（chart.ts generateChart 注入·revealState 由 columnBuiltLevel vs tier 派生）。
 //
-// **依赖方向（守 check-boundaries·无环）**：columns.ts 只 import 类型 + depth_columns.json，是叶子；
-//   bands.ts / lighthouses.ts / chart.ts / dive-start.ts 单向 import 本文件。columnBuiltLevel 直接读
-//   profile.lighthouses（不 import lighthouses.ts·避免与其反向依赖成环）。
+// **依赖方向（守 check-boundaries·无环）**：columns.ts 只 import 类型 + depth_columns.json + 两个**纯叶子**引擎
+//   模块（story.ts 取 TUTORIAL_COMPLETE_FLAG 常量、items.ts 取 poisKnownFromItems——两者皆只 import 类型/JSON·
+//   绝不反向 import columns.ts·无环）；bands.ts / lighthouses.ts / chart.ts / dive-start.ts 单向 import 本文件。
+//   columnBuiltLevel 直接读 profile.lighthouses（不 import lighthouses.ts·避免与其反向依赖成环）。
+//   **主线 beat reveal 的单一来源＝「日志文献坐标」**（poisKnownFromItems·marksPois ⇒ reveal·#117 续）：
+//   storyTier 不再带裸 revealFlag——「知道这条坐标」唯一真相＝玩家手里有没有写着它的那张纸（导师日志）。
 
 import type {
   DepthColumn,
   DepthColumnsFile,
   DepthColumnTier,
+  ColumnStoryTier,
   DepthBand,
   LighthouseTrack,
   LighthouseUpgradeDef,
@@ -22,6 +26,11 @@ import type {
 } from '@/types';
 import columnsData from '@/data/depth_columns.json';
 import { TUTORIAL_COMPLETE_FLAG } from './story';
+import { poisKnownFromItems } from './items';
+
+// 家灯塔 id（本地常量·避免 import state.ts 成依赖环——columns.ts 是叶子·只读 profile.lighthouses）。
+// 与 state.ts::HOME_LIGHTHOUSE_ID / data 字面量一致（check-dive-refs lighthouseIds 含它）。
+const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
 
 const file = columnsData as unknown as DepthColumnsFile;
 const COLUMNS: DepthColumn[] = file.columns ?? [];
@@ -66,6 +75,16 @@ export function columnDivePoiId(columnId: string, tier: number): string {
   return `poi.dive.${columnShort(columnId)}.t${tier}`;
 }
 
+/** 主线 story beat 的派生 band id：`band.<短名>.story`（不与刷怪档 band.<短名>.t<n> 撞·主线柱迁移）。 */
+export function columnStoryBandId(columnId: string): string {
+  return `band.${columnShort(columnId)}.story`;
+}
+
+/** 主线 story beat 的海图潜点 id：`poi.dive.<短名>.story`（不与刷怪档 poi.dive.<短名>.t<n> 撞）。 */
+export function columnStoryDivePoiId(columnId: string): string {
+  return `poi.dive.${columnShort(columnId)}.story`;
+}
+
 /** 一个 tier → 一个 DepthBand（绝对 depthRange 覆盖 zone·order 取顶深以便全局按深度排序）。 */
 function tierBand(c: DepthColumn, t: DepthColumnTier): DepthBand {
   return {
@@ -79,6 +98,7 @@ function tierBand(c: DepthColumn, t: DepthColumnTier): DepthBand {
     blurb: t.blurb ?? c.blurb ?? `${c.name}·第 ${t.tier} 级（${t.depthRange[0]}–${t.depthRange[1]}m）。`,
     danger: t.danger,
     alertFactor: t.alertFactor,
+    lootFactor: t.lootFactor,
     tags: t.tags,
     maxRoomFeatures: t.maxRoomFeatures,
     sonarDeception: t.sonarDeception,
@@ -86,9 +106,27 @@ function tierBand(c: DepthColumn, t: DepthColumnTier): DepthBand {
   };
 }
 
-/** 全部柱的派生 band（bands.ts 合并进注册表）。 */
+/** 主线 story beat → 一个 DepthBand（主线柱迁移·与刷怪 band 同形·落 beat 原深度·不带 hunts/sonarDeception 等刷怪旋钮）。 */
+function storyTierBand(c: DepthColumn, s: ColumnStoryTier): DepthBand {
+  return {
+    id: columnStoryBandId(c.id),
+    name: s.label,
+    zoneId: c.zoneId,
+    depthRange: s.depthRange,
+    order: s.depthRange[0],
+    visibility: s.visibility,
+    current: s.current,
+    blurb: s.blurb ?? c.blurb ?? `${c.name}·${s.label}（${s.depthRange[0]}–${s.depthRange[1]}m）。`,
+    danger: s.danger,
+  };
+}
+
+/** 全部柱的派生 band（bands.ts 合并进注册表）——刷怪档 + 主线 story beat（如有·主线柱迁移）。 */
 export function columnBands(): DepthBand[] {
-  return COLUMNS.flatMap((c) => c.tiers.map((t) => tierBand(c, t)));
+  return COLUMNS.flatMap((c) => [
+    ...c.tiers.map((t) => tierBand(c, t)),
+    ...(c.storyTier ? [storyTierBand(c, c.storyTier)] : []),
+  ]);
 }
 
 /** 一根柱的派生 probe 升级轨（lighthouses.ts 合并进 TRACKS）。 */
@@ -153,6 +191,22 @@ export function depthTierRevealState(builtLevel: number, tier: number): PoiRevea
 }
 
 /**
+ * 主线 story beat 的揭示态（主线柱迁移·点 4·**不走** depthTierRevealState 探深档位制——主线 beat 是链式
+ * build-gate，与刷怪探深无关）：
+ *   日志未标记此坐标（!hasReveal）     → hidden（不知道这条坐标·导师日志没带到）
+ *   日志已标记 且 host 未建（dim）       → dim  （日志早揭示·看得到去不了·blockReason「需先建〈host〉」）
+ *   host 已建                          → lit  （建好该区前哨·下得去）
+ * **reveal 单一来源＝文献坐标**（hasReveal 由调用方从 poisKnownFromItems(profile) 派生·导师日志 marksPois ⇒
+ * 知道这条坐标·#117 续）；**reach 单一来源＝host 灯塔建成**（build-gate·marksPois 不绕 reach·dim 点出不了海）。
+ * reef host=lighthouse.home 恒在（开局即「host 已建」）⇒ 持日志即 lit＝免费入口（教学完即可下）。
+ * 纯函数（hostBuilt/hasReveal 由调用方从 profile 派生）。
+ */
+export function storyTierRevealState(hasReveal: boolean, hostBuilt: boolean): PoiRevealState {
+  if (!hasReveal) return 'hidden';
+  return hostBuilt ? 'lit' : 'dim';
+}
+
+/**
  * 一个 tier → 一个海图深入 POI（摆宿主灯塔揭示圈内·按 tier 往深处扇开·占位坐标作者调手感）。
  * 坐标钳到 [0.03,0.97] 防出界；bandId/columnId/depthTier 让 startDiveFromPoi 走 band 路径 +
  * poiRevealState/poiBlockReason 走档位分支。
@@ -177,6 +231,57 @@ function tierPoi(c: DepthColumn, t: DepthColumnTier, hostX: number, hostY: numbe
   };
 }
 
+/** 是否「host 灯塔已建」（在 profile.lighthouses 里）——主线 story beat 的 reach 门（链式 build-gate）。 */
+export function columnHostBuilt(profile: PlayerProfile, columnId: string): boolean {
+  const c = COLUMN_INDEX.get(columnId);
+  if (!c) return false;
+  return profile.lighthouses.some((l) => l.id === c.lighthouseId);
+}
+
+/**
+ * 主线 story beat → 海图潜点（主线柱迁移）。带 columnStory（dive-start 入潜强制开场）+ bandId（走 story band 绝对
+ * depthRange 下潜路径）+ columnId（startDiveFromPoi 并入宿主灯塔补给设施·与刷怪档同源）。**不带 depthTier**
+ * ⇒ 不触发 poiRevealState 的探深档位制分支（columnId+depthTier 才触发）；reveal 改由 storyPoiRevealState
+ * （columnStory 分支·host 建成 + 日志 marksPois 文献坐标早揭示）算·见 chart.ts。坐标缺省摆 host 旁（host
+ * 未建时退家灯塔旁·让早揭示 dim 点有处可摆）。
+ */
+function storyTierPoi(c: DepthColumn, s: ColumnStoryTier, hostX: number, hostY: number): ChartPoi {
+  const clamp = (v: number) => Math.max(0.03, Math.min(0.97, v));
+  return {
+    id: columnStoryDivePoiId(c.id),
+    zoneId: c.zoneId,
+    name: s.label,
+    blurb: s.blurb ?? c.blurb ?? `${c.name}·${s.label}（${s.depthRange[0]}–${s.depthRange[1]}m）。`,
+    distance: 1,
+    mapX: clamp(s.mapX ?? hostX + 0.018),
+    mapY: clamp(s.mapY ?? hostY - 0.03),
+    bandId: columnStoryBandId(c.id),
+    columnId: c.id,
+    persistent: true,
+    columnStory: {
+      eventId: s.eventId,
+      beatFlag: s.beatFlag,
+      ...(s.chainTail ? { chainTail: true } : {}),
+      ...(s.revisitEventId ? { revisitEventId: s.revisitEventId } : {}),
+      ...(s.revisitRequiresFlag ? { revisitRequiresFlag: s.revisitRequiresFlag } : {}),
+      ...(s.revisitDoneFlag ? { revisitDoneFlag: s.revisitDoneFlag } : {}),
+    },
+  };
+}
+
+/**
+ * 主线 story 潜点的揭示态（chart.ts poiRevealState 的 columnStory 分支调）：从 profile 派生 hasReveal（**日志文献坐标**
+ * 标记了本柱 story 潜点·poisKnownFromItems）+ hostBuilt（host 灯塔在册）→ storyTierRevealState。
+ * reveal 单一来源＝marksPois（导师日志带这四条坐标·#117 续·与「物品即解锁」同径·不再裸 revealFlag）；
+ * reach 单一来源＝host 建成（build-gate·见 columnHostBuilt）。派生 story 潜点 id＝columnStoryDivePoiId(columnId)。
+ */
+export function storyPoiRevealState(profile: PlayerProfile, columnId: string): PoiRevealState {
+  const c = COLUMN_INDEX.get(columnId);
+  if (!c || !c.storyTier) return 'hidden';
+  const hasReveal = poisKnownFromItems(profile).has(columnStoryDivePoiId(columnId));
+  return storyTierRevealState(hasReveal, columnHostBuilt(profile, columnId));
+}
+
 /**
  * 全部「可见」（lit/dim·非 hidden）的深度柱深入 POI（chart.ts generateChart 注入）。
  * 宿主灯塔未建（不在 profile.lighthouses）→ 该柱潜点不现（柱挂在灯塔上·灯塔在才有柱）。
@@ -187,8 +292,22 @@ export function buildColumnPois(profile: PlayerProfile): ChartPoi[] {
   // 教学前海图为空（与所有 anchor/roaming 同门·flag.tutorial_complete）——家灯塔从开局就在，
   // 但教学没过不该有任何潜点；故柱潜点也统一压在教学门后（守 playthrough-chart「教学前海图应为空」）。
   if (!profile.flags.has(TUTORIAL_COMPLETE_FLAG)) return out;
+  const homeLh = profile.lighthouses.find((l) => l.id === HOME_LIGHTHOUSE_ID);
   for (const c of COLUMNS) {
     const host = profile.lighthouses.find((l) => l.id === c.lighthouseId);
+    // 主线 story beat（主线柱迁移）：**先于 host 门**处理——日志早揭示要求 host 未建时仍 emit（dim）。
+    // host 在则摆 host 旁、不在则退家灯塔旁（让早揭示 dim 点有处可摆）。hidden（日志没标记此坐标·没带日志）才略过。
+    if (c.storyTier) {
+      const stState = storyPoiRevealState(profile, c.id);
+      if (stState !== 'hidden') {
+        const anchor = host ?? homeLh;
+        out.push({
+          ...storyTierPoi(c, c.storyTier, anchor?.mapX ?? 0.06, anchor?.mapY ?? 0.5),
+          revealState: stState,
+        });
+      }
+    }
+    // 刷怪档：宿主灯塔未建（不在 profile.lighthouses）→ 该柱刷怪潜点不现（柱挂在灯塔上·灯塔在才有柱）。
     if (!host) continue;
     const built = columnBuiltLevel(profile, c.id);
     for (const t of c.tiers) {

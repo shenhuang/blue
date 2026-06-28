@@ -12,8 +12,8 @@
           "cost": {
             "materials": [
               {
-                "itemId": "item.coral_shard",
-                "qty": 5
+                "itemId": "item.scrap_alloy",
+                "qty": 3
               },
               {
                 "itemId": "item.brass_fitting",

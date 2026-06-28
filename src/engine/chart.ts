@@ -22,7 +22,7 @@ import {
   OUTPOST_USABLE_STAGE,
 } from './lighthouses';
 import { flagGatedRegions } from './regions';
-import { buildColumnPois, columnBuiltLevel, depthTierRevealState } from './columns';
+import { buildColumnPois, columnBuiltLevel, depthTierRevealState, storyPoiRevealState, columnHostBuilt, getColumn } from './columns';
 import { poisKnownFromItems } from './items';
 import { lunarPhase, moonAge, tideLevel, lunarPhaseLabel, daysUntilAnyPhase } from './lunar';
 
@@ -255,6 +255,9 @@ export function isPoiLit(profile: PlayerProfile, poi: ChartPoi): boolean {
   // St1 一章锚点（#117）：日志抄来的坐标＝**已知点**，不走灯塔「发现」轴——教学尾
   // 「四个坐标圈上海图」与海图解锁是同一个动作，你不需要网照到它才知道它在哪。
   if (poi.story) return true;
+  // 主线 story beat（主线柱迁移）：日志早揭示的坐标＝已知点（同 story 短路），可见性由 storyTierRevealState
+  // 在 poiRevealState 决（host 建成 + 日志 marksPois 文献坐标）；这里恒「已知」⇒ 不被误判 mimic「亮而无主」（守诚实轴）。
+  if (poi.columnStory) return true;
   // 文献坐标（物品即解锁·marksPois ⇒ reveal·作者 2026-06-19）：持有标记此点的道具＝已知点，同 story 短路
   // 绕灯塔「发现」轴（导师日志 / 鲸落手记…）。承接 #117 到任意 marksPois 道具。
   if (documentKnowsPoi(profile, poi)) return true;
@@ -271,6 +274,8 @@ export function isPoiExplainedByLighthouse(profile: PlayerProfile, poi: ChartPoi
   // St1 一章锚点（#117）：亮的来源是「你自己抄的坐标」——有解释，别让剧情锚点误穿
   // mimic 的「亮而无主」宏观 tell（海图诚实轴）。
   if (poi.story) return true;
+  // 主线 story beat（主线柱迁移）：亮的来源是「日志抄来的坐标」——有合法解释，别误穿 mimic「亮而无主」tell。
+  if (poi.columnStory) return true;
   // 文献坐标（物品即解锁·#2026-06-19）：亮的来源是「你带着的那张纸」——有合法解释，别让文献揭示的点
   // （如鲸落手记标的生态点）误穿 mimic「亮而无主」tell。
   if (documentKnowsPoi(profile, poi)) return true;
@@ -305,6 +310,11 @@ export function poiRevealState(profile: PlayerProfile, poi: ChartPoi): PoiReveal
   // 灯塔在即随柱浮现；它该不该亮只看探深建到第几级）。
   if (poi.columnId !== undefined && poi.depthTier !== undefined) {
     return depthTierRevealState(columnBuiltLevel(profile, poi.columnId), poi.depthTier);
+  }
+  // 主线 story beat 潜点（主线柱迁移）：带 columnStory + columnId（无 depthTier）⇒ 走 host 建成 + 日志早揭示
+  // （storyTierRevealState·**不走**探深档位制、也不走发现/揭示圈/天气）。reveal=日志 marksPois 文献坐标·reach=host 建成。
+  if (poi.columnStory && poi.columnId !== undefined) {
+    return storyPoiRevealState(profile, poi.columnId);
   }
   // 发现门（位置是否已知）：持有标记此点的文献（物品即解锁·marksPois ⇒ reveal）⇒ 已知·绕发现门；
   // 否则走常规发现（requiresFlags 发现 flag + isPoiLit 灯塔网/揭示圈/story 已知点）。文献短路只绕「发现」，
@@ -375,6 +385,15 @@ export function isPoiDepartable(profile: PlayerProfile, poi: ChartPoi): boolean 
  */
 export function poiBlockReason(profile: PlayerProfile, poi: ChartPoi): string | null {
   if (isPoiDepartable(profile, poi)) return null;
+  // 主线 story beat 暗点（主线柱迁移·点 4）：dim ＝日志已早揭示（知道坐标）但该区 host 前哨还没建好。
+  // 给一句可执行的话——指明「先建哪座前哨」（host 灯塔对应前哨名·单一来源 lighthouse_upgrades.json）。
+  if (poi.columnStory && poi.columnId !== undefined && !columnHostBuilt(profile, poi.columnId)) {
+    const col = getColumn(poi.columnId);
+    const hostName = col
+      ? getOutposts().find((o) => o.result.id === col.lighthouseId)?.name
+      : undefined;
+    return hostName ? `得先建起「${hostName}」。` : '得先把这片海里的前哨建起来。';
+  }
   // 低频声呐「深度柱」暗档（#131）：dim 只因「低频声呐还没建到这一级」——给一句可执行的话。
   if (poi.columnId !== undefined && poi.depthTier !== undefined) {
     return '声呐探得到，但还没有路。低频声呐升一级，这里才能落脚。';
@@ -525,6 +544,11 @@ export interface MarkedPoiInfo {
    * 缺坐标（不在海图上 / 该 POI 未声明 mapX/mapY）→ null。导师日志等「页脚坐标」据此陈列。
    */
   displayCoord: string | null;
+  /**
+   * 已勘——该坐标的主线 beat 已完成（columnStory.beatFlag 置位·去过且拿到关键结果）。
+   * UI 在日志坐标列表给删除线「划掉」·但**仍可点重访**（回流 / St2 vent 留白）；非主线坐标恒 false。
+   */
+  surveyed: boolean;
 }
 
 /**
@@ -546,10 +570,12 @@ export function resolveMarkedPois(profile: PlayerProfile, poiIds: string[]): Mar
   return poiIds.map((id) => {
     const poi = chart.pois.find((p) => p.id === id);
     if (!poi)
-      return { id, name: id, departable: false, blockReason: '还不在你的海图上', onChart: false, displayCoord: null };
+      return { id, name: id, departable: false, blockReason: '还不在你的海图上', onChart: false, displayCoord: null, surveyed: false };
     // poi.mapX/mapY 已是 generateChart resolve 后的绝对坐标（owner-anchored·见 resolveOwnerCoords）。
     const displayCoord =
       poi.mapX != null && poi.mapY != null ? formatChartCoord(poi.mapX, poi.mapY) : null;
+    // 已勘＝该坐标的主线 beat 已完成（columnStory.beatFlag 置位·去过且拿到关键结果）；UI 给「划掉」删除线·仍可点重访。
+    const surveyed = !!poi.columnStory?.beatFlag && profile.flags.has(poi.columnStory.beatFlag);
     return {
       id,
       name: poi.name,
@@ -557,6 +583,7 @@ export function resolveMarkedPois(profile: PlayerProfile, poiIds: string[]): Mar
       blockReason: poiBlockReason(profile, poi),
       onChart: true,
       displayCoord,
+      surveyed,
     };
   });
 }

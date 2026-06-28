@@ -21,8 +21,8 @@
           "cost": {
             "materials": [
               {
-                "itemId": "item.coral_shard",
-                "qty": 6
+                "itemId": "item.scrap_alloy",
+                "qty": 3
               },
               {
                 "itemId": "item.old_fishing_net",
@@ -145,16 +145,16 @@
     {
       "id": "outpost.ch1_wreck",
       "name": "残骸前哨",
-      "requiresAnchor": "wreck",
+      "requiresFlag": "story.ch1.anchor.reef",
       "submerged": true,
       "stages": [
         {
-          "label": "清出一截船体当塔基（珊瑚碎片×3 ＋ 40 金）",
+          "label": "清出一截船体当塔基（废合金×2 ＋ 40 金）",
           "cost": {
             "materials": [
               {
-                "itemId": "item.coral_shard",
-                "qty": 3
+                "itemId": "item.scrap_alloy",
+                "qty": 2
               }
             ],
             "gold": 40
@@ -188,7 +188,8 @@
               }
             ],
             "gold": 110
-          }
+          },
+          "narrative": "井架亮起来的那一刻，海图上残骸那点从灰转成亮。日志第二条坐标——你现在下得去了。 [占位·待过稿]"
         }
       ],
       "result": {
@@ -203,16 +204,16 @@
     {
       "id": "outpost.ch1_midwater",
       "name": "中层浮标",
-      "requiresAnchor": "midwater",
+      "requiresFlag": "story.ch1.anchor.wreck",
       "submerged": true,
       "stages": [
         {
-          "label": "抛锚定位浮标基座（珊瑚碎片×3 ＋ 50 金）",
+          "label": "抛锚定位浮标基座（废合金×2 ＋ 50 金）",
           "cost": {
             "materials": [
               {
-                "itemId": "item.coral_shard",
-                "qty": 3
+                "itemId": "item.scrap_alloy",
+                "qty": 2
               }
             ],
             "gold": 50
@@ -242,7 +243,8 @@
               }
             ],
             "gold": 130
-          }
+          },
+          "narrative": "浮标的灯一亮，没有底的那片水里，第一次有了一个你够得着的标记。第三条坐标，亮了。 [占位·待过稿]"
         }
       ],
       "result": {
@@ -257,7 +259,7 @@
     {
       "id": "outpost.ch1_vent",
       "name": "热液井台",
-      "requiresAnchor": "vent",
+      "requiresFlag": "story.ch1.anchor.midwater",
       "submerged": true,
       "stages": [
         {
@@ -304,7 +306,8 @@
               }
             ],
             "gold": 170
-          }
+          },
+          "narrative": "井台通了电，海沟底那点光在海图上稳住了。最后一条坐标——你一直知道它在哪，现在你建得起下去的那条路。 [占位·待过稿]"
         }
       ],
       "result": {
@@ -323,12 +326,12 @@
       "submerged": true,
       "stages": [
         {
-          "label": "在竖井口岩架上凿出锚位（珊瑚碎片×3 ＋ 50 金）",
+          "label": "在竖井口岩架上凿出锚位（废合金×2 ＋ 50 金）",
           "cost": {
             "materials": [
               {
-                "itemId": "item.coral_shard",
-                "qty": 3
+                "itemId": "item.scrap_alloy",
+                "qty": 2
               }
             ],
             "gold": 50
@@ -386,11 +389,11 @@
       "submerged": true,
       "stages": [
         {
-          "label": "在骨架旁清出一块落脚的硬地（珊瑚碎片×2 ＋ 40 金）",
+          "label": "在骨架旁清出一块落脚的硬地（废合金×2 ＋ 40 金）",
           "cost": {
             "materials": [
               {
-                "itemId": "item.coral_shard",
+                "itemId": "item.scrap_alloy",
                 "qty": 2
               }
             ],

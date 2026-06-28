@@ -110,6 +110,31 @@ export interface ChartPoi {
   columnId?: string;
   depthTier?: number;
   /**
+   * 主线剧情 beat 的入潜强制开场（「主线柱迁移」·D-2·A 案·作者 2026-06-28）：当本 POI 是某柱的主线 beat
+   * （DepthColumn.storyTier·engine/columns.ts::storyTierPoi 透传）时，dive-start.ts 据此把 eventId 作入潜强制
+   * 开场——**与 4 canon 锚点的 `story` 块分离**：那块由 CH1_ANCHORS 短路、占 4 名额、走 chart_pois 锚点；这块身份
+   * ＝columnId（无 depthTier）、触发门读 beatFlag、不挪用 canon anchor 名额。
+   * 触发规则（dive-start.ts·镜像锚点块·只读 flag 不写）：beatFlag 未置位时强制开场；已置位＝回流重访＝普通下潜。
+   * reveal/reach 走 storyTierRevealState（host 建成 + 日志 marksPois 文献坐标·见 chart.ts·**不被本字段改**）；能下到这档
+   * （lit）才会被 startDiveFromPoi 调用，故无需再查 reach。缺省 ⇒ 普通柱档（行为逐字节不变）。
+   */
+  columnStory?: {
+    /** 入潜强制开场的主线节拍事件 id。 */
+    eventId: string;
+    /** 本 beat「完成」flag（节拍事件 setProfileFlags 置位·主线链判定据此·∈ engine/story.ts allStoryFlags()）。 */
+    beatFlag: string;
+    /** 主线链尾（章尾 beat）：结局判定读它的 beatFlag 已置而非硬编码锚点齐（数据驱动·D-2 改动③）。 */
+    chainTail?: boolean;
+    /**
+     * 留白结局重访（St2·迁自旧 chart_pois 锚点 story.revisit*·剧情 SPEC §4.1）：beat **已完成**后再次入潜——
+     * 若已置 revisitRequiresFlag 且未置 revisitDoneFlag——强制开场 revisitEventId（dive-start 镜像旧锚点重访块·读 flag 不写）。
+     * 一章仅 vent beat 用：圆满后持破损饰品（charm_found·⟺ fulfilled-first）重访 → 留白结局（ending_blank）。缺省 ⇒ 无重访。
+     */
+    revisitEventId?: string;
+    revisitRequiresFlag?: string;
+    revisitDoneFlag?: string;
+  };
+  /**
    * 多口持久洞入口绑定（多口持久洞 SPEC §2.3）：设了 ⇒ 本 POI 是某持久洞的一个**入口**。
    * 下潜走持久洞路径（load-or-generate caveMaps[caveId]·起手 = 解析出的入口节点），而非 zone/band 每潜重生路径。
    * **解耦/数据驱动**：别处再开一个口 = 加一条带 caveEntry 的 POI 绑到现成入口门户，不重生、不改码。

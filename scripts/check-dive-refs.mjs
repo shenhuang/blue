@@ -151,14 +151,23 @@ for (const f of readdirSync(EVENTS_DIR).filter((n) => n.endsWith('.json'))) {
   walkAdvance(ev, `events/${f}`);
 }
 
-// (k) 道具「文献坐标」marksPois 必指向在册 authored POI（#140 续·文献坐标功能·防 typo 静默成「不在你的海图上」）。
+// (k) 道具「文献坐标」marksPois 必指向**有效海图点**（#140 续·文献坐标功能·防 typo 静默成「不在你的海图上」）：
+//   ① 在册 authored POI（chart_pois.json anchors/roamingTemplates·原条件）；或
+//   ② 派生「主线柱 story 潜点」id（poi.dive.<短名>.story·columnStoryDivePoiId）——主线 beat 迁至柱 storyTier 后
+//      不再是 authored 锚点，但导师日志（mentor_logbook.marksPois）恢复带这四条坐标＝「日志已知坐标」机制（#117 续·
+//      2026-06-28 内容自洽回归）。两者皆 buildColumnPois/generateChart 注入海图的稳定 id；其余（真 typo）仍红。
 const authoredPoiIds = new Set(authoredPois.map((p) => p.id).filter(Boolean));
+// ② 派生主线柱 story 潜点 id 集（与 engine/columns.ts::columnStoryDivePoiId 同构·单一命名约定）。
+const columnStoryPoiIds = new Set(
+  columns.filter((c) => c.storyTier).map((c) => `poi.dive.${short(c.id)}.story`),
+);
+const validMarksPoiIds = new Set([...authoredPoiIds, ...columnStoryPoiIds]);
 const itemsFile = readJson('items.json');
 for (const it of itemsFile.items ?? []) {
   for (const pid of it.story?.marksPois ?? []) {
-    if (!authoredPoiIds.has(pid)) {
+    if (!validMarksPoiIds.has(pid)) {
       errors.push(
-        `[marksPois] 道具 ${it.id}：marksPois ${pid} 不是在册 authored POI（chart_pois.json anchors）`,
+        `[marksPois] 道具 ${it.id}：marksPois ${pid} 既不是在册 authored POI（chart_pois.json）、也不是派生主线柱 story 潜点（poi.dive.<短名>.story）`,
       );
     }
   }
