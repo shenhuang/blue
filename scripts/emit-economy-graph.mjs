@@ -23,9 +23,11 @@ const reach = auditReachability(dag);
 
 const badItems = new Set();
 const badBuilds = new Set();
+const badRegions = new Set(); // F4 稀疏硬门（#239）：区域级违规·无 itemId/where·单列染红
 for (const v of [...roles.violations, ...reach.violations]) {
   if (v.itemId) badItems.add(v.itemId);
   if (v.where) badBuilds.add(v.where);
+  if (v.code === 'reach/F4-sparse' && v.region) badRegions.add(v.region);
 }
 const warnItems = new Set();
 const warnRegions = new Set();
@@ -35,7 +37,7 @@ for (const w of reach.warnings) {
   if (w.region) warnRegions.add(w.region);
 }
 
-const mmd = toMermaid(dag, { badItems, badBuilds, warnItems, warnRegions });
+const mmd = toMermaid(dag, { badItems, badBuilds, warnItems, warnRegions, badRegions });
 
 const argv = process.argv.slice(2);
 if (argv.includes('--check')) {
@@ -56,8 +58,8 @@ if (argv.includes('--check')) {
 
 if (argv.includes('--write')) {
   writeFileSync(OUT, mmd);
-  const flags = badItems.size + badBuilds.size;
-  console.log(`✓ 写出 docs/economy-dag.mmd（${dag.builds.length} 建造 · ${badItems.size + badBuilds.size ? flags + ' 硬违规染红 · ' : ''}${warnItems.size} 软警告染琥珀）`);
+  const flags = badItems.size + badBuilds.size + badRegions.size;
+  console.log(`✓ 写出 docs/economy-dag.mmd（${dag.builds.length} 建造 · ${flags ? flags + ' 硬违规染红 · ' : ''}${warnItems.size} 软警告染琥珀）`);
   process.exit(0);
 }
 

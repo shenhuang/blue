@@ -489,7 +489,7 @@ export function auditReachability(dag) {
 
   // F4 稀疏：每柱（深度柱·tier≥2 非 capstone 中/深档）真·跨区门 ≤ ${F4_CROSSREGION_LIMIT}。
   //   真·跨区＝强制旅行的料：排除 Mira 可买（港口兜底）+ capstone 模板料（station_module·F4 钦定模板）；capstone 终局档豁免。
-  //   = **软警告**：稀疏是密度/手感调（[[defer-number-tuning]]）·调好后可提升为硬门（把 push 改入 violations）。
+  //   = **硬门**（2026-06-29 #239 由软警告提升·密度 pass 已收到 ≤2·trench/midwater 现各 2）：超限即红·别再加第 3 条跨区门。
   const crossByColumn = new Map(); // region → Set(crossMatId)
   for (const b of dag.builds) {
     if (b.kind !== 'column' || !b.region || (b.tier ?? 1) < 2 || b.capstone) continue;
@@ -503,11 +503,11 @@ export function auditReachability(dag) {
   }
   for (const [region, set] of crossByColumn) {
     if (set.size > F4_CROSSREGION_LIMIT)
-      warnings.push({
+      violations.push({
         code: 'reach/F4-sparse',
         region,
         items: [...set],
-        msg: `${region} 柱中/深档真·跨区门 ${set.size} 处 > ${F4_CROSSREGION_LIMIT}（${[...set].map((s) => s.replace('item.', '')).join('、')}）——偏密·建议收到 1-2(F4 稀疏·密度调·defer)`,
+        msg: `${region} 柱中/深档真·跨区门 ${set.size} 处 > ${F4_CROSSREGION_LIMIT}（${[...set].map((s) => s.replace('item.', '')).join('、')}）——跨区门偏密·收到 ≤${F4_CROSSREGION_LIMIT}(F4 稀疏)`,
       });
   }
 
@@ -569,11 +569,11 @@ const mmId = (s) => s.replace(/[^a-zA-Z0-9_]/g, '_');
 /** 生成 Mermaid flowchart 源码；bad* = 硬违规(红)·warn* = 软警告(琥珀)。 */
 export function toMermaid(
   dag,
-  { badItems = new Set(), badBuilds = new Set(), warnItems = new Set(), warnRegions = new Set() } = {},
+  { badItems = new Set(), badBuilds = new Set(), warnItems = new Set(), warnRegions = new Set(), badRegions = new Set() } = {},
 ) {
   const L = [];
   L.push('%% 自动生成·勿手改——`node scripts/emit-economy-graph.mjs --write` 再生（见 scripts/lib/economy-dag.mjs）');
-  L.push('%% 边 = 建造 --需要--> 材料；红 = 违反 F1/F2 硬门·琥珀 = F4/F5 软警告（详情跑 npm run regress --only economy）');
+  L.push('%% 边 = 建造 --需要--> 材料；红 = 违反 F1/F2/F4 硬门·琥珀 = F5 软警告（详情跑 npm run regress --only economy）');
   L.push('flowchart LR');
   L.push('  classDef bad fill:#fdd,stroke:#c00,stroke-width:2px,color:#900;');
   L.push('  classDef warn fill:#fff3d6,stroke:#c90,stroke-width:1px,color:#850;');
@@ -599,7 +599,7 @@ export function toMermaid(
   const allRegions = [...new Set([...dag.regionOrder, ...buildsByRegion.keys(), ...matsByRegion.keys()])];
   const cls = (id) => (badItems.has(id) ? ':::bad' : warnItems.has(id) ? ':::warn' : ':::mat');
   for (const region of allRegions) {
-    const title = `${region}${warnRegions.has(region) ? ' ⚠F4' : ''}`;
+    const title = `${region}${badRegions.has(region) ? ' ✗F4' : warnRegions.has(region) ? ' ⚠F4' : ''}`;
     L.push(`  subgraph ${mmId(region)}["${title}"]`);
     for (const id of (matsByRegion.get(region) ?? []).sort()) {
       const t = dag.tierOf.get(id);

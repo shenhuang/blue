@@ -9,9 +9,9 @@
 //   ② 有获取源：每个 cost 材料 ≥1 源（事件/敌人掉落·柱 grantsItem·Mira 可买 T1/2）。
 //   F1 单调：有深度的柱档·成本材料最浅源深 ≤ 本档深度（别要求「先更深才能建浅档」）。
 //   F2 无结：(a) 区域依赖不成环（最关键·只看深度柱潜行经济）；(b) 只由 capstone 产出的料·只能被 capstone 档消费。
+//   F4 稀疏：每柱真·跨区门 ≤2（排除 Mira 可买 + capstone 模板料）——2026-06-29 #239 由软警告提升为硬门（密度 pass 已收到 ≤2）。
 //
-// 软警告（surfaced·**不红**·密度/标号是手感调·留 [[defer-number-tuning]]·调好可提升为硬门）：
-//   F4 稀疏：每柱真·跨区门 >2（排除 Mira 可买 + capstone 模板料）。
+// 软警告（surfaced·**不红**·标号是手感调·留 [[defer-number-tuning]]·调好可提升为硬门）：
 //   F5 tier≈源深：材料申报 tier 与最浅事件/产出源深档差 ≥2。
 //
 // 不在本门（别处守·免重复实现·单一真相）：
@@ -24,9 +24,9 @@ import { buildEconomyDag, auditReachability } from './lib/economy-dag.mjs';
 const dag = buildEconomyDag();
 const { violations, warnings } = auditReachability(dag);
 
-// 软警告先打（即便全过也提示·让作者看到 F4/F5 待调项）。
+// 软警告先打（即便全过也提示·让作者看到 F5 待调项）。
 if (warnings.length) {
-  console.warn(`⚠ check-economy-reachability：${warnings.length} 处软警告（F4 稀疏 / F5 tier≈源深·密度/标号调·不阻断·defer）`);
+  console.warn(`⚠ check-economy-reachability：${warnings.length} 处软警告（F5 tier≈源深·标号调·不阻断·defer）`);
   for (const w of warnings) console.warn('  · [' + w.code + '] ' + w.msg);
 }
 
@@ -35,7 +35,7 @@ if (violations.length) {
   for (const e of violations) console.error('  - [' + e.code + '] ' + e.msg);
   console.error(
     '\n  怎么办：补获取源（事件 loot / 敌人掉落 / 柱 grantsItem）·或把成本改指有源料；' +
-      '\n  F1：别让浅档要更深才产的料；F2：跨区门指向已可达浅档/掉落·非对方 capstone；区域序/归属在 scripts/lib/economy-dag.mjs。',
+      '\n  F1：别让浅档要更深才产的料；F2：跨区门指向已可达浅档/掉落·非对方 capstone；F4：单柱跨区门收到 ≤2（太密就并料/本区补源）；区域序/归属在 scripts/lib/economy-dag.mjs。',
   );
   process.exit(1);
 }
@@ -44,8 +44,8 @@ const sinkMats = new Set();
 let costN = 0;
 for (const b of dag.builds) for (const m of b.mats) (sinkMats.add(m.itemId), costN++);
 console.log(
-  `✓ check-economy-reachability：${costN} 处建造成本 · ${sinkMats.size} 种材料 · 在册有源 + F1 单调 + F2 无结` +
+  `✓ check-economy-reachability：${costN} 处建造成本 · ${sinkMats.size} 种材料 · 在册有源 + F1 单调 + F2 无结 + F4 稀疏` +
     `（源池 ${dag.sourcesByItem.size} 种·含 Mira ${dag.miraBuyable.size}）` +
-    (warnings.length ? ` · ${warnings.length} 软警告(F4/F5·defer)` : ''),
+    (warnings.length ? ` · ${warnings.length} 软警告(F5·defer)` : ''),
 );
 process.exit(0);
