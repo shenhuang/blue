@@ -115,11 +115,17 @@ tasks.push({ name: 'check-enemy-refs', cmd: ['node', join('scripts', 'check-enem
 // 深入潜点四条门（纯 node·bandId 完整 + 探深↔POI 配对 + 无孤儿 + onlyLighthouse 合法，见 scripts/check-dive-refs.mjs）
 tasks.push({ name: 'check-dive-refs', cmd: ['node', join('scripts', 'check-dive-refs.mjs')] });
 
-// 经济可达性门 v1（纯 node·建造/升级/配方 cost 材料必在册 + 有获取源〔事件/敌人掉落·柱产出·Mira 可买 T1-2〕·把「资源跟得上」钉成会红的检查·2026-06-27 D-2/E/F 护栏·见 scripts/check-economy-reachability.mjs）
+// 经济可达性门 v2（纯 node·消费 scripts/lib/economy-dag.mjs 单一真相·① 在册 ② 有源 + F1 单调 + F2 无结〔区域环/capstone 依赖〕·F4/F5 软警告·2026-06-29 E/F DAG·见 scripts/check-economy-reachability.mjs）
 tasks.push({ name: 'check-economy-reachability', cmd: ['node', join('scripts', 'check-economy-reachability.mjs')] });
+
+// 经济角色门（纯 node·消费 economy-dag·#197 角色分离〔scrap=纯建材0/coral=纯货币/早期不用 coral〕 + #198 reveal〔mentor_logbook 走 marksPois 非裸 flag〕·2026-06-29·见 scripts/check-economy-roles.mjs）
+tasks.push({ name: 'check-economy-roles', cmd: ['node', join('scripts', 'check-economy-roles.mjs')] });
 
 // 材料主题一致性门（纯 node·结构件用矿物/打捞·禁生物料当承重 + 早期不压深矿·把 E/F 组「升级账单讲得通」钉成会红的检查·2026-06-28·见 scripts/check-build-material-theming.mjs）
 tasks.push({ name: 'check-build-material-theming', cmd: ['node', join('scripts', 'check-build-material-theming.mjs')] });
+
+// 经济 DAG 图漂移门（纯 node·docs/economy-dag.mmd 须与数据同源·脱节即红→`emit-economy-graph.mjs --write` 再生·2026-06-29·见 scripts/emit-economy-graph.mjs）
+tasks.push({ name: 'check-economy-graph', cmd: ['node', join('scripts', 'emit-economy-graph.mjs'), '--check'] });
 
 // 主线可达性门（纯 node·前哨解锁链无环/无死结 + columnStory 主线 beat host/引用/跨柱 item 门可达·把「起点→章尾可达」钉成会红的检查·2026-06-27 D-2 M 组·见 scripts/check-mainline-reachable.mjs）
 tasks.push({ name: 'check-mainline-reachable', cmd: ['node', join('scripts', 'check-mainline-reachable.mjs')] });

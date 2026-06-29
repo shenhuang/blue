@@ -1,163 +1,51 @@
 #!/usr/bin/env node
-// 经济可达性门 v1（2026-06-27·机制先行·D-2/E/F 组的护栏·见 docs/playtest-findings.md）——
-// 把「建造要的材料必须拿得到」钉成 `npm run regress` 里会失败的检查。纯读 JSON·无 TS 依赖·进程隔离友好。
+// 经济可达性门 v2（2026-06-27 v1 → 2026-06-29 v2 DAG·机制先行·见 docs/playtest-findings.md F 组）——
+// 把「建造要的材料拿得到 + 不绕成结」钉成 `npm run regress` 里会失败的检查。
+// 消费单一真相 scripts/lib/economy-dag.mjs::buildEconomyDag()（区域/深度归属在那里·别另搞一份）。
+// 纯读 JSON·无 TS 依赖·进程隔离/沙箱友好。
 //
-// v1 两条硬门（**纯结构·不查数值大小** → 兼容 defer-number-tuning）：
-//   ① 引用存在：所有建造/升级/配方 cost.materials 的 itemId 必在 items.json 在册。
-//   ② 有获取源：每个 cost 材料 ≥1 获取源——事件/敌人掉落 · 深度柱 grantsItem 产出 · Mira 可买（material 且 tier∈{1,2}）。
+// 硬门（**纯结构·不查产率/数量大小** → 兼容 defer-number-tuning·绿在 main·会因真回归变红）：
+//   ① 引用存在：所有建造 cost.materials itemId 必在 items.json 在册。
+//   ② 有获取源：每个 cost 材料 ≥1 源（事件/敌人掉落·柱 grantsItem·Mira 可买 T1/2）。
+//   F1 单调：有深度的柱档·成本材料最浅源深 ≤ 本档深度（别要求「先更深才能建浅档」）。
+//   F2 无结：(a) 区域依赖不成环（最关键·只看深度柱潜行经济）；(b) 只由 capstone 产出的料·只能被 capstone 档消费。
 //
-// 不查（留 v2 DAG·待 E/F「材料→tier→各柱档」映射表·docs/playtest-findings.md F 组）：
-//   · 数量/产率是否够（数值·defer）；· 区域解锁顺序（X 区建造要的料须在 X 或更早区可得）。
+// 软警告（surfaced·**不红**·密度/标号是手感调·留 [[defer-number-tuning]]·调好可提升为硬门）：
+//   F4 稀疏：每柱真·跨区门 >2（排除 Mira 可买 + capstone 模板料）。
+//   F5 tier≈源深：材料申报 tier 与最浅事件/产出源深档差 ≥2。
 //
-// 源收集刻意「宽」（新门零误报优先·仿 check-data-schema 保守原则）：events/enemies 里出现的任何 itemId
-// 都算可获得。故 v1 只会因「某材料在全游戏任何掉落表/产出/商店都不出现」而红＝真·死材料（item.spare_tank 那类）。
-// sink/源 shape 见 check-dive-refs.mjs / items.json / upgrades.json / lighthouse_upgrades.json / depth_columns.json。
-// Mira 规则镜像 src/engine/port.ts::isBuyableFromMira（material 且 tier 在 SHOP_STOCK_BY_TIER={1,2}）。
+// 不在本门（别处守·免重复实现·单一真相）：
+//   F6 bio=光（结构件用矿·别拿生物料当承重）→ check-build-material-theming（Rule A）。
+//   #197 角色分离 / #198 reveal → check-economy-roles。
 //
-// 退出码：全过=0，任一断裂=1。
+// 退出码：硬门任一断裂=1；全过（含仅有软警告）=0。
+import { buildEconomyDag, auditReachability } from './lib/economy-dag.mjs';
 
-import { readFileSync, readdirSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+const dag = buildEconomyDag();
+const { violations, warnings } = auditReachability(dag);
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(HERE, '..');
-const DATA = join(ROOT, 'src', 'data');
-const readJson = (p) => JSON.parse(readFileSync(join(DATA, p), 'utf8'));
-
-const itemsFile = readJson('items.json');
-const upgradesFile = readJson('upgrades.json');
-const lhFile = readJson('lighthouse_upgrades.json');
-const columnsFile = readJson('depth_columns.json');
-
-const items = itemsFile.items ?? [];
-const universe = new Set(items.map((it) => it.id)); // 在册道具全集
-
-// ── 源收集（宽·避免新门误报）──────────────────────────────────────
-const sources = new Set();
-
-/** 递归收集任意 itemId 字符串（用于 events/enemies·它们里出现的 itemId 都是「可获得」）。 */
-function collectItemIds(node, out) {
-  if (!node || typeof node !== 'object') return;
-  if (Array.isArray(node)) {
-    for (const x of node) collectItemIds(x, out);
-    return;
-  }
-  for (const [k, v] of Object.entries(node)) {
-    if (k === 'itemId' && typeof v === 'string') out.add(v);
-    else collectItemIds(v, out);
-  }
+// 软警告先打（即便全过也提示·让作者看到 F4/F5 待调项）。
+if (warnings.length) {
+  console.warn(`⚠ check-economy-reachability：${warnings.length} 处软警告（F4 稀疏 / F5 tier≈源深·密度/标号调·不阻断·defer）`);
+  for (const w of warnings) console.warn('  · [' + w.code + '] ' + w.msg);
 }
 
-for (const sub of ['events', 'enemies']) {
-  const dir = join(DATA, sub);
-  let files = [];
-  try {
-    files = readdirSync(dir).filter((f) => f.endsWith('.json'));
-  } catch {
-    files = []; // 目录缺 → 跳过（非常规环境不破）
-  }
-  for (const f of files) {
-    let parsed;
-    try {
-      parsed = JSON.parse(readFileSync(join(dir, f), 'utf8'));
-    } catch {
-      continue; // 坏 JSON 由 check-data-schema 报·这里跳过
-    }
-    collectItemIds(parsed, sources);
-  }
-}
-
-// 深度柱产出（仅 grantsItem·**不**收 cost.materials，否则会把 sink 误当 source）。
-for (const c of columnsFile.columns ?? []) {
-  for (const t of c.tiers ?? []) {
-    if (t.grantsItem && typeof t.grantsItem.itemId === 'string') sources.add(t.grantsItem.itemId);
-  }
-}
-
-// Mira 可买（port.ts::isBuyableFromMira）：category 'material' 且 tier∈{1,2}。
-const MIRA_TIERS = new Set([1, 2]);
-const miraBuyable = new Set();
-for (const it of items) {
-  if (it.category === 'material' && MIRA_TIERS.has(it.tier)) {
-    sources.add(it.id);
-    miraBuyable.add(it.id);
-  }
-}
-
-// ── sink 收集（带出处·用于报错定位）────────────────────────────────
-const sinks = []; // {itemId, where}
-const addMats = (mats, where) => {
-  for (const m of mats ?? []) if (m && typeof m.itemId === 'string') sinks.push({ itemId: m.itemId, where });
-};
-
-// items.json：装备 upgradeSteps + craftCost
-for (const it of items) {
-  const eq = it.equipment;
-  if (!eq) continue;
-  (eq.upgradeSteps ?? []).forEach((s, i) => addMats(s.materials, `items.json ${it.id} upgradeStep#${i + 1}`));
-  if (eq.craftCost) addMats(eq.craftCost.materials, `items.json ${it.id} craftCost`);
-}
-// upgrades.json：lines[].upgrades[].cost
-for (const ln of upgradesFile.lines ?? []) {
-  for (const u of ln.upgrades ?? []) addMats(u.cost?.materials, `upgrades.json ${u.id}`);
-}
-// lighthouse_upgrades.json：outposts stages + ruins + tracks upgrades
-for (const o of lhFile.outposts ?? []) {
-  (o.stages ?? []).forEach((s, i) => addMats(s.cost?.materials, `lighthouse_upgrades ${o.id} stage#${i + 1}`));
-}
-for (const r of lhFile.ruins ?? []) addMats(r.cost?.materials, `lighthouse_upgrades ruin ${r.result?.id ?? r.id ?? '?'}`);
-for (const tr of lhFile.tracks ?? []) {
-  for (const u of tr.upgrades ?? []) addMats(u.cost?.materials, `lighthouse_upgrades ${u.id}`);
-}
-// depth_columns.json：tiers[].cost
-for (const c of columnsFile.columns ?? []) {
-  (c.tiers ?? []).forEach((t) => addMats(t.cost?.materials, `depth_columns ${c.id} t${t.tier}`));
-}
-
-// ── 判定 ───────────────────────────────────────────────────────────
-const errors = [];
-
-// ① 引用存在
-const missingDef = new Map(); // itemId → where[]
-for (const s of sinks) {
-  if (!universe.has(s.itemId)) {
-    if (!missingDef.has(s.itemId)) missingDef.set(s.itemId, []);
-    missingDef.get(s.itemId).push(s.where);
-  }
-}
-// ② 有获取源
-const noSource = new Map(); // itemId → where[]
-for (const s of sinks) {
-  if (universe.has(s.itemId) && !sources.has(s.itemId)) {
-    if (!noSource.has(s.itemId)) noSource.set(s.itemId, []);
-    noSource.get(s.itemId).push(s.where);
-  }
-}
-
-for (const [id, wheres] of missingDef) {
-  errors.push(`[missing-item] 成本材料 ${id} 不在 items.json 在册 — 被引用于：${[...new Set(wheres)].join('；')}`);
-}
-for (const [id, wheres] of noSource) {
-  errors.push(
-    `[no-source] 成本材料 ${id} 无任何获取源（事件/敌人掉落 · 深度柱产出 · Mira 可买 T1-2 均无）— 被引用于：${[...new Set(wheres)].join('；')}`,
-  );
-}
-
-// ── 汇报 ───────────────────────────────────────────────────────────
-if (errors.length) {
-  console.error(`✗ check-economy-reachability：${errors.length} 处供需断裂`);
-  for (const e of errors) console.error('  - ' + e);
+if (violations.length) {
+  console.error(`✗ check-economy-reachability：${violations.length} 处供需/DAG 断裂`);
+  for (const e of violations) console.error('  - [' + e.code + '] ' + e.msg);
   console.error(
-    '\n  怎么办：给该材料补一个获取源（事件 loot / 敌人掉落 / 深度柱 grantsItem），或把成本改指向有源的材料；' +
-      '\n  T1/T2 材料可经 Mira 回购自动算源（port.ts）。区域顺序/产率不在本门（v2 DAG·见 findings.md F 组）。',
+    '\n  怎么办：补获取源（事件 loot / 敌人掉落 / 柱 grantsItem）·或把成本改指有源料；' +
+      '\n  F1：别让浅档要更深才产的料；F2：跨区门指向已可达浅档/掉落·非对方 capstone；区域序/归属在 scripts/lib/economy-dag.mjs。',
   );
   process.exit(1);
 }
 
-const distinctSinkMats = new Set(sinks.map((s) => s.itemId));
+const sinkMats = new Set();
+let costN = 0;
+for (const b of dag.builds) for (const m of b.mats) (sinkMats.add(m.itemId), costN++);
 console.log(
-  `✓ check-economy-reachability：${sinks.length} 处建造/升级成本 · ${distinctSinkMats.size} 种材料 · ` +
-    `全部在册且有获取源（源池 ${sources.size} 种 · 含 Mira 可买 ${miraBuyable.size} 种）`,
+  `✓ check-economy-reachability：${costN} 处建造成本 · ${sinkMats.size} 种材料 · 在册有源 + F1 单调 + F2 无结` +
+    `（源池 ${dag.sourcesByItem.size} 种·含 Mira ${dag.miraBuyable.size}）` +
+    (warnings.length ? ` · ${warnings.length} 软警告(F4/F5·defer)` : ''),
 );
 process.exit(0);
