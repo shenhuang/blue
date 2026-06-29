@@ -6,6 +6,7 @@
 // 反馈动画：cellKey 随数量变化 → 元素重挂载 → 重放 .item-grid.live 的 item-pop（购买「确实进来了」的跳动）。
 
 import type { ItemDef } from '@/types';
+import { ItemIcon } from './itemIcons';
 
 export function ItemCell({
   def,
@@ -34,7 +35,9 @@ export function ItemCell({
 }) {
   const inner = (
     <>
-      <span className="item-cell-icon" data-cat={def?.category ?? 'unknown'} aria-hidden="true" />
+      <span className="item-cell-icon" data-cat={def?.category ?? 'unknown'} aria-hidden="true">
+        <ItemIcon id={itemId} def={def} />
+      </span>
       <span className="item-cell-name">{def?.name ?? itemId}</span>
       {qty !== undefined && qty > 1 && <span className="item-cell-qty">×{qty}</span>}
       {note && <span className="item-cell-note">{note}</span>}

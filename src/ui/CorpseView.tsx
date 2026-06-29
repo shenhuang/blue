@@ -6,6 +6,7 @@ import { appendLog, totalRunInventoryWeight } from '@/engine/state';
 import { getItemDef } from '@/engine/items';
 import { renderDiverName, D_REVEAL_FLAG } from './diverName';
 import { DiveHeader } from './DiveHeader';
+import { ItemIcon } from './itemIcons';
 
 function decayLabel(tier: DecayTier | undefined): { text: string; tone: string } {
   switch (tier) {
@@ -153,6 +154,7 @@ function CorpseItemRow({
     <li>
       <label className={`corpse-item ${selected ? 'selected' : ''}`}>
         <input type="checkbox" checked={selected} onChange={onToggle} />
+        <ItemIcon id={item.itemId} def={def} />
         <span className="corpse-item-name">{def?.name ?? item.itemId}</span>
         <span className="corpse-item-qty">×{item.qty}</span>
         <span className={`decay-tag decay-${label.tone}`}>{label.text}</span>

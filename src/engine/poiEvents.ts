@@ -305,3 +305,22 @@ export function derivePoiDivePool(key: string): PoiDivePool {
   _poolCache.set(key, result);
   return result;
 }
+
+/**
+ * 「下潜进此 POI 可能触发的全部事件」id 并集 = 随机池 ∪ 开场(open) ∪ 故事变体(story) ∪ poiId 专属钩子(scoped)。
+ * derivePoiDivePool 为「编辑器不重复列钩子」把 open/story/scoped 从随机池减掉了；本函数把它们并回——
+ * 单一真相仍是 buildEventPool 路由 + openOf/storyOpenEvents/scopedIndex 各源，不在此重写匹配。
+ * 用途：港口海图潜点信息「可能收获」材料派生（engine/poiMaterials.ts）——need 全部 loot 源，
+ * 否则只刷 openEventPool 的农点（如 reef_shark_shoals）会漏掉招牌产出。anchor 用 id、roaming 用 templateId 当 key。
+ */
+export function poiAllEventIds(key: string): string[] {
+  const pool = derivePoiDivePool(key);
+  const raw = rawByKey().get(key)?.raw;
+  const ids = new Set<string>(pool.randomIds);
+  if (raw) {
+    for (const id of openOf(raw)) ids.add(id);
+    for (const id of raw.storyOpenEvents ?? []) ids.add(id);
+  }
+  for (const id of scopedIndexCached().get(key) ?? []) ids.add(id);
+  return [...ids].sort((a, b) => a.localeCompare(b));
+}

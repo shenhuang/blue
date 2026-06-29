@@ -22,6 +22,7 @@ import {
 import { UpgradeCostView } from './UpgradeCost';
 import { UpgradeEffectDelta, emptyEffectSet, type EffectSet } from './UpgradeEffectDelta';
 import { PanelShell } from './PanelShell';
+import { ItemIcon } from './itemIcons';
 import { DEV_TOOLS } from './devMode';
 
 // 装备纸娃娃（物品栏与装备 SPEC §4·作者 2026-06-19 模板·2026-06-20 换装+独立框重构）：中间人像（占位·之后放图），
@@ -158,6 +159,7 @@ export function EquipmentDoll({
         title={onSlotClick && inst ? `${def?.name ?? inst.itemId}（点击卸下）` : undefined}
         onClick={handleClick}
       >
+        {inst && <ItemIcon id={inst.itemId} def={def} />}
         <span className="equip-slot-name">{SLOT_LABEL[slot]}</span>
         <span className="equip-slot-item">
           {inst ? `${def?.name ?? inst.itemId}` : locked ? '升级解锁' : '空'}

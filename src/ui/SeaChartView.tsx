@@ -7,6 +7,8 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import type { GameState, ChartPoi, InventoryItem, ChartConditions } from '@/types';
 import { generateChart, poiLockReason, poiBlockReason, isPoiDepartable, describeModifier, describeCaveShape } from '@/engine/chart';
 import { startDiveFromPoi, carryWeightLimitFor } from '@/engine/dive';
+import { poiHarvestMaterials } from '@/engine/poiMaterials';
+import { MaterialIcon } from './materialIcons';
 import { toPort } from '@/engine/transitions';
 import {
   getHomeLighthouse,
@@ -725,6 +727,9 @@ export function ChartInfo({
   const zone = getZone(poi.zoneId);
   const mods = describeModifier(poi.modifier);
   const caveShape = describeCaveShape(poi);
+  // 「可能收获」材料（无剧透·只列 category==='material'·见 engine/poiMaterials.ts）。
+  // roaming 实例 id 每次变 → 用稳定 templateId 当 key（anchor 无 templateId ⇒ 退回 id）。
+  const harvest = useMemo(() => poiHarvestMaterials(poi.templateId ?? poi.id), [poi.templateId, poi.id]);
   const corpses = canSelectTarget ? listRecoverableCorpses(state.profile.deaths, poi.zoneId) : [];
   // 负重过载（武器系统·作者 2026-06-20）：全 POI 统一拦——过载无法出发（与战斗全行动封锁同源 isOverloaded）。
   // 引擎 startDiveFromPoi 亦有同判据兜底（防御性双保险）。起手装＝轻·不受影响。
@@ -889,6 +894,24 @@ export function ChartInfo({
       </div>
 
       <p className="chart-info-blurb">{poi.blurb}</p>
+
+      {harvest.length > 0 && (
+        <div className="chart-harvest">
+          <div className="chart-harvest-label">可能收获</div>
+          <div className="chart-harvest-chips">
+            {harvest.map((m) => (
+              <span
+                key={m.id}
+                className={`harvest-chip mat-${m.role ?? 'none'}`}
+                aria-label={m.name}
+              >
+                <MaterialIcon id={m.id} role={m.role} />
+                <span className="tip">{m.name}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {poi.mimic && (
         <p className="chart-info-tell uncanny">

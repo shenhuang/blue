@@ -917,6 +917,8 @@ html, body, #root {
   font-size: 13px;
   color: var(--text-muted);
 }
+/* 打捞清单行内占位图标（ui/itemIcons.tsx·2026-06-28）：勾选框与名字之间·小号。 */
+.corpse-item .item-icon { width: 20px; height: 20px; flex: 0 0 auto; }
 
 .decay-tag {
   font-size: 11px;
@@ -2237,6 +2239,95 @@ html, body, #root {
   border-color: var(--cyan);
 }
 
+/* 潜点「可能收获」材料图标（彩色分类·作者 2026-06-28 选定「A」）。
+   颜色 = 材料 role（单一来源 items.json·见 engine/poiMaterials.ts）；图标占位线稿在 ui/materialIcons.tsx。
+   只列 category=material（无剧透）；tooltip 仅 hover 出名（镜像 .chart-poi-name 的暗底名牌）。 */
+.chart-harvest {
+  margin: 2px 0 12px;
+}
+.chart-harvest-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  margin: 0 0 7px;
+}
+.chart-harvest-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.harvest-chip {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #2a3a58;
+  color: var(--text-muted);
+  cursor: default;
+  transition: box-shadow 0.12s;
+}
+.harvest-chip .item-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+.harvest-chip.mat-organic {
+  color: var(--green);
+  border-color: rgba(108, 210, 150, 0.5);
+  background: rgba(108, 210, 150, 0.09);
+}
+.harvest-chip.mat-structural {
+  color: #7fa8c9;
+  border-color: rgba(127, 168, 201, 0.5);
+  background: rgba(127, 168, 201, 0.09);
+}
+.harvest-chip.mat-optic {
+  color: var(--violet);
+  border-color: rgba(184, 141, 255, 0.5);
+  background: rgba(184, 141, 255, 0.09);
+}
+.harvest-chip.mat-special {
+  color: var(--yellow);
+  border-color: rgba(243, 210, 100, 0.5);
+  background: rgba(243, 210, 100, 0.09);
+}
+.harvest-chip:hover {
+  box-shadow: 0 0 0 1px currentColor;
+}
+.harvest-chip .tip {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: rgba(6, 12, 18, 0.97);
+  color: var(--text);
+  border: 1px solid #2a3a58;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+  z-index: 6;
+}
+.harvest-chip .tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #2a3a58;
+}
+.harvest-chip:hover .tip {
+  opacity: 1;
+}
+
 /* 打捞行会 Lv.2：出海前选目标尸体 */
 .chart-poi-target {
   display: flex;
@@ -2325,6 +2416,24 @@ html, body, #root {
   position: absolute;
   inset: 0;
   background: rgba(255, 255, 255, 0.03);
+}
+
+/* 占位图标居中陈列（ui/itemIcons.tsx·2026-06-28）：glyph 居中、抬到底部名条之上；
+   .item-art 是将来高清大图的挂载点（现无·见 itemIcons.tsx 文件头）。 */
+.item-cell .item-cell-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 18px;
+}
+.item-cell .item-cell-icon .item-icon {
+  width: 42px;
+  height: 42px;
+}
+.item-cell .item-cell-icon .item-art {
+  max-width: 64px;
+  max-height: 56px;
+  object-fit: contain;
 }
 
 /* 名字＝压在格子底部的半透明条·居中（作者 2026-06-19）·盖在图标上仍可读。 */
@@ -2568,6 +2677,8 @@ html, body, #root {
   white-space: nowrap;
 }
 .equip-slot-lv { font-size: 0.62rem; opacity: 0.6; font-variant-numeric: tabular-nums; }
+/* 装备槽占位图标（ui/itemIcons.tsx·2026-06-28）：72px 槽内 22px·压在槽名上方·只装备态有。 */
+.equip-slot .item-icon { width: 22px; height: 22px; }
 /* 选中槽的详情 + Otto 改装（纸娃娃下方·inline）。 */
 .equip-detail {
   border-top: 1px solid var(--border);
