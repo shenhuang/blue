@@ -190,7 +190,6 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
     currentSweepImmune: false,
     roomFeatureChanceBonus: 0,
     unlockedZones: new Set(),
-    unlockedShopItems: new Set(),
   };
 
   for (const id of profile.unlockedUpgrades) {
@@ -228,9 +227,6 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
           break;
         case 'unlockZone':
           bonuses.unlockedZones.add(e.zoneId);
-          break;
-        case 'unlockShopItem':
-          bonuses.unlockedShopItems.add(e.itemId);
           break;
       }
     }

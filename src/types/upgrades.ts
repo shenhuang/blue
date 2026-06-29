@@ -19,8 +19,9 @@ export type UpgradeEffect =
   //   声呐迁成 Otto 打造的装备件（EquipmentEffect 同名数值 kind·types/items.ts）；灯/规避效果回基线，可日后做成
   //   灯/服档位件用 EquipmentEffect base effects 加回（deriveSensorTuning 旋钮仍在·clarity.ts::SensorUpgradeBonus）。
   // 声呐与房间 §6/§8.3 续：大房间（多事件房间）出现率 +value（salvage_guild lv4·仍为全局升级线·band maxRoomFeatures 仍是天花板），有上限。
-  | { kind: 'roomFeatureChanceBonus'; value: number }
-  | { kind: 'unlockShopItem'; itemId: string };
+  // unlockShopItem 已删（2026-06-29·#242）：该 effect 从未接消费方——unlockedShopItems 只被 add、无人读（死通路）。
+  // 唯一用例「气瓶库 Lv.1·解锁备用气瓶购买」双重失效（且 item.spare_tank 未定义）→ 连同 effect/派生字段一并删（见 CHANGELOG #242）。
+  | { kind: 'roomFeatureChanceBonus'; value: number };
 
 /** 一条升级要求的某种材料及数量（qty 量级 ∈ [1,10]） */
 export interface MaterialCost {
@@ -77,5 +78,4 @@ export interface UpgradeBonuses {
   /** 大房间（多事件房间）出现率加成（声呐与房间 §6/§8.3 续；salvage_guild lv4·有上限 ROOM_FEATURE_CHANCE_MAX·band cap 仍是天花板）。 */
   roomFeatureChanceBonus: number;
   unlockedZones: Set<string>;
-  unlockedShopItems: Set<string>;
 }

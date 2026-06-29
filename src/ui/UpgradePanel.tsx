@@ -209,9 +209,6 @@ function upgradeEffectSet(effects: UpgradeEffect[]): EffectSet {
       case 'unlockZone':
         unlocks.push(`解锁海域：${zoneLabel(e.zoneId)}`);
         break;
-      case 'unlockShopItem':
-        unlocks.push(`解锁商店：${itemLabel(e.itemId)}`);
-        break;
       case 'revealCorpseHint':
         if (e.value) unlocks.push('海图标记尸体');
         break;
@@ -232,15 +229,6 @@ function zoneLabel(id: string): string {
       return '东礁';
     case 'zone.old_lighthouse_reef':
       return '旧灯塔礁';
-    default:
-      return id;
-  }
-}
-
-function itemLabel(id: string): string {
-  switch (id) {
-    case 'item.spare_tank':
-      return '备用气瓶';
     default:
       return id;
   }

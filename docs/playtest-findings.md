@@ -188,7 +188,7 @@
 
 整体**很干净**——没有悬空的 item/combat/event 引用、事件选项无「没接好」的、技能检定 DC 无不可能项。唯一真问题：
 
-- 🟢 **P2-4　`item.spare_tank` 未定义**：`upgrades.json` 气瓶库 Lv1 `unlockShopItem: item.spare_tank`，但 items.json 里没有这个物品 → 建完第一个氧升级，「解锁备用气瓶购买」是死的。补一个 spare_tank 消耗品定义即可（正好接 P2-2 潜中回氧件）。
+- ✅ **P2-4　`item.spare_tank` 未定义 — 已解决（#242·R 删死约定）**：起底＝双重失效——`upgrades.json` 气瓶库 Lv1 effect `unlockShopItem: item.spare_tank` 既引用未定义物品，且 `unlockShopItem` 机制**全仓无消费方**（itemId 只 `add` 进 `bonuses.unlockedShopItems` Set·Mira 货架走 `port.ts::SHOP_STOCK_*` 显式表·不读它）＝死通路。**作者拍 R**（删死约定·非 W 接线做实）：删该 effect + 描述去「解锁备用气瓶购买」+ 连同死的 `unlockShopItem` 通路一并删（types/engine/ui）；**不**补 spare_tank——「潜中回氧件」＝P2-2，有平衡分量，留作者将来 design 的新道具，不是 spare_tank。新 `scripts/check-upgrade-refs.mjs` 门把「升级引用悬空」整类钉成 regress 红（补 `check-data-schema` 不跨文件核引用的缺口）。
 
 扫描澄清（非 bug）：① lore 条目**内联定义在各 event 文件里**——「~90 条悬空 lore」是误报；② 47 条「未接好选项」全是对话/区域 schema——事件文件里真·未接好选项 = 0；③ DC：体力 12–50、理智 14–80、氧 30——满状态都 ≥35% 可过。
 

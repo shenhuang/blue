@@ -153,13 +153,9 @@
             {
               "kind": "oxygenMaxBonus",
               "value": 10
-            },
-            {
-              "kind": "unlockShopItem",
-              "itemId": "item.spare_tank"
             }
           ],
-          "description": "氧气上限 +10 回合。解锁备用气瓶购买。"
+          "description": "氧气上限 +10 回合。"
         }
       ]
     }

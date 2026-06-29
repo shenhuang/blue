@@ -174,7 +174,7 @@ state = {
 state = purchaseUpgrade(state, tankLv1);
 assert(state.profile.unlockedUpgrades.has(tankLv1), '气瓶库 lv1 应入账（材料 shark×4+lobster×4 +25金）');
 const bonuses = getUpgradeBonuses(state.profile);
-log.push(`global bonuses = ${JSON.stringify({ ...bonuses, unlockedZones: [...bonuses.unlockedZones], unlockedShopItems: [...bonuses.unlockedShopItems] })}`);
+log.push(`global bonuses = ${JSON.stringify({ ...bonuses, unlockedZones: [...bonuses.unlockedZones] })}`);
 assert(bonuses.oxygenMaxBonus === 10, '气瓶库 lv1 给 +10 氧气');
 assert(bonuses.preservationBonus === 2, '打捞行会 lv1 给保鲜 +2');
 assert(bonuses.revealCorpseHint === true, '打捞行会 lv1 给 corpse hint');
