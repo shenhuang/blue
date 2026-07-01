@@ -1,8 +1,18 @@
 # 深海回响 · 藏宝 / 贸易 / 通用 NPC 信任系统 SPEC（v0 草案）
 
-> 2026-07-01 · #243（Cowork 交互·Opus）· **设计中·Phase 1 机制层已落 #243·Phase 2+ 未实装**。
+> 2026-07-01 · #243/#244（Cowork 交互·Opus）· **Phase 1（通用信任机制）+ Phase 2（特殊商人 Silas MVP）已落·Phase 3（藏宝图+来源）/Phase 4（Aldo/Mira/Otto retrofit）未实装**。
 > 触点/复用点已由两路 Explore 核实 against 当前代码（见 §9）。**数值全 `defer-number-tuning`·本档只钉机制与结构。**
-> 状态：草案待作者过架构。标 〔提案〕 的是我按项目模式给的默认、可红线改。
+> Phase 2 落地记录（#244）：特殊商人 npc.silas（探险家镜像·3 档信任 [10,30,60]）+ 深潮币 `item.deep_token`
+> （**category 'currency'**·非 §4 原提案的 'other'——codebase 已有专用 'currency' 分类且 UI 配色现成，Silas
+> 这单是它第一个真实消费者，比套用 'other' 更贴）+ Silas 货架（`engine/port.ts::SPECIAL_MERCHANT_STOCK`·
+> token+minTrustTier 双门控·卖 6 个 T3/T4 深料，呼应 §7「深料经 token 可达」）+ 交头点（3 个 midwater
+> roamingTemplates，非 anchors——**check-lunar-reach 只许 roaming 带 lunarWindow**，§6.2 原提案没预见这条硬门，
+> 现改用 roaming+`intelFlag` 入 `requiresFlags`〔`intel.mira.silas`〕做「情报是入场券」）+ Mira 新对话分支
+> 给情报（`mira.tip_silas`）+ 港口在场门（`engine/port.ts::isSpecialMerchantInPort`＝met flag + 相位窗，
+> UI 侧新增·非 SPEC 原文）。**未做**：月相补货曲线（§4·仍走回港补满）、Silas 涨信任的②③④⑦⑧来源
+> （只做①交易额）、藏宝图本体（Phase 3）。回归：`scripts/playthrough-trust.ts`（新）覆盖交头点揭示三态 /
+> 港口在场门 / 交易门控 / 信任跨档。见 CHANGELOG #244。
+> 状态：Phase 2 MVP 待作者验收细节（人设文案/货架选品/数值）；Phase 3+ 待作者拍架构。标 〔提案〕 的是我按项目模式给的默认、可红线改。
 > 未提交（沙箱无凭证·commit 待 Mac/nightly）·集成时再从 STATUS/索引挂导航链。
 
 ---

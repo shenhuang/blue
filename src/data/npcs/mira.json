@@ -51,6 +51,18 @@
           }
         },
         {
+          "id": "silas_tip",
+          "label": "有人说这附近还有旁的买家？",
+          "next": "mira.tip_silas",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "story.ch1.anchor.midwater" },
+              { "kind": "notHasFlag", "flag": "flag.mira.tip_silas_seen" }
+            ]
+          }
+        },
+        {
           "id": "chat",
           "label": "今天行情怎么样？",
           "next": "mira.banter"
@@ -64,6 +76,21 @@
     }
   },
   "dialogs": {
+    "mira.tip_silas": {
+      "id": "mira.tip_silas",
+      "text": "Mira 没马上答话，先把秤砣压好。\n\n「有一个。不常在，跟着潮走——这个月相来，下个月相说不定又换了地方。他只认深潮币，别的一概不收。」\n\n她顿了顿：「我这儿偶尔进一点深潮币，价不便宜。他货架上摆的东西，我这儿没有。」\n\n她没再多说，转头继续记账——好像已经说得比平时多了。",
+      "onEnter": [
+        { "kind": "setFlag", "flag": "flag.mira.tip_silas_seen" },
+        { "kind": "setFlag", "flag": "intel.mira.silas" }
+      ],
+      "choices": [
+        {
+          "id": "back_silas_tip",
+          "label": "（记下了）",
+          "next": "end"
+        }
+      ]
+    },
     "mira.sell_light": {
       "id": "mira.sell_light",
       "text": "「那你是下去没开灯？」\n\nMira 没等你回答，从货架底层抽出一盏黄铜外壳的探照灯，往柜台上一放。\n\n「老式的，但水下没有这东西摸不了路。四十金，随你。」\n\n她又去记账，没再看你。「当然你乐意摸黑，那是你的事。」",

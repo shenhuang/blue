@@ -22,6 +22,8 @@ import { PortView } from './PortView';
 import { PortEventView } from './PortEventView';
 import { SeaChartView } from './SeaChartView';
 import { MiraShopView } from './MiraShopView';
+import { SpecialMerchantShopView } from './SpecialMerchantShopView';
+import { SPECIAL_MERCHANT_SHOP_ID } from '@/engine/port';
 import { UpgradePanel } from './UpgradePanel';
 import { LockerView } from './LockerView';
 import { OttoUpgradeView } from './EquipmentDoll';
@@ -91,7 +93,13 @@ export function PortLayout({ state, onStateChange }: Props) {
     rightPane === 'chart' ? (
       <SeaChartView state={state} onStateChange={onStateChange} focusPoiId={chartFocus ?? undefined} />
     ) : rightPane === 'shop' ? (
-      <MiraShopView state={state} onStateChange={onStateChange} />
+      // shopId 分流（目前两家：Mira 的 mira.bench / Silas 的 shop.silas·SPEC §6）——缺省回退 Mira
+      // （非本二者的 shopId 不炸，回默认柜台）。
+      state.phase.kind === 'shop' && state.phase.shopId === SPECIAL_MERCHANT_SHOP_ID ? (
+        <SpecialMerchantShopView state={state} onStateChange={onStateChange} />
+      ) : (
+        <MiraShopView state={state} onStateChange={onStateChange} />
+      )
     ) : rightPane === 'locker' ? (
       <LockerView
         state={state}

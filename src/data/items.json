@@ -1282,6 +1282,16 @@
       "decay": "durable",
       "tier": 3,
       "harvestPersist": "save"
+    },
+    {
+      "id": "item.deep_token",
+      "name": "深潮币",
+      "category": "currency",
+      "rarity": "uncommon",
+      "description": "不是哪国的钱，边上刻着一圈螺旋。Mira 少量地收着，只说「有些人只认这个」。你没在市面上见过用它买东西的地方——除了那一个。",
+      "weight": 0.05,
+      "sellPrice": 20,
+      "decay": "durable"
     }
   ]
 }

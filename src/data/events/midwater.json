@@ -2577,6 +2577,97 @@
           }
         }
       ]
+    },
+    {
+      "_doc": "特殊商人 Silas 交头点专属（藏宝贸易与信任系统 SPEC §6.2·Phase 2 MVP）：poiId 精确钉住 3 个候选浮标模板之一（每相位一个·chart_pois.json roamingTemplates），zoneTags 空+高权重＝不漏进普通中层池、命中该点时近乎必出。三条事件文案随相位微调开场，出口一致（都置持久 flag.silas.met·PortView 据此在港口显出他的卡片）。",
+      "id": "silas.meet_new",
+      "poiId": "roam.silas_meet_new",
+      "depthRange": [55, 85],
+      "zoneTags": [],
+      "weight": 30,
+      "title": "绳的另一头",
+      "body": "新月，水比平时更暗一层。你顺着那段绳往下，绳尽头是个人——背对着你，正把一件东西往怀里的袋子里塞，动作很稳，像是干这个很久了。\n他听见你的气泡声，头也不回：「别踢起沉积物，我数东西呢。」",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "greet",
+          "label": "游近，打个招呼",
+          "outcome": {
+            "text": "他转过身，把你从头到脚看了一遍——不是看人，是看你身上挂着什么。「找到什么了？还是来看看我这儿有什么。」\n你记下这张脸，往后回港，柜台那边应该也能找到他。",
+            "oxygenTurnCost": 1,
+            "setProfileFlags": ["flag.silas.met"]
+          }
+        },
+        {
+          "id": "watch_first",
+          "label": "先不出声，看他在忙什么",
+          "outcome": {
+            "text": "他把最后一件东西收好，才像是察觉到你，抬眼看过来，不惊讶。「看够了？」\n你没答上来。他自己先转身继续走，绳在他身后一点点松开、沉下去。",
+            "oxygenTurnCost": 1,
+            "setProfileFlags": ["flag.silas.met"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "silas.meet_waxing",
+      "poiId": "roam.silas_meet_waxing",
+      "depthRange": [55, 85],
+      "zoneTags": [],
+      "weight": 30,
+      "title": "绳的另一头",
+      "body": "月相在长，光线比新月那阵好认路一点。绳往下，尽头还是那个人——背对着你，正把一件东西往怀里的袋子里塞，动作很稳，像是干这个很久了。\n他听见你的气泡声，头也不回：「别踢起沉积物，我数东西呢。」",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "greet",
+          "label": "游近，打个招呼",
+          "outcome": {
+            "text": "他转过身，把你从头到脚看了一遍——不是看人，是看你身上挂着什么。「找到什么了？还是来看看我这儿有什么。」\n你记下这张脸，往后回港，柜台那边应该也能找到他。",
+            "oxygenTurnCost": 1,
+            "setProfileFlags": ["flag.silas.met"]
+          }
+        },
+        {
+          "id": "watch_first",
+          "label": "先不出声，看他在忙什么",
+          "outcome": {
+            "text": "他把最后一件东西收好，才像是察觉到你，抬眼看过来，不惊讶。「看够了？」\n你没答上来。他自己先转身继续走，绳在他身后一点点松开、沉下去。",
+            "oxygenTurnCost": 1,
+            "setProfileFlags": ["flag.silas.met"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "silas.meet_full",
+      "poiId": "roam.silas_meet_full",
+      "depthRange": [55, 85],
+      "zoneTags": [],
+      "weight": 30,
+      "title": "绳的另一头",
+      "body": "满月，水面那层光多少漏得下来一点。绳往下，尽头还是那个人——背对着你，正把一件东西往怀里的袋子里塞，动作很稳，像是干这个很久了。\n他听见你的气泡声，头也不回：「别踢起沉积物，我数东西呢。」",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "greet",
+          "label": "游近，打个招呼",
+          "outcome": {
+            "text": "他转过身，把你从头到脚看了一遍——不是看人，是看你身上挂着什么。「找到什么了？还是来看看我这儿有什么。」\n你记下这张脸，往后回港，柜台那边应该也能找到他。",
+            "oxygenTurnCost": 1,
+            "setProfileFlags": ["flag.silas.met"]
+          }
+        },
+        {
+          "id": "watch_first",
+          "label": "先不出声，看他在忙什么",
+          "outcome": {
+            "text": "他把最后一件东西收好，才像是察觉到你，抬眼看过来，不惊讶。「看够了？」\n你没答上来。他自己先转身继续走，绳在他身后一点点松开、沉下去。",
+            "oxygenTurnCost": 1,
+            "setProfileFlags": ["flag.silas.met"]
+          }
+        }
+      ]
     }
   ]
 }
