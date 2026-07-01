@@ -181,5 +181,11 @@ export type Condition =
    * evalCondition 遍历 run.equipment 全槽·engine/events.ts。
    */
   | { kind: 'hasCapability'; capability: string }
+  /**
+   * NPC 信任档门控（通用信任系统·藏宝贸易与信任系统 SPEC §3.4）：该 NPC 的派生信任档 ≥ minTier 即满足。
+   * 复用本 DSL ⇒ 同一原语同时门控对话 visibleIf 与商店货品 minTrustTier；档由 engine/trust.ts::trustTier 派生。
+   * npcId 必须是真 NPC（check-npc-trust 守）。
+   */
+  | { kind: 'npcTrustTier'; npcId: string; minTier: number }
   | { kind: 'all'; of: Condition[] }
   | { kind: 'any'; of: Condition[] };

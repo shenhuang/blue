@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 架构边界检查（六条规则，命中任一即打印 file:line 并退出 1）：
+// 架构边界检查（七条规则，命中任一即打印 file:line 并退出 1）：
 //
 // 规则一：engine ↛ ui —— 引擎层不得依赖 UI 层 / React。
 //   扫 src/engine/**/*.ts(x) 的模块说明符：
@@ -33,6 +33,11 @@
 //   nitrogen 到处被「读」（computeRequiredStops 等·合法）→ 只查「写」：就地变异 x.nitrogen=/+=/-=/++/--，
 //   或 stat 构造里内联 +/- 债务算术 nitrogen:<…±…>。白名单（nitrogen/ascent/events/state）外的
 //   src/engine 命中即违例（当前 0 处：step 走 stepNitrogen()、clamp 走 Math、fixture 只写 0）。
+//
+// 规则七：profile.trust 触碰面收口（通用信任系统·藏宝贸易与信任系统 SPEC §3.3·仿规则四 run.injuries）。
+//   信任数值单源 profile.trust（npcId→数）的读写派生只许 engine/trust.ts（trustValue/trustTier/gainTrust/loseTrust）
+//   + state.ts（createInitialProfile 种 + hydrateGameState 补）。别处引擎文件散读散写 profile.trust 即违例——
+//   门控走 events.ts::evalCondition 的 npcTrustTier（内部调 trustTier·不碰 profile.trust）。当前 0 违例。
 //
 // 把此前靠散文（CLAUDE.md / 评审记忆）维持的解耦约定做成会在 `npm run regress`
 // 里失败的门。现状 0 违例 → 直接绿；以后谁越界，这个门会红——不再靠下一个
@@ -225,6 +230,25 @@ for (const file of engineFiles) {
   }
 }
 
+// ── 规则七：profile.trust 触碰面收口（通用信任系统·SPEC §3.3·仿规则四）──
+// 匹配 profile.trust / profile!.trust / profile?.trust（含 state.profile.trust 等前缀·\b 在点号后照样断词）。
+const TRUST_RE = /\bprofile!?\??\.trust\b/g;
+const TRUST_WHITELIST = new Set([
+  'src/engine/trust.ts', // 读写派生唯一者（trustValue/trustTier/gainTrust/loseTrust）
+  'src/engine/state.ts', // createInitialProfile 种子 + hydrateGameState 单点补
+]);
+const trustViolations = [];
+for (const file of engineFiles) {
+  const rel = relative(ROOT, file).split('\\').join('/');
+  if (TRUST_WHITELIST.has(rel)) continue;
+  const text = readFileSync(file, 'utf-8');
+  let m;
+  TRUST_RE.lastIndex = 0;
+  while ((m = TRUST_RE.exec(text))) {
+    trustViolations.push({ file: rel, line: lineOf(text, m.index) });
+  }
+}
+
 let failed = false;
 
 if (importViolations.length) {
@@ -303,6 +327,18 @@ if (nitrogenViolations.length) {
   );
 }
 
+if (trustViolations.length) {
+  failed = true;
+  console.error('✘ profile.trust 触碰面违例：信任数值读写派生单点在 engine/trust.ts（通用信任系统 SPEC §3.3）\n');
+  for (const v of trustViolations) {
+    console.error(`  ${v.file}:${v.line}  直接触碰 profile.trust`);
+  }
+  console.error(
+    `\n共 ${trustViolations.length} 处。引擎内信任一律走 engine/trust.ts（trustValue/trustTier 读派生·gainTrust/loseTrust 写）；` +
+      `\n门控走 events.ts::evalCondition 的 npcTrustTier（内部调 trustTier）。别散读散写 profile.trust（仿 run.injuries 规则四）。\n`,
+  );
+}
+
 if (failed) process.exit(1);
 
 console.log(
@@ -311,6 +347,7 @@ console.log(
     `；styles.css 滚动容器全在白名单（${SCROLL_WHITELIST.join(' / ')}）` +
     `；run.injuries 触碰面收口（engine 内仅 injuries/modifiers/state/combatScenario）` +
     `；game ↛ dev（游戏侧 ${gameFiles.length} 文件不 import dev 工具）` +
-    `；nitrogen 债务写口收窄（engine 内仅 nitrogen/ascent/events/state 写）`,
+    `；nitrogen 债务写口收窄（engine 内仅 nitrogen/ascent/events/state 写）` +
+    `；profile.trust 触碰面收口（engine 内仅 trust/state）`,
 );
 process.exit(0);

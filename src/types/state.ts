@@ -101,6 +101,14 @@ export interface PlayerProfile {
    * SAVE_VERSION 9→10：形状变·按 #99 不写迁移、bump 弃旧档从头开始。
    */
   caveMaps: Map<string, PersistentCave>;
+  /**
+   * 通用 NPC 信任系统（藏宝贸易与信任系统 SPEC §3·2026-06-30）：npcId → 信任原始数值（累加·「档」由
+   * engine/trust.ts::trustTier 派生·不另存档）。触碰只经 engine/trust.ts（读写派生）+ state.ts（种子/水合）——
+   * check-boundaries 规则七守。additive·**optional**（裸 profile / 旧档缺它 → 读点 trustValue 兜 0）·
+   * JSON 原生 round-trip（Record·非 Set/Map·不碰 saveReplacer）·**不 bump SAVE_VERSION**（quirk #99）。
+   * 将来阵营（§3.9）：另加 profile.factionRep 并存·别改此字段语义。
+   */
+  trust?: Record<string, number>;
 }
 
 /** 死亡记录，用于尸体回收 */

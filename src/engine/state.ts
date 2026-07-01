@@ -86,6 +86,8 @@ export function createInitialProfile(): PlayerProfile {
     harvestedResources: new Map(),
     // 持久洞地图（多口持久洞·方案 B·2026-06-25）：起手空 Map（还没进过任何洞·首次进各自生成冻结）。
     caveMaps: new Map(),
+    // 通用 NPC 信任系统（藏宝贸易与信任系统 SPEC §3·2026-06-30）：起手空表（对谁都陌生·档由 trust.ts 派生）。
+    trust: {},
   };
 }
 
@@ -453,6 +455,8 @@ export function hydrateGameState(state: GameState): GameState {
     harvestedResources: state.profile.harvestedResources ?? new Map(),
     // 持久洞地图容器（多口持久洞·方案 B·2026-06-25）：缺失单点补空 Map（同 harvestedResources·#107）。
     caveMaps: state.profile.caveMaps ?? new Map(),
+    // NPC 信任容器（藏宝贸易与信任系统 SPEC §3·2026-06-30）：缺失单点补空表（同 shopStock·#107·additive 不 bump SAVE·#99）。
+    trust: state.profile.trust ?? {},
     // 装备：缺则种起始件；已有则与起始件合并补齐「新增槽」（如 ranged·作者 2026-06-18 拆武器槽）——
     // 已穿戴槽以存档为准、缺的新槽取起始默认（null）·additive·不 bump SAVE_VERSION（#99）·旧档不作废。
     equipment: state.profile.equipment

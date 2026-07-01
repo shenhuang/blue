@@ -133,6 +133,9 @@ tasks.push({ name: 'check-material-icons', cmd: ['node', join('scripts', 'check-
 // 升级账单跨引用门（纯 node·upgrades.json 引用的 itemId 必须是真道具·补 check-data-schema 不跨文件核引用的缺口·2026-06-29·#242·见 scripts/check-upgrade-refs.mjs）
 tasks.push({ name: 'check-upgrade-refs', cmd: ['node', join('scripts', 'check-upgrade-refs.mjs')] });
 
+// 通用 NPC 信任系统门（纯 node·npcTrustTier 引用的 NPC 存在 + thresholds 单调 + 红线桩·2026-06-30·藏宝贸易与信任系统 SPEC §3.7·见 scripts/check-npc-trust.mjs）
+tasks.push({ name: 'check-npc-trust', cmd: ['node', join('scripts', 'check-npc-trust.mjs')] });
+
 // 主线可达性门（纯 node·前哨解锁链无环/无死结 + columnStory 主线 beat host/引用/跨柱 item 门可达·把「起点→章尾可达」钉成会红的检查·2026-06-27 D-2 M 组·见 scripts/check-mainline-reachable.mjs）
 tasks.push({ name: 'check-mainline-reachable', cmd: ['node', join('scripts', 'check-mainline-reachable.mjs')] });
 

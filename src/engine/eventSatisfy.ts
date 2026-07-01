@@ -206,6 +206,10 @@ function collect(cond: Condition, acc: Accum): void {
     case 'hasUpgrade':
       acc.upgrades.add(cond.upgradeId);
       return;
+    case 'npcTrustTier':
+      // 通用信任门（SPEC §3.4）：事件 fixture 暂不设 NPC 信任（Accum 无 trust 维度·当前无事件按信任门控）。
+      // 若将来事件 visibleIf 用 npcTrustTier，在此给 Accum 加 trust 维度并在 buildFixture 里种起始信任值。
+      return;
     case 'all':
       for (const sub of cond.of) collect(sub, acc);
       return;

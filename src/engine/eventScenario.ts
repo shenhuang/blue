@@ -207,6 +207,8 @@ export function describeCondition(c: Condition): string {
       return `需要深度 ≥ ${c.value}m`;
     case 'hasCapability':
       return `需要工具能力 ${c.capability}（cut＝潜水刀·mine＝岩凿）`;
+    case 'npcTrustTier':
+      return `需要对 ${c.npcId} 的信任达 ${c.minTier} 档`;
     case 'all':
       return `全部满足: [${c.of.map(describeCondition).join(' & ')}]`;
     case 'any':

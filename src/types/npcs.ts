@@ -16,6 +16,12 @@ export interface NpcDef {
   shortDescription: string;
   /** 对话树根节点 */
   dialogRoot: DialogNode;
+  /**
+   * 通用信任系统 per-NPC 档阈值（藏宝贸易与信任系统 SPEC §3.2/§3.6·可选·Phase 1 无 NPC 设置）。
+   * thresholds[i] = 到第 i+1 档所需信任值（单调递增·check-npc-trust 守）；缺则用 engine/trust.ts 默认梯。
+   * 数值 defer-number-tuning。将来阵营（§3.9）在此加 faction?: string。
+   */
+  trust?: { thresholds: number[] };
 }
 
 /** 对话节点 —— 树状结构 */

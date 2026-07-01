@@ -22,6 +22,7 @@ import { effectiveStaminaMax } from './modifiers';
 import { stepNitrogen, narcosisSanityDrain } from './nitrogen';
 import { getCaveTemperature, stepThermalStress, thermalStaminaDrain } from './temperature';
 import { getBands } from './bands';
+import { trustTier } from './trust';
 
 /**
  * 深度加权战利品因子（经济·2026-06-28·单一来源＝depth_columns.json 各 tier 的 lootFactor·镜像 alertFactor）。
@@ -103,6 +104,9 @@ export function evalCondition(state: GameState, c: Condition): boolean {
       }
       return false;
     }
+    case 'npcTrustTier':
+      // NPC 信任档门控（通用信任系统·SPEC §3.4）：派生档 ≥ minTier。信任读派生一律走 engine/trust.ts（单源）。
+      return trustTier(profile, c.npcId) >= c.minTier;
     case 'all':
       return c.of.every((sub) => evalCondition(state, sub));
     case 'any':
