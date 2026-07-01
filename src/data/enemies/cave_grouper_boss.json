@@ -83,7 +83,7 @@
         "rollCount": 1,
         "victoryModifier": {
           "kill": 1.0,
-          "flee": 0.4
+          "flee": 0.0
         }
       },
       "victoryConditions": ["kill", "flee"]

@@ -51,7 +51,7 @@
         "rollCount": 0,
         "victoryModifier": {
           "kill": 1.0,
-          "flee": 0.3
+          "flee": 0.0
         }
       },
       "defaultSkin": "enemy.blind_eel",

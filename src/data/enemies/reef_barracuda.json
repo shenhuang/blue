@@ -48,7 +48,7 @@
         "rollCount": 0,
         "victoryModifier": {
           "kill": 1.0,
-          "flee": 0.3,
+          "flee": 0.0,
           "scare": 0.0
         }
       },
@@ -102,8 +102,8 @@
         "rollCount": 1,
         "victoryModifier": {
           "kill": 1.0,
-          "flee": 0.3,
-          "scare": 0.3
+          "flee": 0.0,
+          "scare": 0.0
         }
       },
       "victoryConditions": ["kill", "flee", "scare"],
