@@ -177,6 +177,10 @@ html, body, #root {
 .btn:hover:not(:disabled) {
   background: var(--bg-elev-2);
   border-color: var(--accent);
+  /* 显式定死文字色（作者 2026-07-02·预览环境里曾看到 hover 背景变浅但文字没跟着变、糊在一起）：
+     游戏自身没有别的规则会在 hover 时动 color，这行是保险丝——hover background 以后再改深浅，
+     文字色不会因为忘记同步而撞色。 */
+  color: var(--text);
 }
 
 .btn:disabled {
@@ -527,6 +531,11 @@ html, body, #root {
 @media (min-width: 1200px) {
   .app-dive {
     max-width: 1472px;
+    /* 与 .app-port 同一条对齐规则（作者 2026-07-02）：靠左而非居中，
+       使下潜左栏（状态/声呐）水平对齐港口左栏、右栏（事件）对齐港口右侧服务面板——
+       两条容器宽度/内边距已同源（皆继承 .app 的 padding），只差这一条 margin。 */
+    margin-left: 0;
+    margin-right: auto;
   }
   .app-dive .dive {
     display: grid;
@@ -718,48 +727,60 @@ html, body, #root {
   font-weight: 500;
 }
 
-.enemy-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* 敌人区（方案A·作者 2026-07-02）：横向卡片带，恒定一屏最多显示 3 张——
+   多于 3 只不再纵向堆叠撑高布局，改横向滚动（scroll-snap 对齐），配合下方 .enemy-scroll-hint 提示。
+   桌面/手机共用同一套（卡片宽度按 % 走，不按视口分叉）。 */
+.enemy-grid {
   display: flex;
-  flex-direction: column;
   gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x proximity;
 }
 
-.enemy-row {
-  width: 100%;
+.enemy-card {
+  flex: 0 0 calc((100% - 16px) / 3);
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 10px 14px;
+  padding: 10px;
   color: var(--text);
   text-align: left;
   cursor: pointer;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 12px;
+  scroll-snap-align: start;
   transition: border-color 0.15s, background 0.15s;
 }
 
-.enemy-row:hover:not(:disabled) {
+.enemy-card:hover:not(:disabled) {
   border-color: var(--accent);
 }
 
-.enemy-row.selected {
+.enemy-card.selected {
   border-color: var(--accent);
   background: var(--bg-elev-2);
 }
 
-.enemy-row.dead {
+.enemy-card.dead {
   opacity: 0.4;
-  text-decoration: line-through;
   cursor: not-allowed;
 }
 
 /* 链鳗按序门：活着但被前节挡住（不可选）——淡化但不划掉（区别于已死节段）。 */
-.enemy-row.blocked {
+.enemy-card.blocked {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.enemy-scroll-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  text-align: center;
 }
 
 .enemy-blocked-hint {
@@ -768,19 +789,36 @@ html, body, #root {
   font-weight: 500;
 }
 
+.enemy-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .enemy-name {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  flex-wrap: wrap;
+  row-gap: 3px;
+  overflow: hidden;
+}
+
+.enemy-name > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stance {
-  font-size: 11px;
-  padding: 2px 8px;
+  font-size: 10px;
+  padding: 1px 6px;
   border-radius: 10px;
   background: var(--bg-elev);
   color: var(--text-faint);
+  white-space: nowrap;
 }
 
 .stance-attacking { color: var(--danger); }
@@ -791,12 +829,12 @@ html, body, #root {
 .enemy-hp {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .hp-bar {
   flex: 1;
-  height: 6px;
+  height: 5px;
   background: var(--bg-elev);
   border-radius: 3px;
   overflow: hidden;
@@ -809,13 +847,56 @@ html, body, #root {
 }
 
 .hp-text {
-  font-size: 12px;
+  font-size: 10px;
   color: var(--text-muted);
-  min-width: 70px;
+  white-space: nowrap;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
+/* 敌人头像（占位或 def.portraitUrl·见 ui/EnemyPortrait.tsx）：卡片左侧固定尺寸圆形。 */
+.enemy-portrait {
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* 头像外的血量圆环包装（作者 2026-07-02）：宽屏是纯透传壳（零视觉影响，尺寸随子元素）；
+   ≤480px 断点（同 .panel-shell 手机断点）才真正画环，且隐藏文字名字/姿态——
+   手机卡片位小，头像+环比一整段文字更快读。--hp-pct 由 CombatView 内联传入。 */
+.enemy-portrait-ring {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .enemy-card-body .enemy-name,
+  .enemy-card-body .enemy-hp {
+    display: none;
+  }
+  .enemy-portrait-ring {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    padding: 4px;
+    box-sizing: border-box;
+    background: conic-gradient(var(--danger) 0% var(--hp-pct), var(--bg-elev) var(--hp-pct) 100%);
+  }
+}
+
+.enemy-portrait-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  font-weight: 500;
+}
+
+/* 战斗日志（作者 2026-07-02）：固定高度 + 内部滚动，新行自动贴底——
+   不再靠砍内容长度防止撑开外层排版，容器高度本身就是不变量。 */
 .combat-log {
   background: var(--bg-elev);
   border: 1px solid var(--border);
@@ -825,6 +906,9 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  height: 112px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
 }
 
 .log-line {
@@ -843,6 +927,13 @@ html, body, #root {
 
 .action-name {
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-icon {
+  flex-shrink: 0;
 }
 
 .action-cost {

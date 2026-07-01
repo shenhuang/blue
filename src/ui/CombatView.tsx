@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { GameState, EnemyInstance, CombatAction } from '@/types';
 import { applyPlayerAction, listAvailableActions, getEnemyDef } from '@/engine/combat';
 import { frontmostLivingSegment } from '@/engine/chain-eel';
 import { beginAscent } from '@/engine/transitions';
 import { isAscentBlocked } from '@/engine/ascent';
 import { StatusBar } from './StatusBar';
+import { EnemyPortrait } from './EnemyPortrait';
+import { ActionIcon } from './actionIcons';
 
 interface Props {
   state: GameState;
@@ -13,6 +15,15 @@ interface Props {
 
 export function CombatView({ state, onStateChange }: Props) {
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
+  const logRef = useRef<HTMLDivElement>(null);
+  // 日志固定高度+内部滚动（见 styles.css .combat-log）：新行进来自动贴底，
+  // 不再靠 slice(-5) 截断来防止撑开外层排版——这是真正修容器高度、不是砍内容。
+  const combatLogLength = state.phase.kind === 'combat' ? state.phase.combat.log.length : 0;
+  useEffect(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [combatLogLength]);
 
   if (state.phase.kind !== 'combat' || !state.run) return null;
   const combat = state.phase.combat;
@@ -56,12 +67,12 @@ export function CombatView({ state, onStateChange }: Props) {
       <div className="combat-enemies">
         <h3>敌人</h3>
         {combat.enemies.length === 0 && <div className="dim">（空）</div>}
-        <ul className="enemy-list">
+        <div className="enemy-grid">
           {combat.enemies.map((e) => {
             // 链鳗：活着但不是最前存活节 → 被挡住（不可选·给提示）；非按序遭遇恒可达。
             const reachable = !attackInOrder || e.instanceId === frontSeg?.instanceId;
             return (
-              <EnemyRow
+              <EnemyCard
                 key={e.instanceId}
                 enemy={e}
                 selected={currentTarget?.instanceId === e.instanceId}
@@ -70,11 +81,14 @@ export function CombatView({ state, onStateChange }: Props) {
               />
             );
           })}
-        </ul>
+        </div>
+        {combat.enemies.length > 3 && (
+          <div className="dim enemy-scroll-hint">← 左右滑动查看全部敌人 →</div>
+        )}
       </div>
 
-      <div className="combat-log">
-        {combat.log.slice(-5).map((l, i) => (
+      <div className="combat-log" ref={logRef}>
+        {combat.log.map((l, i) => (
           <div key={i} className={`log-line log-${l.actor}`}>
             {l.text}
           </div>
@@ -93,7 +107,10 @@ export function CombatView({ state, onStateChange }: Props) {
                 title={action.description}
               >
                 <div className="action-row">
-                  <span className="action-name">{action.name}</span>
+                  <span className="action-name">
+                    <ActionIcon action={action} />
+                    {action.name}
+                  </span>
                   <span className="action-cost">
                     {action.costStamina > 0 && `体力 -${action.costStamina} `}
                     {action.costOxygenTurns > 0 && `氧气 -${action.costOxygenTurns}`}
@@ -122,7 +139,7 @@ export function CombatView({ state, onStateChange }: Props) {
   );
 }
 
-function EnemyRow({
+function EnemyCard({
   enemy,
   selected,
   reachable,
@@ -140,13 +157,18 @@ function EnemyRow({
   // 链鳗：活着但被前节挡住——不可选·禁用按钮·给提示（与引擎 checkActionAvailability 的 reason 同口径）。
   const blocked = !dead && !reachable;
   return (
-    <li>
-      <button
-        className={`enemy-row ${selected ? 'selected' : ''} ${dead ? 'dead' : ''} ${blocked ? 'blocked' : ''}`}
-        onClick={onSelect}
-        disabled={dead || blocked}
-        title={blocked ? '够不到——它身前还有节段挡着，先清掉最前面的。' : undefined}
-      >
+    <button
+      className={`enemy-card ${selected ? 'selected' : ''} ${dead ? 'dead' : ''} ${blocked ? 'blocked' : ''}`}
+      onClick={onSelect}
+      disabled={dead || blocked}
+      title={blocked ? '够不到——它身前还有节段挡着，先清掉最前面的。' : undefined}
+    >
+      {/* 手机（≤480px·styles.css 同断点）：名字/姿态隐藏、血条改画成头像四周的圆环——
+          --hp-pct 只是喂给圆环 conic-gradient 的变量，宽屏下这条变量没人读、零视觉影响。 */}
+      <div className="enemy-portrait-ring" style={{ '--hp-pct': `${hpPct}%` } as CSSProperties}>
+        <EnemyPortrait def={def} size={40} />
+      </div>
+      <div className="enemy-card-body">
         <div className="enemy-name">
           <span>
             {def.name}
@@ -164,8 +186,8 @@ function EnemyRow({
             {enemy.hp} / {def.hp}
           </span>
         </div>
-      </button>
-    </li>
+      </div>
+    </button>
   );
 }
 

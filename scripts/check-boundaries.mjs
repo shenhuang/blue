@@ -127,12 +127,16 @@ for (const file of uiFiles) {
 //     非内容型主视图，不归 PanelShell 管；头部「获得物品」+ 底部提示固定、中间物品格滚（极端多件兜底）。
 //   .dive-header.has-dive-panel .dive-panel（下潜 HUD 移动端全屏面板·物品栏/装备 SPEC §6）：
 //     状态条 + 传感器/面板开关由 .dive-header(flex 列) 钉顶、只面板内容滚——已满足「头部固定/内容滚」之意。
+//   .combat-log（战斗日志固定高度滚动条·2026-07-02）：不是 PanelShell 管的内容型主视图——
+//     它是 .combat-main 里一段**恒定 112px** 的小型日志窗（跟 .pickup-grid 同类：独立小型滚动体，
+//     没有「头部状态/关闭出口」这层结构，PanelShell 的题头+✕不适用）；固定高度本身就是它要解决的问题
+//     （日志随战斗变长不再撑高外层排版），不是绕开壳、是壳管不到的形状。
 // 其余选择器一律违例——内容型视图要内部滚动＝用 PanelShell 包（头部状态固定/内容滚/
 // 底部出口三段），别自己开滚动容器；散开自写迟早回到「金币和返回被滚走」。
 // 范围只限 src/styles.css（玩家界面）；src/ui/dev/*.css 是 dev 工具自留地，不管。
 // 解析假设：styles.css 是扁平 CSS——声明上方最近的 `selector {` 行即其归属；
 // @media 块内仍有选择器行，不会把声明算到 @media 头上。注释行（行内含 `*`）跳过。
-const SCROLL_WHITELIST = ['.panel-shell-body', '.changelog-body', '.pickup-grid', '.dive-header.has-dive-panel .dive-panel'];
+const SCROLL_WHITELIST = ['.panel-shell-body', '.changelog-body', '.pickup-grid', '.dive-header.has-dive-panel .dive-panel', '.combat-log'];
 const SCROLL_DECL_RE = /\boverflow(?:-y)?\s*:\s*(?:auto|scroll)\b/;
 const cssPath = resolve(ROOT, 'src/styles.css');
 const scrollViolations = [];

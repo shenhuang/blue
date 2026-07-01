@@ -191,6 +191,12 @@ export interface EnemyDef {
   threatTier?: ThreatTier;
   /** 背景/图鉴文本（非机器过滤项）。 */
   codex?: CodexEntry;
+  /**
+   * 头像美术资源路径（战斗 UI 敌人卡片用·作者 2026-07-01）。缺省 = 未画 → EnemyPortrait 组件
+   * 自动退回占位头像（按 id 稳定取色 + 名字首字，见 ui/EnemyPortrait.tsx）。以后补真实立绘
+   * 只需在对应敌人 JSON 加这一个字段，组件侧零改动——别为占位图手写 15 张图片资源。
+   */
+  portraitUrl?: string;
 
   /** 遭遇事件中可显示的额外选项（潜行/挑衅/谈判/...） */
   encounterOptions?: EventOption[];
