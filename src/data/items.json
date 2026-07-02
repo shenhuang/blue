@@ -1285,13 +1285,37 @@
     },
     {
       "id": "item.deep_token",
-      "name": "深潮币",
+      "name": "红喉鹈币",
       "category": "currency",
       "rarity": "uncommon",
-      "description": "不是哪国的钱，边上刻着一圈螺旋。Mira 少量地收着，只说「有些人只认这个」。你没在市面上见过用它买东西的地方——除了那一个。",
+      "description": "不是哪国的钱，边上压着一只鸟——翅膀张开，喉囊鼓成一团。赤喉海盗团自铸的分赃筹码；那伙人早散了，币倒还在水里流通。Mira 少量地收着，只说「有些人只认这个」。",
       "weight": 0.05,
       "sellPrice": 20,
       "decay": "durable"
+    },
+    {
+      "id": "item.treasure_map.corin_survey",
+      "name": "科林的测绘图",
+      "category": "story",
+      "rarity": "uncommon",
+      "description": "黑背鸥小队测绘手科林生前钉下的一处坐标，图纸边角被水泡得发脆。页脚盖着红喉鹈——赤喉海盗团的鸟——底下一行小字：『机器不会骗人。』照着它，你能找到他最后标记的地方。",
+      "weight": 0.3,
+      "sellPrice": 0,
+      "decay": "eternal",
+      "story": {
+        "setsFlag": ["story.ch1.corin_map"],
+        "marksPois": ["poi.anchor.corin_cache"]
+      }
+    },
+    {
+      "id": "item.keepsake.corin_coin",
+      "name": "半枚红喉鹈币",
+      "category": "other",
+      "rarity": "common",
+      "description": "一枚红喉鹈币，从中间齐齐断成两半，你手里这半边压着半只鸟。花不出去——断了的分赃筹码谁都不认。对旁人是块废铜，对某个还在数着旧账的人，也许是另一回事。",
+      "weight": 0.02,
+      "sellPrice": 0,
+      "decay": "eternal"
     }
   ]
 }

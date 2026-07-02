@@ -3,9 +3,10 @@
 
 import type { GameState, DialogNode, DialogChoice, DialogEffect, NpcDef } from '@/types';
 import { NPC_FILES } from './npcRegistry';
-import { createNewRun, acquireIntoProfile } from './state';
+import { createNewRun, acquireIntoProfile, removeFromInventory } from './state';
 import { startDive } from './dive';
 import { getRunBonuses } from './lighthouses';
+import { gainTrust } from './trust';
 
 const NPC_INDEX: Map<string, NpcDef> = new Map();
 const DIALOG_INDEX: Map<string, DialogNode> = new Map();
@@ -95,6 +96,19 @@ export function applyDialogEffects(
         // 直接发物进 profile（同购买 / 回港 loot / devGrantItem 作弊路径·acquireIntoProfile 单点：
         // 顺带兑现该物品的 story.setsFlag 里程碑·sticky 幂等·见 state.ts）。
         s = { ...s, profile: acquireIntoProfile(s.profile, [{ itemId: e.itemId, qty: e.qty }]) };
+        break;
+      }
+      case 'takeItem': {
+        // 消耗背包里的指定物（上交收藏品等·复用 state.ts::removeFromInventory 单点·同 port.ts 花币扣减）。
+        s = {
+          ...s,
+          profile: { ...s.profile, inventory: removeFromInventory(s.profile.inventory, e.itemId, e.qty) },
+        };
+        break;
+      }
+      case 'gainTrust': {
+        // 涨信任唯一写口＝engine/trust.ts::gainTrust（规则七·dialog.ts 不在该字段白名单·信任变更必须经此）。
+        s = { ...s, profile: gainTrust(s.profile, e.npcId, e.amount).profile };
         break;
       }
       case 'openUpgradeTree':

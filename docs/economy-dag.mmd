@@ -4,6 +4,15 @@ flowchart LR
   classDef bad fill:#fdd,stroke:#c00,stroke-width:2px,color:#900;
   classDef warn fill:#fff3d6,stroke:#c90,stroke-width:1px,color:#850;
   classDef mat fill:#eef,stroke:#88a,color:#225;
+  subgraph midwater["midwater"]
+    item_scrap_alloy(["scrap_alloy T1"]):::mat
+    depth_columns_col_midwater_t1["midwater t1"]
+    depth_columns_col_midwater_t2["midwater t2"]
+    depth_columns_col_midwater_t3["midwater t3"]
+    depth_columns_col_midwater_t4["midwater t4"]
+    depth_columns_col_midwater_t5["midwater t5"]
+    depth_columns_col_midwater_t6["midwater t6"]
+  end
   subgraph whalefall["whalefall"]
     item_whale_bone(["whale_bone T3"]):::mat
     item_whalefall_polychaete(["whalefall_polychaete T1"]):::mat
@@ -47,15 +56,6 @@ flowchart LR
     depth_columns_col_vent_t2["vent t2"]
     depth_columns_col_vent_t3["vent t3"]
     depth_columns_col_vent_t4["vent t4"]
-  end
-  subgraph midwater["midwater"]
-    item_scrap_alloy(["scrap_alloy T1"]):::mat
-    depth_columns_col_midwater_t1["midwater t1"]
-    depth_columns_col_midwater_t2["midwater t2"]
-    depth_columns_col_midwater_t3["midwater t3"]
-    depth_columns_col_midwater_t4["midwater t4"]
-    depth_columns_col_midwater_t5["midwater t5"]
-    depth_columns_col_midwater_t6["midwater t6"]
   end
   subgraph trench["trench"]
     item_abyssal_crust(["abyssal_crust T4"]):::mat

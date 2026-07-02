@@ -1,0 +1,126 @@
+{
+  "npc": {
+    "id": "npc.sela",
+    "name": "Sela",
+    "role": "trader",
+    "shortDescription": "背包比谁都沉，装的多半是别人不要的东西。她只收一种钱——边上压着一只鸟的那种。",
+    "trust": { "thresholds": [10, 30, 60] },
+    "dialogRoot": {
+      "id": "sela.root",
+      "text": "她没抬头，指关节上还沾着盐渍，正用一小块布擦一件东西——你看不清那是什么。\n\n「找到什么了？还是来看看我这儿有什么。」",
+      "choices": [
+        {
+          "id": "open_shop",
+          "label": "（把找到的东西摆给她看）",
+          "next": "end",
+          "effects": [{ "kind": "openShop", "shopId": "shop.sela" }]
+        },
+        {
+          "id": "corin_return",
+          "label": "（把那半枚币放到台面上）",
+          "next": "sela.corin_return",
+          "visibleIf": { "kind": "hasItem", "itemId": "item.keepsake.corin_coin" },
+          "effects": [
+            { "kind": "takeItem", "itemId": "item.keepsake.corin_coin", "qty": 1 },
+            { "kind": "gainTrust", "npcId": "npc.sela", "amount": 15 },
+            { "kind": "giveItem", "itemId": "item.deep_token", "qty": 2 },
+            { "kind": "setFlag", "flag": "story.ch1.corin_returned" }
+          ]
+        },
+        {
+          "id": "chat",
+          "label": "你怎么会到这儿来？",
+          "next": "sela.banter"
+        },
+        {
+          "id": "leave",
+          "label": "下次再说。",
+          "next": "end"
+        }
+      ]
+    }
+  },
+  "dialogs": {
+    "sela.banter": {
+      "id": "sela.banter",
+      "text": "「我？」她终于抬头，眼神在你身上停了半秒，又落回手里的东西上。\n\n「我不找人。人会变、会走、会说谎。东西不会——它就在那儿，等着被翻出来，一直等，不会不耐烦。」\n\n她没再说话，手上的动作却慢了一点点。",
+      "choices": [
+        {
+          "id": "ask_deeper",
+          "label": "你也是这样下来的？",
+          "next": "sela.deeper",
+          "visibleIf": { "kind": "npcTrustTier", "npcId": "npc.sela", "minTier": 1 }
+        },
+        {
+          "id": "back_banter",
+          "label": "（点头）",
+          "next": "end"
+        }
+      ]
+    },
+    "sela.deeper": {
+      "id": "sela.deeper",
+      "text": "她的手停住了。\n\n「一开始是为了东西。后来东西找完了，人也散了，我还在下面。」她把布收起来，没说完那句话。\n\n「你还回得去几次，自己心里有数吗？」她忽然问，语气不像在开玩笑。「我们原来也数得清。」\n\n她转身继续摆弄货架，不再看你。",
+      "choices": [
+        {
+          "id": "ask_crew",
+          "label": "你原来不是一个人下来的吧。",
+          "next": "sela.corin_offer",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "npcTrustTier", "npcId": "npc.sela", "minTier": 1 },
+              { "kind": "notHasFlag", "flag": "story.ch1.corin_map" },
+              { "kind": "notHasFlag", "flag": "story.ch1.corin_returned" }
+            ]
+          }
+        },
+        {
+          "id": "ask_what",
+          "label": "你到底在找什么？",
+          "next": "sela.confession",
+          "visibleIf": { "kind": "npcTrustTier", "npcId": "npc.sela", "minTier": 2 }
+        },
+        {
+          "id": "back_deeper",
+          "label": "（没接话）",
+          "next": "end"
+        }
+      ]
+    },
+    "sela.corin_offer": {
+      "id": "sela.corin_offer",
+      "text": "她沉默了一会儿。\n\n「四个人。我们那条小队叫黑背鸥——名字是从前那条大船上带出来的，赤喉海盗团，他们喜欢在什么上头都印只鸟。」她说得平，像在报点货，「测绘是科林的活。他把命押在装备上，总说机器不会骗人。」\n\n她从背包最底下摸出一卷图，边角被水泡得发脆。「他画下的地方，我没都去过。你脚程比我快。」\n\n她把图推到台面上，没再多说。",
+      "choices": [
+        {
+          "id": "take_corin_map",
+          "label": "（接过那卷图）",
+          "next": "end",
+          "effects": [{ "kind": "giveItem", "itemId": "item.treasure_map.corin_survey", "qty": 1 }]
+        }
+      ]
+    },
+    "sela.confession": {
+      "id": "sela.confession",
+      "text": "她愣了一下，像是很久没人问过这句。\n\n「一开始，每件东西都连着一个名字。后来名字一个个没了，只剩下『还没找回的那几件』。」\n\n她把手里的东西收进怀里，没让你看清。「你继续下去，早晚也会这样——手里的东西越来越多，能说清『为什么下去』的话越来越少。」\n\n她没再多说，转身去清点货架，像是刚才那句话已经花掉她今天全部的力气。",
+      "choices": [
+        {
+          "id": "back_confession",
+          "label": "（不再追问）",
+          "next": "end"
+        }
+      ]
+    },
+    "sela.corin_return": {
+      "id": "sela.corin_return",
+      "text": "她的手停在半空，才拿起那半枚币。指腹在断口上磨了一下，像是想把它接回另一半。\n\n「……科林的。」她没问你在哪儿找到的。她把币收进怀里最里层，那地方大概还收着别的几件。\n\n「剩下的我自己找。」她说。可你听得出，她记住了你。",
+      "choices": [
+        {
+          "id": "back_corin_return",
+          "label": "（没打扰她）",
+          "next": "end"
+        }
+      ]
+    }
+  }
+}

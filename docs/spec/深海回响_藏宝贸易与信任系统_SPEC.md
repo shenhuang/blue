@@ -14,6 +14,8 @@
 > 港口在场门 / 交易门控 / 信任跨档。见 CHANGELOG #244。
 > 状态：Phase 2 MVP 待作者验收细节（人设文案/货架选品/数值）；Phase 3+ 待作者拍架构。标 〔提案〕 的是我按项目模式给的默认、可红线改。
 > 未提交（沙箱无凭证·commit 待 Mac/nightly）·集成时再从 STATUS/索引挂导航链。
+>
+> **2026-07-02 · #245（Cowork 交互·Opus）· Phase 3 结构定案 → 见 §12「Sela / Vera 藏宝寻宝定案」**：作者在场逐条拍板，把 §5/§6/§11 的开放点全落定——特殊商人由「泛探险家」收成**四人打捞队幸存者 Sela**（改名 + 改女性 + 连内部 id 改·silas→sela），动机＝**收藏家/找回同伴遗物**（藏品对玩家废料、对她仅存证据）＝天然寻宝任务引擎；深潮币＝队里自铸的**分赃筹码**；Sela **渐深遭遇**一路当商人到「无法返回之地」，过线后由失联同伴 **Vera** 接手（不说话·死＝有智慧尸衣者 or 生物改造过度·永不证实·延后建）。三路 Explore 已核实全部触点 against 当前源码。**§12 以下小节以本节为准（覆盖 §5/§6 旧提案）·数值仍全 defer。**
 
 ---
 
@@ -255,6 +257,128 @@ case 'npcTrustTier': return trustTier(profile, c.npcId) >= c.minTier;
 
 ---
 
-## 12. 一句话
+## 12. Sela / Vera 藏宝寻宝定案（2026-07-02 · #245 · Cowork 交互 · Opus）
+
+> 本节把 §5（藏宝图）、§6（特殊商人）、§11（开放点）里所有「待作者拍」的**结构**逐条落定（作者在场拍板），并给出**贴当前代码的实装法**（三路 Explore 核实 against 源码·API/字段/id 均引真名）。**冲突处以本节为准**（§5/§6 旧提案作历史保留）。数值仍全 `defer-number-tuning`。
+>
+> **📎 角色 canon 已抽到独立档：`深海回响_打捞队_SPEC.md`**（黑背鸥小队 Sela/Corin/Nerea/Vera + 母组织赤喉海盗团 + 军舰鸟徽/红喉鹈币 lore + tech/bio 轴 + 与科考队的主题对照）。**人物 canon 以那档为准（活文档）**；下面 §12.1/12.2/12.6/12.7 保留作 2026-07 拍板 provenance，如与打捞队 SPEC 出入以后者为准。本 §12 其余小节（§12.3 寻宝循环机制 / §12.4 渐深遭遇 / §12.5 收藏品 class / §12.8 rename / §12.9 门 / §12.10 slices / §12.11–12.12 开放点+实装状态）是本系统的机制/实装、留在此。
+
+### 12.1 四人打捞队 canon（叙事底盘）
+
+- **"深潮"打捞队**〔队名 draft·你改〕：一支**商业**水下寻宝队，下海捞宝换钱——和主线**科考队七人**（`docs/spec/深海回响_科考队_SPEC.md`）**互不相干**，蓝领 vs 机构、为钱 vs 做研究，别让玩家混起来（若日后要接，只做"擦肩"淡呼应、别入队·见 §12.6 备注）。
+- 原本四人。深海一个个把他们收走：**2 死 + 1 失联（Vera）**，只剩 **Sela** 一个还能浮回港。
+- **深潮币（`item.deep_token`）＝队里自铸的分赃筹码**：四个人按份记账用的私钱。如今队没了，Sela「只认深潮币」不是规矩，是**除了这个她算不清别的账了**（呼应她的人设轴）。玩家手里的 token 也顺势有来历——从他们留下的东西里翻出来的。
+- **世界观规则（叙事·非代码）**：能下到最深的人，要么押"科技"（外挂装备）、要么押"生物"（改造自身）。**彻底押一条路本身就是那条不可逆的线**——这解释了为什么 Sela 还回得来、另外三个过了线。⚠️ **代码里现无科技/生物玩家流派系统**（Explore C 核实）·目前 tech/bio 纯属**叙事层背景**、零代码；真做成玩家可选流派＝独立大工程（§12.7）。
+
+### 12.2 卡司定案
+
+| 角色 | 名/性别 | 押边 | 机制角色 | 收藏品（对玩家废料·draft） |
+|---|---|---|---|---|
+| **Sela** | Sela·女·**礁**（希伯来"岩/礁"） | **没真正押边**（故还回得来） | 港侧商人·渐深遭遇·三条同伴线发布者 | — |
+| 科技派死者 | **Corin**〔draft·男〕 | 科技（押装备） | 遗物＝**数据日志/旧海图**→"好图"来源①ㅤ | 损坏的深度表 / 烧毁的数据模块 |
+| 生物派死者 | **Nerea**〔draft·女〕 | 生物（押改造） | 遗物＝**改造手记/变异标本**→引向深料点/生态点②ㅤ | 蜕下的改造皮膜 / 一管自调血清 |
+| **Vera** | Vera·**真**（拉丁"真"）·性别刻意模糊 | 押得最狠·过线·单程下行 | 最深区接手商人·延后建（§12.6） | — |
+
+- **Sela 动机**：不再为宝藏，为**找回同伴留下的东西**——收藏家，藏品对玩家是废料、对她是仅存的、还记得那三个人的证据（"对玩家无价值、对她有价值"落成机制＝§12.5）。三档信任沿用 `[10,30,60]`；**三条同伴线按档解锁**（档1 Corin 线 / 档2 Nerea 线 / 档3 通向 Vera 的失联线）。
+- **台词现成可回收**：现有 `sela.json`（改名后）三段 banter/deeper/confession 不用重写就变狠——「我不找人。人会变、会走、会说谎」成反话（人全没了才这么说），「一开始有名字，后来只剩下『还没找到的那件』」指的就是同伴。改名+改性别+软化"别问她从哪儿来"（她其实有明确来处）即可。
+- **Corin/Nerea 对称**：一个把命押在装备上（深处装备失效就没了·"深海不原谅机械"），一个把命押在改造自己上（死于改造反噬或被吞）。**Nerea 的"生物改造过度"正是 Vera 两个解释之一**——生物派的终点埋在这条线里，读完为 Vera 的模糊埋伏笔。
+
+### 12.3 动机即任务引擎——寻宝循环（用 flag 造·**无 quest 系统**）
+
+Explore C 核实：**仓内无 quest/journal/objective 系统·一切 flag 驱动**。故寻宝任务全用现成三件拼（零新系统）：`story flags` + `Condition DSL` + `item.story.setsFlag/marksPois` + 对话/事件 effect。单条线的闭环：
+
+1. **藏宝图 item**：`story.marksPois: [poiId]` + `story.setsFlag: ["quest.corin.map"]`。持图 → `poisKnownFromItems(profile)` → `chart.ts::documentKnowsPoi` 判真 → 该 POI 海图点亮（**绕发现门·但不绕能力/天气/月相门**·Explore B 核实）。全走 `acquireIntoProfile`（`state.ts`·三入袋路径单点·含 devGrant）自动置 flag。
+2. **藏宝 POI＝固定手写 anchor（不是随机 roaming）**〔**推荐·correct-over-minimal**〕：`marksPois` **钉不住 roaming 运行时 id**（`poi.roam.<seed>.<templateId>`·含 day·Explore B 核实 `chart.ts`），且 roaming+lunar+天气三坑（quirk #204）。用 **anchor**（`chart_pois.json` 的 `anchors[]`·手写稳定 id）由 marksPois 稳定揭示＝最省最稳。**随机选址留 §5(a) 的"每图 seed-固定位"做 Phase 3b 增强**（`condHash(runsCompleted,salt)` 已是现成确定性源·Explore B），别一上来就随机。
+3. **到点事件**：该 POI 的 open 事件 `loot` 给**收藏品 item**（category `'other'`·§12.5）+ `outcome.setProfileFlags: ["quest.corin.found"]`。
+4. **回港交 Sela**：`sela.json` 对话 choice `visibleIf: { kind:'hasItem', itemId:'item.keepsake.corin_gauge' }` → effects `giveItem`（奖励：更好的藏宝图 / token / 深料）+ `gainTrust {npcId:'npc.sela', amount}`（**信任来源③**·§3.5）+ `setFlag quest.corin.returned`。
+5. **门控推进**：下一 beat / 下一条线 `visibleIf: { kind:'all', of:[ {kind:'hasFlag',flag:'quest.corin.returned'}, {kind:'npcTrustTier',npcId:'npc.sela',minTier:2} ] }`。（`npcTrustTier` 已在 3 switch 就位·加线纯数据。）
+6. **藏宝图来源分层**（§3.5③ + §5）：Mira 便宜卖**通用图**（低门）/ Sela 高信任交底 **crew 的好图**（Corin 生前测绘坐标·高门·产出更深更好）。低高两档天然对上作者原提问「藏宝图来源」。
+
+> ⚠️ **需新增的 effect（Slice 1b·现无·Explore 核实 `types/npcs.ts::DialogEffect` 当前只有 setFlag/removeFlag/giveItem/takeGold/giveGold/startDive/openChart/openShop/openUpgradeTree）**：上交环要两个新对话 effect kind——`gainTrust {npcId, amount}`（§3.5 早已列为待加·唯一写口经 `trust.ts::gainTrust`·别直写 `profile.trust`）+ `takeItem {itemId, qty}`（消耗上交的收藏品）。加 effect kind＝改 `types/npcs.ts` 联合 + `engine/dialog.ts` 的 apply switch 两处；`gainTrust` 走单写者、`takeItem` 走现成 `removeFromInventory`。别假设它们已存在。
+
+### 12.4 渐深遭遇（recurring merchant·作者拍"非常好·就是我的想法"）
+
+- **复用 roaming**：每解锁更深一根**深度柱**（`columns.ts`·家/残骸/中层/热液/海沟）就在更深 zone 加一组 `roam.sela_meet_*`，**永远比上次更深一点**（玩家亲眼看着她只会更深、停不下）。
+- **门控**：`requiresFlags` = 见过她浅层的 chain flag（`flag.sela.met_<tier>`）+ intel（`intel.mira.sela`）+ 沿用三月相窗 `new/waxing/full`（`waning` 故意不露＝不常驻）。港口在场门 `isSpecialMerchantInPort`（met flag + 相位窗）沿用。
+- **硬门**：`check-lunar-reach` 只许 **roaming** 带 `lunarWindow`（Explore B·已强制）——加深层交头点保持 roaming、别做成 anchor。
+- **每次更深遇见＝一条同伴线的里程碑**（叙事推进 + 她更深一层的"下不来"流露）。
+- ⚠️ **加深层 roaming 点前先读 quirk #204**：`intelFlag` **不是**可见性门（必须把情报 flag 也进 `requiresFlags`）；给情报后窗外是 `dim` 不是 hidden；天气遮蔽对 windowed 点同样生效（测试挑晴天：本仓 day 0/10/17/21）。
+
+### 12.5 收藏品 item class（"对玩家废料、对 Sela 有价值"落成机制）
+
+- **约束**（把"对玩家无价值"从散文钉成检查）：Sela 收藏品 item 必须 `category:'other'`、**无** `equipment`/`consumable`/`weaponMod`/`grantsCapability`、`tier` 未定义、`sellPrice` 极低或 0。约定 id 前缀 `item.keepsake.*`（或 data 标 `collectible:true`）。
+- **新回归门 `check-collectibles`**〔提案〕：凡 `item.keepsake.*` 违反上述"无用"约束即 regress 红。这样"收藏品对玩家没用"不靠自觉、靠门守。
+- 收藏品经 `item.story.setsFlag` 顺带记 `quest.<crew>.found`（`acquireIntoProfile` 单点自动置·§12.3.3 也可只用事件 flag·二选一别双写）。
+
+### 12.6 Vera（**延后建**·设计定案·别进第一期）
+
+- **人设**：处处和 Sela 反着来——Sela 还数东西、还攒 token、还一直在找他们、还每次都游得回来；Vera 把这些全放下了，过了线、账不再有意义、不再算、不想（或无法）被找回、静在最底、接受了。Sela 是"快没了"，Vera 是"已经过去了"。
+- **诡异不可辨（核心·作者拍）**：你终于在最深处见到失联的同伴，但游戏**永不确认那到底还是不是本人**——**(a) 死了、被有一定智慧的尸衣者穿上；(b) 生物改造过度、活着但变得和尸衣者一样**，没人能证实。**Vera 不说话**（锁死模糊·也省整棵对话树·靠摆货/手势交易）；玩家一直在她身上找"是她"的证据（按断片说脸永不可见），game 一次都不给。
+- **主题（作者深化）**：从人类视角这是"越深越欺骗"；从深海/自然视角或许"越深越真实"——两个视角都留、**game 永不裁决**（别明说成教条·否则滑进说教）。它顺带软化 Sela 的结局：人这边看是被骗着毁掉（悲剧），深海那边看是被剥回真身（诡异归乡），玩家两种都能读。
+- **唯一特例**：能开店、有智慧的尸衣者比"顶级捕食者"高一档 → 定成**全局唯一的特例**（更古老/唯一一个），**别让普通尸衣者沾这智慧**（守住怪物平时的威胁·接 `boss_enemy_design` 尸衣者定位）。
+- **不可逆价**：过线后**深潮币失效**（分赃筹码只在"还回得来"的世界算数），Vera 的"价"是**拿不回来的东西**（一次性代价·呼应单程下行）——需要一个"不可逆价"机制（**延后设计**·数值/形态待作者）。
+- **依赖**：住"无法返回之地"（最深区·地图落位作者"以后再说"）→ **第一期不建·design-only**。
+- **玩家流派 hook（远期）**：若玩家和 Vera 押了同一条路，Vera 更像"你这条路的终点"，镜子最利——但这**依赖不存在的玩家科技/生物流派系统**（§12.7），远期、别绑进 Sela 交付。
+- **科考队接口（备注）**：作者曾问"失联那个接成导师/科考队第八人"——**已否**（会破坏 Sela 的一二章零剧透 + 把边缘 NPC 焊进承重主线 canon + 破坏科考队 7 人对称）。留"擦肩"淡呼应可，硬接不做（详见本 session 讨论）。
+
+### 12.7 tech/bio 诚实边界（防空中楼阁）
+
+- **代码里不存在科技/生物玩家流派系统**（Explore C 核实·仅有独立装备升级树 + capability 标）。
+- 本设计里 tech/bio 目前**纯叙事层**（四人队背景·两个死者一科技一生物·Vera 押边成谜）——**零代码**。
+- 真做成玩家可选流派＝独立大工程：`profile.techBioPath?: 'tech'|'bio'` 字段（additive·不 bump SAVE·quirk #99）+ 新 Condition kind `hasPath`（补 3 switch·quirk #203）+ 大量内容门控 + 两条装备/改造线。**别混进 Sela/Vera 交付·单列 initiative·Opus·high**。
+
+### 12.8 rename silas→sela（连内部 id·作者拍"都改·干净点")
+
+- 游戏未发布·无存档兼容负担（quirk #99）→ **连 id 一起改**（`flag.silas.met`→`flag.sela.met` 等不 bump SAVE·无真实旧档）。
+- 全量迁移矩阵见 §9 + Explore A 报告（11 个源文件 + 3 个 `_debug_silas*.ts`）：`npc.silas`→`npc.sela`·`shop.silas`→`shop.sela`·`flag.silas.met`·`flag.mira.tip_silas_seen`·`intel.mira.silas`·`roam.silas_meet_*`·`sela.meet_*`·`sela.root/banter/deeper/confession`·`mira.tip_silas`·`silas.json`→`sela.json`·`SPECIAL_MERCHANT_*` 常量值。
+- **一次性/回归门**：rename 后全仓 `grep -i silas` 无残留（除 CHANGELOG 历史）。改名同时改性别代词（他→她）+ retheme 短描述。文案过 `check-protagonist-voice` + `check-terminology`。
+
+### 12.9 regress-gate 约定汇总（守约定用机制不用散文）
+
+1. **`check-collectibles`（新·§12.5）**：`item.keepsake.*` 必须"对玩家无用"（category 'other'·无能力/装备/消费/武改·低价）。
+2. **`check-npc-trust` §8 红线（已在）**：信任奖励不锁主线——确保 `quest.<crew>.*` / 收藏品 flag 不进主线 gate。
+3. **rename 完整门（§12.8）**：无残留 `silas`。
+4. **`check-lunar-reach`（已在·§12.4）**：Sela 深层交头点只 roaming 带 `lunarWindow`。
+5. **三经济门（#201）+ `emit-economy-graph --write`**：改 token/宝藏产出等经济数据后重生 `economy-dag.mmd`；收支环（§7）token 花费 ≤ 宝藏金币收入。
+6. **Vera 唯一门（延后·随 Vera 建）**：深区特例尸衣者商人全局单一。
+7. **`check-boundaries` 规则七（已在）**：`profile.trust` 只 `trust.ts`/`state.ts` 碰。
+8. **`npcRegistry.ts` 单一登记（已在·#244）**：加 NPC 只在这一处登记（`dialog.ts`/`trust.ts` 都读它）。
+
+### 12.10 分期 build slices（model/effort · 并行）
+
+| Slice | 内容 | 现在可搭？ | 绿门 | model·effort |
+|---|---|---|---|---|
+| **1a rename+retheme** | silas→sela 连 id + 改女性 + retheme 人设（四人队幸存者·未押边·token＝分赃筹码）+ 现有 3 交头点/货架/Mira intel 全改名 | ✅ | typecheck + playthrough-trust + rename grep 门 | **Opus·medium**（rename 正确性宽 + voice 文案） |
+| **1b 首条同伴线** | Corin 线端到端：1 张藏宝图 item（Sela 高信任/Mira）→ 1 个固定藏宝 anchor（marksPois 揭示）→ 收藏品('other')+flag → 回港交 Sela → gainTrust+奖励+flag。跑通循环 | ✅ | playthrough-trust 扩 + check-collectibles(新) | **Opus·medium** |
+| **2 二线+渐深+来源分层** | Nerea 线（埋 Vera 伏笔）+ 渐深遭遇（Sela 深一柱再遇）+ 藏宝图 Mira便宜/Sela好图分层 | ✅ | 同上 + check-lunar-reach | **Opus·medium** |
+| **3 Vera（延后）** | Vera 接手 + 不可逆价机制 + 第三条（失联）线总回收 | ❌ 待最深区地图落位 | + Vera 唯一门 | **Opus·high**（需地图 + 新机制·在场定形态） |
+| **X 玩家流派（远期·独立）** | 科技/生物玩家可选流派系统（§12.7）·非本系统必需 | — | 新 Condition 门 | **Opus·high**·单列 |
+
+- **并行**：1a（rename·碰 sela.json/port.ts/events/chart_pois 广但浅）建议**单独一趟先落**，避免和 1b 内容改同文件打架；1b/2 内部串行（共享 sela.json/port.ts/items）。psm 车道：rename 一趟、内容一趟。
+- **机制先行**（CLAUDE.md）：先写会红的 `check-collectibles` → 再用数据转绿。
+
+### 12.11 仍留作者拍（本节新增开放点）
+
+- 〔名〕两个死者 **Corin / Nerea** 是 draft·你改；队名"深潮打捞队"draft。
+- 〔物〕四件收藏品具体物件（各人一件·上表 draft）。
+- 〔Vera〕"不可逆价"具体形态（拿不回来的**什么**）+ 最深区地图落位（你说以后再说）。
+- 〔UI〕Sela 是否要独立信任面板（§3.8·上个交接 todo #3）——本批只商店头显数字。
+- 〔数值·defer〕全部阈值/token 价/藏宝图产出/月相补货/收支配平（§11·`defer-number-tuning`）。
+
+### 12.12 实装状态（2026-07-02 · #246 · Cowork 交互 · Opus · Slice 1a+1b 落地）
+
+**命名定案**（作者在场拍·覆盖 §12.1/§12.2 的 draft 队名）：特殊商人 **Sela**（女·连内部 id silas→sela 全改）的小队＝**黑背鸥小队 / The Kelp Gulls**（探索/侦察向·「不善掠夺」＝侦察不是打手），曾隶属母组织 **赤喉海盗团 / The Crimson-Throats**（红喉军舰鸟海盗·理念不合退出）；队伍**探到了大深渊的秘密**（backstory 钩·**一二章不交底**·同 Vera 一起延后·守剧透纪律）。货币 `item.deep_token` 显示名 深潮币→**红喉鹈币**（id 不变·赤喉海盗团发行的分赃筹码·压着军舰鸟徽）。徽章＝**军舰鸟**（frigatebird·「能上天却碰不到海」的鸟·被下海的队伍拿来当徽＝反讽 + 挽歌）。Corin（科技派死者）/Nerea（生物派死者）draft 名沿用（作者「先这样」）。赤喉(团名)≠红喉(币/鸟)刻意留双词。
+
+**已落**（sandbox `npm run regress` **81/81 全绿**·含 tsx 行为测·build 留 Mac/nightly·**未提交**）：
+- **1a rename+retheme**：silas→sela 连 id/文件/常量 `SPECIAL_MERCHANT_*`/UI/import（新文件 `src/data/npcs/sela.json`·旧 `silas.json` 因 mount 不能 unlink 已 `mv` 进 `.git/.sandbox-junk`→**Mac 收尾需 `git rm src/data/npcs/silas.json` + `git add sela.json`**）；Sela 改女性（他→她）+ 四人队幸存者/收藏家人设（root/banter/deeper/confession retheme·加 `sela.corin_offer`/`sela.corin_return` 两节点）；红喉鹈币 retheme（token 描述 + Mira tip + SpecialMerchantShopView）；PortView role 寻宝人→拾遗人。
+- **1b infra**：新 DialogEffect kind `gainTrust {npcId,amount}`（经 `engine/trust.ts::gainTrust` 单写口·规则七·注释避开 `profile.trust` 字面量 tripwire·quirk #203②）+ `takeItem {itemId,qty}`（经 `state.ts::removeFromInventory`）·改 `types/npcs.ts` + `engine/dialog.ts`。
+- **1b Corin 线端到端**：`item.treasure_map.corin_survey`（story.marksPois→`poi.anchor.corin_cache` + setsFlag `story.ch1.corin_map`·Sela deeper @npcTrustTier≥1 giveItem）→ 固定 anchor `poi.anchor.corin_cache`（openEventId `corin.cache` + openEventFlag `story.ch1.corin_found`·**无 lunarWindow**·mirror whalefall.search 开场机制）→ 开箱事件 `corin.cache` loot 半枚红喉鹈币+token+置 corin_found →回港交还 Sela（takeItem 收藏品 + gainTrust + giveItem token 报酬 + setFlag `story.ch1.corin_returned`）。三 flag 登记进 `story.ts::allStoryFlags`（支线·不进主线 gate·§8）。收藏品 `item.keepsake.corin_coin`（半枚红喉鹈币·category 'other'·卖不出价）。
+- **1b 门**：新 `scripts/check-collectibles.mjs`（`item.keepsake.*` 必 category 'other'·无 equipment/consumable/weaponMod/grantsCapability/effects/tier·sellPrice≤2）入 regress；`playthrough-trust.ts` §5 扩测 Corin 环（地图揭示 lit + 两新 effect 运行时）；经济 DAG 因新事件 loot 重排·已 `emit-economy-graph --write` 再生 `economy-dag.mmd`。
+
+**§12.11 消化**：队名/币/徽定（本节）；Corin/Nerea 名 draft 保留；**仍待作者**：四件收藏品具体物件（Corin 现用「半枚红喉鹈币」·Nerea 待）、Vera 不可逆价 + 最深区落位、Sela 独立信任面板（§3.8·现只商店头显数字）、全数值（defer）。**下一步＝Slice 2**（Nerea 线埋 Vera 伏笔 + 渐深遭遇「Sela 深一柱再遇」+ 藏宝图 Mira便宜/Sela好图分层·§12.10·Opus·medium）。
+
+---
+
+## 13. 一句话
 
 一个作者想要的**贸易/关系/寻宝系统**（三目标：NPC 关系纵深 / 玩法循环 / 长线重玩）·材料缓解 + 金币 sink 是顺带。核心＝**信任做成通用 per-NPC 机制**（数值单源 + 派生档 + 复用 Condition 门控 + 数据驱动 + 单写者 + 回归门），特殊商人只是第一个消费者·任何 NPC 日后零引擎代码接入·**阵营（极地火山区）留 additive 缝**（§3.9）。结构红线：关系门别挡主线必需。

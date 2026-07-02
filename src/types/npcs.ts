@@ -7,7 +7,7 @@ export type NpcRole =
   | 'priest' // 教堂线（后期）
   | 'guildmaster' // 公会
   | 'librarian' // 图书室（后期）
-  | 'trader'; // 特殊商人 Silas（藏宝贸易与信任系统 SPEC §6·探险家镜像·token+信任门控货架）
+  | 'trader'; // 特殊商人 Sela（藏宝贸易与信任系统 SPEC §6·探险家镜像·token+信任门控货架）
 
 export interface NpcDef {
   id: string;
@@ -54,4 +54,6 @@ export type DialogEffect =
   | { kind: 'startDive'; zoneId: string }
   | { kind: 'openChart' } // 摊开港口海图选点（切 phase 'chart'）
   | { kind: 'openShop'; shopId: string }
-  | { kind: 'openUpgradeTree'; lineId: string };
+  | { kind: 'openUpgradeTree'; lineId: string }
+  | { kind: 'gainTrust'; npcId: string; amount: number } // 唯一写口经 engine/trust.ts::gainTrust（规则七·别在别处直写该信任字段）
+  | { kind: 'takeItem'; itemId: string; qty: number };

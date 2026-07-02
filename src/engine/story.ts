@@ -140,6 +140,17 @@ export const STATION_FOUND_FLAG = 'story.ch1.station_found';
 export const VENT_INTEL_FLAG = 'story.ch1.vent_intel';
 
 /**
+ * Corin 藏宝线 flag（黑背鸥小队幸存者 Sela 的第一条同伴线·藏宝贸易与信任系统 SPEC §12.3）：
+ * corin_map = 从 Sela 取得科林测绘图（item.treasure_map.corin_survey.story.setsFlag·并揭示 poi.anchor.corin_cache）；
+ * corin_found = 到点开箱事件置位（chart_pois openEventFlag·一次性强制开场）；
+ * corin_returned = 回港把半枚币交还 Sela（对话 setFlag·涨信任）。
+ * 全为**支线**——§8 红线：关系/藏宝 flag 不挡通关必经进度（不进任何主线 reach/reveal gate）。
+ */
+export const CORIN_MAP_FLAG = 'story.ch1.corin_map';
+export const CORIN_FOUND_FLAG = 'story.ch1.corin_found';
+export const CORIN_RETURNED_FLAG = 'story.ch1.corin_returned';
+
+/**
  * story.ts 生成的**全部** story.* flag 枚举（单一来源）。playthrough-story §4 据此守门
  * 「任何 data 文件里出现的 story.* 字面量都必须 ∈ 本集合」——新增任何 story flag 生成器
  * 务必在此登记，否则用到它的 data 会在 regress 红（这是把「门=flag·派生进 story.ts」
@@ -160,6 +171,9 @@ export function allStoryFlags(): string[] {
     WHALEFALL_FOUND_FLAG,
     STATION_FOUND_FLAG,
     VENT_INTEL_FLAG,
+    CORIN_MAP_FLAG,
+    CORIN_FOUND_FLAG,
+    CORIN_RETURNED_FLAG,
   ];
 }
 

@@ -1,6 +1,6 @@
-// Silas 的货架 —— 特殊商人（藏宝贸易与信任系统 SPEC §6·Phase 2 MVP）。
-// 与 MiraShopView 平行但故意不共享组件：只花深潮币（item.deep_token）、按信任档二次门控、
-// 无「卖东西」侧（他只买他要的，不收摊·SPEC §6.3 只谈货架，未提回购）。
+// Sela 的货架 —— 特殊商人（藏宝贸易与信任系统 SPEC §6·Phase 2 MVP）。
+// 与 MiraShopView 平行但故意不共享组件：只花红喉鹈币（item.deep_token）、按信任档二次门控、
+// 无「卖东西」侧（她只买她要的，不收摊·SPEC §6.3 只谈货架，未提回购）。
 
 import { useState } from 'react';
 import type { GameState } from '@/types';
@@ -31,13 +31,13 @@ export function SpecialMerchantShopView({ state, onStateChange }: Props) {
 
   function handleBuyOne(itemId: string, tokens: number) {
     if (tokenCount < tokens) {
-      setFlash(`深潮币不够：还差 ${tokens - tokenCount} 枚`);
+      setFlash(`红喉鹈币不够：还差 ${tokens - tokenCount} 枚`);
       return;
     }
     const next = buyFromSpecialMerchant(state, itemId, 1);
     if (next !== state) {
       const def = getItemDef(itemId);
-      setFlash(`买入 ${def?.name ?? itemId} ×1（−${tokens} 深潮币）`);
+      setFlash(`买入 ${def?.name ?? itemId} ×1（−${tokens} 红喉鹈币）`);
       onStateChange(next);
     }
   }
@@ -47,10 +47,10 @@ export function SpecialMerchantShopView({ state, onStateChange }: Props) {
   }
 
   return (
-    <div className="port silas-shop">
+    <div className="port sela-shop">
       <header className="port-header">
-        <h1>{npc?.name ?? 'Silas'} 的货架</h1>
-        <p className="port-sub">{npc?.shortDescription ?? '不常在，来的时候别问他从哪儿来。'}</p>
+        <h1>{npc?.name ?? 'Sela'} 的货架</h1>
+        <p className="port-sub">{npc?.shortDescription ?? '不常在，跟着潮水来去。'}</p>
       </header>
 
       <PanelShell
@@ -58,7 +58,7 @@ export function SpecialMerchantShopView({ state, onStateChange }: Props) {
         title="交易"
         sub={
           <>
-            深潮币 <span className="gold-figure" key={tokenCount}>{tokenCount}</span> 枚 ・ 信任
+            红喉鹈币 <span className="gold-figure" key={tokenCount}>{tokenCount}</span> 枚 ・ 信任
             第 {tier} 档（{value}）
           </>
         }
@@ -66,7 +66,7 @@ export function SpecialMerchantShopView({ state, onStateChange }: Props) {
       >
         <section className="mira-section">
           <p className="dim mira-buy-note">
-            只收深潮币，不收金币。信任不够的货先摆着——不是没有，是他不给你看。
+            只收红喉鹈币，不收金币。信任不够的货先摆着——不是没有，是她不给你看。
           </p>
           <div className="item-grid">
             {shelf.map((s) => {
@@ -89,10 +89,10 @@ export function SpecialMerchantShopView({ state, onStateChange }: Props) {
                   variant={short && !blocked ? 'short' : undefined}
                   title={
                     s.locked
-                      ? `${def?.name ?? s.itemId}——信任不够，他不给你看这件`
+                      ? `${def?.name ?? s.itemId}——信任不够，她不给你看这件`
                       : soldOut
                         ? `${def?.name ?? s.itemId}——这批没了，下次再看`
-                        : `${def?.name ?? s.itemId}——点击买 1（${s.tokens} 深潮币）`
+                        : `${def?.name ?? s.itemId}——点击买 1（${s.tokens} 红喉鹈币）`
                   }
                   onClick={() => handleBuyOne(s.itemId, s.tokens)}
                 />

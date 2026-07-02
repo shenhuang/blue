@@ -46,7 +46,7 @@ export function PortView({ state, onStateChange, onOpenService, dialog, onDialog
     onStateChange(toShop(state, 'mira.bench'));
   }
 
-  function openSilasShop() {
+  function openSelaShop() {
     onDialogChange(null);
     onStateChange(toShop(state, SPECIAL_MERCHANT_SHOP_ID));
   }
@@ -107,16 +107,16 @@ export function PortView({ state, onStateChange, onOpenService, dialog, onDialog
             ) : (
               <NpcCard name="Otto" role="气瓶师" description="仓库门口没人。" disabled />
             )}
-            {/* 特殊商人 Silas（藏宝贸易与信任系统 SPEC §6·Phase 2 MVP）：只在见过他（中层交头点 dive 事件
-                置 flag.silas.met）+ 当前月相在他窗内（isSpecialMerchantInPort）才露卡片——不常驻，见不着
-                时干脆不显示（不放"???"占位，守"神秘·偶遇"调性，别提前剧透他的存在）。 */}
-            {getNpc('npc.silas') && isSpecialMerchantInPort(state.profile) && (
+            {/* 特殊商人 Sela（藏宝贸易与信任系统 SPEC §6·Phase 2 MVP）：只在见过她（中层交头点 dive 事件
+                置 flag.sela.met）+ 当前月相在她窗内（isSpecialMerchantInPort）才露卡片——不常驻，见不着
+                时干脆不显示（不放"???"占位，守"神秘·偶遇"调性，别提前剧透她的存在）。 */}
+            {getNpc('npc.sela') && isSpecialMerchantInPort(state.profile) && (
               <NpcCard
-                name={getNpc('npc.silas')!.name}
-                role="寻宝人"
-                description={getNpc('npc.silas')!.shortDescription}
-                onTalk={() => startDialogWith(getNpc('npc.silas'))}
-                extraAction={{ label: '直接看他的货', onClick: openSilasShop }}
+                name={getNpc('npc.sela')!.name}
+                role="拾遗人"
+                description={getNpc('npc.sela')!.shortDescription}
+                onTalk={() => startDialogWith(getNpc('npc.sela'))}
+                extraAction={{ label: '直接看她的货', onClick: openSelaShop }}
               />
             )}
           </div>

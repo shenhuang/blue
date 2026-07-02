@@ -136,6 +136,9 @@ tasks.push({ name: 'check-upgrade-refs', cmd: ['node', join('scripts', 'check-up
 // 通用 NPC 信任系统门（纯 node·npcTrustTier 引用的 NPC 存在 + thresholds 单调 + 红线桩·2026-06-30·藏宝贸易与信任系统 SPEC §3.7·见 scripts/check-npc-trust.mjs）
 tasks.push({ name: 'check-npc-trust', cmd: ['node', join('scripts', 'check-npc-trust.mjs')] });
 
+// 收藏品「对玩家无用」门（纯 node·item.keepsake.* 必为纯收藏品 category 'other'·无功能字段·卖不出价·2026-07-02·藏宝贸易与信任系统 SPEC §12.5·见 scripts/check-collectibles.mjs）
+tasks.push({ name: 'check-collectibles', cmd: ['node', join('scripts', 'check-collectibles.mjs')] });
+
 // 主线可达性门（纯 node·前哨解锁链无环/无死结 + columnStory 主线 beat host/引用/跨柱 item 门可达·把「起点→章尾可达」钉成会红的检查·2026-06-27 D-2 M 组·见 scripts/check-mainline-reachable.mjs）
 tasks.push({ name: 'check-mainline-reachable', cmd: ['node', join('scripts', 'check-mainline-reachable.mjs')] });
 

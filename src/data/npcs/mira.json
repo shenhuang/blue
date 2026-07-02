@@ -51,14 +51,14 @@
           }
         },
         {
-          "id": "silas_tip",
+          "id": "sela_tip",
           "label": "有人说这附近还有旁的买家？",
-          "next": "mira.tip_silas",
+          "next": "mira.tip_sela",
           "visibleIf": {
             "kind": "all",
             "of": [
               { "kind": "hasFlag", "flag": "story.ch1.anchor.midwater" },
-              { "kind": "notHasFlag", "flag": "flag.mira.tip_silas_seen" }
+              { "kind": "notHasFlag", "flag": "flag.mira.tip_sela_seen" }
             ]
           }
         },
@@ -76,16 +76,16 @@
     }
   },
   "dialogs": {
-    "mira.tip_silas": {
-      "id": "mira.tip_silas",
-      "text": "Mira 没马上答话，先把秤砣压好。\n\n「有一个。不常在，跟着潮走——这个月相来，下个月相说不定又换了地方。他只认深潮币，别的一概不收。」\n\n她顿了顿：「我这儿偶尔进一点深潮币，价不便宜。他货架上摆的东西，我这儿没有。」\n\n她没再多说，转头继续记账——好像已经说得比平时多了。",
+    "mira.tip_sela": {
+      "id": "mira.tip_sela",
+      "text": "Mira 没马上答话，先把秤砣压好。\n\n「有一个。不常在，跟着潮走——这个月相来，下个月相说不定又换了地方。她只认红喉鹈币，别的一概不收。」\n\n她顿了顿：「我这儿偶尔进一点红喉鹈币，价不便宜。她货架上摆的东西，我这儿没有。」\n\n她没再多说，转头继续记账——好像已经说得比平时多了。",
       "onEnter": [
-        { "kind": "setFlag", "flag": "flag.mira.tip_silas_seen" },
-        { "kind": "setFlag", "flag": "intel.mira.silas" }
+        { "kind": "setFlag", "flag": "flag.mira.tip_sela_seen" },
+        { "kind": "setFlag", "flag": "intel.mira.sela" }
       ],
       "choices": [
         {
-          "id": "back_silas_tip",
+          "id": "back_sela_tip",
           "label": "（记下了）",
           "next": "end"
         }

@@ -2579,92 +2579,126 @@
       ]
     },
     {
-      "_doc": "特殊商人 Silas 交头点专属（藏宝贸易与信任系统 SPEC §6.2·Phase 2 MVP）：poiId 精确钉住 3 个候选浮标模板之一（每相位一个·chart_pois.json roamingTemplates），zoneTags 空+高权重＝不漏进普通中层池、命中该点时近乎必出。三条事件文案随相位微调开场，出口一致（都置持久 flag.silas.met·PortView 据此在港口显出他的卡片）。",
-      "id": "silas.meet_new",
-      "poiId": "roam.silas_meet_new",
+      "_doc": "特殊商人 Sela 交头点专属（藏宝贸易与信任系统 SPEC §6.2·Phase 2 MVP）：poiId 精确钉住 3 个候选浮标模板之一（每相位一个·chart_pois.json roamingTemplates），zoneTags 空+高权重＝不漏进普通中层池、命中该点时近乎必出。三条事件文案随相位微调开场，出口一致（都置持久 flag.sela.met·PortView 据此在港口显出她的卡片）。",
+      "id": "sela.meet_new",
+      "poiId": "roam.sela_meet_new",
       "depthRange": [55, 85],
       "zoneTags": [],
       "weight": 30,
       "title": "绳的另一头",
-      "body": "新月，水比平时更暗一层。你顺着那段绳往下，绳尽头是个人——背对着你，正把一件东西往怀里的袋子里塞，动作很稳，像是干这个很久了。\n他听见你的气泡声，头也不回：「别踢起沉积物，我数东西呢。」",
+      "body": "新月，水比平时更暗一层。你顺着那段绳往下，绳尽头是个人——背对着你，正把一件东西往怀里的袋子里塞，动作很稳，像是干这个很久了。\n她听见你的气泡声，头也不回：「别踢起沉积物，我数东西呢。」",
       "tone": "realistic",
       "options": [
         {
           "id": "greet",
           "label": "游近，打个招呼",
           "outcome": {
-            "text": "他转过身，把你从头到脚看了一遍——不是看人，是看你身上挂着什么。「找到什么了？还是来看看我这儿有什么。」\n你记下这张脸，往后回港，柜台那边应该也能找到他。",
+            "text": "她转过身，把你从头到脚看了一遍——不是看人，是看你身上挂着什么。「找到什么了？还是来看看我这儿有什么。」\n你记下这张脸，往后回港，柜台那边应该也能找到她。",
             "oxygenTurnCost": 1,
-            "setProfileFlags": ["flag.silas.met"]
+            "setProfileFlags": ["flag.sela.met"]
           }
         },
         {
           "id": "watch_first",
-          "label": "先不出声，看他在忙什么",
+          "label": "先不出声，看她在忙什么",
           "outcome": {
-            "text": "他把最后一件东西收好，才像是察觉到你，抬眼看过来，不惊讶。「看够了？」\n你没答上来。他自己先转身继续走，绳在他身后一点点松开、沉下去。",
+            "text": "她把最后一件东西收好，才像是察觉到你，抬眼看过来，不惊讶。「看够了？」\n你没答上来。她自己先转身继续走，绳在她身后一点点松开、沉下去。",
             "oxygenTurnCost": 1,
-            "setProfileFlags": ["flag.silas.met"]
+            "setProfileFlags": ["flag.sela.met"]
           }
         }
       ]
     },
     {
-      "id": "silas.meet_waxing",
-      "poiId": "roam.silas_meet_waxing",
+      "id": "sela.meet_waxing",
+      "poiId": "roam.sela_meet_waxing",
       "depthRange": [55, 85],
       "zoneTags": [],
       "weight": 30,
       "title": "绳的另一头",
-      "body": "月相在长，光线比新月那阵好认路一点。绳往下，尽头还是那个人——背对着你，正把一件东西往怀里的袋子里塞，动作很稳，像是干这个很久了。\n他听见你的气泡声，头也不回：「别踢起沉积物，我数东西呢。」",
+      "body": "月相在长，光线比新月那阵好认路一点。绳往下，尽头还是那个人——背对着你，正把一件东西往怀里的袋子里塞，动作很稳，像是干这个很久了。\n她听见你的气泡声，头也不回：「别踢起沉积物，我数东西呢。」",
       "tone": "realistic",
       "options": [
         {
           "id": "greet",
           "label": "游近，打个招呼",
           "outcome": {
-            "text": "他转过身，把你从头到脚看了一遍——不是看人，是看你身上挂着什么。「找到什么了？还是来看看我这儿有什么。」\n你记下这张脸，往后回港，柜台那边应该也能找到他。",
+            "text": "她转过身，把你从头到脚看了一遍——不是看人，是看你身上挂着什么。「找到什么了？还是来看看我这儿有什么。」\n你记下这张脸，往后回港，柜台那边应该也能找到她。",
             "oxygenTurnCost": 1,
-            "setProfileFlags": ["flag.silas.met"]
+            "setProfileFlags": ["flag.sela.met"]
           }
         },
         {
           "id": "watch_first",
-          "label": "先不出声，看他在忙什么",
+          "label": "先不出声，看她在忙什么",
           "outcome": {
-            "text": "他把最后一件东西收好，才像是察觉到你，抬眼看过来，不惊讶。「看够了？」\n你没答上来。他自己先转身继续走，绳在他身后一点点松开、沉下去。",
+            "text": "她把最后一件东西收好，才像是察觉到你，抬眼看过来，不惊讶。「看够了？」\n你没答上来。她自己先转身继续走，绳在她身后一点点松开、沉下去。",
             "oxygenTurnCost": 1,
-            "setProfileFlags": ["flag.silas.met"]
+            "setProfileFlags": ["flag.sela.met"]
           }
         }
       ]
     },
     {
-      "id": "silas.meet_full",
-      "poiId": "roam.silas_meet_full",
+      "id": "sela.meet_full",
+      "poiId": "roam.sela_meet_full",
       "depthRange": [55, 85],
       "zoneTags": [],
       "weight": 30,
       "title": "绳的另一头",
-      "body": "满月，水面那层光多少漏得下来一点。绳往下，尽头还是那个人——背对着你，正把一件东西往怀里的袋子里塞，动作很稳，像是干这个很久了。\n他听见你的气泡声，头也不回：「别踢起沉积物，我数东西呢。」",
+      "body": "满月，水面那层光多少漏得下来一点。绳往下，尽头还是那个人——背对着你，正把一件东西往怀里的袋子里塞，动作很稳，像是干这个很久了。\n她听见你的气泡声，头也不回：「别踢起沉积物，我数东西呢。」",
       "tone": "realistic",
       "options": [
         {
           "id": "greet",
           "label": "游近，打个招呼",
           "outcome": {
-            "text": "他转过身，把你从头到脚看了一遍——不是看人，是看你身上挂着什么。「找到什么了？还是来看看我这儿有什么。」\n你记下这张脸，往后回港，柜台那边应该也能找到他。",
+            "text": "她转过身，把你从头到脚看了一遍——不是看人，是看你身上挂着什么。「找到什么了？还是来看看我这儿有什么。」\n你记下这张脸，往后回港，柜台那边应该也能找到她。",
             "oxygenTurnCost": 1,
-            "setProfileFlags": ["flag.silas.met"]
+            "setProfileFlags": ["flag.sela.met"]
           }
         },
         {
           "id": "watch_first",
-          "label": "先不出声，看他在忙什么",
+          "label": "先不出声，看她在忙什么",
           "outcome": {
-            "text": "他把最后一件东西收好，才像是察觉到你，抬眼看过来，不惊讶。「看够了？」\n你没答上来。他自己先转身继续走，绳在他身后一点点松开、沉下去。",
+            "text": "她把最后一件东西收好，才像是察觉到你，抬眼看过来，不惊讶。「看够了？」\n你没答上来。她自己先转身继续走，绳在她身后一点点松开、沉下去。",
             "oxygenTurnCost": 1,
-            "setProfileFlags": ["flag.silas.met"]
+            "setProfileFlags": ["flag.sela.met"]
+          }
+        }
+      ]
+    },
+    {
+      "_doc": "Corin 藏宝线到点开箱（黑背鸥小队测绘手科林最后一处标记·藏宝贸易与信任系统 SPEC §12.3）：poi.anchor.corin_cache 的 openEventId·由 openEventFlag story.ch1.corin_found 一次性门控（开过即不再强制）。给收藏品半枚红喉鹈币（回港交 Sela 涨信任）+ 几枚币当宝藏。留诚实退路（不开可上浮·不置 flag）。文案 [待过稿]。",
+      "id": "corin.cache",
+      "depthRange": [0, 0],
+      "zoneTags": [],
+      "weight": 0,
+      "title": "科林标记的地方",
+      "body": "照着图上炭笔圈死的坐标，你在一处塌了半边的岩架下停住。缝里塞着个防水袋，扣得死紧，外头缠了两圈那种外面打的绳结——和你在中层见过的一样。\n袋子比看着沉。有人把它留在这儿，再没回来取。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "open_cache",
+          "label": "解开那个袋子",
+          "outcome": {
+            "text": "绳结泡得太久，一扯就散。袋里没有金子——一台进了水的深度表，几页泡烂的海图，还有一枚断成两半的红喉鹈币，半只鸟压在你掌心。\n表和图你都留不住，烂了。那半枚币你收进内袋。它对你没用，可你隐约觉得，它对某个人不是废物。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.keepsake.corin_coin", "qty": [1, 1], "chance": 1 },
+              { "itemId": "item.deep_token", "qty": [1, 2], "chance": 1 }
+            ],
+            "setProfileFlags": ["story.ch1.corin_found"]
+          }
+        },
+        {
+          "id": "leave_cache",
+          "label": "先不动它——记着位置，回航",
+          "outcome": {
+            "text": "你把袋子留在原处，退开半米。它在这儿搁了这么久，不差再等你一趟。你核了一遍坐标，调正浮力，往回升。",
+            "oxygenTurnCost": 1,
+            "endDive": "forceAscend"
           }
         }
       ]

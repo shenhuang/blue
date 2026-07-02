@@ -93,7 +93,7 @@ export function PortLayout({ state, onStateChange }: Props) {
     rightPane === 'chart' ? (
       <SeaChartView state={state} onStateChange={onStateChange} focusPoiId={chartFocus ?? undefined} />
     ) : rightPane === 'shop' ? (
-      // shopId 分流（目前两家：Mira 的 mira.bench / Silas 的 shop.silas·SPEC §6）——缺省回退 Mira
+      // shopId 分流（目前两家：Mira 的 mira.bench / Sela 的 shop.sela·SPEC §6）——缺省回退 Mira
       // （非本二者的 shopId 不炸，回默认柜台）。
       state.phase.kind === 'shop' && state.phase.shopId === SPECIAL_MERCHANT_SHOP_ID ? (
         <SpecialMerchantShopView state={state} onStateChange={onStateChange} />
