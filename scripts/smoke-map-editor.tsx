@@ -3,7 +3,7 @@
 // 数据（5 区 beacon 标签 + 图例 + 导出按钮）。守「数据 shape 演进（章节/home 迁移）别静默打挂编辑器」。
 //
 // 跑法： npx tsx scripts/smoke-map-editor.tsx
-import React from 'react';
+// @jsxRuntime automatic —— 同 smoke-chart-ui：pragma 切 automatic transform·与 react-jsx typecheck 一致
 import { renderToStaticMarkup } from 'react-dom/server';
 import MapEditor from '../src/ui/MapEditor';
 

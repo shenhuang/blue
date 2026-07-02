@@ -1,5 +1,6 @@
 # 深海回响 · 藏宝 / 贸易 / 通用 NPC 信任系统 SPEC（v0 草案）
 
+> **📎 状态指针（2026-07-02）：最新落地记录见 §12.12（#246 Slice 1a+1b）/ §12.13（#247 Slice 2 Ch1）**——晚于下面档头状态（写于 Phase 2·#244）的进展以那两节为准。
 > 2026-07-01 · #243/#244（Cowork 交互·Opus）· **Phase 1（通用信任机制）+ Phase 2（特殊商人 Silas MVP）已落·Phase 3（藏宝图+来源）/Phase 4（Aldo/Mira/Otto retrofit）未实装**。
 > 触点/复用点已由两路 Explore 核实 against 当前代码（见 §9）。**数值全 `defer-number-tuning`·本档只钉机制与结构。**
 > Phase 2 落地记录（#244）：特殊商人 npc.silas（探险家镜像·3 档信任 [10,30,60]）+ 深潮币 `item.deep_token`

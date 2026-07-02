@@ -937,7 +937,7 @@
         }
       },
       {
-        "_doc": "特殊商人 Sela 交头点（藏宝贸易与信任系统 SPEC §6.2·Phase 2 MVP）：3 个候选浮标，各钉一个不同相位（new/waxing/full·waning 故意留空——他真不常驻）——同一时间至多一个可去（check-lunar-reach 只许 roamingTemplates 带 lunarWindow，anchor 不许，故走这里非 anchors）。**情报是入场券**：`intel.mira.sela` 进 requiresFlags——没给情报前三点一律 hidden（即便相位对得上，见 poiRevealState：known=false 时 lunarWindowState 不拦、会误穿成 lit，故门必须收在 requiresFlags，光挂 intelFlag 不够）。给了情报后（Mira 一次性对话·见 mira.json）：三点全部转「已知」——当前相位命中的那个 lit（可去），另两个 dim（同 roam.east_ebb_shallows 先例：已知点窗外＝『知道在哪、去不了、可规划』，非彻底消失）。**这三个 lunarWindow 值须与 engine/port.ts::SPECIAL_MERCHANT_ACTIVE_PHASES 保持一致**（PortView 用它判断 Sela 是否「在港」可交易；非机制强连，改窗记得两边一起改）。",
+        "_doc": "特殊商人 Sela 交头点（藏宝贸易与信任系统 SPEC §6.2·Phase 2 MVP）：3 个候选浮标，各钉一个不同相位（new/waxing/full·waning 故意留空——他真不常驻）——同一时间至多一个可去（check-lunar-reach 只许 roamingTemplates 带 lunarWindow，anchor 不许，故走这里非 anchors）。**情报是入场券**：`intel.mira.sela` 进 requiresFlags——没给情报前三点一律 hidden（即便相位对得上，见 poiRevealState：known=false 时 lunarWindowState 不拦、会误穿成 lit，故门必须收在 requiresFlags，光挂 intelFlag 不够）。给了情报后（Mira 一次性对话·见 mira.json）：三点全部转「已知」——当前相位命中的那个 lit（可去），另两个 dim（同 roam.east_ebb_shallows 先例：已知点窗外＝『知道在哪、去不了、可规划』，非彻底消失）。**这三个 lunarWindow 值与 src/data/shop.json::specialMerchant.activePhases 保持一致——已由 check-npc-trust ⑤ 机制强连（改窗两边一起改·否则 regress 红）**（PortView 经 port.ts::SPECIAL_MERCHANT_ACTIVE_PHASES 读同一数据判断 Sela 是否「在港」可交易）。",
         "templateId": "roam.sela_meet_new",
         "zoneId": "zone.open_midwater",
         "owner": "lighthouse.ch1_midwater_outpost",

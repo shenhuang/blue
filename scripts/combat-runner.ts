@@ -487,9 +487,10 @@ function handleShow(args: CliArgs) {
   if (enc.introText) console.log(`intro: ${enc.introText}`);
   console.log(`party (${enc.party.members.length}):`);
   for (const m of enc.party.members) {
-    const def = getEnemyDef(m.defId);
+    // 成员二选一：写死 defId / enemyRef 让库取（EnemyPartyMemberDef）——后者无静态 def 可展示
+    const def = m.defId ? getEnemyDef(m.defId) : undefined;
     console.log(
-      `  - ${m.defId}${
+      `  - ${m.defId ?? `enemyRef(${JSON.stringify(m.enemyRef)})`}${
         def ? `  ${def.name} (hp=${def.hp}, armor=${def.armor}, threat=${def.threat}, ${def.hostility})` : ''
       }`,
     );

@@ -57,7 +57,6 @@ import {
   STALKER_SCENT_PATIENCE_MULT,
   STALKER_SCENT_SPAWN_ALERT_MULT,
   STALKER_ACTIVE_PROBE_PERIOD,
-  STALKER_ACTIVE_PROBE_HOPS,
   STALKER_WEAK_HSPEED,
 } from '../src/engine/stalker';
 import { seedInjuries } from '../src/engine/injuries';
@@ -327,7 +326,8 @@ L('\n========== 8. 玩家规避升级（§3·吸声/迷彩·对称 evadesScan·�
   const tBoth = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { soundAbsorbBonus: 0.5, camoBonus: 0.5 } }).sensorTuning!;
 
   const mkRun = (depth: number, tuning?: SensorTuning): RunState => ({
-    ...huntState({ depth, alert: 90 }).run!, currentNodeId: 'n0', sensorTuning: tuning,
+    // tuning 缺省＝故意留 undefined 走 playerEvadesStalker 的 `!t` 守卫（8a 向后兼容路径）；类型上必填 → 显式断言
+    ...huntState({ depth, alert: 90 }).run!, currentNodeId: 'n0', sensorTuning: tuning as SensorTuning,
   });
   const mkStalker = (sensesBy: SenseModality): Stalker => ({
     nodeId: 'n2', sensesBy, onLostSignal: 'wait', waitTurns: 0, state: 'hunting',

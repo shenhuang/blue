@@ -1,0 +1,16 @@
+{
+  "_comment": "flee 结局零战利品（#244「逃跑/吓退不给材料」）：开局一手屏息潜逃成功（seed=1 骰过 baseChance 0.6）→ finalizeFlee 不结算任何 loot。lootGained 空由 playthrough-combat.ts 的「flee/scare 不掉料」硬门断言（expect.lootGained 只能断『至少有』·断『没有』在脚本侧）。",
+  "combatId": "combat.tutorial_shark",
+  "seed": 1,
+  "actions": [
+    { "actionId": "action.flee" }
+  ],
+  "expect": {
+    "outcome": "flee",
+    "turnsElapsed": 1,
+    "survived": true,
+    "finalPhase": "dive",
+    "enemiesAlive": 1,
+    "statsDelta": { "stamina": -3, "oxygen": -3 }
+  }
+}

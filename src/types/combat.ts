@@ -144,6 +144,27 @@ export interface CombatState {
   pendingEmergencyAscent?: boolean;
 
   /**
+   * 本次 flee 行动脱战成功的标记（与 pendingEmergencyAscent 同款 typed flag）：
+   * applyFlee 成功（掷骰过 / guaranteed）时写入，applyPlayerAction 第 5 步读取后走 finalizeFlee。
+   * 日志文案由此降级回纯叙事（不再靠「脱战成功」子串判定·quirk #107 现代化）。
+   */
+  pendingFleeSuccess?: boolean;
+
+  /**
+   * 战斗内动态生成敌人（裂球分裂 / 女王补工蜂）的单调序号：spawn 时读 `?? 0` 起步、用完回写。
+   * 取代 Date.now()+i——同毫秒多批次 spawn 必撞 instanceId（applyAttack 按 id map 更新会一击打多只
+   * + React key 冲突）。缺省 0＝无 spawn 战斗形状不变（#99 守则·不 bump SAVE_VERSION）。
+   */
+  spawnSeq?: number;
+
+  /**
+   * 已「自行离场」的敌人 instanceId（runEnemyTurn fleeing 分支置 hp=0 离场时记录）。
+   * finalizeVictory 据此跳过其战利品——#244 裁决「逃跑/吓退不给材料」：只有真被打死的敌人掉料；
+   * 被玩家在其转身逃跑时砍死（hp 因攻击归零）仍算击杀、照常掉料。缺省＝无人逃走（普通战斗形状不变）。
+   */
+  fledInstanceIds?: string[];
+
+  /**
    * 尸衣者占据玩家尸体战斗专属：胜/逃后路由回此 DeathRecord 的 corpse subPhase，让玩家仍可打捞物品。
    * 未设（普通战斗）→ finalizeVictory/finalizeFlee 走原有路由（victoryEventId / rest）。
    */

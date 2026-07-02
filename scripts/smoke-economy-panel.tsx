@@ -11,7 +11,7 @@
 import { register } from 'node:module';
 register('./css-stub-loader.mjs', import.meta.url);
 
-import React from 'react';
+// @jsxRuntime automatic —— 同 smoke-chart-ui：pragma 切 automatic transform·与 react-jsx typecheck 一致
 import { renderToStaticMarkup } from 'react-dom/server';
 import { computeMaterialStats } from '../src/engine/materialStats';
 
@@ -69,7 +69,7 @@ s.materials.forEach((_m, mi) =>
 // 大区列含「港口」（装备消耗）·来源方式含「挖矿」（mine 能力门可检测）
 assert(s.regions.includes('港口'), '大区列应含「港口」（装备消耗归位）');
 const methods = new Set(s.materials.flatMap((m) => m.sources.map((x) => x.method)));
-for (const mm of ['敌人', '事件', '深度柱', '挖矿']) assert(methods.has(mm), `来源方式应含「${mm}」`);
+for (const mm of ['敌人', '事件', '深度柱', '挖矿'] as const) assert(methods.has(mm), `来源方式应含「${mm}」`);
 // 概率合法
 for (const m of s.materials) for (const x of m.sources) assert(x.chance >= 0 && x.chance <= 1, `${m.name} 概率 ∈[0,1]`);
 

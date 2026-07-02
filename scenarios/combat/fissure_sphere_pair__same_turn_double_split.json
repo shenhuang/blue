@@ -1,0 +1,19 @@
+{
+  "_comment": "撞号回归（CombatState.spawnSeq）：双裂球同一回合各自分裂（turn 3 两只都过 intervalTurns=3 检查·累计伤害 0）→ 同一次 maybeEnemySplit 调用里两批 spawn。修前 instanceId 用 Date.now()+i：同毫秒两批必撞号 → combatScenario 的 instanceId 唯一性不变量 throw（套件红）；修后 spawnSeq 单调计数 → 全唯一。2 原体 + 2×2 分裂体 = 6 只（maxPartySize=8 未满），只验 spawn 唯一性、不清场（noActionProvided 收）。",
+  "combatId": "combat.fissure_sphere_pair",
+  "seed": 1,
+  "actions": [
+    { "actionId": "action.breathe" },
+    { "actionId": "action.breathe" },
+    { "actionId": "action.breathe" },
+    { "actionId": "action.breathe" }
+  ],
+  "expect": {
+    "outcome": "noActionProvided",
+    "turnsElapsed": 4,
+    "survived": true,
+    "finalPhase": "combat",
+    "enemiesAlive": 6,
+    "logIncludes": ["裂成"]
+  }
+}

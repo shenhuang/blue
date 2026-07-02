@@ -24,7 +24,7 @@
 //   node scripts/psm.mjs land [name] --yes               确认后：ff 合进 main（须在 main 树跑）
 //   node scripts/psm.mjs merge <name>                    = land --yes 的合并那一步（须在 main 树跑）
 //   node scripts/psm.mjs abort <name>                    放弃一条线（沙箱里 worktree 留着·Mac 上 psm gc 清）
-//   node scripts/psm.mjs gc                              Mac 本机：移除已合并/已弃的 worktree + 清已并入 main 的 wip/* 分支（沙箱拒绝·不能 unlink）
+//   node scripts/psm.mjs gc                              Mac 本机：移除已合并/已弃/已并入的 worktree（含台账外孤儿）+ 失效注册项 + 已并入 main 的 wip/*·feat/* 分支（沙箱拒绝·不能 unlink）
 //   node scripts/psm.mjs doctor                          清残锁 / 中断 rebase 态（崩溃卡死后自愈·沙箱 mv 进 .sandbox-junk·可恢复）
 //
 // 退出码：成功 0；「警告即停·等你确认」用 3（区别于真错误 1）。
@@ -147,11 +147,13 @@ function readLedger() {
 }
 function writeLedger(led) { const p = ledgerPath(); const tmp = p + '.tmp-' + process.pid; writeFileSync(tmp, JSON.stringify(led, null, 2) + '\n'); renameSync(tmp, p); }
 // merge 锁＝台账字段（不用 mkdir/rmdir——沙箱不能 rmdir 释放）。真正安全网是 doMerge 里的 staleness 校验。
-function lockHolder(led) {
-  const lk = led.mergeLock; if (!lk) return null;
-  if ((Date.now() - new Date(lk.ts).getTime()) / 60000 > (CFG.lockStaleMinutes || 30)) return null; // 废弃
-  return lk;
+// 过期判定抽成纯函数（显式喂 now/阈值·可测·见 __tests__/psm.test.mjs）：没过期返回锁本身，过期视同无锁。
+export function freshLock(lock, nowMs, staleMinutes = 30) {
+  if (!lock) return null;
+  if ((nowMs - new Date(lock.ts).getTime()) / 60000 > staleMinutes) return null; // 废弃
+  return lock;
 }
+function lockHolder(led) { return freshLock(led.mergeLock, Date.now(), CFG.lockStaleMinutes || 30); }
 
 // ── pendingFf 意图标记（land/merge 的 ff 崩溃原子性·守 main 不停在未验证 tip）──
 // cmdLand(Mac)/doMerge 的 `git merge --ff-only` 把 main 推到分支 tip。若进程在「ff 之后、收尾确认之前」
@@ -169,13 +171,13 @@ function clearPendingFf(led) {
   writeLedger(led);
 }
 // null=无标记；{stale:true}=标记在但 main 未前进（安全·清即可）；{stale:false,main}=未确认的 land。
-function inspectPendingFf(led) {
-  const pf = led.pendingFf;
+// 回滚决策抽成纯函数（显式喂 mainSha·可测）；main sha 读不出也按 stale 处理——别指着空值回滚。
+export function classifyPendingFf(pf, mainSha) {
   if (!pf) return null;
-  const main = shaOf(CFG.mainBranch);
-  if (!main || main === pf.rollbackSha) return { stale: true, pf };
-  return { stale: false, pf, main };
+  if (!mainSha || mainSha === pf.rollbackSha) return { stale: true, pf };
+  return { stale: false, pf, main: mainSha };
 }
+function inspectPendingFf(led) { return classifyPendingFf(led.pendingFf, shaOf(CFG.mainBranch)); }
 
 // ─────────────────────────── 车道匹配 ───────────────────────────
 // 车道 glob 匹配 + 重叠判定收口 lib/glob.mjs（顶部 import + re-export）。旧手搓 lanesOverlap
@@ -286,10 +288,15 @@ function fixWorktreePointers(name, wtAbs) {
 
 // ─────────────────────────── status / check ───────────────────────────
 
-function driftFromMain(baseSha) {
-  const mainSha = shaOf(CFG.mainBranch); if (!mainSha || !baseSha) return '?';
-  try { return git(['rev-list', '--count', `${baseSha}..${mainSha}`]); } catch { return '?'; }
+const gitCountRange = (a, b) => git(['rev-list', '--count', `${a}..${b}`]);
+// 基线落后 main 几个 commit。countRange 注入＝纯可测；sha 缺失 / count 抛错 → '?'。
+export function driftFromMain(baseSha, mainSha, countRange) {
+  if (!mainSha || !baseSha) return '?';
+  try { return countRange(baseSha, mainSha); } catch { return '?'; }
 }
+// 纯判定：「分支已并入 main」＝tip 是 main 祖先（ahead==0 / is-ancestor）**且**确实有过提交（work>0）。
+// 只看 is-ancestor 不够：刚开线零提交的分支 tip 就是旧 main、天然是祖先——照收会误伤在飞 session。
+export function isMergedIntoMain(isAncestor, workCount) { return !!isAncestor && Number(workCount) > 0; }
 // 台账 flag 可能 stale（沙箱不能可靠回写台账·并发 session 推进 main）——用 git 真值核对：分支的活已全
 // 在 main（main..branch == 0）且分支确实有过提交（baseSha..branch > 0）= 实际已 land。返回提示串 or null。
 // 守效率复盘 #4：别照台账 active/ready 判「在飞」，git 才是真相（同 #96 定位轴·同 mergedWipBranches 思路）。
@@ -298,7 +305,7 @@ function staleLandedNote(s) {
   try {
     const ahead = git(['rev-list', '--count', `${CFG.mainBranch}..${s.branch}`]);
     const work = s.baseSha ? git(['rev-list', '--count', `${s.baseSha}..${s.branch}`]) : '0'; // base 未知→不冒「已 land」误报
-    if (ahead === '0' && work !== '0') return `台账标 ${s.state} 但分支已并入 main——实际已 land（Mac 上 psm gc 清台账）。`;
+    if (isMergedIntoMain(ahead === '0', work)) return `台账标 ${s.state} 但分支已并入 main——实际已 land（Mac 上 psm gc 收）。`;
   } catch { /* 分支不可解析（异常 worktree）→ 不判 */ }
   return null;
 }
@@ -311,7 +318,7 @@ function cmdStatus() {
   const active = sessions.filter(([, s]) => s.state === 'active' || s.state === 'ready');
   if (!active.length) info(C.dim('  （无在飞 session）'));
   for (const [n, s] of active) {
-    const drift = driftFromMain(s.baseSha);
+    const drift = driftFromMain(s.baseSha, shaOf(CFG.mainBranch), gitCountRange);
     info(`  ${C.bold(n)}  [${s.state === 'ready' ? C.green('ready') : 'active'}]  ${s.branch}`);
     info(`      车道 [${s.lanes.join(', ')}]`);
     info(C.dim(`      worktree ${s.worktree} · 基线落后 main ${drift} commit${drift !== '0' && drift !== '?' ? '（land 会先 rebase）' : ''}`));
@@ -325,8 +332,12 @@ function cmdStatus() {
   if (lk) info(C.yellow(`\n  merge 锁：${lk.holder} 持有中（${lk.ts}）`));
   const landed = sessions.filter(([, s]) => s.state === 'landed' || s.state === 'aborted');
   if (landed.length) info(C.dim(`\n  待清理（${isSandbox() ? 'Mac 上 ' : ''}psm gc）：${landed.map(([n, s]) => `${n}(${s.state})`).join(', ')}`));
-  const mw = mergedWipBranches();
-  if (mw.length) info(C.dim(`  已并入 main 的 wip/* 分支（${isSandbox() ? 'Mac 上 ' : ''}psm gc 清）：${mw.join(', ')}`));
+  const mw = mergedWipBranches(led);
+  if (mw.length) info(C.dim(`  已并入 main 的 wip/*·feat/* 分支（${isSandbox() ? 'Mac 上 ' : ''}psm gc 清）：${mw.join(', ')}`));
+  const orph = orphanWorktrees(led);
+  if (orph.length) info(C.dim(`  孤儿 worktree·分支已并入 main（${isSandbox() ? 'Mac 上 ' : ''}psm gc 收）：${orph.map((o) => `${CFG.worktreeRoot}/${o.name}(${o.branch})`).join(', ')}`));
+  const dang = danglingWorktreeAdmins(led);
+  if (dang.length) info(C.dim(`  失效 worktree 注册项·gitdir 指向不存在路径（${isSandbox() ? 'Mac 上 ' : ''}psm gc 清）：${dang.map((d) => d.name).join(', ')}`));
 }
 function cmdCheck(argv) {
   const lanes = String(argv[0] || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -351,7 +362,9 @@ function resolveSessionFromCwd(led) {
 // 决定这次 land 跑哪条绿门命令。affected 模式：算改动→依赖图→受影响行为测，只精确跑那些 + 静态门。
 // 健全回退：选测不可用 / 改动波及 ALL → 退回 full（Mac）或静态子集（沙箱）。沙箱无 esbuild 跑不了
 // 行为测 → 只跑静态门，把受影响行为测列进 deferred（交接到 Mac 补跑）。
-function gatePlan(cwd, forceFull) {
+// sinceRef＝affected 选测的 diff 基准（默认 main）。Mac cmdLand 在 temp ff **之后**跑 gate——那一刻
+// merge-base(main,HEAD)==HEAD、diff 恒空、行为测会被误判全跳过 → 必须传 ff 前捕获的 preFfSha 当基准。
+function gatePlan(cwd, forceFull, sinceRef = CFG.mainBranch) {
   const sb = isSandbox(cwd);
   const fallback = sb ? CFG.gate.sandbox : CFG.gate.full;
   // 沙箱跑静态子集时行为测全没跑——「回退/affected→ALL」分支用 ['ALL'] 哨兵交接 Mac 补跑**全量**，
@@ -360,7 +373,7 @@ function gatePlan(cwd, forceFull) {
   if (forceFull) return { cmd: CFG.gate.full, note: '全量（--full）', deferred: [] };
   if (!CFG.gate.affected) return { cmd: fallback, note: sb ? '沙箱静态子集' : '全量', deferred: fallbackDeferred };
   let res = null;
-  const r = spawnSync('node', ['scripts/affected-tests.mjs', '--since', CFG.mainBranch, '--json'], { cwd, encoding: 'utf-8' });
+  const r = spawnSync('node', ['scripts/affected-tests.mjs', '--since', sinceRef, '--json'], { cwd, encoding: 'utf-8' });
   if (r.status === 0) { try { res = JSON.parse(r.stdout); } catch { /* */ } }
   if (!res) return { cmd: fallback, note: '选测不可用·回退' + (sb ? '静态子集' : '全量'), deferred: fallbackDeferred };
   if (res.mode === 'all') return { cmd: fallback, note: `affected→ALL（${res.reason}）·跑${sb ? '静态子集' : '全量'}`, deferred: fallbackDeferred };
@@ -370,8 +383,8 @@ function gatePlan(cwd, forceFull) {
   if (runnable) return { cmd: `npm run regress -- --only typecheck,check --only-exact ${beh.join(',')}`, note: `affected：typecheck+check + ${beh.length} 受影响行为测`, deferred: [] };
   return { cmd: 'npm run regress -- --only typecheck,check', note: `沙箱无 esbuild·跑静态门；${beh.length} 受影响行为测留待 Mac`, deferred: beh };
 }
-function runGate(cwd, forceFull) {
-  const plan = gatePlan(cwd, forceFull);
+function runGate(cwd, forceFull, sinceRef) {
+  const plan = gatePlan(cwd, forceFull, sinceRef);
   info(C.bold('\n跑绿门：') + ` ${plan.cmd}  ${C.dim('（' + plan.note + '）')}`);
   return { ok: spawnSync(plan.cmd, { cwd, shell: true, stdio: 'inherit' }).status === 0, deferred: plan.deferred };
 }
@@ -448,7 +461,8 @@ function cmdLand(argv) {
       warn((ffResult.stderr || ffResult.stdout || '').trim());
       stop(`ff 预合并失败（main 树有未提交改动？或分支不可 ff？）`);
     }
-    gate = runGate(root, f.full);
+    // 时序约束：main 已 ff 到分支 tip → 对 main 的 diff 恒空，affected 选测必须以 preFfSha（旧 main）为基准。
+    gate = runGate(root, f.full, preFfSha);
     // 两种情况需要回滚 temp ff：绿门没过，或绿门过了但用户还没确认（无 --yes）
     if (!gate.ok || !f.yes) {
       spawnSync('git', ['reset', '--hard', preFfSha], { cwd: root, stdio: 'inherit' });
@@ -557,26 +571,100 @@ function cmdAbort(argv) {
   ok(`「${name}」已标记 aborted。`);
   info(C.dim(`  worktree ${s.worktree} 与分支 ${s.branch} 留着（沙箱不能删）。Mac 本机：node scripts/psm.mjs gc`));
 }
-// 已整体并入 main 的 wip/* 分支：交互 session churn 留下的陈旧本地指针（非 psm 台账内·上面 gc 循环只收 feat/）。
-// 「tip 已是 main 祖先」＝其改动全在 main 里 → 删之零损失。main / 当前分支 / auto/weekend（周末线·永不自动删）一律排除。
-function mergedWipBranches() {
+// 已整体并入 main 的 wip/* + feat/* 分支：交互 session churn / 已收的 worktree 留下的陈旧本地指针。
+// 「tip 已是 main 祖先」＝其改动全在 main 里 → 删之零损失。main / 当前分支 / auto/weekend（周末线·
+// 永不自动删）一律排除；传 led 时再排除在飞 session 的分支（刚开线零提交也是 main 祖先·别误删）。
+function mergedWipBranches(led = null) {
   let merged = [];
   try {
     merged = git(['branch', '--merged', CFG.mainBranch, '--format=%(refname:short)'])
       .split('\n').map((x) => x.trim()).filter(Boolean);
   } catch { return []; }
   const keep = new Set([CFG.mainBranch, 'auto/weekend', currentBranch()].filter(Boolean));
-  return merged.filter((b) => b.startsWith('wip/') && !keep.has(b));
+  if (led) for (const s of Object.values(led.sessions)) if (s.state === 'active' || s.state === 'ready') keep.add(s.branch);
+  return merged.filter((b) => (b.startsWith('wip/') || b.startsWith(CFG.branchPrefix)) && !keep.has(b));
+}
+// 纯判定：gc 该不该收这条台账 session（git/fs 事实由调用侧喂·可测·见 __tests__/psm.test.mjs）。
+// landed/aborted＝人已定性·直接收（旧行为不变）；active/ready 只有「确实已并入 main」才视同 landed，
+// 且 auto/weekend / 当前分支永不自动收、脏树跳过（宁留勿删）。
+export function shouldGcSession({ state, isAncestor, workCount, dirty, branch, currentBranch, protectedBranches = ['auto/weekend'] }) {
+  if (state === 'landed' || state === 'aborted') return { reap: true, reason: state };
+  if (state !== 'active' && state !== 'ready') return { reap: false, reason: 'unknown-state' };
+  if (!isMergedIntoMain(isAncestor, workCount)) return { reap: false, reason: 'in-flight' };
+  if (branch && (protectedBranches.includes(branch) || branch === currentBranch)) return { reap: false, reason: 'protected' };
+  if (dirty) return { reap: false, reason: 'dirty' };
+  return { reap: true, reason: 'merged' };
+}
+// worktree 脏态：受跟踪改动或未追踪文件都算脏（gc 宁留勿删）。node_modules 是 psm 挂的 symlink——
+// .gitignore 的 `node_modules/` 尾斜杠不匹配 symlink、status 里会冒 ?? ——排除掉别当脏。
+function worktreeDirty(wtAbs) {
+  const r = spawnSync('git', ['--no-optional-locks', 'status', '--porcelain'], { cwd: wtAbs, encoding: 'utf-8' });
+  if (r.status !== 0) return true; // 状态都读不出 → 按脏处理
+  return (r.stdout || '').split('\n').some((l) => l.trim() && l.slice(3).replace(/\/$/, '') !== 'node_modules');
+}
+// ③ 不在台账但挂在 .worktrees/ 下的孤儿 worktree（手动 git worktree add 的残留·如 poi-roaming）：
+//    分支已并入 main 才算可收。main / auto/weekend / 当前分支 / detached / 读不出分支的一律不碰。
+function orphanWorktrees(led) {
+  const wtRoot = join(ROOT(), CFG.worktreeRoot);
+  if (!existsSync(wtRoot)) return [];
+  const known = new Set(Object.values(led.sessions).map((s) => basename(s.worktree)));
+  const out = [];
+  for (const e of readdirSync(wtRoot, { withFileTypes: true })) {
+    if (!e.isDirectory() || known.has(e.name)) continue;
+    const wtAbs = join(wtRoot, e.name);
+    if (!existsSync(join(wtAbs, '.git'))) continue; // 不是 worktree 的杂物不猜
+    const br = currentBranch(wtAbs);
+    if (!br || br === 'HEAD') continue;
+    if (br === CFG.mainBranch || br === 'auto/weekend' || br === currentBranch()) continue;
+    if (!gitOk(['merge-base', '--is-ancestor', br, CFG.mainBranch])) continue; // 还有没并入的活 → 在飞
+    out.push({ name: e.name, wtAbs, branch: br });
+  }
+  return out;
+}
+// ④ .git/worktrees/ 下 gitdir 指向不存在路径的失效注册项（worktree 目录已没了、注册还挂着）。
+//    与台账收割同款手法 rm -rf 注册目录——继续避开 `git worktree prune`（会误删相对指针的
+//    weekend worktree·quirk #138）。台账内 session 与 weekend（HEAD 指 auto/weekend）不碰。
+function danglingWorktreeAdmins(led) {
+  const wtDir = join(commonDir(), 'worktrees');
+  if (!existsSync(wtDir)) return [];
+  const known = new Set(Object.values(led.sessions).map((s) => basename(s.worktree)));
+  const out = [];
+  for (const name of readdirSync(wtDir)) {
+    if (known.has(name)) continue;
+    const adminDir = join(wtDir, name);
+    let gd = ''; let head = '';
+    try { gd = readFileSync(join(adminDir, 'gitdir'), 'utf-8').trim(); } catch { continue; } // 没 gitdir 的不猜
+    try { head = readFileSync(join(adminDir, 'HEAD'), 'utf-8').trim(); } catch { /* HEAD 读不出不拦 */ }
+    if (head.includes('refs/heads/auto/weekend')) continue;
+    if (existsSync(resolve(adminDir, gd))) continue; // 相对指针相对 admin 目录解析（quirk #138）·还在 → worktree 活着
+    out.push({ name, adminDir });
+  }
+  return out;
 }
 function cmdGc() {
   const root = ROOT();
   if (isSandbox()) die('gc 要在 Mac 本机跑——沙箱不能 unlink，删不掉 worktree（quirk #1）。');
   const led = readLedger(); let n = 0;
+  const curBr = currentBranch();
   for (const [name, s] of Object.entries(led.sessions)) {
-    if (s.state !== 'landed' && s.state !== 'aborted') continue;
+    const wtAbs = join(root, s.worktree);
+    // ① 收不收走纯函数判（shouldGcSession）：landed/aborted 直接收；active/ready 但分支已并入 main
+    //    （is-ancestor + 有过真实提交）→ 视同 landed 收走；脏树跳过并 warn。
+    const inFlight = s.state === 'active' || s.state === 'ready';
+    const decision = shouldGcSession({
+      state: s.state,
+      isAncestor: inFlight && s.branch ? gitOk(['merge-base', '--is-ancestor', s.branch, CFG.mainBranch]) : false,
+      workCount: inFlight && s.baseSha && s.branch ? Number(gitCountRange(s.baseSha, s.branch) || 0) : 0,
+      dirty: inFlight && existsSync(wtAbs) ? worktreeDirty(wtAbs) : false,
+      branch: s.branch, currentBranch: curBr,
+    });
+    if (!decision.reap) {
+      if (decision.reason === 'dirty') warn(`跳过「${name}」：分支已并入 main 但 ${s.worktree} 有未提交改动——收拾干净再 gc。`);
+      continue;
+    }
+    if (decision.reason === 'merged') info(`「${name}」台账标 ${s.state} 但分支已并入 main——视同 landed 收走。`);
     // git 2.34 的 `worktree remove` 不认相对 gitdir 指针（quirk #138 的代价）→ 手动删工作树 + admin 目录。
     // 不用 `git worktree prune`：它会把别的相对指针 worktree（如 weekend）误判可删（见 setup-weekend-worktree 注）。
-    const wtAbs = join(root, s.worktree);
     const adminDir = join(commonDir(), 'worktrees', name);
     try {
       if (existsSync(wtAbs)) rmSync(wtAbs, { recursive: true, force: true });
@@ -587,13 +675,31 @@ function cmdGc() {
     delete led.sessions[name]; n++;
   }
   writeLedger(led);
-  // 顺手清「已并入 main 的 wip/* 分支」——`git branch -d` 自带「未完全合并就拒删」安全门（mergedWipBranches 已预筛一道）。
+  // ③ 孤儿 worktree（不在台账·分支已并入 main）——脏树同样跳过；分支留给下面 ② 的 merged 清扫收。
+  let orphN = 0;
+  for (const o of orphanWorktrees(led)) {
+    if (worktreeDirty(o.wtAbs)) { warn(`跳过孤儿 worktree ${CFG.worktreeRoot}/${o.name}：有未提交改动。`); continue; }
+    const adminDir = join(commonDir(), 'worktrees', o.name);
+    try {
+      rmSync(o.wtAbs, { recursive: true, force: true });
+      if (existsSync(adminDir)) rmSync(adminDir, { recursive: true, force: true });
+      ok(`移除孤儿 worktree ${CFG.worktreeRoot}/${o.name}（分支 ${o.branch} 已并入 main）`);
+      orphN++;
+    } catch (e) { warn(`移除孤儿 worktree ${o.name} 失败：${String(e.message || e).split('\n')[0]}`); }
+  }
+  // ④ 失效 worktree 注册项（gitdir 指向不存在路径）。
+  let dangN = 0;
+  for (const d of danglingWorktreeAdmins(led)) {
+    try { rmSync(d.adminDir, { recursive: true, force: true }); ok(`清失效 worktree 注册项 .git/worktrees/${d.name}（gitdir 指向不存在路径）`); dangN++; }
+    catch (e) { warn(`清注册项 ${d.name} 失败：${String(e.message || e).split('\n')[0]}`); }
+  }
+  // ② 已并入 main 的 wip/* + feat/* 分支——`git branch -d` 自带「未完全合并就拒删」安全门（mergedWipBranches 已预筛一道）。
   let wipN = 0;
-  for (const b of mergedWipBranches()) {
+  for (const b of mergedWipBranches(led)) {
     try { execFileSync('git', ['branch', '-d', b], { cwd: root }); ok(`删已并入分支 ${b}`); wipN++; }
     catch (e) { warn(`删 ${b} 失败（未完全合并？）：${String(e.message || e).split('\n')[0]}`); }
   }
-  ok(`gc 完成·清理 ${n} 条 worktree${wipN ? ` + ${wipN} 个 wip/* 分支` : ''}。`);
+  ok(`gc 完成·台账 worktree ${n} 条${orphN ? ` + 孤儿 worktree ${orphN} 条` : ''}${dangN ? ` + 失效注册项 ${dangN} 个` : ''}${wipN ? ` + 已并入分支 ${wipN} 个` : ''}。`);
 }
 
 // ─────────────────────────── pre-commit 车道门 ───────────────────────────
@@ -630,31 +736,36 @@ function hookPreCommit() {
 
 // ─────────────────────────── CLI ───────────────────────────
 
-const [cmd, ...rest] = process.argv.slice(2);
-switch (cmd) {
-  case 'install': cmdInstall(); break;
-  case 'start': cmdStart(rest); break;
-  case 'status': case 'st': cmdStatus(); break;
-  case 'check': cmdCheck(rest); break;
-  case 'land': cmdLand(rest); break;
-  case 'merge': cmdMerge(rest); break;
-  case 'abort': cmdAbort(rest); break;
-  case 'gc': cmdGc(); break;
-  case 'unlock': cmdUnlock(); break;
-  case 'doctor': cmdDoctor(rest); break;
-  case 'hook': if (rest[0] === 'pre-commit') hookPreCommit(); else process.exit(0); break;
-  default:
-    info(C.bold('psm —— 并行 session 管理器'));
-    info('  install                       一次性装（钩子 + 台账 + gitignore）');
-    info('  start <name> --lane <g,...>   开一条并行线（独立 worktree + 车道）');
-    info('  status                        看在飞 session / 车道 / 落差 / 锁');
-    info('  check <g,...>                  起手前自检车道重叠');
-    info('  land [name] [--yes]           rebase + 绿门；绿了停下等确认；--yes 直接合');
-    info('  merge <name>                  ff 合进 main（main 树跑）');
-    info('  abort <name>                  放弃一条线');
-    info('  gc                            Mac 本机清理已合并/已弃 worktree + 已并入的 wip/* 分支');
-    info('  unlock                        清沙箱遗留 *.lock 文件（land 会自动调·手动备用）');
-  info('  doctor                        清残锁 / 中断 rebase 态（崩溃卡死后自愈·只 mv 不删）');
-    info('\n详见 docs/infra/parallel-sessions.md');
-    process.exit(cmd ? 1 : 0);
+// 只有直接 `node scripts/psm.mjs <cmd>` 才进 CLI dispatch；被 import（__tests__/psm.test.mjs 测
+// 上面导出的纯判定）不执行——同 check-branch.mjs / affected-tests.mjs 的 isMain 门。
+const isMain = process.argv[1] && resolve(process.argv[1]) === SELF;
+if (isMain) {
+  const [cmd, ...rest] = process.argv.slice(2);
+  switch (cmd) {
+    case 'install': cmdInstall(); break;
+    case 'start': cmdStart(rest); break;
+    case 'status': case 'st': cmdStatus(); break;
+    case 'check': cmdCheck(rest); break;
+    case 'land': cmdLand(rest); break;
+    case 'merge': cmdMerge(rest); break;
+    case 'abort': cmdAbort(rest); break;
+    case 'gc': cmdGc(); break;
+    case 'unlock': cmdUnlock(); break;
+    case 'doctor': cmdDoctor(rest); break;
+    case 'hook': if (rest[0] === 'pre-commit') hookPreCommit(); else process.exit(0); break;
+    default:
+      info(C.bold('psm —— 并行 session 管理器'));
+      info('  install                       一次性装（钩子 + 台账 + gitignore）');
+      info('  start <name> --lane <g,...>   开一条并行线（独立 worktree + 车道）');
+      info('  status                        看在飞 session / 车道 / 落差 / 锁 / 待清理项');
+      info('  check <g,...>                  起手前自检车道重叠');
+      info('  land [name] [--yes]           rebase + 绿门；绿了停下等确认；--yes 直接合');
+      info('  merge <name>                  ff 合进 main（main 树跑）');
+      info('  abort <name>                  放弃一条线');
+      info('  gc                            Mac 本机清理：已合并/已弃/已并入 worktree + 孤儿 worktree + 失效注册项 + 已并入的 wip/*·feat/* 分支');
+      info('  unlock                        清沙箱遗留 *.lock 文件（land 会自动调·手动备用）');
+      info('  doctor                        清残锁 / 中断 rebase 态（崩溃卡死后自愈·只 mv 不删）');
+      info('\n详见 docs/infra/parallel-sessions.md');
+      process.exit(cmd ? 1 : 0);
+  }
 }

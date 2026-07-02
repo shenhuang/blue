@@ -240,7 +240,7 @@ function revisitQualZone(state: GameState, picks: Record<string, string>): { sta
   const poi = getPoiById(generateChart({ profile: state.profile }), 'poi.anchor.east_reef');
   assert(poi, '§D east_reef anchor（东礁·资格区）教学后应在海图');
   const dived = startDiveFromPoi(state, poi!);
-  const hit = Object.values(dived.run?.map.nodes ?? {}).find(
+  const hit = Object.values(dived.run?.map?.nodes ?? {}).find(
     (n) => n.eventId === 'tutorial.captain_revisit' || n.eventId === 'tutorial.captain_revisit_empty',
   );
   const run = diveDeepToSurface(dived, picks);

@@ -27,7 +27,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
 // 导航型「当前状态」文档（相对 ROOT）。历史/设计文档刻意不在此列（见档头）。
-const SCANNED = ['README.md', 'docs/STATUS.md'];
+const SCANNED = ['README.md', 'docs/STATUS.md', 'CLAUDE.md', 'docs/infra/parallel-sessions.md'];
 
 // markdown 链接 [text](target)；target 取到第一个空白或 ) 前（容忍 `(path "title")`）。
 const LINK_RE = /\[[^\]]*\]\(([^)\s]+)/g;

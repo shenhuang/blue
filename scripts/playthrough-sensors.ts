@@ -14,7 +14,7 @@
 //
 // 跑法： npx tsx scripts/playthrough-sensors.ts
 
-import type { GameState, RunState, DiveMap, NodeChoice } from '../src/types';
+import type { GameState, RunState, DiveMap, DiveNode, NodeChoice } from '../src/types';
 import { createInitialGameState, createNewRun } from '../src/engine/state';
 import { enterNodeSelection, pingSonar, setLight, moveToNode, setSonarNext } from '../src/engine/dive';
 import { tickTurns } from '../src/engine/events';
@@ -39,7 +39,6 @@ import {
   SIGNATURE_REDUCTION_MAX,
   // 深水区 Phase 1 续·节点级 clarity（section 12）
   clarityForNode,
-  CLARITY_FULL_DEPTH,
   LAMP_DEPTH_REACH,
   SONAR_DEPTH_REACH,
   LAMP_DEPTH_REACH_MAX,
@@ -172,7 +171,7 @@ L('\n========== 5. power 归零 → 强制摸黑 ==========');
 }
 
 // ============================================================
-// 6. 低 san（< 60）→ 声呐注入假回波（阈值跨越，叙述永不交底 quirk #54）
+// 6. 低 san（< 60）→ 声呐注入假回波（阈值跨越·叙述永不交底——假回波不自证真假）
 // ============================================================
 L('\n========== 6. 低 san → 声呐假回波 ==========');
 {

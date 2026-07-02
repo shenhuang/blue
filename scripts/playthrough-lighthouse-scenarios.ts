@@ -19,7 +19,6 @@ import {
   serializeGameState,
   deserializeGameState,
   countInInventory,
-  HOME_LIGHTHOUSE_ID,
 } from '../src/engine/state';
 import { getEvent, resolveOption } from '../src/engine/events';
 import { canRestoreRuin, getRuinDef, ruinRestoredFlag } from '../src/engine/lighthouses';

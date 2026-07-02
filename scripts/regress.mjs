@@ -64,6 +64,9 @@ const tasks = [];
 // 类型检查（最慢的单项之一，先排）
 tasks.push({ name: 'typecheck', cmd: [tsc, '--noEmit'] });
 
+// scripts/ 类型门（tsconfig.scripts.json·scripts/**/*.ts+tsx 连同 src 一起进 program·堵「playthrough/smoke 两万行在 typecheck 门外」的洞·quirk #202 ③ 的欠账·scratch 脚本 scripts/_debug* 已 exclude）
+tasks.push({ name: 'typecheck-scripts', cmd: [tsc, '--noEmit', '-p', 'tsconfig.scripts.json'] });
+
 // 生产构建（落全新临时目录，避免 mount 删不掉旧 assets 的 EACCES）
 // 沙箱（Linux）缺 @rollup/rollup-linux-arm64-gnu（node_modules 是 macOS 装的）→ 自动跳过（quirk #147）。
 // nightly 单独用 NODE_PATH=/tmp/rollup-linux-fix 跑 build，不走本门。
@@ -163,8 +166,20 @@ tasks.push({ name: 'check-tooling', cmd: ['node', join('scripts', 'run-tooling-t
 // STATUS.md 新鲜度门（纯 node·顶部 blockquote 在/带日期 + 行数上限 + 点名脚本存在·机制化 CLAUDE.md 文档维护约定 + handoff 依赖）
 tasks.push({ name: 'check-status-fresh', cmd: ['node', join('scripts', 'check-status-fresh.mjs')] });
 
-// 文档死链门（README/STATUS 导航 markdown 链接不烂·纯 node·见 scripts/check-doc-links.mjs·2026-06-27 文档治理）
+// 文档死链门（README/STATUS/CLAUDE.md/infra 导航 markdown 链接不烂·纯 node·见 scripts/check-doc-links.mjs·2026-06-27 文档治理）
 tasks.push({ name: 'check-doc-links', cmd: ['node', join('scripts', 'check-doc-links.mjs')] });
+
+// quirk 引用完整性门（纯 node·src/scripts/docs〔非 archive〕引用的 quirk #N 必须在 QUIRKS.md 定义集∪裁撤号段〔墓碑 #208〕内·防死引用再生·见 scripts/check-quirk-refs.mjs）
+tasks.push({ name: 'check-quirk-refs', cmd: ['node', join('scripts', 'check-quirk-refs.mjs')] });
+
+// loreEntry 引用 ratchet 门（纯 node·事件数据 loreEntry 引用 ∈ lore.json 登记集∪基线 backlog·新 typo 即红·基线只缩不涨〔--update-baseline〕·见 scripts/check-lore-refs.mjs）
+tasks.push({ name: 'check-lore-refs', cmd: ['node', join('scripts', 'check-lore-refs.mjs')] });
+
+// 周末引擎基线门（纯 node·writer=weekend 且 auto/weekend 落后 main → 红并要求先 rebase·防旧基线生成已死 id 内容·交互写手 no-op·见 scripts/check-weekend-base.mjs）
+tasks.push({ name: 'check-weekend-base', cmd: ['node', join('scripts', 'check-weekend-base.mjs')] });
+
+// 文件行数 ratchet 门（纯 node·src 默认预算 900 行·超标须 baseline 显式条目且只紧不松〔--update 收缩〕·防 combat/mapgen 拆完再长回去·见 scripts/check-file-budget.mjs）
+tasks.push({ name: 'check-file-budget', cmd: ['node', join('scripts', 'check-file-budget.mjs')] });
 
 // flag setter scope 门（纯 node·applyFlags〔下潜域〕置位却被持久消费 → 本该 setProfileFlags·quirk #160/#161·incident #184）
 tasks.push({ name: 'check-flag-setter', cmd: ['node', join('scripts', 'check-flag-setter.mjs')] });
@@ -208,6 +223,9 @@ tasks.push({ name: 'smoke-combat-panel', cmd: [tsx, join('scripts', 'smoke-comba
 
 // 海图 POI 调试器 SSR smoke + parity（守 ChartViewDevPanel 渲染 + poiRevealState/effectiveDistance/describeModifier 自洽·见 scripts/smoke-chart-editor.mjs）
 tasks.push({ name: 'smoke-chart-editor', cmd: [tsx, join('scripts', 'smoke-chart-editor.mjs')] });
+
+// 事件平衡聚合 smoke（守 engine/eventStats 派生恒等式〔byTone/矩阵合计/建议引用真实〕·materialStats↔smoke-economy-panel 的镜像补全·见 scripts/smoke-event-stats.mjs）
+tasks.push({ name: 'smoke-event-stats', cmd: [tsx, join('scripts', 'smoke-event-stats.mjs')] });
 
 // 全部 playthrough*.ts —— 各自独立进程，可并行（#22 安全）
 const playthroughs = readdirSync(join(ROOT, 'scripts'))

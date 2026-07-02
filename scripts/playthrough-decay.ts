@@ -5,7 +5,7 @@
 // 4. 永恒物品永不消失
 // 注：尸体超过 CORPSE_VISIBLE_AGE(25) 天散失（recovered=true）；snapshot 仍按当天 age 重算 ⇒ 内容路径无关。
 
-import { createInitialGameState } from '../src/engine/state';
+import { createInitialGameState, createNewRun } from '../src/engine/state';
 import { executeDeath, ageAndDecayDeaths, getPreservationBonus } from '../src/engine/death';
 import type { GameState, DeathRecord } from '../src/types';
 
@@ -20,14 +20,16 @@ function makeCorpseWith(itemIds: string[]): GameState {
   let s = createInitialGameState();
   s = {
     ...s,
+    // 底座用 createNewRun 补齐 RunState 演进出的新字段（sensors/power/sensorTuning 等·与本测无关），
+    // 再显式覆写本测试钉住的旧字段（runId 决定确定性尸体 id）。
     run: {
+      ...createNewRun({ zoneId: 'zone.old_lighthouse_reef' }),
       runId: 'test-run',
-      zoneId: 'zone.old_lighthouse_reef',
       map: null,
       stats: { stamina: 0, oxygen: 0, sanity: 100, nitrogen: 30, thermalStress: 0 },
       staminaMax: 100,
       oxygenMax: 60,
-      equipment: { tank: null, suit: null, light: null, tool: null, charm: null },
+      equipment: { tank: null, suit: null, light: null, tool: null, sonar: null, ranged: null, charm: null, charm2: null, charm3: null },
       inventory: itemIds.map((id) => ({ itemId: id, qty: 1 })),
       carryWeightLimit: 15,
       gold: 0,

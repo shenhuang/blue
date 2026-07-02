@@ -16,7 +16,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
-import { roadmapDrift } from './check-roadmap-stale.mjs';
+import { roadmapDrift, specBannerDrift } from './check-roadmap-stale.mjs';
 import { isSandbox } from './lib/env.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -158,6 +158,26 @@ try {
   }
 } catch {
   /* 漂移自检失败绝不影响定位 */
+}
+
+// —— 1e. docs/spec 状态 banner advisory（check-roadmap-stale 泛化·不红·只摘要别刷屏）——
+try {
+  const sd = specBannerDrift(ROOT);
+  if (sd.stale.length || sd.noBanner.length) {
+    const SHOW = 3; // 只列 banner 最陈旧的前几条·全量清单走 node scripts/check-roadmap-stale.mjs
+    console.log(
+      `\ndocs/spec 状态 banner advisory：${sd.stale.length} 份可能过期` +
+        (sd.noBanner.length ? ` + ${sd.noBanner.length} 份无状态头` : '') +
+        '（读 SPEC 前以代码/git 为准·全量 `node scripts/check-roadmap-stale.mjs`）：',
+    );
+    const oldest = [...sd.stale].sort((a, b) => a.date.localeCompare(b.date));
+    for (const s of oldest.slice(0, SHOW)) {
+      console.log(`  ⚠ ${s.file}（banner ${s.date}·其后 ${s.count} 笔内容提交）`);
+    }
+    if (oldest.length > SHOW) console.log(`  …另 ${oldest.length - SHOW} 份见全量输出。`);
+  }
+} catch {
+  /* advisory 失败绝不影响定位 */
 }
 
 // —— 2. 最新 nightly REPORT 头部 ——

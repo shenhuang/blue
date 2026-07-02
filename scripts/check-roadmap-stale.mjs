@@ -14,13 +14,19 @@
 // 信号选择「车道文件在 banner 日期后于 main 有提交」＝健全性优先于最小性（同 affected-tests）：宁可多
 // 报一条「这块动过、去核对」，绝不漏报一条已落地却仍标 ⬜ 的任务。无关提交触发的误报，代价只是多瞄一眼。
 //
+// 2026-07-02 泛化（文档修复批）：同一哲学扩到 docs/spec/*.md 的「状态 banner」——SPEC 档头
+// 常见「状态：…（YYYY-MM-DD…）」型手写状态行，同样随 churn 漂移（quirk #208 修复批实例：
+// 主线柱迁移提案落地半月后 banner 仍写「提案·待作者拍」）。能解析出带日期状态行的 spec，
+// banner 日期之后该文件在 main 有非 move 提交（--diff-filter=M·纯改名/迁移不算）→ advisory
+// 「banner 可能过期」；解析不出任何状态头 → advisory「无状态头」。**都只是 advisory·退出码不变**。
+//
 // 用法：
-//   node scripts/check-roadmap-stale.mjs                         # 默认 docs/spec/cave_roadmap.md
+//   node scripts/check-roadmap-stale.mjs                         # 默认 docs/spec/cave_roadmap.md + spec banner 扫描
 //   node scripts/check-roadmap-stale.mjs docs/spec/<其它>.md     # 指定 roadmap
 //   （也被 scripts/handoff.mjs import·起手定位时顺带打一行）
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -78,6 +84,63 @@ export function roadmapDrift(root = DEFAULT_ROOT, roadmapRel = DEFAULT_ROADMAP, 
   return { ok: true, date, total: lanes.length, moved };
 }
 
+// ── spec 状态 banner 扫描（2026-07-02 泛化·见档头）──
+
+// 解析 spec 档头的「状态 banner 日期」：只看头 HEAD_LINES 行，找**同一行**里既有「状态」
+// 又有 YYYY-MM-DD 的（「状态：已实装（2026-07-02…）」「**状态（2026-07-02）**：…」都中），
+// 取该行第一个日期。解析不到 → null（degrade 成「无状态头」advisory，同 parseRoadmap 哲学）。
+const HEAD_LINES = 15;
+export function parseSpecBanner(text) {
+  for (const line of text.split('\n').slice(0, HEAD_LINES)) {
+    if (!/状态/.test(line)) continue;
+    const dm = line.match(/(\d{4}-\d{2}-\d{2})/);
+    if (dm) return dm[1];
+  }
+  return null;
+}
+
+// 返回 { stale:[{file,date,count,latest}], noBanner:[file] }。advisory 专用·不产生退出码。
+export function specBannerDrift(root = DEFAULT_ROOT, specDir = 'docs/spec', mainBranch = 'main') {
+  let names;
+  try {
+    names = readdirSync(resolve(root, specDir)).filter((n) => n.endsWith('.md')).sort();
+  } catch {
+    return { stale: [], noBanner: [] };
+  }
+  const git = (args) => {
+    try {
+      return execFileSync('git', ['--no-optional-locks', ...args], { cwd: root, encoding: 'utf-8' }).trim();
+    } catch {
+      return '';
+    }
+  };
+  const stale = [];
+  const noBanner = [];
+  for (const name of names) {
+    const rel = `${specDir}/${name}`;
+    let text;
+    try {
+      text = readFileSync(resolve(root, rel), 'utf-8');
+    } catch {
+      continue;
+    }
+    const date = parseSpecBanner(text);
+    if (!date) {
+      noBanner.push(rel);
+      continue;
+    }
+    // banner 日期**次日**起（--since 当天 23:59:59 之后）、main 上、非 merge、内容真改过（M·
+    // 纯 move/rename 在当前路径上显示为 A / 不显示，天然排除）的提交——当天提交多半就是落 banner
+    // 那笔，算进去全是自指噪音。
+    const out = git(['log', mainBranch, `--since=${date} 23:59:59`, '--no-merges', '--diff-filter=M', '--format=%h %s', '--', rel]);
+    if (out) {
+      const commits = out.split('\n').filter(Boolean);
+      stale.push({ file: rel, date, count: commits.length, latest: commits[0] });
+    }
+  }
+  return { stale, noBanner };
+}
+
 // ── CLI ──（同 affected-tests.mjs：isMain 时才跑·被 import 时静默）
 const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
@@ -85,19 +148,29 @@ if (isMain) {
   const r = roadmapDrift(DEFAULT_ROOT, roadmapRel);
   if (!r.ok) {
     console.error(`# roadmap 漂移自检跳过：${r.reason}`);
-    process.exit(0);
-  }
-  if (!r.moved.length) {
+  } else if (!r.moved.length) {
     console.log(`roadmap「${roadmapRel}」当前状态 banner（${r.date}）之后，${r.total} 条车道文件在 main 上均无新提交——banner 可信。`);
-    process.exit(0);
+  } else {
+    console.log(
+      `⚠ roadmap「${roadmapRel}」当前状态 banner（${r.date}）可能已 stale——以下车道文件在该日期后于 main 有提交，\n` +
+        `  这些任务很可能已推进/落地：落地前先核对其 ⬜/✓ 状态，别照抄 banner（定位走 git·#96/#3）。`,
+    );
+    for (const mv of r.moved) {
+      console.log(`  · ${mv.name}  (${mv.count} commit)  [${mv.files.join(', ')}]`);
+      console.log(`      最新：${mv.latest}`);
+    }
   }
-  console.log(
-    `⚠ roadmap「${roadmapRel}」当前状态 banner（${r.date}）可能已 stale——以下车道文件在该日期后于 main 有提交，\n` +
-      `  这些任务很可能已推进/落地：落地前先核对其 ⬜/✓ 状态，别照抄 banner（定位走 git·#96/#3）。`,
-  );
-  for (const mv of r.moved) {
-    console.log(`  · ${mv.name}  (${mv.count} commit)  [${mv.files.join(', ')}]`);
-    console.log(`      最新：${mv.latest}`);
+
+  // —— spec 状态 banner 扫描（advisory·不红·见档头 2026-07-02 泛化）——
+  const sd = specBannerDrift(DEFAULT_ROOT);
+  if (sd.stale.length || sd.noBanner.length) {
+    console.log('\n# docs/spec 状态 banner 自检（advisory·不阻断）：');
+    for (const s of sd.stale) {
+      console.log(`  ⚠ ${s.file} 的状态 banner（${s.date}）可能过期——该日期后在 main 有 ${s.count} 笔内容提交（最新：${s.latest}）；以代码/git 为准，顺手翻面 banner。`);
+    }
+    for (const f of sd.noBanner) {
+      console.log(`  · ${f} 无状态头——读它前先 git log 该文件核实时效；顺手补一行「状态：…（YYYY-MM-DD）」banner 更好。`);
+    }
   }
   process.exit(0);
 }

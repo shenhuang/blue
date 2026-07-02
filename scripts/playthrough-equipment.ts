@@ -306,7 +306,8 @@ assert(m.profile.equipment!.tool!.mod === 'item.mod.poison_sac', '毒囊已装�
 assert((m.profile.inventory.find((i) => i.itemId === 'item.mod.poison_sac')?.qty ?? 0) === 0, '毒囊消耗（库存 -1·条目清空）');
 assert(installedModMeta(m.profile.equipment!, 'tool')?.effect === 'poison', 'installedModMeta 读出 poison');
 m = installMod(m, 'tool', 'item.mod.shock_core');
-assert(m.profile.equipment!.tool!.mod === 'item.mod.shock_core', '替换为放电芯');
+// ?. 而非 !：308 行重赋值后 305 行 asserts 留下的 `!` 链窄化不清除（TS CFA 陷阱）→ ! 链会误报恒假比较
+assert(m.profile.equipment?.tool?.mod === 'item.mod.shock_core', '替换为放电芯');
 assert(!m.profile.inventory.some((i) => i.itemId === 'item.mod.poison_sac' && i.qty > 0), '旧毒囊不返还（替换丢弃）');
 const drillProfile = { ...modState().profile, equipment: { ...createStarterLoadout(), tool: { itemId: 'item.rock_drill', slot: 'tool' as const, level: 1 } } };
 assert(!canInstallMod(drillProfile, 'tool', 'item.mod.poison_sac').ok, '岩凿无 modSlot → 不可装');
@@ -332,7 +333,8 @@ d = devUpgradeEquipment(d, 'tool');
 assert(d.profile.equipment!.tool!.level === 2, 'dev 升级：刀 Lv2（0 成本·无料无金）');
 assert(d.profile.equipment!.sonar === null, '起手 sonar 空');
 d = devCraftEquipment(d, 'item.sonar.handheld');
-assert(d.profile.equipment!.sonar?.itemId === 'item.sonar.handheld', 'dev 打造：声呐入空槽（0 成本·无料）');
+// ?. 同上：333 行窄化 sonar===null 后 334 行重赋值不清 `!` 链窄化
+assert(d.profile.equipment?.sonar?.itemId === 'item.sonar.handheld', 'dev 打造：声呐入空槽（0 成本·无料）');
 assert(!d.profile.inventory.some((i) => i.itemId === 'item.mod.shock_core' && i.qty > 0), '不持有放电芯');
 d = devInstallMod(d, 'tool', 'item.mod.shock_core');
 assert(d.profile.equipment!.tool!.mod === 'item.mod.shock_core', 'dev 改装：放电芯装上刀（0 成本·免件免持有）');

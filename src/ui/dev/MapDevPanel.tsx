@@ -19,7 +19,8 @@ import { generateDiveMap, analyzeMap, resolveLayoutStyle } from '@/engine/mapgen
 import { ZONES, zoneAllowsBacktrack } from '@/engine/zones';
 import { makeLcg } from '@/engine/rng';
 import { deriveMapLayout } from '../mapLayout';
-import { buildCaveGeometry, bakeCaveRGBA, SONAR_PX_PER_M, SONAR_COL_W, CAVE_GEOM_MARGIN } from '../SonarScanPanel';
+import { buildCaveGeometry, bakeCaveRGBA } from '../SonarScanPanel';
+import { SONAR_PX_PER_M, SONAR_COL_W, CAVE_GEOM_MARGIN } from '@/engine/sonarGeometry';
 import type { DiveMap, DiveNode, ZoneDef } from '@/types';
 
 export interface MapDevPanelProps {

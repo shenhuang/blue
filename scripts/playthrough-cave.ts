@@ -12,15 +12,11 @@ import { createInitialGameState } from '../src/engine/state';
 import { startDiveFromPoi } from '../src/engine/dive-start';
 import { handleReturnToPort } from '../src/engine/port';
 import type { CaveGenParams, ChartPoi, ZoneDef } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('持久多口洞回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 /** 确定性 PRNG（同 mapgen makeSeededRng·测试自带种子·不依赖全局 Math.random patch）。 */
 function mulberry32(seed: number): () => number {
@@ -195,5 +191,4 @@ L('  0 caves.json 登记表加载 + getCave 解析 ✓');
   L(`  11 渲染契约助手：persistentExploredForRun(Set)·cavePortalsForChart(${portals!.length}口·含入口+出口) ✓`);
 }
 
-console.log(log.join('\n'));
-console.log('\n✓ 持久多口洞回归通过');
+pt.done();

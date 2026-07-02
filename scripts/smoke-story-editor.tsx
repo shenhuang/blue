@@ -4,7 +4,7 @@
 // 守「事件 schema / EVENT_DB 演进别静默打挂剧情编辑器」。
 //
 // 跑法： npx tsx scripts/smoke-story-editor.tsx
-import React from 'react';
+// @jsxRuntime automatic —— 同 smoke-chart-ui：pragma 切 automatic transform·与 react-jsx typecheck 一致
 import { renderToStaticMarkup } from 'react-dom/server';
 import StoryEditor from '../src/ui/StoryEditor';
 import { listPoiEventSets, poiEventIds } from '../src/engine/poiEvents';

@@ -24,7 +24,7 @@ import { buildAtLighthouse } from '../src/engine/lighthouses';
 import { eventDoneFlag, pickReturnTrigger } from '../src/engine/portEvents';
 import { CH1_HOOK_FLAG, ch1Story } from '../src/engine/story';
 import { handleReturnToPort } from '../src/engine/port';
-import type { GameState, DialogNode, DiveEvent } from '../src/types';
+import type { GameState, DialogNode, DiveEvent, NodeChoice } from '../src/types';
 import { makeLcg } from '../src/engine/rng';
 
 // ── 焊死 flaky（quirk #129）─────────────────────────────────────────────────
@@ -162,7 +162,7 @@ while (state.phase.kind === 'dive' && navGuard++ < 40) {
     continue;
   }
   if (sub.kind === 'nodeSelect') {
-    const choices = sub.choices ?? [];
+    const choices: NodeChoice[] = sub.choices ?? [];
     const forward = choices.filter((c) => !c.isAscentPoint);
     const target = forward[0] ?? choices[0];
     if (!target) { state = { ...state, phase: { kind: 'ascent', targetDepth: 0 } }; break; }

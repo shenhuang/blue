@@ -6,7 +6,7 @@
 //
 // 设计原则（与 eventScenario.ts 同源套路）：
 //   1. 不复刻 combat.ts 的内部逻辑（reducer / AI / 撤退阈值 / loot），全部复用。
-//   2. 复用 eventScenario.ts 的 withSeededRandom——quirk #22 已立规矩，不发明新机制。
+//   2. 复用 scenarioShared.ts 的 withSeededRandom / diff helper——quirk #22 已立规矩，不发明新机制。
 //   3. 战斗边界：碰到 victory / defeat / flee / emergency_ascend / 回合数上限 / 行动用完 → 停步，
 //      不进入战斗外的事件链路（"AI 联动事件"不是这一层的事）。
 //   4. input.actions[i] = { actionId, targetIndex? }。targetIndex 是 enemies 数组下标（不是 instanceId），
@@ -19,7 +19,6 @@ import type {
   GameState,
   RunState,
   Stats,
-  Stat,
   CombatLogEntry,
   CombatAction,
   EnemyDef,
@@ -39,7 +38,6 @@ import type {
 import {
   createInitialGameState,
   createNewRun,
-  createStarterLoadout,
 } from './state';
 import { seedInjuries } from './injuries';
 import {
@@ -55,7 +53,12 @@ import {
 } from './combat';
 import { canResolveMember } from './enemyLibrary';
 import { isSegmentReachable } from './chain-eel';
-import { withSeededRandom } from './eventScenario';
+import {
+  withSeededRandom,
+  diffStats,
+  diffInventory,
+  buildEquipment,
+} from './scenarioShared';
 
 // ---------------------------------------------------------------------------
 // 输入 / 输出类型
@@ -213,15 +216,8 @@ export interface CombatScenarioResult {
 }
 
 // ---------------------------------------------------------------------------
-// 初始 state 构造
+// 初始 state 构造（buildEquipment 共用件在 scenarioShared.ts）
 // ---------------------------------------------------------------------------
-
-function buildEquipment(override: Partial<EquipmentLoadout> | undefined): EquipmentLoadout {
-  const base = createStarterLoadout();
-  if (!override) return base;
-  // 9 槽起改用 spread：base 含全 9 槽、override 只含已覆写键（不含显式 undefined）＝加新槽不必动这里。
-  return { ...base, ...override };
-}
 
 function buildInitialState(input: CombatScenarioInput): GameState {
   const base = createInitialGameState();
@@ -302,6 +298,26 @@ function startAdHocCombat(state: GameState, enemyDefIds: string[], wornSkin?: st
 }
 
 // ---------------------------------------------------------------------------
+// 不变量
+// ---------------------------------------------------------------------------
+
+/**
+ * 不变量：combat.enemies 的 instanceId 不得重复——撞号时 applyAttack 按 instanceId map 更新会
+ * 一击打多只 + React key 冲突（历史根因：spawn 用 Date.now()+i 同毫秒批次必撞·已改 CombatState.spawnSeq）。
+ * 每回合步进后与开战时各查一次；违反即 throw ⇒ 任何跑 scenario 的 playthrough 都会红（机制门）。
+ */
+function assertUniqueEnemyInstanceIds(state: GameState, where: string): void {
+  if (state.phase.kind !== 'combat') return;
+  const seen = new Set<string>();
+  for (const e of state.phase.combat.enemies) {
+    if (seen.has(e.instanceId)) {
+      throw new Error(`combat 不变量违反（${where}）：enemies 里 instanceId 重复 "${e.instanceId}"`);
+    }
+    seen.add(e.instanceId);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // 工具：snapshot 与 diff
 // ---------------------------------------------------------------------------
 
@@ -339,27 +355,6 @@ function deriveTerminalEnemiesSnapshot(
   }
   // flee / defeat / emergency_ascend：state.phase 已不是 combat，用 preTurn 的最后切片
   return preTurn.map((e) => ({ ...e }));
-}
-
-function diffStats(before: Stats, after: Stats): Partial<Stats> {
-  const out: Partial<Stats> = {};
-  const keys: Stat[] = ['stamina', 'oxygen', 'sanity', 'nitrogen'];
-  for (const k of keys) {
-    const d = after[k] - before[k];
-    if (Math.abs(d) > 1e-9) out[k] = Number(d.toFixed(4));
-  }
-  return out;
-}
-
-function diffInventory(before: InventoryItem[], after: InventoryItem[]): InventoryItem[] {
-  const beforeMap = new Map(before.map((i) => [i.itemId, i.qty]));
-  const out: InventoryItem[] = [];
-  for (const item of after) {
-    const prev = beforeMap.get(item.itemId) ?? 0;
-    const delta = item.qty - prev;
-    if (delta > 0) out.push({ itemId: item.itemId, qty: delta });
-  }
-  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -480,6 +475,7 @@ export function buildCombatEntryState(input: CombatScenarioInput): CombatEntrySt
   if (!entered.ok) {
     return { state: null, resolvedInitialState: entered.resolvedInitialState, errors: entered.errors };
   }
+  assertUniqueEnemyInstanceIds(entered.state, '开战');
   return { state: entered.state, resolvedInitialState: entered.resolvedInitialState, errors: [] };
 }
 
@@ -498,6 +494,7 @@ export function runCombatScenario(input: CombatScenarioInput): CombatScenarioRes
     };
   }
   let state = entered.state;
+  assertUniqueEnemyInstanceIds(state, '开战');
   const resolvedInitialState: GameState = entered.resolvedInitialState;
   const startStats: Stats = { ...state.run!.stats };
   const startInventory: InventoryItem[] = state.run!.inventory.map((i) => ({ ...i }));
@@ -578,6 +575,7 @@ export function runCombatScenario(input: CombatScenarioInput): CombatScenarioRes
 
       const result = applyPlayerAction(state, actionInput.actionId, targetInstanceId);
       state = result.state;
+      assertUniqueEnemyInstanceIds(state, `turn ${i} 步进后`); // 分裂/补蜂 spawn 都发生在行动内
 
       const afterStats: Stats = state.run ? { ...state.run.stats } : beforeStats;
       const turnLog: CombatLogEntry[] =

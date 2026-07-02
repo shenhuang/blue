@@ -2,12 +2,14 @@
 // 敌人库 SPEC（docs/spec/深海回响_敌人库_SPEC.md §6/§7）的机制门——把"约定"变成会在
 // `npm run regress` 里失败的检查。纯读 JSON·无 TS 依赖。任一不过 → exit 1。
 //
-// 四条门：
+// 五条门：
 //   (a) registry 不过期    —— registry.generated.ts 与 src/data/enemies/*.json 一致（调 gen --check）。
 //   (b) 引用完整           —— 每个 combatEncounter 引用的敌人 defId（含增援池）都已注册。
 //   (c) 无孤儿敌人         —— 每只敌人 ≥1 bands 且 ≥1 biomes（否则 pickEnemy 永选不中＝死库存）。
 //       (c2) boss/miniboss phases 降序；(c3) 尸衣者 skinLoot 形状 + defaultSkin∈skinLoot。
 //   (d) 有 baseline        —— 每只敌人被 ≥1 个 scenarios/combat/*.json 实跑覆盖。
+//   (e) flee/scare 零掉落  —— #244 裁决：材料只走 kill——任何 loot 表（def.loot 与 skinLoot 皮囊变体）
+//       的 victoryModifier.flee / .scare 一旦写成非 0 → 红（逃跑/吓退仍是有效脱离结局·只是不掉料）。
 //
 // 这是 §5 两条自动化入库工作流（描述→实装 / 定时生成）的"绿门"：绿才算"完成"。
 
@@ -82,6 +84,7 @@ for (const f of enemyFiles) {
       phases: Array.isArray(e.phases) ? e.phases : undefined,
       hasSkinLoot: Object.prototype.hasOwnProperty.call(e, 'skinLoot'),
       skinLoot: e.skinLoot,
+      loot: e.loot,
       defaultSkin: e.defaultSkin,
       headEnrage: e.headEnrage,
       file: f,
@@ -277,6 +280,30 @@ for (const e of enemyDefs) {
   }
 }
 
+// —— (e) flee/scare 零掉落（#244 裁决机制化）——
+// 作者拍板（CHANGELOG 5e0a64d「逃跑/吓退不再给动物材料」）：flee/scare 掉率削弱「战斗=进度」+
+// 主题怪（逃了怎么采到材料）+ 配合 stalker 可刷 → 材料掉率只走 kill。victoryConditions 仍保留
+// flee/scare 三态（有效脱离结局），但所有 loot 表（def.loot 与 skinLoot 各皮囊变体）的
+// victoryModifier.flee / .scare 若写出必须为 0；缺省键＝无此路径掉率·放行。
+for (const e of enemyDefs) {
+  const tables = [['loot', e.loot]];
+  if (e.skinLoot && typeof e.skinLoot === 'object' && !Array.isArray(e.skinLoot)) {
+    for (const [skin, table] of Object.entries(e.skinLoot)) tables.push([`skinLoot["${skin}"]`, table]);
+  }
+  for (const [name, table] of tables) {
+    const vm = table && typeof table === 'object' && !Array.isArray(table) ? table.victoryModifier : undefined;
+    if (!vm || typeof vm !== 'object') continue;
+    for (const path of ['flee', 'scare']) {
+      if (vm[path] !== undefined && vm[path] !== 0) {
+        errors.push(
+          `[fleeLoot] ${e.id}（${e.file}）${name}.victoryModifier.${path}=${vm[path]}` +
+            `——#244 裁决：逃跑/吓退不掉材料·须为 0（材料掉率只走 kill）`,
+        );
+      }
+    }
+  }
+}
+
 // —— 汇报 ——
 if (errors.length) {
   console.error(`✗ check-enemy-refs：${errors.length} 处问题`);
@@ -284,5 +311,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  `✓ check-enemy-refs：${enemyDefs.length} 敌人 / ${encounters.length} encounter · 引用完整 · 无孤儿 · boss 阶段降序 · 尸衣 skinLoot 合规 · 链鳗按序节序合规 · 全有 baseline · registry 最新`,
+  `✓ check-enemy-refs：${enemyDefs.length} 敌人 / ${encounters.length} encounter · 引用完整 · 无孤儿 · boss 阶段降序 · 尸衣 skinLoot 合规 · 链鳗按序节序合规 · 全有 baseline · flee/scare 零掉落 · registry 最新`,
 );

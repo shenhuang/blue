@@ -31,9 +31,13 @@ import type {
 import {
   createInitialGameState,
   createNewRun,
-  createStarterLoadout,
 } from './state';
-import { makeLcg } from './rng';
+import {
+  withSeededRandom,
+  diffStats,
+  diffInventory,
+  buildEquipment,
+} from './scenarioShared';
 import {
   isOptionVisible,
   resolveOption,
@@ -163,23 +167,10 @@ export interface ScenarioResult {
 }
 
 // ---------------------------------------------------------------------------
-// RNG patch
+// RNG patch（本体迁 scenarioShared.ts·此处 re-export 保住既有 import 面）
 // ---------------------------------------------------------------------------
 
-/**
- * 在 fn 期间临时把 Math.random 替换成线性同余 RNG。fn 跑完恢复原 random。
- * 用法见 runEventScenario。**注意：不要在它运行时并发跑别的引擎代码**（全局副作用）。
- */
-export function withSeededRandom<T>(seed: number | undefined, fn: () => T): T {
-  if (seed === undefined) return fn();
-  const original = Math.random;
-  Math.random = makeLcg(seed); // 与 chart.ts / MapDevPanel 同一份 LCG（src/engine/rng.ts）
-  try {
-    return fn();
-  } finally {
-    Math.random = original;
-  }
-}
+export { withSeededRandom } from './scenarioShared';
 
 // ---------------------------------------------------------------------------
 // Condition 人类可读化
@@ -249,13 +240,6 @@ function inferZoneId(ev: DiveEvent): string {
   return 'zone.old_lighthouse_reef';
 }
 
-function buildEquipment(override: Partial<EquipmentLoadout> | undefined): EquipmentLoadout {
-  const base = createStarterLoadout();
-  if (!override) return base;
-  // 9 槽起改用 spread：base 含全 9 槽、override 只含已覆写键（不含显式 undefined）＝加新槽不必动这里。
-  return { ...base, ...override };
-}
-
 function buildInitialState(input: ScenarioInput, ev: DiveEvent): GameState {
   const base = createInitialGameState();
 
@@ -300,29 +284,8 @@ function buildInitialState(input: ScenarioInput, ev: DiveEvent): GameState {
 }
 
 // ---------------------------------------------------------------------------
-// 一步内的 diff 计算
+// 一步内的 diff 计算（diffStats / diffInventory 共用件在 scenarioShared.ts）
 // ---------------------------------------------------------------------------
-
-function diffStats(before: Stats, after: Stats): Partial<Stats> {
-  const out: Partial<Stats> = {};
-  const keys: Stat[] = ['stamina', 'oxygen', 'sanity', 'nitrogen'];
-  for (const k of keys) {
-    const d = after[k] - before[k];
-    if (Math.abs(d) > 1e-9) out[k] = Number(d.toFixed(4));
-  }
-  return out;
-}
-
-function diffInventory(before: InventoryItem[], after: InventoryItem[]): InventoryItem[] {
-  const beforeMap = new Map(before.map((i) => [i.itemId, i.qty]));
-  const out: InventoryItem[] = [];
-  for (const item of after) {
-    const prev = beforeMap.get(item.itemId) ?? 0;
-    const delta = item.qty - prev;
-    if (delta > 0) out.push({ itemId: item.itemId, qty: delta });
-  }
-  return out;
-}
 
 function diffFlags(before: Set<string>, after: Set<string>): string[] {
   const out: string[] = [];

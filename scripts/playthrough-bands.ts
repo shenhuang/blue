@@ -32,15 +32,11 @@ import {
   SONAR_PING_COST,
 } from '../src/engine/clarity';
 import type { GameState, ChartPoi, DepthBand } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('深度 band / 深入下潜回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 const depthsOf = (s: GameState) => Object.values(s.run!.map!.nodes).map((n) => n.depth);
 
 // 深入下潜测试夹具（#131）：把一个 band 包成「深度柱深入潜点」inline ChartPoi，走 startDiveFromPoi 的
@@ -302,5 +298,4 @@ assert(
 assert(capBand!.order === capBand!.depthRange[0], `14: 柱 band order=顶深（${capBand!.order}=${capBand!.depthRange[0]}）`);
 L(`  columnBands()=${colBands.length} 档全并表 / band.trench.t4 [${capBand!.depthRange}] order ${capBand!.order} ✓`);
 
-console.log(log.join('\n'));
-console.log('\n✓ 深度 band / 深入下潜回归通过');
+pt.done();

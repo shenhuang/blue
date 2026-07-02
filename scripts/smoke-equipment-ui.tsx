@@ -7,7 +7,7 @@
 //      HUD 不出升级行/不提示卸下 + onSlotClick 态提示「点击卸下」但不出详情/升级/打造。
 //
 // 跑法： npx tsx scripts/smoke-equipment-ui.tsx
-import React from 'react';
+// @jsxRuntime automatic —— 同 smoke-chart-ui：pragma 切 automatic transform·与 react-jsx typecheck 一致
 import { renderToStaticMarkup } from 'react-dom/server';
 import { EquipmentDoll, OttoUpgradeView, EquipmentUpgradeBox } from '../src/ui/EquipmentDoll';
 import { createInitialGameState } from '../src/engine/state';

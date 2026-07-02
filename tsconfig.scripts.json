@@ -1,0 +1,13 @@
+{
+  // scripts/ 类型门：主 tsconfig include 只有 src，scripts 两万行长期在 typecheck 门外
+  // （esbuild/tsx 只剥类型不检查）。这份配置把 scripts + src 收进同一个 program
+  // （scripts 深度 import src·必须一起编译），regress 由独立任务跑 `tsc -p tsconfig.scripts.json`。
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // scripts 跑在 node（fs/path/process）；smoke-*.tsx 是 SSR·jsx 由主配置 react-jsx 继承
+    "types": ["node"]
+  },
+  "include": ["scripts/**/*.ts", "scripts/**/*.tsx", "src"],
+  // scratch 调试脚本（gitignore 的 scripts/_debug*·沙箱删不掉的残骸）不纳管——别让临时脚本打红门
+  "exclude": ["scripts/_debug*"]
+}

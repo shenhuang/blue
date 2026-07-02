@@ -31,7 +31,8 @@ import type { GameState, InventoryItem } from '../src/types';
 let state: GameState = createInitialGameState();
 const log: string[] = [];
 
-function assert(cond: unknown, msg: string) {
+// asserts cond：与其他 playthrough 同款——让 tsc 沿断言窄化（canPurchase 判别联合读 reason/shortfall 靠它）
+function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) {
     console.error(log.join('\n'));
     throw new Error('断言失败: ' + msg);

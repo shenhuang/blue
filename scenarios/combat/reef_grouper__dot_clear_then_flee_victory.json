@@ -1,0 +1,22 @@
+{
+  "_comment": "全灭窗回归（applyPlayerAction 前置全灭结算）：倒刺刀挂撕裂 DoT → 石斑在敌人回合末被 DoT 掉血清场（胜负按既有时序留到下个行动点判）→ 玩家下一手偏偏选「屏息潜逃」。修前：flee 掷骰若失败，failExposure 找活敌 find(...)! 对空场取 undefined → 崩溃（seed=40 正落在这条骰路上）；修后：行动最前先查全灭直接 finalizeVictory，flee 根本不掷。断言不 throw 且 outcome=victory；DoT 击杀算真击杀（≠自行逃走），战利品照掉（#244 口径对照组）。",
+  "combatId": "combat.reef_grouper_solo",
+  "seed": 40,
+  "equipment": { "tool": { "itemId": "item.dive_knife.standard", "slot": "tool", "level": 1, "mod": "item.mod.barb_kit" } },
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.evade" },
+    { "actionId": "action.flee" }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 4,
+    "survived": true,
+    "finalPhase": "dive",
+    "enemiesAlive": 0,
+    "lootGained": { "item.grouper_maw": 1 },
+    "statsDelta": { "stamina": -31, "oxygen": -2 },
+    "logIncludes": ["因持续伤势"]
+  }
+}

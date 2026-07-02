@@ -14,7 +14,7 @@
 import { register } from 'node:module';
 register('./css-stub-loader.mjs', import.meta.url);
 
-import React from 'react';
+// @jsxRuntime automatic —— 同 smoke-chart-ui：pragma 切 automatic transform·与 react-jsx typecheck 一致
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   runCombatScenario,

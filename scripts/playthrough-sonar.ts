@@ -10,7 +10,7 @@
 //
 // 跑法： npx tsx scripts/playthrough-sonar.ts
 
-import type { GameState, RunState, DiveMap, Stalker } from '../src/types';
+import type { GameState, RunState, DiveMap } from '../src/types';
 import {
   createInitialGameState,
   createNewRun,
@@ -21,9 +21,7 @@ import { pingSonar, moveToNode, enterNodeSelection, exploreFeature, setSonarNext
 import {
   POWER_MAX,
   SONAR_PING_COST,
-  SONAR_PING_ALERT,
   ALERT_MAX,
-  ALERT_WARN,
   ALERT_THRESHOLD,
   THREAT_CONTACT_ALERT,
   sonarPingAlertDelta,
@@ -497,7 +495,7 @@ L('\n========== 15. 落地即扫 + 偏好持久 ==========');
   const onState: GameState = { ...base, run: createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } }) };
   const dived = startDive(onState, 'zone.blue_caves');
   const start = dived.run!.currentNodeId;
-  assert(dived.run!.scanMemory[start] === dived.run!.turn, '15: 落地即扫——起始节点＝本回合扫描中心（声呐开+解锁）');
+  assert(start !== null && dived.run!.scanMemory[start] === dived.run!.turn, '15: 落地即扫——起始节点＝本回合扫描中心（声呐开+解锁）');
   assert(dived.run!.sensors.sonar === 'ping', '15: 落地处于发射态 sonar=ping（exposed·与到站自动扫一致）');
   assert(dived.run!.sensors.sonarOn === true && dived.run!.sensors.sonarNext === true, '15: 偏好开 → 种 sonarOn/sonarNext=true');
 

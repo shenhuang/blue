@@ -3,13 +3,24 @@
 // 2. 选 "engage" 进入战斗
 // 3. 用潜水刀对鲨鱼一通砍直到胜利
 // 4. 验证战斗后跳回 tutorial.deeper 事件链
+// 5. 「flee/scare 不掉料」硬门（#244）：跑两个结局场景断言 lootGained 为空
+//    （scenario 套件的 expect.lootGained 只能断「至少有」·断「没有」收口在这里）
 
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { createInitialGameState } from '../src/engine/state';
 import { getDialogNode, getNpc, selectChoice } from '../src/engine/dialog';
 import { resolveOption } from '../src/engine/events';
 import { getEventById } from '../src/engine/zones';
-import { applyPlayerAction, listAvailableActions } from '../src/engine/combat';
+import { listAvailableActions } from '../src/engine/combat';
+import { runCombatScenario, type CombatScenarioInput } from '../src/engine/combatScenario';
+import { makeLcg } from '../src/engine/rng';
 import type { GameState, DialogNode } from '../src/types';
+
+// 种子化焊死 flaky（quirk #129 同源）：教学事件检定 + 战斗命中/敌 AI 都走 Math.random → 定死随机变确定性。
+// golden seed 落「潜行过检 → 鲨鱼战 victory → tutorial.deeper」路径；PT_SEED=<n> 可临时换种探路。
+Math.random = makeLcg(Number(process.env.PT_SEED) || 20260702);
 
 let state: GameState = createInitialGameState();
 const log: string[] = [];
@@ -139,6 +150,38 @@ import('../src/engine/combat').then(async (mod) => {
     }
   }
   log.push(`战利品: ${state.run?.inventory.map((i) => `${i.itemId}×${i.qty}`).join(', ')}`);
+
+  // —— 断言（文件头目标 3/4）：胜利收尾 + 跳回 tutorial.deeper 事件链（seeded 确定性·quirk #129）——
+  function fail(msg: string): never {
+    console.log(log.join('\n'));
+    throw new Error(`[playthrough-combat] ${msg}`);
+  }
+  if (outcome !== 'victory') fail(`战斗应以 victory 收（实际 ${outcome}）`);
+  if (state.phase.kind !== 'dive' || state.phase.subPhase.kind !== 'event') {
+    fail(`战斗后应回 dive/event（实际 ${state.phase.kind}${state.phase.kind === 'dive' ? '/' + state.phase.subPhase.kind : ''}）`);
+  }
+  if (state.phase.subPhase.eventId !== 'tutorial.deeper') {
+    fail(`战斗后应跳 tutorial.deeper（实际 ${state.phase.subPhase.eventId}）`);
+  }
+
+  // —— 「flee/scare 不掉料」硬门（#244·文件头目标 5）——
+  // 直接跑黄金套件里两个结局场景（同一份 JSON·单一场景来源），断言战利品为空：
+  // flee＝finalizeFlee 从不结算 loot；scare＝敌人自行离场（fledInstanceIds）被 finalizeVictory 跳过。
+  const scenarioDir = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'scenarios', 'combat');
+  for (const [file, wantOutcome] of [
+    ['tutorial_shark__flee_no_loot.json', 'flee'],
+    ['wreck_spider_crab_solo__scare_no_loot.json', 'victory'],
+  ] as const) {
+    const raw = JSON.parse(readFileSync(resolve(scenarioDir, file), 'utf8')) as Record<string, unknown>;
+    const { _comment, expect, ...input } = raw;
+    void _comment; void expect;
+    const r = runCombatScenario(input as CombatScenarioInput);
+    if (r.summary.outcome !== wantOutcome) fail(`${file}: outcome 应 ${wantOutcome}（实际 ${r.summary.outcome}）`);
+    if (r.summary.lootGained.length !== 0) {
+      fail(`${file}: flee/scare 结局不该有任何战利品（#244·实际 ${r.summary.lootGained.map((l) => `${l.itemId}×${l.qty}`).join(', ')}）`);
+    }
+  }
+  log.push('flee/scare 零战利品门 ✓');
 
   console.log(log.join('\n'));
   console.log('\n✓ 战斗 playthrough 完成');

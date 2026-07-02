@@ -10,7 +10,7 @@
 //   3) 回退 ALL：任何「解释不了的改动」（不在图里、又不是文档）或全局触发（tsconfig/package/
 //      vite/regress 本身）→ 直接返回 ALL，让调用方跑全量。这条保证永不漏测。
 //
-// 行为测入口（= regress 里 esbuild 相关的那批任务）：scripts/playthrough*.ts + smoke-*.tsx + verify-tutorial.mjs。
+// 行为测入口（= regress 里 esbuild 相关的那批任务）：scripts/playthrough*.ts + smoke-*.{tsx,mjs} + verify-tutorial.mjs。
 // typecheck 与 check-*（纯 node·全局不变量）不在选择范围——它们便宜，调用方一律全跑。
 //
 // 用法：
@@ -43,7 +43,7 @@ const GLOBAL_TRIGGERS = [
 const INERT = [/^docs\//, /\.md$/, /^\.gitignore$/, /^\.githooks\//, /^README/, /^LICENSE/, /\.txt$/, /^psm\.config\.json$/, /^\.worktrees\//];
 
 function isEntry(relPath) {
-  return /^scripts\/playthrough.*\.ts$/.test(relPath) || /^scripts\/smoke-.*\.tsx$/.test(relPath) || relPath === 'scripts/verify-tutorial.mjs';
+  return /^scripts\/playthrough.*\.ts$/.test(relPath) || /^scripts\/smoke-.*\.(tsx|mjs)$/.test(relPath) || relPath === 'scripts/verify-tutorial.mjs';
 }
 function taskName(relPath) { return relPath.replace(/^scripts\//, '').replace(/\.(ts|tsx|mjs)$/, ''); }
 

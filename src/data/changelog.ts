@@ -6,7 +6,7 @@ import type { ChangelogEntry } from '@/types';
 //   1. 倒序：最新条目放数组**最前面**（UI 直接取 slice(0, N)）。
 //   2. 面向玩家措辞：别抄 docs/archive/CHANGELOG.md 的 dev 黑话（quirk 号、文件名、SAVE_VERSION…）。
 //   3. **不剧透**：深水欺骗 / mimic / corpse-wearer 等设计只描述"玩法入口"，不点破真相
-//      （叙述永不交底·quirk #54、deep-game-vision 北极星）。
+//      （叙述永不交底的深水写法铁律·deep-game-vision 北极星）。
 //   4. UI 只显示最近 VISIBLE 条（见 ChangelogModal，现 5 条·可滚动）；更早条目留在这里**不删**即可。
 //   5. 加新版本 = 在数组顶部 push 一条 `{ date, title, changes }`；类型由 ChangelogEntry 约束。
 //

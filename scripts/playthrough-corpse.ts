@@ -49,17 +49,15 @@ if (state.run?.map) {
 
 // 给玩家塞几件物品，确保死亡留下战利品
 if (state.run) {
-  state = {
-    ...state,
-    run: {
-      ...state.run,
-      inventory: addToInventory(addToInventory(state.run.inventory, 'item.shark_tooth', 3), 'item.coral_shard', 2),
-      currentDepth: 45,
-      gold: 50,
-    },
+  const run = {
+    ...state.run,
+    inventory: addToInventory(addToInventory(state.run.inventory, 'item.shark_tooth', 3), 'item.coral_shard', 2),
+    currentDepth: 45,
+    gold: 50,
   };
-  L(`玩家库存: ${state.run.inventory.map(i => `${i.itemId}×${i.qty}`).join(', ')}`);
-  L(`金币: ${state.run.gold} / 深度: ${state.run.currentDepth}m`);
+  state = { ...state, run };
+  L(`玩家库存: ${run.inventory.map(i => `${i.itemId}×${i.qty}`).join(', ')}`);
+  L(`金币: ${run.gold} / 深度: ${run.currentDepth}m`);
 }
 
 // 强制死亡

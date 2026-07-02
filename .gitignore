@@ -53,3 +53,6 @@ docs/NEXT_SESSION_PROMPT.md
 
 # 方案 B 周末引擎独立 worktree（挂 auto/weekend·物理隔离·mount 内·sandbox 可见）— never commit
 /.worktrees/
+
+# 沙箱 mount 不能 unlink（quirk #1）——调试残骸删不掉·别让宽 `git add` 扫进 commit（临时脚本放 session scratchpad·照 tools/playtest-llm/.gitignore 先例）
+scripts/_debug*

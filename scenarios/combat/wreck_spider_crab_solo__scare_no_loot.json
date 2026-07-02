@@ -1,0 +1,21 @@
+{
+  "_comment": "scare 结局零战利品（#244「逃跑/吓退不给材料」）：两刀把蛛蟹打进低血撤退（territorial·hp≤30% 掷 0.5）→ 它下个敌人回合「向远处游开」真离场（hp 置 0 + 记入 fledInstanceIds）→ 玩家下一手结算 victory，finalizeVictory 跳过自行离场者的 loot → 零掉落。与 __flee_retreat.json 对照：那边蛛蟹转身逃跑时被刀砍死（hp 因攻击归零）＝真击杀·照常掉甲壳。lootGained 空由 playthrough-combat.ts 的「flee/scare 不掉料」硬门断言。",
+  "combatId": "combat.wreck_spider_crab_solo",
+  "seed": 4,
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.evade" },
+    { "actionId": "action.evade" },
+    { "actionId": "action.evade" }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 4,
+    "survived": true,
+    "finalPhase": "dive",
+    "enemiesAlive": 0,
+    "statsDelta": { "stamina": -24, "oxygen": -2 },
+    "logIncludes": ["向远处游开"]
+  }
+}

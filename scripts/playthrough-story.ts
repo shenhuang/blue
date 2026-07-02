@@ -299,7 +299,7 @@ L('§2d 重返东礁深度途中触发（storyOpenEvents 选变体 + 钉到 wrec
     const poi = generateChart({ profile }).pois.find((p) => p.id === 'poi.anchor.east_reef');
     assert(poi, '§2d poi.anchor.east_reef 教学后应在海图');
     const after = startDiveFromPoi({ ...createInitialGameState(), profile }, poi!);
-    const nodes = Object.values(after.run?.map.nodes ?? {}) as Array<{ depth: number; kind: string; eventId?: string; layer?: number }>;
+    const nodes = Object.values(after.run?.map?.nodes ?? {}) as Array<{ depth: number; kind: string; eventId?: string; layer?: number }>;
     const hit = nodes.find((n) => n.eventId === 'tutorial.captain_revisit' || n.eventId === 'tutorial.captain_revisit_empty');
     const sub = (after.phase as { subPhase?: { kind: string; eventId?: string } }).subPhase;
     const maxDepth = Math.max(...nodes.map((n) => n.depth));

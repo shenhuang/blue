@@ -29,7 +29,7 @@ psm start <name> --lane <glob,...>     # 开一条线：独立 worktree + 申报
   → 在该 worktree 里开一个 Cowork session 干活（只动车道内文件）
 psm land <name>                         # 收工：rebase 最新 main + 绿门；绿了【停下等你确认】
 psm land <name> --yes   /  psm merge <name>   # 你确认后：ff 合进 main（在 main 树跑）
-psm gc                                  # Mac 本机：清掉已合并 worktree
+psm gc                                  # Mac 本机：清已合并的 worktree/分支 + 失效注册项
 ```
 
 `land` 默认**只到绿门检查点就停**（退出码 3），不自动合——这是你选的「警告然后停下等我回复」。确认无误再
@@ -48,7 +48,11 @@ psm gc                                  # Mac 本机：清掉已合并 worktree
   清残锁 → 跑绿门 → 停下让 **Mac** `land --yes` 收尾——**绝不在沙箱 rebase / 合并**。
 - `psm merge <name>` —— = `land --yes` 的合并那一步。**必须在 main 树、当前在 main 上跑**（advance main 会动 main 树文件）。沙箱拒绝（见下）。
 - `psm abort <name>` —— 放弃一条线（沙箱删不掉 worktree，留到 `gc`）。
-- `psm gc` —— **Mac 本机**清掉已合并/已弃的 worktree + 分支（沙箱拒绝·不能 unlink）。
+- `psm gc` —— **Mac 本机**清理（沙箱拒绝·不能 unlink）。四类都收：
+  1. **台账 session**：landed/aborted 直接收；active/ready 但**分支已并入 main**（tip 是 main 祖先**且**有过真实提交——只看祖先不够，刚开线零提交的分支 tip 就是旧 main）视同 landed 收走。脏树跳过（宁留勿删），auto/weekend / 当前分支永不自动收（`shouldGcSession` 纯判定·可测）。
+  2. **已并入 main 的 `wip/*` + `feat/*` 陈旧分支**（在飞 session 的分支排除；`git branch -d` 自带「未完全合并拒删」兜底）。
+  3. **`.worktrees/` 下不在台账的孤儿 worktree**（手动 `git worktree add` 的残留）——分支已并入 main 才收；main / auto/weekend / 当前分支 / detached / 脏树一律不碰。
+  4. **`.git/worktrees/` 下 gitdir 指向不存在路径的失效注册项**（worktree 目录没了、注册还挂着）——手动删注册目录，继续避开 `git worktree prune`（会误删相对指针的 weekend worktree·quirk #138）；台账内 session 与 weekend（HEAD 指 auto/weekend）不碰。
 - `psm doctor` —— 清崩溃 / 中断留下的 git 残锁（`*.lock`）+ 中断 rebase 态（`rebase-merge`）。沙箱不能 unlink →
   **只 mv 进 `.sandbox-junk`（可恢复）不删**；只碰 git 自己的锁、不碰 refs / objects / 工作树 / 台账串行锁。
   卡死时（"another git process could not detach HEAD" / "cannot lock ref"）跑它自愈；`land` 起手也会自动先跑一遍。
@@ -57,6 +61,9 @@ psm gc                                  # Mac 本机：清掉已合并 worktree
 
 - **不能 unlink（quirk #1）**：Cowork 沙箱 mount 只能 创建/改/rename，删不掉文件或目录。所以 `land`/`merge`
   **不在沙箱删 worktree**——合完 worktree 留在原地（gitignored·无害），清理交给 Mac 本机 `psm gc`。
+- **调试残渣不进库**：临时探针脚本命名 `scripts/_debug*` —— 交互树 `.gitignore` 已挡（沙箱删不掉的调试残骸
+  不再冒 `??`、不会被宽 `git add` 扫进提交）。首选还是放 session scratchpad（照 `tools/playtest-llm` 先例）；
+  这类文件不归 `gc` 管，Mac 上用完直接删。
 - **相对指针（quirk #138）**：git 2.34 无 `--relative-paths`，`psm start` 在 `worktree add` 后手写两个相对指针，
   才能 Mac + 任意 Cowork 沙箱通用（每个 session 把 Blue 挂在不同绝对路径）。代价：git 2.34 的
   `git worktree remove` / `git worktree prune` **不认相对指针**——所以**别手动 `git worktree remove`/`prune`**
@@ -86,7 +93,7 @@ psm gc                                  # Mac 本机：清掉已合并 worktree
 
 环境：
 
-- **Mac**（有 native esbuild）：`land` 实跑 `npm run regress -- --only typecheck,check --only-exact <受影响行为测>`，快且覆盖到位。
+- **Mac**（有 native esbuild）：`land` 实跑 `npm run regress -- --only typecheck,check --only-exact <受影响行为测>`，快且覆盖到位。注意时序：Mac 的 gate 是**从 main 树 temp ff 到分支 tip 之后**才跑的（worktree 里 esbuild 启动有 ENOEXEC 问题），那一刻对 main 的 diff 恒空——affected 选测若仍以 main 为基准会把行为测全部误判成可跳过（假绿洞·已修）。所以 affected 的 diff 基准取 **ff 前捕获的 `preFfSha`（旧 main）**，选测面等于这条分支真实带进来的改动。
 - **沙箱**（无 esbuild·跑不了 tsx）：只跑静态门，并**精确报告**「这些受影响行为测请在 Mac 补跑：`npm run regress -- --only-exact <list>`」——比旧的「playthrough 全留 nightly」精确得多。要在沙箱也跑行为测，接上 `ESBUILD_BINARY_PATH`（见自动记忆 `blue-regress-sandbox`），`land` 会自动改跑受影响行为测。
 
 逃生阀：`psm land <name> --full` 强制全量；或 `psm.config.json` 里 `gate.affected:false` 关掉。`--only-exact` 是给 `regress.mjs` 加的精确选测开关（与 `--only` 子串取并集·避免 `playthrough` 子串把 30 个全带上）。`node scripts/affected-tests.mjs --since main` 可单独看选测结果。

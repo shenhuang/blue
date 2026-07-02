@@ -14,6 +14,7 @@ import { ageAndDecayDeaths, getPreservationBonus } from './death';
 import { daysToNextPhase, lunarPhase, lunarPhaseLabel } from './lunar';
 import { knownLunarPoints } from './chart';
 import { trustTier, gainTrust } from './trust';
+import shopData from '@/data/shop.json';
 
 export interface ReturnToPortResult {
   state: GameState;
@@ -233,89 +234,59 @@ export function sellItemToMira(
 // - 另有少量「装备性消耗品」（decoy/med_kit·SHOP_STOCK_CONSUMABLES）：同一套限量/加价机制走货。
 // - 买价 = 卖价（miraOfferFor）× markup，恒 > 卖价（markup>1），给金币一个去处又不破材料门控。
 // - 店铺限量：每种可买材料按 tier 有 shopStock 上限，购买递减、每次回港补满（handleReturnToPort 清空）。
-//   都是 tunable（见 SPEC §9），集中在下面三个常量。
+//   都是 tunable（见 SPEC §9）；纯内容表住 src/data/shop.json（数据在 data 层 ⇒ check-npc-trust
+//   §8 红线等 regress 门可静态读·各表用途/出处见 JSON 内 _doc）——本文件只留逻辑与形状收窄。
+
+/** src/data/shop.json 的形状（import 处 as 收窄·字段语义见 JSON 内 _doc）。 */
+interface ShopDataFile {
+  mira: {
+    /** 可回购的材料分档 → 每次回港的备货上限。不在表里的 tier = 不可买。 */
+    stockByTier: Partial<Record<MaterialTier, number>>;
+    consumables: Record<string, number>;
+    equipment: Record<string, number>;
+    mods: Record<string, number>;
+    charts: Record<string, { price: number; maxStock: number; oneTimeFlag?: string }>;
+  };
+  specialMerchant: {
+    activePhases: readonly LunarPhase[];
+    stock: Record<string, { tokens: number; minTrustTier: number; maxStock: number }>;
+  };
+}
+const SHOP_DATA = shopData as unknown as ShopDataFile;
 
 /** 回购加价倍率：买价 = 卖价 × 此值（默认 2×，恒 > 卖价）。 */
 export const MIRA_BUY_MARKUP = 2;
 
-/** 可回购的材料分档 → 每次回港的备货上限（深档更稀、备货更少）。不在表里的 tier = 不可买。 */
-const SHOP_STOCK_BY_TIER: Partial<Record<MaterialTier, number>> = {
-  1: 8,
-  2: 4,
-};
+/** 可回购的材料分档 → 每次回港的备货上限（深档更稀、备货更少·shop.json::mira.stockByTier）。 */
+const SHOP_STOCK_BY_TIER = SHOP_DATA.mira.stockByTier;
 
 /**
  * Mira 柜台的「装备性消耗品」货架（猎手 SPEC §4 data 面·#108）：itemId → 每次回港备货上限。
- * 材料回购之外的第二类货——花金币买、出发前选带下水（dive-start.ts carryItems）。买价沿
- * miraOfferFor × MIRA_BUY_MARKUP 同一套（恒 > 卖价）；限量同 shopStock 机制（回港补满）。
- * 备货故意少（2）＝「带一两枚保命」的开销，不是无限弹药（守可生存但代价巨大）。
- * med_kit 上架（负伤 SPEC §8「medkit 治伤、药物买时间」·作者拍 2026-06-12·价/量后续可调）。
+ * 买价沿 miraOfferFor × MIRA_BUY_MARKUP 同一套（恒 > 卖价）；限量同 shopStock 机制（回港补满）。
+ * 内容/出处见 shop.json::mira._doc_consumables。
  */
-const SHOP_STOCK_CONSUMABLES: Record<string, number> = {
-  'item.decoy_sound': 2,
-  'item.decoy_light': 2,
-  'item.med_kit': 2,
-  // 弹药（武器系统·作者 2026-06-20）：按发补货；携带承载按重量（每发 0.05kg·items.ts::weightForItem）。数值＝提案可调。
-  'item.ammo.pneumatic': 16,
-  'item.ammo.harpoon': 60,
-  // 红喉鹈币（藏宝贸易与信任系统 SPEC §4）：Mira 少量高价卖·特殊商人 Sela 货架花它（§6.3）。
-  // 月相补货曲线〔作者拍·数值 defer〕留 Phase 3：暂同其余货架一样每次回港补满。
-  'item.deep_token': 3,
-};
+const SHOP_STOCK_CONSUMABLES = SHOP_DATA.mira.consumables;
 
 /**
  * Mira 柜台的「基础装备件」货架（段2·作者 2026-06-19）：itemId → 每次回港备货上限。
- * 与消耗品货架平行——花金币买**基础装备件**（手电＝基础潜水灯·Mira 购买、不升级·见段2 装备模型：
- * 灯/规避＝固定属性买/换件、声呐＝Otto 打造、唯它逐级升）。买价/限量同一套（miraOfferFor × markup·回港补满）。
- * 注：买到的件进仓库（未装备备件）；换装流程（仓库↔槽·equipItem/unequipItem 单点）已实装（B·作者 2026-06-20·
- *   物品栏装备 tab / Otto 纸娃娃点槽→选仓库备件装上·旧件回仓库·见 engine/equipment.ts）。加可买件＝往这表加一行（数据驱动）。
- * A（作者 2026-06-20）：退役的灯/电池/规避升级做回「固定属性档位件」上架（数值在 base effects·占位待调·别重建 upgrades.json 三线·quirk #142）。
+ * 买到的件进仓库（未装备备件）·换装走 equipItem/unequipItem 单点（engine/equipment.ts）。
+ * 内容/出处见 shop.json::mira._doc_equipment；加可买件＝往 JSON 表加一行（数据驱动）。
  */
-const SHOP_STOCK_EQUIPMENT: Record<string, number> = {
-  'item.light.hand_torch': 1,
-  'item.light.spotlight': 1,
-  'item.light.floodlamp': 1,
-  'item.light.eco_lamp': 1,
-  'item.suit.reinforced': 1,
-  'item.suit.sound_absorb': 1,
-  'item.suit.camo': 1,
-  'item.charm.quiet_pendant': 1,
-  'item.charm.spare_cell': 1,
-  // 武器 / 盾（武器系统·作者 2026-06-20）：买进仓库当备件·换装上槽（无 upgradeSteps＝固定件·守 quirk #142）。
-  'item.weapon.rescue_axe': 1,
-  'item.weapon.pneumatic_pistol': 1,
-  'item.weapon.harpoon_rifle': 1,
-  'item.shield.basic': 1,
-};
+const SHOP_STOCK_EQUIPMENT = SHOP_DATA.mira.equipment;
 
 /**
  * 武器改装组件货架（武器系统·作者 2026-06-20）：itemId → 每次回港备货上限。
- * 买进仓库·Otto 装上有 modSlot 的武器（engine/equipment.ts::installMod）。数值＝提案可调。
+ * 买进仓库·Otto 装上有 modSlot 的武器（engine/equipment.ts::installMod）。内容见 shop.json::mira._doc_mods。
  */
-const SHOP_STOCK_MODS: Record<string, number> = {
-  'item.mod.poison_sac': 2,
-  'item.mod.barb_kit': 2,
-  'item.mod.silent_wrap': 1,
-  'item.mod.shock_core': 1,
-};
+const SHOP_STOCK_MODS = SHOP_DATA.mira.mods;
 
 /**
- * 藏宝图货架（藏宝贸易与信任系统 SPEC §12.4·来源分层「低层」）：Mira 便宜卖的**通用打捞图**——
- * 与 crew 好图（Sela 高信任交底·§6）对照的低门来源。价与 sellPrice 解耦（story 物 sellPrice=0·
- * miraOfferFor 走 sellPrice 会算成 0），故本表 itemId → { price 金币, maxStock, oneTimeFlag? }·
+ * 藏宝图货架（藏宝贸易与信任系统 SPEC §12.4·来源分层「低层」）：itemId → { price 金币, maxStock, oneTimeFlag? }。
+ * 价与 sellPrice 解耦（story 物 sellPrice=0·miraOfferFor 走 sellPrice 会算成 0）——
  * isBuyableFromMira/miraBuyPriceFor/maxShopStockFor 显式查它；oneTimeFlag 已置＝已买过 → 不再上架、
- * 买不动（回港补货也不复现·免重复扣金币的 footgun）。数值 defer-number-tuning（作者最后调）。
+ * 买不动（回港补货也不复现·免重复扣金币的 footgun）。内容/出处见 shop.json::mira._doc_charts。
  */
-const SHOP_STOCK_CHARTS: Record<
-  string,
-  { price: number; maxStock: number; oneTimeFlag?: string }
-> = {
-  'item.treasure_map.salvage_generic': {
-    price: 20,
-    maxStock: 1,
-    oneTimeFlag: 'flag.salvage_chart_bought',
-  },
-};
+const SHOP_STOCK_CHARTS = SHOP_DATA.mira.charts;
 
 /** 取某材料的 tier（非 material / 无 tier → undefined）。 */
 function tierOf(itemId: string): MaterialTier | undefined {
@@ -443,11 +414,12 @@ export const SPECIAL_MERCHANT_NPC_ID = 'npc.sela';
 export const SPECIAL_MERCHANT_SHOP_ID = 'shop.sela';
 
 /**
- * Sela「在港」的月相窗（须与 chart_pois.json 里 3 个 roam.sela_meet_* 模板各自的 lunarWindow
- * 保持一致——单一来源意图·此处是唯一权威·JSON 那边靠注释交叉引用，非机制强连；改窗记得两边一起改）。
+ * Sela「在港」的月相窗（数据在 shop.json::specialMerchant.activePhases·与 chart_pois.json 各
+ * roam.sela_meet* 模板的 lunarWindow 保持一致——已由 check-npc-trust 机制强连·改窗两边一起改否则 regress 红）。
  * `waning` 故意不在其中＝他真的「不常驻」，有一相不露面。
  */
-export const SPECIAL_MERCHANT_ACTIVE_PHASES: readonly LunarPhase[] = ['new', 'waxing', 'full'];
+export const SPECIAL_MERCHANT_ACTIVE_PHASES: readonly LunarPhase[] =
+  SHOP_DATA.specialMerchant.activePhases;
 
 /**
  * Sela 是否「在港」可对话/交易（PortView 据此显/藏他的 NPC 卡片）：见过一次（flag.sela.met·
@@ -466,20 +438,10 @@ const TOKEN_ITEM_ID = 'item.deep_token';
 
 /**
  * Sela 货架（§6.3·数值 defer-number-tuning）：itemId → 花费 token 数 / 所需信任档 / 每次回港补货上限。
- * MVP 先卖**深料**（T3/T4·平日只能靠战斗/刷点拿）——呼应 SPEC §7「深料经 token 可达」，非战斗玩家的
- * 第二条获取路径；不锁通关必需（§8 红线·全是「多一条路买深料」，非唯一来源·check-npc-trust 断言）。
+ * 不锁通关必需（§8 红线·全是「多一条路买深料」，非唯一来源·check-npc-trust ③ 实查 shop.json）。
+ * 内容/出处见 shop.json::specialMerchant._doc。
  */
-const SPECIAL_MERCHANT_STOCK: Record<
-  string,
-  { tokens: number; minTrustTier: number; maxStock: number }
-> = {
-  'item.eel_skin': { tokens: 2, minTrustTier: 0, maxStock: 2 },
-  'item.lantern_gland': { tokens: 3, minTrustTier: 0, maxStock: 2 },
-  'item.vent_sulfide': { tokens: 4, minTrustTier: 1, maxStock: 2 },
-  'item.wreck_bronze': { tokens: 4, minTrustTier: 1, maxStock: 2 },
-  'item.abyssal_crust': { tokens: 6, minTrustTier: 2, maxStock: 1 },
-  'item.bluecave_geode': { tokens: 6, minTrustTier: 2, maxStock: 1 },
-};
+const SPECIAL_MERCHANT_STOCK = SHOP_DATA.specialMerchant.stock;
 
 /** 该 itemId 是否在 Sela 货架上（不判信任档——UI/校验分开问，见 listSpecialMerchantShelf）。 */
 export function isOnSpecialMerchantShelf(itemId: string): boolean {

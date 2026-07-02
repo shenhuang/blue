@@ -1,0 +1,62 @@
+{
+  "_doc": "商店/信任货架纯内容表（2026-07-02 从 engine/port.ts 抽出——数据住 data 层 ⇒ check-npc-trust 等 regress 门可静态读；购买/限量/补货逻辑仍全在 engine/port.ts，import 处 as 收窄）。两侧货架：mira＝金币侧（材料回购 + 消耗品 + 装备件 + 武改件 + 藏宝图·买价沿 miraOfferFor × MIRA_BUY_MARKUP·charts 例外见其 _doc）；specialMerchant＝特殊商人 Sela（藏宝贸易与信任系统 SPEC §6·红喉鹈币 + 信任档双门控）。限量语义共通：数值＝每次回港的备货上限（handleReturnToPort 清空 profile.shopStock → 懒默认满货）。数值全部 defer-number-tuning（作者最后调）。",
+  "mira": {
+    "_doc_stockByTier": "可回购的材料分档 → 备货上限（基建地图 SPEC §2.5）：仅 T1/T2 材料可回购，T3/T4 只卖不买（保住「深度＝进度」门控·深档更稀、备货更少）；不在表里的 tier＝不可买。键＝MaterialTier 数字。",
+    "stockByTier": {
+      "1": 8,
+      "2": 4
+    },
+    "_doc_consumables": "「装备性消耗品」货架（猎手 SPEC §4 data 面·#108）：itemId → 备货上限。花金币买、出发前选带下水（dive-start.ts carryItems）。decoy/med_kit 备货故意少（2）＝「带一两枚保命」的开销、不是无限弹药（守可生存但代价巨大·med_kit 上架见负伤 SPEC §8·作者拍 2026-06-12）；弹药按发补货、携带承载按重量（每发 0.05kg·items.ts::weightForItem·武器系统·作者 2026-06-20）；红喉鹈币 item.deep_token＝Mira 少量高价卖、特殊商人 Sela 货架花它（藏宝贸易与信任系统 SPEC §4/§6.3·月相补货曲线〔作者拍·数值 defer〕留 Phase 3：暂同其余货架每次回港补满）。",
+    "consumables": {
+      "item.decoy_sound": 2,
+      "item.decoy_light": 2,
+      "item.med_kit": 2,
+      "item.ammo.pneumatic": 16,
+      "item.ammo.harpoon": 60,
+      "item.deep_token": 3
+    },
+    "_doc_equipment": "「基础装备件」货架（段2·作者 2026-06-19）：itemId → 备货上限。花金币买**基础装备件**（灯/规避＝固定属性买/换件、声呐＝Otto 打造、唯它逐级升）；买到的件进仓库（未装备备件），换装走 equipItem/unequipItem 单点（engine/equipment.ts·Otto 纸娃娃点槽换装）。灯/电池/规避退役升级线做回「固定属性档位件」上架（数值在 base effects·别重建 upgrades.json 三线·quirk #142·A 案作者 2026-06-20）；武器/盾同理买进仓库当备件（无 upgradeSteps＝固定件）。加可买件＝往这表加一行（数据驱动）。",
+    "equipment": {
+      "item.light.hand_torch": 1,
+      "item.light.spotlight": 1,
+      "item.light.floodlamp": 1,
+      "item.light.eco_lamp": 1,
+      "item.suit.reinforced": 1,
+      "item.suit.sound_absorb": 1,
+      "item.suit.camo": 1,
+      "item.charm.quiet_pendant": 1,
+      "item.charm.spare_cell": 1,
+      "item.weapon.rescue_axe": 1,
+      "item.weapon.pneumatic_pistol": 1,
+      "item.weapon.harpoon_rifle": 1,
+      "item.shield.basic": 1
+    },
+    "_doc_mods": "武器改装组件货架（武器系统·作者 2026-06-20）：itemId → 备货上限。买进仓库·Otto 装上有 modSlot 的武器（engine/equipment.ts::installMod）。",
+    "mods": {
+      "item.mod.poison_sac": 2,
+      "item.mod.barb_kit": 2,
+      "item.mod.silent_wrap": 1,
+      "item.mod.shock_core": 1
+    },
+    "_doc_charts": "藏宝图货架（藏宝贸易与信任系统 SPEC §12.4·来源分层「低层」）：Mira 便宜卖的**通用打捞图**——与 crew 好图（Sela 高信任交底·§6）对照的低门来源。价与 sellPrice 解耦（story 物 sellPrice=0·miraOfferFor 走 sellPrice 会算成 0），故条目带显式 price；oneTimeFlag 已置＝已买过 → 不再上架、买不动（回港补货也不复现·免重复扣金币的 footgun）。",
+    "charts": {
+      "item.treasure_map.salvage_generic": {
+        "price": 20,
+        "maxStock": 1,
+        "oneTimeFlag": "flag.salvage_chart_bought"
+      }
+    }
+  },
+  "specialMerchant": {
+    "_doc": "特殊商人 Sela（藏宝贸易与信任系统 SPEC §6·Phase 2 MVP）。activePhases＝Sela「在港」月相窗（waning 故意不在其中＝她真的「不常驻」，有一相不露面）——与 chart_pois.json 各 roam.sela_meet* 交头模板的 lunarWindow 保持一致，已由 check-npc-trust ⑤ 机制强连（改窗两边一起改·否则 regress 红）。stock＝货架（§6.3）：itemId → { tokens 花费红喉鹈币数, minTrustTier 所需信任档, maxStock 备货上限 }。MVP 先卖**深料**（T3/T4·平日只能靠战斗/刷点拿）——呼应 SPEC §7「深料经 token 可达」，非战斗玩家的第二条获取路径；全是「多一条路买深料」非唯一来源 ⇒ minTrustTier>0 不锁通关必需（§8 红线·check-npc-trust ③ 实查）。",
+    "activePhases": ["new", "waxing", "full"],
+    "stock": {
+      "item.eel_skin": { "tokens": 2, "minTrustTier": 0, "maxStock": 2 },
+      "item.lantern_gland": { "tokens": 3, "minTrustTier": 0, "maxStock": 2 },
+      "item.vent_sulfide": { "tokens": 4, "minTrustTier": 1, "maxStock": 2 },
+      "item.wreck_bronze": { "tokens": 4, "minTrustTier": 1, "maxStock": 2 },
+      "item.abyssal_crust": { "tokens": 6, "minTrustTier": 2, "maxStock": 1 },
+      "item.bluecave_geode": { "tokens": 6, "minTrustTier": 2, "maxStock": 1 }
+    }
+  }
+}
