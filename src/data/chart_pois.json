@@ -18,6 +18,22 @@
         "modifier": { "depthRange": [65, 80] }
       },
       {
+        "_doc": "Mira 便宜通用图（藏宝贸易与信任系统 SPEC §12.4·来源分层低层）揭示的固定浅礁打捞点：买『打捞旧图』(item.treasure_map.salvage_generic) → story.setsFlag flag.salvage_chart_bought（sticky·满足本 requiresFlags）+ marksPois 揭示本点。owner lighthouse.home（恒在）+ 浅（30-45·对照 crew 好图更深）。openEventId salvage.generic_cache 一次性开箱（openEventFlag flag.salvage_generic_opened）给 modest 常见打捞料（gold 源）。",
+        "id": "poi.anchor.salvage_generic",
+        "zoneId": "zone.old_lighthouse_reef",
+        "name": "旧图上的记号",
+        "blurb": "打捞旧图上晕开的那个墨点，落在近岸浅礁一带。多半是空的——但也可能不是。",
+        "distance": 1,
+        "owner": "lighthouse.home",
+        "mapX": 0.11,
+        "mapY": -0.14,
+        "persistent": true,
+        "requiresFlags": ["flag.tutorial_complete", "flag.salvage_chart_bought"],
+        "openEventId": "salvage.generic_cache",
+        "openEventFlag": "flag.salvage_generic_opened",
+        "modifier": { "depthRange": [30, 45] }
+      },
+      {
         "id": "poi.anchor.east_reef",
         "zoneId": "zone.east_reef",
         "name": "东礁·资格区",
@@ -985,6 +1001,76 @@
         "intelFlag": "intel.mira.sela",
         "modifier": {
           "depthRange": [58, 64]
+        }
+      },
+      {
+        "_doc": "渐深遭遇（藏宝贸易与信任系统 SPEC §12.4·Slice 2）：Sela 只会更深——见过她中层浅处（flag.sela.met）后，解锁热液柱（story.ch1.anchor.vent）就在更深的热液区再遇她一组浮标（3 相位候选·同浅层三窗 new/waxing/full）。门比浅层更严：除 tutorial+intel+浅层 met 外还要 story.ch1.anchor.vent。深度 ~90-110（明显深过中层 58-64）。出口置 flag.sela.met_deep（供二章 Nerea offer 消费·flag.* 非 story.* 不进 allStoryFlags）。check-lunar-reach 只许 roaming 带窗故走这里非 anchors。三 lunarWindow 值与浅层一致；此深层点不改港口在港逻辑（isSpecialMerchantInPort 只看 flag.sela.met），仅作叙事里程碑 + 埋 flag.sela.met_deep。",
+        "templateId": "roam.sela_meet_deep_new",
+        "zoneId": "zone.thermal_pocket",
+        "owner": "lighthouse.ch1_vent_outpost",
+        "name": "系着浮标的绳",
+        "blurb": "又是那种外面打的绳结，这一段系得更深，绳上结着热液区的矿垢。往下望不到头。",
+        "distance": 3,
+        "mapX": 0.14,
+        "mapY": -0.02,
+        "weight": 1,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "story.ch1.anchor.vent",
+          "flag.sela.met",
+          "intel.mira.sela"
+        ],
+        "lunarWindow": ["new"],
+        "lunarOffWindow": "hidden",
+        "intelFlag": "intel.mira.sela",
+        "modifier": {
+          "depthRange": [90, 110]
+        }
+      },
+      {
+        "templateId": "roam.sela_meet_deep_waxing",
+        "zoneId": "zone.thermal_pocket",
+        "owner": "lighthouse.ch1_vent_outpost",
+        "name": "系着浮标的绳",
+        "blurb": "又是那种外面打的绳结，这一段系得更深，绳上结着热液区的矿垢。往下望不到头。",
+        "distance": 3,
+        "mapX": -0.15,
+        "mapY": 0.03,
+        "weight": 1,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "story.ch1.anchor.vent",
+          "flag.sela.met",
+          "intel.mira.sela"
+        ],
+        "lunarWindow": ["waxing"],
+        "lunarOffWindow": "hidden",
+        "intelFlag": "intel.mira.sela",
+        "modifier": {
+          "depthRange": [90, 110]
+        }
+      },
+      {
+        "templateId": "roam.sela_meet_deep_full",
+        "zoneId": "zone.thermal_pocket",
+        "owner": "lighthouse.ch1_vent_outpost",
+        "name": "系着浮标的绳",
+        "blurb": "又是那种外面打的绳结，这一段系得更深，绳上结着热液区的矿垢。往下望不到头。",
+        "distance": 3,
+        "mapX": 0.03,
+        "mapY": 0.15,
+        "weight": 1,
+        "requiresFlags": [
+          "flag.tutorial_complete",
+          "story.ch1.anchor.vent",
+          "flag.sela.met",
+          "intel.mira.sela"
+        ],
+        "lunarWindow": ["full"],
+        "lunarOffWindow": "hidden",
+        "intelFlag": "intel.mira.sela",
+        "modifier": {
+          "depthRange": [90, 110]
         }
       }
     ]

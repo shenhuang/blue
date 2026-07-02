@@ -13,6 +13,9 @@ import { trustTier, trustValue } from '../src/engine/trust';
 import { applyDialogEffects } from '../src/engine/dialog';
 import {
   buyFromSpecialMerchant,
+  buyFromMira,
+  listMiraBuyables,
+  miraBuyPriceFor,
   isSpecialMerchantInPort,
   listSpecialMerchantShelf,
   SPECIAL_MERCHANT_NPC_ID,
@@ -214,12 +217,12 @@ function baseProfile(day: number): PlayerProfile {
   assert(!!cache && cache.revealState === 'lit', `给图后藏宝点应 lit（marksPois 揭示·绕发现门）（现 ${cache?.revealState ?? '缺'}）`);
   L('  Corin 测绘图：给图前藏宝点不上图；给图后置 corin_map + marksPois 把藏宝点揭示为 lit ✓');
 
-  // 5b. 模拟到点开箱：拿到半枚红喉鹈币 + 置 story.ch1.corin_found（真实由 corin.cache 事件 loot+setProfileFlags 落）
+  // 5b. 模拟到点开箱：拿到红喉鹈徽章 + 置 story.ch1.corin_found（真实由 corin.cache 事件 loot+setProfileFlags 落）
   s = {
     ...s,
     profile: {
       ...s.profile,
-      inventory: [...s.profile.inventory, { itemId: 'item.keepsake.corin_coin', qty: 1 }],
+      inventory: [...s.profile.inventory, { itemId: 'item.keepsake.corin_badge', qty: 1 }],
       flags: new Set([...s.profile.flags, 'story.ch1.corin_found']),
     },
   };
@@ -228,14 +231,14 @@ function baseProfile(day: number): PlayerProfile {
   const trustBefore = trustValue(s.profile, 'npc.sela');
   const tokenBefore = s.profile.inventory.find((i) => i.itemId === 'item.deep_token')?.qty ?? 0;
   s = applyDialogEffects(s, [
-    { kind: 'takeItem', itemId: 'item.keepsake.corin_coin', qty: 1 },
+    { kind: 'takeItem', itemId: 'item.keepsake.corin_badge', qty: 1 },
     { kind: 'gainTrust', npcId: 'npc.sela', amount: 15 },
     { kind: 'giveItem', itemId: 'item.deep_token', qty: 2 },
     { kind: 'setFlag', flag: 'story.ch1.corin_returned' },
   ]);
   assert(
-    (s.profile.inventory.find((i) => i.itemId === 'item.keepsake.corin_coin')?.qty ?? 0) === 0,
-    'takeItem 应消耗掉半枚红喉鹈币（收藏品交还 Sela）',
+    (s.profile.inventory.find((i) => i.itemId === 'item.keepsake.corin_badge')?.qty ?? 0) === 0,
+    'takeItem 应消耗掉红喉鹈徽章（收藏品交还 Sela）',
   );
   assert(
     trustValue(s.profile, 'npc.sela') === trustBefore + 15,
@@ -246,8 +249,85 @@ function baseProfile(day: number): PlayerProfile {
     'giveItem 应发 2 枚红喉鹈币作报酬',
   );
   assert(s.profile.flags.has('story.ch1.corin_returned'), '交还后应置 story.ch1.corin_returned');
-  L('  Corin 上交环：takeItem 消耗半枚币 / gainTrust 涨信任（新 effect·单写口）/ giveItem 发 token / setFlag corin_returned ✓');
+  L('  Corin 上交环：takeItem 消耗徽章 / gainTrust 涨信任（新 effect·单写口）/ giveItem 发 token / setFlag corin_returned ✓');
+}
+
+// —— 6. 藏宝图来源分层「低层」：Mira 便宜通用图（买→揭示浅礁打捞点·一次性不复购·SPEC §12.4）——
+{
+  // 前置：教学完成 + 章节 reef 锚点（Mira 卖图对话门）+ 足够金币。lighthouse.home 恒在（浅礁点 owner）。
+  let s = createInitialGameState();
+  s = {
+    ...s,
+    profile: {
+      ...s.profile,
+      flags: new Set(['flag.tutorial_complete', 'story.ch1.anchor.reef']),
+      bankedGold: 100,
+    },
+  };
+
+  // 6a. 买图前：浅礁打捞点缺 flag.salvage_chart_bought → 不上图；图在 Mira 货架（价与 sellPrice 解耦）
+  assert(
+    !generateChart({ profile: s.profile }).pois.some((p) => p.id === 'poi.anchor.salvage_generic'),
+    '买图前 poi.anchor.salvage_generic 不应上图（缺 flag.salvage_chart_bought）',
+  );
+  const price = miraBuyPriceFor('item.treasure_map.salvage_generic');
+  assert(price > 0, 'Mira 应给通用图定价（charts 表·与 sellPrice=0 解耦）');
+  assert(
+    listMiraBuyables(s.profile).some((b) => b.itemId === 'item.treasure_map.salvage_generic'),
+    '未买时通用图应在 Mira 货架上',
+  );
+  L(`  Mira 通用图上架（价 ${price} 金·与 sellPrice 解耦）✓`);
+
+  // 6b. 买图：扣金币 + 置 flag（acquireIntoProfile 兑现 story.setsFlag）→ marksPois 揭示浅礁点 lit
+  const goldBefore = s.profile.bankedGold;
+  s = buyFromMira(s, 'item.treasure_map.salvage_generic', 1);
+  assert(s.profile.bankedGold === goldBefore - price, `买图应扣 ${price} 金（实扣 ${goldBefore - s.profile.bankedGold}）`);
+  assert(s.profile.flags.has('flag.salvage_chart_bought'), '买图应置 flag.salvage_chart_bought（item.story.setsFlag 单点兑现）');
+  const salvage = generateChart({ profile: s.profile }).pois.find((p) => p.id === 'poi.anchor.salvage_generic');
+  assert(!!salvage && salvage.revealState === 'lit', `买图后浅礁点应 lit（marksPois + flag 揭示）（现 ${salvage?.revealState ?? '缺'}）`);
+  L('  买图：扣金币 + 置 flag + 揭示浅礁打捞点为 lit ✓');
+
+  // 6c. 一次性：买过后不再上架、再买 no-op（回港补货也不复现·免重复扣金币）
+  assert(
+    !listMiraBuyables(s.profile).some((b) => b.itemId === 'item.treasure_map.salvage_generic'),
+    '买过后通用图不应再上 Mira 货架（oneTimeFlag 已置）',
+  );
+  assert(buyFromMira(s, 'item.treasure_map.salvage_generic', 1) === s, '买过后再买通用图应 no-op（不重复扣金币）');
+  L('  一次性守门：买过后不上架 + 再买 no-op ✓');
+}
+
+// —— 7. 渐深遭遇：Sela 热液区深层再遇（比中层更深·门比浅层多一道 story.ch1.anchor.vent·SPEC §12.4）——
+{
+  // 前置：见过浅层（flag.sela.met）+ 情报 + 热液哨站已建（深层点 owner: lighthouse.ch1_vent_outpost）。
+  // day 0 = new·clear（同 §1 口径·避开天气遮蔽）。
+  const ventProfile = (flags: string[]): PlayerProfile => {
+    const p = createInitialProfile();
+    return {
+      ...p,
+      day: 0,
+      flags: new Set(flags),
+      lighthouses: [
+        ...p.lighthouses,
+        { id: 'lighthouse.ch1_vent_outpost', name: '热液哨站', mapX: 0, mapY: 0, level: 1, builtUpgrades: new Set<string>() },
+      ],
+    };
+  };
+  const deepPois = (p: PlayerProfile) =>
+    generateChart({ profile: p }).pois.filter((poi) => poi.id.includes('sela_meet_deep'));
+
+  // 7a. 缺 story.ch1.anchor.vent（没解锁热液柱）→ 深层交头点 hidden，即便情报+见过浅层+相位对
+  //     （quirk #204①：requiresFlags 才是第一道可见性门·intelFlag 不是入场券）。
+  const noVent = deepPois(ventProfile(['flag.tutorial_complete', 'flag.sela.met', 'intel.mira.sela']));
+  assert(noVent.length === 0, '未解锁热液柱（缺 story.ch1.anchor.vent）时深层交头点不应出现（门比浅层严）');
+
+  // 7b. 齐全（+story.ch1.anchor.vent）+ 新月窗内 → 有一个深层交头点 lit（另两相位窗给了情报后 dim·#204②）
+  const withVent = deepPois(
+    ventProfile(['flag.tutorial_complete', 'flag.sela.met', 'intel.mira.sela', 'story.ch1.anchor.vent']),
+  );
+  assert(withVent.length > 0, '齐全（tutorial+met+intel+anchor.vent·相位窗内）时应出现深层交头点');
+  assert(withVent.some((p) => p.revealState === 'lit'), '新月窗内应有一个深层交头点 lit');
+  L('  渐深遭遇：缺 anchor.vent 深层点 hidden；齐全 + 相位窗内 lit（门比浅层多一道 story.ch1.anchor.vent）✓');
 }
 
 console.log(log.join('\n'));
-console.log('\n✓ 特殊商人 Sela（Phase 2 MVP）回归通过');
+console.log('\n✓ 特殊商人 Sela 回归通过（Phase 2 MVP + Slice 2：Corin 徽章 / 渐深遭遇 / Mira 通用图）');

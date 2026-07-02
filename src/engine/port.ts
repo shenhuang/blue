@@ -299,6 +299,24 @@ const SHOP_STOCK_MODS: Record<string, number> = {
   'item.mod.shock_core': 1,
 };
 
+/**
+ * 藏宝图货架（藏宝贸易与信任系统 SPEC §12.4·来源分层「低层」）：Mira 便宜卖的**通用打捞图**——
+ * 与 crew 好图（Sela 高信任交底·§6）对照的低门来源。价与 sellPrice 解耦（story 物 sellPrice=0·
+ * miraOfferFor 走 sellPrice 会算成 0），故本表 itemId → { price 金币, maxStock, oneTimeFlag? }·
+ * isBuyableFromMira/miraBuyPriceFor/maxShopStockFor 显式查它；oneTimeFlag 已置＝已买过 → 不再上架、
+ * 买不动（回港补货也不复现·免重复扣金币的 footgun）。数值 defer-number-tuning（作者最后调）。
+ */
+const SHOP_STOCK_CHARTS: Record<
+  string,
+  { price: number; maxStock: number; oneTimeFlag?: string }
+> = {
+  'item.treasure_map.salvage_generic': {
+    price: 20,
+    maxStock: 1,
+    oneTimeFlag: 'flag.salvage_chart_bought',
+  },
+};
+
 /** 取某材料的 tier（非 material / 无 tier → undefined）。 */
 function tierOf(itemId: string): MaterialTier | undefined {
   const def = getItemDef(itemId);
@@ -311,6 +329,7 @@ export function isBuyableFromMira(itemId: string): boolean {
   if (SHOP_STOCK_CONSUMABLES[itemId] !== undefined) return true;
   if (SHOP_STOCK_EQUIPMENT[itemId] !== undefined) return true;
   if (SHOP_STOCK_MODS[itemId] !== undefined) return true;
+  if (SHOP_STOCK_CHARTS[itemId] !== undefined) return true;
   const tier = tierOf(itemId);
   return tier !== undefined && SHOP_STOCK_BY_TIER[tier] !== undefined;
 }
@@ -318,6 +337,8 @@ export function isBuyableFromMira(itemId: string): boolean {
 /** 单件回购买价（不可买 → 0）。买价 = 卖价 × markup，恒 > 卖价。 */
 export function miraBuyPriceFor(itemId: string): number {
   if (!isBuyableFromMira(itemId)) return 0;
+  const chart = SHOP_STOCK_CHARTS[itemId];
+  if (chart) return chart.price; // 藏宝图价与 sellPrice 解耦（story 物·§12.4）
   return miraOfferFor(itemId) * MIRA_BUY_MARKUP;
 }
 
@@ -329,6 +350,8 @@ export function maxShopStockFor(itemId: string): number {
   if (fromGear !== undefined) return fromGear;
   const fromMod = SHOP_STOCK_MODS[itemId];
   if (fromMod !== undefined) return fromMod;
+  const fromChart = SHOP_STOCK_CHARTS[itemId];
+  if (fromChart !== undefined) return fromChart.maxStock;
   const tier = tierOf(itemId);
   if (tier === undefined) return 0;
   return SHOP_STOCK_BY_TIER[tier] ?? 0;
@@ -350,6 +373,9 @@ export function listMiraBuyables(profile: PlayerProfile): {
   const out: { itemId: string; unitPrice: number; stock: number; maxStock: number }[] = [];
   for (const def of allItems()) {
     if (!isBuyableFromMira(def.id)) continue;
+    const chart = SHOP_STOCK_CHARTS[def.id];
+    // 已买过的一次性藏宝图不再上架（回港补货也不复现·§12.4）。
+    if (chart?.oneTimeFlag && profile.flags.has(chart.oneTimeFlag)) continue;
     out.push({
       itemId: def.id,
       unitPrice: miraBuyPriceFor(def.id),
@@ -367,6 +393,9 @@ export function listMiraBuyables(profile: PlayerProfile): {
 export function buyFromMira(state: GameState, itemId: string, qty: number): GameState {
   if (qty <= 0) return state;
   if (!isBuyableFromMira(itemId)) return state;
+  const chartEntry = SHOP_STOCK_CHARTS[itemId];
+  // 一次性藏宝图已买过＝no-op（免回港补货后重复扣金币·§12.4）。
+  if (chartEntry?.oneTimeFlag && state.profile.flags.has(chartEntry.oneTimeFlag)) return state;
   const unitPrice = miraBuyPriceFor(itemId);
   if (unitPrice <= 0) return state;
 

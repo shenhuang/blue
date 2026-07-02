@@ -4410,6 +4410,40 @@
           }
         }
       ]
+    },
+    {
+      "_doc": "Mira 便宜通用图（藏宝贸易与信任系统 SPEC §12.4·来源分层低层）到点开箱：poi.anchor.salvage_generic 的 openEventId·一次性（openEventFlag flag.salvage_generic_opened）。给 modest 常见打捞料（gold 源·对照 Sela crew 好图给收藏品+深料）。留诚实退路。文案 [待过稿]。",
+      "id": "salvage.generic_cache",
+      "depthRange": [0, 0],
+      "zoneTags": [],
+      "weight": 0,
+      "title": "旧图上的记号",
+      "body": "记号落在一道礁缝里。缝底卡着个泡胀的帆布包，绳早烂了，一碰就散。\n没有名字，没有标记——就是个下来过、又没上去的人，随手塞下的一包东西。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "open_bag",
+          "label": "把包里的东西倒出来",
+          "outcome": {
+            "text": "几件还能卖的打捞货：一副黄铜配件、两只没锈穿的罐头、一截旧渔网。算不上宝藏，够换几个钱。\n你把能带的都收进网兜。旧图上那个墨点，划掉了。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.brass_fitting", "qty": [1, 2], "chance": 1 },
+              { "itemId": "item.canned_food", "qty": [1, 2], "chance": 1 },
+              { "itemId": "item.old_fishing_net", "qty": [1, 1], "chance": 0.7 }
+            ],
+            "setProfileFlags": ["flag.salvage_generic_opened"]
+          }
+        },
+        {
+          "id": "leave_bag",
+          "label": "看一眼就走",
+          "outcome": {
+            "text": "包里没什么值得为它多耗一口气的。你把它塞回礁缝，继续往前。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
     }
   ]
 }

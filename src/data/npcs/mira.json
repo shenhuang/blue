@@ -63,6 +63,18 @@
           }
         },
         {
+          "id": "buy_chart",
+          "label": "你这儿有旧图卖吗？",
+          "next": "mira.sell_chart",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "story.ch1.anchor.reef" },
+              { "kind": "notHasFlag", "flag": "flag.salvage_chart_bought" }
+            ]
+          }
+        },
+        {
           "id": "chat",
           "label": "今天行情怎么样？",
           "next": "mira.banter"
@@ -76,6 +88,23 @@
     }
   },
   "dialogs": {
+    "mira.sell_chart": {
+      "id": "mira.sell_chart",
+      "text": "「旧图？」Mira 从柜台底下拖出一个鞋盒，里头塞满卷边的纸。\n\n「这种一抓一把——下去没回来的人，东西最后总归流到我这儿。大多是空的，偶尔有个把没人捡过的角落。」\n\n她抽出一张推到你面前。「二十金，拿去。别指望它能标出什么金山。」",
+      "choices": [
+        {
+          "id": "buy_chart_shop",
+          "label": "（看看她的货）",
+          "next": "end",
+          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }]
+        },
+        {
+          "id": "pass_chart",
+          "label": "下次再说。",
+          "next": "end"
+        }
+      ]
+    },
     "mira.tip_sela": {
       "id": "mira.tip_sela",
       "text": "Mira 没马上答话，先把秤砣压好。\n\n「有一个。不常在，跟着潮走——这个月相来，下个月相说不定又换了地方。她只认红喉鹈币，别的一概不收。」\n\n她顿了顿：「我这儿偶尔进一点红喉鹈币，价不便宜。她货架上摆的东西，我这儿没有。」\n\n她没再多说，转头继续记账——好像已经说得比平时多了。",

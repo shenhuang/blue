@@ -17,11 +17,11 @@
         },
         {
           "id": "corin_return",
-          "label": "（把那半枚币放到台面上）",
+          "label": "（把那枚徽章放到台面上）",
           "next": "sela.corin_return",
-          "visibleIf": { "kind": "hasItem", "itemId": "item.keepsake.corin_coin" },
+          "visibleIf": { "kind": "hasItem", "itemId": "item.keepsake.corin_badge" },
           "effects": [
-            { "kind": "takeItem", "itemId": "item.keepsake.corin_coin", "qty": 1 },
+            { "kind": "takeItem", "itemId": "item.keepsake.corin_badge", "qty": 1 },
             { "kind": "gainTrust", "npcId": "npc.sela", "amount": 15 },
             { "kind": "giveItem", "itemId": "item.deep_token", "qty": 2 },
             { "kind": "setFlag", "flag": "story.ch1.corin_returned" }
@@ -113,7 +113,7 @@
     },
     "sela.corin_return": {
       "id": "sela.corin_return",
-      "text": "她的手停在半空，才拿起那半枚币。指腹在断口上磨了一下，像是想把它接回另一半。\n\n「……科林的。」她没问你在哪儿找到的。她把币收进怀里最里层，那地方大概还收着别的几件。\n\n「剩下的我自己找。」她说。可你听得出，她记住了你。",
+      "text": "她的手停在半空，才拿起那枚徽章。指腹在锈面上磨了一下，把那只鸟擦出一点旧金属的光。\n\n「……科林的。」她没问你在哪儿找到的。她盯着那只鸟看了一会儿，像要说什么，最后只把徽章收进怀里最里层，那地方大概还收着别的几件。\n\n「这东西的来历，说来话长。」她说，「不是今天。」\n\n她转回货架那边。可你听得出，她记住了你。",
       "choices": [
         {
           "id": "back_corin_return",

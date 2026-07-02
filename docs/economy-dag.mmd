@@ -13,10 +13,6 @@ flowchart LR
     depth_columns_col_midwater_t5["midwater t5"]
     depth_columns_col_midwater_t6["midwater t6"]
   end
-  subgraph whalefall["whalefall"]
-    item_whale_bone(["whale_bone T3"]):::mat
-    item_whalefall_polychaete(["whalefall_polychaete T1"]):::mat
-  end
   subgraph reef["reef"]
     item_barracuda_jaw(["barracuda_jaw T2"]):::mat
     item_canned_food(["canned_food T1"]):::mat
@@ -24,6 +20,10 @@ flowchart LR
     item_shark_tooth(["shark_tooth T1"]):::mat
     depth_columns_col_home_t1["reef t1"]
     depth_columns_col_home_t2["reef t2"]
+  end
+  subgraph whalefall["whalefall"]
+    item_whale_bone(["whale_bone T3"]):::mat
+    item_whalefall_polychaete(["whalefall_polychaete T1"]):::mat
   end
   subgraph cave["cave"]
     item_bluecave_geode(["bluecave_geode T3"]):::warn

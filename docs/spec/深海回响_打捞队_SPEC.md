@@ -42,19 +42,20 @@
 **动机（关键·从寻宝转向找人）**：她不再为宝藏，为**找回同伴留下的东西**——收藏家。藏品对玩家是废料、对她是仅存的、还记得那三个人的证据（"对玩家无价值、对她有价值"落成机制＝收藏品 class·藏宝 SPEC §12.5）。
 **机制角色**：港侧特殊商人（红喉鹈币 + 信任档双门控货架）+ **渐深遭遇**（每解锁更深一根深度柱就在更深处再遇她一次·她只会更深、停不下）+ **三条同伴线的发布者**（档1 Corin / 档2 Nerea / 档3 通向 Vera 的失联线）·信任三档沿用 `[10,30,60]`。
 **警示镜**：一个为"物"而非"人"下来的探险家，深海把她磨成什么样；信任越高越露出她比表面更"下不来"的一面（与玩家执念同构）。
-**已实装**（#246）：改名（silas→sela 连 id）+ 改女性 + retheme 落地；对话 root/banter/deeper/confession + 新 `sela.corin_offer`/`sela.corin_return`；Corin 线端到端。
+**已实装**（#246）：改名（silas→sela 连 id）+ 改女性 + retheme 落地；对话 root/banter/deeper/confession + 新 `sela.corin_offer`/`sela.corin_return`；Corin 线端到端。**（#247）渐深遭遇**：热液区 `roam.sela_meet_deep_*` 深层再遇（比中层更深·置 `flag.sela.met_deep`·供二章 Nerea offer 门控消费）。
 
 ### Corin（科技派死者·draft 名·**第一条同伴线已实装**）
 **押边**：科技——把命押在装备上、"机器不会骗人"。
 **命运**：装备在深处失效→没了（"深海不原谅机械"）。遗物＝**测绘图/数据日志**＝"好图"来源①（Corin 生前钉下的坐标·比通用图更深更好）。
-**收藏品（交还 Sela）**：**半枚红喉鹈币**（`item.keepsake.corin_coin`·从中间断开的分赃筹码·花不出去·对玩家废铜、对 Sela 是他的证据）。〔原 draft 遗物"损坏的深度表/烧毁的数据模块"仍作为"泡烂了留不住"的东西出现在开箱叙述里〕
-**已实装**（#246·第一条同伴线）：`item.treasure_map.corin_survey`（Sela deeper @信任档1 给）→ 固定藏宝点 `poi.anchor.corin_cache`（openEventId 开箱）→ 得半枚币 + 币 + 置 `story.ch1.corin_found` → 回港交还 Sela（涨信任 + 报酬 + 置 `story.ch1.corin_returned`）。
+**收藏品（交还 Sela）**：**红喉鹈徽章**（`item.keepsake.corin_badge`·赤喉海盗团的军舰鸟徽记·别在队伍装具上的那种·背面刻着科林自己的记号·花不出去、对玩家废铁、对 Sela 是他的证据）。**徽章两段揭示（作者拍·2026-07-02）**：交还 Corin 徽章（Ch1·stage 1）Sela 认出、收口、只说「说来话长·不是今天」；交还 Nerea 徽章（Ch2·stage 2）她才透露一些赤喉海盗团的旧事——徽章＝「他们从前不只是下海捞宝」的实证，逐件累积揭示母组织。〔原 draft 遗物"损坏的深度表/烧毁的数据模块"仍作为"泡烂了留不住"的东西出现在开箱叙述里〕
+**已实装**（#246 首条同伴线·#247 遗物 retcon 币→徽章）：`item.treasure_map.corin_survey`（Sela deeper @信任档1 给）→ 固定藏宝点 `poi.anchor.corin_cache`（openEventId 开箱）→ 得**红喉鹈徽章** + 币 + 置 `story.ch1.corin_found` → 回港交还 Sela（stage-1 收口·涨信任 + 报酬 + 置 `story.ch1.corin_returned`）。
 
-### Nerea（生物派死者·draft 名·**待建 Slice 2**）
+### Nerea（生物派死者·draft 名·**整条线移到第二章**·作者拍 2026-07-02）
 **押边**：生物——把命押在改造自己上。
 **命运**：死于**改造反噬或被吞**。遗物＝**改造手记/变异标本**＝引向深料点/生态点②。
 **伏笔（重要）**：Nerea 的"生物改造过度"正是 **Vera 两个解释之一**——生物派的终点埋在这条线里·读完为 Vera 的模糊埋伏笔。
-**收藏品/线**：待建（Slice 2·§开放问题）。
+**收藏品**：也是一枚**赤喉海盗团徽章**（`item.keepsake.nerea_badge`·category 'other'·二章建）——交还＝徽章两段揭示 **stage 2**：Sela 借它交底赤喉海盗团旧事（见 Corin 条）。
+**落位（作者拍 2026-07-02）**：Nerea 的藏宝点在**第二章**——二章正是**生物派的主要地区**（贴她的生物押边）。二章目前**纯 SPEC 零代码**，故 Nerea 藏宝线（图→藏点→交还 stage-2）**延后到二章建**、不在 Ch1 落。Ch1 已埋的钩：`flag.sela.met_deep`（渐深遭遇·见 Sela 条）留给二章 Nerea offer 门控消费。
 
 ### Vera（失联者·**延后建·design-only·别进第一期**）
 **名/性别**：Vera（拉丁"真"）·性别**刻意模糊**。
@@ -97,15 +98,17 @@
 
 ## 实装状态
 
-- **已落**（#246·sandbox `npm run regress` **81/81**·未提交）：Sela 改名+改女性+retheme；红喉鹈币；Corin 第一条同伴线端到端；`gainTrust`/`takeItem` 对话 effect；`check-collectibles` 门；`playthrough-trust §5` 扩测。**机制/实装细节以 `深海回响_藏宝贸易与信任系统_SPEC.md` §12（尤 §12.12）为准**（本档只管人物 canon）。
-- **下一步 Slice 2**：Nerea 线（埋 Vera 伏笔）+ 渐深遭遇（Sela 深一柱再遇）+ 藏宝图来源分层（Mira 便宜通用图 / Sela 高信任 crew 好图）·Opus·medium。
+- **已落 #246**（Slice 1a+1b）：Sela 改名+改女性+retheme；红喉鹈币；Corin 首条同伴线端到端；`gainTrust`/`takeItem` 对话 effect；`check-collectibles` 门；`playthrough-trust §5`。
+- **已落 #247**（Slice 2 的 **Ch1 部分**）：① Corin 遗物 retcon **半枚币→红喉鹈徽章**（`item.keepsake.corin_badge`·徽章两段揭示 stage 1）；② **渐深遭遇**——热液区更深处再遇 Sela（`roam.sela_meet_deep_*`·gated `story.ch1.anchor.vent`+`flag.sela.met`+intel+相位窗·置 `flag.sela.met_deep`）；③ **藏宝图来源分层「低层」**——Mira 便宜卖通用打捞图（`item.treasure_map.salvage_generic`·`SHOP_STOCK_CHARTS` 价与 sellPrice 解耦·`oneTimeFlag` 一次性·揭示浅礁固定点）。`playthrough-trust §6/§7` 扩测。
+- **延后二章**：**Nerea 整条线**（图→藏点→交还 stage-2 徽章揭示）——二章＝生物派主区·目前零代码。Vera（§Vera·design-only）。
+- **机制/实装细节以 `深海回响_藏宝贸易与信任系统_SPEC.md` §12（尤 §12.12/§12.13）为准**（本档只管人物 canon）。
 
 ---
 
 ## 开放问题 / 待作者
 
 1. 〔名〕Corin / Nerea 为 draft（作者"先这样"·可改）；队名黑背鸥小队 / 母组织赤喉海盗团 / 币红喉鹈币 / 徽军舰鸟 已定。
-2. 〔物〕Nerea 收藏品具体物件待定（Corin＝半枚红喉鹈币已定）。
+2. 〔物〕收藏品统一为**赤喉海盗团徽章**（Corin＝`item.keepsake.corin_badge` 已实装·Nerea＝`item.keepsake.nerea_badge` 二章建）——各人徽章上刻自己的记号做区分（细节待建）。
 3. 〔Vera〕"不可逆价"具体形态（拿不回来的**什么**）+ 最深区地图落位（"以后再说"）→ 延后·design-only。
 4. 〔UI〕Sela 是否要独立信任面板（现只商店头显数字·藏宝 SPEC §3.8）。
 5. 〔远期·独立〕tech/bio 玩家流派系统（非本队必需·单列 Opus·high）。

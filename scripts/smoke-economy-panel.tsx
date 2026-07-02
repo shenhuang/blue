@@ -44,8 +44,8 @@ assert(beak && beak.srcCount === 1 && beak.totalDemand === 6 && !beak.bottleneck
 const lantern = by.get('item.lantern_gland');
 assert(lantern && lantern.srcCount === 1 && lantern.bottleneck, '冷光腺 srcCount===1 且 bottleneck');
 const brass = by.get('item.brass_fitting');
-// srcCount 随内容增减（#175 加 shaft_crack/flooded_gallery 两处旧装具掉落 → 21→23；weekend merge 加 wreck_graveyard 一处 → 24；叙事审查移除 reef.keepers_footlocker brass → wreck_graveyard 同批 +2 源净抵消仍 24；Batch2 grotto.old_anchor（同事件去重=1源）→ 25·#237 中层 suspended_drum/hanging_plate 两处漂浮残骸打捞 brass → 27）；totalDemand 42→39（删水力发电设施·brass×3·2026-06-21）·#235 热液前哨 s1 鳗皮→黄铜 +2 → 41。
-assert(brass && brass.srcCount === 27 && brass.totalDemand === 41, '黄铜配件 srcCount===27 且 totalDemand===41（#237 中层两处漂浮残骸打捞 brass 掉点 +2：25→27）');
+// srcCount 随内容增减（#175 加 shaft_crack/flooded_gallery 两处旧装具掉落 → 21→23；weekend merge 加 wreck_graveyard 一处 → 24；叙事审查移除 reef.keepers_footlocker brass → wreck_graveyard 同批 +2 源净抵消仍 24；Batch2 grotto.old_anchor（同事件去重=1源）→ 25·#237 中层 suspended_drum/hanging_plate 两处漂浮残骸打捞 brass → 27·#247 salvage.generic_cache〔Mira 通用图开箱〕+1 源 → 28）；totalDemand 42→39（删水力发电设施·brass×3·2026-06-21）·#235 热液前哨 s1 鳗皮→黄铜 +2 → 41。
+assert(brass && brass.srcCount === 28 && brass.totalDemand === 41, '黄铜配件 srcCount===28 且 totalDemand===41（#247 Mira 通用图开箱 salvage.generic_cache 掉 brass +1：27→28）');
 const station = by.get('item.station_module');
 assert(station && !station.deadstock && station.srcCount === 1, '科考站升级模块非 deadstock 且单源（capstone 算源）');
 const idle = new Set(s.materials.filter((m) => m.idle).map((m) => m.name));

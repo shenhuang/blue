@@ -2670,7 +2670,98 @@
       ]
     },
     {
-      "_doc": "Corin 藏宝线到点开箱（黑背鸥小队测绘手科林最后一处标记·藏宝贸易与信任系统 SPEC §12.3）：poi.anchor.corin_cache 的 openEventId·由 openEventFlag story.ch1.corin_found 一次性门控（开过即不再强制）。给收藏品半枚红喉鹈币（回港交 Sela 涨信任）+ 几枚币当宝藏。留诚实退路（不开可上浮·不置 flag）。文案 [待过稿]。",
+      "_doc": "渐深遭遇（藏宝贸易与信任系统 SPEC §12.4·Slice 2）：Sela 深层再遇事件·poiId 精钉 chart_pois.json 的 roam.sela_meet_deep_{new,waxing,full}（每相位一个候选浮标）。zoneTags 空 + 高权重＝不漏进普通池、命中近乎必出。三条随相位微调开场，出口一致（都置 flag.sela.met_deep·供二章 Nerea offer 消费）。比浅层交头点更深（~90-110 vs 58-64）·文案透她「只会更深、下不来」。文案 [待过稿]。",
+      "id": "sela.meet_deep_new",
+      "poiId": "roam.sela_meet_deep_new",
+      "depthRange": [85, 120],
+      "zoneTags": [],
+      "weight": 30,
+      "title": "更深处的绳",
+      "body": "新月，热液区的水黑得发红，能见度只剩一臂。你顺着那段结着矿垢的绳往下，比上次深出一大截。绳尽头还是她——这回没在数东西，只是停在温热的水里，像在听什么。听见你的气泡声，她偏了偏头，没回头：「你也下到这儿来了。」",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "approach",
+          "label": "游近她",
+          "outcome": {
+            "text": "「上面没有的东西，只能往下找。」她说，声音比在港口里更平，「我从前也说过『就这一趟』。」\n她把绳又往下放了一段，看它沉进望不见的地方。「你还回得去，就趁回得去的时候多回几趟。」\n你记下了这个深度。她比上次更远，而她自己像是没打算停。",
+            "oxygenTurnCost": 1,
+            "setProfileFlags": ["flag.sela.met_deep"]
+          }
+        },
+        {
+          "id": "watch_deep",
+          "label": "先不出声，看她在忙什么",
+          "outcome": {
+            "text": "她没在清点，也没在交易——只是把手贴在温热的岩壁上，久久没动，像在确认什么只有她听得见的东西。\n过了一会儿她才回过神。「……看够了。」她收回手，指节僵着，自己没在意。\n她转身往更深处去，绳在身后一寸寸松开、沉下去。",
+            "oxygenTurnCost": 1,
+            "setProfileFlags": ["flag.sela.met_deep"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "sela.meet_deep_waxing",
+      "poiId": "roam.sela_meet_deep_waxing",
+      "depthRange": [85, 120],
+      "zoneTags": [],
+      "weight": 30,
+      "title": "更深处的绳",
+      "body": "月相在长，可这么深，上面的光一点都漏不下来。你顺着那段结着矿垢的绳往下，比上次深出一大截。绳尽头还是她——这回没在数东西，只是停在温热的水里，像在听什么。听见你的气泡声，她偏了偏头，没回头：「你也下到这儿来了。」",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "approach",
+          "label": "游近她",
+          "outcome": {
+            "text": "「上面没有的东西，只能往下找。」她说，声音比在港口里更平，「我从前也说过『就这一趟』。」\n她把绳又往下放了一段，看它沉进望不见的地方。「你还回得去，就趁回得去的时候多回几趟。」\n你记下了这个深度。她比上次更远，而她自己像是没打算停。",
+            "oxygenTurnCost": 1,
+            "setProfileFlags": ["flag.sela.met_deep"]
+          }
+        },
+        {
+          "id": "watch_deep",
+          "label": "先不出声，看她在忙什么",
+          "outcome": {
+            "text": "她没在清点，也没在交易——只是把手贴在温热的岩壁上，久久没动，像在确认什么只有她听得见的东西。\n过了一会儿她才回过神。「……看够了。」她收回手，指节僵着，自己没在意。\n她转身往更深处去，绳在身后一寸寸松开、沉下去。",
+            "oxygenTurnCost": 1,
+            "setProfileFlags": ["flag.sela.met_deep"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "sela.meet_deep_full",
+      "poiId": "roam.sela_meet_deep_full",
+      "depthRange": [85, 120],
+      "zoneTags": [],
+      "weight": 30,
+      "title": "更深处的绳",
+      "body": "满月的光到不了这个深度，热液的微光反而更显眼。你顺着那段结着矿垢的绳往下，比上次深出一大截。绳尽头还是她——这回没在数东西，只是停在温热的水里，像在听什么。听见你的气泡声，她偏了偏头，没回头：「你也下到这儿来了。」",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "approach",
+          "label": "游近她",
+          "outcome": {
+            "text": "「上面没有的东西，只能往下找。」她说，声音比在港口里更平，「我从前也说过『就这一趟』。」\n她把绳又往下放了一段，看它沉进望不见的地方。「你还回得去，就趁回得去的时候多回几趟。」\n你记下了这个深度。她比上次更远，而她自己像是没打算停。",
+            "oxygenTurnCost": 1,
+            "setProfileFlags": ["flag.sela.met_deep"]
+          }
+        },
+        {
+          "id": "watch_deep",
+          "label": "先不出声，看她在忙什么",
+          "outcome": {
+            "text": "她没在清点，也没在交易——只是把手贴在温热的岩壁上，久久没动，像在确认什么只有她听得见的东西。\n过了一会儿她才回过神。「……看够了。」她收回手，指节僵着，自己没在意。\n她转身往更深处去，绳在身后一寸寸松开、沉下去。",
+            "oxygenTurnCost": 1,
+            "setProfileFlags": ["flag.sela.met_deep"]
+          }
+        }
+      ]
+    },
+    {
+      "_doc": "Corin 藏宝线到点开箱（黑背鸥小队测绘手科林最后一处标记·藏宝贸易与信任系统 SPEC §12.3）：poi.anchor.corin_cache 的 openEventId·由 openEventFlag story.ch1.corin_found 一次性门控（开过即不再强制）。给收藏品红喉鹈徽章（回港交 Sela 涨信任）+ 几枚币当宝藏。留诚实退路（不开可上浮·不置 flag）。文案 [待过稿]。",
       "id": "corin.cache",
       "depthRange": [0, 0],
       "zoneTags": [],
@@ -2683,10 +2774,10 @@
           "id": "open_cache",
           "label": "解开那个袋子",
           "outcome": {
-            "text": "绳结泡得太久，一扯就散。袋里没有金子——一台进了水的深度表，几页泡烂的海图，还有一枚断成两半的红喉鹈币，半只鸟压在你掌心。\n表和图你都留不住，烂了。那半枚币你收进内袋。它对你没用，可你隐约觉得，它对某个人不是废物。",
+            "text": "绳结泡得太久，一扯就散。袋里没有金子——一台进了水的深度表，几页泡烂的海图，还有一枚锈死的金属徽章，上头一只鸟展着翅。\n表和图你都留不住，烂了。那枚徽章你收进内袋。它对你没用，可你隐约觉得，它对某个人不是废物。",
             "oxygenTurnCost": 1,
             "loot": [
-              { "itemId": "item.keepsake.corin_coin", "qty": [1, 1], "chance": 1 },
+              { "itemId": "item.keepsake.corin_badge", "qty": [1, 1], "chance": 1 },
               { "itemId": "item.deep_token", "qty": [1, 2], "chance": 1 }
             ],
             "setProfileFlags": ["story.ch1.corin_found"]
