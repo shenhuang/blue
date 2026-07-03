@@ -1,6 +1,6 @@
 # 洞穴扩充 SPEC：27 洞 · 4 beacon · 多口持久洞
 
-> 状态：**设计章 v2 定稿（2026-06-23·交互 session〔Cowork〕）**——覆盖原 28 区方案（→27 洞）。
+> 状态：**设计章 v2 定稿（最新一次改动 2026-06-26·补语调单一来源指针，设计本身未变；定稿本体 2026-06-23·交互 session〔Cowork〕）**——覆盖原 28 区方案（→27 洞）。
 > Batch 0（28 区 stub）已 land 进 zones.json；本章重定方案。**下方「全区 JSON」「事件池设计指引」是 Batch-0 原始参数·实装时按本设计章更新**（删 5 区·改 lc/depthRange·加 beacon/温度/多口标注）。事件池 Batch 1–4 见 cave_batch_prompts.md。
 
 ---

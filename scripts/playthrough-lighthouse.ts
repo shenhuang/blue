@@ -30,15 +30,11 @@ import {
 } from '../src/engine/lighthouses';
 import { regionRadius } from '../src/engine/regions';
 import type { GameState, InventoryItem, Lighthouse } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('灯塔基地（Phase B 数据模型 + 引擎脚手架）回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 const HOME = 'lighthouse.home';
 // 主建造 fixture：船坞（lhtrack.dockyard·homeOnly·单级·requiresLighthouseLevel 1）。
@@ -242,5 +238,4 @@ L('\n========== 7. dev 测试建造（0 成本·#110 口径）==========');
   L('  空账户直建（跳前置）/不扣账/已建·未知 no-op/派生同真建 ✓');
 }
 
-console.log(log.join('\n'));
-console.log('\n✓ 灯塔基地（Phase B 数据模型 + 引擎脚手架）回归通过');
+pt.done();

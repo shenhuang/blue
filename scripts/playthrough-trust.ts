@@ -21,15 +21,11 @@ import {
   SPECIAL_MERCHANT_NPC_ID,
 } from '../src/engine/port';
 import type { GameState, PlayerProfile } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('特殊商人 Sela 回归（Phase 2 MVP + Slice 2：Corin 徽章 / 渐深遭遇 / Mira 通用图）');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 function baseProfile(day: number): PlayerProfile {
   const p = createInitialProfile();
@@ -329,5 +325,4 @@ function baseProfile(day: number): PlayerProfile {
   L('  渐深遭遇：缺 anchor.vent 深层点 hidden；齐全 + 相位窗内 lit（门比浅层多一道 story.ch1.anchor.vent）✓');
 }
 
-console.log(log.join('\n'));
-console.log('\n✓ 特殊商人 Sela 回归通过（Phase 2 MVP + Slice 2：Corin 徽章 / 渐深遭遇 / Mira 通用图）');
+pt.done();

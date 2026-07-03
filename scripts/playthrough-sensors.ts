@@ -44,15 +44,11 @@ import {
   LAMP_DEPTH_REACH_MAX,
   SONAR_DEPTH_REACH_MAX,
 } from '../src/engine/clarity';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('微观双传感器 / clarity 回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 const N1_TRUTH = '一条窄缝，水在慢慢动。';
 const N2_TRUTH = '一处塌下来的石堆。';
@@ -530,5 +526,4 @@ L('\n========== 12. 节点级 clarity：深度分档 ==========');
   }
 }
 
-console.log(log.join('\n'));
-console.log('\n✓ 微观双传感器 / clarity 回归通过');
+pt.done();

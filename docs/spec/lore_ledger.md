@@ -5,6 +5,13 @@
 > 用途：供下批 agent 动笔前读取，避免新事件与已确立设定矛盾。
 > 冲突标记：如发现矛盾，在条目前加 `⚠️` 并注明，等待作者裁定。
 
+**状态（2026-07-03）**：`scripts/check-lore-refs.mjs` ratchet 基线批量清空（100→0）——原先散落
+`lore.*`（bluecaves/deep_water/midwater/old_lighthouse/reef/reef_deep/reef_shallows/trench/vent/
+whalefall/wreck_graveyard 11 组 + 7 条独立敌人图鉴）全部在 `src/data/lore.json` 补了登记文案，
+均标 `[待过稿]`（草稿·待作者审阅）。文案依据：敌人 codex 字段 / 引用事件的 body+outcome 原文，
+未新造设定。**驳回某条草稿请直接编辑该条 body/title 保留 id 已登记态**——删除条目会让 id 重新
+悬空、需要重跑 `--update-baseline` 才能收回基线，多一道返工。
+
 ---
 
 ## 浅水区 / Shallow Zones

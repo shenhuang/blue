@@ -27,19 +27,15 @@ import {
 } from '../src/engine/columns';
 import { generateChart, poiBlockReason, isPoiDepartable } from '../src/engine/chart';
 import type { GameState } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
 // 导师日志道具 id（reveal 单一来源·内容自洽回归·#117 续）：marksPois 带四主线 beat 派生 story 潜点坐标。
 // 「持日志」＝把它放进 profile.inventory（取代旧「置 coords_known flag」·reveal 机制已改回文献坐标）。
 const MENTOR_LOGBOOK_ITEM_ID = 'item.mentor_logbook';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('探深「深度柱」（#131·§10 定案 + 主线柱迁移）回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 const TUT = 'flag.tutorial_complete';
 // §10 定案级数：家2 / 残骸3 / 中层6（主探索区·内容最重）/ 热液4 / 海沟4（3 普通 + 1 电梯 capstone）。
@@ -444,5 +440,4 @@ L('\n========== 11. 主线 beat（storyTier·与 probe 梯子解耦） =========
 }
 L('  storyTierRevealState 纯函数 + 早揭示端到端（reef 免费入口/其余建前哨前 dim 后 lit）+ 不污染 probe 梯子 + story 潜点带 columnStory ✓');
 
-console.log(log.join('\n'));
-console.log('\n✓ 探深「深度柱」（#131·§10 定案 + 主线柱迁移）回归通过');
+pt.done();

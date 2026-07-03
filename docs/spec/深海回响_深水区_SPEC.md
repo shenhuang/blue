@@ -1,6 +1,6 @@
 # 深海回响 · 深水区 / 欺骗系统 SPEC
 
-> **状态：v0.1 草案（2026-06-02，作者口述定调 + 四点拍板）。** 这是「最终预期」北极星（自动记忆 [[deep-game-vision]]）落成可建系统的第一版设计文档。方向已锁、若干子机制留作者复核（见 §7）。建法承袭基建+地图 revamp 的「SPEC → 分阶段实装 → 每阶段全绿自审」节奏（见 `docs/深海回响_基建地图_SPEC.md`）。
+> **状态：北极星草案仍有效，部分内容已被后续 SPEC 取代（2026-06-27 文档治理续，见下方 tombstone）。** 这是「最终预期」北极星（自动记忆 [[deep-game-vision]]）落成可建系统的第一版设计文档，Phase 0–3 plumbing/mimic capstone 等段落已实装（见 §12）；但 §5/§12 的旧深度 band 描述已整体删除、改由数据驱动「深度柱」承接（见下方 tombstone + `深海回响_探深深度柱_SPEC.md`）。建法承袭基建+地图 revamp 的「SPEC → 分阶段实装 → 每阶段全绿自审」节奏（见 `docs/深海回响_基建地图_SPEC.md`）。
 >
 > **伏笔层已就位**：浅/中/深三级『越深越欺骗』事件已全部埋好（STATUS quirk #53–#57）——mimic 假信标 `bluecaves.the_glow`(中)→`cave.false_beacon`(深)，corpse-wearer `wreck_graveyard.{the_other,no_bubbles,the_wearer}`(浅/中/深)，lore.deep_water.{cold_light,the_window,the_false_beacon}。capstone（§5 Phase 3）登场时回收这些母题与 tell。
 >

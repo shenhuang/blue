@@ -48,15 +48,11 @@ import {
   SONAR_SCAN_RANGE,
   SONAR_SCAN_RANGE_MAX,
 } from '../src/engine/sonar';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('声呐探索扫描回归（S0 + S1 多事件房间 + S2 不可信扫描 + S3 威胁定位 + 开/关窗口 §4）');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 const sortedKeys = (o: Record<string, number>) => Object.keys(o).sort();
 const sameSet = (a: string[], b: string[]) =>
   a.length === b.length && [...a].sort().join('|') === [...b].sort().join('|');
@@ -513,7 +509,4 @@ L('\n========== 15. 落地即扫 + 偏好持久 ==========');
   L('  落地即扫(开) / 落地全黑(关) / 偏好写 profile 跨 run ✓');
 }
 
-console.log(log.join('\n'));
-console.log(
-  '\n✓ 声呐探索扫描回归通过（S0 + S1 多事件房间 + S2 不可信扫描 + S3 威胁定位 + 开/关窗口 §4）',
-);
+pt.done();

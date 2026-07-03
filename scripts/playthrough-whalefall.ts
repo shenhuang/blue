@@ -32,18 +32,14 @@ import { getColumnForLighthouse } from '../src/engine/columns';
 import { regionForOwner } from '../src/engine/regions';
 import { isChapterOutpost } from '../src/engine/lighthouses';
 import type { GameState, PlayerProfile, ChartPoi, Lighthouse, DiveEvent } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.log(log.join('\n'));
-    throw new Error(`[playthrough-whalefall] ${msg}`);
-  }
-}
+const pt = makeHarness('playthrough-whalefall 完成：§1 目击链 / §2 残骸独立 / §3 找寻+found / §4 生态点+物品即解锁 / §5 精简营地 / §6 zone+生态 / §7 setsFlag 里程碑 全部');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 // —— 数据加载（chart_pois mapId-keyed·flatten ch1 段；lighthouse_upgrades outposts）——
 const chartPoisRaw = JSON.parse(
@@ -348,5 +344,4 @@ L('§7 物品即里程碑（item.whalefall_log setsFlag → whalefall_found）')
   L('  作弊发鲸落手记 → 置 whalefall_found（圈/营地随之解锁·§4 §5 据此）✓');
 }
 
-console.log(log.join('\n'));
-console.log('\n✓ playthrough-whalefall 完成：§1 目击链 / §2 残骸独立 / §3 找寻+found / §4 生态点+物品即解锁 / §5 精简营地 / §6 zone+生态 / §7 setsFlag 里程碑 全部通过');
+pt.done();

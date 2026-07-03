@@ -20,15 +20,11 @@ import {
 } from '../src/engine/state';
 import { POWER_MAX, SONAR_PING_COST, LAMP_DEPTH_REACH, SONAR_DEPTH_REACH, deriveSensorTuning } from '../src/engine/clarity';
 import type { GameState } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('存档序列化回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 // —— 构造一个内容丰富的 state：三个 profile Set + deaths + 进行中的 run（含 activeFlags Set） ——
 let s: GameState = createInitialGameState();
@@ -324,5 +320,4 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
 }
 L('  hydrate：缺字段旧档单点补 canonical 默认 · 真条件字段不补 · 幂等 · 部分缺失按档内值 ✓');
 
-console.log(log.join('\n'));
-console.log('\n✓ 存档序列化回归通过');
+pt.done();

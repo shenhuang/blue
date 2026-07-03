@@ -26,15 +26,11 @@ import { applyOutcome } from '../src/engine/events';
 import { getEventById } from '../src/engine/zones';
 import { outpostStageFlag, OUTPOST_USABLE_STAGE } from '../src/engine/lighthouses';
 import type { GameState, EventOption, Outcome } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('深水区 Phase 3 mimic capstone（chart 引诱 → 入潜兑现 → d_reveal）回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 const D_REVEAL = 'flag.d_reveal';
 const SURVIVED = 'flag.mimic.false_beacon.survived';
@@ -151,5 +147,4 @@ for (const o of wearer.options) {
 }
 L('  the_wearer 读穿→lore、不置 d_reveal、loot-free 无战斗 ✓');
 
-console.log(log.join('\n'));
-console.log('\n✓ 深水区 Phase 3 mimic capstone（chart 引诱 → 入潜兑现 → d_reveal）回归通过');
+pt.done();

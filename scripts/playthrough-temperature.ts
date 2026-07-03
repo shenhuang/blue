@@ -26,16 +26,11 @@ import zonesData from '../src/data/zones.json';
 import { createNewRun, createStarterLoadout } from '../src/engine/state';
 import { tickTurns } from '../src/engine/events';
 import { loadoutInsulation } from '../src/engine/equipment';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string) {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
-const near = (a: number, b: number, eps = 1e-9) => Math.abs(a - b) <= eps;
+const pt = makeHarness('温度系统回归门');
+const { L, near } = pt;
+const assert: PtAssert = pt.assert;
 
 // ── 1. ceiling / 保温抵消 ──
 L('========== 1. thermalCeiling / 抵消 ==========');
@@ -144,5 +139,4 @@ assert(
 );
 L(`  逐回合=${runA.stats.thermalStress.toFixed(6)} 一次性=${runB.stats.thermalStress.toFixed(6)} 中性=0 insulation=${loadoutInsulation(createStarterLoadout())} ✓`);
 
-console.log(log.join('\n'));
-console.log('\n温度系统回归门 ✓ 全通过');
+pt.done();

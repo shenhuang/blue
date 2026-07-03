@@ -13,16 +13,11 @@ import { satisfyEvent } from '../src/engine/eventSatisfy';
 import { runEventScenario, buildScenarioState } from '../src/engine/eventScenario';
 import { eventArc, eventRoots, outgoingEdges } from '../src/engine/eventGraph';
 import { enterNodeSelection } from '../src/engine/dive';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.log(log.join('\n'));
-    throw new Error(`[playthrough-satisfy] ${msg}`);
-  }
-}
+const pt = makeHarness('playthrough-satisfy：§1 一键满足保证 / §2 图重建+引用完整 / §3 无图态离场 全部');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 // ═══════════════════════════════════════════════════════════════
 // §1 satisfyEvent：满足后首步无「非有意」隐藏 + 全库无互斥冲突
@@ -115,5 +110,4 @@ L('§3 无图态 remainOnEvent 离场 rest');
   L('  无图态离场到 rest ✓');
 }
 
-console.log(log.join('\n'));
-console.log('\n✓ playthrough-satisfy：§1 一键满足保证 / §2 图重建+引用完整 / §3 无图态离场 全部通过');
+pt.done();

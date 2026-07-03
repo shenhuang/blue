@@ -1,5 +1,7 @@
 # 深海回响 · 敌人库（Enemy Library）设计文档
 
+> 状态：**基础+解耦+收尾已实装（2026-06-14·#121/#126）**——route A 余项已评估跳过，详见下行。
+>
 > 配套战斗 SPEC（`深海回响_战斗系统_SPEC.md`）的子文档。
 > **状态：基础+解耦+收尾已实装（基础/解耦＝交互 session #121；收尾＝并行 session `feat/enemy-rest` #126·**待作者合 main**）· route A 余项已评估跳过。** 已落地：支柱三 目录自动加载 + 支柱一 元数据回填 9 只 + §4 `pickEnemy`/`matchEnemies` + §6 `check-enemy-refs` 四门 + combat-runner 过滤 + 支柱二 `enemyRef`（route B 加法·`resolveEncounterMember`/`canResolveMember`·startCombat 接入）+ §7.4 `--new-enemy` 脚手架 + §5 入库 SKILL 草案。**#126 收尾**：enemyRef 端到端线上用例（`combat.wreck_field_patrol` + 事件 `wreck_graveyard.patrol_stir` + combat baseline·`runCombatScenario` 把 startCombat 包进 seeded 窗口使 pool 取样可复现·defId baseline 逐字节不变）+ codex 充实 9 只 + 图鉴 UI（`BestiaryView`·港口「潜水志」入口·只显已遭遇〔`enemy_seen:<id>`·startCombat 单点写〕·氛围+软标签不露数值）+ verify-tutorial 认 enemyRef 成员。**regress 31/31 全绿**。待续：route A（把 `combatEncounters` 迁出敌人文件·纯重构·非必须·#126 评估后跳过）、模式 B 的 schedule（作者立·SKILL 草案已备）。详见 CHANGELOG #121 / #126。
 > 一句话：把"敌人"从**散在文件里、靠人肉眼挑**的状态，升级成**可查询、可复用、目录自动加载、可被一个独立 session 安全地"产"与"用"**的库。

@@ -48,19 +48,14 @@ import { generateChart } from '../src/engine/chart';
 import { applyDialogEffects, getDialogNode, getNpc } from '../src/engine/dialog';
 import { allItems } from '../src/engine/items';
 import type { GameState, PlayerProfile } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.log(log.join('\n'));
-    throw new Error(`[playthrough-story] ${msg}`);
-  }
-}
+const pt = makeHarness('playthrough 完成：剧情脊柱 §1 派生 / §2 港口路径 / §3 round-trip / §4 守门 / §5 St1 锚点链 / §6 鲸落支线 / §4c Mira 对话 / §4d Otto 对话 全部');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 /** 造一个带指定 flags 的 profile（其余取初始档） */
 function profileWith(flags: string[]): PlayerProfile {
@@ -1052,7 +1047,4 @@ L('§4d Otto 进度对话门控');
   L('  Otto 声呐 possession-keyed：首发一次 + 重访催料去重 + 反锁死自愈 ✓');
 }
 
-console.log(log.join('\n'));
-console.log(
-  '\n✓ playthrough 完成：剧情脊柱 §1 派生 / §2 港口路径 / §3 round-trip / §4 守门 / §5 St1 锚点链 / §6 鲸落支线 / §4c Mira 对话 / §4d Otto 对话 全部通过',
-);
+pt.done();

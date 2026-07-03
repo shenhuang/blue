@@ -19,15 +19,11 @@ import {
   ALERT_THRESHOLD,
   ALERT_AFTER_TRIGGER,
 } from '../src/engine/clarity';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('探测 / 隐身 / 警觉回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 const CAVE_POOL = ['combat.blind_eel_solo', 'combat.cave_octopus_solo'];
 
@@ -146,5 +142,4 @@ L('\n========== 6. 无伏击池的 zone → 不触发 ==========');
   L('  无伏击池 zone：满警觉也不触发（数据门控）✓');
 }
 
-console.log(log.join('\n'));
-console.log('\n✓ 探测 / 隐身 / 警觉回归通过');
+pt.done();

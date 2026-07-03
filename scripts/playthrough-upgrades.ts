@@ -27,17 +27,12 @@ import { craftEquipment, upgradeEquipment, canCraftEquipment, canUpgradeEquipmen
 import { getDialogNode, getNpc, selectChoice } from '../src/engine/dialog';
 import { generateChart, poiLockReason, isPoiDepartable } from '../src/engine/chart';
 import type { GameState, InventoryItem } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
 let state: GameState = createInitialGameState();
-const log: string[] = [];
-
-// asserts cond：与其他 playthrough 同款——让 tsc 沿断言窄化（canPurchase 判别联合读 reason/shortfall 靠它）
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败: ' + msg);
-  }
-}
+const pt = makeHarness('港口升级 playthrough');
+const { log } = pt;
+const assert: PtAssert = pt.assert;
 
 // 升级账单（与 data/upgrades.json 对齐，改动数值时同步）
 //   tankhouse.lv1    = shark_tooth×4, lobster×4          ＋ 25 金
@@ -309,5 +304,4 @@ log.push('  声呐打造 Lv.1 → 升 Lv.5 → getEquipmentStats → getRunBonus
 //   回退基线（deriveSensorTuning 默认·stalker 管线 soundAbsorb/camo 缺省 0）；机制保留、可日后做成
 //   防寒服档位件用 base effects 加回（见 CHANGELOG 段2）。规避缺省 0 的护栏改由 playthrough-stalker 守。
 
-console.log(log.join('\n'));
-console.log('\n✓ 港口升级 playthrough 通过');
+pt.done();

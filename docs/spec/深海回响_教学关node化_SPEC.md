@@ -1,5 +1,7 @@
 # 教学关 node 化 SPEC（#221+·作者拍：tutorial 也走 node-graph + 限制行为）
 
+> 状态：**已实装（2026-06-27·#222，续修石斑鱼→沉船入口氛围铺垫同日跟进）**——`ascentLocked` + `scriptedNodeEvents` 机制已落地并接入 `dive-start.ts`/`ascent.ts`/`mapgen*.ts`。
+
 ## 目标 / 北极星
 教学首潜（zone.east_reef 第一次）与重访**共用同一张节点图**，让「重去资格区＝认得出来的同一个地方」。
 tutorial 仍是**强制、不可错过**的引导——靠「锁上浮 + 单向线性」限制玩家行为，而不是靠 event-chain 把图藏掉。

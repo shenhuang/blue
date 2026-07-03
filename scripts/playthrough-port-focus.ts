@@ -11,15 +11,11 @@
 // 跑法：npx tsx scripts/playthrough-port-focus.ts
 
 import { portRightPane, type PortServiceMode } from '../src/ui/portFocus';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败: ' + msg);
-  }
-}
+const pt = makeHarness('playthrough-port-focus');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 const SERVICES: (PortServiceMode | null)[] = ['gear', 'salvage', 'bestiary', null];
 // 港口族 + 会触发清场的相邻 phase（dive 等离港态由 PortLayout 的 effect 清本地态·这里只验决策函数）。

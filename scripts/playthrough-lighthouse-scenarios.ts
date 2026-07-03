@@ -25,18 +25,14 @@ import { canRestoreRuin, getRuinDef, ruinRestoredFlag } from '../src/engine/ligh
 import { isPoiLit, effectiveDistance } from '../src/engine/chart';
 import { runEventScenario, type ScenarioInput } from '../src/engine/eventScenario';
 import type { GameState, ChartPoi, InventoryItem } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SCN_DIR = resolve(__dirname, '../scenarios/lighthouse');
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('灯塔修复循环（Phase C）回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 const RUIN_ID = 'ruin.north_beacon';
 const OUTPOST_ID = 'lighthouse.outpost_north';
@@ -155,5 +151,4 @@ assert(rOutpost && rOutpost.builtUpgrades instanceof Set, 'round-trip 后前哨�
 assert(round!.profile.flags.has(ruinRestoredFlag(RUIN_ID)), 'round-trip 后 restore flag 应保留');
 L('  存档 round-trip：前哨灯塔 + restore flag 保留 ✓');
 
-console.log(log.join('\n'));
-console.log('\n✓ 灯塔修复循环（Phase C）回归通过');
+pt.done();

@@ -1,5 +1,7 @@
 # 洞穴扩充 批次生成 Prompt
 
+> 状态：**Batch 0–4 均已落 main（历史执行记录·作只读参考）**——事件池等对应 roadmap E1–E4 已完工，见 `cave_roadmap.md` 顶部状态（2026-06-27 核对：roadmap 9/10 项落地，仅 T2b 深门未做）。本文件的 prompt 文本已过时（不必按此重跑），仅留存当初的车道划分与执行顺序供参考。
+>
 > 配套 cave_zones_spec.md（28 区参数）  
 > 执行顺序：Batch 0 先跑并 land → Batch 1/2/3/4 并行
 

@@ -28,15 +28,11 @@ import { runCombatScenario } from '../src/engine/combatScenario';
 import { generateChart, poiLockReason } from '../src/engine/chart';
 import aldoData from '../src/data/npcs/aldo.json';
 import type { GameState } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string) {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('沉船墓园 playthrough');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 function makeRng(seed: number) {
   let s = seed >>> 0;
@@ -426,6 +422,6 @@ L(`  roaming 相位隔离：templateId 命中进池 / 实例 id 配不上 / 非 
 // 收尾
 // ============================================
 
-console.log(log.join('\n'));
+console.log(pt.log.join('\n'));
 console.log('\n✓ 沉船墓园 playthrough 完成');
 console.log(`最终：银行 ${state.profile.bankedGold} 金 / lore ${state.profile.loreEntries.size} 条`);

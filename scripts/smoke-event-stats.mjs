@@ -107,6 +107,32 @@ stats.zones.forEach((zone, zi) => {
   }
 }
 
+// ── ⑥ 分布阈值门（#248 尾）：守内容偏斜——某桶/区退化到阈值外即红。阈值＝占位（当前实测 <X>·+margin）·待作者 number pass（defer-number-tuning）。
+// 目的：不是「今天必须绿」（今天本来就绿·有余量），是「未来某个 zone/深度桶被churn 清空、或某个 zone 吃掉大半内容」时报警。
+// 不用「格子占自身行(zone)比例」做阈值——shallow 这类单桶 zone 结构性就是 100%，那个指标起点就顶格、没有余量可言。
+{
+  const zoneEmpties = stats.zoneTotals.filter((c) => c === 0).length;
+  assert(zoneEmpties === 0, `不应有 zone 完全空（0 事件），实空=${zoneEmpties}（当前实测 0·无余量·任何 zone 归零即红）`);
+
+  const bucketEmpties = stats.bucketTotals.filter((c) => c === 0).length;
+  assert(
+    bucketEmpties <= 3,
+    `空深度桶数(${bucketEmpties}) 应 <= 3（当前实测 1·210–240m 因桶边界天然稀·margin +2 桶）`,
+  );
+
+  const maxZoneShare = Math.max(...stats.zoneTotals.map((c) => c / stats.total));
+  assert(
+    maxZoneShare <= 0.25,
+    `最大单 zone 占比(${(maxZoneShare * 100).toFixed(1)}%) 应 <= 25%（当前实测 17.0%·wreck·margin +8pp）`,
+  );
+
+  const gapCount = stats.suggestions.filter((s) => s.kind === 'gap').length;
+  assert(
+    gapCount <= 8,
+    `gap 建议数(${gapCount}) 应 <= 8（当前实测 3·margin +5·gap＝某 zone 活跃深度跨度内出现 0 事件的桶）`,
+  );
+}
+
 console.log(
-  `✓ smoke-event-stats: 聚合恒等式通过（total=${stats.total}·tone 守恒·矩阵行/列合计·tone 交叉表·建议 ${stats.suggestions.length} 条引用+格子一致）`,
+  `✓ smoke-event-stats: 聚合恒等式通过（total=${stats.total}·tone 守恒·矩阵行/列合计·tone 交叉表·建议 ${stats.suggestions.length} 条引用+格子一致）+ 分布阈值门通过`,
 );

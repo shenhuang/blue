@@ -6,16 +6,11 @@
 // 跑法： npx tsx scripts/playthrough-nitrogen.ts
 
 import { N2, nitrogenCeiling, stepNitrogen, narcosisSanityDrain } from '../src/engine/nitrogen';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string) {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
-const near = (a: number, b: number, eps = 1e-9) => Math.abs(a - b) <= eps;
+const pt = makeHarness('氮气系统回归门');
+const { L, near } = pt;
+const assert: PtAssert = pt.assert;
 
 // ── 1. 饱和上限 ceiling ──
 L('========== 1. ceiling 曲线 ==========');
@@ -49,5 +44,4 @@ assert(narcosisSanityDrain(90, 180, 5) > narcosisSanityDrain(90, 100, 5), '同�
 assert(narcosisSanityDrain(20, 60, 1) < 0.1, '低氮浅处氮醉极轻');
 L(`  N90@100m/5t = ${narcosisSanityDrain(90, 100, 5).toFixed(2)} 理智`);
 
-console.log(log.join('\n'));
-console.log('\n氮气系统回归门 ✓ 全通过');
+pt.done();
