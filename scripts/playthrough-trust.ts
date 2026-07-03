@@ -11,6 +11,7 @@ import { createInitialProfile, createInitialGameState } from '../src/engine/stat
 import { generateChart } from '../src/engine/chart';
 import { trustTier, trustValue } from '../src/engine/trust';
 import { applyDialogEffects } from '../src/engine/dialog';
+import { evalCondition } from '../src/engine/events';
 import {
   buyFromSpecialMerchant,
   buyFromMira,
@@ -21,6 +22,8 @@ import {
   SPECIAL_MERCHANT_NPC_ID,
 } from '../src/engine/port';
 import type { GameState, PlayerProfile } from '../src/types';
+import type { Condition } from '../src/types/events';
+import miraNpc from '../src/data/npcs/mira.json';
 import { makeHarness, type PtAssert } from './lib/pt';
 
 const pt = makeHarness('特殊商人 Sela 回归（Phase 2 MVP + Slice 2：Corin 徽章 / 渐深遭遇 / Mira 通用图）');
@@ -323,6 +326,84 @@ function baseProfile(day: number): PlayerProfile {
   assert(withVent.length > 0, '齐全（tutorial+met+intel+anchor.vent·相位窗内）时应出现深层交头点');
   assert(withVent.some((p) => p.revealState === 'lit'), '新月窗内应有一个深层交头点 lit');
   L('  渐深遭遇：缺 anchor.vent 深层点 hidden；齐全 + 相位窗内 lit（门比浅层多一道 story.ch1.anchor.vent）✓');
+}
+
+// —— 8. Sela 引荐门与深度脱钩、改由 Mira 打捞委托单点门控（销赃中间人验明正身·SPEC §6/§12·2026-07-03）——
+// 不变量：做完 Mira 打捞任务（story.ch1.mira_salvage_done）才解锁 sela_tip 引荐 → 置 intel.mira.sela。
+// 深度（story.ch1.anchor.midwater）不再直接门 sela_tip——它只写在 poi.anchor.mira_salvage 的 offer 门上
+// （单一旋钮＝任务位置·挪任务则 Sela 可达点自动跟着走）。守「做了任务⟹见得到 Sela / 没做⟹见不到」。
+{
+  type DialogEffects = Parameters<typeof applyDialogEffects>[1];
+  const mira = miraNpc as unknown as {
+    npc: { dialogRoot: { choices: Array<{ id: string; visibleIf?: Condition }> } };
+    dialogs: Record<string, { onEnter: DialogEffects }>;
+  };
+  const selaChoice = mira.npc.dialogRoot.choices.find((c) => c.id === 'sela_tip');
+  assert(!!selaChoice, 'mira.dialogRoot 应有 sela_tip 选项');
+  const cond = selaChoice!.visibleIf!;
+  const condStr = JSON.stringify(cond);
+  assert(
+    condStr.includes('story.ch1.mira_salvage_done'),
+    'sela_tip 应门控在 story.ch1.mira_salvage_done（做完 Mira 打捞委托）上',
+  );
+  assert(
+    !condStr.includes('story.ch1.anchor.midwater'),
+    'sela_tip 不应再直接门控深度（story.ch1.anchor.midwater）——深度只写在 mira_salvage 的 offer 门',
+  );
+
+  const stateWithFlags = (flags: string[]): GameState => {
+    const s = createInitialGameState();
+    return { ...s, profile: { ...s.profile, flags: new Set(flags) } };
+  };
+
+  // 8a. 只到中层、没做委托 → sela_tip 不可见（不再是深度门）。
+  assert(
+    !evalCondition(stateWithFlags(['flag.tutorial_complete', 'story.ch1.anchor.midwater']), cond),
+    '只到中层但没做 Mira 委托时 sela_tip 应不可见',
+  );
+
+  // 8b. 做完委托 → sela_tip 可见 → 进 mira.tip_sela 的 onEnter 置 intel.mira.sela（引荐兑现）。
+  const done = stateWithFlags(['flag.tutorial_complete', 'story.ch1.mira_salvage_done']);
+  assert(evalCondition(done, cond), '做完 Mira 委托（story.ch1.mira_salvage_done）后 sela_tip 应可见');
+  const afterTip = applyDialogEffects(done, mira.dialogs['mira.tip_sela'].onEnter);
+  assert(afterTip.profile.flags.has('intel.mira.sela'), '进 mira.tip_sela 应置 intel.mira.sela（引荐兑现）');
+
+  // 8c. 看过引荐 → sela_tip 不再出现（notHasFlag flag.mira.tip_sela_seen·一次性）。
+  assert(
+    !evalCondition(
+      stateWithFlags(['flag.tutorial_complete', 'story.ch1.mira_salvage_done', 'flag.mira.tip_sela_seen']),
+      cond,
+    ),
+    '看过引荐后 sela_tip 不应再出现',
+  );
+  L('  Sela 引荐门：没做委托→不可见；做完→可见并置 intel.mira.sela；看过→隐藏（深度脱钩·任务单点门控）✓');
+}
+
+// —— 9. Mira 打捞 POI 门控：offered flag 前 hidden，接委托后随中层哨站揭示 lit（mirror Corin 5a/5b）——
+{
+  let s = createInitialGameState();
+  s = {
+    ...s,
+    profile: {
+      ...s.profile,
+      day: 0, // new·clear 天（同 §1 口径·避开天气遮蔽干扰 lit 判定）
+      flags: new Set(['flag.tutorial_complete']),
+      lighthouses: [
+        ...s.profile.lighthouses,
+        { id: 'lighthouse.ch1_midwater_outpost', name: '中层哨站', mapX: 0, mapY: 0, level: 1, builtUpgrades: new Set<string>() },
+      ],
+    },
+  };
+  // 9a. 未接委托：打捞点缺 story.ch1.mira_salvage_offered → 不上图
+  assert(
+    !generateChart({ profile: s.profile }).pois.some((p) => p.id === 'poi.anchor.mira_salvage'),
+    '未接委托时 poi.anchor.mira_salvage 不应上图（缺 story.ch1.mira_salvage_offered）',
+  );
+  // 9b. 接委托（Mira 对话 setFlag）→ 打捞点在中层哨站揭示圈内 lit
+  s = applyDialogEffects(s, [{ kind: 'setFlag', flag: 'story.ch1.mira_salvage_offered' }]);
+  const poi = generateChart({ profile: s.profile }).pois.find((p) => p.id === 'poi.anchor.mira_salvage');
+  assert(!!poi && poi.revealState === 'lit', `接委托后打捞点应 lit（现 ${poi?.revealState ?? '缺'}）`);
+  L('  Mira 打捞 POI：未接委托不上图；接委托后中层哨站揭示圈内 lit ✓');
 }
 
 pt.done();

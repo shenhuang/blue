@@ -151,6 +151,17 @@ export const CORIN_FOUND_FLAG = 'story.ch1.corin_found';
 export const CORIN_RETURNED_FLAG = 'story.ch1.corin_returned';
 
 /**
+ * Mira 打捞委托 flag（销赃中间人「验明正身」门·藏宝贸易与信任系统 SPEC §6/§12·2026-07-03）：
+ * mira_salvage_offered = Mira 在港口对话里把委托交给你（dialog setFlag·揭示 poi.anchor.mira_salvage）；
+ * mira_salvage_done    = 到点撬开铅封匣事件置位（chart_pois openEventFlag + 事件 setProfileFlags·一次性）。
+ * **单一旋钮＝任务位置**：深度不再直接门 sela_tip（引荐），只写在 mira_salvage POI 的 offer 门上——
+ * 挪任务＝Sela 可达点自动跟着走（quirk 见 SPEC）。sela_tip 改由 mira_salvage_done 门控（做完任务⟹见得到 Sela）。
+ * 全为**支线**——§8 红线：关系/藏宝 flag 不挡通关必经进度（不进任何主线 reach/reveal gate）。
+ */
+export const MIRA_SALVAGE_OFFERED_FLAG = 'story.ch1.mira_salvage_offered';
+export const MIRA_SALVAGE_DONE_FLAG = 'story.ch1.mira_salvage_done';
+
+/**
  * story.ts 生成的**全部** story.* flag 枚举（单一来源）。playthrough-story §4 据此守门
  * 「任何 data 文件里出现的 story.* 字面量都必须 ∈ 本集合」——新增任何 story flag 生成器
  * 务必在此登记，否则用到它的 data 会在 regress 红（这是把「门=flag·派生进 story.ts」
@@ -174,6 +185,8 @@ export function allStoryFlags(): string[] {
     CORIN_MAP_FLAG,
     CORIN_FOUND_FLAG,
     CORIN_RETURNED_FLAG,
+    MIRA_SALVAGE_OFFERED_FLAG,
+    MIRA_SALVAGE_DONE_FLAG,
   ];
 }
 

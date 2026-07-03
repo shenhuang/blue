@@ -2793,6 +2793,39 @@
           }
         }
       ]
+    },
+    {
+      "_doc": "Mira 打捞委托到点开箱（销赃中间人验明正身·藏宝贸易与信任系统 SPEC §6/§12·2026-07-03）：poi.anchor.mira_salvage 的 openEventId·由 openEventFlag story.ch1.mira_salvage_done 一次性门控（开过即不再强制）。给红喉鹈币（item.deep_token）当工钱＝Mira 涉海盗经济的第一处 tell + bootstrap 玩家进 Sela 的币本位经济。做完置 story.ch1.mira_salvage_done → 回港 Mira 的 sela_tip 解锁引荐（引荐门与深度脱钩·任务单点门控）。留诚实退路（不撬可上浮·不置 flag）。数值 defer-number-tuning。",
+      "id": "mira.salvage",
+      "depthRange": [0, 0],
+      "zoneTags": [],
+      "weight": 0,
+      "title": "铅封的匣子",
+      "body": "塌了半边的船斜插在中层的斜坡上。照 Mira 图上的记号，你贴着侧舷摸进去——一个铅皮封口的匣子卡在两根肋材之间，比看着沉。外头缠着的绳结，打法和你在中层见过的一样。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "pull_box",
+          "label": "把匣子撬出来",
+          "outcome": {
+            "text": "铅封锈脆了，撬棍一别就开。里头没有金子——一卷受了潮的名册，字迹泡得认不出；底下压着一小叠铜币，边上都打着同一只展翅的鸟。你把币收进内袋。名册留不住，散了。\nMira 要的未必是这几个币。可这船里会有它们，她显然早就知道。",
+            "oxygenTurnCost": 1,
+            "loot": [
+              { "itemId": "item.deep_token", "qty": [2, 3], "chance": 1 }
+            ],
+            "setProfileFlags": ["story.ch1.mira_salvage_done"]
+          }
+        },
+        {
+          "id": "leave_box",
+          "label": "先不碰——记下位置，回航",
+          "outcome": {
+            "text": "你把匣子留在原处，退开半米。它卡在这儿有些年头了，不差再等你一趟。你核了坐标，调正浮力，往回升。",
+            "oxygenTurnCost": 1,
+            "endDive": "forceAscend"
+          }
+        }
+      ]
     }
   ]
 }

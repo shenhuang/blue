@@ -18,6 +18,21 @@
         "modifier": { "depthRange": [65, 80] }
       },
       {
+        "id": "poi.anchor.mira_salvage",
+        "zoneId": "zone.open_midwater",
+        "name": "Mira 标的那条船",
+        "blurb": "Mira 在图上敲了记号的一处——塌了半边的沉船，侧舱里卡着个铅封的匣子。她要你把它拽出来。",
+        "distance": 3,
+        "owner": "lighthouse.ch1_midwater_outpost",
+        "mapX": -0.12,
+        "mapY": 0.13,
+        "persistent": true,
+        "requiresFlags": ["flag.tutorial_complete", "story.ch1.mira_salvage_offered"],
+        "openEventId": "mira.salvage",
+        "openEventFlag": "story.ch1.mira_salvage_done",
+        "modifier": { "depthRange": [65, 80] }
+      },
+      {
         "_doc": "Mira 便宜通用图（藏宝贸易与信任系统 SPEC §12.4·来源分层低层）揭示的固定浅礁打捞点：买『打捞旧图』(item.treasure_map.salvage_generic) → story.setsFlag flag.salvage_chart_bought（sticky·满足本 requiresFlags）+ marksPois 揭示本点。owner lighthouse.home（恒在）+ 浅（30-45·对照 crew 好图更深）。openEventId salvage.generic_cache 一次性开箱（openEventFlag flag.salvage_generic_opened）给 modest 常见打捞料（gold 源）。",
         "id": "poi.anchor.salvage_generic",
         "zoneId": "zone.old_lighthouse_reef",
