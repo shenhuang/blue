@@ -1736,6 +1736,9 @@ html, body, #root {
   /* translate(-50%,-50%) 的 % 基于自身尺寸——chart-poi-name 用 position:absolute 脱离文档流，
      确保按钮高度恒为 padding+dot，避免 .sel 展开名称时 -50% 偏移量变化导致点位漂移。 */
   transform: translate(-50%, -50%) scale(var(--chart-cscale, 1));
+  /* 鼠标/触摸命中改走 ChartViewport 的"容器拦截+最近距离"分发（密集处标记会互相遮挡，原生层叠命中谁后画谁赢）
+     ——这里禁用原生指针命中，把按钮让给底层 surface；键盘 Tab/Enter 走本按钮自身 onClick，不受影响。 */
+  pointer-events: none;
   background: none;
   border: none;
   cursor: pointer;
@@ -1966,8 +1969,9 @@ html, body, #root {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  /* 现在是可点按钮（点击弹 popup）：覆盖旧 pointer-events:none + 清默认 <button> 白框/灰底（作者反馈「灯塔有白框」）。 */
-  pointer-events: auto;
+  /* 命中改走 ChartViewport 最近距离分发（同 .chart-map-poi 的理由）——不再靠原生 pointer-events:auto
+     直接接指针；键盘可达不受影响。清默认 <button> 白框/灰底仍由 background/border:none 兜底。 */
+  pointer-events: none;
   z-index: 1;
   background: none;
   border: none;
@@ -2010,6 +2014,8 @@ html, body, #root {
   padding: 6px;
   cursor: pointer;
   z-index: 1;
+  /* 命中改走 ChartViewport 最近距离分发（同 .chart-map-poi 的理由）。 */
+  pointer-events: none;
 }
 .chart-outpost-dot {
   width: 11px;

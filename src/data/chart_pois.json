@@ -877,8 +877,8 @@
         "blurb": "热液场边上一处不冒烟的洼地，水反倒是凉的，底上结着一层白霜似的东西。东西沉得久，气味也淡。",
         "distance": 3,
         "owner": "lighthouse.ch1_vent_outpost",
-        "mapX": -0.05,
-        "mapY": 0.05,
+        "mapX": -0.03,
+        "mapY": 0.015,
         "weight": 1,
         "requiresFlags": [
           "flag.tutorial_complete"
@@ -916,8 +916,8 @@
         "name": "死烟囱",
         "blurb": "一片不再冒烟的烟囱，矿物结的柱子还立着，脆，碰一下掉一层渣。烟一停，靠烟过活的那群也散了，只剩空壳子。",
         "distance": 3,
-        "mapX": 0.06,
-        "mapY": -0.05,
+        "mapX": 0.08,
+        "mapY": -0.015,
         "weight": 1,
         "requiresFlags": [
           "flag.tutorial_complete"

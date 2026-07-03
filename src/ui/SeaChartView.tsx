@@ -36,7 +36,7 @@ import { advanceDays, daysToNextLunarBoundary, waitPreview } from '@/engine/port
 import { lunarPhaseLabel, dayWithinPhase } from '@/engine/lunar';
 import { MoonDisc } from './MoonDisc';
 import { LighthouseBuildPanel } from './LighthouseBuildPanel';
-import { ChartViewport, type ChartContentBox } from './ChartViewport';
+import { ChartViewport, type ChartContentBox, type ChartHitTarget } from './ChartViewport';
 import { HOME_LIGHTHOUSE_ID } from '@/engine/state';
 import { regionForOwner, flagGatedRegions } from '@/engine/regions';
 import { DEV_TOOLS } from './devMode';
@@ -390,6 +390,53 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
     onStateChange(toPort(state));
   }
 
+  // 地图标记选中/弹窗逻辑抽成具名函数（灯塔/前哨/POI 各一条）：下面 JSX 按钮的键盘 onClick 与
+  // hitTargets 的指针"容器拦截+最近距离"分发共用同一份状态更新，不分叉出两套逻辑（见 ChartViewport::endDrag）。
+  function selectLighthousePopup(popup: MapPopup, wasActive: boolean) {
+    setSelectedId(''); // 关 POI 信息
+    setMapPopup(wasActive ? null : popup);
+  }
+  function selectOutpostPopup(outpostId: string, wasActive: boolean) {
+    setSelectedId(''); // 关 POI 信息
+    setMapPopup(wasActive ? null : { kind: 'outpost', id: outpostId });
+  }
+  function selectPoiMarker(poiId: string) {
+    setMapPopup(null);
+    setSelectedId(poiId);
+  }
+
+  // 命中目标（POI/灯塔/前哨的世界坐标 + 选中回调）喂给 ChartViewport 做"容器拦截+最近距离"分发
+  // （quirk #215）——修密集处标记遮挡：命中不再看谁在 DOM 里画得更后（原生层叠），看指针落点世界距离谁最近。
+  // 过滤条件须与下面渲染那几段保持一致（灯塔＝regionForOwner；前哨＝regionForOwner+未点亮+已发现）——
+  // 两处分叉会导致"画出来的点"和"摸得到的点"不一致，改一处记得改另一处。
+  const hitTargets = useMemo<ChartHitTarget[]>(() => {
+    const out: ChartHitTarget[] = [];
+    for (const lh of state.profile.lighthouses) {
+      if (!regionForOwner(lh.id)) continue;
+      const isHome = lh.id === HOME_LIGHTHOUSE_ID;
+      const outpostId = getOutposts().find((o) => o.result.id === lh.id)?.id;
+      const popupTarget: MapPopup = isHome
+        ? { kind: 'home' }
+        : outpostId ? { kind: 'outpost', id: outpostId } : { kind: 'home' };
+      const isActive = mapPopup?.kind === popupTarget.kind &&
+        (popupTarget.kind === 'home' || ('id' in popupTarget && 'id' in (mapPopup ?? {}) && (mapPopup as { id: string }).id === popupTarget.id));
+      out.push({ id: `lh-${lh.id}`, x: lh.mapX, y: lh.mapY, onSelect: () => selectLighthousePopup(popupTarget, isActive) });
+    }
+    for (const o of getOutposts()) {
+      if (!regionForOwner(o.result.id)) continue;
+      if (state.profile.lighthouses.some((l) => l.id === o.result.id)) continue;
+      if (!isOutpostDiscovered(state.profile, o.id)) continue;
+      const isActive = mapPopup?.kind === 'outpost' && (mapPopup as { id: string }).id === o.id;
+      out.push({ id: `outpost-${o.id}`, x: o.result.mapX, y: o.result.mapY, onSelect: () => selectOutpostPopup(o.id, isActive) });
+    }
+    for (const poi of chart.pois) {
+      const { x, y } = poiPos(poi);
+      out.push({ id: poi.id, x, y, onSelect: () => selectPoiMarker(poi.id) });
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.profile.lighthouses, state.profile.flags, mapPopup, chart.pois]);
+
   return (
     <div className="port sea-chart">
       <header className="port-header">
@@ -445,7 +492,7 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
         </p>
       ) : (
         <div className="chart-2d">
-          <ChartViewport contentBox={contentBox} minSpan={MIN_VIEW_SPAN} fitKey={chartSig}>
+          <ChartViewport contentBox={contentBox} minSpan={MIN_VIEW_SPAN} fitKey={chartSig} hitTargets={hitTargets}>
             <div className="chart-coast" aria-hidden="true" />
             <span className="chart-axis" style={{ left: '20%' }}>近岸</span>
             <span className="chart-axis" style={{ left: '50%' }}>中段</span>
@@ -495,11 +542,8 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
                     className={`chart-lighthouse chart-lighthouse-btn${isActive ? ' sel' : ''}`}
                     aria-label={`灯塔：${lh.name}`}
                     style={{ left: `${lh.mapX * 100}%`, top: `${lh.mapY * 100}%` }}
-                    onClick={() => {
-                      setSelectedId(''); // 关 POI 信息
-                      // 灯塔/蛙跳重构 step ③：点灯塔节点（家/前哨）→ 弹 popup·里面有「灯塔设施」入口（家＝HomePopup·前哨＝OutpostPopup·交互一致）。
-                      setMapPopup(isActive ? null : popupTarget);
-                    }}
+                    // 灯塔/蛙跳重构 step ③：点灯塔节点（家/前哨）→ 弹 popup·里面有「灯塔设施」入口（家＝HomePopup·前哨＝OutpostPopup·交互一致）。
+                    onClick={() => selectLighthousePopup(popupTarget, isActive)}
                   >
                     <span className="chart-light-dot" />
                     <span className="chart-light-name">{lh.name}</span>
@@ -551,10 +595,7 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
                   className={cls}
                   style={{ left: `${o.result.mapX * 100}%`, top: `${o.result.mapY * 100}%` }}
                   aria-label={`前哨：${o.name}${stage > 0 ? `（修建中 ${stage}/${OUTPOST_MAX_STAGE}）` : chapter && !unlocked ? '（暗·待解锁）' : '（未动工）'}`}
-                  onClick={() => {
-                    setSelectedId(''); // 关 POI 信息
-                    setMapPopup(isActive ? null : { kind: 'outpost', id: o.id });
-                  }}
+                  onClick={() => selectOutpostPopup(o.id, isActive)}
                 >
                   <span className="chart-outpost-dot" />
                   <span className="chart-outpost-label">{o.name}</span>
@@ -591,7 +632,7 @@ export function SeaChartView({ state, onStateChange, focusPoiId }: Props) {
                   className={cls}
                   style={{ left: `${x * 100}%`, top: `${y * 100}%`, animationDelay: sd !== null ? `${sd}s` : '0s' }}
                   aria-label={lock ? `${poi.name}（${lock}）` : poi.name}
-                  onClick={() => { setMapPopup(null); setSelectedId(poi.id); }}
+                  onClick={() => selectPoiMarker(poi.id)}
                 >
                   <span className="chart-dot" />
                   <span className="chart-poi-name">{poi.name}</span>

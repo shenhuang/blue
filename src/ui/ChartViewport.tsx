@@ -22,12 +22,26 @@ const RING = 0.06;
 const ZOOM_STEP = 1.2;
 /** 拖动判定阈值（px）：超过才算 pan、否则放行点击（防吞 POI 点击·沿声呐 pan/zoom 先例 quirk #112）。 */
 const DRAG_THRESHOLD = 4;
+/**
+ * 触点命中半径（屏幕像素·恒定，不随 zoom 缩放）：点击/触摸落点在此半径内的候选标记中，
+ * 取世界坐标距离最近的一个命中——不再依赖原生 DOM 层叠顺序（谁后画谁挡住谁）。
+ * 超出半径＝落空（放行成"点在空水域"，不强行认领很远的点）。约等于 POI 标记 padding 命中盒的半宽（见 styles.css .chart-map-poi）。
+ */
+const TAP_HIT_RADIUS_PX = 20;
 
 export interface ChartContentBox {
   minX: number;
   minY: number;
   maxX: number;
   maxY: number;
+}
+
+/** 海图可点标记（POI / 灯塔 / 前哨）的命中目标：世界坐标 + 命中回调。由 SeaChartView 按当前渲染的标记构建。 */
+export interface ChartHitTarget {
+  id: string;
+  x: number;
+  y: number;
+  onSelect: () => void;
 }
 
 /** 取景：中心 + 横向世界跨度 spanX（纵向跨度 spanY=spanX·H/W 由框 aspect 派生·保各向同性）。 */
@@ -44,10 +58,17 @@ interface Props {
   minSpan: number;
   /** 解锁签名：变化＝世界边界变了 → 自动 fit 到新边界（autozoom·组合形态）；不变则不打扰当前取景。 */
   fitKey?: string;
+  /**
+   * 可点标记命中目标（POI/灯塔/前哨·世界坐标）：点击/触摸抬起时若未越过拖动阈值（真是"点"而非"拖"），
+   * 按屏幕像素半径 TAP_HIT_RADIUS_PX 换算成当前 zoom 下的世界半径，取半径内世界距离最近的一个调用其 onSelect。
+   * 标记按钮本身应设 `pointer-events:none`（见 styles.css），把鼠标/触摸命中全交给这条路径——
+   * 键盘 Tab/Enter 走各按钮自身 onClick，不经过这里、不受影响。缺省 []：不接线时行为等同旧版原生点击透传。
+   */
+  hitTargets?: ChartHitTarget[];
   children: ReactNode;
 }
 
-export function ChartViewport({ contentBox, minSpan, fitKey, children }: Props) {
+export function ChartViewport({ contentBox, minSpan, fitKey, hitTargets, children }: Props) {
   const surfRef = useRef<HTMLDivElement>(null);
   // 框像素尺寸（算 aspect H/W + 把拖拽像素换成世界单位）。首帧未量到 → 用 16:10 占位，量到即校正。
   const [size, setSize] = useState({ w: 16, h: 10 });
@@ -162,16 +183,43 @@ export function ChartViewport({ contentBox, minSpan, fitKey, children }: Props) 
     },
     [clamp],
   );
-  const endDrag = useCallback((e: React.PointerEvent) => {
-    if (drag.current?.active) {
-      try {
-        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-      } catch {
-        /* 指针已释放·忽略 */
+  // 命中分发（容器拦截+最近距离·quirk #215）：抬指针时若这轮交互始终没越过 DRAG_THRESHOLD（真是"点"），
+  // 把落点换算成世界坐标，在 hitTargets 里取 TAP_HIT_RADIUS_PX 半径内世界距离最近的一个调用 onSelect——
+  // 不再依赖标记按钮的原生 DOM 层叠命中（谁后画谁挡住谁·海图 POI 密集处的遮挡问题）。
+  const endDrag = useCallback(
+    (e: React.PointerEvent) => {
+      const wasTap = !!drag.current && !drag.current.active;
+      if (drag.current?.active) {
+        try {
+          (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+        } catch {
+          /* 指针已释放·忽略 */
+        }
       }
-    }
-    drag.current = null;
-  }, []);
+      drag.current = null;
+      if (wasTap && hitTargets && hitTargets.length > 0) {
+        const r = surfRef.current?.getBoundingClientRect();
+        if (r && r.width > 0 && r.height > 0) {
+          const v = viewRef.current;
+          const spanYNow = v.spanX * aspect;
+          const worldX = v.cx - v.spanX / 2 + ((e.clientX - r.left) / r.width) * v.spanX;
+          const worldY = v.cy - spanYNow / 2 + ((e.clientY - r.top) / r.height) * spanYNow;
+          const radiusWorld = (TAP_HIT_RADIUS_PX / r.width) * v.spanX; // px→世界·按当前 zoom（各向同性，横纵同比例）
+          let best: ChartHitTarget | null = null;
+          let bestD = Infinity;
+          for (const t of hitTargets) {
+            const d = Math.hypot(t.x - worldX, t.y - worldY);
+            if (d <= radiusWorld && d < bestD) {
+              bestD = d;
+              best = t;
+            }
+          }
+          best?.onSelect();
+        }
+      }
+    },
+    [hitTargets, aspect],
+  );
 
   const spanY = view.spanX * aspect;
   const vlx = view.cx - view.spanX / 2;

@@ -193,6 +193,10 @@ tasks.push({ name: 'check-lunar-reach', cmd: ['node', join('scripts', 'check-lun
 // POI 固定资源 save 级别名门（纯 node·同 POI 内两条 save 脉不得共享 itemId·quirk #163）
 tasks.push({ name: 'check-poi-resources', cmd: ['node', join('scripts', 'check-poi-resources.mjs')] });
 
+// 海图坐标撞车门（纯 node·quirk #215·anchors/roamingTemplates resolve 后绝对坐标两两不得重合——重合＝命中分发平局、
+// 其中一点必然摸不到·实测案例见 scripts/check-chart-poi-coords.mjs 头注）
+tasks.push({ name: 'check-chart-poi-coords', cmd: ['node', join('scripts', 'check-chart-poi-coords.mjs')] });
+
 // dev 工作台漂移门（纯 node·柱 POI 接入 / 战场压力存活聚合 / tone 档位样式·把 #206 dev 面板↔引擎漂移焊成会红的检查·见 scripts/check-dev-panels.mjs）
 tasks.push({ name: 'check-dev-panels', cmd: ['node', join('scripts', 'check-dev-panels.mjs')] });
 
