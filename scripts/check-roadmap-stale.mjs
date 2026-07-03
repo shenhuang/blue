@@ -34,6 +34,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = resolve(__dirname, '..');
 const DEFAULT_ROADMAP = 'docs/spec/cave_roadmap.md';
 
+// quirk #213：banner 日期照提交的 **UTC 日期**写，但 `git log --since` 默认按运行机**本地时区**
+// （沙箱/作者机 = Asia/Shanghai +08:00）解析边界——一个 UTC 16:00–24:00 的提交在本地已跨次日、
+// 落进 `--since "<banner 日期> 23:59:59"` 窗口 → banner〔日期其实正确〕被误标过期。把 git 子进程的
+// TZ 钉到 UTC，令 `--since` 边界与 banner 的 UTC 日期同基准比较（两处 git 调用共用此 env）。
+const GIT_ENV = { ...process.env, TZ: 'UTC' };
+
 // 解析 roadmap：① 顶部「当前状态（YYYY-MM-DD …）」banner 日期；② 每条 `psm.mjs start <name> --lane "<files>"`
 // 车道（name + 逗号分隔的仓库相对文件）。两者都是机械可解析的稳定锚点；解析不到就优雅跳过（degrade）。
 export function parseRoadmap(text) {
@@ -67,7 +73,7 @@ export function roadmapDrift(root = DEFAULT_ROOT, roadmapRel = DEFAULT_ROADMAP, 
   }
   const git = (args) => {
     try {
-      return execFileSync('git', ['--no-optional-locks', ...args], { cwd: root, encoding: 'utf-8' }).trim();
+      return execFileSync('git', ['--no-optional-locks', ...args], { cwd: root, encoding: 'utf-8', env: GIT_ENV }).trim();
     } catch {
       return '';
     }
@@ -109,7 +115,7 @@ export function specBannerDrift(root = DEFAULT_ROOT, specDir = 'docs/spec', main
   }
   const git = (args) => {
     try {
-      return execFileSync('git', ['--no-optional-locks', ...args], { cwd: root, encoding: 'utf-8' }).trim();
+      return execFileSync('git', ['--no-optional-locks', ...args], { cwd: root, encoding: 'utf-8', env: GIT_ENV }).trim();
     } catch {
       return '';
     }

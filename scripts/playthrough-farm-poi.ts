@@ -18,18 +18,14 @@ import { TUTORIAL_COMPLETE_FLAG } from '../src/engine/story';
 import { buildEventPool, getZone, getEventById } from '../src/engine/zones';
 import { startDiveFromPoi } from '../src/engine/dive';
 import type { GameState, PlayerProfile, ChartPoi, DiveEvent } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.log(log.join('\n'));
-    throw new Error(`[playthrough-farm-poi] ${msg}`);
-  }
-}
+const pt = makeHarness('材料刷点范式回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 const FARM_POI_ID = 'poi.anchor.reef_shark_shoals';
 const POOL = ['reef.shark_run_circling', 'reef.shark_run_pair', 'reef.shark_run_feeding'];
@@ -121,7 +117,4 @@ L('§3 普通 reef 有鲨入口（reef.reef_shark 在 [reef] 池）+ 三 beat �
   L('  reef.reef_shark 入普通 [reef] 池 · 三刷点 beat 专属不漏 ✓');
 }
 
-console.log(log.join('\n'));
-console.log(
-  '\n✓ playthrough-farm-poi 完成：§1 刷点形状 / §2 轮替机制 / §3 普通 reef 鲨入口 + beat 专属 全部通过',
-);
+pt.done();

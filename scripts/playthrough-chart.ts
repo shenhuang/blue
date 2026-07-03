@@ -34,16 +34,11 @@ import { getZone } from '../src/engine/zones';
 import { lunarPhase, moonAge, tideLevel } from '../src/engine/lunar';
 import { advanceDays, daysToNextLunarBoundary } from '../src/engine/port';
 import type { GameState, PlayerProfile, ChartPoi, RunState, Lighthouse, LunarPhase } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    console.error('\n✗ ' + msg);
-    process.exit(1);
-  }
-}
+const pt = makeHarness('海图');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 /** 确定性 LCG（generateDiveMap 的 rng 注入用；chart.ts 的 roaming 现走 pool-independent 键、不再用 LCG） */
 function lcg(seed: number): () => number {
@@ -841,5 +836,4 @@ L('\n========== 12. 月相 roaming 选取池（窗门 + 情报降级）=========
   L('  东礁退潮浅滩：满月无情报→消失 / 新月→lit / 满月+Aldo情报→dim（可规划「等到新月」）✓');
 }
 
-console.log(log.join('\n'));
-console.log('\n✓ 海图 playthrough 完成');
+pt.done();

@@ -8,12 +8,11 @@
 import { createInitialGameState, createNewRun } from '../src/engine/state';
 import { executeDeath, ageAndDecayDeaths, getPreservationBonus } from '../src/engine/death';
 import type { GameState, DeathRecord } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) throw new Error('衰减验证失败：' + msg);
-}
+const pt = makeHarness('衰减系统验证');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 // 帮工：制造一具带物品的尸体（diedOnDay 由 executeDeath 种当天·此刻 age=0·确定性 id=death-0-test-run）
 function makeCorpseWith(itemIds: string[]): GameState {
@@ -190,5 +189,4 @@ L('\n========== 永恒物品（开海流冲走也不动） ==========');
   L('  100 天 + 开海流冲走 → 航海日志：仍在 ✓');
 }
 
-console.log(log.join('\n'));
-console.log('\n✓ 衰减系统验证通过（按天 · 确定性冲走 · jump≡step）');
+pt.done();

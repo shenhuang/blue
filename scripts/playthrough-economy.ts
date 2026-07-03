@@ -30,16 +30,11 @@ import {
 import { canPurchase } from '../src/engine/upgrades';
 import { computeLootValue, executeAscent } from '../src/engine/ascent';
 import type { GameState, InventoryItem } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-
-function assert(cond: unknown, msg: string) {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('经济系统验证');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 function findQty(inv: InventoryItem[], id: string): number {
   return inv.find((i) => i.itemId === id)?.qty ?? 0;
@@ -371,6 +366,5 @@ L('\n========== 出发前选带（applyCarryItems·作者拍板「不全带·死
   L('  只认消耗品 · qty 夹库存 · 承载(重量)截断 · 不选=原样 · 生还自动归库 ✓');
 }
 
-console.log(log.join('\n'));
-console.log('\n✓ economy playthrough 完成');
-console.log(`最终：银行 ${state.profile.bankedGold} 金 / 仓库 ${state.profile.inventory.length} 项`);
+L(`最终：银行 ${state.profile.bankedGold} 金 / 仓库 ${state.profile.inventory.length} 项`);
+pt.done();

@@ -17,15 +17,11 @@ import { miraOfferFor, sellItemToMira, handleReturnToPort } from '../src/engine/
 import { breatheAtAirPocket, campAtNode } from '../src/engine/dive';
 import { tickTurns } from '../src/engine/events';
 import type { GameState, DiveMap } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string) {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('蓝洞群');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 // 简单的 seeded RNG，让 mapgen 可复现
 function makeRng(seed: number) {
@@ -337,6 +333,5 @@ assert(cl.run!.stats.sanity === Math.min(100, baseLong.stats.sanity + 10), '长�
 assert(cl.run!.stats.stamina === Math.min(runBeforeLong.staminaMax, baseLong.stats.stamina + 30), '长扎营体力 +30（叠加在 tick 后）');
 L('  气穴/扎营节点效果 ✓');
 
-console.log(log.join('\n'));
-console.log('\n✓ 蓝洞群 playthrough 完成');
-console.log(`最终：银行 ${state.profile.bankedGold} 金 / 仓库 ${state.profile.inventory.length} 项`);
+L(`最终：银行 ${state.profile.bankedGold} 金 / 仓库 ${state.profile.inventory.length} 项`);
+pt.done();

@@ -60,16 +60,11 @@ import {
   STALKER_WEAK_HSPEED,
 } from '../src/engine/stalker';
 import { seedInjuries } from '../src/engine/injuries';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    console.error('\n✗ ' + msg);
-    process.exit(1);
-  }
-}
+const pt = makeHarness('猎手（声呐图上的捕食者）回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 const CAVE_POOL = ['combat.blind_eel_solo', 'combat.cave_octopus_solo'];
 /** 无嗅觉系对照池（§20g）：盲鳗自 #117 已进 scent 名单（§12.2 作者拍），对照只剩章鱼。 */
@@ -1087,5 +1082,4 @@ L('\n========== 20. scent 第三通道（流血·重 × enemy.scent·负伤 SPEC
   L('  摸黑/吸声失效·轻档不漏·非嗅觉不波及·decoy 仍出路·半线循血现身（全链）·守口 ×1.5 ✓');
 }
 
-console.log(log.join('\n'));
-console.log('\n✓ 猎手（Stalker mid-edge 追击重做 + §4 decoy + §5/§6/§2.2/Q3 Phase 2 收尾 + wreck/幼体档案 + 原地同拍 06-10 + §6.1 scent 第三通道 #116）playthrough 完成');
+pt.done();

@@ -43,15 +43,11 @@ import { getRunBonuses } from '../src/engine/lighthouses';
 import { isBuyableFromMira } from '../src/engine/port';
 import { allItems, weightForItem } from '../src/engine/items';
 import type { GameState, EquipmentLoadout } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    throw new Error('断言失败：' + msg);
-  }
-}
+const pt = makeHarness('穿戴装备升级 + 换装回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 // ── §1 base 激活：starter 读 base（护甲/光照）+ 氧/体 base 跳过（floor 不双计）+ 净氧 60 ──
 const s0 = getEquipmentStats(createStarterLoadout());
@@ -258,7 +254,7 @@ assert(
 L('§11a 负重档位：起手轻/换斧中/重载过载 + 倍率/命中补正 ✓');
 
 // §11b 背包承载＝重量制（weightForItem·按 qty 线性·2026-06-21·取代旧「弹匣占格」）
-const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+const { near } = pt;
 assert(
   near(weightForItem('item.ammo.pneumatic', 8), 0.4) && near(weightForItem('item.ammo.pneumatic', 16), 0.8),
   '气动弹每发 0.05kg：8 发→0.4kg·16 发→0.8kg（线性）',
@@ -340,5 +336,4 @@ d = devInstallMod(d, 'tool', 'item.mod.shock_core');
 assert(d.profile.equipment!.tool!.mod === 'item.mod.shock_core', 'dev 改装：放电芯装上刀（0 成本·免件免持有）');
 L('§11f dev 免费升级/打造/改装（0 成本·镜像设施）✓');
 
-console.log(log.join('\n'));
-console.log('playthrough-equipment ✓ 全绿');
+pt.done();

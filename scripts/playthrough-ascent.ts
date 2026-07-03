@@ -9,16 +9,11 @@ import type { GameState, RunState, Stalker, DiveMap, DiveNode } from '../src/typ
 import { createInitialGameState, createNewRun } from '../src/engine/state';
 import { resolveAscent, planAscent, computeRequiredStops } from '../src/engine/ascent';
 import { beginAscentFromDive } from '../src/engine/dive';
+import { makeHarness, type PtAssert } from './lib/pt';
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) {
-    console.error(log.join('\n'));
-    console.error('\n✗ ' + msg);
-    process.exit(1);
-  }
-}
+const pt = makeHarness('上浮单点真相回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 // free-ascend 区（canFreeAscend=true·midwater）·非闭合：A–E 全在这里判。
 const FREE_ZONE = 'zone.midwater';
@@ -227,4 +222,4 @@ L('\n========== lethal. 高氮 rushed → 死亡确认（诚实性）=========='
   L('  高氮 rushed→IV → needsConfirm / 低氮 rushed→I → 不弹 ✓');
 }
 
-console.log('✓ 上浮单点真相全绿（A–E + blocked + 决策①② + duress + lethal · 上浮系统 SPEC §2/§5）');
+pt.done();

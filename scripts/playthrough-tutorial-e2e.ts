@@ -26,15 +26,14 @@ import { eventDoneFlag, pickReturnTrigger } from '../src/engine/portEvents';
 import { toPort } from '../src/engine/transitions';
 import { makeLcg } from '../src/engine/rng';
 import type { GameState, DiveEvent } from '../src/types';
+import { makeHarness, type PtAssert } from './lib/pt';
 
 // 种子化焊死 flaky（quirk #129 同源）：教学含潜行检定 + 逃跑判定（Math.random）→ 定死随机变确定性。
 Math.random = makeLcg(Number(process.env.PT_SEED) || 20260625);
 
-const log: string[] = [];
-const L = (s: string) => log.push(s);
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) { console.log(log.join('\n')); throw new Error(`[playthrough-tutorial-e2e] ${msg}`); }
-}
+const pt = makeHarness('教学关「真·端到端」回归');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
 
 // —— 忠实复刻 EventView：解析潜水事件某选项，带 event 参数 ——
 function driveEvent(state: GameState, eventId: string, pickId: (ev: DiveEvent) => string) {
@@ -293,4 +292,4 @@ L('§D 重访东礁二次下潜·导航式真跑（grab_log 路径必"遇到"_em
   L('  场景C：教学 grab_log 进船长室 → 重访#1 真遇 _empty → 重访#2 普通 ✓');
 }
 
-console.log('playthrough-tutorial-e2e ✓ — §0 起点 / §A 上浮 / §B 逃跑 / §C 船长日志 → tutorial_complete / §D 导航式重访：A 真遇 revisit→_empty→普通·C 真遇 _empty→普通（#189）');
+pt.done();
