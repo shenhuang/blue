@@ -499,17 +499,6 @@ function applyActionEffect(state: GameState, action: CombatAction, targetId?: st
       return applyCrowdControl(s, action);
     case 'use_item':
       return applyUseItem(s, action);
-    case 'ambush':
-      s = setCombat(s, (c) => ({
-        ...c,
-        playerStatuses: addOrReplace(c.playerStatuses, {
-          kind: 'ambushing',
-          remaining: 2, // 持续到下次攻击
-          param: action.effect.kind === 'ambush' ? action.effect.nextAttackMultiplier : 1.5,
-        }),
-      }));
-      s = pushCombatLog(s, { actor: 'player', text: `${action.name}：你压住浮力，等待时机。` });
-      return s;
   }
   return s;
 }

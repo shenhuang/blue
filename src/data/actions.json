@@ -93,18 +93,6 @@
       }
     },
     {
-      "id": "action.ambush",
-      "name": "屏息伏击",
-      "description": "压住浮力，下次攻击附加暴击。",
-      "costStamina": 0,
-      "costOxygenTurns": 3,
-      "targeting": "self",
-      "effect": {
-        "kind": "ambush",
-        "nextAttackMultiplier": 1.5
-      }
-    },
-    {
       "id": "action.flee",
       "name": "屏息潜逃",
       "description": "尝试脱战。对警戒度低的敌人成功率高、代价也低；已被警戒或缠住时，脱身要拼体力。",

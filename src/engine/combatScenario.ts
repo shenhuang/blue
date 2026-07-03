@@ -815,8 +815,6 @@ function summarizeEffect(a: CombatAction): string {
       }`;
     case 'use_item':
       return `useItem requires=${a.requiresItemId ?? '?'}`;
-    case 'ambush':
-      return `ambush nextMul=${eff.nextAttackMultiplier}`;
   }
 }
 

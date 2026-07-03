@@ -44,8 +44,7 @@ export type ActionEffect =
   | RecoverEffect
   | FleeEffect
   | CrowdControlEffect
-  | UseItemEffect
-  | AmbushEffect;
+  | UseItemEffect;
 
 export interface AttackEffect {
   kind: 'attack';
@@ -99,12 +98,6 @@ export interface CrowdControlEffect {
 export interface UseItemEffect {
   kind: 'use_item';
   /** 引用 items.json 的 consumable.effectOnUse */
-}
-
-export interface AmbushEffect {
-  kind: 'ambush';
-  /** 下回合攻击的暴击倍率 */
-  nextAttackMultiplier: number;
 }
 
 /** 玩家在战斗中的临时状态 */

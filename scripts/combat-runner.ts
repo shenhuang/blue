@@ -8,7 +8,7 @@
 //     npx tsx scripts/combat-runner.ts <combatId> --action <id> [--target <i>] ...
 //   多回合 quick mode（可重复 --action / --target，按序对齐）：
 //     npx tsx scripts/combat-runner.ts combat.tutorial_shark \
-//         --action action.ambush --target 0 \
+//         --action action.knife_slash --target 0 \
 //         --action action.knife_slash --target 0 \
 //         --action action.knife_slash --target 0 \
 //         --seed 42

@@ -100,18 +100,17 @@ import('../src/engine/combat').then(async (mod) => {
   if (state.phase.kind !== 'combat') throw new Error('startCombat 后应在战斗中');
   log.push(`战斗：${combatId}，敌人 ${state.phase.combat.enemies.map((e) => mod.getEnemyDef(e.defId)?.name).join(', ')}`);
 
-  // 战斗循环：屏息伏击 → 潜水刀砍砍砍（伏击给首刀 1.5×·见 combat.ts ambushing.param）
+  // 战斗循环：潜水刀砍砍砍到胜利（低血闪避保命）
   let round = 0;
   let outcome: string = 'continue';
   while (outcome === 'continue' && round++ < 20) {
     log.push(`\n--- round ${round} ---`);
     const avail = listAvailableActions(state).filter((a) => a.availability.available);
     log.push(`可用：${avail.map((a) => a.action.name).join(', ')}`);
-    // 策略：低血闪避保命；其他回合 ambush→挥砍（伏击给首刀 1.5×）
+    // 策略：低血闪避保命；其余回合潜水刀挥砍
     let actionId: string;
     const hp = state.run?.stats.stamina ?? 100;
     if (hp <= 50 && round > 2) actionId = 'action.evade';
-    else if (round === 1) actionId = 'action.ambush';
     else actionId = 'action.knife_slash';
 
     if (!avail.find((a) => a.action.id === actionId)) {
