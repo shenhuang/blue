@@ -862,8 +862,9 @@ html, body, #root {
 }
 
 /* 头像外的血量圆环包装（作者 2026-07-02）：宽屏是纯透传壳（零视觉影响，尺寸随子元素）；
-   ≤480px 断点（同 .panel-shell 手机断点）才真正画环，且隐藏文字名字/姿态——
-   手机卡片位小，头像+环比一整段文字更快读。--hp-pct 由 CombatView 内联传入。 */
+   ≤480px 断点（同 .panel-shell 手机断点）才真正画环，卡片改竖排、姿态/血条隐藏、
+   名字移到头像正下方——手机卡片位小，头像+环+名字比横排一整段文字更快读。
+   --hp-pct 由 CombatView 内联传入。 */
 .enemy-portrait-ring {
   flex-shrink: 0;
   display: flex;
@@ -872,9 +873,25 @@ html, body, #root {
 }
 
 @media (max-width: 480px) {
-  .enemy-card-body .enemy-name,
-  .enemy-card-body .enemy-hp {
+  .enemy-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+  }
+  .enemy-card-body {
+    width: 100%;
+    align-items: center;
+  }
+  .enemy-card-body .enemy-hp,
+  .enemy-card-body .enemy-name .stance {
     display: none;
+  }
+  .enemy-card-body .enemy-name {
+    justify-content: center;
+  }
+  .enemy-card-body .enemy-name > span:first-child {
+    font-size: 11px;
   }
   .enemy-portrait-ring {
     width: 48px;
