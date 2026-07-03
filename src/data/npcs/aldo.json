@@ -51,7 +51,8 @@
           "visibleIf": { "kind": "hasFlag", "flag": "flag.tutorial_complete" },
           "effects": [
             { "kind": "openChart" }
-          ]
+          ],
+          "filler": true
         },
         {
           "id": "ask_mentor",
@@ -84,7 +85,8 @@
           "next": "end",
           "effects": [
             { "kind": "openChart" }
-          ]
+          ],
+          "filler": true
         },
         {
           "id": "ask_mentor",
@@ -197,7 +199,8 @@
           "next": "end",
           "effects": [
             { "kind": "openChart" }
-          ]
+          ],
+          "filler": true
         },
         { "id": "back", "label": "（点头）", "next": "aldo.harbor_morning" }
       ]

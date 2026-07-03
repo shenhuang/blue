@@ -12,7 +12,8 @@
           "id": "open_shop",
           "label": "把材料摊在柜台上。",
           "next": "end",
-          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }]
+          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }],
+          "filler": true
         },
         {
           "id": "cant_see",
@@ -108,7 +109,8 @@
           "id": "buy_chart_shop",
           "label": "（看看她的货）",
           "next": "end",
-          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }]
+          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }],
+          "filler": true
         },
         {
           "id": "pass_chart",
@@ -154,7 +156,8 @@
           "id": "buy_light",
           "label": "买一盏。",
           "next": "end",
-          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }]
+          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }],
+          "filler": true
         },
         {
           "id": "pass_light",
@@ -174,7 +177,8 @@
           "id": "open_shop_after",
           "label": "（把东西摊在秤上）",
           "next": "end",
-          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }]
+          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }],
+          "filler": true
         },
         {
           "id": "back_reef",
@@ -194,7 +198,8 @@
           "id": "open_shop_wreck",
           "label": "（把东西摊在秤上）",
           "next": "end",
-          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }]
+          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }],
+          "filler": true
         },
         {
           "id": "back_wreck",

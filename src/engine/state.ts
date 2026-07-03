@@ -88,6 +88,8 @@ export function createInitialProfile(): PlayerProfile {
     caveMaps: new Map(),
     // 通用 NPC 信任系统（藏宝贸易与信任系统 SPEC §3·2026-06-30）：起手空表（对谁都陌生·档由 trust.ts 派生）。
     trust: {},
+    // 对话选项"新/已聊"分档（对话选项面板收窄·2026-07-03）：起手空 Set（什么都没聊过）。
+    seenChoices: new Set(),
   };
 }
 
@@ -457,6 +459,8 @@ export function hydrateGameState(state: GameState): GameState {
     caveMaps: state.profile.caveMaps ?? new Map(),
     // NPC 信任容器（藏宝贸易与信任系统 SPEC §3·2026-06-30）：缺失单点补空表（同 shopStock·#107·additive 不 bump SAVE·#99）。
     trust: state.profile.trust ?? {},
+    // 对话选项已聊记录（对话选项面板收窄·2026-07-03）：缺失单点补空 Set（同 trust·additive 不 bump SAVE·#99）。
+    seenChoices: state.profile.seenChoices ?? new Set(),
     // 装备：缺则种起始件；已有则与起始件合并补齐「新增槽」（如 ranged·作者 2026-06-18 拆武器槽）——
     // 已穿戴槽以存档为准、缺的新槽取起始默认（null）·additive·不 bump SAVE_VERSION（#99）·旧档不作废。
     equipment: state.profile.equipment

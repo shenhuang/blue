@@ -13,7 +13,8 @@
           "id": "open_shop",
           "label": "（把找到的东西摆给她看）",
           "next": "end",
-          "effects": [{ "kind": "openShop", "shopId": "shop.sela" }]
+          "effects": [{ "kind": "openShop", "shopId": "shop.sela" }],
+          "filler": true
         },
         {
           "id": "corin_return",

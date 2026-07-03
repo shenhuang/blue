@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react';
 import type { GameState, DialogNode, NpcDef } from '@/types';
-import { getDialogNode, getNpc, selectChoice } from '@/engine/dialog';
+import { getDialogNode, getNpc, selectChoice, selectDisplayChoices } from '@/engine/dialog';
 import { evalCondition } from '@/engine/events';
 import { toShop, toChart } from '@/engine/transitions';
 import { isSpecialMerchantInPort, SPECIAL_MERCHANT_SHOP_ID } from '@/engine/port';
@@ -201,6 +202,21 @@ function DialogPanel({
     return evalCondition(state, c.visibleIf);
   });
 
+  // 选项面板收窄（超过 DIALOG_DISPLAY_CAP 条才收窄+换话题·作者 2026-07-03 拍板）：换节点时取确定顺序，
+  // 只有点了「换个话题」才真随机重抽——不然节点内无关的 state 变化会打断玩家正在看的选项。
+  const [selection, setSelection] = useState(() =>
+    selectDisplayChoices(state.profile, node, visibleChoices, false)
+  );
+
+  useEffect(() => {
+    setSelection(selectDisplayChoices(state.profile, node, visibleChoices, false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id]);
+
+  function handleRotate() {
+    setSelection(selectDisplayChoices(state.profile, node, visibleChoices, true));
+  }
+
   return (
     <div className="dialog-panel">
       {node.text && (
@@ -211,15 +227,27 @@ function DialogPanel({
         </div>
       )}
       <div className="dialog-choices">
-        {visibleChoices.length > 0 ? (
-          visibleChoices.map((c) => (
-            <button key={c.id} className="btn dialog-btn" onClick={() => onChoose(c.id)}>
-              {c.label}
-            </button>
-          ))
+        {selection.shown.length > 0 ? (
+          selection.shown.map((c) => {
+            const isSeen = state.profile.seenChoices?.has(`${node.id}::${c.id}`) ?? false;
+            return (
+              <button
+                key={c.id}
+                className={`btn dialog-btn${isSeen ? ' dialog-btn-seen' : ''}`}
+                onClick={() => onChoose(c.id)}
+              >
+                {c.label}
+              </button>
+            );
+          })
         ) : (
           <button className="btn dialog-btn" onClick={onClose}>
             （离开）
+          </button>
+        )}
+        {selection.needsRotate && (
+          <button className="btn dialog-btn dialog-rotate-btn" onClick={handleRotate}>
+            换个话题聊聊
           </button>
         )}
       </div>

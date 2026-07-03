@@ -109,6 +109,15 @@ export interface PlayerProfile {
    * 将来阵营（§3.9）：另加 profile.factionRep 并存·别改此字段语义。
    */
   trust?: Record<string, number>;
+  /**
+   * 对话选项"新/已聊"分档（对话选项面板收窄·作者 2026-07-03 拍板）：记录选过的对话选项，key=
+   * `${dialogNodeId}::${choiceId}`（choice.id 只在所属节点内唯一，须拼节点 id 才全局唯一）。
+   * 唯一写口 engine/dialog.ts::selectChoice（选中即记录·幂等）；读点 selectDisplayChoices——
+   * 没记录＝「新」（高优先级，优先占显示位）、有记录＝「已聊」（次优先级 + 面板灰显）。
+   * additive·**optional**（裸 profile / 旧档缺它 → 读点兜空 Set）·Set 走 saveReplacer/saveReviver
+   * 通用 __set 分支原生 round-trip（同 flags）·**不 bump SAVE_VERSION**（quirk #99）。
+   */
+  seenChoices?: Set<string>;
 }
 
 /** 死亡记录，用于尸体回收 */

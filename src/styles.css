@@ -513,6 +513,18 @@ html, body, #root {
   margin-top: 16px;
 }
 
+/* 已聊过的选项（新/已聊/同功能三档·见 engine/dialog.ts::selectDisplayChoices）：灰一点但保持可读，
+   复用现成 --text-muted（跟 NPC 简介等次要文字同一套灰度，别为这个再调新颜色）。 */
+.dialog-btn-seen {
+  color: var(--text-muted);
+}
+
+/* 换个话题：跟普通选项区分开，虚线边框示意"这不是一句台词，是刷新按钮"。 */
+.dialog-rotate-btn {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
 /* ——— 下潜与事件 ——— */
 
 .dive {

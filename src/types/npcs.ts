@@ -43,6 +43,16 @@ export interface DialogChoice {
   /** 跳转到的下一个 DialogNode id，或 'end' 关闭对话 */
   next: string | 'end';
   effects?: DialogEffect[];
+  /**
+   * 同功能冗余（对话选项面板收窄·作者 2026-07-03 拍板）：这条选项跟别处已有的常驻入口做同一件事——
+   * 比如 Mira 的"把材料摊在柜台上"跟 NPC 卡片上的"直接找她卖东西"按钮重复、Aldo 的"摊开海图"跟港口
+   * 常驻底部"摊开海图（出海）"按钮重复。标 true 后这条选项只在「新 + 已聊」两档凑不满显示上限时才补位
+   * （够了就整条从候选池摘掉，不是排队等轮到）——见 engine/dialog.ts::selectDisplayChoices。
+   * 不填＝当普通选项（新/已聊分档仍照常算）。**"下次再说/没事先这样"这类通用退出选项别标此字段**——
+   * 对话面板没有常驻关闭按钮（作者 2026-07-03 拍：位置错位，删；靠对话选项本身关闭就够），标了会导致
+   * 它被同功能挤出候选池，真的关不掉对话。
+   */
+  filler?: boolean;
 }
 
 export type DialogEffect =

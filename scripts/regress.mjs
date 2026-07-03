@@ -142,6 +142,11 @@ tasks.push({ name: 'check-npc-trust', cmd: ['node', join('scripts', 'check-npc-t
 // 收藏品「对玩家无用」门（纯 node·item.keepsake.* 必为纯收藏品 category 'other'·无功能字段·卖不出价·2026-07-02·藏宝贸易与信任系统 SPEC §12.5·见 scripts/check-collectibles.mjs）
 tasks.push({ name: 'check-collectibles', cmd: ['node', join('scripts', 'check-collectibles.mjs')] });
 
+// 对话选项面板收窄「同功能不能锁死退出」门（纯 node·choices.length > DIALOG_DISPLAY_CAP 的节点必留至少
+// 一条不标 filler 的 next:'end' 选项——没有常驻关闭按钮，同功能整档被挤出候选池时会真的关不掉对话·
+// 2026-07-03·见 scripts/check-dialog-filler-exit.mjs）
+tasks.push({ name: 'check-dialog-filler-exit', cmd: ['node', join('scripts', 'check-dialog-filler-exit.mjs')] });
+
 // 主线可达性门（纯 node·前哨解锁链无环/无死结 + columnStory 主线 beat host/引用/跨柱 item 门可达·把「起点→章尾可达」钉成会红的检查·2026-06-27 D-2 M 组·见 scripts/check-mainline-reachable.mjs）
 tasks.push({ name: 'check-mainline-reachable', cmd: ['node', join('scripts', 'check-mainline-reachable.mjs')] });
 
