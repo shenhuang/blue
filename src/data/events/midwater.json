@@ -2761,12 +2761,12 @@
       ]
     },
     {
-      "_doc": "Corin 藏宝线到点开箱（黑背鸥小队测绘手科林最后一处标记·藏宝贸易与信任系统 SPEC §12.3）：poi.anchor.corin_cache 的 openEventId·由 openEventFlag story.ch1.corin_found 一次性门控（开过即不再强制）。给收藏品红喉鹈徽章（回港交 Sela 涨信任）+ 几枚币当宝藏。留诚实退路（不开可上浮·不置 flag）。文案 [待过稿]。",
+      "_doc": "Corin 藏宝线到点开箱（黑背鸥小队测绘手 Corin 最后一处标记·藏宝贸易与信任系统 SPEC §12.3）：poi.anchor.corin_cache 的 openEventId·由 openEventFlag story.ch1.corin_found 一次性门控（开过即不再强制）。给收藏品红喉鹈徽章（回港交 Sela 涨信任）+ 几枚币当宝藏。留诚实退路（不开可上浮·不置 flag）。文案 [待过稿]。",
       "id": "corin.cache",
       "depthRange": [0, 0],
       "zoneTags": [],
       "weight": 0,
-      "title": "科林标记的地方",
+      "title": "Corin 标记的地方",
       "body": "照着图上炭笔圈死的坐标，你在一处塌了半边的岩架下停住。缝里塞着个防水袋，扣得死紧，外头缠了两圈那种外面打的绳结——和你在中层见过的一样。\n袋子比看着沉。有人把它留在这儿，再没回来取。",
       "tone": "realistic",
       "options": [

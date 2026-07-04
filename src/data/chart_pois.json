@@ -5,7 +5,7 @@
       {
         "id": "poi.anchor.corin_cache",
         "zoneId": "zone.open_midwater",
-        "name": "科林的坐标",
+        "name": "Corin 的坐标",
         "blurb": "图上炭笔圈死的一点。塌了半边的岩架，缝里像是塞着什么——有人来过，把东西留下，再没回来取。",
         "distance": 3,
         "owner": "lighthouse.ch1_midwater_outpost",

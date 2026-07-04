@@ -141,9 +141,9 @@ export const VENT_INTEL_FLAG = 'story.ch1.vent_intel';
 
 /**
  * Corin 藏宝线 flag（黑背鸥小队幸存者 Sela 的第一条同伴线·藏宝贸易与信任系统 SPEC §12.3）：
- * corin_map = 从 Sela 取得科林测绘图（item.treasure_map.corin_survey.story.setsFlag·并揭示 poi.anchor.corin_cache）；
+ * corin_map = 从 Sela 取得 Corin 的测绘图（item.treasure_map.corin_survey.story.setsFlag·并揭示 poi.anchor.corin_cache）；
  * corin_found = 到点开箱事件置位（chart_pois openEventFlag·一次性强制开场）；
- * corin_returned = 回港把半枚币交还 Sela（对话 setFlag·涨信任）。
+ * corin_returned = 回港把红喉鹈徽章交还 Sela（对话 setFlag·涨信任）。
  * 全为**支线**——§8 红线：关系/藏宝 flag 不挡通关必经进度（不进任何主线 reach/reveal gate）。
  */
 export const CORIN_MAP_FLAG = 'story.ch1.corin_map';
