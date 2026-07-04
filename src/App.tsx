@@ -38,20 +38,32 @@ function withDevTutorialSkip(s: GameState): GameState {
   return s;
 }
 
-export default function App() {
-  // 启动时尝试读存档；无 / 损坏 / 版本不兼容则开新档。
+/**
+ * 游戏根。默认（无 props）＝真玩家流程：读存档 / 开新档、自动落盘。
+ * dev UI 预览注入（?dev&scene=·见 main.tsx + ui/dev/scenes）传两个可选 prop：
+ *   - initialState 顶替 loadGame()（用真实引擎构造器造的合法 state·渲真实 UI＝逐像素保真）
+ *   - ephemeral   跳过自动存档（预览绝不落盘·不覆盖玩家真实存档）
+ * App 不 import 任何 dev/scenes（由 main.tsx 装配）→ game↛dev 边界不破。
+ */
+export default function App({
+  initialState,
+  ephemeral,
+}: { initialState?: GameState; ephemeral?: boolean } = {}) {
+  // 启动时尝试读存档；无 / 损坏 / 版本不兼容则开新档。预览模式用注入 state 顶替。
   // dev 跳过教学（仅 ?dev·见 withDevTutorialSkip）：load 与「重开新档」同一条路径补 tutorial_complete。
   const [state, setState] = useState<GameState>(() =>
-    withDevTutorialSkip(loadGame() ?? createInitialGameState()),
+    withDevTutorialSkip(initialState ?? loadGame() ?? createInitialGameState()),
   );
 
   // 更新日志弹窗开关：同样是本地 UI state，不进 GameState（quirk #23）
   const [changelogOpen, setChangelogOpen] = useState(false);
 
-  // 自动存档：state 变化即写 localStorage（回合制、频率低，无需防抖；非浏览器环境 saveGame 自动跳过）
+  // 自动存档：state 变化即写 localStorage（回合制、频率低，无需防抖；非浏览器环境 saveGame 自动跳过）。
+  // 预览模式（ephemeral·?dev&scene=）绝不落盘——否则注入的 fixture 会覆盖玩家真实存档。
   useEffect(() => {
+    if (ephemeral) return;
     saveGame(state);
-  }, [state]);
+  }, [state, ephemeral]);
 
   function handleReturnToPort() {
     setState((s) => handleReturnToPortFn(s).state);

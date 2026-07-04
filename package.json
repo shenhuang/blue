@@ -24,7 +24,9 @@
     "check:dive": "node scripts/check-dive-refs.mjs",
     "audit:materials": "tsx scripts/material-audit.ts",
     "bless:combat": "tsx scripts/playthrough-combat-scenarios.ts --bless",
-    "test:tooling": "node scripts/run-tooling-tests.mjs"
+    "test:tooling": "node scripts/run-tooling-tests.mjs",
+    "shoot": "node scripts/shoot.mjs",
+    "shoot:sandbox": "node scripts/shoot-sandbox.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

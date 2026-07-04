@@ -12,11 +12,24 @@ const params = typeof window !== 'undefined' ? new URLSearchParams(window.locati
 const isWorkbench = params.has('editor') || params.has('storyeditor');
 const EditorApp = lazy(() => import('./ui/EditorApp'));
 
+// dev UI 预览（?dev&scene=<id>·仅 ?dev 门下生效）：把真实 App 一启动就落在任意画面、注入用真实引擎
+// 构造器造的合法 state（渲真实 UI＝逐像素保真·预览 ephemeral 不落盘）。fixture/装配全在 lazy chunk
+// ScenePreview（src/ui/dev/scenes）·不进游戏主包；main.tsx 不受 game↛dev 边界扫描（check-boundaries 规则五）。
+const sceneId = params.has('dev') ? params.get('scene') : null;
+const ScenePreview = lazy(() => import('./ui/dev/scenes/ScenePreview'));
+
 function Root() {
   if (isWorkbench) {
     return (
       <Suspense fallback={null}>
         <EditorApp />
+      </Suspense>
+    );
+  }
+  if (sceneId) {
+    return (
+      <Suspense fallback={null}>
+        <ScenePreview sceneId={sceneId} />
       </Suspense>
     );
   }
