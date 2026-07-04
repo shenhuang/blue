@@ -50,6 +50,17 @@ export function getColumnForLighthouse(lighthouseId: string): DepthColumn | unde
   return COLUMN_BY_LIGHTHOUSE.get(lighthouseId);
 }
 
+/**
+ * 某座灯塔所属深度柱的**本区自身** story beat flag（如 `col.vent → story.ch1.anchor.<id>`·无柱/无 storyTier → undefined）。
+ * 单一来源＝depth_columns.json 的 `storyTier.beatFlag`（与派生 POI 的 `columnStory.beatFlag` 同源·#198）。
+ * dev 一键解锁本区（lighthouses.ts::devUnlockChapterRegion）用它补「本区自身 beat」——前哨 `requiresFlag` 是**上游**
+ * 解锁门（链式＝上一区 beat·#198），不是本区自身 beat；尤其 **chainTail 柱**（vent）的 beat 不是任何前哨的
+ * requiresFlag（没有下游区借它当门），只能由此显式补上，否则 dev 解锁后本区 beat-gated 内容永不现（见 playthrough-outpost §7d′）。
+ */
+export function columnBeatFlagForLighthouse(lighthouseId: string): string | undefined {
+  return COLUMN_BY_LIGHTHOUSE.get(lighthouseId)?.storyTier?.beatFlag;
+}
+
 /** 柱短名（`col.trench` → `trench`）——派生 band / probe 升级 / 深入 POI 的 id 前缀。 */
 export function columnShort(columnId: string): string {
   return columnId.replace(/^col\./, '');

@@ -49,7 +49,7 @@ import {
   OUTPOST_USABLE_STAGE,
 } from '../src/engine/lighthouses';
 import { ch1AnchorFlag } from '../src/engine/story';
-import { getColumnForLighthouse } from '../src/engine/columns';
+import { getColumnForLighthouse, columnBeatFlagForLighthouse } from '../src/engine/columns';
 import { isPoiVisible } from '../src/engine/chart';
 import type { ChartPoi, GameState, InventoryItem } from '../src/types';
 import { makeHarness, type PtAssert } from './lib/pt';
@@ -328,16 +328,32 @@ assert(isOutpostLit(sDev.profile, OUTPOST), '7c: dev 三连点亮');
 const sDevNoop = devAdvanceOutpost(sDev, OUTPOST);
 assert(outpostStage(sDevNoop.profile, OUTPOST) === OUTPOST_MAX_STAGE, '7c: 已点亮 dev no-op');
 
-// 7d dev 一键解锁本区：锁态直接 devUnlockChapterRegion → 点亮 + 置「可建门」flag（主线柱迁移后=上一 beat reef·requiresFlag）
-//    + 置 tutorial_complete（海图门）。注：本区**自身** beat flag（anchor.wreck）由潜该区主线 beat 置·dev 解锁不代置。
+// 7d dev 一键解锁本区：锁态直接 devUnlockChapterRegion → 点亮 + 置上游「可建门」flag（主线柱迁移后=上一 beat reef·requiresFlag）
+//    + 置 tutorial_complete（海图门）+ 置**本区自身 beat**（深度柱 beatFlag 单一源·#217 翻转旧行为）。
 let sRegion = wreckStock();
 assert(!sRegion.profile.flags.has(GATE_FLAG), '7d: 解锁前无上一 beat（reef）gate flag');
 sRegion = devUnlockChapterRegion(sRegion, OUTPOST);
 assert(isOutpostLit(sRegion.profile, OUTPOST), '7d: dev 解锁本区 → 前哨点亮');
-assert(sRegion.profile.flags.has(GATE_FLAG), '7d: dev 解锁本区 → 置「可建门」flag（=上一 beat reef·requiresFlag·主线柱迁移）');
+assert(sRegion.profile.flags.has(GATE_FLAG), '7d: dev 解锁本区 → 置上游「可建门」flag（=上一 beat reef·requiresFlag·主线柱迁移）');
 assert(sRegion.profile.flags.has('flag.tutorial_complete'), '7d: dev 解锁本区 → 置 tutorial_complete（海图门）');
+// #217：本区自身 beat（残骸区＝anchor.wreck）现由 dev 解锁**代置**（旧行为「不代置」已翻转）——让本区 beat-gated 潜点可测。
+assert(sRegion.profile.flags.has(ch1AnchorFlag('wreck')), '7d: dev 解锁本区 → 置本区自身 beat anchor.wreck（#217·深度柱 beatFlag 源）');
 assert(countInInventory(sRegion.profile.inventory, 'item.scrap_alloy') === 2, '7d: dev 解锁本区不扣料');
 assert(hasLh(sRegion, RESULT_LH), '7d: dev 解锁本区 push 灯塔');
+
+// 7d′ chainTail 回归门（#217·防「dev 解锁漏 anchor.vent」重演）：**每座**有 story 深度柱的章节前哨 dev 解锁后，
+//     其柱的本区 beatFlag 必被置——尤其 vent 是链尾（anchor.vent 不是任何前哨的 requiresFlag·旧实现下 dev 永不置它·
+//     热液深层 Sela 点因此不现）。用深度柱 beatFlag 单一源逐座核，无 story 柱（如海沟占位）自动跳过。
+let ventTailChecked = false;
+for (const o of getOutposts()) {
+  const ownBeat = columnBeatFlagForLighthouse(o.result.id);
+  if (ownBeat === undefined) continue;
+  const sU = devUnlockChapterRegion(createInitialGameState(), o.id);
+  assert(sU.profile.flags.has(ownBeat), `7d′: dev 解锁 ${o.id} → 置本区自身 beat「${ownBeat}」（#217）`);
+  if (ownBeat === ch1AnchorFlag('vent')) ventTailChecked = true;
+}
+assert(ventTailChecked, "7d′: 覆盖到了 vent 链尾（anchor.vent·防 chainTail 漏置回归·#217）");
+L('  dev 一键解锁本区：点亮 + 上游门 + tutorial_complete + **本区自身 beat**（含 vent 链尾·#217）✓');
 
 // 7e 发现门（作者 2026-06-14·非恒显·见 isOutpostDiscovered 注释）：本前哨未设 discoveredFlag（St1 剧情未接）→
 // 起手既未动工又无 discovered 标记 → 海图上不可见；devRevealOutpost 显式标记后 → 可见；动过工（建过一阶）→ 必可见。

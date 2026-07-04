@@ -29,7 +29,7 @@ import { appendLog, removeFromInventory, addToInventory, enqueuePickup, HOME_LIG
 import { materialShortfall, describeUpgradeCost, getUpgradeBonuses } from './upgrades';
 import { ch1AnchorFlag, TUTORIAL_COMPLETE_FLAG, type Ch1Anchor } from './story';
 import { regionRadius } from './regions';
-import { columnProbeTracks } from './columns';
+import { columnProbeTracks, columnBeatFlagForLighthouse } from './columns';
 
 const file = lighthouseData as unknown as LighthouseUpgradesFile;
 // 设施轨两来源（#131）：lighthouse_upgrades.json 手写轨（船坞/能源…）+ 各深度柱派生的「低频声呐」轨
@@ -635,9 +635,13 @@ export function devAdvanceOutpost(state: GameState, outpostId: string): GameStat
 /**
  * dev 一键解锁一个章节前哨**整片区域**（章节哨站批·#118·作者拍 2026-06-13）：
  * 像 demo 那样不走剧情节拍、不收材料，直接把这一区开出来——
- *   ① 置 `flag.tutorial_complete`（海图本身的门）+ 对应锚点节拍 flag（解锁门 + 让对应潜点的剧情门记为已达）；
- *   ② 把前哨直接点亮（建满 = devAdvanceOutpost 连推到 OUTPOST_MAX_STAGE）。
- * 非章节前哨（无 requiresAnchor）→ 只点亮、不动 flag。引擎仍无门（门在 UI 的 ?dev 后）；真路径零触碰。
+ *   ① 置 `flag.tutorial_complete`（海图本身的门）+ **上游解锁门** flag（requiresFlag·链式＝上一区 beat·#198·
+ *      或旧式 requiresAnchor 本区锚点）；
+ *   ② 置**本区自身 beat** flag（从深度柱 beatFlag 单一源·columnBeatFlagForLighthouse）——让本区 beat-gated 的
+ *      潜点/内容记为已达可测。**尤其 chainTail 柱（vent）的 anchor.vent 不是任何前哨的 requiresFlag**（没有下游区
+ *      借它当门），漏了这步「dev 解锁全部」也补不上它、热液深层 Sela 点永不现（#217·守门 playthrough-outpost §7d′）；
+ *   ③ 把前哨直接点亮（建满 = devAdvanceOutpost 连推到 OUTPOST_MAX_STAGE）。
+ * 非章节前哨（无 requiresAnchor/requiresFlag）→ 只点亮、不动 flag。引擎仍无门（门在 UI 的 ?dev 后）；真路径零触碰。
  */
 export function devUnlockChapterRegion(state: GameState, outpostId: string): GameState {
   const def = OUTPOST_INDEX.get(outpostId);
@@ -646,8 +650,13 @@ export function devUnlockChapterRegion(state: GameState, outpostId: string): Gam
   if (def.requiresAnchor !== undefined || def.requiresFlag !== undefined) {
     const flags = new Set(s.profile.flags);
     flags.add(TUTORIAL_COMPLETE_FLAG);
+    // ① 上游解锁门（requiresFlag 链式＝上一区 beat·#198·或旧式 requiresAnchor 本区锚点）。
     if (def.requiresAnchor !== undefined) flags.add(ch1AnchorFlag(def.requiresAnchor as Ch1Anchor));
-    if (def.requiresFlag !== undefined) flags.add(def.requiresFlag); // 海沟等非锚点章节门
+    if (def.requiresFlag !== undefined) flags.add(def.requiresFlag);
+    // ② 本区**自身** beat（深度柱 beatFlag 单一源）——requiresFlag 是上游门、不是本区 beat，故须单独补；
+    //    chainTail 柱（vent）的 beat 不是任何前哨的 requiresFlag，只能从这里置（#217）。
+    const ownBeat = columnBeatFlagForLighthouse(def.result.id);
+    if (ownBeat !== undefined) flags.add(ownBeat);
     s = { ...s, profile: { ...s.profile, flags } };
   }
   // 连推到点亮（devAdvanceOutpost 已点亮即 no-op，故 OUTPOST_MAX_STAGE 次封顶安全）。
