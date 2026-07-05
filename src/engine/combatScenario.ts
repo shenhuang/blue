@@ -7,7 +7,7 @@
 // 设计原则（与 eventScenario.ts 同源套路）：
 //   1. 不复刻 combat.ts 的内部逻辑（reducer / AI / 撤退阈值 / loot），全部复用。
 //   2. 复用 scenarioShared.ts 的 withSeededRandom / diff helper——quirk #22 已立规矩，不发明新机制。
-//   3. 战斗边界：碰到 victory / defeat / flee / emergency_ascend / 回合数上限 / 行动用完 → 停步，
+//   3. 战斗边界：碰到 victory / defeat / flee / 回合数上限 / 行动用完 → 停步，
 //      不进入战斗外的事件链路（"AI 联动事件"不是这一层的事）。
 //   4. input.actions[i] = { actionId, targetIndex? }。targetIndex 是 enemies 数组下标（不是 instanceId），
 //      因为外部调用方（dev 面板 / scenarios JSON / CLI）不应该感知 instanceId 命名约定。
@@ -123,7 +123,6 @@ export type CombatScenarioOutcome =
   | 'victory'              // 全敌人 hp ≤ 0
   | 'defeat'               // 玩家死亡（窒息 / 失血 / 理智崩溃）
   | 'flee'                 // 屏息潜逃成功
-  | 'emergency_ascend'     // 应急上浮
   | 'maxTurns'             // 达到 maxTurns 上限，未分出胜负
   | 'noActionProvided'     // actions 用完
   | 'actionUnavailable'    // 给定 action 不可用（资源不足/装备缺失），战斗中止扫描
@@ -180,7 +179,7 @@ export interface CombatTurnSnapshot {
   enemiesAfter: EnemySnapshot[];
 
   /** 引擎吐回的 outcome（与 applyPlayerAction 一致） */
-  outcome: 'continue' | 'victory' | 'flee' | 'defeat' | 'emergency_ascend';
+  outcome: 'continue' | 'victory' | 'flee' | 'defeat';
 }
 
 /** 整局战斗 scenario 的最终汇总 */
@@ -353,7 +352,7 @@ function deriveTerminalEnemiesSnapshot(
   if (outcome === 'victory') {
     return preTurn.map((e) => ({ ...e, hp: 0, stance: 'unaware' as EnemyStance, statuses: [], reachable: false }));
   }
-  // flee / defeat / emergency_ascend：state.phase 已不是 combat，用 preTurn 的最后切片
+  // flee / defeat：state.phase 已不是 combat，用 preTurn 的最后切片
   return preTurn.map((e) => ({ ...e }));
 }
 
@@ -615,10 +614,6 @@ export function runCombatScenario(input: CombatScenarioInput): CombatScenarioRes
       }
       if (result.outcome === 'defeat') {
         finalOutcome = 'defeat';
-        break;
-      }
-      if (result.outcome === 'emergency_ascend') {
-        finalOutcome = 'emergency_ascend';
         break;
       }
       // continue → 下一回合

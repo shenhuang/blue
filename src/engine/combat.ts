@@ -372,7 +372,7 @@ export function checkActionAvailability(
 
 export interface CombatTurnResult {
   state: GameState;
-  outcome: 'continue' | 'victory' | 'flee' | 'defeat' | 'emergency_ascend';
+  outcome: 'continue' | 'victory' | 'flee' | 'defeat';
 }
 
 export function applyPlayerAction(
@@ -453,27 +453,23 @@ export function applyPlayerAction(
     return finalizeVictory(s);
   }
 
-  // —— 5. 检查脱战（applyFlee 成功时写 pendingFleeSuccess·与第 6 步 pendingEmergencyAscent 同款 typed flag）——
+  // —— 5. 检查脱战（applyFlee 成功时写 pendingFleeSuccess·typed flag）——
   if (s.phase.kind === 'combat' && s.phase.combat.pendingFleeSuccess) {
     return finalizeFlee(s);
   }
 
-  // —— 6. 检查应急上浮 ——
-  if (s.phase.kind === 'combat' && s.phase.combat.pendingEmergencyAscent) {
-    return { state: { ...s, phase: { kind: 'ascent', targetDepth: 0, duress: true } }, outcome: 'emergency_ascend' };
-  }
-
-  // —— 7. 敌人回合 ——
+  // —— 6. 敌人回合 ——
   s = runEnemyTurn(s);
 
-  // —— 8. 玩家死亡判定 ——
+  // —— 7. 玩家死亡判定 ——
   if (!s.run) return { state: s, outcome: 'defeat' };
   // 幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：本场是你**疯出来的**·没有真实赌注。
   // 体力/理智：幻觉战里**软化不判死**（敌攻软化体力伤为 0；理智照吃 sanityDamage 但本场不结算死）——
   // 这两条的真危险留到幻象散后（finalizeVictory / 你逃开）的下一记真判定：耗到 0 的是你自己，不是这只从没在那儿的东西。
   // **氧气例外·仍当场致命**（作者 2026-07-05 定·SPEC §7①）：氧气是行动经济里你自己 tick 掉的、与幻觉怪无关；
   // 全封会让「进幻觉＝无敌」→ 泄掉张力，让它当场淹死你＝「你自己耗光的、不是鬼杀的」当场成立。
-  // 无脚本死不破：应急上浮（第 6 步·排在本判定前·无条件零成本零 roll）任何回合都能离场，低氧进幻觉也总有活路。
+  // 出口是 flee / beginAscent（都不经本函数）：开阔水或站在上浮口 → CombatView 弃战上浮（beginAscent·零成本·任意回合）；
+  // 其余水域靠 action.flee（需氧≥3）。**封闭水域低氧确实无出路＝有意 attrition**（蓝洞头顶岩顶·作者 2026-07-05 拍·非 bug）。
   // 真遭遇（非幻觉）三条死亡窗逐字节不变。
   const inHallucination = s.phase.kind === 'combat' && s.phase.combat.hallucination === true;
   if (s.run.stats.oxygen <= 0) {
@@ -488,7 +484,7 @@ export function applyPlayerAction(
     }
   }
 
-  // —— 9. 回合 +1 ——
+  // —— 8. 回合 +1 ——
   s = setCombat(s, (c) => ({ ...c, turn: c.turn + 1 }));
 
   return { state: s, outcome: 'continue' };
@@ -1059,12 +1055,6 @@ function finalizeFlee(state: GameState): CombatTurnResult {
     s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
   }
   return { state: s, outcome: 'flee' };
-}
-
-/** 玩家选择应急上浮（战斗中可用） */
-export function triggerEmergencyAscent(state: GameState): GameState {
-  if (state.phase.kind !== 'combat') return state;
-  return setCombat(state, (c) => ({ ...c, pendingEmergencyAscent: true }));
 }
 
 /**

@@ -73,7 +73,7 @@ function driveTutorialToSurface(state: GameState, picks: Record<string, string>)
       let fled = false;
       for (let t = 0; t < 40 && (s.phase as { kind: string }).kind === 'combat'; t++) {
         const r = applyPlayerAction(s, 'action.flee'); s = r.state;
-        if (r.outcome === 'flee' || r.outcome === 'emergency_ascend') { fled = true; break; }
+        if (r.outcome === 'flee') { fled = true; break; }
         if ((s.phase as { kind: string }).kind === 'gameOver') return { state: s, beats, lockedThroughout, forcedLinear, sawCombat, ended: 'died' as const };
       }
       if (!fled) return { state: s, beats, lockedThroughout, forcedLinear, sawCombat, ended: 'stuck-combat' as const };
@@ -203,7 +203,7 @@ function diveDeepToSurface(state: GameState, picks: Record<string, string>): { s
     if (ph.kind === 'combat') {
       for (let t = 0; t < 40 && (s.phase as { kind: string }).kind === 'combat'; t++) {
         const r = applyPlayerAction(s, 'action.flee'); s = r.state;
-        if (r.outcome === 'flee' || r.outcome === 'emergency_ascend') break;
+        if (r.outcome === 'flee') break;
         if ((s.phase as { kind: string }).kind === 'gameOver') return { state: s, seen };
       }
       continue;

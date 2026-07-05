@@ -178,7 +178,7 @@ export function replayActionsFromState(
     // applies one per surfaced decision point).  We therefore apply the action
     // ONCE and ALWAYS advance actionIdx — whether the round outcome was
     // 'continue' (fight goes on → next logged entry is the next round) or a
-    // terminal ('victory'/'flee'/'defeat'/'emergency_ascend' → engine has left
+    // terminal ('victory'/'flee'/'defeat' → engine has left
     // the combat phase, the loop falls through to the new phase).  When the log
     // is exhausted mid-fight (actionIdx >= length) we `break`: the caller then
     // surfaces THIS round's legalActions as a fresh decision point.
@@ -264,7 +264,7 @@ export function replayActionsFromState(
           ctx.terminal = { outcome: 'combat-loss', summary: '战斗失败，潜水员阵亡。' };
           return ctx;
         }
-        // 'victory'/'flee'/'emergency_ascend' → engine already left combat phase;
+        // 'victory'/'flee' → engine already left combat phase;
         // 'continue' → still in combat, next iteration reads the next logged
         // round (or breaks below to surface a decision point if log exhausted).
         continue;

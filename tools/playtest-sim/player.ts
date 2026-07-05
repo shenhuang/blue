@@ -125,7 +125,7 @@ function doCombat(state: any, rec: RunResult, fight: boolean): any {
     const res = applyPlayerAction(s, pick.id, target);
     s = res.state;
     if (res.outcome === 'defeat') { rec.end = 'combat-loss'; rec.deathCause = '战斗失败'; break; }
-    if (res.outcome === 'victory' || res.outcome === 'flee' || res.outcome === 'emergency_ascend') break;
+    if (res.outcome === 'victory' || res.outcome === 'flee') break;
   }
   return s;
 }

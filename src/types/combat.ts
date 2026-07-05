@@ -133,11 +133,8 @@ export interface CombatState {
   /** 战斗结束后回到的节点 id（脱战后回 nodeSelect） */
   resumeNodeId: string | null;
 
-  /** 玩家在战斗中选择"应急上浮"时的标记 */
-  pendingEmergencyAscent?: boolean;
-
   /**
-   * 本次 flee 行动脱战成功的标记（与 pendingEmergencyAscent 同款 typed flag）：
+   * 本次 flee 行动脱战成功的标记（typed flag）：
    * applyFlee 成功（掷骰过 / guaranteed）时写入，applyPlayerAction 第 5 步读取后走 finalizeFlee。
    * 日志文案由此降级回纯叙事（不再靠「脱战成功」子串判定·quirk #107 现代化）。
    */
