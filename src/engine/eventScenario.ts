@@ -32,6 +32,7 @@ import {
   createInitialGameState,
   createNewRun,
 } from './state';
+import { HALLUCINATION_VISIBLE_SANITY } from './clarity';
 import {
   withSeededRandom,
   diffStats,
@@ -210,9 +211,9 @@ export function describeCondition(c: Condition): string {
 function describeHiddenReason(state: GameState, opt: EventOption): string {
   if (opt.hallucination) {
     const sanity = state.run?.stats.sanity;
-    if (!state.run) return '幻觉选项需要 run（且 sanity ≤ 50）';
-    if (sanity !== undefined && sanity > 50) {
-      return `幻觉选项：sanity (${sanity}) > 50，不出现`;
+    if (!state.run) return `幻觉选项需要 run（且 sanity ≤ ${HALLUCINATION_VISIBLE_SANITY}）`;
+    if (sanity !== undefined && sanity > HALLUCINATION_VISIBLE_SANITY) {
+      return `幻觉选项：sanity (${sanity}) > ${HALLUCINATION_VISIBLE_SANITY}，不出现`;
     }
   }
   if (opt.visibleIf) return describeCondition(opt.visibleIf);

@@ -481,7 +481,7 @@ L('\n========== 13. 低 san 幻觉遭遇注入 + 控制组 ==========');
   }
 
   // 13b 注入层：低 san 走进事件节点 → 进入 combat 且该场标 hallucination:true。
-  const lowSan = moveToNode(mkDive(20), 'h1');
+  const lowSan = moveToNode(mkDive(HALLUCINATION_SANITY), 'h1');
   assert(lowSan.phase.kind === 'combat', '13b: 低 san 进节点 → 注入幻觉遭遇（进入 combat）');
   if (lowSan.phase.kind === 'combat') {
     assert(lowSan.phase.combat.hallucination === true, '13b: 注入的这场标 hallucination:true');
@@ -498,7 +498,7 @@ L('\n========== 13. 低 san 幻觉遭遇注入 + 控制组 ==========');
 // ============================================================
 // 直接起一场标 hallucination:true 的战斗（复用真敌 combat.blind_eel_solo·不改 def），断言：
 //   ① 敌攻不扣真实体力（幻爪穿不透·实体伤 0）——用战斗 log 隔离敌伤与行动费（真伤 log 含「体力 -」·幻觉含「没有痛」）；
-//   ② 永远打不死你（stamina 死亡窗封死·北极星「无脚本死」）；③ 打赢后无战利品 + 暧昧收场「只有空水」（它从没在那儿）。
+//   ② 敌攻/理智打不死你（体力+san 死亡窗封死·无脚本死改由应急上浮兜）·但**氧气例外**：你自己把氧耗光仍当场淹死（14d·SPEC §7①）；③ 打赢后无战利品 + 暧昧收场「只有空水」（它从没在那儿）。
 // san 是软代价（可恢复·耗尽走既有疯狂上浮·非怪物击杀）。以 action.evade（不伤敌·让敌人一直打你）挨打·knife 打赢。
 L('\n========== 14. 幻觉遭遇看破即消（无 loot·无实体伤·打不死）==========');
 {
@@ -541,7 +541,7 @@ L('\n========== 14. 幻觉遭遇看破即消（无 loot·无实体伤·打不死
       s = r.state;
       if (r.outcome === 'defeat') { died = true; break; }
     }
-    assert(!died, '14b: 幻觉怪永远打不死你（实体伤 0 → stamina 死亡窗封死·北极星无脚本死）');
+    assert(!died, '14b: 幻觉敌攻打不死你（实体伤 0·体力/理智死亡窗封死；本场富氧故氧气不参与——氧气例外见 14d）');
     const log = enemyLog(s);
     assert(log.length > 0, '14b: fixture 事实——敌人确实出手了（有敌 log）');
     assert(!log.some((t) => t.includes('体力 -')), '14b: 幻觉敌攻零真实体力伤（敌 log 无「体力 -」·幻爪穿不透）');
@@ -567,7 +567,16 @@ L('\n========== 14. 幻觉遭遇看破即消（无 loot·无实体伤·打不死
     const sawEmptyWater = s.log.some((e) => e.text.includes('只有空水'));
     assert(sawEmptyWater, '14c: 幻觉收场文案暧昧（「只有空水」＝从没在那儿·GameState.log）');
   }
-  L('  对照真伤 / 幻觉 0 伤打不死 / 打赢无 loot + 暧昧收场 ✓');
+
+  // 14d 氧气例外（作者 2026-07-05·SPEC §7①·combat.ts）：幻觉里敌攻/理智打不死你，但你自己把氧耗光仍当场淹死
+  //   ——「你自己耗光的、不是鬼杀的」（无脚本死改由应急上浮兜·非全封）。与 14b 富氧对照：把氧压到 0 → defeat（窒息）。
+  {
+    let s = mkCombat(true);
+    if (s.phase.kind === 'combat') s = { ...s, run: { ...s.run!, stats: { ...s.run!.stats, oxygen: 0 } } };
+    const r = applyPlayerAction(s, 'action.evade');
+    assert(r.outcome === 'defeat', '14d: 幻觉里氧气≤0 仍当场淹死（氧气例外·非全封·SPEC §7①）');
+  }
+  L('  对照真伤 / 幻觉 0 伤打不死 / 打赢无 loot + 暧昧收场 / 氧气例外仍淹死 ✓');
 }
 
 pt.done();

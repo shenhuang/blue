@@ -242,11 +242,20 @@ export function predatorApproaches(run: RunState): boolean {
 // 起战时标 hallucination:true·结算软化在 combat.ts）。
 
 /**
- * 低理智幻觉怪的 san 阈值（≤ 此值才可能出幻觉遭遇）。占位·defer-number-tuning（作者最终统一调）。
- * 与选项半边 eventSatisfy.ts::HALLUCINATION_SANITY_MAX / events.ts::isOptionVisible 的 `sanity > 50` 同档，
- * 让「低 san = 改选项 + 改怪物」两半在同一根轴、同一条线上翻（SPEC §2.3 单轴）。
+ * 低理智幻觉「可见层」san 阈值（≤ 此值起，改选项类幻觉现身：假选项 / 改写文案·本身不致命）。
+ * 单一真相收口点：events.ts::isOptionVisible / eventSatisfy.ts / eventScenario.ts / StoryEditor.tsx
+ * 一律 import 本常量，别再各写字面量 50（SPEC §2.3 可见层）。占位·defer-number-tuning（作者最终统一调）。
  */
-export const HALLUCINATION_SANITY = 50;
+export const HALLUCINATION_VISIBLE_SANITY = 50;
+
+/**
+ * 低理智幻觉「致命层」san 阈值（≤ 此值才可能出幻觉战斗遭遇＝会致命的那半）。
+ * 作者 2026-07-05 定分层：san≤50 只看得到（可见层·改选项 HALLUCINATION_VISIBLE_SANITY）· san≤20 才致命
+ * （本层·改怪物 / 幻觉战 + 氧气当场致命）。渐进恐怖曲线（50→20 玩家能察觉「在滑」、有机会回 san 自救）；
+ * 20 的高门槛天然是「氧气幻觉致命」的护栏（SPEC §2.3/§7①·gate＝hallucinationApproaches→maybeHallucinationEncounter）。
+ * 占位·defer-number-tuning（作者最终统一调）。
+ */
+export const HALLUCINATION_SANITY = 20;
 
 /**
  * 是否可能撞上低理智幻觉遭遇（moveToNode 据此走注入钩子·mirror predatorApproaches）：

@@ -26,6 +26,7 @@ import type { ScenarioInput } from './eventScenario';
 import { getEventById } from './zones';
 import { createStarterLoadout } from './state';
 import { allItems } from './items';
+import { HALLUCINATION_VISIBLE_SANITY } from './clarity';
 
 type EquipSlot = keyof EquipmentLoadout; // 'tank' | 'suit' | 'light' | 'tool' | 'charm'
 
@@ -110,7 +111,7 @@ export interface SatisfyOptions {
 // 条件收集器：把一棵 Condition 树摊平成「需要的状态」累加器
 // ---------------------------------------------------------------------------
 
-const HALLUCINATION_SANITY_MAX = 50; // 与 events.ts isOptionVisible / eventScenario describeHiddenReason 同阈值
+// 幻觉「可见层」阈值统一收口到 clarity.ts::HALLUCINATION_VISIBLE_SANITY（原局部 HALLUCINATION_SANITY_MAX 已并入·别再各写字面量 50）
 
 interface Accum {
   requiredFlags: Set<string>;
@@ -318,7 +319,7 @@ export function satisfyEvent(eventId: string, opts: SatisfyOptions = {}): Satisf
 
   // ----- sanity 单独定：唯一影响可见性的是 hallucination 阈值；sanityRange 只是池门（runner 直接落点·不需要） -----
   // 默认满血（对正常选项 + sanity 检定都最有利）；幻觉模式压到 ≤50 让 hallucination 选项现身。
-  const sanity = wantHalluc && hasHalluc ? HALLUCINATION_SANITY_MAX : 100;
+  const sanity = wantHalluc && hasHalluc ? HALLUCINATION_VISIBLE_SANITY : 100;
 
   // ----- flag 调和：required ∩ forbidden = 冲突 -----
   for (const f of acc.requiredFlags) {

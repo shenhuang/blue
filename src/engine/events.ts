@@ -18,7 +18,7 @@ import { getUpgradeDef } from './upgrades';
 import { equipmentUnlocksAction, loadoutInsulation } from './equipment';
 import { EQUIPMENT_SLOTS } from '@/types/items';
 import { restoreLighthouse, advanceOutpost } from './lighthouses';
-import { lampPowerDrain, alertDelta, ALERT_MAX } from './clarity';
+import { lampPowerDrain, alertDelta, ALERT_MAX, HALLUCINATION_VISIBLE_SANITY } from './clarity';
 import { effectiveStaminaMax } from './modifiers';
 import { stepNitrogen, narcosisSanityDrain } from './nitrogen';
 import { getCaveTemperature, stepThermalStress, thermalStaminaDrain } from './temperature';
@@ -118,7 +118,7 @@ export function evalCondition(state: GameState, c: Condition): boolean {
 /** 一个选项是否对当前 state 可见 */
 export function isOptionVisible(state: GameState, opt: EventOption): boolean {
   if (opt.hallucination) {
-    if (!state.run || state.run.stats.sanity > 50) return false;
+    if (!state.run || state.run.stats.sanity > HALLUCINATION_VISIBLE_SANITY) return false;
   }
   if (opt.visibleIf && !evalCondition(state, opt.visibleIf)) {
     return opt.hiddenIfFails === false; // false = 仅灰显

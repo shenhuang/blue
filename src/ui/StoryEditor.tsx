@@ -19,6 +19,7 @@ import { listAllEvents, describeCondition, buildScenarioState } from '@/engine/e
 import { satisfyEvent, describeEventGate, eventGate } from '@/engine/eventSatisfy';
 import type { SatisfyResult } from '@/engine/eventSatisfy';
 import { eventArc, eventRoots, type EventArc, type ArcEdge } from '@/engine/eventGraph';
+import { HALLUCINATION_VISIBLE_SANITY } from '@/engine/clarity';
 import {
   listPoiEventSets,
   poiEventIds,
@@ -187,7 +188,7 @@ export default function StoryEditor() {
         <span style={{ flex: 1 }} />
         <label style={S.toggle}>
           <input type="checkbox" checked={hallucinations} onChange={(e) => setHallucinations(e.target.checked)} />
-          幻觉模式（露 sanity≤50 选项）
+          幻觉模式（露 sanity≤{HALLUCINATION_VISIBLE_SANITY} 选项）
         </label>
         <button style={S.btn} onClick={() => setShowStats(true)}>内容统计</button>
         <span style={{ ...S.faint, opacity: 0.6 }}>编辑 / 保存：Phase 3</span>
@@ -567,7 +568,7 @@ function PoiEvents({ p, selectedId, onPick }: { p: PoiEventSet; selectedId: stri
 function OptionCond({ opt, intended }: { opt: EventOption; intended: boolean }) {
   const bits: string[] = [];
   if (opt.visibleIf) bits.push(describeCondition(opt.visibleIf));
-  if (opt.hallucination) bits.push('幻觉（sanity≤50）');
+  if (opt.hallucination) bits.push(`幻觉（sanity≤${HALLUCINATION_VISIBLE_SANITY}）`);
   if (opt.check) bits.push(`检定 ${STAT_LABEL[opt.check.stat] ?? opt.check.stat} ${opt.check.dc}`);
   return (
     <div style={S.condLine}>

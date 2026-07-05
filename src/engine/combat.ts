@@ -468,17 +468,18 @@ export function applyPlayerAction(
 
   // —— 8. 玩家死亡判定 ——
   if (!s.run) return { state: s, outcome: 'defeat' };
-  // 幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：本场是你**疯出来的**·没有真实赌注·**永远不能在其中被打死**
-  // （北极星「幻觉怪不能有脚本死」）。软化到底：幻觉战里跳过全部死亡窗（体力/氧气/理智仍**真的会掉**——
-  // 敌攻只软化体力伤为 0、氧气随行动经济照 tick、理智照吃 sanityDamage＝真代价·下方仍持续压——只是**这一场里**
-  // 不判死）。代价的真危险留在**之后**：幻象散了（finalizeVictory / 你逃开）后回到真世界，若刚才在幻觉里把氧/
-  // 理智耗到 0，下一记真判定（moveToNode/tickTurns 的氧气死 / 事件理智死）照样收——但那是「你自己耗光的」，
-  // 不是这只从没在那儿的东西把你打死。真遭遇（非幻觉）三条死亡窗逐字节不变。
+  // 幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：本场是你**疯出来的**·没有真实赌注。
+  // 体力/理智：幻觉战里**软化不判死**（敌攻软化体力伤为 0；理智照吃 sanityDamage 但本场不结算死）——
+  // 这两条的真危险留到幻象散后（finalizeVictory / 你逃开）的下一记真判定：耗到 0 的是你自己，不是这只从没在那儿的东西。
+  // **氧气例外·仍当场致命**（作者 2026-07-05 定·SPEC §7①）：氧气是行动经济里你自己 tick 掉的、与幻觉怪无关；
+  // 全封会让「进幻觉＝无敌」→ 泄掉张力，让它当场淹死你＝「你自己耗光的、不是鬼杀的」当场成立。
+  // 无脚本死不破：应急上浮（第 6 步·排在本判定前·无条件零成本零 roll）任何回合都能离场，低氧进幻觉也总有活路。
+  // 真遭遇（非幻觉）三条死亡窗逐字节不变。
   const inHallucination = s.phase.kind === 'combat' && s.phase.combat.hallucination === true;
+  if (s.run.stats.oxygen <= 0) {
+    return { state: executeDeath(s, '战斗中窒息'), outcome: 'defeat' };
+  }
   if (!inHallucination) {
-    if (s.run.stats.oxygen <= 0) {
-      return { state: executeDeath(s, '战斗中窒息'), outcome: 'defeat' };
-    }
     if (s.run.stats.stamina <= 0) {
       return { state: executeDeath(s, '被敌人撕碎'), outcome: 'defeat' };
     }
