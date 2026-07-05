@@ -2332,13 +2332,19 @@ html, body, #root {
 
 /* 选中点位的信息面板 */
 .chart-info {
-  flex: 1 1 240px;
+  /* 按内容撑高——别回 `flex: 1 1 <px>`（旧值 240px 是早期左右布局的遗留）。
+     本盒是 .chart-2d **竖向** flex 的子项：定死 flex-basis 会把高度钉死，而下面显式的
+     min-height 又关掉了 flex 子项默认的 auto(min-content) 兜底 → 内容比 basis 高时盒子
+     不撑开、直接溢出底边（出海/下潜按钮跑到框外·窄屏 blurb 折行时更易触发）。
+     flex:0 0 auto = 高度随内容走，min-height 只当下限地板。 */
+  flex: 0 0 auto;
   min-width: 0;
   background: var(--bg-elev);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px 14px;
-  /* 三个 departStep 内容高度不同，按钮会闪：flex 列 + min-height + margin-top:auto 把按钮钉底 */
+  /* 三个 departStep 内容高度不同：flex 列 + min-height 地板 + margin-top:auto 把按钮钉底
+     （内容超过地板时按钮紧随内容、始终落在框内）。 */
   display: flex;
   flex-direction: column;
   min-height: 180px;
