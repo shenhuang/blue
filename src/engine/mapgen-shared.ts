@@ -372,69 +372,62 @@ export function placeCorpses(
  * 纯函数·零 rng（绝不移动任何 seed 的生成顺序）。
  */
 // ============================================================
-// 隐藏黑点撒布（感知重做 per-node 黑·#262·FNV 确定性·零 rng·缺省 no-op）
+// 感知门撒布（感知门 SPEC §6·FNV 确定性·零 rng·缺省 no-op·byte-identical）
 // ============================================================
-// 与 band/POI 级「整潜黑」(diveModifier.visibility==='dark') 正交：那是可见锁住 + 起潜预告；
-// 这里是**不带灯不显示**的伏笔黑点，只在 zone.darkEligible 的区、按深度密度确定性标记 node.dark。
-// FNV 哈希取点（同 caveDepthCurveForPlace·零 rng·绝不移动任何 seed 生成顺序）⇒ 同一地点复访同一批黑点。
-// 缺省（无 eligible zone / 密度 0）→ 一个都不标、byte-identical（不破 mapgen 场景快照）。数值占位·defer-number-tuning。
+// 与 band/POI 级「整潜门」(diveModifier.gate·live-combine) 正交：那是给所有非豁免节点盖同一个门；
+// 这里按 zone.gates 规格给候选节点（event/rest）各自撒 per-node `node.gate`（sense=lamp/sonar·mode=hidden/locked）。
+// FNV 哈希取点/判配比（同 caveDepthCurveForPlace·零 rng·绝不移动任何 seed 生成顺序）⇒ 同一地点复访同一批门。
+// 缺省（无 zone.gates / 密度 0）→ 一个都不标、byte-identical（不破 mapgen 场景快照）。数值占位·defer-number-tuning。
+// **无 repair**（感知门 SPEC §5·作者点 6 拍「repair=删」）：卡死结构上不可能（选点/休整/战斗永远有主动上浮）；
+// 前面全被门挡＝可接受最坏情况（门在起作用·空屏走 dive-select.ts::enterNodeSelection 的已有上浮/canReveal 分支）。
 
-/** 隐藏黑点深度档密度（0..1·占位·作者最终统一调）：深≥90→.30 / 中≥50→.15 / 浅(参与区 25–50)→.05。 */
-export const DARK_DENSITY_DEEP = 0.3;
-export const DARK_DENSITY_MID = 0.15;
-export const DARK_DENSITY_SHALLOW = 0.05;
-/** 隐藏黑点深度档阈值（占位）。浅于 DARK_MIN_DEPTH 即便 eligible 也不撒（守「浅水绝对安全」·对齐 clarity.ALERT_MIN_DEPTH=25）。 */
+/** 门深度档阈值（占位）。浅于 DARK_MIN_DEPTH 即便配了 gates 也不撒（守「浅水绝对安全」·对齐 clarity.ALERT_MIN_DEPTH=25）。 */
 export const DARK_DEEP_DEPTH = 90;
 export const DARK_MID_DEPTH = 50;
 export const DARK_MIN_DEPTH = 25;
 
 /**
- * 一个节点的隐藏黑点密度（0..1）：非 `darkEligible` zone → 0；浅于 DARK_MIN_DEPTH → 0（浅水免黑）；
- * 否则按深度档取 deep/mid/shallow。纯函数·数据驱动（zone.darkEligible + 深度）·调数值只动上面几个常量。
+ * 一个节点某 sense 的门密度（0..1·感知门 SPEC §6）：非该 sense 配置 zone → 0；浅于 DARK_MIN_DEPTH → 0（浅水免门）；
+ * 否则按深度档取 deep/mid/shallow。纯函数·数据驱动（zone.gates[sense] + 深度）·数值随 zone.gates 数据调（占位·defer）。
  */
-export function darkDensityForNode(zone: ZoneDef, depth: number): number {
-  if (!zone.darkEligible) return 0;
+export function gateDensityForNode(zone: ZoneDef, depth: number, sense: 'lamp' | 'sonar'): number {
+  const d = zone.gates?.[sense];
+  if (!d) return 0;
   if (depth < DARK_MIN_DEPTH) return 0;
-  if (depth >= DARK_DEEP_DEPTH) return DARK_DENSITY_DEEP;
-  if (depth >= DARK_MID_DEPTH) return DARK_DENSITY_MID;
-  return DARK_DENSITY_SHALLOW;
+  if (depth >= DARK_DEEP_DEPTH) return d.deep ?? 0;
+  if (depth >= DARK_MID_DEPTH) return d.mid ?? 0;
+  return d.shallow ?? 0;
 }
 
-/** 可当隐藏黑点的节点：只普通事件/休息中间点（地标=上浮口/气穴/扎营 + 尸体/shop/boss 一律不撒＝守可达性·永不锁死出口）。 */
-function darkSprinkleCandidate(node: DiveNode): boolean {
+/** 可撒门的节点：只普通事件/休息中间点（地标=上浮口/气穴/扎营 + 尸体/shop/boss 一律不撒＝守可达性·永不锁死出口·感知门 SPEC §5/§7）。 */
+function gateSprinkleCandidate(node: DiveNode): boolean {
   return node.kind === 'event' || node.kind === 'rest';
 }
 
 /**
- * 隐藏黑点撒布 post-pass（确定性·零 rng·缺省 no-op·原地改 map.nodes）：
- *  1) 对每个候选节点按 `darkDensityForNode` 概率、用 FNV(zone::key::dark::nodeId) 确定性标 `node.dark`（复访一致）。
- *  2) repair 守门：绝不让某父节点**所有**子都变黑（否则无灯玩家在该父无可见出口）——某父子全黑则取消其最浅子的黑。
- * 兜底另有无条件应急上浮(dive step6)。非 eligible zone / 起始节点 / 密度 0 → 不标（byte-identical）。
+ * 感知门撒布 post-pass（确定性·零 rng·缺省 no-op·原地改 map.nodes·感知门 SPEC §6）：
+ * 对每个候选节点、每 sense（lamp 先·sonar 后·确定性顺序），按 `gateDensityForNode` 概率用 FNV 命中即标 `node.gate`
+ * （首个命中的 sense 定 gate·一节点一门）；mode 由 `hiddenRatio` 用第二道 FNV 判（< ratio → hidden·否则 locked）。
+ * 非配置 zone / 起始节点 / 密度 0 → 不标（byte-identical）。地标/尸体/shop/boss 永不撒（守骨架·check-gate-skeleton 焊）。
  */
-export function sprinkleDarkNodes(map: DiveMap, zone: ZoneDef, seedKey?: string): void {
-  if (!zone.darkEligible) return;
+export function sprinkleGates(map: DiveMap, zone: ZoneDef, seedKey?: string): void {
+  if (!zone.gates) return;
   const key = seedKey ?? zone.id;
   const nodes = map.nodes;
+  const senses: Array<'lamp' | 'sonar'> = ['lamp', 'sonar'];
   for (const node of Object.values(nodes)) {
-    if (node.id === map.startNodeId) continue; // 起始节点你已在其上·标黑无意义
-    if (!darkSprinkleCandidate(node)) continue;
-    const density = darkDensityForNode(zone, node.depth);
-    if (density <= 0) continue;
-    const u = fnv(`${zone.id}::${key}::dark::${node.id}`) / 0x100000000;
-    if (u < density) node.dark = true;
-  }
-  // repair：每个父节点保留 ≥1 非黑子（无灯也有可见出口·防摸黑无路）。只减不增·单趟收敛。
-  for (const parent of Object.values(nodes)) {
-    const kids = parent.connectsTo;
-    if (kids.length === 0) continue;
-    if (kids.some((id) => !nodes[id]?.dark)) continue; // 已有非黑子 → OK
-    let unmark = kids[0]; // 全黑：取消最浅子（depth 最小·并列取 id 最小·确定性）
-    for (const id of kids) {
-      const a = nodes[id];
-      const b = nodes[unmark];
-      if (a && b && (a.depth < b.depth || (a.depth === b.depth && id < unmark))) unmark = id;
+    if (node.id === map.startNodeId) continue; // 起始节点你已在其上·标门无意义
+    if (!gateSprinkleCandidate(node)) continue;
+    for (const sense of senses) {
+      const density = gateDensityForNode(zone, node.depth, sense);
+      if (density <= 0) continue;
+      const u = fnv(`${zone.id}::${key}::gate::${sense}::${node.id}`) / 0x100000000;
+      if (u >= density) continue;
+      const ratio = zone.gates[sense]?.hiddenRatio ?? 0;
+      const h = fnv(`${zone.id}::${key}::gatemode::${sense}::${node.id}`) / 0x100000000;
+      node.gate = { sense, mode: h < ratio ? 'hidden' : 'locked' };
+      break; // 一节点一门（首个命中的 sense 定 gate）
     }
-    if (nodes[unmark]) nodes[unmark].dark = false;
   }
 }
 

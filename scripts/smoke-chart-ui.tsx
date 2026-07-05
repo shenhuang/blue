@@ -191,7 +191,7 @@ function diveState(opts?: { visibility?: 'dark'; sonarUnlocked?: boolean }): Gam
     ...r0,
     currentDepth: 20,
     currentNodeId: 'n0',
-    diveModifier: opts?.visibility ? { visibility: opts.visibility } : undefined,
+    diveModifier: opts?.visibility ? { gate: { sense: 'lamp' as const, mode: 'locked' as const } } : undefined,
   };
   return {
     ...base,

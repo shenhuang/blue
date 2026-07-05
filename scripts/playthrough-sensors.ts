@@ -78,7 +78,7 @@ function mk(opts?: {
     power: opts?.power ?? r0.power,
     sensors: { ...r0.sensors, light: opts?.light ?? true },
     stats: { ...r0.stats, sanity: opts?.sanity ?? 100 },
-    diveModifier: opts?.visibility ? { visibility: opts.visibility } : undefined,
+    diveModifier: opts?.visibility ? { gate: { sense: 'lamp', mode: 'locked' } } : undefined,
   };
   return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
 }
@@ -140,7 +140,7 @@ L('\n========== 3. 地标豁免灯门 ==========');
   const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
   const run: RunState = {
     ...r0, map: mapLm, currentNodeId: 'n0', currentDepth: 20,
-    sensors: { ...r0.sensors, light: false }, diveModifier: { visibility: 'dark' },
+    sensors: { ...r0.sensors, light: false }, diveModifier: { gate: { sense: 'lamp', mode: 'locked' } },
   };
   const st0: GameState = { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
   const s = enterNodeSelection(st0);
@@ -167,7 +167,7 @@ L('\n========== 4. 深度不再降档（陡降灯下仍 full）==========');
   const mkDeep = (vis?: 'dark'): GameState => {
     const base = createInitialGameState();
     const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
-    const run: RunState = { ...r0, map: deepMap, currentNodeId: 'd0', currentDepth: 80, diveModifier: vis ? { visibility: vis } : undefined };
+    const run: RunState = { ...r0, map: deepMap, currentNodeId: 'd0', currentDepth: 80, diveModifier: vis ? { gate: { sense: 'lamp', mode: 'locked' } } : undefined };
     return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
   };
   const csClear = choicesOf(enterNodeSelection(mkDeep()));
@@ -303,7 +303,7 @@ function mkUp(
     power: opts?.power ?? r0.power,
     sensors: { ...r0.sensors, light: opts?.light ?? true },
     stats: { ...r0.stats, sanity: opts?.sanity ?? 100 },
-    diveModifier: opts?.visibility ? { visibility: opts.visibility } : undefined,
+    diveModifier: opts?.visibility ? { gate: { sense: 'lamp', mode: 'locked' } } : undefined,
   };
   return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
 }
@@ -395,7 +395,7 @@ function mkDeep(opts?: { visibility?: 'dark'; light?: boolean; power?: number })
     currentDepth: 80,
     power: opts?.power ?? r0.power,
     sensors: { ...r0.sensors, light: opts?.light ?? true },
-    diveModifier: opts?.visibility ? { visibility: opts.visibility } : undefined,
+    diveModifier: opts?.visibility ? { gate: { sense: 'lamp', mode: 'locked' } } : undefined,
   };
   return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
 }
@@ -420,7 +420,7 @@ L('\n========== 12. 尸体定位豁免（Lv.1·灯门约束）==========');
   // (c) 黑水灯开：Lv.1 尸体豁免走 lampOn（新模型黑处灯照得到）→ 仍给 hint、不锁（灯认得出那具熟悉轮廓）。
   const darkOnLv1 = enterNodeSelection({
     ...withLv1,
-    run: { ...withLv1.run!, diveModifier: { visibility: 'dark' } }, // 灯默认开
+    run: { ...withLv1.run!, diveModifier: { gate: { sense: 'lamp', mode: 'locked' } } }, // 灯默认开
   });
   const csDarkOn = choicesOf(darkOnLv1);
   assert(byId(csDarkOn, 'dcorpse').locked !== true, '12c: 黑水灯开 Lv.1 尸体不锁（lampOn 豁免·灯认得出）');
@@ -429,7 +429,7 @@ L('\n========== 12. 尸体定位豁免（Lv.1·灯门约束）==========');
   // (d) 黑水关灯：连 Lv.1 尸体也要灯才认得出 → 锁住、无 hint（尸体豁免走 lampOn·关灯即失）。
   const darkOffLv1 = enterNodeSelection({
     ...withLv1,
-    run: { ...withLv1.run!, sensors: { ...withLv1.run!.sensors, light: false }, diveModifier: { visibility: 'dark' } },
+    run: { ...withLv1.run!, sensors: { ...withLv1.run!.sensors, light: false }, diveModifier: { gate: { sense: 'lamp', mode: 'locked' } } },
   });
   const csDarkOff = choicesOf(darkOffLv1);
   assert(byId(csDarkOff, 'dcorpse').locked === true, '12d: 黑水关灯 Lv.1 尸体也锁住（需要灯才认得出）');

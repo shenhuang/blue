@@ -9,13 +9,10 @@
 //
 // 详见 src/engine/chart.ts 与 docs/STATUS.md §5「港口海图选点 UI」。
 
-import type { CaveRegion } from './dive';
+import type { CaveRegion, NodeGate } from './dive';
 
 /** 洋流强度档位。MVP：仅叙事 + 落到 run.diveModifier 留接口；冲走/漂移效果待实装。 */
 export type CurrentStrength = 'none' | 'mild' | 'strong';
-
-/** 能见度档位（感知重做后＝灯门核心·#259/#262）：dark→黑处需有效灯才看清（否则可见锁住/隐藏）；murky 中间档已删（非黑=干净）。 */
-export type Visibility = 'clear' | 'dark';
 
 /**
  * POI 环境修正 —— 全部可选，叠加在所引用 zone 的基础参数上。
@@ -29,8 +26,16 @@ export interface PoiModifier {
   depthOffset?: number;
   /** 洋流强度。MVP 仅落到 run.diveModifier + 叙事日志；冲走/漂移效果待实装。 */
   current?: CurrentStrength;
-  /** 能见度。MVP 仅落到 run.diveModifier + 叙事日志；光照半径/事件可见性效果待实装。 */
-  visibility?: Visibility;
+  /**
+   * 整潜门（感知门 SPEC §2.1·取代旧 `visibility:'clear'|'dark'`）：落到 `run.diveModifier.gate`＝live-combine 的
+   * run 属性（非 stamp 进 mapgen·见 dive-select.ts::effectiveGate）。给非豁免节点盖同一个门。
+   *   - `{sense:'lamp',mode:'locked'}`＝旧 `visibility:'dark'`（黑处·可见但锁·没灯全黑）；
+   *   - `{sense:'sonar',mode:'locked'}`＝整潜浑浊（灯没用·得扫一记声呐）；
+   *   - 缺省（无 gate）＝旧 `'clear'`（不需灯就看清近场）。
+   * 整潜门**只用 `locked`**（可见但锁·沿用 #221 预告语义）；`hidden` 只由 per-node 撒点产生（SPEC §2.1）。
+   * 海图入口门（chart.ts::poiDiveBlock）读它判「缺该感官时挡下潜」。
+   */
+  gate?: NodeGate;
   /**
    * 覆盖 zone.depthRange 的绝对深度窗口（米·与 band.depthRange 同义）。**已实装**（直通 GenOpts.depthRange）。
    * 「平廊」类 POI 用窄 span 表达横向洞——洞型谱 #114 的 span 旋钮在调用方，这就是那个调用方。

@@ -32,7 +32,9 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // 形状变（run.stats 多一字段）；按 quirk #99 不写迁移、bump 弃旧档从头开始（createNewRun 种默认 0）。
 // 11→12（月相潮汐 Phase 0b·2026-06-26）：DeathRecord.diveAge → diedOnDay（尸体腐烂挂「天」不挂「次」·
 // age = profile.day − diedOnDay 纯派生·SPEC §2.2）；形状变（reshape，非纯加字段）→ 按 quirk #99 不写迁移、bump 弃旧档。
-const SAVE_VERSION = 12;
+// 12→13（感知门·2026-07-05）：diveModifier.visibility:'clear'|'dark' → diveModifier.gate?:NodeGate（灯/声呐×隐藏/锁住）——
+// run.diveModifier 形状变（'dark'→{sense:'lamp',mode:'locked'}）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始。
+const SAVE_VERSION = 13;
 
 /** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile 用。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';

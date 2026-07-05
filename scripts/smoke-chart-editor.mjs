@@ -74,8 +74,8 @@ const reefReach = effectiveDistance(profile, reef);
 assert(typeof reefReach === 'number' && reefReach >= 0, `effectiveDistance 应为非负整数·got: ${reefReach}`);
 assert(reefReach === 2, `东礁 effectiveDistance·hypot(0.01,0.5)/0.3≈2·got: ${reefReach}`);
 
-// modifier describeModifier：深度偏移 + 急流 + 黑暗
-const mod = { depthOffset: 30, current: 'strong', visibility: 'dark' };
+// modifier describeModifier：深度偏移 + 急流 + 黑暗（lamp 门·感知门 SPEC）
+const mod = { depthOffset: 30, current: 'strong', gate: { sense: 'lamp', mode: 'locked' } };
 const tags = describeModifier(mod);
 assert(tags.includes('更深 +30m'), `describeModifier 应含「更深 +30m」·got: ${tags}`);
 assert(tags.includes('急流'), `describeModifier 应含「急流」·got: ${tags}`);

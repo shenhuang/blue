@@ -469,7 +469,8 @@ function Section({
 // ── POI 的事件集（开场/变体/专属·每行点进去走查·剧情编辑器「按 POI」模式）──────
 const VIA_LABEL: Record<string, string> = { zone: '区域池', band: '深度带', cave: '持久洞' };
 const CURRENT_LABEL: Record<string, string> = { none: '无', mild: '缓流', strong: '急流' };
-const VIS_LABEL: Record<string, string> = { clear: '清', dark: '黑水' };
+// 整潜门（感知门 SPEC）dev 标签：lamp 门＝黑水（需灯）/ sonar 门＝浑浊（需声呐）。
+const GATE_LABEL: Record<string, string> = { lamp: '黑水（需灯）', sonar: '浑浊（需声呐）' };
 
 /**
  * 门控标注（Q1「全量目录+门控标注」）：一条事件的运行态门槛压成一行紧凑串——解释「为什么这条在某次下潜里没出现」。
@@ -538,7 +539,7 @@ function PoiEvents({ p, selectedId, onPick }: { p: PoiEventSet; selectedId: stri
             {r.depthOffset ? ` · Δ深 ${r.depthOffset > 0 ? '+' : ''}${r.depthOffset}` : ''}
             {r.tags.length ? ` · ${r.tags.join('/')}` : ''}
             {r.current && r.current !== 'none' ? ` · 洋流 ${CURRENT_LABEL[r.current] ?? r.current}` : ''}
-            {r.visibility && r.visibility !== 'clear' ? ` · 能见 ${VIS_LABEL[r.visibility] ?? r.visibility}` : ''}
+            {r.gate ? ` · 门 ${GATE_LABEL[r.gate.sense] ?? r.gate.sense}` : ''}
             {r.lunarMayUpgradeCurrent ? ' · 大潮可升洋流' : ''}
           </div>
         </div>

@@ -18,7 +18,7 @@ import { getBand, bandDiveModifier } from './bands';
 import { getCave } from './caves';
 import { getColumns, columnDivePoiId, columnTierBandId, columnStoryDivePoiId, columnStoryBandId } from './columns';
 import chartData from '../data/chart_pois.json';
-import type { ZoneDef, ZoneTag, CurrentStrength, Visibility, PoiModifier } from '@/types';
+import type { ZoneDef, ZoneTag, CurrentStrength, NodeGate, PoiModifier } from '@/types';
 
 export type PoiKind = 'anchor' | 'roaming';
 
@@ -177,8 +177,8 @@ export interface PoiDiveRouting {
   caveId?: string;
   /** POI 固有洋流（band→bandDiveModifier）。 */
   current?: CurrentStrength;
-  /** POI 固有能见度（band→bandDiveModifier）。 */
-  visibility?: Visibility;
+  /** POI 固有整潜门（感知门 SPEC·band→bandDiveModifier·取代旧 visibility）。 */
+  gate?: NodeGate;
   /** zone 路径的深度偏移（≠0 才带）。 */
   depthOffset?: number;
   /** zone 路径：大潮（月相）可把洋流升档（运行期按 day 派生·此处只标注可能性·band/cave 不吃月相）。 */
@@ -234,7 +234,7 @@ function resolveRouting(raw: RawPoi): PoiDiveRouting | null {
         via: 'band', zoneId: band.zoneId, zoneName: zone?.name, bandId: raw.bandId,
         depthRange: span,
         tags: band.tags ?? (zone ? activeTagsAcross(zone, span[0], span[1]) : []),
-        current: m.current, visibility: m.visibility,
+        current: m.current, gate: m.gate,
       };
     }
   }
@@ -246,7 +246,7 @@ function resolveRouting(raw: RawPoi): PoiDiveRouting | null {
   return {
     via: 'zone', zoneId: zone.id, zoneName: zone.name,
     depthRange: span, tags: activeTagsAcross(zone, span[0], span[1]),
-    current: raw.modifier?.current, visibility: raw.modifier?.visibility,
+    current: raw.modifier?.current, gate: raw.modifier?.gate,
     depthOffset: off || undefined, lunarMayUpgradeCurrent: true,
   };
 }

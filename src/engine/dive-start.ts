@@ -7,7 +7,7 @@ import type {
   GameState,
   RunState,
   ChartPoi,
-  Visibility,
+  NodeGate,
   PlayerProfile,
   ZoneTag,
   InventoryItem,
@@ -482,7 +482,7 @@ export function startDiveFromPoi(
           : '水里有股缓慢的洋流。',
     });
   }
-  s = appendVisibilityLog(s, m?.visibility, run.sensors.sonarUnlocked);
+  s = appendVisibilityLog(s, m?.gate, run.sensors.sonarUnlocked);
 
   // 深水区 Phase 3：横渡到「无灯之光」→ 入潜兑现（§3.5）。强制把这次下潜的开场设成 mimic 兑现事件
   // （run/map 已就位，事件自身以 forceAscend 收尾＝一次性 capstone 遭遇，不靠节点池抽取、不可错过）。
@@ -560,27 +560,39 @@ export function startDiveFromPoi(
 }
 
 /**
- * 出潜时按能见度追加叙事（startDiveFromPoi / startDiveFromOutpost 共用，避免文案漂移）。
- * 黑水里灯打不透 → 提示声呐门控（深水区 Phase 0a：有声呐能扫远但回波不可信 / 没声呐只能摸黑）。
+ * 出潜时按整潜门追加叙事（感知门 SPEC·startDiveFromPoi / diveIntoBand 共用，避免文案漂移）。
+ * lamp 门（黑水灯打不透）→ 提示声呐门控（有声呐能扫远 / 没声呐只能摸黑）；sonar 门（浑浊·灯没用）→ 提示扫声呐。
+ * 无 gate（清水）→ 不加日志（early-return）。
  */
 function appendVisibilityLog(
   s: GameState,
-  visibility: Visibility | undefined,
+  gate: NodeGate | undefined,
   sonarUnlocked: boolean,
 ): GameState {
-  if (!visibility || visibility === 'clear') return s;
-  s = appendLog(s, {
-    tone: 'realistic',
-    // 感知重做删 murky 中间档（#262）：能到这里的只剩 band/POI 级整潜黑（clear 已在上面 early-return）。
-    text: '光几乎照不进来，探照灯只够看清面前一臂。',
-  });
-  if (visibility === 'dark') {
+  if (!gate) return s;
+  if (gate.sense === 'lamp') {
+    s = appendLog(s, {
+      tone: 'realistic',
+      text: '光几乎照不进来，探照灯只够看清面前一臂。',
+    });
     s = appendLog(s, {
       // 感知重做（#259/#262）：灯=诚实硬门（有灯看得清近场·没灯全黑），声呐=诚实侦察（不再「回波信不信得过」）。
       tone: 'uncanny',
       text: sonarUnlocked
         ? '（这片黑里没有灯就寸步难行。声呐能从前方探回轮廓——回波是诚实的，帮你先看清下一步。）'
         : '（这片黑里没有灯就寸步难行。你也没有能用的声呐，只能贴着石壁一点点摸过去。）',
+    });
+  } else {
+    // sonar 门（浑浊 / 塌方只余回声 / 水搅浑…灯没用·得扫声呐·诚实揭示非欺骗）。
+    s = appendLog(s, {
+      tone: 'realistic',
+      text: '水浑得灯照不透——光只在眼前散成一团。',
+    });
+    s = appendLog(s, {
+      tone: 'uncanny',
+      text: sonarUnlocked
+        ? '（这里灯没用，得靠声呐——一记脉冲打出去，回波替你把前方的路认清。）'
+        : '（这里灯没用，你也没有能用的声呐，只能贴着摸，看不清前面是什么。）',
     });
   }
   return s;
@@ -642,7 +654,7 @@ function diveIntoBand(
     tone: 'system',
     text: `下潜至「${band.name}」（${band.depthRange[0]}–${band.depthRange[1]}m）。`,
   });
-  s = appendVisibilityLog(s, m.visibility, run.sensors.sonarUnlocked);
+  s = appendVisibilityLog(s, m.gate, run.sensors.sonarUnlocked);
   if (band.danger) {
     s = appendLog(s, { tone: 'uncanny', text: band.danger });
   }

@@ -9,7 +9,7 @@ import type {
   Outcome,
   Condition,
   Stats,
-  Visibility,
+  NodeGate,
   InventoryItem,
 } from '@/types';
 import { addToInventory, addToPoiSetMap, appendLog, clampStats, enqueuePickup, totalRunInventoryWeight } from './state';
@@ -505,14 +505,14 @@ export function resolveOption(
 }
 
 /**
- * 能见度（海图 POI 修正）对理智的额外消耗：看不清越久越压抑。
- * 纯函数，便于回归断言。clear / 未设 → 0。
+ * 整潜门（感知门 SPEC）对理智的额外消耗：黑处（lamp 门）看不清越久越压抑（＝旧 `visibility:'dark'` 行为）。
+ * sonar 门（浑浊）/ 无门 → 0（只 lamp-dark 掉 san·守旧行为）。纯函数，便于回归断言。
  */
 export function visibilitySanityDrain(
-  visibility: Visibility | undefined,
+  gate: NodeGate | undefined,
   turns: number,
 ): number {
-  if (visibility === 'dark') return 0.35 * turns;
+  if (gate?.sense === 'lamp') return 0.35 * turns;
   return 0;
 }
 
@@ -555,8 +555,8 @@ export function tickTurns(
   if (narcosisDrain > 0) {
     stats.sanity = Math.max(0, stats.sanity - narcosisDrain);
   }
-  // 能见度（海图 POI 修正）：看不清 → 额外理智压力
-  const visDrain = visibilitySanityDrain(run.diveModifier?.visibility, turns);
+  // 整潜门（感知门·黑处 lamp 门）：看不清 → 额外理智压力（sonar 门不掉·守旧 'dark' 行为）
+  const visDrain = visibilitySanityDrain(run.diveModifier?.gate, turns);
   if (visDrain > 0) {
     stats.sanity = Math.max(0, stats.sanity - visDrain);
   }

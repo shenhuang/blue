@@ -14,7 +14,7 @@ import {
   maybeMultiFeatureRoom,
   roomPreview,
   placeCorpses,
-  sprinkleDarkNodes,
+  sprinkleGates,
   applyHarvestDepletion,
 } from './mapgen-shared';
 
@@ -223,8 +223,8 @@ export function generatePersistentCaveMap(opts: GenOpts, params: CaveGenParams):
     // 默认起手 = 第一个入口门户（idOf(1)）；load 时按绑定入口（caveEntry 解析·§2.3/§4.1）覆盖 currentNodeId。
     startNodeId: idOf(1),
   };
-  // 隐藏黑点撒布（感知重做 per-node 黑·#262·确定性·零 rng·冻进洞结构·非 eligible→no-op·byte-identical）。
-  sprinkleDarkNodes(map, zone, params.caveId);
+  // 感知门撒布（感知门 SPEC §6·确定性·零 rng·冻进洞结构·无 zone.gates→no-op·byte-identical）。
+  sprinkleGates(map, zone, params.caveId);
   return map;
 }
 

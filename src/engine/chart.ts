@@ -8,6 +8,7 @@
 import type { ChartPoi, PoiModifier, PlayerProfile, SeaChart, ChartConditions, PoiRevealState, LunarPhase } from '@/types';
 import chartData from '@/data/chart_pois.json';
 import { getUpgradeDef } from './upgrades';
+import { hasSonarEquipped } from './equipment';
 import { caveDepthCurveForPlace, caveShapeBucket } from './mapgen';
 import { getZone } from './zones';
 import {
@@ -216,7 +217,7 @@ function makeMimicPoi(): ChartPoi {
     distance: 4,
     mapX: 0.93,
     mapY: 0.9,
-    modifier: { depthOffset: 100, visibility: 'dark', current: 'strong' },
+    modifier: { depthOffset: 100, gate: { sense: 'lamp', mode: 'locked' }, current: 'strong' },
     persistent: false,
     mimic: true,
   };
@@ -341,8 +342,46 @@ export function isPoiVisible(profile: PlayerProfile, poi: ChartPoi): boolean {
 }
 
 /**
+ * 是否拥有可用照明装备（感知门 SPEC §4/§10.5·入口谓词）：灯槽装着一件灯——**不看当前电量**（拥有即算·
+ * 想下去就带灯，哪怕出海时没充满）。别和潜内实时 `lampOn`（run.sensors.light && power>0）混。
+ * 缺 equipment（裸 profile / 坏档）→ 无灯（保守挡）。
+ */
+export function ownsUsableLamp(profile: PlayerProfile): boolean {
+  return profile.equipment?.light != null;
+}
+
+/**
+ * 声呐能力是否已解锁（感知门 SPEC §4/§10.5·入口谓词）：声呐槽装着一台达基线等级的声呐件（＝run.sensors.sonarUnlocked
+ * 的持久来源·engine/equipment.ts::hasSonarEquipped 单一真相）。别用潜内 run.sensors。缺 equipment → 未解锁。
+ */
+export function sonarUnlocked(profile: PlayerProfile): boolean {
+  return profile.equipment ? hasSonarEquipped(profile.equipment) : false;
+}
+
+/**
+ * 海图入口门（感知门 SPEC §4·一般化「全黑 POI 不带灯不让下潜」）：POI 是整潜门（modifier.gate）且玩家缺那个感官
+ * → 挡下潜、给原因；否则 null（可下）。**不对称**（§4）：
+ *   - lamp 门 && !ownsUsableLamp → 挡「漆黑 · 需照明才能下潜」（缺装备·下去纯浪费）；
+ *   - sonar 门 && !sonarUnlocked → 挡（reason 取 gate.reason ?? 中性）——但**已解锁声呐则不挡**（下去扫就行）；
+ * 海图生图前只有 POI 自带 modifier·拿不到还没生成的子节点 ⇒ 入口门必须靠 POI 级 modifier.gate（授权源）。纯函数。
+ */
+export function poiDiveBlock(profile: PlayerProfile, poi: ChartPoi): { blocked: true; reason: string } | null {
+  const g = poi.modifier?.gate;
+  if (!g) return null;
+  if (g.sense === 'lamp' && !ownsUsableLamp(profile)) {
+    return { blocked: true, reason: '漆黑 · 需照明才能下潜' };
+  }
+  if (g.sense === 'sonar' && !sonarUnlocked(profile)) {
+    return { blocked: true, reason: g.reason ?? '需声呐才能下潜' };
+  }
+  return null;
+}
+
+/**
  * POI 不能出海的原因（已假定 visible）。可出海返回 null。
- * 能力门两类：requiresUpgrade（全局随身升级）+ requiresLighthouseUpgrade（家灯塔设施，如船坞）。
+ * 能力门：requiresUpgrade（全局随身升级）+ requiresLighthouseUpgrade（家灯塔设施，如船坞）+ 感知门入口（poiDiveBlock·
+ * 缺灯 / 声呐没解锁的整潜门 POI·感知门 SPEC §4）。**入口门收在此单点** ⇒ 自动流进 poiRevealState（lit/dim 判据）与
+ * poiBlockReason（UI 一句话）——lamp 门缺灯的 POI 落 dim（可见但去不了·标「漆黑·需照明」）。
  */
 export function poiLockReason(profile: PlayerProfile, poi: ChartPoi): string | null {
   if (poi.requiresUpgrade && !profile.unlockedUpgrades.has(poi.requiresUpgrade)) {
@@ -356,6 +395,9 @@ export function poiLockReason(profile: PlayerProfile, poi: ChartPoi): string | n
       return `需要「${def?.name ?? poi.requiresLighthouseUpgrade}」`;
     }
   }
+  // 感知门入口（§4）：缺灯 / 声呐没解锁的整潜门 POI → 挡（reason 直给）。
+  const gateBlock = poiDiveBlock(profile, poi);
+  if (gateBlock) return gateBlock.reason;
   return null;
 }
 
@@ -598,8 +640,8 @@ export function describeModifier(mod?: PoiModifier): string[] {
   if (mod.current && mod.current !== 'none') {
     tags.push(mod.current === 'strong' ? '急流' : '缓流');
   }
-  if (mod.visibility && mod.visibility !== 'clear') {
-    tags.push(mod.visibility === 'dark' ? '黑暗' : '浑浊');
+  if (mod.gate) {
+    tags.push(mod.gate.sense === 'lamp' ? '黑暗' : '浑浊');
   }
   return tags;
 }

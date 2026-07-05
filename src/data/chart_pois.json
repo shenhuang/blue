@@ -137,8 +137,7 @@
             30
           ],
           "layerCount": 10,
-          "depthCurve": 2.4,
-          "visibility": "clear"
+          "depthCurve": 2.4
         }
       },
       {
@@ -213,7 +212,7 @@
             85,
             105
           ],
-          "visibility": "dark"
+          "gate": { "sense": "lamp", "mode": "locked" }
         }
       },
       {
@@ -235,7 +234,7 @@
             95,
             110
           ],
-          "visibility": "dark"
+          "gate": { "sense": "lamp", "mode": "locked" }
         }
       },
       {
@@ -266,7 +265,7 @@
           "flag.tutorial_complete"
         ],
         "modifier": {
-          "visibility": "dark"
+          "gate": { "sense": "lamp", "mode": "locked" }
         }
       },
       {
@@ -388,7 +387,7 @@
           "flag.tutorial_complete"
         ],
         "modifier": {
-          "visibility": "dark"
+          "gate": { "sense": "lamp", "mode": "locked" }
         }
       },
       {
@@ -505,7 +504,7 @@
           "intel.mira.sela"
         ],
         "modifier": {
-          "visibility": "dark"
+          "gate": { "sense": "lamp", "mode": "locked" }
         }
       },
       {
@@ -669,7 +668,7 @@
           "flag.cave_chart_page"
         ],
         "modifier": {
-          "visibility": "dark"
+          "gate": { "sense": "lamp", "mode": "locked" }
         }
       },
       {
@@ -734,7 +733,7 @@
           "story.ch1.anchor.vent"
         ],
         "modifier": {
-          "visibility": "dark"
+          "gate": { "sense": "lamp", "mode": "locked" }
         }
       }
     ],
@@ -773,7 +772,7 @@
         ],
         "modifier": {
           "current": "strong",
-          "visibility": "dark"
+          "gate": { "sense": "lamp", "mode": "locked" }
         }
       },
       {
@@ -791,7 +790,7 @@
         ],
         "modifier": {
           "depthOffset": 6,
-          "visibility": "dark"
+          "gate": { "sense": "lamp", "mode": "locked" }
         }
       },
       {
@@ -808,7 +807,6 @@
           "flag.tutorial_complete"
         ],
         "modifier": {
-          "visibility": "clear",
           "current": "mild"
         }
       },
@@ -850,7 +848,7 @@
             60,
             84
           ],
-          "visibility": "dark"
+          "gate": { "sense": "lamp", "mode": "locked" }
         }
       },
       {
@@ -888,7 +886,7 @@
             92,
             116
           ],
-          "visibility": "dark"
+          "gate": { "sense": "lamp", "mode": "locked" }
         }
       },
       {
@@ -905,7 +903,6 @@
           "flag.tutorial_complete"
         ],
         "modifier": {
-          "visibility": "clear",
           "current": "mild"
         }
       },
@@ -927,7 +924,7 @@
             98,
             116
           ],
-          "visibility": "dark"
+          "gate": { "sense": "lamp", "mode": "locked" }
         }
       },
       {

@@ -530,30 +530,30 @@ assert(
 L('  横岩廊→往里钻（钉 2.4）· 蓝洞群→斜着下（派生 0.87）· 墓园→无标签 · 三档门槛 ✓');
 
 // ============================================
-// 6. current / visibility 实际效果
+// 6. current / 整潜门 实际效果
 // ============================================
-L('\n========== 6. current / visibility 实际效果 ==========');
+L('\n========== 6. current / 整潜门 实际效果 ==========');
 
-// visibility：在浅水（depth 0，无深度衰减）下，理智只受能见度影响 → 干净断言
+// 整潜门（感知门）：在浅水（depth 0，无深度衰减）下，理智只受 lamp 门影响 → 干净断言
 const darkRun: RunState = {
   ...createNewRun({ zoneId: 'zone.east_reef' }),
   currentDepth: 0,
-  diveModifier: { visibility: 'dark' },
+  diveModifier: { gate: { sense: 'lamp', mode: 'locked' } },
 };
 const darkTicked = tickTurns(darkRun, 10);
 assert(
   Math.abs(darkTicked.stats.sanity - (100 - 0.35 * 10)) < 1e-6,
-  `dark 10 回合应扣 3.5 理智，实际扣 ${(100 - darkTicked.stats.sanity).toFixed(3)}`,
+  `lamp 门 10 回合应扣 3.5 理智，实际扣 ${(100 - darkTicked.stats.sanity).toFixed(3)}`,
 );
 const clearTicked = tickTurns({ ...darkRun, diveModifier: undefined }, 10);
 assert(clearTicked.stats.sanity === 100, '无修正 + 浅水不应扣理智');
 assert(
-  visibilitySanityDrain('dark', 4) === 1.4 &&
-    visibilitySanityDrain('clear', 4) === 0 &&
+  visibilitySanityDrain({ sense: 'lamp', mode: 'locked' }, 4) === 1.4 &&
+    visibilitySanityDrain({ sense: 'sonar', mode: 'locked' }, 4) === 0 &&
     visibilitySanityDrain(undefined, 4) === 0,
-  'visibilitySanityDrain 档位不对',
+  'visibilitySanityDrain 档位不对（只 lamp 门掉 san·sonar 门/无门 0）',
 );
-L('  visibility：dark −0.35/turn、clear/无 0 ✓（感知重做删 murky 中间档·#262）');
+L('  整潜门：lamp 门 −0.35/turn、sonar 门/无 0 ✓（感知门 SPEC·守旧 dark 行为）');
 
 // current：每次节点移动的额外消耗（纯函数档位）
 assert(

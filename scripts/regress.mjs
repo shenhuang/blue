@@ -121,6 +121,13 @@ tasks.push({ name: 'check-enemy-refs', cmd: ['node', join('scripts', 'check-enem
 // 深入潜点四条门（纯 node·bandId 完整 + 探深↔POI 配对 + 无孤儿 + onlyLighthouse 合法，见 scripts/check-dive-refs.mjs）
 tasks.push({ name: 'check-dive-refs', cmd: ['node', join('scripts', 'check-dive-refs.mjs')] });
 
+// 感知门·地标永不带门 门（感知门 SPEC §7·静态 zone.gates schema + 高密度撒门 post 断言地标零门·见 scripts/check-gate-skeleton.mjs）
+// 走 tsx（import engine 生成图）⇒ 沙箱无 esbuild 时自动剔出、留 Mac/nightly（同其它 tsx 行为测）。
+tasks.push({ name: 'check-gate-skeleton', cmd: [tsx, join('scripts', 'check-gate-skeleton.mjs')] });
+
+// 感知门·无空白懵屏/死锁 门（感知门 SPEC §5.1/§7·节点×传感器态×门配比·visible 空必 canReveal 或落上浮·见 scripts/check-gate-legibility.mjs）
+tasks.push({ name: 'check-gate-legibility', cmd: [tsx, join('scripts', 'check-gate-legibility.mjs')] });
+
 // 经济可达性门 v2（纯 node·消费 scripts/lib/economy-dag.mjs 单一真相·① 在册 ② 有源 + F1 单调 + F2 无结〔区域环/capstone 依赖〕 + F4 稀疏〔跨区门≤2·硬门·#239〕·F5 软警告·2026-06-29 E/F DAG·见 scripts/check-economy-reachability.mjs）
 tasks.push({ name: 'check-economy-reachability', cmd: ['node', join('scripts', 'check-economy-reachability.mjs')] });
 

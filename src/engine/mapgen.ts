@@ -15,7 +15,7 @@
 // 本文件只留分流入口 generateDiveMap + re-export（外部 import 面与拆分前一致·静态边不破）。
 
 import type { DiveMap, DiveNode } from '@/types';
-import { type GenOpts, makeSeededRng, applyHarvestDepletion, resolveLayoutStyle, sprinkleDarkNodes } from './mapgen-shared';
+import { type GenOpts, makeSeededRng, applyHarvestDepletion, resolveLayoutStyle, sprinkleGates } from './mapgen-shared';
 import { generateLayeredMap } from './mapgen-layered';
 import { generateMazeMap } from './mapgen-maze';
 
@@ -99,7 +99,7 @@ export function generateDiveMap(opts: GenOpts): DiveMap {
   // 固定资源耗尽（POI 固定资源耗尽·2026-06-25）：把已采尽的资源点抹平成空节点（确定性·零 rng·gated·post-pass）。
   // 两集都空（缺省）→ no-op、逐字节复现旧图（不破现有 mapgen 场景快照）。
   applyHarvestDepletion(map, opts.harvestedItemIds, opts.harvestedNodeIds);
-  // 隐藏黑点撒布（感知重做 per-node 黑·#262·确定性·零 rng·非 eligible zone→no-op·byte-identical）。
-  sprinkleDarkNodes(map, zone, opts.seedKey);
+  // 感知门撒布（感知门 SPEC §6·确定性·零 rng·无 zone.gates→no-op·byte-identical）。
+  sprinkleGates(map, zone, opts.seedKey);
   return map;
 }

@@ -2,7 +2,7 @@
 // 与主 SPEC §3 四属性、§7 死亡与元进度对齐
 
 import type { EquipmentSlot, DecoyKind } from './items';
-import type { DiveMap, NodeKind, PersistentCave } from './dive';
+import type { DiveMap, NodeKind, PersistentCave, GateSense } from './dive';
 import type { CombatState } from './combat';
 import type { ActiveInjury } from './injuries';
 import type { PoiModifier } from './chart';
@@ -511,17 +511,22 @@ export interface NodeChoice {
   /** 迷路图：该节点此前是否已到访过（回头/绕回时给"已来过"提示，盲航时也显示） */
   visited?: boolean;
   /**
-   * 该选项预览的感知档（感知重做后塌成灯门二态·SPEC §2.1）：'full' 灯下诚实真相 / 'none' 盲（黑处无灯锁住）。
+   * 该选项预览的感知档（感知重做后塌成门二态·感知门 SPEC §2.3）：'full' 灯下诚实真相 / 'none' 盲（门锁住）。
    * 'sonar' 档不再由引擎产出（声呐＝诚实远场侦察·不碰选点）；该成员仍在 ClarityTier 类型里供样式引用。
    * enterNodeSelection 计算并把对应 preview 文案烤进本结构（引擎侧门控，便于回归断言）；UI 据此渲染样式。
    */
   clarity?: ClarityTier;
   /**
-   * 灯门锁住（黑处无有效灯·可见但锁住·SPEC §2.1）：图上/选项里照画但点不了、标「太暗，看不清——需要灯」。
-   * enterNodeSelection 置位（clarity.ts::lampGateLocked）；开灯→解锁。**渲染层的禁用/拦截是车道 3**——
-   * 本车道只置标志 + 预览文案，选中一个 locked 节点尚未被引擎拦截（见报告）。
+   * 门锁住（可见但不能选·感知门 SPEC §2.3）：图上/选项里照画但点不了、按 gateSense 标「需要灯/需要声呐」。
+   * enterNodeSelection 置位（dive-select.ts::effectiveGate/gateUnlocked·per-node gate 优先·缺省落整潜门）；
+   * 满足对应感官（开灯 / 扫一记声呐）→ 解锁。渲染层（NodeSelectView）据此出禁用态 + handlePick 拦截。
    */
   locked?: boolean;
+  /**
+   * locked 时是哪种感官的门（感知门 SPEC §2.3）：'lamp'→提示「需要灯」/ 'sonar'→「需要声呐」。
+   * 仅 locked 时置；渲染层据此选禁用态提示文案。
+   */
+  gateSense?: GateSense;
 }
 
 /**

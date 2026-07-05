@@ -72,12 +72,12 @@ L(`  ${bands.length} 个 band：${bands.map((b) => `${b.name}[${b.depthRange[0]}
 // ============================================================
 // 2. 存在 >60m 的深 band（突破旧 60m 准硬上限）+ 深 band = 黑水
 // ============================================================
-L('\n========== 2. 深 band 突破 60m + 黑水 ==========');
-const deep = bands.find((b) => b.depthRange[0] >= 60 && b.visibility === 'dark');
-assert(deep, '2: 存在 ≥60m 的深黑 band（去掉 60m 准硬上限、证明不封顶）');
-assert(deep!.visibility === 'dark', '2: 深 band = 黑水（软门控：灯打不透 → 被迫用更耗电的声呐）');
-assert(bandDiveModifier(deep!).visibility === 'dark', '2: bandDiveModifier 透出 visibility');
-L(`  深黑 band「${deep!.name}」${deep!.depthRange[0]}–${deep!.depthRange[1]}m · ${deep!.visibility} ✓`);
+L('\n========== 2. 深 band 突破 60m + 黑水（lamp 门）==========');
+const deep = bands.find((b) => b.depthRange[0] >= 60 && b.gate?.sense === 'lamp');
+assert(deep, '2: 存在 ≥60m 的深黑 band（lamp 门·去掉 60m 准硬上限、证明不封顶）');
+assert(deep!.gate?.sense === 'lamp', '2: 深 band = 黑水 lamp 门（软门控：灯打不透 → 被迫用更耗电的声呐）');
+assert(bandDiveModifier(deep!).gate?.sense === 'lamp', '2: bandDiveModifier 透出 gate（lamp 门）');
+L(`  深黑 band「${deep!.name}」${deep!.depthRange[0]}–${deep!.depthRange[1]}m · gate ${deep!.gate?.sense} ✓`);
 
 // ============================================================
 // 3. mapgen depthRange 覆盖：band 绝对窗口生成
@@ -113,7 +113,7 @@ const s = startDiveFromPoi(base, divePoiForBand(deepBand));
 assert(s.run, '4: 出潜后有 run');
 assert(s.phase.kind === 'dive', '4: 进入 dive phase');
 assert(s.run!.zoneId === deepBand.zoneId, '4: run.zoneId = band.zoneId');
-assert(s.run!.diveModifier?.visibility === deepBand.visibility, '4: run.diveModifier.visibility = band.visibility');
+assert(s.run!.diveModifier?.gate?.sense === deepBand.gate?.sense, '4: run.diveModifier.gate = band.gate（sense 一致）');
 assert(s.run!.bandAlertFactor === (deepBand.alertFactor ?? 1), `4: run.bandAlertFactor = band.alertFactor（实 ${s.run!.bandAlertFactor}）`);
 // run.sonarDeception 断言随感知重做删除（声呐诚实·SPEC §2.2/§3）。
 assert(s.run!.huntEnabled === (deepBand.hunts ?? false), '4: run.huntEnabled = band.hunts');
@@ -287,9 +287,9 @@ for (const cb of colBands) {
       reg!.depthRange[0] === cb.depthRange[0] &&
       reg!.depthRange[1] === cb.depthRange[1] &&
       reg!.order === cb.order &&
-      reg!.visibility === cb.visibility &&
+      reg!.gate?.sense === cb.gate?.sense &&
       (reg!.alertFactor ?? 1) === (cb.alertFactor ?? 1),
-    `14: 注册表里的 ${cb.id} 与 columnBands() 派生一致（zone/窗口/order/visibility/alertFactor）`,
+    `14: 注册表里的 ${cb.id} 与 columnBands() 派生一致（zone/窗口/order/gate/alertFactor）`,
   );
 }
 const capBand = getBand('band.trench.t4');

@@ -2,11 +2,11 @@
 // 与 chart.ts 的"宏观 clarity（海图灯塔网）"平行：本文件只管"这一潜你带的灯 / 声呐"的近场诚实门 + 暴露脊柱。
 //
 // 新北极星（替代旧「越深越欺骗」·SPEC §1）：三件感知各司其职、诚实。
-//   灯 = 诚实近场硬门：黑处（visibility:'dark'）没有效灯 → 可见但锁住；开灯 → 解锁可探。灯到即真、不再有「灯下幻觉」。
-//   声呐 = 诚实远场侦察：ping 才扫、揭示前方地图规划纵深；永不撒谎、不碰选点（渲染在 SonarScanPanel）。
+//   灯 = 诚实近场硬门：整潜 lamp 门（diveModifier.gate.sense==='lamp'）没有效灯 → 可见但锁住；开灯 → 解锁可探。灯到即真、不再有「灯下幻觉」。
+//   声呐 = 诚实远场侦察：ping 才扫、揭示前方地图规划纵深；永不撒谎、不碰选点（渲染在 SonarScanPanel）。声呐门（浑浊）＝扫一记才认得清（诚实揭示·非欺骗）。
 //   欺骗 = 只剩低理智轴（本文件不再承担）：san 低 → 改选项 / 改怪物；世界诚实。
-// 深度不再降档预览——**darkness（visibility 标志）是唯一的门**（SPEC §2.1 / CLARITY COLLAPSE）。
-// 灯门判定收在 dive-select.ts（enterNodeSelection·per-choice locked + preview）；本文件留传感器派生态 + 暴露脊柱。
+// 深度不再降档预览——**门（NodeGate·感知门 SPEC）是唯一的门**：整潜门 live-combine（本文件的薄 helper）+ per-node 门（dive-select）。
+// 选点门判定（per-node·整潜门归一）收在 dive-select.ts（enterNodeSelection·effectiveGate/gateUnlocked·per-choice locked + preview）；本文件留传感器派生态 + 暴露脊柱 + run 级整潜门薄 helper。
 //
 // 纯函数 + 防御性读取（run 字段可能因脚本构造的部分 run 而缺失 → 用默认兜底）。
 
@@ -91,12 +91,19 @@ export function sonarPingCost(run: RunState): number {
   return run.sensorTuning.pingCost;
 }
 
-/** 'none' 档（摸黑 / 灯打不透）的盲航预览文案——沿用旧 visibility:dark 行为（quirk #27/#41）。 */
+/** 'none' 档（摸黑 / 灯打不透）的盲航预览文案——沿用旧 dark 行为（quirk #27/#41）。 */
 export const BLIND_PREVIEW = '看不清，一团黑影。';
 /** 'none' 档且该路已来过：你记得这片黑，但仍看不清里头。 */
 export const BLIND_VISITED_PREVIEW = '来过的方向，记得这片黑。';
-/** 灯门锁住（黑处无有效灯·可见但锁住·SPEC §2.1）的预览文案。 */
+/** 灯门锁住（黑处无有效灯·可见但锁住·感知门 SPEC §2.3）的预览文案（LOCKED_FALLBACK.lamp）。 */
 export const LOCKED_DARK_PREVIEW = '太暗，看不清——需要灯';
+/** 声呐门锁住（灯没用·得扫一记声呐·感知门 SPEC §2.3）的中性兜底预览（LOCKED_FALLBACK.sonar）。 */
+export const LOCKED_SONAR_PREVIEW = '得扫一记声呐才认得清';
+/**
+ * 门锁住选项旁的短标签（感知门 SPEC §2.3·**单一来源**·防漂移）：按 gateSense 取「需要灯 / 需要声呐」。
+ * NodeSelectView 的 lock-tag / title 一律读它，别在 UI 手写字面量（check-terminology 之外的散文漂移由「单点常量」机制挡）。
+ */
+export const GATE_TAG_LABEL = { lamp: '需要灯', sonar: '需要声呐' } as const;
 
 // ============================================================
 // 传感器派生状态
@@ -112,15 +119,19 @@ export function lampOn(run: RunState): boolean {
   return run.sensors.light && run.power > 0;
 }
 
-/** 这一潜的水是否全黑（visibility:'dark'·由 band/chart/column 派生落 diveModifier）——灯门的输入（SPEC §2.1）。 */
+/**
+ * 这一潜的水是否全黑（整潜 lamp 门·感知门 SPEC §2.1）——`run.diveModifier.gate` 是 lamp 门＝旧 `visibility:'dark'`
+ * （由 band/chart/column 派生落 diveModifier）。灯门的输入。整潜 sonar 门（浑浊）不是「黑」、不走这条（灯没用·不掉灯电）。
+ */
 export function waterIsDark(run: RunState): boolean {
-  return run.diveModifier?.visibility === 'dark';
+  return run.diveModifier?.gate?.sense === 'lamp';
 }
 
 /**
- * 灯门是否**锁住**这个下潜（SPEC §2.1「诚实近场硬门」）：黑处（waterIsDark）+ 没有效灯（灯没开或没电）→ 锁。
- * 开灯（且有电）→ 解锁。非黑水→从不锁（浅/清/浊水不需要灯就看得清近场）。
- * **触发是 lamp-on-and-powered，不是旧的排除 dark 的 lampEffective**（新模型里黑处正是灯起作用的地方）。
+ * 灯门是否**锁住**这个下潜（感知门 SPEC §2.1「诚实近场硬门」）：整潜 lamp 门（waterIsDark）+ 没有效灯（灯没开或没电）→ 锁。
+ * 开灯（且有电）→ 解锁。非 lamp 门→从不锁（浅/清/浊水/sonar 门不需要灯就看得清近场）。
+ * **薄 helper**：run 级整潜门的便捷判定（lightDrainFactor / clarity / appendVisibilityLog 用）；per-node 选点判定走
+ * dive-select.ts::effectiveGate/gateUnlocked 统一路径（整潜门在那边由 effectiveGate 归一进来·SPEC §2.3）。
  */
 export function lampGateLocked(run: RunState): boolean {
   return waterIsDark(run) && !lampOn(run);
@@ -136,21 +147,22 @@ export function sonarActive(run: RunState): boolean {
 }
 
 /**
- * run 级预览档（感知重做后塌成灯门二态·SPEC §2.1）：灯门锁住（黑处无有效灯）→ 'none'（盲）；否则 → 'full'（近场诚实真相）。
- * **关键**：非黑水（清 / 浊水）不需要灯就看得清近场 → 恒 'full'，即便灯关 / 没电（与 dive-select per-choice 灯门语义一致）。
+ * run 级预览档（感知门 SPEC §2.3·run 级整潜档）：整潜 lamp 门锁住（无有效灯）→ 'none'（盲）；否则 → 'full'（近场诚实真相）。
+ * **关键**：非 lamp 门（清 / sonar 门）不需要灯就看得清近场 → 恒 'full'，即便灯关 / 没电（与 dive-select per-choice 门语义一致）。
  * 声呐不再产生 per-choice 预览档（声呐＝诚实远场侦察·渲染在 SonarScanPanel·永不撒谎、不碰选点）——故 'sonar' 档不再由本函数产出。
- * 深度不再降档（旧 clarityForNode 已删）：唯一的门是 darkness（lampGateLocked）。
+ * 深度不再降档（旧 clarityForNode 已删）：门（NodeGate）是唯一的门；此处只看 run 级整潜 lamp 门（per-node 门在 dive-select 逐点判）。
  * ClarityTier 的 'sonar' 成员保留于类型（NodeSelectView/CSS 仍引用·lane 3/4 语义）——只是引擎不再产出它。
  */
 export function clarity(run: RunState): ClarityTier {
   return lampGateLocked(run) ? 'none' : 'full';
 }
 
-/** 灯每回合耗电的水况因子：清水/未设 ≈ 0（浅水近免费，Q2）/ 黑水 1（+ 深 band 斜坡留 Phase 1）。感知重做删 murky 中间档（#262·非黑=干净）。 */
+/**
+ * 灯每回合耗电的水况因子：清水/未设/sonar 门 ≈ 0（浅水近免费，Q2）/ 整潜 lamp 门 1（+ 深 band 斜坡留 Phase 1）。
+ * 感知门 SPEC §2.1：只 **lamp** 整潜门才耗灯电（灯打不透那段）；sonar 整潜门（浑浊）灯没用⇒不掉灯电。
+ */
 export function lightDrainFactor(run: RunState): number {
-  const vis = run.diveModifier?.visibility;
-  if (vis === 'dark') return 1;
-  return 0;
+  return run.diveModifier?.gate?.sense === 'lamp' ? 1 : 0;
 }
 
 /** 灯每回合耗电（仅灯亮时）。tickTurns 调用，类比 oxygen 的 turn 消耗。 */

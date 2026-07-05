@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import type { GameState, NodeChoice, FeatureChoice } from '@/types';
 import { moveToNode, exploreFeature, standAndFight, deployDecoy, beginAscentFromDive } from '@/engine/dive';
 import { isAscentBlocked } from '@/engine/ascent';
-import { clarity, ALERT_WARN, ALERT_THRESHOLD } from '@/engine/clarity';
+import { clarity, ALERT_WARN, ALERT_THRESHOLD, GATE_TAG_LABEL } from '@/engine/clarity';
+import { deriveGateNotice } from '@/engine/dive-select';
+import { getUpgradeBonuses } from '@/engine/upgrades';
 import { activeDecoy } from '@/engine/stalker';
 import { getItemDef } from '@/engine/items';
 import { zoneAllowsBacktrack } from '@/engine/zones';
@@ -36,6 +38,13 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
   // 单向下潜预告：层状（开阔水域）zone 的下潜图只往下通、走过的节点不再是选项（迷路图可回头则不提示）。
   // 在选点前就讲清楚，免得玩家过了上浮口往深里走之后，才发现回不了头（设计是单向、不该是惊吓）。
   const oneWay = !zoneAllowsBacktrack(run.zoneId);
+
+  // 派生门标注（感知门 SPEC §3）：从当前节点子集派生「暗处还有去处·需要灯 / 声呐才找得到的岔口」等提示（只 hidden 门驱动）。
+  // 纯引擎函数（deriveGateNotice）算·UI 只渲染（守 engine↛ui·quirk #95）。
+  const curNode = run.map && curNodeId ? run.map.nodes[curNodeId] : undefined;
+  const gateNotice = curNode
+    ? deriveGateNotice(curNode, run, getUpgradeBonuses(state.profile).revealCorpseHint)
+    : null;
 
   // 两段点击（#5）：选中态对不上当前 choices（移动后残留/欺骗变化）→ 视为无选中。
   const pending = pendingNodeId && choices.some((c) => c.nodeId === pendingNodeId) ? pendingNodeId : null;
@@ -179,6 +188,16 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
             已在声呐图上选中一处——下方亮边的就是它。图上点击只负责选中；要出发，点下方那条亮边的选项。
           </p>
         )}
+
+        {/* 派生门标注（感知门 SPEC §3）：当前节点还有被 hidden 门挡着的去处 → 提示需要灯 / 声呐（占位文案·作者后调）。
+            locked 门不在此汇总（选项自身已标「需要灯/需要声呐」）。 */}
+        {gateNotice && (
+          <div className="gate-notice">
+            {gateNotice.lines.map((line, i) => (
+              <p key={i} className="dim gate-notice-line">{line}</p>
+            ))}
+          </div>
+        )}
         <ul className="event-options">
           {choices.map((c) => {
             const isAscent = c.isAscentPoint;
@@ -193,9 +212,10 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
                 : isCamp
                   ? '⌂ 扎营点'
                   : `${c.depth}m`;
-            // 灯门锁住（感知重做 SPEC §2.1）：黑处无有效灯的非豁免节点＝可见但锁住——照画、dim + 禁用、点不了、标「需要灯」。
-            // 地标（上浮口/气穴/扎营）与 Lv.1 尸体引擎已豁免（locked 不置）＝照常可选。开灯→引擎清 locked→解锁。
+            // 门锁住（感知门 SPEC §2.3）：可见但不能选的非豁免节点＝照画、dim + 禁用、点不了、按 gateSense 标「需要灯/需要声呐」。
+            // 地标（上浮口/气穴/扎营）与 Lv.1 尸体引擎已豁免（locked 不置）＝照常可选。满足对应感官（开灯/扫声呐）→ 引擎清 locked→解锁。
             const isLocked = c.locked === true;
+            const gateLabel = GATE_TAG_LABEL[c.gateSense ?? 'lamp'];
             return (
               <li key={c.nodeId}>
                 <button
@@ -203,13 +223,13 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
                   onClick={isLocked ? undefined : () => handlePick(c.nodeId)}
                   disabled={isLocked}
                   aria-disabled={isLocked || undefined}
-                  title={isLocked ? '太暗，看不清——需要灯' : undefined}
+                  title={isLocked ? c.preview : undefined}
                 >
                   <div className="node-row">
                     <span className="node-depth">{label}</span>
-                    {/* 预览已按 clarity 档烤好（灯下真相 / 盲）；clar-<档> 控制样式。locked 时预览＝「太暗，看不清——需要灯」（引擎烤） */}
+                    {/* 预览已按 clarity 档烤好（灯下真相 / 盲）；clar-<档> 控制样式。locked 时预览＝门成因（gate.reason 或中性兜底·引擎烤） */}
                     <span className={`node-preview clar-${c.clarity ?? 'full'}`}>{c.preview}</span>
-                    {isLocked && <span className="lock-tag" aria-hidden="true">需要灯</span>}
+                    {isLocked && <span className="lock-tag" aria-hidden="true">{gateLabel}</span>}
                   </div>
                   {c.hasCorpseHint && <div className="node-hint">这一带似乎有熟悉的东西…</div>}
                   {!isAscent && (

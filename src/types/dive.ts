@@ -3,6 +3,43 @@
 
 import type { ZoneTag } from './events';
 
+// ============================================================
+// 统一门模型（感知门 SPEC·灯/声呐 × 隐藏/锁住·2×2）—— 一个门 = 哪种感官解锁 × 不满足时怎么表现。
+// 取代 #262 的 `DiveNode.dark:boolean` + 旧整潜级 `diveModifier.visibility:'clear'|'dark'`（收成一处 per-node·
+// live-combine 语义见 dive-select.ts::effectiveGate/gateUnlocked）。runtime 生成·不入存档 → 干净替换。
+// ============================================================
+
+/** 哪种感官能解锁这个门（灯＝持续装备态·声呐＝一记 ping 粘住·SPEC §2.2）。 */
+export type GateSense = 'lamp' | 'sonar';
+/** 门不满足时的表现（SPEC §2）：locked＝看得见但不能选（多数）/ hidden＝根本不显示（伏笔岔口）。 */
+export type GateMode = 'hidden' | 'locked';
+
+/** 一个门（感知门 SPEC §2.1）。缺省（无 gate）＝普通节点：有没有灯/声呐都看得见、都能选。 */
+export interface NodeGate {
+  sense: GateSense;
+  mode: GateMode;
+  /** 作者供的「为什么这里非这感官不可」成因文案（按剧情/环境而定）·缺省用 sense 的中性兜底（LOCKED_FALLBACK）。 */
+  reason?: string;
+}
+
+/** 某一 sense 的门密度配比（zone.gates 撒点规格·SPEC §6·dormant·缺省全 0⇒byte-identical）。 */
+export interface GateDensity {
+  /** 深档密度 0..1（占位·defer-number-tuning）。 */
+  deep?: number;
+  /** 中档密度 0..1。 */
+  mid?: number;
+  /** 浅档密度 0..1。 */
+  shallow?: number;
+  /** 撒到的门里判 hidden 的比例 0..1（其余为 locked·缺省 0＝全 locked）。 */
+  hiddenRatio?: number;
+}
+
+/** 一个 zone 的门撒点规格（每 sense 一组密度 + hidden/locked 配比·SPEC §6）。缺省全关（dormant）。 */
+export interface ZoneGates {
+  lamp?: GateDensity;
+  sonar?: GateDensity;
+}
+
 /**
  * 地图布局风格（**纯渲染**·决定节点图怎么"铺"·不改拓扑/深度/存档）。**三者纵轴 Y 都＝真实深度**
  * （#92「位置即深度」·绝不脱钩·2026-06-27 作者拍），只是横轴 X 用法不同。
@@ -104,11 +141,12 @@ export interface ZoneDef {
    */
   weakHuntEncounters?: string[];
   /**
-   * 感知重做 per-node 黑点（#262）：true → 本 zone 参与「隐藏黑点」撒布（`sprinkleDarkNodes` 按深度密度确定性撒·
-   * 见 `darkDensityForNode`）。缺省/false → 一个隐藏黑点都不撒（byte-identical·浅水/教学/reef 默认关）。
-   * 参与区（作者 2026-07-05·方向 b）：trench/blue_caves/wreck/midwater/whalefall/vent 对应 zone；浅水段(<25m)即便 eligible 也不撒。
+   * 感知门撒点规格（感知门 SPEC §6·取代 #262 的 `darkEligible:boolean`）：每 sense（灯/声呐）一组深度档密度 +
+   * hidden/locked 配比，`sprinkleGates` 据此在候选节点（event/rest）确定性标 `node.gate`。**dormant**（所有 zone
+   * 缺省不设 ⇒ 一个门都不撒·byte-identical·浅水/教学/reef 默认关）；激活＝给参与 zone 填 `gates`（内容 session）。
+   * 浅水段(<DARK_MIN_DEPTH)即便配了也不撒（守「浅水绝对安全」）。见 `gateDensityForNode`。
    */
-  darkEligible?: boolean;
+  gates?: ZoneGates;
 }
 
 /** 下潜地图（运行时生成） */
@@ -153,18 +191,20 @@ export interface DiveNode {
   corpseRecordId?: string;
   /** 该节点能去往下一层的节点 ids */
   connectsTo: string[];
-  /** 节点选择时的简短预览文本（灯下看到的"地面真相"；黑处无灯锁住由灯门在选点时改写·感知重做 SPEC §2.1） */
+  /** 节点选择时的简短预览文本（灯下看到的"地面真相"；被门锁住时由 dive-select 在选点时改写·感知门 SPEC §2.3） */
   preview: string;
   /** UI 提示：附近可能有尸体 */
   hasCorpseHint?: boolean;
   // 节点级声呐欺骗钩子（曾喂假回波/无回波表象）：**感知重做已删**——声呐诚实（SPEC §2.2/§3）。
   /**
-   * 隐藏黑点（感知重做 per-node 黑·#262）：撒点 post-pass `sprinkleDarkNodes` 在 `darkEligible` zone 按深度密度确定性标记。
-   * 语义＝**不带灯不显示此选项**（dive-select 无有效灯时把它从 choices 过滤掉·带灯才现）——伏笔式黑点、起潜 advisory 不预告。
-   * 区别于 band/POI 级「整潜黑」(`run.diveModifier.visibility==='dark'`·可见但锁住·会预告)——那是另一档。
-   * 撒点 repair 守「永不做某父节点的唯一非黑出口」＝摸黑不会无路可走（兜底另有无条件应急上浮）。缺省 undefined＝非黑点。
+   * 该节点自带的门（感知门 SPEC §2.1·取代 #262 的 `dark:boolean`）：撒点 post-pass `sprinkleGates` 在配了
+   * `zone.gates` 的区按深度密度确定性标记（sense=lamp/sonar·mode=hidden/locked）。
+   *   - mode='hidden'：不满足对应感官时**不显示此选项**（dive-select 过滤掉·满足才现）——伏笔式岔口。
+   *   - mode='locked'：**看得见但不能选**、标「需要灯/声呐」（沿用 #221 预告语义）。
+   * 与 run 级整潜门（`run.diveModifier.gate`·live-combine）正交：per-node gate 优先，缺省则落整潜门
+   * （见 dive-select.ts::effectiveGate）。地标（上浮口/气穴/扎营）+ Lv.1 尸体永不撒门＝骨架永远通。缺省 undefined＝普通节点。
    */
-  dark?: boolean;
+  gate?: NodeGate;
   /**
    * 多口持久洞（多口持久洞 SPEC §2.2）：该 ascent_point 是洞的哪类口。
    *  - 'entrance'：带 POI 的入口（可下潜起手 + 上浮）。

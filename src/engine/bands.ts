@@ -28,10 +28,10 @@ export function getBand(id: string): DepthBand | undefined {
 }
 
 /**
- * band 的环境修正（落 run.diveModifier）：visibility / current。
+ * band 的环境修正（落 run.diveModifier）：gate（整潜门·感知门 SPEC §2.1）/ current。
  * 深度不走 depthOffset——band 用绝对 depthRange 覆盖 zone（见 mapgen GenOpts.depthRange / diveIntoBand（经 startDiveFromPoi））。
- * 深 band 的 visibility=dark 是软门控的核心：灯打不透 → 被迫用更耗电的声呐（间接电量压力，不加深度耗电税）。
+ * 深 band 的 gate={sense:'lamp',mode:'locked'} 是软门控的核心：灯打不透 → 被迫用更耗电的声呐（间接电量压力，不加深度耗电税）。
  */
 export function bandDiveModifier(band: DepthBand): PoiModifier {
-  return { visibility: band.visibility, current: band.current };
+  return { gate: band.gate, current: band.current };
 }

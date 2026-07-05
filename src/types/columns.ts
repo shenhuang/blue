@@ -15,7 +15,8 @@
 // 「另一个世界」是专门 Phase（depth_bands.json 保留这些 band 作预留·暂无柱档抵达·见 deep_game_vision）。
 
 import type { UpgradeCost, MaterialCost } from './upgrades';
-import type { Visibility, CurrentStrength } from './chart';
+import type { CurrentStrength } from './chart';
+import type { NodeGate } from './dive';
 import type { ZoneTag } from './events';
 
 /**
@@ -32,8 +33,8 @@ export interface DepthColumnTier {
   label: string;
   /** 建该级 probe 升级的账单（材料＋金币·派生进 LighthouseUpgradeDef.cost）。 */
   cost: UpgradeCost;
-  /** 能见度（缺省 clear；深档转 dark＝灯门核心压力，见 DepthBand.visibility）。感知重做删 murky 中间档（#262）。 */
-  visibility?: Visibility;
+  /** 整潜门（感知门 SPEC §2.1·取代旧 `visibility`；缺省＝清水·深档 `{sense:'lamp',mode:'locked'}`＝灯门核心压力·见 DepthBand.gate）。 */
+  gate?: NodeGate;
   /** 洋流（缺省 none）。 */
   current?: CurrentStrength;
   /** 专属事件 tag 池（覆盖 zone.zoneTagsByDepth·附加而非纯替换·见 DepthBand.tags）。缺省＝走 zone 自身池。 */
@@ -133,8 +134,8 @@ export interface ColumnStoryTier {
   blurb?: string;
   /** 危险提示（软门控·派生 story band.danger）。 */
   danger?: string;
-  /** 能见度（缺省 clear·派生 story band.visibility）。 */
-  visibility?: Visibility;
+  /** 整潜门（感知门 SPEC §2.1·取代旧 `visibility`·缺省＝清水·派生 story band.gate）。 */
+  gate?: NodeGate;
   /** 洋流（缺省 none·派生 story band.current）。 */
   current?: CurrentStrength;
   /** 显式海图坐标（归一化·覆盖默认「宿主灯塔附近扇开」自动布点）。缺省走自动布点。 */
