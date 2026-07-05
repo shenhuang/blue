@@ -146,11 +146,10 @@ export function clarity(run: RunState): ClarityTier {
   return lampGateLocked(run) ? 'none' : 'full';
 }
 
-/** 灯每回合耗电的水况因子：清水/未设 ≈ 0（浅水近免费，Q2）/ 微浊 0.5 / 黑水 1（+ 深 band 斜坡留 Phase 1）。 */
+/** 灯每回合耗电的水况因子：清水/未设 ≈ 0（浅水近免费，Q2）/ 黑水 1（+ 深 band 斜坡留 Phase 1）。感知重做删 murky 中间档（#262·非黑=干净）。 */
 export function lightDrainFactor(run: RunState): number {
   const vis = run.diveModifier?.visibility;
   if (vis === 'dark') return 1;
-  if (vis === 'murky') return 0.5;
   return 0;
 }
 

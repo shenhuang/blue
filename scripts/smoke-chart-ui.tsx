@@ -181,7 +181,7 @@ L('  教学后有入口 / 教学前无入口 ✓');
 // 深水区 Phase 0a：预览遮蔽已移进引擎（enterNodeSelection 按 clarity 档烤 preview）；
 // NodeSelectView 成纯渲染器——按 choice.clarity 出样式 + 渲染传感器控制/电量。引擎侧门控由 playthrough-sensors 测。
 L('\n========== E. NodeSelectView clarity 渲染 + 传感器 + 电量 ==========');
-function diveState(opts?: { visibility?: 'murky' | 'dark'; sonarUnlocked?: boolean }): GameState {
+function diveState(opts?: { visibility?: 'dark'; sonarUnlocked?: boolean }): GameState {
   const base = createInitialGameState();
   const r0 = createNewRun({
     zoneId: 'zone.wreck_graveyard',

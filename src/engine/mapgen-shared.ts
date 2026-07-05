@@ -371,6 +371,73 @@ export function placeCorpses(
  * 显式 `zone.layoutStyle` 优先；否则 `orientation==='horizontal'` → 'horizontal'；再否则 'vertical'。
  * 纯函数·零 rng（绝不移动任何 seed 的生成顺序）。
  */
+// ============================================================
+// 隐藏黑点撒布（感知重做 per-node 黑·#262·FNV 确定性·零 rng·缺省 no-op）
+// ============================================================
+// 与 band/POI 级「整潜黑」(diveModifier.visibility==='dark') 正交：那是可见锁住 + 起潜预告；
+// 这里是**不带灯不显示**的伏笔黑点，只在 zone.darkEligible 的区、按深度密度确定性标记 node.dark。
+// FNV 哈希取点（同 caveDepthCurveForPlace·零 rng·绝不移动任何 seed 生成顺序）⇒ 同一地点复访同一批黑点。
+// 缺省（无 eligible zone / 密度 0）→ 一个都不标、byte-identical（不破 mapgen 场景快照）。数值占位·defer-number-tuning。
+
+/** 隐藏黑点深度档密度（0..1·占位·作者最终统一调）：深≥90→.30 / 中≥50→.15 / 浅(参与区 25–50)→.05。 */
+export const DARK_DENSITY_DEEP = 0.3;
+export const DARK_DENSITY_MID = 0.15;
+export const DARK_DENSITY_SHALLOW = 0.05;
+/** 隐藏黑点深度档阈值（占位）。浅于 DARK_MIN_DEPTH 即便 eligible 也不撒（守「浅水绝对安全」·对齐 clarity.ALERT_MIN_DEPTH=25）。 */
+export const DARK_DEEP_DEPTH = 90;
+export const DARK_MID_DEPTH = 50;
+export const DARK_MIN_DEPTH = 25;
+
+/**
+ * 一个节点的隐藏黑点密度（0..1）：非 `darkEligible` zone → 0；浅于 DARK_MIN_DEPTH → 0（浅水免黑）；
+ * 否则按深度档取 deep/mid/shallow。纯函数·数据驱动（zone.darkEligible + 深度）·调数值只动上面几个常量。
+ */
+export function darkDensityForNode(zone: ZoneDef, depth: number): number {
+  if (!zone.darkEligible) return 0;
+  if (depth < DARK_MIN_DEPTH) return 0;
+  if (depth >= DARK_DEEP_DEPTH) return DARK_DENSITY_DEEP;
+  if (depth >= DARK_MID_DEPTH) return DARK_DENSITY_MID;
+  return DARK_DENSITY_SHALLOW;
+}
+
+/** 可当隐藏黑点的节点：只普通事件/休息中间点（地标=上浮口/气穴/扎营 + 尸体/shop/boss 一律不撒＝守可达性·永不锁死出口）。 */
+function darkSprinkleCandidate(node: DiveNode): boolean {
+  return node.kind === 'event' || node.kind === 'rest';
+}
+
+/**
+ * 隐藏黑点撒布 post-pass（确定性·零 rng·缺省 no-op·原地改 map.nodes）：
+ *  1) 对每个候选节点按 `darkDensityForNode` 概率、用 FNV(zone::key::dark::nodeId) 确定性标 `node.dark`（复访一致）。
+ *  2) repair 守门：绝不让某父节点**所有**子都变黑（否则无灯玩家在该父无可见出口）——某父子全黑则取消其最浅子的黑。
+ * 兜底另有无条件应急上浮(dive step6)。非 eligible zone / 起始节点 / 密度 0 → 不标（byte-identical）。
+ */
+export function sprinkleDarkNodes(map: DiveMap, zone: ZoneDef, seedKey?: string): void {
+  if (!zone.darkEligible) return;
+  const key = seedKey ?? zone.id;
+  const nodes = map.nodes;
+  for (const node of Object.values(nodes)) {
+    if (node.id === map.startNodeId) continue; // 起始节点你已在其上·标黑无意义
+    if (!darkSprinkleCandidate(node)) continue;
+    const density = darkDensityForNode(zone, node.depth);
+    if (density <= 0) continue;
+    const u = fnv(`${zone.id}::${key}::dark::${node.id}`) / 0x100000000;
+    if (u < density) node.dark = true;
+  }
+  // repair：每个父节点保留 ≥1 非黑子（无灯也有可见出口·防摸黑无路）。只减不增·单趟收敛。
+  for (const parent of Object.values(nodes)) {
+    const kids = parent.connectsTo;
+    if (kids.length === 0) continue;
+    if (kids.some((id) => !nodes[id]?.dark)) continue; // 已有非黑子 → OK
+    let unmark = kids[0]; // 全黑：取消最浅子（depth 最小·并列取 id 最小·确定性）
+    for (const id of kids) {
+      const a = nodes[id];
+      const b = nodes[unmark];
+      if (a && b && (a.depth < b.depth || (a.depth === b.depth && id < unmark))) unmark = id;
+    }
+    if (nodes[unmark]) nodes[unmark].dark = false;
+  }
+}
+
 export function resolveLayoutStyle(zone: ZoneDef): LayoutStyle {
   return zone.layoutStyle ?? (zone.orientation === 'horizontal' ? 'horizontal' : 'vertical');
 }

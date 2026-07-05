@@ -469,7 +469,7 @@ function Section({
 // ── POI 的事件集（开场/变体/专属·每行点进去走查·剧情编辑器「按 POI」模式）──────
 const VIA_LABEL: Record<string, string> = { zone: '区域池', band: '深度带', cave: '持久洞' };
 const CURRENT_LABEL: Record<string, string> = { none: '无', mild: '缓流', strong: '急流' };
-const VIS_LABEL: Record<string, string> = { clear: '清', murky: '浑浊', dark: '黑水' };
+const VIS_LABEL: Record<string, string> = { clear: '清', dark: '黑水' };
 
 /**
  * 门控标注（Q1「全量目录+门控标注」）：一条事件的运行态门槛压成一行紧凑串——解释「为什么这条在某次下潜里没出现」。

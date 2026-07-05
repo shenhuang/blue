@@ -62,7 +62,7 @@ function makeMap(): DiveMap {
 }
 
 function mk(opts?: {
-  visibility?: 'murky' | 'dark';
+  visibility?: 'dark';
   sonarUnlocked?: boolean;
   light?: boolean;
   power?: number;
@@ -291,7 +291,7 @@ L('\n========== 10. signature 排序 ==========');
 /** 同 mk() 但带升级 bonuses（经 createNewRun 烤成 run.sensorTuning / powerMax）。 */
 function mkUp(
   bonuses: NonNullable<Parameters<typeof createNewRun>[0]['bonuses']>,
-  opts?: { visibility?: 'murky' | 'dark'; light?: boolean; sanity?: number; power?: number },
+  opts?: { visibility?: 'dark'; light?: boolean; sanity?: number; power?: number },
 ): GameState {
   const base = createInitialGameState();
   const r0 = createNewRun({ zoneId: 'zone.blue_caves', bonuses });
@@ -385,7 +385,7 @@ function makeDeepMap(): DiveMap {
 }
 
 /** 深图版 mk()：currentDepth 默认 80（深水），可覆盖。 */
-function mkDeep(opts?: { visibility?: 'murky' | 'dark'; light?: boolean; power?: number }): GameState {
+function mkDeep(opts?: { visibility?: 'dark'; light?: boolean; power?: number }): GameState {
   const base = createInitialGameState();
   const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
   const run: RunState = {

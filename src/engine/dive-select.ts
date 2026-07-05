@@ -64,7 +64,12 @@ export function enterNodeSelection(state: GameState): GameState {
   const NEUTRAL_CORPSE = '前方的水暗下去，看不清里面有什么。';
   const gateLocked = lampGateLocked(run); // 这一潜（黑水无灯）→ 非豁免选项一律锁
 
-  const choices: NodeChoice[] = nextChoices.map((n) => {
+  // 隐藏黑点（感知重做 per-node·#262）：无有效灯时 `n.dark` 的选项**不显示**（从 choices 过滤掉·带灯才现）——
+  // 伏笔式黑点，区别于 band 级整潜黑（gateLocked·可见但锁住）。撒点 repair 保证父节点总留 ≥1 非黑出口＝摸黑不会无路。
+  const hasLamp = lampOn(run);
+  const choices: NodeChoice[] = nextChoices
+    .filter((n) => hasLamp || !n.dark)
+    .map((n) => {
     const isCorpse = n.kind === 'corpse';
     // 地标（上浮口 / 气穴 / 扎营点）结构性可感——盲航也认得，始终给真相文案、不被灯门锁。
     const isLandmark = n.kind === 'ascent_point' || n.kind === 'air_pocket' || n.kind === 'camp';

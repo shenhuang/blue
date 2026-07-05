@@ -513,7 +513,6 @@ export function visibilitySanityDrain(
   turns: number,
 ): number {
   if (visibility === 'dark') return 0.35 * turns;
-  if (visibility === 'murky') return 0.15 * turns;
   return 0;
 }
 

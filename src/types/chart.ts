@@ -14,8 +14,8 @@ import type { CaveRegion } from './dive';
 /** 洋流强度档位。MVP：仅叙事 + 落到 run.diveModifier 留接口；冲走/漂移效果待实装。 */
 export type CurrentStrength = 'none' | 'mild' | 'strong';
 
-/** 能见度档位。MVP：仅叙事 + 落到 run.diveModifier 留接口；光照/可见性效果待实装。 */
-export type Visibility = 'clear' | 'murky' | 'dark';
+/** 能见度档位（感知重做后＝灯门核心·#259/#262）：dark→黑处需有效灯才看清（否则可见锁住/隐藏）；murky 中间档已删（非黑=干净）。 */
+export type Visibility = 'clear' | 'dark';
 
 /**
  * POI 环境修正 —— 全部可选，叠加在所引用 zone 的基础参数上。

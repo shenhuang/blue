@@ -138,7 +138,7 @@
           ],
           "layerCount": 10,
           "depthCurve": 2.4,
-          "visibility": "murky"
+          "visibility": "clear"
         }
       },
       {
@@ -213,7 +213,7 @@
             85,
             105
           ],
-          "visibility": "murky"
+          "visibility": "dark"
         }
       },
       {
@@ -266,7 +266,7 @@
           "flag.tutorial_complete"
         ],
         "modifier": {
-          "visibility": "murky"
+          "visibility": "dark"
         }
       },
       {
@@ -388,7 +388,7 @@
           "flag.tutorial_complete"
         ],
         "modifier": {
-          "visibility": "murky"
+          "visibility": "dark"
         }
       },
       {
@@ -798,7 +798,7 @@
         "templateId": "roam.wreck_murk",
         "zoneId": "zone.wreck_graveyard",
         "name": "墓园雾区",
-        "blurb": "悬浮物把光散成一团白。看不远，但浅，洋流也温和——适合稳稳捞一趟。",
+        "blurb": "浮尘在水里飘着，但水浅、洋流也温和——适合稳稳捞一趟。",
         "distance": 1,
         "owner": "lighthouse.ch1_wreck_outpost",
         "mapX": -0.04,
@@ -808,7 +808,7 @@
           "flag.tutorial_complete"
         ],
         "modifier": {
-          "visibility": "murky",
+          "visibility": "clear",
           "current": "mild"
         }
       },
@@ -850,7 +850,7 @@
             60,
             84
           ],
-          "visibility": "murky"
+          "visibility": "dark"
         }
       },
       {
@@ -905,7 +905,7 @@
           "flag.tutorial_complete"
         ],
         "modifier": {
-          "visibility": "murky",
+          "visibility": "clear",
           "current": "mild"
         }
       },

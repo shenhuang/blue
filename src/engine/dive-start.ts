@@ -571,17 +571,16 @@ function appendVisibilityLog(
   if (!visibility || visibility === 'clear') return s;
   s = appendLog(s, {
     tone: 'realistic',
-    text:
-      visibility === 'dark'
-        ? '光几乎照不进来，探照灯只够看清面前一臂。'
-        : '悬浮物把光散成一团白，看不远。',
+    // 感知重做删 murky 中间档（#262）：能到这里的只剩 band/POI 级整潜黑（clear 已在上面 early-return）。
+    text: '光几乎照不进来，探照灯只够看清面前一臂。',
   });
   if (visibility === 'dark') {
     s = appendLog(s, {
+      // 感知重做（#259/#262）：灯=诚实硬门（有灯看得清近场·没灯全黑），声呐=诚实侦察（不再「回波信不信得过」）。
       tone: 'uncanny',
       text: sonarUnlocked
-        ? '（灯吃不透这片黑。也许声呐还能从前方探回点轮廓——只是回波信不信得过，另说。）'
-        : '（灯吃不透这片黑。你没有能用的声呐，只能贴着石壁一点点摸过去。）',
+        ? '（这片黑里没有灯就寸步难行。声呐能从前方探回轮廓——回波是诚实的，帮你先看清下一步。）'
+        : '（这片黑里没有灯就寸步难行。你也没有能用的声呐，只能贴着石壁一点点摸过去。）',
     });
   }
   return s;

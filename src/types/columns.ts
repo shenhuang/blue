@@ -32,7 +32,7 @@ export interface DepthColumnTier {
   label: string;
   /** 建该级 probe 升级的账单（材料＋金币·派生进 LighthouseUpgradeDef.cost）。 */
   cost: UpgradeCost;
-  /** 能见度（缺省 clear；深档转 murky/dark＝软门控核心压力，见 DepthBand.visibility）。 */
+  /** 能见度（缺省 clear；深档转 dark＝灯门核心压力，见 DepthBand.visibility）。感知重做删 murky 中间档（#262）。 */
   visibility?: Visibility;
   /** 洋流（缺省 none）。 */
   current?: CurrentStrength;

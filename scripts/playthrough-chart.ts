@@ -545,21 +545,15 @@ assert(
   Math.abs(darkTicked.stats.sanity - (100 - 0.35 * 10)) < 1e-6,
   `dark 10 回合应扣 3.5 理智，实际扣 ${(100 - darkTicked.stats.sanity).toFixed(3)}`,
 );
-const murkyTicked = tickTurns({ ...darkRun, diveModifier: { visibility: 'murky' } }, 10);
-assert(
-  Math.abs(murkyTicked.stats.sanity - (100 - 0.15 * 10)) < 1e-6,
-  `murky 10 回合应扣 1.5 理智，实际扣 ${(100 - murkyTicked.stats.sanity).toFixed(3)}`,
-);
 const clearTicked = tickTurns({ ...darkRun, diveModifier: undefined }, 10);
 assert(clearTicked.stats.sanity === 100, '无修正 + 浅水不应扣理智');
 assert(
   visibilitySanityDrain('dark', 4) === 1.4 &&
-    visibilitySanityDrain('murky', 4) === 0.6 &&
     visibilitySanityDrain('clear', 4) === 0 &&
     visibilitySanityDrain(undefined, 4) === 0,
   'visibilitySanityDrain 档位不对',
 );
-L('  visibility：dark −0.35/turn、murky −0.15/turn、clear/无 0 ✓');
+L('  visibility：dark −0.35/turn、clear/无 0 ✓（感知重做删 murky 中间档·#262）');
 
 // current：每次节点移动的额外消耗（纯函数档位）
 assert(

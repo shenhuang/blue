@@ -22,19 +22,19 @@
           "depthRange": [30, 40],
           "label": "礁壁·上槽",
           "lootFactor": 1.0,
-          "visibility": "murky",
-          "blurb": "礁壁外侧的第一道台阶。水凉下来，悬浮物把灯散成白雾——还看得见，只是看不远。",
+          "visibility": "clear",
+          "blurb": "礁壁外侧的第一道台阶。水凉下来，光还透得进来，脚下每道沟壑都看得清。",
           "cost": { "materials": [{ "itemId": "item.brass_fitting", "qty": 1 }], "gold": 30 }
         },
         {
           "tier": 2,
           "depthRange": [40, 60],
           "label": "礁壁·深槽",
-          "visibility": "murky",
+          "visibility": "clear",
           "alertFactor": 1.1,
           "lootFactor": 1.3,
-          "blurb": "深槽的底。冷，白雾更厚，礁体在头顶合拢成一道窄缝。",
-          "danger": "悬浮物里灯只够看清面前一臂。声呐能扫远些，但回波信不信得过另说。",
+          "blurb": "深槽的底。冷，礁体在头顶合拢成一道窄缝，光从缝里斜斜切下来。",
+          "danger": "窄缝里水打着旋，别让它把你推到礁石上。",
           "cost": {
             "materials": [
               { "itemId": "item.brass_fitting", "qty": 2 },
@@ -66,7 +66,7 @@
           "depthRange": [18, 50],
           "label": "船舱·上层",
           "lootFactor": 1.0,
-          "visibility": "murky",
+          "visibility": "clear",
           "blurb": "侧躺商船的上层甲板。锈屑把灯磨得发毛，鱼群在断裂的舷窗间进出。",
           "cost": { "materials": [{ "itemId": "item.scrap_alloy", "qty": 2 }], "gold": 40 }
         },
@@ -75,7 +75,7 @@
           "depthRange": [50, 75],
           "label": "船舱·中层",
           "lootFactor": 1.3,
-          "visibility": "murky",
+          "visibility": "dark",
           "blurb": "舱室一层层往下塌。过道里淤着沙，关着的门后面什么都可能有。",
           "cost": {
             "materials": [
@@ -132,7 +132,7 @@
           "tier": 2,
           "depthRange": [60, 90],
           "label": "中层·温跃",
-          "visibility": "murky",
+          "visibility": "dark",
           "lootFactor": 1.3,
           "blurb": "温跃层。水的两侧形状都扭曲，穿越的瞬间冷了四度。",
           "cost": { "materials": [{ "itemId": "item.brass_fitting", "qty": 2 }], "gold": 80 }
@@ -141,7 +141,7 @@
           "tier": 3,
           "depthRange": [90, 120],
           "label": "中层·暮光",
-          "visibility": "murky",
+          "visibility": "dark",
           "alertFactor": 1.2,
           "lootFactor": 1.6,
           "blurb": "光开始用完。上方还剩一点蓝，下方已是匀质的灰——没有参照物，但你回得去。",
@@ -203,7 +203,7 @@
       "lighthouseId": "lighthouse.ch1_vent_outpost",
       "zoneId": "zone.vent_trench",
       "name": "热液",
-      "blurb": "热液场的井与廊。黑烟柱在远处一根根立着，水是温的，灯照不透那团矿物的浑浊。",
+      "blurb": "热液场的井与廊。黑烟柱在远处一根根立着，水是温的，越往深处矿物把光吃尽——没有灯，那团黑里什么都看不见。",
       "storyTier": {
         "depthRange": [80, 120],
         "label": "海沟热液场",
@@ -223,17 +223,17 @@
           "tier": 1,
           "depthRange": [25, 75],
           "label": "热液·井缘",
-          "visibility": "murky",
+          "visibility": "clear",
           "current": "mild",
           "lootFactor": 1.0,
-          "blurb": "热液场的最外缘。水还凉，往下是越来越暖的浑浊。雪人蟹举着白毛的螯肢在热流里扫动，毛里养着化能细菌。",
+          "blurb": "热液场的最外缘。水还凉，往下一层层暖起来，热流把水搅得发晃。雪人蟹举着白毛的螯肢在热流里扫动，毛里养着化能细菌。",
           "cost": { "materials": [{ "itemId": "item.brass_fitting", "qty": 2 }], "gold": 70 }
         },
         {
           "tier": 2,
           "depthRange": [75, 125],
           "label": "热液·烟柱林",
-          "visibility": "murky",
+          "visibility": "dark",
           "current": "mild",
           "alertFactor": 1.2,
           "lootFactor": 1.3,

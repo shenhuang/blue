@@ -134,7 +134,7 @@ L('\n--- G. 非 current 字段大潮穿透（additive·不丢 POI 字段） ---'
 // ── 9. 跨周期确定性（day + CYCLE 与 day 结果相同） ───────────────────────
 L('\n--- H. 跨周期确定性（day 与 day+28 结果相同） ---');
 {
-  const poi: PoiModifier = { visibility: 'murky' };
+  const poi: PoiModifier = { visibility: 'dark' };
   const r1 = lunarDiveModifier(poi, springDay);
   const r2 = lunarDiveModifier(poi, springDay + LUNAR_CYCLE_DAYS);
   assert(
