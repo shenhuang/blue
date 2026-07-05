@@ -1,7 +1,7 @@
 // 揭示归因小标冒烟（感知重做 SPEC §2.1·车道 5-2）。
 //   作者请求：「带了某道具才**显示**某选项……这个选项旁边可以提示是你有了这个道具才解锁的。」
 //   本车道＝渲染 + 派生：某**已可见**选项若因某持有条件（hasCapability / hasEquipment / hasItem /
-//   hasUpgrade）才显示 → EventView 旁标一枚「靠 <显示名>」。显示名从满足的持有条件派生
+//   hasUpgrade）才显示 → EventView 旁标一枚「持有 <显示名>」。显示名从满足的持有条件派生
 //   （engine/events.ts::revealAttribution·能力→玩家实际持有件真名·数据驱动·未来道具零改动）。
 //
 // 断言两层：
@@ -11,7 +11,7 @@
 //      - all/any → 取第一个满足的持有类子条件；数值/flag 子条件不产出归因
 //      - 无 visibleIf / stat / flag / notHasItem 门 → null（不是「你带了什么」）
 //   ② SSR 渲染：从 EVENT_DB 自定位一个「起始装备即可满足其持有门」的可见选项事件 → 渲染 EventView →
-//      markup 含「靠 」标；同一事件里非持有门的选项不带标（负样本）。自定位＝不钉具体事件 id（抗内容改名）。
+//      markup 含「持有 」标；同一事件里非持有门的选项不带标（负样本）。自定位＝不钉具体事件 id（抗内容改名）。
 //
 // 跑法： ESBUILD_BINARY_PATH=/tmp/esbuild-linux/node_modules/@esbuild/linux-arm64/bin/esbuild npx tsx scripts/smoke-event-reveal-hint.tsx
 // @jsxRuntime automatic —— 同 smoke-equipment-ui：pragma 切 automatic transform·与 react-jsx typecheck 一致
@@ -123,8 +123,8 @@ const markup = renderToStaticMarkup(
   <EventView state={state} eventId={targetEventId!} onStateChange={() => {}} />,
 );
 assert(markup.includes('reveal-tag'), 'EventView 应渲染 reveal-tag（持有门可见选项旁的归因标）');
-assert(markup.includes('靠 潜水刀'), 'reveal-tag 文案应含「靠 潜水刀」（起始潜水刀满足 tool/cut 门）');
-console.log(`  ② SSR：事件「${targetEventId}」持有门可见选项旁渲染「靠 潜水刀」✓`);
+assert(markup.includes('持有 潜水刀'), 'reveal-tag 文案应含「持有 潜水刀」（起始潜水刀满足 tool/cut 门）');
+console.log(`  ② SSR：事件「${targetEventId}」持有门可见选项旁渲染「持有 潜水刀」✓`);
 
 // 负样本：若该事件里存在非持有门的可见选项，其标签行不应挂 reveal-tag——
 // 用「reveal-tag 出现次数 == 起始可满足的持有门可见选项数」保证不误标（近似·同事件内）。

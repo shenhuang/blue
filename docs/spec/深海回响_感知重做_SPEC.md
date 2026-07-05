@@ -31,10 +31,10 @@
 
 ### 2.1b 揭示型门（hidden-reveal · 作者 2026-07-04 加）
 
-与「可见但锁住」互补的第二种门——**带了道具才『显示』某选项 + 旁边标「靠 X 解锁」**：
+与「可见但锁住」互补的第二种门——**带了道具才『显示』某选项 + 旁边标「持有 X」**：
 
 - 机制早有：`visibleIf:{hasCapability/hasEquipment/hasItem/hasUpgrade}` 把选项藏到你有那东西为止（memory `capability_mechanism`）。新加的只是**归因提示**。
-- **✅ 实装（车道 5-2）**：`events.ts::revealAttribution(state,opt)` 纯函数——可见选项若因某「持有」条件现身，取那件**实际持有物 / 能力的显示名** → `EventView` 渲染 `.reveal-tag`「靠 潜水刀」。走 capability→持有物真名 = **任何未来道具自动带提示、零逐项写**。
+- **✅ 实装（车道 5-2）**：`events.ts::revealAttribution(state,opt)` 纯函数——可见选项若因某「持有」条件现身，取那件**实际持有物 / 能力的显示名** → `EventView` 渲染 `.reveal-tag`「持有 潜水刀」。走 capability→持有物真名 = **任何未来道具自动带提示、零逐项写**。
 - **内容作者约定**（注释·不强制）：灯揭近场交互选项·声呐揭结构 / 导航选项·其余道具按性质。节点选项现无 `visibleIf` 门（由 mapgen+灯门派生）→ 暂不适用，将来加物品门节点可复用同函数。
 
 ### 2.2 声呐 = 诚实远场侦察

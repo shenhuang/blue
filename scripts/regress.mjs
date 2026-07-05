@@ -239,7 +239,7 @@ tasks.push({ name: 'smoke-chart-editor', cmd: [tsx, join('scripts', 'smoke-chart
 // 事件平衡聚合 smoke（守 engine/eventStats 派生恒等式〔byTone/矩阵合计/建议引用真实〕·materialStats↔smoke-economy-panel 的镜像补全·见 scripts/smoke-event-stats.mjs）
 tasks.push({ name: 'smoke-event-stats', cmd: [tsx, join('scripts', 'smoke-event-stats.mjs')] });
 
-// 揭示归因小标 SSR smoke（感知重做 §2.1·车道 5-2）：某可见选项因某持有条件才显示 → EventView 旁标「靠 <显示名>」·
+// 揭示归因小标 SSR smoke（感知重做 §2.1·车道 5-2）：某可见选项因某持有条件才显示 → EventView 旁标「持有 <显示名>」·
 // 显示名从满足条件派生（engine/events.ts::revealAttribution·能力→实际持有件真名·数据驱动）·非持有门不标·见 scripts/smoke-event-reveal-hint.tsx
 tasks.push({ name: 'smoke-event-reveal-hint', cmd: [tsx, join('scripts', 'smoke-event-reveal-hint.tsx')] });
 

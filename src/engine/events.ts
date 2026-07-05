@@ -130,7 +130,7 @@ export function isOptionVisible(state: GameState, opt: EventOption): boolean {
 //
 // 「带了某道具才**显示**某选项 → 选项旁提示是靠这件解锁的」（作者请求）。
 // isOptionVisible 只回 bool；本节把「因何可见」这层信息**从满足的持有条件里派生**出来，
-// 供 EventView 在选项旁渲染一枚「（靠 <显示名>）」小标（渲染在 UI 层·此处只出纯数据）。
+// 供 EventView 在选项旁渲染一枚「（持有 <显示名>）」小标（渲染在 UI 层·此处只出纯数据）。
 //
 // 可扩展性（作者价值：落成机制别硬编码）——显示名一律从**满足条件的那件持有物**的真实
 // `name`（ItemDef / UpgradeDef / 装备槽件）派生，不为每个选项、每种能力手写文案：
@@ -182,7 +182,7 @@ function equipmentSlotFallbackLabel(slot: string): string {
 
 /**
  * 若一个**已可见**选项的可见性来自某个持有条件（hasCapability / hasEquipment / hasItem / hasUpgrade），
- * 返回其归因显示名（供「（靠 X）」小标）；否则（无 visibleIf、或 visibleIf 是数值/flag/欺骗类非持有条件）返回 null。
+ * 返回其归因显示名（供「（持有 X）」小标）；否则（无 visibleIf、或 visibleIf 是数值/flag/欺骗类非持有条件）返回 null。
  *
  * 调用前提：选项已通过 isOptionVisible（本函数不重复判可见）。纯函数·便于回归断言。
  */
@@ -232,7 +232,7 @@ function attributionOf(state: GameState, c: Condition): string | null {
         if (a) return a;
       }
       return null;
-    // 非持有类（数值 / flag / 信任 / notHas*）：不产出「靠某道具」归因。
+    // 非持有类（数值 / flag / 信任 / notHas*）：不产出「持有某道具」归因。
     case 'notHasItem':
     case 'statAtLeast':
     case 'statAtMost':
