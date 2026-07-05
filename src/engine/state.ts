@@ -252,11 +252,7 @@ export function createNewRun(opts: {
     powerMaxBonus?: number;
     sonarPingCostReduction?: number;
     lampEfficiency?: number;
-    sonarRobustness?: number;
-    lampRobustness?: number;
     signatureReduction?: number;
-    lampRangeBonus?: number;
-    sonarRangeBonus?: number;
     sonarScanRangeBonus?: number;
     roomFeatureChanceBonus?: number;
     soundAbsorbBonus?: number;
@@ -271,11 +267,7 @@ export function createNewRun(opts: {
   const sensorTuning = deriveSensorTuning({
     sonarPingCostReduction: opts.bonuses?.sonarPingCostReduction,
     lampEfficiency: opts.bonuses?.lampEfficiency,
-    sonarRobustness: opts.bonuses?.sonarRobustness,
-    lampRobustness: opts.bonuses?.lampRobustness,
     signatureReduction: opts.bonuses?.signatureReduction,
-    lampRangeBonus: opts.bonuses?.lampRangeBonus,
-    sonarRangeBonus: opts.bonuses?.sonarRangeBonus,
     sonarScanRangeBonus: opts.bonuses?.sonarScanRangeBonus,
     roomFeatureChanceBonus: opts.bonuses?.roomFeatureChanceBonus,
     soundAbsorbBonus: opts.bonuses?.soundAbsorbBonus,
@@ -321,10 +313,9 @@ export function createNewRun(opts: {
     alert: 0,
     // 声呐与房间 S0：声呐图记忆起手为空（全黑，只随 ping 一块块点亮）。
     scanMemory: {},
-    // band 派生三旋钮的「无 band」默认（POI 下潜 / 浅水基线）；startDiveFromOutpost 按 band 覆写。
-    // 必填化（CHANGELOG #107）：默认值即旧读点 `?? 1 / ?? 0 / 缺省假` 的语义，行为不变。
+    // band 派生旋钮的「无 band」默认（POI 下潜 / 浅水基线）；startDiveFromOutpost 按 band 覆写。
+    // 必填化（CHANGELOG #107）：默认值即旧读点 `?? 1 / 缺省假` 的语义，行为不变。
     bandAlertFactor: 1,
-    sonarDeception: 0,
     huntEnabled: false,
     // 负伤（负伤 SPEC §3）：run 级身体债，出海无伤起步；回港随 run 销毁＝全愈。
     injuries: [],
@@ -411,7 +402,7 @@ export function clampStats(stats: Stats, max: { stamina: number; oxygen: number 
 //
 // **纯加字段的缺省补齐收口在 hydrateGameState 单点**（CHANGELOG #107·品味评审候选③）：
 // 同版本旧档缺新字段（纯加字段不 bump 的代价）→ 反序列化后一次补齐 canonical 默认，
-// 引擎/UI 读点直读（不再散落 `?? 默认`）。真条件字段（diveModifier / stalker / sensors.sonarOn…）
+// 引擎/UI 读点直读（不再散落 `?? 默认`）。真条件字段（diveModifier / stalker / decoy / sensors.litThisTurn…）
 // 不在此列——缺席有语义（功能关 / 未触发），保持可选。
 
 const SAVE_KEY = 'deepecho.save';
@@ -443,7 +434,7 @@ export function serializeGameState(state: GameState): string {
  * 纯加字段不 bump SAVE_VERSION（quirk #99），代价是同版本旧档可能缺新字段；此前靠全引擎读点
  * `?? 默认` 兜底（dive 拆分前一文件 27 处 `?.`），现收口到这里一次补齐，读点直读、类型必填。
  * 默认值与 createNewRun / createInitialProfile 的种子一致（canonical 默认＝未升级/无 band 基线）。
- * 真条件字段（diveModifier / stalker / sensors.sonarOn / sonarNext / sonarDir）不补——缺席即语义。
+ * 真条件字段（diveModifier / stalker / decoy）不补——缺席即语义。
  * 不是迁移链：无版本分支、无形状改写；改坏形状仍走 bump 弃档。
  */
 export function hydrateGameState(state: GameState): GameState {
@@ -486,7 +477,6 @@ export function hydrateGameState(state: GameState): GameState {
       sensorTuning: run.sensorTuning ?? deriveSensorTuning({}),
       scanMemory: run.scanMemory ?? {},
       bandAlertFactor: run.bandAlertFactor ?? 1,
-      sonarDeception: run.sonarDeception ?? 0,
       huntEnabled: run.huntEnabled ?? false,
       injuries: run.injuries ?? [],
       // 固定资源 run 级耗尽容器（POI 固定资源耗尽·2026-06-25）：缺失单点补空 Map（poiId/harvestedSaveItems

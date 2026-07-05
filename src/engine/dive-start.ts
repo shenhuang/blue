@@ -33,7 +33,6 @@ import { getCaveTemperature, thermalAccess } from './temperature';
 import { getRunBonuses, getLighthouseBonuses } from './lighthouses';
 import type { RunStartBonuses } from './lighthouses';
 import { getColumn } from './columns';
-import { autoScanOnArrival } from './dive-sensors';
 import { getBand, bandDiveModifier } from './bands';
 import { MIMIC_DIVE_EVENT_ID } from './chart';
 import { ch1Story, CH1_ANCHORS, type Ch1Anchor } from './story';
@@ -86,7 +85,6 @@ export function startDive(
     depthCurve?: number;
     bandTags?: ZoneTag[];
     maxRoomFeatures?: number;
-    sonarDeception?: number;
     targetCorpseId?: string;
     /** 洞穴一致性（声呐渲染重做 SPEC §6①·#98）：地点身份串（POI.id / band.id）→ 同地点同图。缺省回退随机。 */
     seedKey?: string;
@@ -160,7 +158,6 @@ export function startDive(
       maxRoomFeatures: opts?.maxRoomFeatures,
       // 大房间出现率加成（声呐与房间 §6/§8.3 续·升级派生）：只在 maxRoomFeatures>1 的深 band 生效；缺省 0＝旧图不变。
       roomFeatureChanceBonus: state.run.sensorTuning.roomFeatureChanceBonus,
-      sonarDeception: opts?.sonarDeception,
       targetCorpseId: opts?.targetCorpseId,
       // 洞穴一致性（SPEC §6①·#98）：透传地点身份串 → mapgen 据此派生确定性 rng（同地点同图）。
       seedKey: opts?.seedKey,
@@ -182,15 +179,9 @@ export function startDive(
 
   const startNode = map.nodes[map.startNodeId];
 
-  // 落地＝到站（作者拍板·所有下潜一致）：按 profile 记的声呐开关偏好种 sonarOn/sonarNext（跨 run 持久）；
-  // 声呐开着 + 已解锁 → 立刻扫一记起始节点（一落地就看见掉进的那片洞）。与「到站自动扫」逐字一致：
-  // 落发射态(sonar='ping')、耗一记电、从第 0 回合起就暴露；电不够则哑火转 off（autoScanOnArrival 自带）。
-  const sonarPref = state.profile.sonarOn ?? true;
-  let run: RunState = { ...run0, sensors: { ...run0.sensors, sonarOn: sonarPref, sonarNext: sonarPref } };
-  if (run.sensors.sonarUnlocked && sonarPref) {
-    run = { ...run, sensors: { ...run.sensors, sonar: 'ping' } };
-    run = autoScanOnArrival({ ...state, run }).run!;
-  }
+  // 落地不自动扫（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：起始节点声呐 off（scanMemory 空·全黑）——
+  // 想看掉进的那片洞＝落地后主动 ping 一记（付电 + 暴露）。旧「按 profile 偏好种 sonarOn/sonarNext + 落地自动扫」已删。
+  let run: RunState = run0;
 
   // 教学首潜锁上浮（教学关 node 化·#221+·SPEC 深海回响_教学关node化）：linearScripted zone 且其 scriptedStart 未见过＝首潜
   // ⇒ run.ascentLocked（isAscentBlocked 恒挡 + UI 藏自愿上浮钮 ⇒ 玩家只能沿单向图前进、靠 forceAscend 事件退出）。
@@ -630,8 +621,6 @@ function diveIntoBand(
     // 深水区 C：band 探测压力倍率落 run（band 数据缺省 → 1＝无加压·run 字段必填 #107）。
     // 越深 band 越凶，在深度因子饱和（ALERT_DEPTH_FULL）之上继续加压；摸黑/浅水消退不受倍率影响（逃生阀门不被买断）。
     bandAlertFactor: band.alertFactor ?? 1,
-    // 声呐与房间 S2：band 不可信声呐失真强度落 run（band 数据缺省 → 0＝声呐相对老实）。
-    sonarDeception: band.sonarDeception ?? 0,
     // 猎手 SPEC Phase 1：本 band 是否启用「有位置的逼近猎手」（band 数据缺省 → false → moveToNode 走旧 alert→伏击瞬时路径）。
     huntEnabled: band.hunts ?? false,
   };
@@ -644,8 +633,6 @@ function diveIntoBand(
     depthRange: band.depthRange,
     bandTags: band.tags,
     maxRoomFeatures: band.maxRoomFeatures,
-    // band.sonarDeception（如有）让 mapgen 给部分内部节点挂 spoofs/evades（节点版 mimic / 无回波，S2）。
-    sonarDeception: band.sonarDeception,
     // 洞穴一致性（SPEC §6①·#98）：调用方给定身份串（蛙跳＝bandId / 深入 POI＝poi.id）⇒ 同地点同图。
     seedKey: opts.seedKey,
     // roaming 专属内容（2026-06-25）：透传稳定模板身份（roaming 才有·anchor/柱缺省 undefined＝零影响）。

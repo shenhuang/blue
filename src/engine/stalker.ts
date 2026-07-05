@@ -2,7 +2,7 @@
 //
 // 把一直抽象的「警觉」(run.alert·深水区 #59) 做成一个**有位置、会逼近、按你用哪种感官显示不同保真度**的猎手：
 //   灯（光） → 你只知道「有东西在接近」（NodeSelectView 既有 alert-warning·模糊）。
-//   声呐（ping）→ 你知道它**在哪个节点 + 多远**（SonarScanPanel 精确 blip·**只在被扫到时更新**·可 evadesSonar 躲）。
+//   声呐（ping）→ 你知道它**在哪个节点 + 多远**（SonarScanPanel 精确 blip·**只在被扫到时更新**·深处可躲扫描·stalkerEvadesScan）。
 //   摸黑       → 既不知存在也不知位置（但你也最不容易被它锁定）。
 // **同一只猎手**——不是两套敌人，是同一个实体的两种读数（双传感器 clarity 从「读地形」推进到「读威胁」）。
 //
@@ -40,7 +40,7 @@ export const STALKER_WAIT_TURNS = 3;
 export const STALKER_SEEK_MAX_TURNS = 8;
 /** ≥ 此 alert ＝它「有你的信号」（在追·刷新 lastSignal）；低于＝信号切断（你摸黑让它消退）→ 按性格搜。沿用预警线。 */
 export const STALKER_SIGNAL_ALERT = ALERT_WARN;
-/** ≥ 此深度的声/双感猎手会躲声呐扫描（evadesSonar·越深越难缠 §2.6；abyssal 108m 起）。 */
+/** ≥ 此深度的声/双感猎手会躲声呐扫描（stalkerEvadesScan·越深越难缠 §2.6；abyssal 108m 起）。 */
 export const STALKER_EVADE_DEPTH = 108;
 /**
  * ≥ 此深度的猎手＝「大型生物」（声呐与房间 §5 later「接触带大小」）：比玩家还大的深渊捕食者（abyssal the_rising / apex 类·abyssal 108m 起），
@@ -440,11 +440,12 @@ export function maybeSpawnWeakStalker(run: RunState, pool: string[]): Stalker | 
 
 /**
  * 弱变体的「有你的信号」（§2.6/Q3）：浅水警觉不积累（§7.5 铁律不动）→ 它直读你当下的信号源——
- * 光感＝你的灯开着；声感＝你这回合在 ping / 声呐持续开着；双感＝任一。关掉对应开关＝当场切断（教学版阀门）。
+ * 光感＝你的灯开着；声感＝你这回合发过一记 ping（感知重做 SPEC §2.2「ping 才扫」·发声即被听见）；双感＝任一。
+ * 关灯 / 这回合不 ping＝当场切断（教学版阀门）。
  */
 export function weakStalkerHasSignal(run: RunState, stalker: Stalker): boolean {
   const lamp = run.sensors.light;
-  const sounding = run.sensors.sonar === 'ping' || (run.sensors.sonarUnlocked && (run.sensors.sonarOn ?? true));
+  const sounding = run.sensors.sonar === 'ping';
   if (stalker.sensesBy === 'light') return lamp;
   if (stalker.sensesBy === 'sound') return sounding;
   return lamp || sounding;
@@ -571,7 +572,7 @@ export function advanceStalker(run: RunState, stalker: Stalker, fromNodeId?: str
 }
 
 /**
- * 这只猎手是否躲过这一记 ping（§2.1 evadesSonar·§2.6 越深越会躲）：纯光感不躲声呐；
+ * 这只猎手是否躲过这一记 ping（§2.1 躲扫描·§2.6 越深越会躲）：纯光感不躲声呐；
  * 深处（≥ STALKER_EVADE_DEPTH）的声/双感约半数 ping 躲过（确定性·随 turn＝两记 ping 间可能时显时隐）。
  */
 export function stalkerEvadesScan(run: RunState, stalker: Stalker): boolean {

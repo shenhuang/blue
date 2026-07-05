@@ -75,11 +75,6 @@ export interface PlayerProfile {
    */
   outpostScanSig?: Record<string, string>;
   /**
-   * 声呐开/关偏好（跨 run 持久·作者拍板）：玩家上一次设定的声呐持续开/关，新 run 落地（startDive）按它种 sonarOn/sonarNext。
-   * 缺省（旧档/未设）→ 开（读点一律 `?? true`）。additive·JSON 原生 round-trip·不 bump SAVE_VERSION。后续「装备/行前装包」里也能调。
-   */
-  sonarOn?: boolean;
-  /**
    * 持久装备配置（玩家穿戴的 5 件·跨 run 保留·港口物品栏读此·Otto 升级写此·P3）。
    * 新 run 起手从这里 copy 进 RunState.equipment。
    * additive·缺省补 createStarterLoadout()·不 bump SAVE_VERSION（#99 纯加字段）。
@@ -146,16 +141,17 @@ export interface DeathRecord {
 }
 
 /**
- * 微观感知预览档（深水区 Phase 0a，SPEC §3.1/§3.2）：
- *  - 'full'：灯有效——相邻节点的"地面真相"（细节高、能读 tell）。
- *  - 'sonar'：关灯但声呐 ping——远端"不可信的返回"（≠ 真内容，可被躲 / 骗 / 低 san 幻觉改写）。
- *  - 'none'：摸黑——无预览、盲航（沿用旧 visibility:dark 行为，quirk #27/#41）。
+ * 微观感知预览档（感知重做后塌成灯门二态·SPEC §2.1）：
+ *  - 'full'：灯下（或非黑水）诚实近场真相。
+ *  - 'none'：黑处无有效灯——盲 / 锁住（沿用旧 visibility:dark 行为，quirk #27/#41）。
+ *  - 'sonar'：**引擎不再产出**（声呐＝诚实远场侦察·不碰选点·SPEC §2.2）——成员留在类型里仅供 UI 样式/lane 3/4 引用。
  */
 export type ClarityTier = 'full' | 'sonar' | 'none';
 
 /**
  * 微观双传感器状态（深水区 Phase 0a）。灯＝近距真相 + 解锁信息、暴露(signature)高；
- * 声呐＝远距不可信回波、暴露低、费电。关灯关声呐＝致盲但最隐蔽（主动感知是双向的）。
+ * 声呐＝一记 ping 诚实远场侦察、暴露低、费电（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）。
+ * 关灯不 ping＝致盲但最隐蔽（主动感知是双向的）。
  * 声呐能力本身是后期解锁（sonarUnlocked，段2：收集材料后找 Otto 打造声呐件即解锁·hasSonarEquipped）——
  * 早期＝仅有灯，黑水区天然探索受限，玩家先经历"黑暗中无声呐"（作者 2026-06-02）。
  */
@@ -169,21 +165,14 @@ export interface SensorState {
    * 没开过灯（hydrate 不补·quirk #106 同族·additive 不 bump SAVE_VERSION）。
    */
   litThisTurn?: boolean;
-  /** 声呐模式。'ping'＝本次选点扫一发（耗电、回波不可信）；'off'＝不扫。默认 off。移动后归 off（脉冲是瞬时的）。 */
+  /**
+   * 声呐模式（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：'ping'＝本回合发过一记 ping（诚实远场侦察·付电 + 暴露）；
+   * 'off'＝没 ping（默认·不扫）。**移动后归 off（脉冲是瞬时的·不跨回合持续）**——旧「本回合开/关 + 预约下回合」双态状态机已删。
+   * 一潜内一站至多一记 ping（1 scan/停留）；weakStalkerHasSignal / signature 据 'ping' 判「你这回合响不响」。
+   */
   sonar: 'off' | 'ping';
   /** 声呐能力是否已解锁（升级派生，后期才有）。未解锁则 ping 不可用、黑水保持盲航。 */
   sonarUnlocked: boolean;
-  /**
-   * 声呐持续开/关——**本回合已承诺的状态**（声呐渲染重做 SPEC §4「开/关窗口规则」）。缺省（undefined）→ 视为开（缺省开）。
-   * 开＝本回合处于暴露/发射态（sonarActive 计暴露·到站自动扫一记 scan-on-open）；关＝不自动扫、只看保留的旧图。
-   * 「本回合开/关是上回合定的」：移动时由 sonarNext 提交进来（applyTransit）。**仅 sonarUnlocked 才落字段**＝未解锁逐字节不变。additive·不 bump SAVE_VERSION。
-   */
-  sonarOn?: boolean;
-  /**
-   * 声呐**下回合**的预承诺（SPEC §4「玩家的控制点＝决定下一回合是否关」）。缺省 → 跟随 sonarOn。
-   * 切换开关只改这里（本回合不变·预先承诺）；移动时 sonarNext→sonarOn 落定。本回合仍可主动扫一记反悔（pingSonar·扫了就算本回合开·付暴露）。
-   */
-  sonarNext?: boolean;
 }
 
 /**
@@ -196,20 +185,14 @@ export interface SensorTuning {
   pingCost: number;
   /** 灯每回合耗电的乘子（默认 1；升级下调＝更省电，有地板）。清水因子仍 0，只在黑/浊水生效。 */
   lampDrainMult: number;
-  /** 声呐注入假回波的 san 阈值（默认 SONAR_FALSE_ECHO_SANITY；升级下调＝更抗欺骗，但留地板＝永不全可信）。 */
-  sonarFalseEchoSanity: number;
-  /** 灯产生幻觉的 san 阈值（默认 LAMP_HALLUCINATION_SANITY；升级下调＝灯更晚崩，但留地板＝灯也终会崩）。 */
-  lampHallucinationSanity: number;
   /** signature 减免（默认 0；升级上调＝更隐蔽，有上限＝点灯/ping 暴露永不归零，守"读真相必自曝"）。 */
   signatureReduction: number;
-  /** 灯给真相的最大深度差 m（默认 LAMP_DEPTH_REACH；升级上调＝灯探得更深，有上限＝再陡的坑仍照不穿）。节点级 clarity·范围/分辨。 */
-  lampDepthReach: number;
-  /** 声呐够到的最大深度差 m（默认 SONAR_DEPTH_REACH，> 灯；升级上调，有上限）。 */
-  sonarDepthReach: number;
   /**
-   * 声呐探索扫描的有效跳数（声呐与房间 SPEC §8.1：范围是声呐主升级轴）。默认 SONAR_SCAN_RANGE，
-   * 升级上调、有上限 SONAR_SCAN_RANGE_MAX（< 最深 + < 全洞——再升也扫不穿整洞、照不到最深处）。
-   * sonar.ts::sonarScanRange(run) 读它；缺省（旧档/部分 run）→ 回退基线常量。
+   * 声呐一记 ping 的有效跳数＝**规划纵深**（感知重做 SPEC §2.2「更远的声呐 = 预判未来的选项」）：一记 ping
+   * 从当前节点无向 BFS 揭示这么多跳之外的节点（进 run.scanMemory·SonarScanPanel 画出来供规划）+ 同量程内的猎手听觉。
+   * 默认 SONAR_SCAN_RANGE，升级上调（sonarScanRangeBonus·声呐主升级轴）、有上限 SONAR_SCAN_RANGE_MAX
+   * （< 最深 + < 全洞——再升也扫不穿整洞、照不到最深处·守北极星）。sonar.ts::sonarScanRange(run) 读它；
+   * 缺省（旧档/部分 run）→ 回退基线常量。
    */
   sonarScanRange: number;
   /**
@@ -241,7 +224,7 @@ export type StalkerLostBehavior = 'wait' | 'seek_last';
 /**
  * 一只在下潜内追猎你的「猎手」（猎手 SPEC Phase 1 spine）。把抽象的警觉（run.alert·#59）做成一个
  * **有位置、会逼近、按你用哪种感官显示不同保真度**的实体（灯＝知道在接近 / 声呐＝知道位置+距离·同一只猎手）。
- * **run 级·派生·不入 profile·不 bump SAVE_VERSION**（同 scanMemory/sonarDeception；纯对象，JSON 自动 round-trip）。
+ * **run 级·派生·不入 profile·不 bump SAVE_VERSION**（同 scanMemory；纯对象，JSON 自动 round-trip）。
  * 仅在 run.huntEnabled（DepthBand.hunts·深 band）时 engage；缺省 → 引擎走旧 alert→伏击瞬时路径（向后兼容）。
  */
 export interface Stalker {
@@ -399,17 +382,12 @@ export interface RunState {
   bandAlertFactor: number;
   /**
    * 声呐探索图记忆（声呐与房间 SPEC §5「会过时的记忆」）：nodeId → 上次被 ping 扫到时的 run.turn。
-   * 累积（每次 ping 把扫到的节点 stamp 成当前 turn）；UI 据 (turn − stamp) 渐隐余像。run 级、不入存档、
+   * 累积（每记 ping 把**量程内 BFS 揭示的所有节点**〔sonarScanRange 跳·规划纵深·感知重做 SPEC §2.2〕stamp 成当前 turn）；
+   * UI 据 (turn − stamp) 渐隐余像 + 据此把这些「几跳之外」的节点画出来供规划。run 级、不入存档、
    * 不 bump SAVE_VERSION——createNewRun 种 {} + 旧档由 hydrateGameState 单点补 {}（同 shopStock/outpostState）。
    */
   scanMemory: Record<string, number>;
-  /**
-   * 本次蛙跳下潜所在 band 的不可信声呐失真强度（声呐与房间 SPEC §5/§7 S2）：diveIntoBand（经 startDiveFromPoi） 从
-   * band.sonarDeception 落到 run，clarity.ts::effectiveFalseEchoSanity 据此抬高低 san 假回波/伪接触/读数乱码阈值
-   * （深 band 更易骗，subhadal 回落＝『把戏都停了』）。createNewRun 种 0（声呐相对老实）＝POI 下潜 / 浅水默认；
-   * 旧档由 hydrateGameState 单点补 0。派生自 band，未发布不 bump SAVE_VERSION（JSON 自动 round-trip）。
-   */
-  sonarDeception: number;
+  // 本次下潜的不可信声呐失真强度（曾派生自 band·抬高低 san 假回波阈值）：**感知重做已删**（声呐诚实·SPEC §2.2/§3）。
   /**
    * 本次下潜是否启用「猎手」（猎手 SPEC Phase 1·§2.6 范围门控）：diveIntoBand（经 startDiveFromPoi） 从 DepthBand.hunts 落到 run。
    * 真 → moveToNode 走有位置的逼近猎手（出现→逼近→接触触发现有伏击）；假（createNewRun 种 false＝
@@ -533,10 +511,17 @@ export interface NodeChoice {
   /** 迷路图：该节点此前是否已到访过（回头/绕回时给"已来过"提示，盲航时也显示） */
   visited?: boolean;
   /**
-   * 该选项预览的感知档（深水区 Phase 0a）：'full' 灯下真相 / 'sonar' 声呐不可信表象 / 'none' 盲。
+   * 该选项预览的感知档（感知重做后塌成灯门二态·SPEC §2.1）：'full' 灯下诚实真相 / 'none' 盲（黑处无灯锁住）。
+   * 'sonar' 档不再由引擎产出（声呐＝诚实远场侦察·不碰选点）；该成员仍在 ClarityTier 类型里供样式引用。
    * enterNodeSelection 计算并把对应 preview 文案烤进本结构（引擎侧门控，便于回归断言）；UI 据此渲染样式。
    */
   clarity?: ClarityTier;
+  /**
+   * 灯门锁住（黑处无有效灯·可见但锁住·SPEC §2.1）：图上/选项里照画但点不了、标「太暗，看不清——需要灯」。
+   * enterNodeSelection 置位（clarity.ts::lampGateLocked）；开灯→解锁。**渲染层的禁用/拦截是车道 3**——
+   * 本车道只置标志 + 预览文案，选中一个 locked 节点尚未被引擎拦截（见报告）。
+   */
+  locked?: boolean;
 }
 
 /**
@@ -551,7 +536,7 @@ export interface FeatureChoice {
   eventId: string;
   /** 灯下真相短标签（事件标题）。 */
   preview: string;
-  /** 感知档（房内＝近处，通常 full；低 san 幻觉仍可由引擎改写）。 */
+  /** 感知档（房内＝近处·恒 'full' 诚实真相；感知重做后无低 san 改写）。 */
   clarity?: ClarityTier;
 }
 

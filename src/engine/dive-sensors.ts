@@ -1,6 +1,7 @@
-// 灯与声呐 wiring（#106 拆分自 dive.ts·纯搬移）：setLight / pingSonar（定向 §5）/ setSonarNext（§4 预承诺）/
-// scan-on-open（autoScanOnArrival·供 dive-move 到站调用）。refreshSelection 收在此处——仅传感器切换后刷新选点预览。
-// 函数体与拆分前逐字相同。
+// 灯与声呐 wiring（#106 拆分自 dive.ts）：setLight / pingSonar（一记诚实 ping·感知重做 SPEC §2.2）。
+// refreshSelection 收在此处——仅传感器切换后刷新选点预览。
+// 声呐重做（车道 4·感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：删掉「本回合开/关 + 预约下回合」双态状态机
+// （setSonarNext / autoScanOnArrival / scan-on-open）——ping 是一记瞬时动作，付电 + 暴露、揭示规划纵深、不跨回合持续。
 
 import type { GameState, RunState, Stalker } from '@/types';
 import { appendLog } from './state';
@@ -8,8 +9,8 @@ import {
   sonarPingCost,
   ALERT_MAX,
   sonarPingAlertDelta,
-  sonarStandingNext,
 } from './clarity';
+import { revealSonarScan, sonarScanRange } from './sonar';
 import { scanStalker } from './stalker';
 import { enterNodeSelection } from './dive-select';
 
@@ -45,32 +46,28 @@ export function setLight(state: GameState, on: boolean): GameState {
 }
 
 /**
- * 发一记声呐 ping（深水区 Phase 0a）：耗一大口电，本次选点改读"不可信的声呐返回"（≠ 真内容）。
- * 需已解锁声呐能力（后期深料升级）；电量不足则只叙事不消费。移动后 ping 自动消散（脉冲是瞬时的）。
- *
- * 定向 ping（声呐与房间 SPEC §5·作者 2026-06-06 拍板「方向扇区」）：dir 给出时把波束朝一个扇区聚焦——
- * 那个扇区探更远、别处更短（revealSonarScanDirectional），且暴露按方向计（sonarPingAlertDelta(run,dir)：
- * 整体更安静、但正对声感猎手则尖峰）。**dir 缺省＝全向，与旧行为逐字节一致**。猎手定位仍按基线量程（你
- * 总听得到近场的它），只是「看到的洞」和「招来的注意」随方向变。
- */
-/**
- * 一次声呐扫描的核心（几何圆揭示·作者 06-13 重设计）：把**当前所在节点**记成「本回合的扫描中心」
- * （scanMemory[当前节点]=本回合）——渲染层据此画出以你为心、半径 SONAR_REVEAL_R 的揭示圆。
- * 同时快照猎手位置（听觉量程·§8.7）。纯揭示，**不动 power / alert / sensors**（由调用方决定暴露与开关态）。
+ * 一记声呐扫描的核心（感知重做 SPEC §2.2「更远的声呐 = 预判未来的选项」）：把从当前节点无向 BFS 到
+ * sonarScanRange 跳的**所有节点**都记成「本回合被揭示到」（scanMemory[各节点]=本回合）——渲染层据此把这些
+ * 「几跳之外」的节点画出来供规划（射程 = 看多远），并按几何圆做扩散揭示动画。同时快照猎手位置（听觉量程·§8.7·同一批节点）。
+ * 纯揭示，**不动 power / alert / sensors**（由调用方 pingSonar 决定暴露与发射态）。
  */
 function scanReveal(run: RunState): { scanMemory: Record<string, number>; stalker: Stalker | undefined } {
   const scanMemory: Record<string, number> = { ...run.scanMemory };
-  // 只盖**当前节点**＝这一站、这一回合的扫描中心（渲染按所有中心 + 半径画几何圆；移动到新节点再扫＝新中心·#1）。
-  if (run.currentNodeId) scanMemory[run.currentNodeId] = run.turn;
-  // 猎手 SPEC §2.1/§8.7：听到猎手（听觉量程内 + 未躲过）→ 刷新它在声呐图上的（会过时的）位置；没听到/躲过 → 原样。
+  // 一记 ping 揭示量程内的全部节点（规划纵深·SPEC §2.2）：BFS 到 sonarScanRange 跳、全 stamp 成本回合（含 origin）。
+  if (run.map && run.currentNodeId) {
+    for (const id of revealSonarScan(run.map, run.currentNodeId, sonarScanRange(run))) {
+      scanMemory[id] = run.turn;
+    }
+  }
+  // 猎手 SPEC §2.1/§8.7：听到猎手（听觉量程内 + 未躲过·同一记 ping）→ 刷新它在声呐图上的（会过时的）位置；没听到/躲过 → 原样。
   const stalker = run.stalker ? scanStalker(run, run.stalker) : undefined;
   return { scanMemory, stalker };
 }
 
 /**
- * 发一记声呐扫描（深水区 Phase 0a + 声呐渲染重做 §4「本回合反悔」）：耗一大口电 + 当场抬警觉尖峰（loud 主动暴露），
- * 以你当前节点为心点亮一块揭示圆。需已解锁 + 有电 + 这一站还没扫过。声呐关时也可用＝「本回合反悔扫一记」
- * （扫了就算本回合开·付暴露·之后再设关只影响下回合）——开/关切换的「关着点开＝立即扫」也走这里。
+ * 发一记声呐 ping（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：耗一大口电 + 当场抬警觉尖峰（loud 主动暴露），
+ * 从当前节点揭示 sonarScanRange 跳之外的节点供规划（诚实远场侦察·永不撒谎）。需已解锁 + 有电 + 这一站还没扫过。
+ * ping 是一记瞬时动作——移动后 sonar 归 off（不跨回合持续·旧双态开/关状态机已删）。
  */
 export function pingSonar(state: GameState): GameState {
   const run = state.run;
@@ -78,7 +75,7 @@ export function pingSonar(state: GameState): GameState {
   if (!run.sensors.sonarUnlocked) {
     return appendLog(state, { tone: 'system', text: '你还没有能用的声呐。' });
   }
-  // 1 scan / 停留（声呐与房间 SPEC §8「1 scan/turn」）：这一站已扫过（自动 scan-on-open 或手动）→ 不重复耗电/暴露。
+  // 1 scan / 停留（声呐与房间 SPEC §8「1 scan/turn」）：这一站已 ping 过 → 不重复耗电/暴露。
   if (run.sensors.sonar === 'ping') {
     return appendLog(state, { tone: 'system', text: '脉冲还在水里荡，等它散了再扫一记。' });
   }
@@ -98,55 +95,13 @@ export function pingSonar(state: GameState): GameState {
       alert,
       scanMemory,
       stalker,
-      // 手动扫＝本回合发射（sonar='ping'）＝就算之前设了关也算本回合开（付暴露·§4 反悔）。
+      // 本回合发过一记 ping（sonar='ping'·付电 + 暴露）；移动后 applyTransit 归 off（脉冲瞬时）。
       sensors: { ...run.sensors, sonar: 'ping' },
     },
   };
   s = appendLog(s, {
     tone: 'uncanny',
-    text: '你发出一记脉冲。回波荡了回来——只是你说不准能不能信它。',
+    text: '你发出一记脉冲。回波荡了回来，前方的水路在图上凿出了轮廓。',
   });
   return refreshSelection(s);
-}
-
-/**
- * scan-on-open（声呐渲染重做 SPEC §4）：声呐持续开时，到站自动扫一记（懒揭示·刷新成新图 + 快照猎手）。
- * 暴露由「持续开」本身承担（sonarActive 在回合 tick 里计 signature·见 alertDelta）——自动扫**不再加 ping 尖峰**（区别主动 ping 的 loud 暴露）。
- * 耗一记电（声呐费电）：电不够 → 声呐哑火转 off（旧图保留·留电管理张力）。仅 emitting（applyTransit 据 standing 落的 sonar==='ping'）时跑。
- */
-export function autoScanOnArrival(state: GameState): GameState {
-  const run = state.run;
-  if (!run) return state;
-  if (run.sensors.sonar !== 'ping') return state; // standing 关 / 未解锁 → 不自动扫（看旧图）
-  const cost = sonarPingCost(run);
-  if (run.power < cost) {
-    // 电不够维持声呐 → 这一站哑火（落 off·旧图保留·暴露也随之停）。
-    return { ...state, run: { ...run, sensors: { ...run.sensors, sonar: 'off' } } };
-  }
-  const power = Math.max(0, run.power - cost);
-  const { scanMemory, stalker } = scanReveal(run); // 到站自动扫＝以新节点为心点亮揭示圆
-  return { ...state, run: { ...run, power, scanMemory, stalker } };
-}
-
-/**
- * 切换声呐**下回合**开/关（声呐渲染重做 SPEC §4·玩家的控制点＝预承诺下一回合是否关）。
- * 只改 sonarNext，本回合开/关不变（已是上回合定的）；移动时 applyTransit 把 sonarNext 落成下回合的 sonarOn。
- * 本回合若想立刻看＝主动 pingSonar 反悔（付暴露）。未解锁 → 原样。
- */
-export function setSonarNext(state: GameState, on: boolean): GameState {
-  const run = state.run;
-  if (!run || !run.sensors.sonarUnlocked) return state;
-  if (sonarStandingNext(run) === on) return state;
-  let s: GameState = {
-    ...state,
-    run: { ...run, sensors: { ...run.sensors, sonarNext: on } },
-    profile: { ...state.profile, sonarOn: on }, // 跨 run 持久：记进 profile，下次落地（startDive）按它种声呐开关
-  };
-  s = appendLog(s, {
-    tone: 'system',
-    text: on
-      ? '你决定下一段路把声呐开着——看得见，但也被听得见。'
-      : '你决定下一段路关掉声呐——往黑里走，凭记忆里的旧图摸路。',
-  });
-  return s;
 }

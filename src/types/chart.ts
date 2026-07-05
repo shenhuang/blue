@@ -94,7 +94,7 @@ export interface ChartPoi {
   modifier?: PoiModifier;
   /**
    * 深入潜点（灯塔/蛙跳重构 step ②·#125）：设了 ⇒ 本 POI 走**深度 band 路径**（band 的绝对 depthRange
-   * 覆盖 zone·并落 band 的 alertFactor/sonarDeception/hunts/tags/maxRoomFeatures）——等价于旧「前哨蛙跳」入口，
+   * 覆盖 zone·并落 band 的 alertFactor/hunts/tags/maxRoomFeatures）——等价于旧「前哨蛙跳」入口，
    * 但表达成海图上的一个潜点（由灯塔升级派生·扫描即浮现）。预耗氧从 POI 起潜深度（band 顶）纯函数推、
    * 不查前哨态（startDiveFromPoi·launchDepth=0）。缺省 ⇒ 走 zone + modifier.depthOffset 的普通下潜路径。
    * band 引用悬空由 check-dive-refs 焊成 regress 红（step ④ 接）。

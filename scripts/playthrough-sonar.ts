@@ -1,11 +1,11 @@
 // 声呐探索扫描回归（声呐与房间 SPEC §5/§7「S0」）。纯引擎断言（不碰 UI/combat）：
 //   1. revealSonarScan：有限程无向 BFS——range 决定揭示几跳、永不照全洞、含 origin、缺 origin → []
 //   2. sonarScanRange：S0 基线常量（升级轨留后续）
-//   3. pingSonar 写 scanMemory（盖当前节点为扫描中心·stamp 当前 turn）+ 扣电 + sonar='ping'
+//   3. pingSonar 写 scanMemory（揭示 sonarScanRange 跳内的**全部节点**·规划纵深·SPEC §2.2）+ 扣电 + sonar='ping'
 //   4. 软门控：声呐未解锁 → ping 无效（不写记忆、不扣电）
 //   5. 1 scan / 停留：已 ping（未移动）→ 再 ping no-op（不重复扣电/写记忆）
 //   6. ping 当场抬警觉：深水 spike / 浅水免压（深度因子 0）/ 深 band 倍率 / clamp 上限
-//   7. 会过时的记忆：持续开到站自动扫(盖新中心)·turn 前进；再 ping 刷新被扫到的 stamp，没扫到的留旧 stamp（staleness）
+//   7. 会过时的记忆：移动→脉冲归 off（不自动扫）·turn 前进；到新一站再 ping 刷新量程内 stamp，量程外留旧 stamp（staleness）
 //   9. 不动存档：scanMemory 走 JSON round-trip，SAVE_VERSION = 6（#131 §10）
 //
 // 跑法： npx tsx scripts/playthrough-sonar.ts
@@ -17,7 +17,7 @@ import {
   serializeGameState,
   deserializeGameState,
 } from '../src/engine/state';
-import { pingSonar, moveToNode, enterNodeSelection, exploreFeature, setSonarNext, startDive } from '../src/engine/dive';
+import { pingSonar, moveToNode, enterNodeSelection, exploreFeature, startDive } from '../src/engine/dive';
 import {
   POWER_MAX,
   SONAR_PING_COST,
@@ -26,22 +26,10 @@ import {
   THREAT_CONTACT_ALERT,
   sonarPingAlertDelta,
   alertDelta,
-  sonarStandingOn,
-  sonarStandingNext,
   alertDepthFactor,
-  sonarReturn,
-  nodeSonarView,
-  sonarPhantoms,
   threatContact,
-  effectiveFalseEchoSanity,
-  SONAR_FALSE_ECHO_SANITY,
-  SONAR_FALSE_ECHO_SANITY_BAND_MAX,
   deriveSensorTuning,
 } from '../src/engine/clarity';
-import { generateDiveMap } from '../src/engine/mapgen';
-import { getZone } from '../src/engine/zones';
-import { getBand } from '../src/engine/bands';
-import type { DiveNode } from '../src/types';
 import {
   revealSonarScan,
   sonarScanRange,
@@ -50,7 +38,7 @@ import {
 } from '../src/engine/sonar';
 import { makeHarness, type PtAssert } from './lib/pt';
 
-const pt = makeHarness('声呐探索扫描回归（S0 + S1 多事件房间 + S2 不可信扫描 + S3 威胁定位 + 开/关窗口 §4）');
+const pt = makeHarness('声呐探索扫描回归（S0 + S1 多事件房间 + S3 威胁定位 + 一记 ping 单动作·感知重做 §2.2·S2 不可信扫描已删）');
 const { L } = pt;
 const assert: PtAssert = pt.assert;
 const sortedKeys = (o: Record<string, number>) => Object.keys(o).sort();
@@ -182,18 +170,19 @@ L('\n========== 2. sonarScanRange 范围升级轴（§8.1）==========');
 // ============================================================
 // 3. pingSonar 写 scanMemory + 扣电 + sonar=ping
 // ============================================================
-L('\n========== 3. ping 写 scanMemory + 扣电 ==========');
+L('\n========== 3. ping 写 scanMemory（揭示量程内全部节点·规划纵深）+ 扣电 ==========');
 {
   const s = pingSonar(mk());
   const run = s.run!;
   assert(run.power === POWER_MAX - SONAR_PING_COST, `3: ping 扣 ${SONAR_PING_COST} 电`);
   assert(run.sensors.sonar === 'ping', '3: ping 后 sonar=ping');
+  // 感知重做 SPEC §2.2：一记 ping 揭示 sonarScanRange 跳内的全部节点（基线 range 1 从 n0 → {n0,n1,n2}）。
   assert(
-    sameSet(sortedKeys(run.scanMemory ?? {}), ['n0']),
-    '3: scanMemory = 本回合扫描中心＝当前节点（几何圆揭示·scanReveal 只盖当前节点·作者 06-13 重设计）',
+    sameSet(sortedKeys(run.scanMemory ?? {}), ['n0', 'n1', 'n2']),
+    '3: scanMemory = 一记 ping 揭示量程内全部节点（range1 从 n0 = n0+直接邻居·规划纵深·SPEC §2.2）',
   );
-  assert(run.scanMemory!['n0'] === run.turn, '3: 扫描中心 stamp 当前 turn');
-  L('  ping 盖当前节点为扫描中心 + 扣电 + stamp turn ✓');
+  assert(run.scanMemory!['n0'] === run.turn && run.scanMemory!['n1'] === run.turn, '3: 揭示的节点全 stamp 当前 turn');
+  L('  ping 揭示量程内节点（规划纵深）+ 扣电 + stamp turn ✓');
 }
 
 // ============================================================
@@ -248,21 +237,23 @@ L('\n========== 6. ping 抬警觉 ==========');
 }
 
 // ============================================================
-// 7. 会过时的记忆 + scan-on-open（声呐渲染重做 §4）：声呐持续开 → 到站自动扫一记（sonar 保持 ping）；
-//    量程外的旧记忆随你而留（保留到下次被扫到才刷新·staleness），量程内的刷新成新 turn。
+// 7. 会过时的记忆（感知重做 §2.2）：ping 揭示量程内节点·移动→脉冲归 off（不自动扫）·turn 前进；
+//    到新一站再 ping → 刷新新量程内的 stamp，旧量程外的节点留旧 stamp（staleness）。
 // ============================================================
-L('\n========== 7. 会过时的记忆 + scan-on-open（§4·staleness）==========');
+L('\n========== 7. 会过时的记忆（§2.2·staleness）==========');
 {
-  const first = pingSonar(mk({ depth: 50 })); // 在 n0·turn 0·scanReveal 只盖中心 → scanMemory={n0:0}
+  const first = pingSonar(mk({ depth: 50 })); // 在 n0·turn 0·range1 揭示 {n0,n1,n2} → 全 stamp 0
   const t0 = first.run!.turn;
-  const moved = moveToNode(first, 'n1'); // 去 n1：声呐持续开 → 到站自动扫一记（scan-on-open §4）·turn 前进·盖新中心 n1
-  assert(moved.run!.sensors.sonar === 'ping', '7: 声呐持续开 → 到站自动扫（sonar 保持 ping·scan-on-open §4，不再「移动归 off」）');
+  assert(first.run!.scanMemory!['n2'] === t0, '7: 首 ping 揭示 n2（range1 从 n0·stamp t0）');
+  const moved = moveToNode(first, 'n1'); // 去 n1：脉冲消散归 off（不自动扫·感知重做 §2.2）·turn 前进
+  assert(moved.run!.sensors.sonar === 'off', '7: 移动后脉冲归 off（不自动扫·感知重做 §2.2）');
   assert(moved.run!.turn > t0, '7: 移动后 turn 前进');
   const t1 = moved.run!.turn;
-  assert(moved.run!.scanMemory!['n1'] === t1, '7: 到站自动扫＝盖新扫描中心 n1（新 turn）');
-  assert(moved.run!.scanMemory!['n0'] === t0, '7: 旧扫描中心 n0 随你而留——仍是旧 turn（中心记忆持久·staleness）');
+  const rescan = pingSonar(moved); // 在 n1 再 ping：range1 从 n1 = {n1,n0,n3} 刷新成 t1；n2 不在量程内 → 留旧 t0
+  assert(rescan.run!.scanMemory!['n1'] === t1 && rescan.run!.scanMemory!['n0'] === t1, '7: 到新一站再 ping → 量程内 n1/n0 刷新成新 turn');
+  assert(rescan.run!.scanMemory!['n2'] === t0, '7: 量程外的旧节点 n2 留旧 turn（记忆会过时·staleness）');
   assert(t1 > t0, '7: 新 stamp 比旧 stamp 新');
-  L('  持续开→到站自动扫(scan-on-open·盖新中心) + 旧中心留存(staleness) ✓');
+  L('  ping 揭示量程 + 移动归 off(不自动扫) + 再 ping 刷新量程内 + 旧节点留存(staleness) ✓');
 }
 
 // ============================================================
@@ -334,89 +325,18 @@ L('\n========== 10. 多事件房间（S1）==========');
 }
 
 // ============================================================
-// 11. 不可信扫描（声呐与房间 S2）：spoof/evade 表象 + 深 band 失真阈值(封顶/回落) + 低 san 伪接触/读数乱码 + mapgen 欺骗 pass
+// 11. 不可信扫描（声呐与房间 S2）：spoof/evade 表象 + 深 band 失真阈值 + 低 san 伪接触/读数乱码 + mapgen 欺骗 pass
+//   → **整节随感知重做删除**（声呐诚实、欺骗移交低理智轴·SPEC §2.2/§2.3/§3）。
 // ============================================================
-L('\n========== 11. 不可信扫描（S2）==========');
-{
-  const makeRng = (seed: number) => { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 0x100000000; }; };
-  // 纯 run（只喂 clarity 需要的字段；必填化〔#107〕后读点直读 → fixture 显式种 canonical 默认）。
-  const run = (o?: { sanity?: number; turn?: number; dec?: number }): RunState =>
-    ({ stats: { sanity: o?.sanity ?? 100 }, turn: o?.turn ?? 0, sonarDeception: o?.dec ?? 0, sensorTuning: deriveSensorTuning({}) } as unknown as RunState);
-  const node = (o: Partial<DiveNode>): DiveNode =>
-    ({ id: 'x', layer: 1, depth: 150, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '真相', ...o });
-
-  // (a) evadesSonar → 无回波：文本「吞了」、nodeSonarView.noEcho + deceptive（声呐图不画）
-  const ev = node({ id: 'ev', evadesSonar: true });
-  assert(sonarReturn(run({ sanity: 100 }), ev).includes('吞'), '11a: evade 文本＝无回波（脉冲被吞）');
-  const evv = nodeSonarView(run({}), ev);
-  assert(evv.noEcho && evv.deceptive, '11a: evade → noEcho + deceptive');
-
-  // (b) spoofsSonar → 假信标（节点版 mimic）：文本「像…」、displayKind 画成上浮口、deceptive、不 noEcho
-  const sp = node({ id: 'sp', spoofsSonar: '一道朝上的出口' });
-  assert(sonarReturn(run({}), sp).includes('一道朝上的出口'), '11b: spoof 文本＝伪装成假信标');
-  const spv = nodeSonarView(run({}), sp);
-  assert(spv.displayKind === 'ascent_point' && spv.deceptive && !spv.noEcho, '11b: spoof → 声呐图画成上浮口(假信标)、deceptive');
-
-  // (c) effectiveFalseEchoSanity：缺省＝基线（守 sensors 回归）/ 欺骗越强阈值越高（越深越易骗）/ 封顶
-  assert(effectiveFalseEchoSanity(run({})) === SONAR_FALSE_ECHO_SANITY, '11c: 缺省 band → 恰好基线（零行为变化）');
-  const thrT2 = effectiveFalseEchoSanity(run({ dec: getBand('band.trench.t2')!.sonarDeception })); // 0.1
-  const thrT3 = effectiveFalseEchoSanity(run({ dec: getBand('band.trench.t3')!.sonarDeception })); // 0.15
-  assert(thrT2 > SONAR_FALSE_ECHO_SANITY && thrT3 > thrT2, '11c: 欺骗越强越易骗（trench.t2 0.1 < trench.t3 0.15）');
-  assert(effectiveFalseEchoSanity(run({ dec: 99 })) === SONAR_FALSE_ECHO_SANITY_BAND_MAX, '11c: 深 band 失真有封顶（高 san 仍留一线可信）');
-
-  // (d) 低 san 伪接触：低 san + 深 band → 幻影 blip；高 san → 无（大致为真）；锚在真实接触上
-  const mem: Record<string, number> = {}; for (let i = 0; i < 6; i++) mem['n' + i] = 0;
-  const ph = sonarPhantoms(run({ sanity: 18, dec: 0.32 }), mem);
-  assert(ph.length >= 1, '11d: 低 san + 深 band → 伪接触（幻影 blip）');
-  assert(ph.every((p) => mem[p.nearNodeId] !== undefined), '11d: 伪接触锚在真实接触附近（随其余像渐隐）');
-  assert(sonarPhantoms(run({ sanity: 100, dec: 0.32 }), mem).length === 0, '11d: 高 san → 无伪接触（大致为真）');
-
-  // (e) 读数乱码：低 san 时部分节点 garbled；高 san 不坏
-  const someGarbled = (sanity: number) =>
-    ['n0', 'n1', 'n2', 'n3', 'n4', 'n5'].some((id) => nodeSonarView(run({ sanity, dec: 0.32, turn: 0 }), node({ id })).garbled);
-  assert(someGarbled(18), '11e: 低 san → 部分读数乱码（garbled）');
-  assert(!someGarbled(100), '11e: 高 san → 读数不坏');
-
-  // (f) mapgen 欺骗 pass：深 band 给部分内部节点挂 spoofs/evades；门控缺省零改动；地标/起点/尸体豁免；确定性
-  const zone = getZone('zone.blue_caves')!;
-  const genDeep = (seed: number, dec: number) =>
-    generateDiveMap({ zone, profileFlags: new Set(['flag.tutorial_complete']), deaths: [], rng: makeRng(seed), depthRange: [140, 180], maxRoomFeatures: 3, sonarDeception: dec });
-  let totalDeceived = 0, totalBadExempt = 0, totalGated = 0;
-  for (let seed = 1; seed <= 12; seed++) {
-    const dirty = genDeep(seed, 0.32);
-    const clean = genDeep(seed, 0);
-    for (const n of Object.values(dirty.nodes)) {
-      if (n.evadesSonar || n.spoofsSonar) {
-        totalDeceived++;
-        if (['ascent_point', 'air_pocket', 'camp', 'corpse'].includes(n.kind) || n.id === dirty.startNodeId) totalBadExempt++;
-      }
-    }
-    for (const n of Object.values(clean.nodes)) if (n.evadesSonar || n.spoofsSonar) totalGated++;
-  }
-  assert(totalDeceived >= 6, `11f: 深 band 12 seed 累计有欺骗节点（实得 ${totalDeceived}）`);
-  assert(totalBadExempt === 0, '11f: 地标/起点/尸体永不被欺骗（结构性可感、守 #36）');
-  assert(totalGated === 0, '11f: 门控缺省（sonarDeception=0）→ 零欺骗字段＝旧图逐字节不变（向后兼容）');
-  const fp = (m: DiveMap) => Object.values(m.nodes).map((n) => `${n.id}:${n.evadesSonar ? 'E' : ''}${n.spoofsSonar ? 'S' : ''}`).sort().join('|');
-  assert(fp(genDeep(5, 0.32)) === fp(genDeep(5, 0.32)), '11f: 欺骗确定性（同 seed 两次一致·FNV 哈希不耗 rng）');
-
-  // (g) 数据守则：柱越深 sonarDeception 越强（trench.t2 0.1 → t3 0.15）；浅 band 不设
-  assert(getBand('band.home.t1')!.sonarDeception === undefined, '11g: 浅柱档（home.t1）不设欺骗（浅段相对老实）');
-  assert(getBand('band.trench.t1')!.sonarDeception === undefined, '11g: 海沟柱浅档（trench.t1）不设欺骗');
-  assert(
-    (getBand('band.trench.t2')!.sonarDeception ?? 0) < (getBand('band.trench.t3')!.sonarDeception ?? 0),
-    '11g: 海沟柱越深欺骗越强（trench.t2 0.1 < trench.t3 0.15）',
-  );
-
-  L('  spoof/evade 表象 + 深 band 失真阈值(封顶/回落) + 低 san 伪接触/乱码 + mapgen 欺骗(门控/豁免/确定性) ✓');
-}
 
 // ============================================================
-// 12. 威胁定位（声呐与房间 S3 廉价版）：run.alert → 近似接触 + 粗距档 + 低 san 读不出
+// 12. 威胁定位（声呐与房间 S3 廉价版）：run.alert → 近似接触 + 粗距档（诚实·感知重做后无 san 侧失真）
+// ============================================================
 // ============================================================
 L('\n========== 12. 威胁定位（S3 廉价版）==========');
 {
-  const tr = (o: { alert?: number; sanity?: number; turn?: number; dec?: number }): RunState =>
-    ({ alert: o.alert ?? 0, stats: { sanity: o.sanity ?? 100 }, turn: o.turn ?? 0, sonarDeception: o.dec ?? 0, sensorTuning: deriveSensorTuning({}) } as unknown as RunState);
+  const tr = (o: { alert?: number; sanity?: number; turn?: number }): RunState =>
+    ({ alert: o.alert ?? 0, stats: { sanity: o.sanity ?? 100 }, turn: o.turn ?? 0, sensorTuning: deriveSensorTuning({}) } as unknown as RunState);
 
   // (a) 预警线下 → 无接触（水里还算静）
   assert(threatContact(tr({ alert: THREAT_CONTACT_ALERT - 1 })) === null, '12a: 警觉未到预警线 → 无威胁接触');
@@ -429,84 +349,71 @@ L('\n========== 12. 威胁定位（S3 廉价版）==========');
   const near = threatContact(tr({ alert: ALERT_THRESHOLD }))!;
   assert(near.imminent && near.range === 'near', '12c: 越过接近线 → imminent + 近');
   assert(!warn.imminent, '12c: 预警线刚到 → 未 imminent（还有熄灯反应窗口）');
-  // (d) 低 san + 深 band → 距离偶尔读不出（garbled·按 turn 变）；高 san 读得出
-  const hiSan = threatContact(tr({ alert: ALERT_MAX, sanity: 100 }))!;
-  assert(!hiSan.garbled, '12d: 高 san → 威胁距离读得出（不 garbled）');
-  let everGarbled = false;
-  for (let t = 0; t < 12; t++) if (threatContact(tr({ alert: ALERT_MAX, sanity: 15, dec: 0.32, turn: t }))!.garbled) everGarbled = true;
-  assert(everGarbled, '12d: 低 san → 威胁距离偶尔读不出（garbled）');
+  // (d) 感知重做：威胁诚实（garbled 恒 false）——低 san 也读得出距离（失真移交低理智轴·SPEC §2.2/§2.3）。
+  assert(!threatContact(tr({ alert: ALERT_MAX, sanity: 100 }))!.garbled, '12d: 高 san → 威胁诚实（不 garbled）');
+  assert(!threatContact(tr({ alert: ALERT_MAX, sanity: 15 }))!.garbled, '12d: 低 san 也不 garbled（威胁诚实·感知重做）');
   // (e) 确定性（不耗 RNG·SSR 安全）：同输入同方位/逼近度
   const a = threatContact(tr({ alert: 70, turn: 3 }))!;
   const b = threatContact(tr({ alert: 70, turn: 3 }))!;
   assert(a.angle === b.angle && a.proximity === b.proximity, '12e: 威胁接触确定性（同输入同结果）');
-  L('  预警线门 / 逼近度随 alert / imminent 近 / 低 san 读不出 / 确定性 ✓');
+  L('  预警线门 / 逼近度随 alert / imminent 近 / 威胁诚实(不 garbled) / 确定性 ✓');
 }
 
 // ============================================================
-// 14. 声呐开/关窗口规则（声呐渲染重做 §4·本 session 重做）：缺省开·预承诺下回合·暴露按状态·本回合反悔·旧图保留
+// 14. 声呐一记 ping 单动作（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」·本 session 重做）：
+//     默认不扫（sonar=off）·主动 ping 付电+暴露·移动脉冲归 off·不跨回合持续
 // ============================================================
-L('\n========== 14. 声呐开/关窗口（§4 重做）==========');
+L('\n========== 14. 一记 ping 单动作（§2.2）==========');
 {
-  // (a) 缺省开（sonarOn 缺字段 → 视为开）
+  // (a) 默认不扫（sonar 缺省 off·感知重做后无 sonarOn/sonarNext 双态）
   const fresh = enterNodeSelection(mk({ depth: 50 }));
-  assert(sonarStandingOn(fresh.run!) === true, '14a: 缺省开（sonarOn 缺字段 → 视为开）');
-  assert(sonarStandingNext(fresh.run!) === true, '14a: 下回合缺省跟随＝开');
+  assert(fresh.run!.sensors.sonar === 'off', '14a: 默认不扫（sonar=off·ping 才扫）');
 
-  // (b) 预承诺（§4 控制点）：setSonarNext 只改下回合·本回合不变
-  const pre = setSonarNext(fresh, false);
-  assert(sonarStandingOn(pre.run!) === true, '14b: 切「关」只改下回合 → 本回合仍开（本回合是上回合定的）');
-  assert(sonarStandingNext(pre.run!) === false, '14b: 下回合预承诺=关');
+  // (b) 主动 ping → sonar=ping·付暴露尖峰
+  const pinged = pingSonar(fresh);
+  assert(pinged.run!.sensors.sonar === 'ping', '14b: ping 后 sonar=ping');
+  assert(pinged.run!.alert > fresh.run!.alert, '14b: ping 付了暴露尖峰（alert 抬升·主动感知=暴露）');
 
-  // (c) 落定：移动把 sonarNext→sonarOn（关）·到站不自动扫（sonar=off·看保留旧图）
-  const movedOff = moveToNode(pre, 'n1');
-  assert(movedOff.run!.sensors.sonarOn === false, '14c: 移动落定本回合=关（sonarNext→sonarOn）');
-  assert(movedOff.run!.sensors.sonar === 'off', '14c: 关着到站不自动扫（sonar off·保留旧图）');
+  // (c) 移动：脉冲消散归 off（不自动扫·不跨回合持续）
+  const movedOff = moveToNode(pinged, 'n1');
+  assert(movedOff.run!.sensors.sonar === 'off', '14c: 移动后脉冲归 off（不自动扫·不跨回合持续·§2.2）');
 
-  // (d) 暴露按状态付（§4）：同深同灯下，发射态(sonar=ping)每回合暴露 > 关态(off)——开＝暴露照付
-  const onAfter = moveToNode(enterNodeSelection(mk({ depth: 50 })), 'n1');
-  assert(onAfter.run!.sensors.sonar === 'ping', '14d: 持续开移动后处于发射态(sonar=ping·scan-on-open)');
-  const offLike = { ...onAfter, run: { ...onAfter.run!, sensors: { ...onAfter.run!.sensors, sonar: 'off' as const, sonarOn: false } } };
-  assert(alertDelta(onAfter.run!, 1) > alertDelta(offLike.run!, 1), '14d: 开着每回合暴露 > 关着（暴露按状态付·§4）');
+  // (d) 暴露按状态付：本回合发过 ping（sonar=ping）每回合暴露 > 没 ping（off）——ping 那一回合暴露照付
+  const offLike = { ...pinged, run: { ...pinged.run!, sensors: { ...pinged.run!.sensors, sonar: 'off' as const } } };
+  assert(alertDelta(pinged.run!, 1) > alertDelta(offLike.run!, 1), '14d: 发过 ping 那回合每回合暴露 > 没 ping（暴露按状态付）');
 
-  // (e) 本回合反悔：即使是关态，pingSonar 仍可主动扫一记（扫了就算本回合开·付暴露）
-  const offState = { ...fresh, run: { ...fresh.run!, sensors: { ...fresh.run!.sensors, sonar: 'off' as const, sonarOn: false, sonarNext: false } } };
-  const revoked = pingSonar(offState);
-  assert(revoked.run!.sensors.sonar === 'ping', '14e: 关着仍可主动扫一记反悔（sonar→ping·§4）');
-  assert(revoked.run!.alert > offState.run!.alert, '14e: 反悔扫付了暴露尖峰（alert 抬升＝扫了就算本回合开）');
-
-  // (f) 存档 round-trip：sonarOn/sonarNext 普通布尔·保真·不 bump SAVE_VERSION
+  // (e) 存档 round-trip：sonar 普通枚举·保真·不 bump SAVE_VERSION
   const rt = deserializeGameState(serializeGameState(movedOff));
-  assert(rt!.version === 12, '14f: SAVE_VERSION 12（月相 Phase 0b bump·sonarOn 本身不影响）');
-  assert(rt!.run!.sensors.sonarOn === false && rt!.run!.sensors.sonarNext === false, '14f: sonarOn/sonarNext round-trip 保真');
-  L('  缺省开 / 切换只改下回合 / 移动落定 / 暴露按状态(on>off) / 本回合反悔扫一记 / 存档 round-trip ✓');
+  assert(rt!.version === 12, '14e: SAVE_VERSION 12（月相 Phase 0b bump·感知重做删 sonarOn 不影响）');
+  assert(rt!.run!.sensors.sonar === 'off', '14e: sensors.sonar round-trip 保真');
+  L('  默认不扫 / ping 付暴露 / 移动归 off(不自动扫) / 暴露按状态 / 存档 round-trip ✓');
 }
 
 // ============================================================
-// 15. 落地即扫 + 声呐开关偏好跨 run 持久（作者拍板·所有下潜·startDive 当到站处理）
+// 15. 落地不自动扫（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：落地全黑（scanMemory 空·sonar off），
+//     想看＝落地后主动 ping 一记。旧「按 profile 偏好落地自动扫 + setSonarNext 跨 run 持久」已删。
 // ============================================================
-L('\n========== 15. 落地即扫 + 偏好持久 ==========');
+L('\n========== 15. 落地不自动扫（§2.2·ping 才扫）==========');
 {
   const base = createInitialGameState();
-  // 偏好开（默认）+ 已解锁 → startDive 落地立刻扫一记起始节点（看见掉进的那片洞）。
+  // 已解锁声呐 → startDive 落地仍不自动扫（scanMemory 空·sonar off·全黑·隐蔽）。
   const onState: GameState = { ...base, run: createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } }) };
   const dived = startDive(onState, 'zone.blue_caves');
-  const start = dived.run!.currentNodeId;
-  assert(start !== null && dived.run!.scanMemory[start] === dived.run!.turn, '15: 落地即扫——起始节点＝本回合扫描中心（声呐开+解锁）');
-  assert(dived.run!.sensors.sonar === 'ping', '15: 落地处于发射态 sonar=ping（exposed·与到站自动扫一致）');
-  assert(dived.run!.sensors.sonarOn === true && dived.run!.sensors.sonarNext === true, '15: 偏好开 → 种 sonarOn/sonarNext=true');
+  assert(Object.keys(dived.run!.scanMemory).length === 0, '15: 落地不自动扫（scanMemory 空·全黑·感知重做 §2.2）');
+  assert(dived.run!.sensors.sonar === 'off', '15: 落地 sonar=off（不发射·不暴露·想看再主动 ping）');
 
-  // 偏好关（profile.sonarOn=false）→ 落地不扫、不发射（全黑·隐蔽）。
-  const offState: GameState = { ...base, profile: { ...base.profile, sonarOn: false }, run: createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } }) };
-  const divedOff = startDive(offState, 'zone.blue_caves');
-  assert(Object.keys(divedOff.run!.scanMemory).length === 0, '15: 偏好关 → 落地不扫（scanMemory 空·全黑）');
-  assert(divedOff.run!.sensors.sonarOn === false && divedOff.run!.sensors.sonar === 'off', '15: 偏好关 → 种 sonarOn=false·不发射');
+  // 落地后主动 ping → 揭示起始节点周围（一记诚实 ping·付电 + 暴露）。
+  const start = dived.run!.currentNodeId!;
+  const pinged = pingSonar(dived);
+  assert(pinged.run!.scanMemory[start] === pinged.run!.turn, '15: 落地后主动 ping → 揭示起始节点（本回合 stamp）');
+  assert(pinged.run!.sensors.sonar === 'ping', '15: 主动 ping → sonar=ping（付电 + 暴露）');
+  assert(pinged.run!.power < dived.run!.power, '15: 主动 ping 付电');
 
-  // setSonarNext 把偏好写进 profile（跨 run 持久的单一来源·下次落地按它种）。
-  const stOn: GameState = { ...base, run: createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } }) };
-  const turnedOff = setSonarNext(stOn, false);
-  assert(turnedOff.profile.sonarOn === false, '15: setSonarNext(false) 写 profile.sonarOn=false（跨 run 持久）');
-  assert(setSonarNext(turnedOff, true).profile.sonarOn === true, '15: setSonarNext(true) 写 profile.sonarOn=true');
-  L('  落地即扫(开) / 落地全黑(关) / 偏好写 profile 跨 run ✓');
+  // 未解锁声呐 → 落地同样全黑，且 ping no-op（不扫·不扣电）。
+  const noSonar: GameState = { ...base, run: createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: false } }) };
+  const divedNo = startDive(noSonar, 'zone.blue_caves');
+  assert(Object.keys(divedNo.run!.scanMemory).length === 0 && divedNo.run!.sensors.sonar === 'off', '15: 未解锁声呐 → 落地全黑');
+  L('  落地不自动扫(全黑) / 落地后主动 ping 揭示付电 / 未解锁全黑 ✓');
 }
 
 pt.done();

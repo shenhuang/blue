@@ -269,13 +269,9 @@ export interface RunStartBonuses {
   powerMaxBonus: number;
   sonarPingCostReduction: number;
   lampEfficiency: number;
-  sonarRobustness: number;
-  lampRobustness: number;
   signatureReduction: number;
-  // 深水区 Phase 1 续·节点级 clarity 范围/分辨：灯/声呐 reach 加成。
-  lampRangeBonus: number;
-  sonarRangeBonus: number;
-  // 猎手听觉量程跳数加成。
+  // 声呐主升级轴（感知重做 SPEC §2.2「更远的声呐 = 预判未来的选项」）：一记 ping 的规划纵深跳数加成
+  // （视觉 lookahead + 猎手听觉同轴）。旧 sonarRobustness/lampRobustness/lampRangeBonus/sonarRangeBonus 随感知重做删。
   sonarScanRangeBonus: number;
   // 声呐与房间 §6/§8.3 续：大房间出现率加成。
   roomFeatureChanceBonus: number;
@@ -295,12 +291,13 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
   const homeSlot = home ? getLighthouseBonuses(home).extraConsumableSlot : 0;
   // 段1：并入穿戴件升级增量（Otto·equipment.ts 单点）——starter 全 Lv.1 时为 0、对既有基线零扰动。
   const eq = profile.equipment ? getEquipmentStats(profile.equipment) : emptyEquipmentStats();
-  // 段2（2026-06-19）+ A 档位件（2026-06-20）：传感器加成全部来源＝穿戴件 eq（getEquipmentStats·单点）——
-  //   · 声呐五项（sonarUnlocked / pingCost / robustness / rangeBonus / scanRangeBonus）：读 eq（Otto 打造的声呐件·数值在 upgradeSteps）。
-  //     sonarUnlocked＝声呐槽是否装着件（hasSonarEquipped 单一来源）。
-  //   · 灯/电池/规避（powerMax / lampEfficiency / lampRobustness / signatureReduction / lampRangeBonus / soundAbsorb / camo）：
+  // 段2（2026-06-19）+ A 档位件（2026-06-20）+ 感知重做精简（车道 4）：传感器加成全部来源＝穿戴件 eq（getEquipmentStats·单点）——
+  //   · 声呐（sonarUnlocked / pingCost / scanRangeBonus）：读 eq（Otto 打造的声呐件·数值在 upgradeSteps）。
+  //     sonarUnlocked＝声呐槽是否装着件（hasSonarEquipped 单一来源）。scanRangeBonus＝声呐主升级轴（规划纵深·SPEC §2.2）。
+  //   · 灯/电池/规避（powerMax / lampEfficiency / signatureReduction / soundAbsorb / camo）：
   //     A 把退役的灯/电池/规避升级做回「固定属性档位件」（Mira 买·数值在 base effects）→ 改读 eq.*（替段2 的字面 0）。
   //     注：powerMaxBonus 仍被 dive-start 的前哨在线补给 rechargeBonus 叠加（在此给 eq 起点·dive-start += recharge）。
+  //   （旧 sonarRobustness/lampRobustness/lampRangeBonus/sonarRangeBonus 随感知重做删——声呐诚实、灯到即真、深度不降档。）
   //   防双计（quirk #140/#142）：传感器 bonus 唯一来源＝eq；氧/体地板唯一住 createNewRun（eq 不读其 base·见 equipment.ts）。
   const sonarPresent = profile.equipment ? hasSonarEquipped(profile.equipment) : false;
   return {
@@ -311,11 +308,7 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
     powerMaxBonus: eq.powerMaxBonus,
     sonarPingCostReduction: eq.sonarPingCostReduction,
     lampEfficiency: eq.lampEfficiency,
-    sonarRobustness: eq.sonarRobustness,
-    lampRobustness: eq.lampRobustness,
     signatureReduction: eq.signatureReduction,
-    lampRangeBonus: eq.lampRangeBonus,
-    sonarRangeBonus: eq.sonarRangeBonus,
     sonarScanRangeBonus: eq.sonarScanRangeBonus,
     roomFeatureChanceBonus: g.roomFeatureChanceBonus,
     soundAbsorbBonus: eq.soundAbsorbBonus,

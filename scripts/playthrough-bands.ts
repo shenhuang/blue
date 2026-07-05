@@ -19,13 +19,13 @@
 import { createInitialGameState, createStarterLoadout } from '../src/engine/state';
 import { getBands, getBand, bandDiveModifier } from '../src/engine/bands';
 import { columnBands } from '../src/engine/columns';
-import { startDiveFromPoi } from '../src/engine/dive';
+import { startDiveFromPoi, setLight } from '../src/engine/dive';
 import { generateDiveMap } from '../src/engine/mapgen';
 import { getZone } from '../src/engine/zones';
 import { makeLcg } from '../src/engine/rng';
 import {
   clarity,
-  lampEffective,
+  lampGateLocked,
   alertDepthFactor,
   alertDelta,
   ALERT_DEPTH_FULL,
@@ -115,21 +115,25 @@ assert(s.phase.kind === 'dive', '4: 进入 dive phase');
 assert(s.run!.zoneId === deepBand.zoneId, '4: run.zoneId = band.zoneId');
 assert(s.run!.diveModifier?.visibility === deepBand.visibility, '4: run.diveModifier.visibility = band.visibility');
 assert(s.run!.bandAlertFactor === (deepBand.alertFactor ?? 1), `4: run.bandAlertFactor = band.alertFactor（实 ${s.run!.bandAlertFactor}）`);
-assert(s.run!.sonarDeception === (deepBand.sonarDeception ?? 0), `4: run.sonarDeception = band.sonarDeception（实 ${s.run!.sonarDeception}）`);
+// run.sonarDeception 断言随感知重做删除（声呐诚实·SPEC §2.2/§3）。
 assert(s.run!.huntEnabled === (deepBand.hunts ?? false), '4: run.huntEnabled = band.hunts');
 const rd = depthsOf(s);
 assert(Math.min(...rd) >= deepBand.depthRange[0] && Math.max(...rd) <= deepBand.depthRange[1], '4: run.map 深度落在 band 窗口');
 assert(s.run!.stats.oxygen === s.run!.oxygenMax, '4: 满氧起手（距离预耗氧已删·作者 2026-06-14）');
 assert(s.run!.turn === 0, `4: 从第一回合起算 → turn 0（实 ${s.run!.turn}）`);
-L('  zoneId / 黑水 modifier / bandAlertFactor / sonarDeception / huntEnabled / 深度窗口 / 满氧 turn0 ✓');
+L('  zoneId / 黑水 modifier / bandAlertFactor / huntEnabled / 深度窗口 / 满氧 turn0 ✓');
 
 // ============================================================
 // 5. 软门控：深黑 band + 无声呐 → 瞎；装上声呐件 → run 解锁
 // ============================================================
 L('\n========== 5. 软门控（装备＝钥匙）==========');
 assert(s.run!.sensors.sonarUnlocked === false, '5: 新存档没声呐');
-assert(lampEffective(s.run!) === false, '5: 黑水灯打不透（lampEffective false）');
-assert(clarity(s.run!) === 'none', '5: 黑水 + 无声呐 → clarity none（装备不够就瞎着下）');
+// 感知重做（SPEC §2.1）：黑水正是灯起作用的地方——灯开（默认）→ 近场诚实真相、灯门不锁；灯关 → 黑处锁住。
+assert(lampGateLocked(s.run!) === false, '5: 黑水灯开（默认）→ 灯门不锁（新模型：黑处灯照得到）');
+assert(clarity(s.run!) === 'full', '5: 黑水灯开 → clarity full（近场诚实真相）');
+const sLampOff = setLight(s, false);
+assert(lampGateLocked(sLampOff.run!) === true, '5: 黑水关灯 → 灯门锁住（可见但锁住·需要灯）');
+assert(clarity(sLampOff.run!) === 'none', '5: 黑水关灯 → clarity none（黑处无有效灯·盲）');
 // 段2：声呐＝Otto 打造的装备件——装上 item.sonar.handheld（hasSonarEquipped）即解锁，不再走 upgrade.sonar.lv1。
 const withSonar: GameState = {
   ...base,

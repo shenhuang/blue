@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { GameState, NodeChoice } from '@/types';
-import { setLight, pingSonar, setSonarNext } from '@/engine/dive';
-import { sonarPingCost, sonarStandingOn, sonarStandingNext } from '@/engine/clarity';
+import { setLight, pingSonar } from '@/engine/dive';
+import { sonarPingCost } from '@/engine/clarity';
 import { StatusBar } from './StatusBar';
 import { SonarScanPanel } from './SonarScanPanel';
 import { LootPanel } from './LootPanel';
@@ -55,7 +55,8 @@ const ICON_EQUIP = (
 //
 // 移动端 HUD（SPEC §6·作者 2026-06-17）：状态条**常显**（不收进图标）；声呐图 / 战利品 / 装备做成**互斥**面板
 //   （openPanel 单态·开一个收起另一个）——移动端点开＝全屏覆盖（CSS .dive-header.has-dive-panel·状态条留顶上），
-//   桌面内联（声呐图默认开·保留旧「常驻声呐图」体验·再点收起）。声呐控制仍只一个开/关（关着点开＝本回合立即扫一次·#5）。
+//   桌面内联（声呐图默认开·保留旧「常驻声呐图」体验·再点收起）。声呐控制＝面板内一个「扫一记」按钮
+//   （感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」·付电 + 暴露·揭示前方规划纵深）。
 //   「装备」＝下潜侧只读看纸娃娃（EquipmentDoll readOnly·改装去港口 Otto·C 段 2026-06-19）。
 type PanelKind = 'none' | 'sonar' | 'loot' | 'equipment';
 
@@ -100,10 +101,8 @@ export function DiveHeader({ state, onStateChange, choices = [], pendingNodeId =
 
   const lightOn = run.sensors.light;
   const pingCost = sonarPingCost(run);
-  const canPing = sonarUnlocked && run.power >= pingCost;
   const alreadyPinged = run.sensors.sonar === 'ping';
-  const standingOn = sonarStandingOn(run);
-  const standingNext = sonarStandingNext(run);
+  const canPing = sonarUnlocked && !alreadyPinged && run.power >= pingCost;
 
   return (
     <div className={`dive-pinned dive-header${activePanel !== 'none' ? ' has-dive-panel' : ''}`}>
@@ -167,28 +166,20 @@ export function DiveHeader({ state, onStateChange, choices = [], pendingNodeId =
           </div>
           {activePanel === 'sonar' ? (
             <>
-              {/* 声呐开/关：放在声呐面板内，关着点开＝本回合立即扫一次（#5）。 */}
+              {/* 声呐扫一记（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：一记诚实 ping·付电 + 暴露·
+                  揭示前方 sonarScanRange 跳的规划纵深。这一站已 ping / 电不足 → 禁用。 */}
               <div className="dive-sonar-controls">
                 <button
-                  className={`btn sensor-btn sonar-toggle ${standingOn ? 'on' : ''}`}
-                  onClick={() => {
-                    if (standingOn) {
-                      onStateChange(setSonarNext(state, false));
-                    } else {
-                      let s: GameState = {
-                        ...state,
-                        run: { ...run, sensors: { ...run.sensors, sonarOn: true, sonarNext: true } },
-                        profile: { ...state.profile, sonarOn: true },
-                      };
-                      if (canPing && !alreadyPinged) s = pingSonar(s);
-                      onStateChange(s);
-                    }
-                  }}
-                  title="声呐开＝每站自动成图、但一直暴露你；关＝隐蔽、只看保留的旧图。关着时点开＝本回合立即开并扫一记。"
+                  className="btn sensor-btn sonar-ping"
+                  disabled={!canPing}
+                  onClick={() => onStateChange(pingSonar(state))}
+                  title="扫一记声呐：诚实揭示前方几跳的水路供规划——代价是耗电 + 被听见（暴露）。走到下一站再想看就再扫一记。"
                 >
-                  {standingOn ? '声呐：开' : '声呐：关'}
-                  {standingNext !== standingOn ? (standingNext ? ' → 下回合开' : ' → 下回合关') : ''}
-                  {!standingOn && !canPing ? '（电量不足）' : ''}
+                  {alreadyPinged
+                    ? '已扫（走一步再扫）'
+                    : run.power < pingCost
+                      ? `扫一记（电量不足）`
+                      : `扫一记 · 耗电 ${pingCost}`}
                 </button>
               </div>
               <SonarScanPanel

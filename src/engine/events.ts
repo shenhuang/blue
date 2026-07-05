@@ -14,6 +14,7 @@ import type {
 } from '@/types';
 import { addToInventory, addToPoiSetMap, appendLog, clampStats, enqueuePickup, totalRunInventoryWeight } from './state';
 import { getItemDef, harvestPersistOf, weightForItem } from './items';
+import { getUpgradeDef } from './upgrades';
 import { equipmentUnlocksAction, loadoutInsulation } from './equipment';
 import { EQUIPMENT_SLOTS } from '@/types/items';
 import { restoreLighthouse, advanceOutpost } from './lighthouses';
@@ -123,6 +124,124 @@ export function isOptionVisible(state: GameState, opt: EventOption): boolean {
     return opt.hiddenIfFails === false; // false = 仅灰显
   }
   return true;
+}
+
+// —— 揭示归因（感知重做 SPEC §2.1 · 车道 5-2）——
+//
+// 「带了某道具才**显示**某选项 → 选项旁提示是靠这件解锁的」（作者请求）。
+// isOptionVisible 只回 bool；本节把「因何可见」这层信息**从满足的持有条件里派生**出来，
+// 供 EventView 在选项旁渲染一枚「（靠 <显示名>）」小标（渲染在 UI 层·此处只出纯数据）。
+//
+// 可扩展性（作者价值：落成机制别硬编码）——显示名一律从**满足条件的那件持有物**的真实
+// `name`（ItemDef / UpgradeDef / 装备槽件）派生，不为每个选项、每种能力手写文案：
+//   - hasCapability：扫玩家实际持有、且 grantsCapability 含该能力的第一件（装备槽优先，其次背包），
+//     取它的 def.name。⇒ **任何未来「授予某能力」的新道具自动带标**（新增道具零改动·新事件只问能力）。
+//     万一没扫到具体件（理论上 evalCondition 已保证有）才回退能力标签。
+//   - hasEquipment：该槽当前装的件名（run.equipment[slot].name），回退到槽的通用名。
+//   - hasItem：条件里 itemId 的 def.name。
+//   - hasUpgrade：条件里 upgradeId 的 UpgradeDef.name。
+//   - all/any：递归取**第一个满足的持有类**子条件（欺骗/数值/flag 类不产出归因·它们不是「你带了什么」）。
+//
+// 【内容作者约定（写在此处·代码不强制）】哪些选项该 item-gate、灯/声呐/其它各揭示什么，属内容：
+//   - **灯**揭示近场 INTERACTION 选项（凑近、伸手、翻找——光照到才敢碰）；
+//   - **声呐**揭示 STRUCTURAL / 导航选项（前方结构、暗流、绕路——回波先探清）；
+//   - **其它道具**按其性质（刀→切割、岩凿→采矿、相机→取证……）。
+//   本车道只做渲染 + 派生；具体给哪些选项挂 visibleIf 由内容车道逐条铺。
+
+/** 能力标签的名词兜底（仅在扫不到具体持有件时用·正常路径走真实道具名）。 */
+function capabilityFallbackLabel(cap: string): string {
+  switch (cap) {
+    case 'cut':
+      return '切割工具';
+    case 'mine':
+      return '采矿工具';
+    default:
+      return cap;
+  }
+}
+
+/** 装备槽的通用名（仅在该槽件查不到 def 时兜底·正常走件名）。 */
+function equipmentSlotFallbackLabel(slot: string): string {
+  switch (slot) {
+    case 'light':
+      return '灯';
+    case 'sonar':
+      return '声呐';
+    case 'tool':
+      return '手中的工具';
+    case 'ranged':
+      return '副手武器';
+    case 'tank':
+      return '气瓶';
+    case 'suit':
+      return '潜水服';
+    default:
+      return '装备';
+  }
+}
+
+/**
+ * 若一个**已可见**选项的可见性来自某个持有条件（hasCapability / hasEquipment / hasItem / hasUpgrade），
+ * 返回其归因显示名（供「（靠 X）」小标）；否则（无 visibleIf、或 visibleIf 是数值/flag/欺骗类非持有条件）返回 null。
+ *
+ * 调用前提：选项已通过 isOptionVisible（本函数不重复判可见）。纯函数·便于回归断言。
+ */
+export function revealAttribution(state: GameState, opt: EventOption): string | null {
+  if (!opt.visibleIf) return null;
+  return attributionOf(state, opt.visibleIf);
+}
+
+/** 从一个（已满足的）Condition 递归取「你带了什么」的显示名·非持有类返回 null。 */
+function attributionOf(state: GameState, c: Condition): string | null {
+  const run = state.run;
+  switch (c.kind) {
+    case 'hasCapability': {
+      // 数据驱动：取玩家实际持有、grantsCapability 含该能力的第一件的真实名（装备槽优先·其次背包）。
+      // ⇒ 未来任何授予该能力的新道具自动命名·无需在此登记。
+      if (run) {
+        for (const slot of EQUIPMENT_SLOTS) {
+          const inst = run.equipment[slot];
+          if (!inst) continue;
+          const def = getItemDef(inst.itemId);
+          if (def?.grantsCapability?.includes(c.capability)) return def.name;
+        }
+        for (const inv of run.inventory) {
+          if (inv.qty <= 0) continue;
+          const def = getItemDef(inv.itemId);
+          if (def?.grantsCapability?.includes(c.capability)) return def.name;
+        }
+      }
+      return capabilityFallbackLabel(c.capability);
+    }
+    case 'hasEquipment': {
+      const inst = run?.equipment[c.slot] ?? null;
+      const name = inst ? getItemDef(inst.itemId)?.name : undefined;
+      return name ?? equipmentSlotFallbackLabel(c.slot);
+    }
+    case 'hasItem':
+      return getItemDef(c.itemId)?.name ?? c.itemId;
+    case 'hasUpgrade':
+      return getUpgradeDef(c.upgradeId)?.name ?? c.upgradeId;
+    case 'all':
+    case 'any':
+      // 复合条件：取第一个满足的**持有类**子条件的归因（跳过数值/flag/欺骗类——它们不是「你带了什么」）。
+      // any：满足的那条即产出归因；all：全满足·取第一条有归因的（通常一件门·多件时报头一件）。
+      for (const sub of c.of) {
+        if (!evalCondition(state, sub)) continue;
+        const a = attributionOf(state, sub);
+        if (a) return a;
+      }
+      return null;
+    // 非持有类（数值 / flag / 信任 / notHas*）：不产出「靠某道具」归因。
+    case 'notHasItem':
+    case 'statAtLeast':
+    case 'statAtMost':
+    case 'hasFlag':
+    case 'notHasFlag':
+    case 'depthAtLeast':
+    case 'npcTrustTier':
+      return null;
+  }
 }
 
 /** 该选项是否可点（满足 visibleIf 才可点） */

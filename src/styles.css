@@ -1117,6 +1117,49 @@ html, body, #root {
   color: var(--cyan);
 }
 
+/* 灯门锁住（感知重做 SPEC §2.1）：黑处无灯的节点＝可见但锁住——虚线边 + dim（同 .visited/.upgrade-status.locked 的「已知但不可用」语汇），
+   .btn:disabled 已给 not-allowed / opacity；这里把边做成虚线、深度数字褪成 faint，读作「点不了、缺灯」而非普通选项。 */
+.event-option.locked {
+  border-style: dashed;
+  border-color: var(--border);
+}
+.event-option.locked .node-depth {
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+/* 「需要灯」小标（与 .check-badge 同一套窄胶囊尺寸·暖色边提示这是缺灯门·不抢 fiction）：
+   靠右贴齐＝所有锁住选项的标记落在同一竖线上（作者偏好等大/对齐）。 */
+.lock-tag {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 0 6px;
+  font-size: 0.78em;
+  line-height: 1.5;
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  border-radius: 9px;
+  white-space: nowrap;
+  opacity: 0.9;
+}
+
+/* 揭示归因小标「靠 <显示名>」（感知重做 §2.1·车道 5-2）：某选项因你带了某道具才**显示**——
+   旁标它是靠哪件解锁的。与 .check-badge / .lock-tag 同一套窄胶囊尺寸（作者偏好等大/对齐），
+   但走冷调 accent 边＝正向「你拿到了它」的提示，区别于 .lock-tag 的暖调「你还缺它」。不抢 fiction。 */
+.reveal-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  font-size: 0.78em;
+  line-height: 1.5;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 9px;
+  vertical-align: 1px;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
 /* 节点选择 ——— */
 
 .node-row {

@@ -18,7 +18,8 @@ import {
   deserializeGameState,
   loadGame,
 } from '../src/engine/state';
-import { POWER_MAX, SONAR_PING_COST, LAMP_DEPTH_REACH, SONAR_DEPTH_REACH, deriveSensorTuning } from '../src/engine/clarity';
+import { POWER_MAX, SONAR_PING_COST, deriveSensorTuning } from '../src/engine/clarity';
+import { SONAR_SCAN_RANGE } from '../src/engine/sonar';
 import type { GameState } from '../src/types';
 import { makeHarness, type PtAssert } from './lib/pt';
 
@@ -97,7 +98,7 @@ s = {
     // 深水区 Phase 0 升级轨：给非默认 bonuses，让 powerMax/sensorTuning 带可辨识值，验证它们也 round-trip。
     ...createNewRun({
       zoneId: 'zone.blue_caves',
-      bonuses: { powerMaxBonus: 20, sonarPingCostReduction: 2, lampEfficiency: 0.5, sonarRobustness: 20, lampRobustness: 10, signatureReduction: 3, lampRangeBonus: 4, sonarRangeBonus: 8, sonarScanRangeBonus: 1, roomFeatureChanceBonus: 0.18, soundAbsorbBonus: 0.5, camoBonus: 0.4 },
+      bonuses: { powerMaxBonus: 20, sonarPingCostReduction: 2, lampEfficiency: 0.5, signatureReduction: 3, sonarScanRangeBonus: 1, roomFeatureChanceBonus: 0.18, soundAbsorbBonus: 0.5, camoBonus: 0.4 },
     }),
     currentDepth: 30,
     activeFlags: new Set(['air_used:node.5', 'run.scratch']),
@@ -161,15 +162,12 @@ assert(
     back!.run?.powerMax === POWER_MAX + 20 &&
     back!.run?.sensorTuning?.pingCost === SONAR_PING_COST - 2 &&
     back!.run?.sensorTuning?.lampDrainMult === 0.5 &&
-    back!.run?.sensorTuning?.sonarFalseEchoSanity === 40 &&
-    back!.run?.sensorTuning?.lampHallucinationSanity === 15 &&
     back!.run?.sensorTuning?.signatureReduction === 3 &&
-    back!.run?.sensorTuning?.lampDepthReach === LAMP_DEPTH_REACH + 4 &&
-    back!.run?.sensorTuning?.sonarDepthReach === SONAR_DEPTH_REACH + 8 &&
+    back!.run?.sensorTuning?.sonarScanRange === SONAR_SCAN_RANGE + 1 &&
     back!.run?.sensorTuning?.roomFeatureChanceBonus === 0.18 &&
     back!.run?.sensorTuning?.soundAbsorbBonus === 0.5 &&
     back!.run?.sensorTuning?.camoBonus === 0.4,
-  'run.sensors / power / powerMax / sensorTuning（深水区 Phase 0 升级轨 + Phase 1 续节点级 reach + 房间出现率轴 + 猎手规避轴）应 round-trip',
+  'run.sensors / power / powerMax / sensorTuning（感知重做后：pingCost + scanRange 主轴 + 隐蔽 + 房间出现率轴 + 猎手规避轴）应 round-trip',
 );
 assert(
   back!.run?.decoy?.nodeId === 'node.3' && back!.run?.decoy?.kind === 'sound' && back!.run?.decoy?.expiresTurn === 9,
@@ -284,17 +282,18 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
     '6: sensorTuning 补未升级基线（deriveSensorTuning({})）',
   );
   assert(
-    Object.keys(h.run.scanMemory).length === 0 && h.run.bandAlertFactor === 1 && h.run.sonarDeception === 0 && h.run.huntEnabled === false,
-    '6: scanMemory {} / bandAlertFactor 1 / sonarDeception 0 / huntEnabled false',
+    Object.keys(h.run.scanMemory).length === 0 && h.run.bandAlertFactor === 1 && h.run.huntEnabled === false,
+    '6: scanMemory {} / bandAlertFactor 1 / huntEnabled false',
   );
   assert(
     Array.isArray(h.run.injuries) && h.run.injuries.length === 0,
     '6: injuries 补 []（负伤 SPEC §10·quirk #99/#106）',
   );
-  // 真条件字段不补（缺席即语义：无猎手 / 无诱饵 / 声呐持续开关未解锁不落）
+  // 真条件字段不补（缺席即语义：无猎手 / 无诱饵）
   assert(h.run.stalker === undefined, '6: stalker 缺席不补（真条件字段）');
   assert(h.run.decoy === undefined, '6: decoy 缺席不补（真条件字段·猎手 §4）');
-  assert(h.run.sensors.sonarOn === undefined && h.run.sensors.sonarNext === undefined, '6: sonarOn/sonarNext 缺席不补');
+  // 声呐脉冲 sonar 缺省 'off'（感知重做后无 sonarOn/sonarNext 双态字段·ping 才扫）
+  assert(h.run.sensors.sonar === 'off', '6: sensors.sonar 缺省 off（感知重做后 ping 才扫·无跨回合持续态）');
   // profile 容器补 {}（条目级懒默认语义留在读点）
   assert(
     h.profile.shopStock && Object.keys(h.profile.shopStock).length === 0,

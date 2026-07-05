@@ -9,14 +9,17 @@
 //   - 非洞穴场景（层状·沉船/礁）：先全黑只显节点占位（§2·留后续专属背景）。
 //
 // 纯渲染：canvas 在 useEffect 里画（SSR 不跑·只出空 canvas）；语义/可点标记走 SVG 覆盖层（SSR 可断言 + 可点 + 无障碍）。
-// 欺骗/威胁仍是 clarity 单一来源（nodeSonarView/sonarPhantoms/threatContact·面板不加判定分支·§7/§10）；猎手位置 stalkerSonarBlip（§8.7 会过时·mid-edge 插值）。
+// 感知重做后声呐诚实（SPEC §2.2）：不再有欺骗表象/伪接触——节点按真 kind 画。威胁是 clarity 单一来源（threatContact·诚实）；
+// 猎手位置 stalkerSonarBlip（§8.7 会过时·mid-edge 插值）。ping 是一记诚实动作（车道 4 落地·SPEC §2.2「ping 才扫」）：
+// 一记 ping 揭示 sonarScanRange 跳的规划纵深（scanReveal stamp 进 scanMemory·这里把「几跳之外」的节点也画出来供规划）——
+// 射程 = 看多远。几何揭示圆（SONAR_REVEAL_R·SDF/雷达扫/猎手红点）整套渲染留用（与单记 ping 兼容）。
 
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import type { GameState, NodeChoice, RunState } from '@/types';
 import { deriveMapLayout, type MapLayout } from './mapLayout';
 import { moveToNode } from '@/engine/dive';
-import { nodeSonarView, sonarPhantoms, threatContact, sonarStandingOn } from '@/engine/clarity';
+import { threatContact } from '@/engine/clarity';
 import { stalkerSonarBlip } from '@/engine/stalker';
 import { hash01, roomScale01 } from '@/engine/sonar';
 import {
@@ -847,8 +850,7 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   if (stalkerPos && haveCaveGeom) stalkerPos = projectIntoWater(stalkerPos, cave);
   if (threatPos && haveCaveGeom) threatPos = projectIntoWater(threatPos, cave);
 
-  // 低 san 伪接触（S2·锚在扫到的节点附近·subtle）。
-  const phantoms = sonarPhantoms(run, memory);
+  // 低 san 伪接触（S2）：**感知重做已删**（声呐诚实·SPEC §2.2/§3）——不再画幻影 blip。
 
   // 你的呼吸点：voidTrack 跟随扭曲后的洞（不浮在岩里）；量程环/取景仍以房间中心 here 为准。
   const youMark = voidTrack(here.x, here.y);
@@ -1008,35 +1010,20 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
               if (movedRef.current <= 6) onPendingChange?.(null);
             }}
           >
-            {/* 量程环（声呐开着时显示·半径＝SONAR_REVEAL_R 与揭示圆同大）：一眼看出「这一记扫多远」。关声呐时不画（没在扫·别误导）。 */}
-            {sonarStandingOn(run) && (
+            {/* 量程环（已解锁声呐时显示·半径＝SONAR_REVEAL_R 与揭示圆同大）：一眼看出「一记 ping 从你这儿点亮多大一圈」。
+                感知重做后声呐＝一记诚实 ping（SPEC §2.2）：射程升级揭示更多跳之外的节点供规划，几何揭示圆本身固定。 */}
+            {run.sensors.sonarUnlocked && (
               <circle className="sonar-range-ring" cx={here.x} cy={here.y} r={SONAR_REVEAL_R} />
             )}
             {/* 「波到才亮」组（#3）：key=lastScanTurn＝真扫描重挂载重播淡入；平移/缩放不重弹。 */}
             <g key={`wave-${lastScanTurn}`}>
-            {/* 低 san 伪接触（S2）：与真接触无异的幻影·subtle */}
-            {phantoms.map((ph) => {
-              const anchor = layout.pos[ph.nearNodeId];
-              if (!anchor) return null;
-              return (
-                <circle
-                  key={ph.id}
-                  className="sonar-phantom sonar-wave-in"
-                  style={waveDelay(anchor.x + ph.dx, anchor.y + ph.dy)}
-                  cx={anchor.x + ph.dx}
-                  cy={anchor.y + ph.dy}
-                  r={5}
-                />
-              );
-            })}
+            {/* 低 san 伪接触（S2）：感知重做已删（声呐诚实·SPEC §2.2）——不再画幻影 blip。 */}
             {/* 相邻可去节点（§2·只这些可点·点击＝触发那条 move choice·与 NodeSelectView 同步）。
-                欺骗仍走 clarity（nodeSonarView）：evade→无回波(不画)·spoof→假信标(is-spoof)·低 san→读数乱码(is-garbled)。 */}
+                声呐诚实（感知重做 SPEC §2.2）：按真 kind 画·无欺骗表象/无回波/读数乱码。 */}
             {adj.map((c) => {
               const p = layout.pos[c.nodeId];
               if (!p) return null;
               const node = map.nodes[c.nodeId];
-              const view = nodeSonarView(run, node);
-              if (view.noEcho) return null; // evade：无回波·这处空缺（捕食者躲过你的扫描）
               // POI 落点：已扫节点 → 偏心 + voidTrack 跟随扭曲后的洞；未扫但可去的相邻节点（作者 06-13）→
               // 吸附到敞口通道的水里（projectIntoWater·配合上面的敞口通道伸到该节点）＝落在开口处、不再浮在墙外。
               let m = { x: p.x, y: p.y };
@@ -1044,20 +1031,20 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
               // 未知＝可去但本局没扫到、且非持久已探。非洞下潜 persistentExplored=undefined ⇒ 逐字节不变。
               const known = isRevealed(p) || mergeIds.includes(c.nodeId) || (persistentExplored?.has(c.nodeId) ?? false);
               if (known) {
-                const o = poiOffset(c.nodeId, view.displayKind ?? node.kind);
+                const o = poiOffset(c.nodeId, node.kind);
                 m = voidTrack(p.x + o.dx, p.y + o.dy);
               } else if (haveCaveGeom) {
                 m = projectIntoWater({ x: p.x, y: p.y }, cave);
               }
-              const glyph = kindGlyph(view.displayKind);
+              const glyph = kindGlyph(node.kind);
               const feats = node.features ?? [];
-              const isRoom = feats.length > 1 && !view.deceptive;
+              const isRoom = feats.length > 1;
               const baseR = isRoom ? 9 : 6;
               const isPending = pendingNodeId === c.nodeId;
               return (
                 <g
                   key={c.nodeId}
-                  className={`sonar-blip sonar-node-marker sonar-wave-in ${kindClass(view.displayKind)} ${isRoom ? 'is-room' : ''} ${view.deceptive ? 'is-spoof' : ''} ${isPending ? 'is-pending' : ''}`}
+                  className={`sonar-blip sonar-node-marker sonar-wave-in ${kindClass(node.kind)} ${isRoom ? 'is-room' : ''} ${isPending ? 'is-pending' : ''}`}
                   style={waveDelay(m.x, m.y)}
                   onClick={(ev) => {
                     // 图上点击**只做选中/切换选中**（作者 06-11 拍板·替代 06-10 的「再击同点＝前往」）：
@@ -1098,8 +1085,8 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
                       {glyph}
                     </text>
                   )}
-                  <text className={`sonar-blip-depth ${view.garbled ? 'is-garbled' : ''}`} x={m.x} y={m.y - 10}>
-                    {!known ? '? m' : view.garbled ? '▓▓m' : `${node.depth}m`}
+                  <text className="sonar-blip-depth" x={m.x} y={m.y - 10}>
+                    {!known ? '? m' : `${node.depth}m`}
                   </text>
                 </g>
               );

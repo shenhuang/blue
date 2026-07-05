@@ -20,7 +20,7 @@ import type { ZoneTag } from './events';
 
 /**
  * 深度柱的一级（一个深度档）。tier 1-based、同柱内连续递增；depthRange 越深档越深（check-dive-refs 守单调）。
- * 各 band 旋钮（visibility/tags/alertFactor/maxRoomFeatures/sonarDeception/hunts）语义同 DepthBand——
+ * 各 band 旋钮（visibility/tags/alertFactor/maxRoomFeatures/hunts）语义同 DepthBand——
  * engine/columns.ts 把本 tier 直接生成一个 DepthBand（id＝band.<柱短名>.t<tier>）。
  */
 export interface DepthColumnTier {
@@ -44,8 +44,7 @@ export interface DepthColumnTier {
   lootFactor?: number;
   /** 多事件「大房间」上限（深档 2–3·见 DepthBand.maxRoomFeatures）。缺省 1。 */
   maxRoomFeatures?: number;
-  /** 不可信声呐失真强度 0..1（深档越骗·见 DepthBand.sonarDeception）。缺省 0。 */
-  sonarDeception?: number;
+  // 不可信声呐失真强度（曾深档越骗）：**感知重做已删**（声呐诚实·SPEC §2.2/§3）。
   /** 是否启用「有位置的逼近猎手」（深/洞档 true·见 DepthBand.hunts）。缺省 false。 */
   hunts?: boolean;
   /** 出潜叙事（派生 band.blurb；缺省回退 column.blurb 或自动串）。 */
@@ -54,7 +53,7 @@ export interface DepthColumnTier {
   danger?: string;
   /**
    * 标记为 capstone 档（非普通刷怪 band·如海沟科考站电梯入口·SPEC §10）。纯语义 + 派生 probe 升级文案分支；
-   * band/POI 仍正常派生（它就是「那一个下潜点」），但通常不设 hunts/sonarDeception＝不是普通深 band。
+   * band/POI 仍正常派生（它就是「那一个下潜点」），但通常不设 hunts＝不是普通深 band。
    */
   capstone?: boolean;
   /**

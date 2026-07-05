@@ -238,11 +238,11 @@ L('\n========== 7. 柱潜点下潜落 run ==========');
   assert(after.run!.zoneId === band.zoneId, '7: run.zoneId = band.zone');
   assert(after.run!.turn === 0, '7: 每潜从第 0 回合起算（满氧·#128）');
   assert(after.run!.bandAlertFactor === (band.alertFactor ?? 1), '7: run.bandAlertFactor 落 band');
-  assert(after.run!.sonarDeception === (band.sonarDeception ?? 0), '7: run.sonarDeception 落 band');
+  // run.sonarDeception 断言随感知重做删除（声呐诚实·SPEC §2.2/§3）。
   assert(after.run!.huntEnabled === (band.hunts ?? false), '7: run.huntEnabled 落 band');
   assert(after.run!.diveModifier?.visibility === band.visibility, '7: run.diveModifier.visibility 落 band');
 }
-L('  从 lit 档 startDiveFromPoi → run 落 zone/turn0/alert/sonarDeception/hunt/visibility ✓');
+L('  从 lit 档 startDiveFromPoi → run 落 zone/turn0/alert/hunt/visibility ✓');
 
 // ============================================================
 // 8. 宿主前哨补给设施并入柱下潜（老蛙跳删后承接·能源容量门控已删 2026-06-21：建成即全额生效）

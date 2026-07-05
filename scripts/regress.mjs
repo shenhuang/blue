@@ -106,6 +106,9 @@ tasks.push({ name: 'check-protagonist-voice', cmd: ['node', join('scripts', 'che
 // 术语单一来源门（纯 node·禁 live 内容〔src+scenarios〕出现「穿尸」·逼回与代码/敌人库对齐的「尸衣者」·收口 #224·见 scripts/check-terminology.mjs）
 tasks.push({ name: 'check-terminology', cmd: ['node', join('scripts', 'check-terminology.mjs')] });
 
+// 声呐欺骗拆干净门（纯 node·感知重做 SPEC §6·src 扫到 spoofsSonar/evadesSonar/sonarReturn/sonarDeception/sonarPhantoms/applySonarDeception/effectiveFalseEchoSanity/nodeSonarView 任一残留即红·声呐诚实·欺骗移交低理智轴·见 scripts/check-no-sonar-deception.mjs）
+tasks.push({ name: 'check-no-sonar-deception', cmd: ['node', join('scripts', 'check-no-sonar-deception.mjs')] });
+
 // 文案草稿泄漏门（纯 node·src/data/events 玩家可见字段禁 [待过稿]·playtest 报告⑤ 根治·见 scripts/check-draft-leak.mjs）
 tasks.push({ name: 'check-draft-leak', cmd: ['node', join('scripts', 'check-draft-leak.mjs')] });
 
@@ -235,6 +238,10 @@ tasks.push({ name: 'smoke-chart-editor', cmd: [tsx, join('scripts', 'smoke-chart
 
 // 事件平衡聚合 smoke（守 engine/eventStats 派生恒等式〔byTone/矩阵合计/建议引用真实〕·materialStats↔smoke-economy-panel 的镜像补全·见 scripts/smoke-event-stats.mjs）
 tasks.push({ name: 'smoke-event-stats', cmd: [tsx, join('scripts', 'smoke-event-stats.mjs')] });
+
+// 揭示归因小标 SSR smoke（感知重做 §2.1·车道 5-2）：某可见选项因某持有条件才显示 → EventView 旁标「靠 <显示名>」·
+// 显示名从满足条件派生（engine/events.ts::revealAttribution·能力→实际持有件真名·数据驱动）·非持有门不标·见 scripts/smoke-event-reveal-hint.tsx
+tasks.push({ name: 'smoke-event-reveal-hint', cmd: [tsx, join('scripts', 'smoke-event-reveal-hint.tsx')] });
 
 // 全部 playthrough*.ts —— 各自独立进程，可并行（#22 安全）
 const playthroughs = readdirSync(join(ROOT, 'scripts'))

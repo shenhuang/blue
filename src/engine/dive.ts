@@ -6,7 +6,7 @@
 // 继续 import '@/engine/dive' 或 './dive'，路径零改。子系统索引：
 //   dive-start    开潜三入口（港口 zone / 海图 POI / 前哨蛙跳）+ 出海叙事
 //   dive-select   节点选择与预览档位（enterNodeSelection / featureDoneFlag）
-//   dive-sensors  灯 / 声呐（setLight / pingSonar / setSonarNext / scan-on-open / refreshSelection）
+//   dive-sensors  灯 / 声呐（setLight / pingSonar 一记诚实 ping·感知重做 SPEC §2.2 / refreshSelection）
 //   dive-move     过渡与移动（currentMoveCost / applyTransit / moveToNode）
 //   dive-stalker  猎手与伏击 wiring（stalkerStep / maybeApproachEncounter / standAndFight / deployDecoy）
 //   dive-actions  节点动作（exploreFeature / restAtNode / breatheAtAirPocket / campAtNode）
@@ -15,7 +15,7 @@
 
 export { startDive, startDiveFromPoi, carryWeightLimitFor, lunarDiveModifier } from './dive-start';
 export { enterNodeSelection } from './dive-select';
-export { setLight, pingSonar, setSonarNext } from './dive-sensors';
+export { setLight, pingSonar } from './dive-sensors';
 export { currentMoveCost, moveToNode } from './dive-move';
 export { standAndFight, deployDecoy, beginAscentFromDive } from './dive-stalker';
 export { exploreFeature, restAtNode, breatheAtAirPocket, campAtNode } from './dive-actions';

@@ -58,8 +58,8 @@ assert(
   '氧/体上限 base 跳过（其 Lv.1 base＝createNewRun 60/100 地板·读会双计·quirk #142）',
 );
 assert(
-  s0.lampRangeBonus === 0 && s0.soundAbsorbBonus === 0 && s0.camoBonus === 0 && s0.weaponDamage === 0,
-  'starter 灯/规避/武器 base 全 0（起手件无这些）',
+  s0.soundAbsorbBonus === 0 && s0.camoBonus === 0 && s0.weaponDamage === 0,
+  'starter 规避/武器 base 全 0（起手件无这些·灯 reach 旋钮 lampRangeBonus 已随感知重做删）',
 );
 // 净氧：base 激活后氧 run-start 路径逐字节不变（floor 60 + eq 增量 0）。
 assert(

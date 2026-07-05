@@ -13,11 +13,11 @@ export type UpgradeEffect =
   | { kind: 'revealCorpseHint'; value: boolean }
   | { kind: 'preDiveCorpseSelect'; value: boolean }
   | { kind: 'currentSweepImmune'; value: boolean }
-  // 段2（作者 2026-06-19）：三传感器线（sonar_rig/dive_kit/evasion_rig）退役 → 它们独有的 effect kind 全删：
-  //   unlockSonar / powerMaxBonus / sonarPingCostReduction / lampEfficiency / sonarRobustness / lampRobustness /
-  //   signatureReduction / lampRangeBonus / sonarRangeBonus / sonarScanRangeBonus / soundAbsorbBonus / camoBonus。
+  // 段2（作者 2026-06-19）：三传感器线（sonar_rig/dive_kit/evasion_rig）退役 → 它们独有的 effect kind 全删（迁 EquipmentEffect）。
   //   声呐迁成 Otto 打造的装备件（EquipmentEffect 同名数值 kind·types/items.ts）；灯/规避效果回基线，可日后做成
   //   灯/服档位件用 EquipmentEffect base effects 加回（deriveSensorTuning 旋钮仍在·clarity.ts::SensorUpgradeBonus）。
+  //   感知重做（车道 4·2026-07）再删失效旋钮：sonarRobustness/lampRobustness（抗欺骗）+ lampRangeBonus/sonarRangeBonus
+  //   （深度降档 reach）——声呐诚实、灯到即真、深度不降档；声呐主升级轴收敛成 sonarScanRangeBonus（规划纵深·SPEC §2.2）。
   // 声呐与房间 §6/§8.3 续：大房间（多事件房间）出现率 +value（salvage_guild lv4·仍为全局升级线·band maxRoomFeatures 仍是天花板），有上限。
   // unlockShopItem 已删（2026-06-29·#242）：该 effect 从未接消费方——unlockedShopItems 只被 add、无人读（死通路）。
   // 唯一用例「气瓶库 Lv.1·解锁备用气瓶购买」双重失效（且 item.spare_tank 未定义）→ 连同 effect/派生字段一并删（见 CHANGELOG #242）。
@@ -72,9 +72,9 @@ export interface UpgradeBonuses {
   preDiveCorpseSelect: boolean;
   currentSweepImmune: boolean;
   // 段2（作者 2026-06-19）：传感器派生字段（sonarUnlocked / powerMaxBonus / sonarPingCostReduction /
-  //   lampEfficiency / sonarRobustness / lampRobustness / signatureReduction / lampRangeBonus /
-  //   sonarRangeBonus / sonarScanRangeBonus / soundAbsorbBonus / camoBonus）已随三传感器线退役删除——
+  //   lampEfficiency / signatureReduction / sonarScanRangeBonus / soundAbsorbBonus / camoBonus）已随三传感器线退役删除——
   //   声呐迁装备件（hasSonarEquipped / getEquipmentStats）·灯/规避回基线·getRunBonuses 不再从这里取它们。
+  //   （抗欺骗/深度 reach 旋钮 sonarRobustness/lampRobustness/lampRangeBonus/sonarRangeBonus 已随感知重做进一步删净·车道 4。）
   /** 大房间（多事件房间）出现率加成（声呐与房间 §6/§8.3 续；salvage_guild lv4·有上限 ROOM_FEATURE_CHANCE_MAX·band cap 仍是天花板）。 */
   roomFeatureChanceBonus: number;
   unlockedZones: Set<string>;

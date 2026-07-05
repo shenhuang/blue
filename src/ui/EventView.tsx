@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { GameState, EventOption } from '@/types';
-import { getEvent, isOptionEnabled, isOptionVisible, resolveOption } from '@/engine/events';
+import { getEvent, isOptionEnabled, isOptionVisible, resolveOption, revealAttribution } from '@/engine/events';
 import { enterNodeSelection } from '@/engine/dive';
 import { enterCombat } from '@/engine/combat';
 import { toDiveEvent, beginAscent, toGameOver } from '@/engine/transitions';
@@ -75,6 +75,10 @@ export function EventView({ state, eventId, onStateChange }: Props) {
             .filter((opt) => isOptionVisible(state, opt))
             .map((opt) => {
               const enabled = isOptionEnabled(state, opt);
+              // 揭示归因（感知重做 SPEC §2.1·车道 5-2）：本选项若是「带了某道具才显示」的——
+              // 旁标一枚「（靠 <显示名>）」，告诉玩家是哪件解锁了它。显示名从满足的持有条件派生
+              // （引擎 revealAttribution·能力→实际持有件真名·数据驱动·未来道具零改动）。非持有门 → null → 不标。
+              const revealBy = revealAttribution(state, opt);
               return (
                 <li key={opt.id}>
                   <button
@@ -90,6 +94,7 @@ export function EventView({ state, eventId, onStateChange }: Props) {
                         {STAT_LABEL[opt.check.stat] ?? opt.check.stat} {opt.check.dc}
                       </span>
                     )}
+                    {revealBy && <span className="reveal-tag">靠 {revealBy}</span>}
                   </button>
                 </li>
               );

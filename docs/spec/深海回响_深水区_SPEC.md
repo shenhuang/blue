@@ -5,6 +5,8 @@
 > **伏笔层已就位**：浅/中/深三级『越深越欺骗』事件已全部埋好（STATUS quirk #53–#57）——mimic 假信标 `bluecaves.the_glow`(中)→`cave.false_beacon`(深)，corpse-wearer `wreck_graveyard.{the_other,no_bubbles,the_wearer}`(浅/中/深)，lore.deep_water.{cold_light,the_window,the_false_beacon}。capstone（§5 Phase 3）登场时回收这些母题与 tell。
 >
 > **⚠ 旧深度脊柱已删（tombstone·2026-06-27 文档治理）**：下文 §5/§12 等处把 `band.abyssal/hadal/subhadal/nameless` 深 band 及其前哨链（reef_deep/trench_deep/…）当现役描述——这套**已整体移除**，改为数据驱动「深度柱」。读深 band 细节以 `深海回响_探深深度柱_SPEC.md`（§10 记录该删除）为准，别据本档旧 band 名建模。
+>
+> **⚠ 欺骗侧已被感知重做取代（tombstone·2026-07-04·#259）**：本档「越深越欺骗」的**欺骗侧**——声呐不可信（§3.2「返回不可信」·`spoofsSonar`/`evadesSonar`/`sonarReturn`）+ 深度驱动欺骗 + 双传感器 clarity 的欺骗层——**已整体撤除并换北极星**，见 `深海回响_感知重做_SPEC.md`（欺骗收敛成单一「低理智」轴·只改选项+怪物·声呐永远诚实）。**诚实感知侧（灯近场硬门 / 声呐远场侦察 / 电 / signature / 射程 / 探图渲染）保留**·别据本档旧欺骗描述建模。
 
 ---
 

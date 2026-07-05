@@ -112,12 +112,11 @@ function tierBand(c: DepthColumn, t: DepthColumnTier): DepthBand {
     lootFactor: t.lootFactor,
     tags: t.tags,
     maxRoomFeatures: t.maxRoomFeatures,
-    sonarDeception: t.sonarDeception,
     hunts: t.hunts,
   };
 }
 
-/** 主线 story beat → 一个 DepthBand（主线柱迁移·与刷怪 band 同形·落 beat 原深度·不带 hunts/sonarDeception 等刷怪旋钮）。 */
+/** 主线 story beat → 一个 DepthBand（主线柱迁移·与刷怪 band 同形·落 beat 原深度·不带 hunts 等刷怪旋钮）。 */
 function storyTierBand(c: DepthColumn, s: ColumnStoryTier): DepthBand {
   return {
     id: columnStoryBandId(c.id),

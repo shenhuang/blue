@@ -404,10 +404,6 @@
               {
                 "kind": "sonarPingCostReduction",
                 "value": 2
-              },
-              {
-                "kind": "sonarRobustness",
-                "value": 20
               }
             ]
           },
@@ -429,8 +425,8 @@
             "gold": 200,
             "statDeltas": [
               {
-                "kind": "sonarRangeBonus",
-                "value": 8
+                "kind": "sonarScanRangeBonus",
+                "value": 1
               }
             ]
           },
@@ -492,17 +488,13 @@
       "name": "聚光灯",
       "category": "equipment",
       "rarity": "uncommon",
-      "description": "收窄的光柱打得更远，照进灯照不透的陡降——代价是视野窄了一圈。",
+      "description": "收窄的光柱把光聚成一束打得更亮——代价是视野窄了一圈。",
       "weight": 1,
       "sellPrice": 30,
       "equipment": {
         "slot": "light",
         "baseLevel": 1,
         "effects": [
-          {
-            "kind": "lampRangeBonus",
-            "value": 5
-          },
           {
             "kind": "lightRadius",
             "value": 1
@@ -515,7 +507,7 @@
       "name": "泛光灯组",
       "category": "equipment",
       "rarity": "uncommon",
-      "description": "一排灯珠把近处铺成白昼，水里那些骗眼睛的影子无所遁形。照不远，但看得清。",
+      "description": "一排灯珠把近处铺成白昼，眼前的水路看得一清二楚。照不远，但看得清。",
       "weight": 1,
       "sellPrice": 30,
       "equipment": {
@@ -525,10 +517,6 @@
           {
             "kind": "lightRadius",
             "value": 4
-          },
-          {
-            "kind": "lampRobustness",
-            "value": 8
           }
         ]
       }

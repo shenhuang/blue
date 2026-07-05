@@ -2,7 +2,7 @@
 //
 // 内容：小工具（randInt/pickFrom/clamp）、多事件房间（rollExtraFeatures/maybeMultiFeatureRoom）、
 // 确定性种子与洞型谱（fnv/makeSeededRng/caveSeededRng/caveHash/resolveDepthCurve/caveDepthCurveForPlace/
-// caveShapeBucket）、声呐失真 pass（applySonarDeception）、尸体 pass（placeCorpses 一族）、
+// caveShapeBucket）、尸体 pass（placeCorpses 一族）、
 // 布局风格（resolveLayoutStyle/nodeCountMultiplier）、固定资源耗尽 pass（applyHarvestDepletion 一族）。
 // 生成器本体在 mapgen-layered / mapgen-maze / mapgen-cave；对外门面在 mapgen.ts（re-export·import 面不破）。
 
@@ -68,13 +68,7 @@ export interface GenOpts {
    * ＝**rng() 仍只取一次、阈值不变＝逐字节复现旧图**（不破现有 mapgen 场景快照）。
    */
   roomFeatureChanceBonus?: number;
-  /**
-   * 不可信声呐失真强度（声呐与房间 SPEC §5/§7 S2）：0..1。仅 >0（深 band 出潜传 band.sonarDeception）时，
-   * 给部分**内部**节点钉 spoofsSonar（声呐图假装成朝上的出口/信标＝节点版 mimic）/evadesSonar（无回波）。
-   * **确定性 FNV 哈希、零 rng**——绝不移动任何 seed 的生成顺序（旧图/深 band 快照 rng 流不变，只多挂派生字段）。
-   * 缺省 / ≤0（POI / 教学 / 浅水 zone 不传）→ 不进欺骗 pass ＝逐字节复现旧图（向后兼容）。
-   */
-  sonarDeception?: number;
+  // 不可信声呐失真强度（曾给内部节点钉 spoof/evade 表象）：**感知重做已删**（声呐诚实·SPEC §2.2/§3）。
   /**
    * 打捞行会 Lv.2「出海前选目标」：指定一具 DeathRecord.id 作为本次必定出现的尸体。
    * 若该尸体在本 zone 且仍可回收（isRecoverableCorpse），则**保证**布点（绕过 corpseChance 随机），
@@ -277,45 +271,10 @@ export function caveShapeBucket(k: number): CaveShapeBucket {
   return 'gallery';
 }
 
-/** spoof 在 NodeSelectView 声呐预览里「像……」的伪装文案（节点版 mimic「无灯之光」＝假上浮口/家的光/空水）。 */
-const SPOOF_DISGUISES = [
-  '一道朝上的出口',
-  '海面漏下来的光',
-  '一盏像家的光',
-  '一片什么都没有的空水',
-];
+// 不可信声呐失真 pass（曾给深 band 内部节点钉 spoof/evade 表象＝节点版 mimic）：**感知重做已删**——
+// 声呐诚实、欺骗移交低理智轴（SPEC §2.2/§2.3/§3）；海图 mimic（#69·ChartPoi.mimic）走 chart.ts 事件检定、不依赖本 pass。
 
-/**
- * 不可信声呐失真（S2）：给深 band 部分**内部**节点钉 spoofsSonar（声呐图画成假信标＝节点版 mimic，与 #69 海图
- * mimic 合流·**不触发 d_reveal**）/ evadesSonar（无回波）。**确定性 FNV 哈希·零 rng**——故绝不移动任何 seed 的
- * 生成顺序（旧图 / 深 band 快照的 rng 流逐字节不变，只多挂两个纯派生字段）。仅 chance>0 才进＝缺省零改动。
- * 豁免：起点 + 地标（出口/气穴/扎营，dive.ts isLandmark 永给真相、不参与欺骗）+ 尸体（守 #36 尸体定位）+
- *      已带 spoofs/evades 的节点（mimic 钩子等，不覆盖）。
- */
-export function applySonarDeception(map: DiveMap, chance: number): void {
-  if (chance <= 0) return; // 门控：缺省零改动（守旧图/快照、不耗 rng）
-  for (const node of Object.values(map.nodes)) {
-    if (node.id === map.startNodeId) continue;
-    if (
-      node.kind === 'ascent_point' ||
-      node.kind === 'air_pocket' ||
-      node.kind === 'camp' ||
-      node.kind === 'corpse'
-    ) {
-      continue;
-    }
-    if (node.evadesSonar || node.spoofsSonar) continue; // 别覆盖既有钩子
-    const h = fnv(`sonar-deceive:${node.id}:${node.depth}`);
-    if ((h % 1000) / 1000 >= chance) continue;
-    if ((h >>> 10) % 2 === 0) {
-      node.evadesSonar = true; // 无回波（捕食者躲过 ping）
-    } else {
-      node.spoofsSonar = SPOOF_DISGUISES[(h >>> 11) % SPOOF_DISGUISES.length]; // 假信标（节点版 mimic）
-    }
-  }
-}
-
-/** 多事件房间从远处（相邻节点）看到的预览——只暗示「开阔、有好几处」，不剧透各 feature（灯下/声呐/盲都先过这层）。 */
+/** 多事件房间从远处（相邻节点）看到的预览——只暗示「开阔、有好几处」，不剧透各 feature（先过这层）。 */
 export function roomPreview(featureCount: number): string {
   return featureCount >= 3
     ? '前方的水域开阔下来，黑里隐约有好几处轮廓，值得一个个凑近看。'

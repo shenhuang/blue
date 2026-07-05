@@ -12,7 +12,7 @@
 // 跑法：npx tsx scripts/playthrough-upgrades.ts
 
 import { createInitialGameState, createNewRun, countInInventory, createStarterLoadout, HOME_LIGHTHOUSE_ID, RUN_CARRY_WEIGHT } from '../src/engine/state';
-import { SONAR_PING_COST, SONAR_DEPTH_REACH, ROOM_FEATURE_CHANCE_MAX } from '../src/engine/clarity';
+import { SONAR_PING_COST, ROOM_FEATURE_CHANCE_MAX } from '../src/engine/clarity';
 import { SONAR_SCAN_RANGE_MAX } from '../src/engine/sonar';
 import {
   canPurchase,
@@ -254,22 +254,19 @@ for (let lv = 1; lv < 5; lv++) {
 }
 assert(state.profile.equipment!.sonar!.level === 5, '8: 声呐升到 Lv.5');
 
-// (c) getEquipmentStats 累计 = 旧 sonar_rig lv2-5 增量之和（对账逐项相等）
+// (c) getEquipmentStats 累计（感知重做后声呐件精简·车道 4）：lv2=pingCost−2；scanRange 主轴＝lv3(+1)+lv4(+1)+lv5(+2)=4。
+//   旧 sonarRobustness（抗假回波·lv2）+ sonarRangeBonus（深度 reach·lv3）随感知重做删——lv3 重指为 scanRange（规划纵深·SPEC §2.2）。
 const eqStats = getEquipmentStats(state.profile.equipment!);
-assert(eqStats.sonarPingCostReduction === 2, '8: sonarPingCostReduction = 2（旧 sonar lv2）');
-assert(eqStats.sonarRobustness === 20, '8: sonarRobustness = 20（旧 sonar lv2）');
-assert(eqStats.sonarRangeBonus === 8, '8: sonarRangeBonus = 8（旧 sonar lv3）');
-assert(eqStats.sonarScanRangeBonus === 3, '8: sonarScanRangeBonus = 3（旧 sonar lv4 +1 + lv5 +2）');
+assert(eqStats.sonarPingCostReduction === 2, '8: sonarPingCostReduction = 2（sonar lv2）');
+assert(eqStats.sonarScanRangeBonus === 4, '8: sonarScanRangeBonus = 4（lv3 +1〔重指自旧 sonarRangeBonus〕 + lv4 +1 + lv5 +2）');
 
-// (d) 桥：getRunBonuses 透传 → createNewRun 烤进 run.sensorTuning（与旧 sonar 升满逐项相等）
+// (d) 桥：getRunBonuses 透传 → createNewRun 烤进 run.sensorTuning（感知重做后声呐诚实·只剩 pingCost + scanRange 主轴）
 const rb = getRunBonuses(state.profile);
 const upRun = createNewRun({ zoneId: 'zone.old_lighthouse_reef', bonuses: rb });
 assert(upRun.sensors.sonarUnlocked === true, '8: run 声呐解锁');
-assert(upRun.sensorTuning!.pingCost === SONAR_PING_COST - 2, '8: run.sensorTuning.pingCost（旧值 6-2）');
-assert(upRun.sensorTuning!.sonarFalseEchoSanity === 40, '8: run.sensorTuning.sonarFalseEchoSanity（旧值 60-20）');
-assert(upRun.sensorTuning!.sonarDepthReach === SONAR_DEPTH_REACH + 8, '8: run.sensorTuning.sonarDepthReach（旧 sonar lv3 扩声呐 reach）');
-assert(upRun.sensorTuning!.sonarScanRange === SONAR_SCAN_RANGE_MAX, '8: run.sensorTuning.sonarScanRange = 上限（声呐升满）');
-log.push('  声呐打造 Lv.1 → 升 Lv.5 → getEquipmentStats → getRunBonuses → createNewRun 烤进 run.sensorTuning（对账旧 sonar_rig 逐项相等）✓');
+assert(upRun.sensorTuning!.pingCost === SONAR_PING_COST - 2, '8: run.sensorTuning.pingCost（6-2）');
+assert(upRun.sensorTuning!.sonarScanRange === SONAR_SCAN_RANGE_MAX, '8: run.sensorTuning.sonarScanRange = 上限（声呐升满·+4 夹到 MAX·规划纵深主轴）');
+log.push('  声呐打造 Lv.1 → 升 Lv.5 → getEquipmentStats → getRunBonuses → createNewRun 烤进 run.sensorTuning（感知重做后声呐诚实·pingCost + scanRange 主轴）✓');
 
 // ============================================================
 // 9. 房间 feature 出现率升级（salvage_guild lv4·声呐与房间 §6/§8.3 续）

@@ -1,15 +1,15 @@
-// 过渡与移动（#106 拆分自 dive.ts·纯搬移）：currentMoveCost（洋流）/ applyTransit（tick+声呐窗口落定）/
-// moveToNode（按节点 kind 分发·猎手与伏击经 dive-stalker·到站自动扫经 dive-sensors）。函数体与拆分前逐字相同。
+// 过渡与移动（#106 拆分自 dive.ts）：currentMoveCost（洋流）/ applyTransit（tick + 声呐脉冲归 off）/
+// moveToNode（按节点 kind 分发·猎手与伏击经 dive-stalker）。
+// 声呐重做（车道 4·感知重做 SPEC §2.2）：移动＝新一回合＝声呐脉冲消散归 off（不再跨回合持续/到站自动扫）——
+// ping 是一记瞬时动作，扫在你停留的那一站。
 
 import type { GameState, DiveNode, CurrentStrength } from '@/types';
 import { tickTurns } from './events';
 import { appendLog } from './state';
 import { executeDeath } from './death';
-import { sonarStandingNext } from './clarity';
 import { computeModifiers } from './modifiers';
 import { enterNodeSelection } from './dive-select';
-import { autoScanOnArrival } from './dive-sensors';
-import { stalkerStep, weakStalkerStep, maybeApproachEncounter } from './dive-stalker';
+import { stalkerStep, weakStalkerStep, maybeApproachEncounter, maybeHallucinationEncounter } from './dive-stalker';
 import { startCombat } from './combat';
 import {
   resolveCorpseWearerTier,
@@ -46,29 +46,14 @@ function applyTransit(state: GameState, target: DiveNode): GameState {
   // 无伤＝恒等元 1，下方全部算式逐字节不变。
   const mods = computeModifiers(run);
   let ticked = tickTurns(run, transitionTurns, { o2CostMult: mods.o2CostMult });
-  // 声呐开/关窗口（声呐渲染重做 §4）：移动＝回合推进＝把 sonarNext 落成下回合的 sonarOn（「本回合开/关是上回合定的」）。
-  //   持续开 + 有电 → sonar='ping'（本站发射·到站 autoScanOnArrival 扫一记 scan-on-open）；关/无电 → 'off'（看保留的旧图）。定向聚焦每步清掉（§5）。
-  //   **仅 sonarUnlocked 才落 sonarOn/sonarNext + 持续发射＝未解锁逐字节不变**（旧档/浅水/无声呐：仍是脉冲瞬时·移动归 off）。
-  const unlocked = ticked.sensors.sonarUnlocked;
-  let nextSensors: typeof ticked.sensors;
-  if (unlocked) {
-    const standing = sonarStandingNext(run); // 下回合预承诺 → 本次落定为本回合
-    const emitting = standing && ticked.power > 0;
-    nextSensors = {
-      ...ticked.sensors,
-      sonar: emitting ? 'ping' : 'off',
-      sonarOn: standing,
-      sonarNext: standing,
-    };
-  } else {
-    nextSensors = { ...ticked.sensors, sonar: 'off' };
-  }
+  // 声呐脉冲消散（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：移动＝新一回合＝上一站那记 ping 荡散归 off。
+  // 想在新一站看＝到站后再 ping 一记（付电 + 暴露）。旧「持续开/关 + 到站自动扫」双态状态机已删。
   ticked = {
     ...ticked,
     currentDepth: target.depth,
     currentNodeId: target.id,
     visitedNodeIds: [...ticked.visitedNodeIds, target.id],
-    sensors: nextSensors,
+    sensors: { ...ticked.sensors, sonar: 'off' },
   };
 
   // 洋流（海图 POI 修正）：每次移动额外耗体力 + 氧气（在死亡判定前应用，使洋流耗氧也能致死）。
@@ -146,10 +131,16 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
     }
   }
 
-  // scan-on-open（声呐渲染重做 §4）：到站时若声呐持续开 → 自动扫一记刷新成新图（关则保留旧图·不重扫）。
-  s = autoScanOnArrival(s);
+  // 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a·「改怪物」的怪物半边）：与上面的真伏击**平行**——
+  // 真伏击读警觉（你招来的真危险），幻觉读低 san（是你疯了·世界诚实）。放在真遭遇之后：走到这儿说明本步
+  // 没触发真伏击（真伏击 contact 会提前 return），此时才轮到低 san 幻觉，避免一步撞两场。高 san（控制组）→
+  // maybeHallucinationEncounter 恒返回 null → 照常进节点（无幻觉怪）。san 回上来即消（下潜里 san 恢复→不再触发）。
+  {
+    const hallucinated = maybeHallucinationEncounter(s, target);
+    if (hallucinated) return hallucinated;
+  }
 
-  // 根据节点 kind 决定下一步
+  // 根据节点 kind 决定下一步（声呐重做：到站不自动扫——想看新一站就再 ping 一记·感知重做 SPEC §2.2）
   switch (target.kind) {
     case 'event':
       // 多事件「大房间」(S1)：到房间不自动触发——摆出房内未探 feature ＋ 出口，玩家自己选探哪个 / 走哪条。

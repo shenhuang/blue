@@ -237,15 +237,14 @@ export type EquipmentEffect =
   // unlockSonar＝Lv.1 base（装上即解锁声呐能力·声明用·getEquipmentStats 不读 base·解锁由「声呐槽是否有件」派生）。
   | { kind: 'unlockSonar'; value: boolean }
   | { kind: 'sonarPingCostReduction'; value: number }
-  | { kind: 'sonarRobustness'; value: number }
-  | { kind: 'sonarRangeBonus'; value: number }
+  // 声呐主升级轴（感知重做 SPEC §2.2「更远的声呐 = 预判未来的选项」）：一记 ping 的规划纵深跳数加成。
+  // （旧 sonarRobustness〔抗假回波〕/ sonarRangeBonus〔深度降档 reach〕已随感知重做删——声呐诚实、深度不降档。）
   | { kind: 'sonarScanRangeBonus'; value: number }
   // 灯/电池/规避「档位件」base 效果（A·作者 2026-06-20·退役的灯/电池/规避升级做回固定属性件·别重建 upgrades.json 三线）。
   // 这些 kind 喂 deriveSensorTuning 的同名旋钮：lighthouses.ts::getRunBonuses 改读 eq.*（替段2 的字面 0）。
   // 固定属性件数值全在 base effects（不升级·getEquipmentStats 读 base）；与声呐件（数值在 upgradeSteps）互补。
+  // （旧 lampRobustness〔抗幻觉〕/ lampRangeBonus〔灯深度 reach〕已随感知重做删——灯到即真、深度不降档。）
   | { kind: 'lampEfficiency'; value: number }
-  | { kind: 'lampRobustness'; value: number }
-  | { kind: 'lampRangeBonus'; value: number }
   | { kind: 'signatureReduction'; value: number }
   | { kind: 'soundAbsorbBonus'; value: number }
   | { kind: 'camoBonus'; value: number }

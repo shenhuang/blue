@@ -15,7 +15,7 @@
 // 本文件只留分流入口 generateDiveMap + re-export（外部 import 面与拆分前一致·静态边不破）。
 
 import type { DiveMap, DiveNode } from '@/types';
-import { type GenOpts, makeSeededRng, applySonarDeception, applyHarvestDepletion, resolveLayoutStyle } from './mapgen-shared';
+import { type GenOpts, makeSeededRng, applyHarvestDepletion, resolveLayoutStyle } from './mapgen-shared';
 import { generateLayeredMap } from './mapgen-layered';
 import { generateMazeMap } from './mapgen-maze';
 
@@ -95,11 +95,9 @@ export function generateDiveMap(opts: GenOpts): DiveMap {
   // 层状开阔水域天然走 vertical（resolveLayoutStyle 兜底）；只有声明了 layoutStyle/orientation 的 zone 变形。
   map.layoutStyle = resolveLayoutStyle(zone);
   map.orientation = zone.orientation;
-  // 不可信声呐失真（声呐与房间 S2）：深 band 给部分内部节点挂 spoofs/evades（确定性·零 rng·gated）。
-  // 放在分流之后＝两种拓扑共用一条欺骗 pass；chance=0（缺省）时 no-op、不耗 rng、逐字节复现旧图。
-  applySonarDeception(map, opts.sonarDeception ?? 0);
-  // 固定资源耗尽（POI 固定资源耗尽·2026-06-25）：把已采尽的资源点抹平成空节点（确定性·零 rng·gated·post-pass·
-  // 同 applySonarDeception 模式）。两集都空（缺省）→ no-op、逐字节复现旧图（不破现有 mapgen 场景快照）。
+  // 不可信声呐失真 pass（曾给深 band 内部节点挂 spoof/evade 表象）：**感知重做已删**（声呐诚实·SPEC §2.2/§3）。
+  // 固定资源耗尽（POI 固定资源耗尽·2026-06-25）：把已采尽的资源点抹平成空节点（确定性·零 rng·gated·post-pass）。
+  // 两集都空（缺省）→ no-op、逐字节复现旧图（不破现有 mapgen 场景快照）。
   applyHarvestDepletion(map, opts.harvestedItemIds, opts.harvestedNodeIds);
   return map;
 }

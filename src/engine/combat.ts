@@ -100,6 +100,13 @@ export interface StartCombatOptions {
    * 未设 → 普通路由（victoryEventId / rest）。由 dive-move.ts case 'corpse': 注入。
    */
   sourceCorpseId?: string;
+  /**
+   * 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：把本场标为幻觉（写 CombatState.hallucination）。
+   * 低 san 注入钩子（dive-stalker.ts::maybeHallucinationEncounter）复用 zone 现有怪时用它——**不改共享 def**
+   * 就让这一场软化结算（敌攻 0 体力伤·无战利品·暧昧收场）。def 自带 enc.hallucination:true 时也会被或上（下方）。
+   * 未设 → 取 def.hallucination（缺省 false ＝真遭遇逐字节不变）。
+   */
+  hallucination?: boolean;
 }
 
 export function startCombat(
@@ -160,6 +167,10 @@ export function startCombat(
     ...(options?.sourceCorpseId ? { sourceCorpseId: options.sourceCorpseId } : {}),
     // 链鳗（分节实体）：按序攻击分节链标记（仅显式标 true 的遭遇带·普通 party 不写 ⇒ 逐字节不变）。
     ...(enc.attackInOrder ? { attackInOrder: true as const } : {}),
+    // 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：def 自带 enc.hallucination 或注入钩子传 options.hallucination
+    // → 标 CombatState.hallucination（enemyAttackPlayer 0 体力伤·finalizeVictory 无战利品·暧昧收场）。
+    // 二者皆无（真遭遇）⇒ 不写此字段 ⇒ 逐字节不变。
+    ...(enc.hallucination || options?.hallucination ? { hallucination: true as const } : {}),
   };
 
   // 图鉴发现门（敌人库·只显示已遭遇）：开战即把本场敌人（含 enemyRef 取到的）记入
@@ -457,14 +468,23 @@ export function applyPlayerAction(
 
   // —— 8. 玩家死亡判定 ——
   if (!s.run) return { state: s, outcome: 'defeat' };
-  if (s.run.stats.oxygen <= 0) {
-    return { state: executeDeath(s, '战斗中窒息'), outcome: 'defeat' };
-  }
-  if (s.run.stats.stamina <= 0) {
-    return { state: executeDeath(s, '被敌人撕碎'), outcome: 'defeat' };
-  }
-  if (s.run.stats.sanity <= 0) {
-    return { state: executeDeath(s, '理智崩溃，疯狂上浮'), outcome: 'defeat' };
+  // 幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：本场是你**疯出来的**·没有真实赌注·**永远不能在其中被打死**
+  // （北极星「幻觉怪不能有脚本死」）。软化到底：幻觉战里跳过全部死亡窗（体力/氧气/理智仍**真的会掉**——
+  // 敌攻只软化体力伤为 0、氧气随行动经济照 tick、理智照吃 sanityDamage＝真代价·下方仍持续压——只是**这一场里**
+  // 不判死）。代价的真危险留在**之后**：幻象散了（finalizeVictory / 你逃开）后回到真世界，若刚才在幻觉里把氧/
+  // 理智耗到 0，下一记真判定（moveToNode/tickTurns 的氧气死 / 事件理智死）照样收——但那是「你自己耗光的」，
+  // 不是这只从没在那儿的东西把你打死。真遭遇（非幻觉）三条死亡窗逐字节不变。
+  const inHallucination = s.phase.kind === 'combat' && s.phase.combat.hallucination === true;
+  if (!inHallucination) {
+    if (s.run.stats.oxygen <= 0) {
+      return { state: executeDeath(s, '战斗中窒息'), outcome: 'defeat' };
+    }
+    if (s.run.stats.stamina <= 0) {
+      return { state: executeDeath(s, '被敌人撕碎'), outcome: 'defeat' };
+    }
+    if (s.run.stats.sanity <= 0) {
+      return { state: executeDeath(s, '理智崩溃，疯狂上浮'), outcome: 'defeat' };
+    }
   }
 
   // —— 9. 回合 +1 ——
@@ -911,13 +931,24 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
     dmg = Math.max(1, dmg - armor);
   }
 
+  // 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：幻爪打不穿你——**物理体力伤软化到 0**（无实体伤）。
+  // 代价留在理智（下方 sanityDamage 照扣＝「你自己的脑子」）+ 氧气（行动经济照 tick）+ 慌。0 体力伤 ⇒ 敌人
+  // 永远打不死你（stamina 死亡窗封死·北极星「无脚本死」）；真遭遇（非幻觉）dmg 逐字节不变。
+  const isHallucination = state.phase.combat.hallucination === true;
+  if (isHallucination) dmg = 0;
+
   let s = applyStatsDelta(state, { stamina: -dmg });
   s = pushCombatLog(s, {
     actor: 'enemy',
-    text: `${chosen.description}（体力 -${dmg}）`,
+    // 幻觉：读得出「牙贴上来却没有痛」——它不真在那儿（不写机制·守欺骗轴的暧昧）。真遭遇：原文案逐字节不变。
+    text: isHallucination
+      ? `${chosen.description}——可牙咬下来的地方没有痛，皮也没破。`
+      : `${chosen.description}（体力 -${dmg}）`,
   });
 
-  // 理智伤害（负伤 SPEC §5 敌攻理智消费点：sd × sanityTakenMult·向上取整；无伤 ×1 逐字节不变）
+  // 理智伤害（负伤 SPEC §5 敌攻理智消费点：sd × sanityTakenMult·向上取整；无伤 ×1 逐字节不变）。
+  // 幻觉遭遇照扣＝「代价是你的脑子」（软伤·SPEC §2.3）；但理智耗尽仍走既有「疯狂上浮」（events/combat 死亡判定），
+  // 不是被这只幻觉怪「击杀」——北极星「幻觉怪不能有脚本死」由 0 体力伤保证，理智侧沿用既有可恢复轴。
   if (chosen.sanityDamage) {
     const sd = Math.ceil(randRange(chosen.sanityDamage) * computeModifiers(state.run).sanityTakenMult);
     s = applyStatsDelta(s, { sanity: -sd });
@@ -927,7 +958,9 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
   // 负伤判定（负伤 SPEC §4.1）：**仅带 injuryOnHit 的攻击才掷骰**——不带的攻击零额外 RNG 消耗，
   // 既有 seed 基线不被搅（只有配了数据的敌人的 baseline 需要重抄）。injuryId 缺省 → 按
   // damageType 查 cause 默认派生（physical→流血）；同类升档/上限顶替封死在 addInjury。
-  if (chosen.injuryOnHit && s.run && Math.random() < chosen.injuryOnHit.chance) {
+  // 幻觉遭遇**不留伤**（幻爪穿不透·无实体伤·SPEC §2.3）：直接跳过掷骰——注意这会改变幻觉战斗的 RNG 流，
+  // 但幻觉遭遇是新路径（无既有 baseline）⇒ 不影响任何真遭遇的 seeded 基线。
+  if (!isHallucination && chosen.injuryOnHit && s.run && Math.random() < chosen.injuryOnHit.chance) {
     const injuryId = chosen.injuryOnHit.injuryId ?? injuryIdForDamageType(chosen.damageType);
     if (injuryId) {
       const change = addInjury(s.run, injuryId);
@@ -964,6 +997,21 @@ function finalizeVictory(state: GameState): CombatTurnResult {
   const combat = state.phase.combat;
 
   let s = state;
+
+  // 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：看破 / 打「赢」＝它散了——**无战利品**（从没有东西可捞），
+  // 收场暧昧（「你眨眼，那里只有空水」＝它从没在那儿·是你疯了、不是世界有东西）。跳过整段 loot 结算（effectiveLoot /
+  // randRange 都不跑）；路由沿用真遭遇（尸衣者 corpse / victoryEventId / rest），但幻觉一般无 victoryEventId ⇒ 回 rest。
+  if (combat.hallucination) {
+    s = appendLog(s, { tone: 'uncanny', text: '你眨眼，那里只有空水——刚才那东西没有留下任何痕迹，仿佛从来没在那儿。' });
+    if (combat.sourceCorpseId) {
+      s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'corpse', deathRecordId: combat.sourceCorpseId } } };
+    } else if (combat.victoryEventId) {
+      s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: combat.victoryEventId } } };
+    } else {
+      s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
+    }
+    return { state: s, outcome: 'victory' };
+  }
 
   // 战利品（尸衣者按 wornSkin 替换 loot·普通敌人 effectiveLoot 恒回 def.loot ⇒ 逐字节不变）
   const looted: InventoryItem[] = []; // 本次战斗所有掉落·收齐后批量一格弹「获得物品」（enqueuePickup·见 state.ts）

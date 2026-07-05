@@ -55,6 +55,10 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
         : '光照不进来。前方只有几团模糊的黑影。';
 
   function handlePick(nodeId: string) {
+    // 灯门拦截（感知重做 SPEC §2.1·车道 3）：locked（黑处无有效灯·可见但锁住）的节点点了不动、不改状态。
+    // 按钮本身已 disabled（浏览器不派发点击）；这里再兜一层＝键盘/程序化触发也挡（渲染层是拦截单点·别让锁只是样式）。
+    // 选中态（声呐图第一击）可以落在 locked 节点上（图是纯定位层），但出发路径只有这条列表点击——挡这里＝挡住唯一的 move。
+    if (choices.find((c) => c.nodeId === nodeId)?.locked) return;
     onStateChange(moveToNode(state, nodeId));
   }
   function handleExplore(featureId: string) {
@@ -189,16 +193,23 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
                 : isCamp
                   ? '⌂ 扎营点'
                   : `${c.depth}m`;
+            // 灯门锁住（感知重做 SPEC §2.1）：黑处无有效灯的非豁免节点＝可见但锁住——照画、dim + 禁用、点不了、标「需要灯」。
+            // 地标（上浮口/气穴/扎营）与 Lv.1 尸体引擎已豁免（locked 不置）＝照常可选。开灯→引擎清 locked→解锁。
+            const isLocked = c.locked === true;
             return (
               <li key={c.nodeId}>
                 <button
-                  className={`btn event-option ${c.hasCorpseHint ? 'corpse' : ''} ${isAir || isCamp ? 'landmark' : ''} ${c.visited ? 'visited' : ''} ${pending === c.nodeId ? 'is-pending' : ''}`}
-                  onClick={() => handlePick(c.nodeId)}
+                  className={`btn event-option ${c.hasCorpseHint ? 'corpse' : ''} ${isAir || isCamp ? 'landmark' : ''} ${c.visited ? 'visited' : ''} ${pending === c.nodeId ? 'is-pending' : ''} ${isLocked ? 'locked' : ''}`}
+                  onClick={isLocked ? undefined : () => handlePick(c.nodeId)}
+                  disabled={isLocked}
+                  aria-disabled={isLocked || undefined}
+                  title={isLocked ? '太暗，看不清——需要灯' : undefined}
                 >
                   <div className="node-row">
                     <span className="node-depth">{label}</span>
-                    {/* 预览已按 clarity 档烤好（灯下真相 / 声呐不可信表象 / 盲）；clar-<档> 控制样式 */}
+                    {/* 预览已按 clarity 档烤好（灯下真相 / 盲）；clar-<档> 控制样式。locked 时预览＝「太暗，看不清——需要灯」（引擎烤） */}
                     <span className={`node-preview clar-${c.clarity ?? 'full'}`}>{c.preview}</span>
+                    {isLocked && <span className="lock-tag" aria-hidden="true">需要灯</span>}
                   </div>
                   {c.hasCorpseHint && <div className="node-hint">这一带似乎有熟悉的东西…</div>}
                   {!isAscent && (

@@ -1,59 +1,53 @@
-// 微观双传感器 / clarity 回归（深水区 Phase 0a）。
-// 覆盖 SPEC §11 0a 的核心断言（纯引擎，不碰 combat）：
-//   1. 灯 + 清水 → full → 相邻"地面真相"（spoofsSonar 节点在灯下也是真相，不被假回波改写）
-//   2. 灯 + 黑水（声呐未解锁）→ none → 盲航（旧 visibility:dark 行为并入 clarity，quirk #27/#41）
-//   3. 关灯 + 声呐 ping（已解锁 + 有电）→ sonar → 不可信表象（spoof 可改写、≠ 真内容）+ 耗电
-//   4. 声呐未解锁 → ping 无效（不耗电、黑水仍盲）——"先经历黑暗中无声呐"（作者 2026-06-02）
-//   5. power 归零 → 强制摸黑（致盲不直接死）
-//   6. 低 san（< 60）→ 声呐注入假回波（阈值跨越）；7. 更低 san（< 25）→ 连灯也产幻觉（灯最后崩）
-//   8. tickTurns 灯耗电：清水近免费 / 黑水耗 / 关灯不耗
-//   9. 移动后声呐 ping 自动消散（脉冲瞬时）
-//  10. signature：灯 > 声呐 > 摸黑（0b 接遭遇/combat）
-//  11. 升级轨（深水区 Phase 0 升级轨）：powerMax/ping 耗电/灯效率/抗欺骗(声呐&灯)/隐蔽 随升级派生，含地板/上限 + 未升级=基线
-//  12. 节点级 clarity·深度分档（深水区 Phase 1 续）：浅水豁免 / 仅灯陡降黑 / 声呐补中段 / 黑水全声呐 / 灯&声呐 reach 升级扩 + 上限
+// 微观感知 / 灯门 clarity 回归（感知重做 SPEC·docs/spec/深海回响_感知重做_SPEC.md）。
+// 覆盖新北极星的核心断言（纯引擎，不碰 combat）——欺骗全部移交低理智轴（非本回归·SPEC §2.3）：
+//   1. 灯 + 清水 → full → 相邻"地面真相"（非黑水不需灯就 full·灯门不锁）
+//   2. 灯 + 黑水 → 灯门解锁 → full（黑处正是灯起作用的地方·SPEC §2.1 INVERSION）；关灯 → 锁住（none·locked）
+//   4. 深度不再降档：任意深的陡降在灯下也是 full（darkness 是唯一的门·SPEC §2.1 CLARITY COLLAPSE）
+//   5. power 归零 → 灯失效：黑水锁住 / 清水仍 full（清水不需灯）
+//   8. tickTurns 灯耗电：清水近免费 / 黑水耗 / 关灯不耗（暴露脊柱保留·PRESERVE）
+//   9. 声呐一记 ping（感知重做 §2.2「ping 才扫、不 ping 不扫」）：ping→sonar=ping；移动→归 off（脉冲瞬时·不自动扫）
+//  10. signature：灯 > 声呐 > 摸黑（暴露脊柱·0b 接遭遇/combat·PRESERVE）
+//  11. 升级轨：powerMax/ping 耗电/灯效率/隐蔽 随升级派生，含地板/上限 + 未升级=基线
+//      （抗欺骗〔声呐&灯〕/reach 旋钮已随感知重做退成惰性·不再断言其行为）
 //
 // 跑法： npx tsx scripts/playthrough-sensors.ts
 
-import type { GameState, RunState, DiveMap, DiveNode, NodeChoice } from '../src/types';
+import type { GameState, RunState, DiveMap, NodeChoice } from '../src/types';
 import { createInitialGameState, createNewRun } from '../src/engine/state';
-import { enterNodeSelection, pingSonar, setLight, moveToNode, setSonarNext } from '../src/engine/dive';
+import { enterNodeSelection, pingSonar, setLight, moveToNode } from '../src/engine/dive';
 import { tickTurns } from '../src/engine/events';
 import {
   clarity,
-  sonarReturn,
+  lampGateLocked,
   lampPreview,
   signature,
   lampPowerDrain,
   POWER_MAX,
   SONAR_PING_COST,
-  // 深水区 Phase 0 升级轨（section 11）
+  // 升级轨（section 11）
   deriveSensorTuning,
   sonarPingCost,
   SONAR_PING_COST_MIN,
   LAMP_DRAIN_MULT_MIN,
-  SONAR_FALSE_ECHO_SANITY_MIN,
-  LAMP_HALLUCINATION_SANITY_MIN,
   SIGNATURE_BASE,
   SIGNATURE_LIGHT,
   SIGNATURE_MIN_ACTIVE,
   SIGNATURE_REDUCTION_MAX,
-  // 深水区 Phase 1 续·节点级 clarity（section 12）
-  clarityForNode,
-  LAMP_DEPTH_REACH,
-  SONAR_DEPTH_REACH,
-  LAMP_DEPTH_REACH_MAX,
-  SONAR_DEPTH_REACH_MAX,
+  // 低理智轴：改怪物钩子（section 13/14·感知重做 SPEC §2.3/§7① 形态 a）
+  hallucinationApproaches,
+  HALLUCINATION_SANITY,
 } from '../src/engine/clarity';
+import { startCombat, applyPlayerAction, getEncounter } from '../src/engine/combat';
 import { makeHarness, type PtAssert } from './lib/pt';
 
-const pt = makeHarness('微观双传感器 / clarity 回归');
+const pt = makeHarness('微观感知 / 灯门 clarity 回归');
 const { L } = pt;
 const assert: PtAssert = pt.assert;
 
 const N1_TRUTH = '一条窄缝，水在慢慢动。';
 const N2_TRUTH = '一处塌下来的石堆。';
 
-/** 起点 n0 连到两个事件节点 n1/n2；n2 带 spoofsSonar（mimic/Phase 3 钩子）。 */
+/** 起点 n0 连到两个事件节点 n1/n2（感知重做后节点无声呐欺骗钩子）。 */
 function makeMap(): DiveMap {
   return {
     zoneId: 'zone.blue_caves',
@@ -62,10 +56,7 @@ function makeMap(): DiveMap {
     nodes: {
       n0: { id: 'n0', layer: 0, depth: 20, zoneTag: 'cave', kind: 'event', connectsTo: ['n1', 'n2'], preview: '起点。' },
       n1: { id: 'n1', layer: 1, depth: 24, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: N1_TRUTH },
-      n2: {
-        id: 'n2', layer: 1, depth: 24, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: N2_TRUTH,
-        spoofsSonar: '一座灯塔的光',
-      },
+      n2: { id: 'n2', layer: 1, depth: 24, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: N2_TRUTH },
     },
   };
 }
@@ -99,98 +90,123 @@ function choicesOf(s: GameState): NodeChoice[] {
 const byId = (cs: NodeChoice[], id: string) => cs.find((c) => c.nodeId === id)!;
 
 // ============================================================
-// 1. 灯 + 清水 → full → 地面真相（spoof 节点在灯下也真）
+// 1. 灯 + 清水 → full → 地面真相（非黑水不需灯就 full·灯门不锁·感知重做 SPEC §2.1）
 // ============================================================
 L('========== 1. 灯 + 清水 → full 真相 ==========');
 {
   const s = enterNodeSelection(mk());
   const cs = choicesOf(s);
+  assert(clarity(s.run!) === 'full', '1: 清水灯下 clarity=full');
   assert(cs.every((c) => c.clarity === 'full'), '1: 清水灯下所有选项 clarity=full');
+  assert(cs.every((c) => !c.locked), '1: 清水非黑·选项都不锁');
   assert(byId(cs, 'n1').preview === N1_TRUTH, '1: n1 显示地面真相');
-  assert(byId(cs, 'n2').preview === N2_TRUTH, '1: n2 灯下显示真相（spoofsSonar 不改写灯）');
-  L('  full 档真相 / spoof 节点灯下仍真 ✓');
+  assert(byId(cs, 'n2').preview === N2_TRUTH, '1: n2 显示地面真相（诚实·无欺骗改写）');
+  L('  清水 full 诚实真相 / 不锁 ✓');
 }
 
 // ============================================================
-// 2. 灯 + 黑水（声呐未解锁）→ none → 盲航
+// 2. 黑水灯门（感知重做 INVERSION·SPEC §2.1）：灯开 → 解锁 full（黑处正是灯起作用的地方）；关灯 → 锁住 none
 // ============================================================
-L('\n========== 2. 灯 + 黑水（无声呐）→ none 盲 ==========');
+L('\n========== 2. 黑水灯门（灯开 full / 关灯锁住）==========');
 {
-  const s = enterNodeSelection(mk({ visibility: 'dark' }));
+  // 灯开（默认）+ 黑水：新模型黑处灯照得到 → 灯门不锁、full 诚实真相。
+  const on = enterNodeSelection(mk({ visibility: 'dark' }));
+  const csOn = choicesOf(on);
+  assert(lampGateLocked(on.run!) === false, '2: 黑水灯开 → 灯门不锁（黑处灯照得到）');
+  assert(clarity(on.run!) === 'full', '2: 黑水灯开 → clarity full');
+  assert(csOn.every((c) => c.clarity === 'full' && !c.locked), '2: 黑水灯开 → 选项 full、不锁');
+  assert(byId(csOn, 'n1').preview === N1_TRUTH, '2: 黑水灯开 n1 给真相');
+  // 关灯 + 黑水：灯门锁住 → 可见但锁住（locked·标「太暗，看不清——需要灯」）。
+  const off = enterNodeSelection(setLight(mk({ visibility: 'dark' }), false));
+  const csOff = choicesOf(off);
+  assert(lampGateLocked(off.run!) === true, '2: 黑水关灯 → 灯门锁住');
+  assert(clarity(off.run!) === 'none', '2: 黑水关灯 → clarity none');
+  assert(byId(csOff, 'n1').locked === true, '2: 黑水关灯 n1 → locked');
+  assert(byId(csOff, 'n1').clarity === 'none', '2: 黑水关灯 n1 → clarity none');
+  assert(byId(csOff, 'n1').preview.includes('需要灯'), '2: locked 预览＝「太暗，看不清——需要灯」');
+  assert(byId(csOff, 'n1').preview !== N1_TRUTH, '2: 锁住时不给真相');
+  L('  黑水灯开→full不锁（INVERSION）/ 关灯→locked·need-lamp ✓');
+}
+
+// ============================================================
+// 3. 地标豁免灯门：黑水关灯下上浮口/气穴/扎营仍给真相、不锁（结构性可感·SPEC §2.1）
+// ============================================================
+L('\n========== 3. 地标豁免灯门 ==========');
+{
+  // n2 改成上浮口地标：黑水关灯下它仍诚实、不锁（地标豁免）。
+  const mapLm = makeMap();
+  mapLm.nodes.n2 = { ...mapLm.nodes.n2, kind: 'ascent_point', preview: '↑ 上浮口' };
+  const base = createInitialGameState();
+  const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
+  const run: RunState = {
+    ...r0, map: mapLm, currentNodeId: 'n0', currentDepth: 20,
+    sensors: { ...r0.sensors, light: false }, diveModifier: { visibility: 'dark' },
+  };
+  const st0: GameState = { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
+  const s = enterNodeSelection(st0);
   const cs = choicesOf(s);
-  assert(clarity(s.run!) === 'none', '2: 黑水灯打不透 → clarity none');
-  assert(cs.every((c) => c.clarity === 'none'), '2: 所有选项 clarity=none');
-  assert(byId(cs, 'n1').preview.includes('看不清'), '2: 盲航遮蔽真相预览');
-  assert(byId(cs, 'n1').preview !== N1_TRUTH, '2: 黑水里看不到真相');
-  L('  黑水 + 无声呐 → 盲航（旧 visibility:dark 并入 clarity）✓');
+  assert(byId(cs, 'n2').locked !== true, '3: 黑水关灯下地标(上浮口)不锁（豁免灯门）');
+  assert(byId(cs, 'n2').preview === '↑ 上浮口', '3: 地标给真相文案');
+  assert(byId(cs, 'n1').locked === true, '3: 同图非地标节点仍锁（对照）');
+  L('  地标黑水关灯仍诚实不锁 / 非地标锁（对照）✓');
 }
 
 // ============================================================
-// 3. 关灯 + 声呐 ping（已解锁 + 有电）→ sonar → 不可信表象 + 耗电
+// 4. 深度不再降档（感知重做 CLARITY COLLAPSE·SPEC §2.1）：任意深的陡降在灯下也是 full（darkness 是唯一的门）
 // ============================================================
-L('\n========== 3. 声呐 ping → sonar 不可信表象 ==========');
+L('\n========== 4. 深度不再降档（陡降灯下仍 full）==========');
 {
-  let s = enterNodeSelection(mk({ sonarUnlocked: true }));
-  s = setLight(s, false); // 关灯 → 此刻 none（还没 ping）
-  assert(clarity(s.run!) === 'none', '3: 关灯未 ping → none');
-  s = pingSonar(s); // 耗电 + sonar='ping' → 刷新选点
-  const cs = choicesOf(s);
-  assert(s.run!.power === POWER_MAX - SONAR_PING_COST, `3: ping 耗 ${SONAR_PING_COST} 电`);
-  assert(cs.every((c) => c.clarity === 'sonar'), '3: ping 后所有选项 clarity=sonar');
-  assert(byId(cs, 'n1').preview !== N1_TRUTH, '3: 声呐表象 ≠ 真内容');
-  assert(byId(cs, 'n2').preview.includes('一座灯塔的光'), '3: spoofsSonar 把 n2 显示成假信标（mimic 钩子）');
-  L('  关灯 ping → 不可信表象（spoof 可改写）+ 耗电 ✓');
+  // 深水（80m）+ 一个深得多的陡降节点（dd 60）：旧模型会降到 none，新模型灯下仍 full（清/黑水两测）。
+  const deepMap: DiveMap = {
+    zoneId: 'zone.blue_caves', generatedAt: 0, startNodeId: 'd0',
+    nodes: {
+      d0: { id: 'd0', layer: 0, depth: 80, zoneTag: 'cave', kind: 'event', connectsTo: ['dfar'], preview: '起点。' },
+      dfar: { id: 'dfar', layer: 1, depth: 140, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '一道直坠下去的裂口。' },
+    },
+  };
+  const mkDeep = (vis?: 'dark'): GameState => {
+    const base = createInitialGameState();
+    const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
+    const run: RunState = { ...r0, map: deepMap, currentNodeId: 'd0', currentDepth: 80, diveModifier: vis ? { visibility: vis } : undefined };
+    return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
+  };
+  const csClear = choicesOf(enterNodeSelection(mkDeep()));
+  assert(byId(csClear, 'dfar').clarity === 'full', '4: 清水陡降 dd60 灯下仍 full（深度不降档）');
+  assert(byId(csClear, 'dfar').preview === '一道直坠下去的裂口。', '4: 陡降给真相（不被深度藏住）');
+  const csDark = choicesOf(enterNodeSelection(mkDeep('dark')));
+  assert(byId(csDark, 'dfar').clarity === 'full', '4: 黑水灯开陡降 dd60 也 full（灯门开·深度不降档）');
+  L('  陡降清/黑水灯下都 full（darkness 是唯一的门）✓');
 }
 
 // ============================================================
-// 4. 声呐未解锁 → ping 无效（不耗电、黑水仍盲）
+// 5. power 归零 → 灯失效：黑水锁住 / 清水仍 full（清水不需灯·SPEC §2.1）
 // ============================================================
-L('\n========== 4. 未解锁声呐 → ping 无效 ==========');
+L('\n========== 5. power 归零 → 灯失效 ==========');
 {
-  let s = enterNodeSelection(mk({ visibility: 'dark' })); // sonarUnlocked 默认 false
-  const p0 = s.run!.power;
-  s = pingSonar(s);
-  assert(s.run!.power === p0, '4: 未解锁 ping 不耗电');
-  assert(clarity(s.run!) === 'none', '4: 未解锁声呐黑水仍盲（先经历"黑暗中无声呐"）');
-  L('  未解锁声呐：ping no-op，黑水保持盲航 ✓');
+  // 清水没电：灯失效但清水不需灯 → 仍 full、不锁。
+  const clear = enterNodeSelection(mk({ power: 0 }));
+  assert(clarity(clear.run!) === 'full', '5: 清水 power=0 → 仍 full（清水不需灯）');
+  assert(choicesOf(clear).every((c) => !c.locked), '5: 清水没电也不锁');
+  // 黑水没电：灯失效（lampOn=false）→ 灯门锁住。
+  const dark = enterNodeSelection(mk({ visibility: 'dark', power: 0 }));
+  assert(lampGateLocked(dark.run!) === true, '5: 黑水 power=0 → 灯失效 → 灯门锁住');
+  assert(clarity(dark.run!) === 'none', '5: 黑水没电 → clarity none');
+  assert(choicesOf(dark).every((c) => c.locked), '5: 黑水没电 → 所有非豁免选项锁住');
+  L('  清水没电仍 full / 黑水没电锁住（致盲不直接死）✓');
 }
 
 // ============================================================
-// 5. power 归零 → 强制摸黑
+// 6/7. 低 san 声呐假回波 / 灯幻觉：**整节随感知重做删除**（欺骗移交低理智轴·SPEC §2.3）。
+//   灯下恒真：lampPreview 现无 san 分支——极低 san 也给真相（控制组）。
 // ============================================================
-L('\n========== 5. power 归零 → 强制摸黑 ==========');
-{
-  const s = enterNodeSelection(mk({ power: 0 })); // 灯开、清水，但没电
-  assert(clarity(s.run!) === 'none', '5: power=0 → 灯失效 → clarity none（强制摸黑）');
-  assert(choicesOf(s).every((c) => c.clarity === 'none'), '5: 所有选项盲');
-  L('  电池归零 → 灯失效、强制摸黑（致盲不直接死）✓');
-}
-
-// ============================================================
-// 6. 低 san（< 60）→ 声呐注入假回波（阈值跨越·叙述永不交底——假回波不自证真假）
-// ============================================================
-L('\n========== 6. 低 san → 声呐假回波 ==========');
+L('\n========== 6/7. 灯下恒真（无低 san 幻觉）==========');
 {
   const node = makeMap().nodes.n1;
-  const at = (sanity: number) => sonarReturn(mk({ sonarUnlocked: true, sanity }).run!, node);
-  assert(at(100) === at(60), '6: san≥60 声呐表象稳定（同节点同表象）');
-  assert(at(59) !== at(60), '6: san<60 跨阈值 → 声呐返回改变（注入假回波）');
-  assert(at(59) !== N1_TRUTH, '6: 假回波 ≠ 真内容');
-  L('  理智 <60 → 声呐先失真（阈值跨越）✓');
-}
-
-// ============================================================
-// 7. 更低 san（< 25）→ 连灯也产幻觉（灯最稳、最后崩）
-// ============================================================
-L('\n========== 7. 极低 san → 灯也幻觉 ==========');
-{
-  const node = makeMap().nodes.n1;
-  assert(lampPreview(mk({ sanity: 25 }).run!, node) === N1_TRUTH, '7: san≥25 灯下仍是真相');
-  assert(lampPreview(mk({ sanity: 24 }).run!, node) !== N1_TRUTH, '7: san<25 连灯也产假预览（灯最后崩）');
-  // 经 enterNodeSelection 端到端：极低 san 灯下预览被改写
-  const cs = choicesOf(enterNodeSelection(mk({ sanity: 10 })));
-  assert(byId(cs, 'n1').clarity === 'full' && byId(cs, 'n1').preview !== N1_TRUTH, '7: full 档但极低 san 预览是幻觉');
-  L('  理智 <25 → 灯也幻觉（无完全可信的传感器）✓');
+  assert(lampPreview(mk({ sanity: 100 }).run!, node) === N1_TRUTH, '6/7: 高 san 灯下真相');
+  assert(lampPreview(mk({ sanity: 5 }).run!, node) === N1_TRUTH, '6/7: 极低 san 灯下仍真相（幻觉移交低理智轴·SPEC §2.3）');
+  const cs = choicesOf(enterNodeSelection(mk({ sanity: 5 })));
+  assert(byId(cs, 'n1').clarity === 'full' && byId(cs, 'n1').preview === N1_TRUTH, '6/7: 端到端极低 san 清水灯下＝诚实真相');
+  L('  灯下恒真·无低 san 改写（控制组）✓');
 }
 
 // ============================================================
@@ -234,24 +250,25 @@ L('\n========== 8. tickTurns 灯耗电（水况分级）==========');
 }
 
 // ============================================================
-// 9. 声呐持续开/关窗口（声呐渲染重做 §4）：开→到站自动扫（scan-on-open·sonar 保持 ping）；关→不扫看旧图
+// 9. 声呐一记 ping（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：ping→sonar=ping；移动→归 off（脉冲瞬时·不自动扫）；再 ping→再扫
 // ============================================================
-L('\n========== 9. 声呐开/关窗口（§4）==========');
+L('\n========== 9. 声呐一记 ping（§2.2 单动作）==========');
 {
-  // 持续开（缺省）：移动后到站自动扫一记
-  let s = enterNodeSelection(mk({ sonarUnlocked: true }));
-  s = pingSonar(s);
-  assert(s.run!.sensors.sonar === 'ping', '9: ping 后 sonar=ping');
-  s = moveToNode(s, 'n1');
-  assert(s.run!.sensors.sonar === 'ping', '9: 持续开 → 移动后到站自动扫（sonar 保持 ping·scan-on-open §4）');
-  assert(s.run!.sensors.light === true, '9: 灯状态不受移动影响（仍开）');
+  // ping：本回合发过一记（sonar=ping）
+  const pinged = pingSonar(enterNodeSelection(mk({ sonarUnlocked: true })));
+  assert(pinged.run!.sensors.sonar === 'ping', '9: ping 后 sonar=ping（本回合发过一记）');
 
-  // 持续关：预承诺下回合关 → 移动后 sonar=off（不自动扫·只看保留旧图·暴露停）
-  let off = setSonarNext(enterNodeSelection(mk({ sonarUnlocked: true })), false);
-  off = moveToNode(off, 'n1');
-  assert(off.run!.sensors.sonar === 'off', '9: 设了下回合关 → 移动后 sonar=off（不自动扫·看保留旧图）');
-  assert(off.run!.sensors.sonarOn === false, '9: 移动后本回合承诺=关（sonarNext→sonarOn 落定·§4）');
-  L('  持续开→到站自动扫 / 持续关→不扫看旧图 / 灯不受影响 ✓');
+  // 移动：脉冲消散归 off（不自动扫·不跨回合持续）；灯不受影响
+  const moved = moveToNode(pinged, 'n1');
+  assert(moved.run!.sensors.sonar === 'off', '9: 移动后 sonar=off（脉冲瞬时·不自动扫·感知重做 §2.2）');
+  assert(moved.run!.sensors.light === true, '9: 灯状态不受移动影响（仍开）');
+
+  // 到新一站再 ping：又扫一记（付电·付暴露）
+  const p0 = moved.run!.power;
+  const rescan = pingSonar(moved);
+  assert(rescan.run!.sensors.sonar === 'ping', '9: 新一站再 ping → 又扫一记');
+  assert(rescan.run!.power < p0, '9: 再 ping 再付电（诚实主动感知·付代价）');
+  L('  ping→sonar=ping / 移动归 off（不自动扫）/ 再 ping 再扫付电 / 灯不受影响 ✓');
 }
 
 // ============================================================
@@ -293,8 +310,6 @@ function mkUp(
 
 L('\n========== 11. 升级轨：传感器随升级成长 ==========');
 {
-  const node = makeMap().nodes.n1;
-
   // 11.0 未升级 = 基线（守"defaults 复现 0a/0b 行为"）
   const baseTuning = createNewRun({ zoneId: 'zone.blue_caves' }).sensorTuning!;
   assert(
@@ -326,18 +341,9 @@ L('\n========== 11. 升级轨：传感器随升级成长 ==========');
   assert(upDark === baseDark * 0.5 && upDark < baseDark, '11c: 灯效率 → 黑水耗电减半');
   assert(deriveSensorTuning({ lampEfficiency: 1 }).lampDrainMult === LAMP_DRAIN_MULT_MIN, '11c: 灯耗电乘子有地板');
 
-  // 11d 声呐抗欺骗：阈值 60→40，san50 仍是稳定表象（不再注入假回波）+ 地板
-  const truthful = sonarReturn(mk({ sonarUnlocked: true, sanity: 100 }).run!, node); // 稳定的"真实但粗糙"表象
-  assert(sonarReturn(mk({ sonarUnlocked: true, sanity: 50 }).run!, node) !== truthful, '11d: 基线 san50<60 → 假回波');
-  assert(sonarReturn(mkUp({ sonarUnlocked: true, sonarRobustness: 20 }, { sanity: 50 }).run!, node) === truthful, '11d: 抗欺骗阈值降到40 → san50 仍稳定表象');
-  assert(deriveSensorTuning({ sonarRobustness: 99 }).sonarFalseEchoSanity === SONAR_FALSE_ECHO_SANITY_MIN, '11d: 声呐抗欺骗有地板（永不全可信）');
+  // 11d/11e 声呐/灯抗欺骗旋钮：**随感知重做退成惰性**（欺骗移交低理智轴·SPEC §2.3）——不再断言其行为。
 
-  // 11e 灯抗欺骗：阈值 25→15，san20 灯下仍真相 + 地板
-  assert(lampPreview(mk({ sanity: 20 }).run!, node) !== N1_TRUTH, '11e: 基线 san20<25 → 灯幻觉');
-  assert(lampPreview(mkUp({ lampRobustness: 10 }, { sanity: 20 }).run!, node) === N1_TRUTH, '11e: 灯抗欺骗阈值降到15 → san20 仍真相');
-  assert(deriveSensorTuning({ lampRobustness: 99 }).lampHallucinationSanity === LAMP_HALLUCINATION_SANITY_MIN, '11e: 灯抗欺骗有地板（灯最后崩、仍会崩）');
-
-  // 11f 隐蔽：降 signature + 上限 + 结构地板（点灯永不归零暴露）
+  // 11f 隐蔽：降 signature + 上限 + 结构地板（点灯永不归零暴露·暴露脊柱 PRESERVE）
   const sigBase = signature(mk().run!); // 灯开清水 = BASE + LIGHT
   const sigStealth = signature(mkUp({ signatureReduction: 3 }).run!);
   assert(sigStealth < sigBase, '11f: 隐蔽降 signature');
@@ -346,184 +352,222 @@ L('\n========== 11. 升级轨：传感器随升级成长 ==========');
   const sigDark2 = signature({ ...mk().run!, sensors: { light: false, sonar: 'off', sonarUnlocked: false } });
   assert(sigStealth > sigDark2, '11f: 隐蔽再强、点灯 signature 仍 > 摸黑（读真相必自曝，§3.2/§3.3）');
 
-  // 11g createNewRun 端到端把全部 bonus 烤进 sensorTuning
+  // 11g createNewRun 端到端把（存活的）bonus 烤进 sensorTuning
   const allUp = createNewRun({
     zoneId: 'zone.blue_caves',
-    bonuses: { powerMaxBonus: 40, sonarPingCostReduction: 2, lampEfficiency: 0.5, sonarRobustness: 20, lampRobustness: 10, signatureReduction: 3 },
+    bonuses: { powerMaxBonus: 40, sonarPingCostReduction: 2, lampEfficiency: 0.5, signatureReduction: 3 },
   });
   assert(allUp.powerMax === POWER_MAX + 40, '11g: powerMax');
   assert(allUp.sensorTuning!.pingCost === SONAR_PING_COST - 2, '11g: sensorTuning.pingCost');
   assert(allUp.sensorTuning!.lampDrainMult === 0.5, '11g: sensorTuning.lampDrainMult');
-  assert(allUp.sensorTuning!.sonarFalseEchoSanity === 40, '11g: sensorTuning.sonarFalseEchoSanity');
-  assert(allUp.sensorTuning!.lampHallucinationSanity === 15, '11g: sensorTuning.lampHallucinationSanity');
   assert(allUp.sensorTuning!.signatureReduction === 3, '11g: sensorTuning.signatureReduction');
 
-  L('  powerMax / ping 耗电 / 灯效率 / 抗欺骗(声呐&灯) / 隐蔽 随升级成长，地板上限守铁律 ✓');
+  L('  powerMax / ping 耗电 / 灯效率 / 隐蔽 随升级成长，地板上限守铁律（抗欺骗/reach 旋钮已退惰性）✓');
 }
 
 // ============================================================
-// 12. 节点级 clarity：深度分档（深水区 Phase 1 续）
+// 12. 节点级 clarity·深度分档：**整节随感知重做删除**——深度不再降档预览（darkness 是唯一的门·
+//     SPEC §2.1 CLARITY COLLAPSE）；「陡降灯下仍 full」已由上面 section 4 覆盖。
 // ============================================================
-// clarity(run) 是天花板；clarityForNode 在它之上按"节点比你深多少 m"降档：
-//   灯只照得到近处（≤ lampReach）；更深的陡降灯打不透 → 声呐够到（≤ sonarReach）才给表象、否则黑。
-//   浅水（≤ CLARITY_FULL_DEPTH）豁免：所见为真、不按深度降档。reach 升级可扩、有上限。
-const DEEP_NEAR = '近处的坑，看得清。'; // dd 4
-const DEEP_EDGE = '刚够到的坑沿。'; // dd 8
-const DEEP_MID = '中段沉下去的水道。'; // dd 12
-const DEEP_FAR = '更深处，一道直坠下去的裂口。'; // dd 20
-const DEEP_DEEP = '再往下，连回波都要拐个弯才回来。'; // dd 26（基线声呐 22 够不到、升级才扫得到）
-const DEEP_ABYSS = '最底下那道缝，什么都不回来。'; // dd 35（声呐升满 30 也读不穿＝守北极星）
 
-/** d0(40m) 连到四个不同深度差的事件节点 + 一个深处尸体（测尸体也被深度藏住）。 */
+/** 深图 fixture（保留尸体豁免测试）：d0(80m) 连一个深陡降 dfar + 深处尸体 dcorpse。 */
 function makeDeepMap(): DiveMap {
-  const ev = (id: string, depth: number, preview: string): DiveNode => ({
-    id, layer: 1, depth, zoneTag: 'cave', kind: 'event', connectsTo: [], preview,
-  });
   return {
     zoneId: 'zone.blue_caves',
     generatedAt: 0,
     startNodeId: 'd0',
     nodes: {
-      d0: { id: 'd0', layer: 0, depth: 40, zoneTag: 'cave', kind: 'event', connectsTo: ['near', 'edge', 'mid', 'far', 'deep', 'abyss', 'dcorpse'], preview: '起点。' },
-      near: ev('near', 44, DEEP_NEAR),
-      edge: ev('edge', 48, DEEP_EDGE),
-      mid: ev('mid', 52, DEEP_MID),
-      far: ev('far', 60, DEEP_FAR),
-      deep: ev('deep', 66, DEEP_DEEP),
-      abyss: ev('abyss', 75, DEEP_ABYSS),
-      dcorpse: { id: 'dcorpse', layer: 1, depth: 60, zoneTag: 'cave', kind: 'corpse', connectsTo: [], preview: '一具卡在深处的尸体。' },
+      d0: { id: 'd0', layer: 0, depth: 80, zoneTag: 'cave', kind: 'event', connectsTo: ['dfar', 'dcorpse'], preview: '起点。' },
+      dfar: { id: 'dfar', layer: 1, depth: 140, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '一道直坠下去的裂口。' },
+      dcorpse: { id: 'dcorpse', layer: 1, depth: 140, zoneTag: 'cave', kind: 'corpse', connectsTo: [], preview: '一具卡在深处的尸体。' },
     },
   };
 }
 
-/** 深图版 mk()：currentDepth 默认 40（深水），可覆盖；bonuses 走 createNewRun（reach 升级直通）。 */
-function mkDeep(opts?: {
-  curDepth?: number;
-  visibility?: 'murky' | 'dark';
-  sonarUnlocked?: boolean;
-  light?: boolean;
-  power?: number;
-  sanity?: number;
-  bonuses?: NonNullable<Parameters<typeof createNewRun>[0]['bonuses']>;
-}): GameState {
+/** 深图版 mk()：currentDepth 默认 80（深水），可覆盖。 */
+function mkDeep(opts?: { visibility?: 'murky' | 'dark'; light?: boolean; power?: number }): GameState {
   const base = createInitialGameState();
-  const r0 = createNewRun({ zoneId: 'zone.blue_caves', bonuses: opts?.bonuses ?? { sonarUnlocked: opts?.sonarUnlocked } });
+  const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
   const run: RunState = {
     ...r0,
     map: makeDeepMap(),
     currentNodeId: 'd0',
-    currentDepth: opts?.curDepth ?? 40,
+    currentDepth: 80,
     power: opts?.power ?? r0.power,
-    sensors: { ...r0.sensors, light: opts?.light ?? true, sonarUnlocked: opts?.sonarUnlocked ?? r0.sensors.sonarUnlocked },
-    stats: { ...r0.stats, sanity: opts?.sanity ?? 100 },
+    sensors: { ...r0.sensors, light: opts?.light ?? true },
     diveModifier: opts?.visibility ? { visibility: opts.visibility } : undefined,
   };
   return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
 }
 
-L('\n========== 12. 节点级 clarity：深度分档 ==========');
+// ============================================================
+// 12. 尸体定位豁免（打捞行会 Lv.1·守 quirk #36/#58）——感知重做后：不被深度藏、只受灯门（黑处无灯）约束。
+// ============================================================
+L('\n========== 12. 尸体定位豁免（Lv.1·灯门约束）==========');
 {
-  // 12a 浅水豁免：currentDepth ≤ 25 → 即便 far 是 dd40 的陡降，灯下也全 full（所见为真）
+  // (a) 深处尸体 + Lv.1 + 灯开（清水）：不被深度藏住 → full + hint（地图知识·感知重做后深度本就不降档）。
+  const deepBase = mkDeep();
+  const withLv1: GameState = { ...deepBase, profile: { ...deepBase.profile, unlockedUpgrades: new Set(['upgrade.salvage_guild.lv1']) } };
+  const csHint = choicesOf(enterNodeSelection(withLv1));
+  assert(byId(csHint, 'dcorpse').clarity === 'full', '12a: Lv.1 深处尸体 full（不被深度藏）');
+  assert(byId(csHint, 'dcorpse').hasCorpseHint === true, '12a: Lv.1 深处尸体给 corpse hint');
+  assert(byId(csHint, 'dfar').clarity === 'full', '12a: 同图深陡降 dfar 灯下也 full（深度不降档）');
+
+  // (b) 无 Lv.1：尸体不给 hint（伪装成中性水道·moveToNode 撞上才发现）。
+  const csNo = choicesOf(enterNodeSelection(deepBase));
+  assert(byId(csNo, 'dcorpse').hasCorpseHint !== true, '12b: 无 Lv.1 深处尸体无 hint');
+
+  // (c) 黑水灯开：Lv.1 尸体豁免走 lampOn（新模型黑处灯照得到）→ 仍给 hint、不锁（灯认得出那具熟悉轮廓）。
+  const darkOnLv1 = enterNodeSelection({
+    ...withLv1,
+    run: { ...withLv1.run!, diveModifier: { visibility: 'dark' } }, // 灯默认开
+  });
+  const csDarkOn = choicesOf(darkOnLv1);
+  assert(byId(csDarkOn, 'dcorpse').locked !== true, '12c: 黑水灯开 Lv.1 尸体不锁（lampOn 豁免·灯认得出）');
+  assert(byId(csDarkOn, 'dcorpse').hasCorpseHint === true, '12c: 黑水灯开 Lv.1 尸体给 hint');
+
+  // (d) 黑水关灯：连 Lv.1 尸体也要灯才认得出 → 锁住、无 hint（尸体豁免走 lampOn·关灯即失）。
+  const darkOffLv1 = enterNodeSelection({
+    ...withLv1,
+    run: { ...withLv1.run!, sensors: { ...withLv1.run!.sensors, light: false }, diveModifier: { visibility: 'dark' } },
+  });
+  const csDarkOff = choicesOf(darkOffLv1);
+  assert(byId(csDarkOff, 'dcorpse').locked === true, '12d: 黑水关灯 Lv.1 尸体也锁住（需要灯才认得出）');
+  assert(byId(csDarkOff, 'dcorpse').hasCorpseHint !== true, '12d: 黑水关灯 Lv.1 尸体无 hint（锁住时读不出轮廓）');
+  L('  Lv.1 尸体不被深度藏 / 无 Lv.1 无 hint / 黑水灯开给 hint·关灯锁住（守 quirk #36）✓');
+}
+
+// ============================================================
+// 13. 低理智「改怪物」——幻觉遭遇注入 + 控制组（感知重做 SPEC §2.3/§7① 形态 a）
+// ============================================================
+// 欺骗只剩低 san 一根轴：san 够低 → moveToNode 可注入**幻觉遭遇**（复用 zone 现有怪·标 hallucination:true）；
+// san 满（控制组）→ 恒不注入（世界诚实·无幻觉怪）。判定 hallucinationApproaches 纯派生·可复现。
+// fixture 用 zone.blue_caves（ambushEncounters=[combat.blind_eel_solo]）·够深（≥25·§7.5 浅水免压）·
+// huntEnabled=false（走旧路径·幻觉钩子在真伏击之后）·alert=0（真伏击不触发·把「真危险」隔离掉、只测 san 轴）。
+L('\n========== 13. 低 san 幻觉遭遇注入 + 控制组 ==========');
+{
+  const DEEP = 40; // ≥ ALERT_MIN_DEPTH(25)·让 hallucinationApproaches 的深度门过
+  const makeDeepEventMap = (): DiveMap => ({
+    zoneId: 'zone.blue_caves',
+    generatedAt: 0,
+    startNodeId: 'h0',
+    nodes: {
+      h0: { id: 'h0', layer: 0, depth: DEEP, zoneTag: 'cave', kind: 'event', connectsTo: ['h1'], preview: '起点。' },
+      h1: { id: 'h1', layer: 1, depth: DEEP, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '一条通往深处的窄道。' },
+    },
+  });
+  const mkDive = (sanity: number): GameState => {
+    const base = createInitialGameState();
+    const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
+    const run: RunState = {
+      ...r0,
+      map: makeDeepEventMap(),
+      currentNodeId: 'h0',
+      currentDepth: DEEP,
+      alert: 0,          // 真伏击线（predatorApproaches）不触发——隔离掉「真危险」，只测低 san 轴
+      huntEnabled: false, // 走旧 alert→伏击路径（幻觉钩子在其后）
+      stats: { ...r0.stats, sanity, oxygen: 999 }, // 富氧·免过渡耗氧致死污染断言
+    };
+    return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
+  };
+
+  // 13a 判定层：低 san + 够深 → true；高 san → false（控制组）；浅水低 san → false（§7.5 浅水免压）。
+  assert(hallucinationApproaches(mkDive(HALLUCINATION_SANITY).run!) === true, '13a: san≤阈值+够深 → hallucinationApproaches true');
+  assert(hallucinationApproaches(mkDive(100).run!) === false, '13a: 高 san → hallucinationApproaches false（控制组·世界诚实）');
   {
-    const cs = choicesOf(enterNodeSelection(mkDeep({ curDepth: 20 })));
-    assert(cs.every((c) => c.clarity === 'full'), '12a: 浅水（≤25m）所有选项 full、不按深度降档');
-    assert(byId(cs, 'far').preview === DEEP_FAR, '12a: 浅水 far 给真相');
-    L('  浅水豁免：陡降在浅水也是真相 ✓');
+    const shallow = mkDive(10);
+    shallow.run!.currentDepth = 15; // < ALERT_MIN_DEPTH
+    assert(hallucinationApproaches(shallow.run!) === false, '13a: 浅水低 san → false（§7.5 浅水免压）');
   }
 
-  // 12b 深水 + 仅灯（无声呐）：近处 full、灯够不到的陡降 = 黑（没声呐填不上）
-  {
-    const cs = choicesOf(enterNodeSelection(mkDeep())); // curDepth 40，灯开，声呐未解锁
-    assert(byId(cs, 'near').clarity === 'full', '12b: dd4(≤lampReach6) 灯下 full');
-    assert(byId(cs, 'near').preview === DEEP_NEAR, '12b: near 给真相');
-    assert(byId(cs, 'edge').clarity === 'none', '12b: dd8(>lampReach6) 无声呐 = 黑');
-    assert(byId(cs, 'mid').clarity === 'none', '12b: dd12 无声呐 = 黑');
-    assert(byId(cs, 'far').clarity === 'none', '12b: dd20 无声呐 = 黑');
-    assert(byId(cs, 'far').preview !== DEEP_FAR, '12b: 陡降里看不到真相');
-    assert(byId(cs, 'dcorpse').clarity === 'none', '12b: 深处尸体也被深度藏住（none，不漏真相/提示）');
-    L('  深水仅灯：近 full / 陡降黑（没声呐摸不到深处）✓');
+  // 13b 注入层：低 san 走进事件节点 → 进入 combat 且该场标 hallucination:true。
+  const lowSan = moveToNode(mkDive(20), 'h1');
+  assert(lowSan.phase.kind === 'combat', '13b: 低 san 进节点 → 注入幻觉遭遇（进入 combat）');
+  if (lowSan.phase.kind === 'combat') {
+    assert(lowSan.phase.combat.hallucination === true, '13b: 注入的这场标 hallucination:true');
   }
 
-  // 12c 深水 + 灯 + 声呐 ping：近 full（灯）/ 中段 sonar（声呐补）/ 太深仍黑
+  // 13c 控制组：高 san 走进同一节点 → 不注入（照常进节点·世界诚实·无幻觉怪）。
+  const highSan = moveToNode(mkDive(100), 'h1');
+  assert(highSan.phase.kind !== 'combat', '13c: 高 san 进节点 → 不注入幻觉怪（控制组·照常进节点）');
+  L('  低 san→注入 hallucination 战斗 / 高 san→不注入（单轴·控制组可复现）✓');
+}
+
+// ============================================================
+// 14. 幻觉遭遇「看破即消」——无战利品·无实体伤·打不死（感知重做 SPEC §2.3/§7① 形态 a）
+// ============================================================
+// 直接起一场标 hallucination:true 的战斗（复用真敌 combat.blind_eel_solo·不改 def），断言：
+//   ① 敌攻不扣真实体力（幻爪穿不透·实体伤 0）——用战斗 log 隔离敌伤与行动费（真伤 log 含「体力 -」·幻觉含「没有痛」）；
+//   ② 永远打不死你（stamina 死亡窗封死·北极星「无脚本死」）；③ 打赢后无战利品 + 暧昧收场「只有空水」（它从没在那儿）。
+// san 是软代价（可恢复·耗尽走既有疯狂上浮·非怪物击杀）。以 action.evade（不伤敌·让敌人一直打你）挨打·knife 打赢。
+L('\n========== 14. 幻觉遭遇看破即消（无 loot·无实体伤·打不死）==========');
+{
+  const HALLUC_ENC = 'combat.blind_eel_solo'; // 复用真敌·只是这一场被标幻觉（不改 def·SPEC §7① 只做钩子）
+  assert(getEncounter(HALLUC_ENC) !== undefined, '14: fixture 前提——combat.blind_eel_solo 存在');
+
+  /** 起一场（可选幻觉）· 富体力免行动费耗尽污染断言（我们用 log 隔离敌伤·不靠体力守恒）。 */
+  const mkCombat = (halluc: boolean): GameState => {
+    const base = createInitialGameState();
+    const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
+    const run: RunState = {
+      ...r0,
+      currentNodeId: null,
+      currentDepth: 40,
+      stats: { ...r0.stats, stamina: 100, sanity: 20, oxygen: 999 },
+    };
+    const s0: GameState = { ...base, run, phase: { kind: 'port' } };
+    return startCombat(s0, HALLUC_ENC, undefined, halluc ? { hallucination: true } : undefined);
+  };
+  /** 收集战斗全程敌人 log 文本（combat.log 内 actor==='enemy'）。 */
+  const enemyLog = (s: GameState): string[] =>
+    s.phase.kind === 'combat' ? s.phase.combat.log.filter((e) => e.actor === 'enemy').map((e) => e.text) : [];
+
+  // 14a 对照：**不标**幻觉起同一场——敌攻打出真实体力伤（log 含「体力 -」）。证明这只怪本会打人（幻觉侧 0 伤非因敌人不打）。
   {
-    let s = enterNodeSelection(mkDeep({ sonarUnlocked: true })); // 灯开 + 解锁
-    s = pingSonar(s); // 灯仍开 → 天花板 full；声呐补灯够不到的中段
-    const cs = choicesOf(s);
-    assert(byId(cs, 'near').clarity === 'full', '12c: 近处灯下真相（full）');
-    assert(byId(cs, 'edge').clarity === 'sonar', '12c: dd8 灯够不到、声呐够到 → sonar');
-    assert(byId(cs, 'mid').clarity === 'sonar', '12c: dd12(≤sonarReach22) → sonar');
-    assert(byId(cs, 'mid').preview !== DEEP_MID, '12c: 声呐表象 ≠ 真内容');
-    assert(byId(cs, 'far').clarity === 'sonar', '12c: dd20(≤sonarReach22) 声呐够到 → sonar（声呐=深水的眼·2026-06-13 抬到 22）');
-    assert(byId(cs, 'abyss').clarity === 'none', '12c: dd35(>sonarReach22) 连声呐都够不到 = 黑（最深仍黑）');
-    L('  灯近真相 + 声呐补中段/陡降 + 最深仍黑（用途分工）✓');
+    let s = mkCombat(false);
+    assert(s.phase.kind === 'combat' && s.phase.combat.hallucination !== true, '14a: 对照场 hallucination≠true');
+    for (let i = 0; i < 6 && s.phase.kind === 'combat'; i++) s = applyPlayerAction(s, 'action.evade').state; // evade 不伤敌·让它一直打
+    const realHit = enemyLog(s).some((t) => t.includes('体力 -'));
+    assert(realHit, '14a: 对照（真遭遇）敌攻打出真实体力伤（log 含「体力 -」·证明这只怪本会打人）');
   }
 
-  // 12d 深水 + 黑水（灯无效）+ 声呐 ping：天花板 = sonar，近/中都 sonar、太深黑
+  // 14b 幻觉场：同样挨打——敌攻**零真实体力伤**（log 无「体力 -」·有「没有痛」暧昧句），且玩家全程不死。
   {
-    let s = enterNodeSelection(mkDeep({ sonarUnlocked: true, visibility: 'dark' }));
-    s = pingSonar(s);
-    const cs = choicesOf(s);
-    assert(clarity(s.run!) === 'sonar', '12d: 黑水灯无效、声呐在跑 → 天花板 sonar');
-    assert(byId(cs, 'near').clarity === 'sonar', '12d: 黑水近处也只有声呐表象（无灯真相）');
-    assert(byId(cs, 'mid').clarity === 'sonar', '12d: dd12 ≤ sonarReach → sonar');
-    assert(byId(cs, 'far').clarity === 'sonar', '12d: dd20 ≤ sonarReach22 → sonar');
-    assert(byId(cs, 'abyss').clarity === 'none', '12d: dd35 > sonarReach22 → 黑');
-    L('  黑水：全靠声呐、近处也无真相、最深仍黑 ✓');
+    let s = mkCombat(true);
+    assert(s.phase.kind === 'combat' && s.phase.combat.hallucination === true, '14b: 幻觉场 hallucination:true');
+    let died = false;
+    for (let i = 0; i < 12 && s.phase.kind === 'combat'; i++) {
+      const r = applyPlayerAction(s, 'action.evade');
+      s = r.state;
+      if (r.outcome === 'defeat') { died = true; break; }
+    }
+    assert(!died, '14b: 幻觉怪永远打不死你（实体伤 0 → stamina 死亡窗封死·北极星无脚本死）');
+    const log = enemyLog(s);
+    assert(log.length > 0, '14b: fixture 事实——敌人确实出手了（有敌 log）');
+    assert(!log.some((t) => t.includes('体力 -')), '14b: 幻觉敌攻零真实体力伤（敌 log 无「体力 -」·幻爪穿不透）');
+    assert(log.some((t) => t.includes('没有痛')), '14b: 幻觉敌攻暧昧文案（「没有痛，皮也没破」＝它不真在那儿）');
   }
 
-  // 12e 灯 reach 升级（lampRangeBonus）：原先黑的 dd8 陡降变 full
+  // 14c 看破即消（打赢）：胜利后**无战利品** + 暧昧收场文案「只有空水」（appendLog 落 GameState.log·战斗已结束）。
   {
-    const csBase = choicesOf(enterNodeSelection(mkDeep())); // 基线 lampReach 6
-    assert(byId(csBase, 'edge').clarity === 'none', '12e: 基线 dd8 灯够不到 = 黑');
-    const csUp = choicesOf(enterNodeSelection(mkDeep({ bonuses: { lampRangeBonus: 4 } }))); // reach 6→10
-    assert(byId(csUp, 'edge').clarity === 'full', '12e: 灯 reach 升级(+4→10) → dd8 看清 full');
-    assert(byId(csUp, 'edge').preview === DEEP_EDGE, '12e: 升级后 edge 给真相');
-    assert(byId(csUp, 'mid').clarity === 'none', '12e: dd12 仍超 reach10（升级不是万能、深处仍要声呐/摸黑）');
-    L('  灯 reach 升级把陡降里看清更远（填 #60 范围/分辨钩子）✓');
+    let s = mkCombat(true);
+    const inv0 = s.run!.inventory.reduce((a, it) => a + it.qty, 0);
+    // 目标 instanceId（applyPlayerAction 第 3 参是 instanceId 字符串·非数组下标；单敌场取首个活敌）。
+    const targetId = s.phase.kind === 'combat' ? s.phase.combat.enemies.find((e) => e.hp > 0)?.instanceId : undefined;
+    let outcome = 'continue';
+    for (let i = 0; i < 20 && s.phase.kind === 'combat'; i++) {
+      const r = applyPlayerAction(s, 'action.knife_slash', targetId);
+      s = r.state;
+      outcome = r.outcome;
+      if (outcome !== 'continue') break;
+    }
+    assert(outcome === 'victory', '14c: 幻觉遭遇能被「打赢」（看破即消）');
+    const inv1 = s.run!.inventory.reduce((a, it) => a + it.qty, 0);
+    assert(inv1 === inv0, '14c: 幻觉遭遇胜利后无战利品（背包总数不变·它从没在那儿）');
+    const sawEmptyWater = s.log.some((e) => e.text.includes('只有空水'));
+    assert(sawEmptyWater, '14c: 幻觉收场文案暧昧（「只有空水」＝从没在那儿·GameState.log）');
   }
-
-  // 12f 声呐 reach 升级（sonarRangeBonus）：原先黑的 dd26 变 sonar（基线 22 够不到、升级 +8→30 扫得到）
-  {
-    let sBase = pingSonar(enterNodeSelection(mkDeep({ sonarUnlocked: true })));
-    assert(byId(choicesOf(sBase), 'deep').clarity === 'none', '12f: 基线 dd26 > sonarReach22 = 黑');
-    let sUp = pingSonar(enterNodeSelection(mkDeep({ bonuses: { sonarUnlocked: true, sonarRangeBonus: 8 } }))); // reach 22→30
-    assert(byId(choicesOf(sUp), 'deep').clarity === 'sonar', '12f: 声呐 reach 升级(+8→30) → dd26 扫得到 sonar');
-    assert(byId(choicesOf(sUp), 'abyss').clarity === 'none', '12f: 升满 reach30 仍读不穿 dd35（守北极星·最深处必须自己下去）');
-    L('  声呐 reach 升级把更深的陡降扫回个轮廓·最深仍买不穿 ✓');
-  }
-
-  // 12g 未升级 = 基线 + reach 上限（守"永远有比最深更深的"：最深处灯/声呐都买不穿）
-  {
-    const baseTuning = createNewRun({ zoneId: 'zone.blue_caves' }).sensorTuning!;
-    assert(baseTuning.lampDepthReach === LAMP_DEPTH_REACH, '12g: 未升级灯 reach = 基线');
-    assert(baseTuning.sonarDepthReach === SONAR_DEPTH_REACH, '12g: 未升级声呐 reach = 基线');
-    assert(deriveSensorTuning({ lampRangeBonus: 99 }).lampDepthReach === LAMP_DEPTH_REACH_MAX, '12g: 灯 reach 有上限');
-    assert(deriveSensorTuning({ sonarRangeBonus: 99 }).sonarDepthReach === SONAR_DEPTH_REACH_MAX, '12g: 声呐 reach 有上限');
-    // 灯 reach 上限 < 深图最深陡降：灯升满也照不穿最深，守北极星
-    assert(LAMP_DEPTH_REACH_MAX < 20, '12g: 灯 reach 上限 < 最深陡降（最深处必须自己摸黑/声呐下去）');
-    // 声呐 reach 上限(30) < 深图最深陡降 dd35：声呐升满也读不穿最底，守"永远有比最深更深的"
-    assert(SONAR_DEPTH_REACH_MAX < 35, '12g: 声呐 reach 上限 < 最深陡降 dd35（声呐升满也买不穿最底）');
-    L('  reach 默认=基线 + 有上限（最深处灯/声呐都买不穿）✓');
-  }
-
-  // 12h 横行 / 上行不降档：与你同深或更浅的节点，深水里也始终给天花板档
-  {
-    const flat = clarityForNode(mkDeep().run!, makeDeepMap().nodes.d0); // d0 与自己同深 dd0
-    assert(flat === 'full', '12h: 同深/上行节点不被深度降档（只有"往下要"才读不到）');
-    L('  横行/上行不降档（深度只藏"下面"）✓');
-  }
-
-  // 12i 尸体定位（打捞行会 Lv.1）不被深度藏住：深处尸体 + Lv.1 + 灯 → full + hint；无 Lv.1 → 黑（守 quirk #36）
-  {
-    const deepBase = mkDeep(); // dcorpse 是 dd20 深处尸体；无升级
-    const withLv1: GameState = { ...deepBase, profile: { ...deepBase.profile, unlockedUpgrades: new Set(['upgrade.salvage_guild.lv1']) } };
-    const csHint = choicesOf(enterNodeSelection(withLv1));
-    assert(byId(csHint, 'dcorpse').clarity === 'full', '12i: Lv.1 标记的深处尸体不被深度降档（full、地图知识）');
-    assert(byId(csHint, 'dcorpse').hasCorpseHint === true, '12i: Lv.1 深处尸体仍给 corpse hint');
-    const csNo = choicesOf(enterNodeSelection(deepBase));
-    assert(byId(csNo, 'dcorpse').hasCorpseHint !== true, '12i: 无 Lv.1 深处尸体无 hint（且 12b 已测其 clarity=none）');
-    L('  尸体定位(Lv.1)不被深度藏住 / 无 Lv.1 仍黑（守 quirk #36）✓');
-  }
+  L('  对照真伤 / 幻觉 0 伤打不死 / 打赢无 loot + 暧昧收场 ✓');
 }
 
 pt.done();

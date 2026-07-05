@@ -59,23 +59,13 @@ export interface DepthBand {
    * 配合声呐扫描「先看见一个开阔房间、再凑近逐个点亮」的探索质感。透传 diveIntoBand（经 startDiveFromPoi） → mapgen。
    */
   maxRoomFeatures?: number;
-  /**
-   * 不可信声呐失真强度（声呐与房间 SPEC §5/§7 S2）：0..1。data 驱动、**非单调**——
-   * 中深段（竖井喉/深渊/超渊）高、渊外 subhadal 回落（『那些骗你的把戏都停了』：越深越欺骗的梯度在最底反转，
-   * 它不再骗你、只给你下去的理由）。双重作用：
-   *   ① mapgen 据此给本 band 部分内部节点掷 spoofsSonar（声呐图上假装成朝上的出口/信标＝节点版 mimic）/
-   *      evadesSonar（无回波，捕食者躲过你的 ping）——**确定性哈希、不耗 rng**，仅 >0 才进＝缺省零改动（守旧图/快照）；
-   *   ② 落 run.sonarDeception，clarity.ts::effectiveFalseEchoSanity 据此抬高低 san 假回波/伪接触/读数乱码阈值
-   *      （深 band 更易骗）。
-   * 缺省（reef_deep / trench_mouth / 非 band 的 POI 下潜）→ 0 ＝声呐相对老实、零行为变化（守 sensors 回归）。
-   */
-  sonarDeception?: number;
+  // 不可信声呐失真强度（曾给内部节点挂 spoof/evade 表象 + 抬低 san 假回波阈值）：**感知重做已删**（声呐诚实·SPEC §2.2/§3）。
   /**
    * 是否启用「猎手」（猎手 SPEC Phase 1·§2.6 范围门控）：true → 本 band 的高警觉遭遇升级成**有位置的逼近猎手**
    * （出现在你声呐量程外→逐回合沿图逼近→追到你才触发现有 ambushEncounters 伏击·复用现有捕食者不加新敌），
    * 配合声呐「知道它在哪」/ 灯「只知道有东西在接近」的感知分层（§2.1）。落 run.huntEnabled（diveIntoBand（经 startDiveFromPoi） 透传）。
    * 缺省 / false（reef_deep / 非 band 的 POI 下潜 / 浅水）→ 走旧 alert→伏击瞬时路径＝逐字节不变（向后兼容·守 playthrough-stealth）。
-   * Phase 1 范围＝深 band（trench+·越深越会 evadesSonar 躲扫描）；浅水小概率弱变体留 Phase 2（猎手 SPEC §7）。
+   * Phase 1 范围＝深 band（trench+·越深越会躲声呐扫描·stalkerEvadesScan）；浅水小概率弱变体留 Phase 2（猎手 SPEC §7）。
    */
   hunts?: boolean;
 }

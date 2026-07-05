@@ -5,12 +5,10 @@ import type { GameState, RunState, NodeChoice, FeatureChoice } from '@/types';
 import { getNextChoices } from './mapgen';
 import { getUpgradeBonuses } from './upgrades';
 import {
-  clarityForNode,
-  lampEffective,
-  sonarReturn,
+  lampOn,
+  lampGateLocked,
   lampPreview,
-  BLIND_PREVIEW,
-  BLIND_VISITED_PREVIEW,
+  LOCKED_DARK_PREVIEW,
 } from './clarity';
 
 /** run.activeFlags 里「某房某 feature 已探」的 key（run 级、不入存档形状）。 */
@@ -58,32 +56,33 @@ export function enterNodeSelection(state: GameState): GameState {
   // 打捞行会 Lv.1（revealCorpseHint）才在选点界面"预知"尸体；否则尸体节点伪装成普通水道，
   // 玩家只能撞上去才发现（moveToNode 仍按 kind==='corpse' 路由到 CorpseView，与提示无关）。
   const revealCorpseHint = getUpgradeBonuses(state.profile).revealCorpseHint;
-  // 微观 clarity（深水区 Phase 0a + Phase 1 续节点级降档）：灯 full（真相）/ 声呐 sonar（不可信表象）/ 摸黑 none（盲）。
-  // run 级 clarity(run) 是天花板；clarityForNode 在它之上按"节点比你深多少"降档（陡降的深坑灯打不透→声呐→黑）。
-  // 引擎侧把对应预览文案烤进 choice（便于 playthrough-sensors 断言，承 quirk #38「别只测引擎」）。
+  // 灯门二态（感知重做 CLARITY COLLAPSE·SPEC §2.1）：darkness 是唯一的门、深度不再降档。
+  //   - 地标（上浮口/气穴/扎营）+ Lv.1 尸体：恒诚实真相（结构性可感 / 地图知识·不被灯门锁）。
+  //   - 否则黑处（waterIsDark）无有效灯 → locked：可见但锁住、标「太暗，看不清——需要灯」。
+  //   - 否则 → 诚实真相（lampPreview／node.preview；尸体无 Lv.1 仍伪装成中性水道 NEUTRAL_CORPSE）。
+  // 引擎侧把 locked 标志 + 预览文案烤进 choice（便于 playthrough 断言·渲染层拦截是车道 3）。
   const NEUTRAL_CORPSE = '前方的水暗下去，看不清里面有什么。';
+  const gateLocked = lampGateLocked(run); // 这一潜（黑水无灯）→ 非豁免选项一律锁
 
   const choices: NodeChoice[] = nextChoices.map((n) => {
     const isCorpse = n.kind === 'corpse';
-    // 地标（上浮口 / 气穴 / 扎营点）结构性可感——盲航也认得，始终给真相文案、不被声呐/盲/深度改写。
+    // 地标（上浮口 / 气穴 / 扎营点）结构性可感——盲航也认得，始终给真相文案、不被灯门锁。
     const isLandmark = n.kind === 'ascent_point' || n.kind === 'air_pocket' || n.kind === 'camp';
     const visited = visitedSet.has(n.id);
-    // 节点级档：浅水/近处 full、陡降按 reach 降档（深水区 Phase 1 续）。两类不参与深度降档：
-    //   ① 地标（上浮口/气穴/扎营）结构性可感；
-    //   ② 打捞行会 Lv.1 标记的尸体——尸体定位是地图知识、不被深度藏住，灯有效就认得出那具熟悉的轮廓（守 quirk #36/#58）。
-    const corpseMarked = isCorpse && revealCorpseHint && lampEffective(run);
-    const nodeTier = isLandmark || corpseMarked ? 'full' : clarityForNode(run, n);
+    // Lv.1 标记的尸体——尸体定位是地图知识、灯门不锁它（守 quirk #36/#58），灯有效就认得出那具熟悉的轮廓。
+    const corpseMarked = isCorpse && revealCorpseHint && lampOn(run);
+    // 豁免灯门 → 恒诚实真相；否则受这一潜的灯门（黑处无灯）锁。
+    const exemptGate = isLandmark || corpseMarked;
+    const locked = gateLocked && !exemptGate;
 
     let preview: string;
-    if (isLandmark) {
+    if (locked) {
+      preview = LOCKED_DARK_PREVIEW; // 黑处无有效灯：可见但锁住
+    } else if (isLandmark) {
       preview = n.preview;
-    } else if (nodeTier === 'full') {
-      // 灯下真相（san 极低时 lampPreview 把它改写成幻觉）；尸体无 Lv.1 仍伪装成中性水道。
-      preview = isCorpse && !revealCorpseHint ? NEUTRAL_CORPSE : lampPreview(run, n);
-    } else if (nodeTier === 'sonar') {
-      preview = sonarReturn(run, n); // 不可信表象（≠ 真内容，可被躲/骗/低 san 假回波改写）
     } else {
-      preview = visited ? BLIND_VISITED_PREVIEW : BLIND_PREVIEW;
+      // 诚实近场真相（灯到即真·感知重做后无低 san 改写）；尸体无 Lv.1 仍伪装成中性水道。
+      preview = isCorpse && !revealCorpseHint ? NEUTRAL_CORPSE : lampPreview(run, n);
     }
 
     return {
@@ -93,10 +92,12 @@ export function enterNodeSelection(state: GameState): GameState {
       preview,
       isAscentPoint: n.kind === 'ascent_point',
       kind: n.kind,
-      // 尸体提示只在灯下（该节点读到 full）+ 有 Lv.1 才给——声呐/盲/太深都读不出"熟悉的轮廓"。
-      hasCorpseHint: isCorpse && revealCorpseHint && nodeTier === 'full',
+      // 尸体提示只在未锁 + 有 Lv.1 才给（黑处无灯锁住时读不出"熟悉的轮廓"）。
+      hasCorpseHint: isCorpse && revealCorpseHint && !locked,
       visited,
-      clarity: nodeTier,
+      // 灯门二态：未锁＝'full'（灯下诚实真相·非黑水不需灯也 full）/ 锁＝'none'（黑处无灯·盲）。
+      clarity: locked ? 'none' : 'full',
+      ...(locked ? { locked: true } : {}),
     };
   });
 

@@ -29,16 +29,14 @@ export interface EquipmentStats {
   /** 潜服保温累计（温度系统·喂 loadoutInsulation→温度纯函数抵消洞强度·见 engine/temperature.ts）。 */
   insulation: number;
   lightRadius: number;
-  // 声呐件升级增量（段2·作者 2026-06-19）：随 sonar 件 upgradeSteps 累加；
-  // getRunBonuses 把这四项喂进 deriveSensorTuning（同名字段·下游形状不变·只换来源）。
+  // 声呐件升级增量（段2·作者 2026-06-19·感知重做后精简）：随 sonar 件 upgradeSteps 累加；
+  // getRunBonuses 把这两项喂进 deriveSensorTuning（同名字段·下游形状不变·只换来源）。
+  // （旧 sonarRobustness/sonarRangeBonus 随感知重做删——声呐诚实、深度不降档·主升级轴＝sonarScanRangeBonus。）
   sonarPingCostReduction: number;
-  sonarRobustness: number;
-  sonarRangeBonus: number;
   sonarScanRangeBonus: number;
-  // 灯/电池/规避「档位件」base 效果累计（A·作者 2026-06-20）：喂 getRunBonuses → deriveSensorTuning 同名旋钮。
+  // 灯/电池/规避「档位件」base 效果累计（A·作者 2026-06-20·感知重做后精简）：喂 getRunBonuses → deriveSensorTuning 同名旋钮。
+  // （旧 lampRobustness/lampRangeBonus 随感知重做删——灯到即真、深度不降档。）
   lampEfficiency: number;
-  lampRobustness: number;
-  lampRangeBonus: number;
   signatureReduction: number;
   soundAbsorbBonus: number;
   camoBonus: number;
@@ -50,8 +48,8 @@ export interface EquipmentStats {
 export function emptyEquipmentStats(): EquipmentStats {
   return {
     oxygenMaxBonus: 0, staminaMaxBonus: 0, physicalArmor: 0, sanityResist: 0, insulation: 0, lightRadius: 0,
-    sonarPingCostReduction: 0, sonarRobustness: 0, sonarRangeBonus: 0, sonarScanRangeBonus: 0,
-    lampEfficiency: 0, lampRobustness: 0, lampRangeBonus: 0, signatureReduction: 0,
+    sonarPingCostReduction: 0, sonarScanRangeBonus: 0,
+    lampEfficiency: 0, signatureReduction: 0,
     soundAbsorbBonus: 0, camoBonus: 0, powerMaxBonus: 0, weaponDamage: 0,
   };
 }
@@ -69,16 +67,12 @@ function addEffects(acc: EquipmentStats, effects: EquipmentEffect[], isBase: boo
       case 'insulation': acc.insulation += e.value; break;
       case 'lightRadius': acc.lightRadius += e.value; break;
       case 'lampEfficiency': acc.lampEfficiency += e.value; break;
-      case 'lampRobustness': acc.lampRobustness += e.value; break;
-      case 'lampRangeBonus': acc.lampRangeBonus += e.value; break;
       case 'signatureReduction': acc.signatureReduction += e.value; break;
       case 'soundAbsorbBonus': acc.soundAbsorbBonus += e.value; break;
       case 'camoBonus': acc.camoBonus += e.value; break;
       case 'powerMaxBonus': acc.powerMaxBonus += e.value; break;
       case 'weaponDamage': acc.weaponDamage += e.value; break;
       case 'sonarPingCostReduction': acc.sonarPingCostReduction += e.value; break;
-      case 'sonarRobustness': acc.sonarRobustness += e.value; break;
-      case 'sonarRangeBonus': acc.sonarRangeBonus += e.value; break;
       case 'sonarScanRangeBonus': acc.sonarScanRangeBonus += e.value; break;
       // 'unlocksAction' / 'unlockSonar'：非数值加成·跳过（声呐解锁由 hasSonarEquipped 派生）。
       // grantsCapability 已迁至 ItemDef 顶层字段·不再是 EquipmentEffect·不在此处理。
