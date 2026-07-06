@@ -55,7 +55,12 @@
       "canFreeAscend": false,
       "ambushEncounters": ["combat.blind_eel_solo", "combat.cave_octopus_solo"],
       "weakHunts": true,
-      "weakHuntEncounters": ["combat.blind_eel_juv_solo"]
+      "weakHuntEncounters": ["combat.blind_eel_juv_solo"],
+      "_gates_doc": "感知门激活（旗舰 demo·灯+声呐双感·感知门激活提案草案 §2.1）：给作者立 2×2 四格样板。可达档 mid(50-55)/shal(25-49)（<25 不撒·硬地板）。密度全为占位保守起手值·defer-number-tuning（稀≈0.10/中≈0.20/密≈0.30 的命名档映射·作者最后一次性调）。hiddenRatio 浅端≈0（诚实预告·全 locked）。reason 走内容侧（撒点门只带中性兜底）。",
+      "gates": {
+        "lamp": { "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.1 },
+        "sonar": { "mid": 0.1, "shallow": 0.1, "hiddenRatio": 0.1 }
+      }
     },
     {
       "id": "zone.open_midwater",
@@ -70,7 +75,12 @@
       "requiresFlags": ["flag.tutorial_complete"],
       "generation": "random",
       "canFreeAscend": true,
-      "ambushEncounters": ["combat.reef_barracuda_solo"]
+      "ambushEncounters": ["combat.reef_barracuda_solo"],
+      "_gates_doc": "感知门激活（主探索区·声呐为主+灯为辅·草案 §2.2）：中层无参照物·声呐＝找到「会折光的薄膜」那类岔口·灯少量点缀。可达档 mid 全段（deep/shal 都够不到）。C.2 采推荐默认＝不叠整潜声呐门（保留纯 per-node·不触海图入口门 poiDiveBlock）。密度占位保守·defer-number-tuning。hiddenRatio mid≈0.15（给一档隐藏岔口）。",
+      "gates": {
+        "sonar": { "mid": 0.2, "hiddenRatio": 0.15 },
+        "lamp": { "mid": 0.1, "hiddenRatio": 0.15 }
+      }
     },
     {
       "id": "zone.vent_trench",
@@ -87,7 +97,12 @@
       "mapShape": "maze",
       "depthCurveRange": [0.4, 0.75],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.blind_eel_solo"]
+      "ambushEncounters": ["combat.blind_eel_solo"],
+      "_gates_doc": "感知门激活（深区·灯为主+声呐为辅·草案 §2.3）：深黑热液柱林立·灯是硬需求·声呐辅助（黑烟/悬浮矿物搅乱视线）。可达档 deep(90-118)/mid(85-89 一小段)（shal 够不到）。深档密度最高（深⇒更藏·C.3）。C.2 不叠整潜门。密度占位保守·defer-number-tuning。hiddenRatio deep 最高≈0.30。",
+      "gates": {
+        "lamp": { "deep": 0.3, "mid": 0.2, "hiddenRatio": 0.3 },
+        "sonar": { "deep": 0.2, "mid": 0.1, "hiddenRatio": 0.3 }
+      }
     },
     {
       "id": "zone.wreck_graveyard",
@@ -132,7 +147,12 @@
       "requiresFlags": ["flag.tutorial_complete"],
       "generation": "random",
       "canFreeAscend": true,
-      "ambushEncounters": []
+      "ambushEncounters": [],
+      "_gates_doc": "感知门激活（深区·灯为主·草案 §2.4）：巨兽尸骸阴影里看不清·灯为主·声呐留很稀一撮（尸肉挡视线）。可达档 deep(90-110)/mid(80-89 一小段)。密度占位保守·defer-number-tuning。hiddenRatio deep 最高≈0.30。守 quirk #230 铁律：尸体 kind 永不带门（骨架焊在 check-gate-skeleton·撒点候选只 event/rest）＝鲸落尸体豁免天然成立。",
+      "gates": {
+        "lamp": { "deep": 0.3, "mid": 0.2, "hiddenRatio": 0.3 },
+        "sonar": { "deep": 0.1, "hiddenRatio": 0.3 }
+      }
     },
     {
       "id": "zone.shaft_crack",
@@ -151,7 +171,12 @@
       "canFreeAscend": false,
       "ambushEncounters": ["combat.blind_eel_solo"],
       "weakHunts": true,
-      "weakHuntEncounters": ["combat.blind_eel_juv_solo"]
+      "weakHuntEncounters": ["combat.blind_eel_juv_solo"],
+      "_gates_doc": "感知门激活·中洞档（草案 §3·crack·最深端 78m 够到 mid）。灯为主·声呐辅。密度占位保守·defer-number-tuning。hiddenRatio 浅≈0→mid 略升 0.15。",
+      "gates": {
+        "lamp": { "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.15 },
+        "sonar": { "mid": 0.1, "hiddenRatio": 0.15 }
+      }
     },
     {
       "id": "zone.chamber_network",
@@ -171,7 +196,12 @@
       "canFreeAscend": false,
       "ambushEncounters": ["combat.cave_octopus_solo", "combat.blind_eel_solo"],
       "weakHunts": true,
-      "weakHuntEncounters": ["combat.blind_eel_juv_solo"]
+      "weakHuntEncounters": ["combat.blind_eel_juv_solo"],
+      "_gates_doc": "感知门激活·中洞档（草案 §3·chamber·最深端 80m 够到 mid）。灯为主·声呐辅。密度占位保守·defer-number-tuning。hiddenRatio 浅≈0→mid 略升 0.15。",
+      "gates": {
+        "lamp": { "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.15 },
+        "sonar": { "mid": 0.1, "hiddenRatio": 0.15 }
+      }
     },
     {
       "id": "zone.flooded_gallery",
@@ -189,7 +219,12 @@
       "mapShape": "maze",
       "depthCurveRange": [2.2, 3.5],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.cave_octopus_solo"]
+      "ambushEncounters": ["combat.cave_octopus_solo"],
+      "_gates_doc": "感知门激活·中洞档（草案 §3·flooded·最深端 86m 够到 mid）。灯为主·声呐辅。密度占位保守·defer-number-tuning。hiddenRatio 浅≈0→mid 略升 0.15。",
+      "gates": {
+        "lamp": { "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.15 },
+        "sonar": { "mid": 0.1, "hiddenRatio": 0.15 }
+      }
     },
     {
       "id": "zone.reef_pocket",
@@ -207,7 +242,9 @@
       "canFreeAscend": false,
       "ambushEncounters": ["combat.reef_barracuda_solo"],
       "weakHunts": true,
-      "weakHuntEncounters": ["combat.reef_barracuda_juv_solo"]
+      "weakHuntEncounters": ["combat.reef_barracuda_juv_solo"],
+      "_gates_doc": "感知门激活·浅洞档（草案 §3·cave·最深端 28m 只够 shal·多在 <25 不撒段）。灯门全 locked 诚实预告。密度占位保守·defer-number-tuning。",
+      "gates": { "lamp": { "shallow": 0.1, "hiddenRatio": 0 } }
     },
     {
       "id": "zone.tidal_seam",
@@ -225,7 +262,9 @@
       "canFreeAscend": false,
       "ambushEncounters": ["combat.reef_barracuda_solo"],
       "weakHunts": true,
-      "weakHuntEncounters": ["combat.reef_barracuda_juv_solo"]
+      "weakHuntEncounters": ["combat.reef_barracuda_juv_solo"],
+      "_gates_doc": "感知门激活·浅洞档（草案 §3·tide·[8,25] 几乎全 <25·仅 25m 边缘可撒·实际近乎不撒）。灯门全 locked 诚实预告。密度占位保守·defer-number-tuning。",
+      "gates": { "lamp": { "shallow": 0.1, "hiddenRatio": 0 } }
     },
     {
       "id": "zone.kelp_hollow",
@@ -240,7 +279,9 @@
       "mapShape": "maze",
       "depthCurveRange": [0.9, 1.2],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.reef_barracuda_solo"]
+      "ambushEncounters": ["combat.reef_barracuda_solo"],
+      "_gates_doc": "感知门激活·浅洞档（草案 §3·cave·最深端 28m 只够 shal）。灯门全 locked 诚实预告。密度占位保守·defer-number-tuning。",
+      "gates": { "lamp": { "shallow": 0.1, "hiddenRatio": 0 } }
     },
     {
       "id": "zone.anchor_hollow",
@@ -258,7 +299,9 @@
       "canFreeAscend": false,
       "ambushEncounters": ["combat.blind_eel_solo"],
       "weakHunts": true,
-      "weakHuntEncounters": ["combat.blind_eel_juv_solo"]
+      "weakHuntEncounters": ["combat.blind_eel_juv_solo"],
+      "_gates_doc": "感知门激活·浅洞档（草案 §3·crack·最深端 38m<50 只够 shal）。灯门为主·全 locked 诚实预告（hiddenRatio 0）·声呐档无。密度占位保守·defer-number-tuning。",
+      "gates": { "lamp": { "shallow": 0.1, "hiddenRatio": 0 } }
     },
     {
       "id": "zone.limestone_slot",
@@ -273,7 +316,12 @@
       "mapShape": "maze",
       "depthCurveRange": [0.15, 0.5],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.blind_eel_solo"]
+      "ambushEncounters": ["combat.blind_eel_solo"],
+      "_gates_doc": "感知门激活·中洞档（草案 §3·crack·最深端 65m 够到 mid）。灯为主·声呐辅（拐弯/塌方/泥沙遮挡岔口）。密度占位保守·defer-number-tuning。hiddenRatio 浅≈0→mid 略升 0.15。",
+      "gates": {
+        "lamp": { "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.15 },
+        "sonar": { "mid": 0.1, "hiddenRatio": 0.15 }
+      }
     },
     {
       "id": "zone.tidal_bore_cave",
@@ -291,7 +339,9 @@
       "canFreeAscend": false,
       "ambushEncounters": ["combat.reef_barracuda_solo"],
       "weakHunts": true,
-      "weakHuntEncounters": ["combat.reef_barracuda_juv_solo"]
+      "weakHuntEncounters": ["combat.reef_barracuda_juv_solo"],
+      "_gates_doc": "感知门激活·浅洞档（草案 §3·tide·[8,28] 几乎全 <25·仅边缘可撒）。灯门全 locked 诚实预告。密度占位保守·defer-number-tuning。",
+      "gates": { "lamp": { "shallow": 0.1, "hiddenRatio": 0 } }
     },
     {
       "id": "zone.wreck_hold",
@@ -308,7 +358,9 @@
       "canFreeAscend": false,
       "ambushEncounters": ["combat.reef_grouper_solo", "combat.reef_barracuda_solo"],
       "weakHunts": true,
-      "weakHuntEncounters": ["combat.reef_barracuda_juv_solo"]
+      "weakHuntEncounters": ["combat.reef_barracuda_juv_solo"],
+      "_gates_doc": "感知门激活·浅洞档（草案 §3·cave·最深端 42m 只够 shal）。灯门全 locked 诚实预告。密度占位保守·defer-number-tuning。",
+      "gates": { "lamp": { "shallow": 0.1, "hiddenRatio": 0 } }
     },
     {
       "id": "zone.silt_alcove",
@@ -323,7 +375,9 @@
       "mapShape": "maze",
       "depthCurveRange": [0.9, 1.4],
       "canFreeAscend": false,
-      "ambushEncounters": []
+      "ambushEncounters": [],
+      "_gates_doc": "感知门激活·浅洞档（草案 §3·tide·最深端 44m 只够 shal·能见度本就差）。灯门全 locked 诚实预告。密度占位保守·defer-number-tuning。",
+      "gates": { "lamp": { "shallow": 0.1, "hiddenRatio": 0 } }
     },
     {
       "id": "zone.blind_alley",
@@ -339,7 +393,12 @@
       "mapShape": "maze",
       "depthCurveRange": [0.8, 1.3],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.reef_barracuda_solo"]
+      "ambushEncounters": ["combat.reef_barracuda_solo"],
+      "_gates_doc": "感知门激活·中洞档（草案 §3·deep_cave·最深端 80m 够到 mid）。灯为主·声呐辅。密度占位保守·defer-number-tuning。hiddenRatio 浅≈0→mid 略升 0.15。",
+      "gates": {
+        "lamp": { "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.15 },
+        "sonar": { "mid": 0.1, "hiddenRatio": 0.15 }
+      }
     },
     {
       "id": "zone.drowned_well",
@@ -354,7 +413,12 @@
       "mapShape": "maze",
       "depthCurveRange": [0.1, 0.4],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.blind_eel_solo"]
+      "ambushEncounters": ["combat.blind_eel_solo"],
+      "_gates_doc": "感知门激活·深洞档（草案 §3·crack·最深端 90m 够到 deep）。灯为主·声呐辅·深⇒更藏。密度占位保守·defer-number-tuning。hiddenRatio deep 最高≈0.30。",
+      "gates": {
+        "lamp": { "deep": 0.3, "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.3 },
+        "sonar": { "deep": 0.2, "mid": 0.1, "hiddenRatio": 0.3 }
+      }
     },
     {
       "id": "zone.moonpool_cavern",
@@ -371,7 +435,12 @@
       "canFreeAscend": false,
       "ambushEncounters": ["combat.cave_octopus_solo", "combat.blind_eel_solo"],
       "weakHunts": true,
-      "weakHuntEncounters": ["combat.blind_eel_juv_solo"]
+      "weakHuntEncounters": ["combat.blind_eel_juv_solo"],
+      "_gates_doc": "感知门激活·中洞档（草案 §3·grotto·最深端 56m 够到 mid）。语义洞 reason override（草案 §3.3·避开月光叙事）：灯门 reason **别写「有天光就不用灯」**——洞顶开口只满月给光、水下另一条路不通开口；reason 走内容侧时用中性洞穴黑（占位「水面以下是另一条路，那点天光照不到——需要灯」）。密度结构同标准中洞档（reason 不改密度·撒点门只带中性兜底）。占位保守·defer-number-tuning。",
+      "gates": {
+        "lamp": { "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.15 },
+        "sonar": { "mid": 0.1, "hiddenRatio": 0.15 }
+      }
     },
     {
       "id": "zone.ossuary_passage",
@@ -387,7 +456,12 @@
       "mapShape": "maze",
       "depthCurveRange": [0.9, 1.3],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.blind_eel_solo"]
+      "ambushEncounters": ["combat.blind_eel_solo"],
+      "_gates_doc": "感知门激活·中洞档（草案 §3·grotto·最深端 78m 够到 mid）。灯为主·声呐辅。密度占位保守·defer-number-tuning。hiddenRatio 浅≈0→mid 略升 0.15。",
+      "gates": {
+        "lamp": { "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.15 },
+        "sonar": { "mid": 0.1, "hiddenRatio": 0.15 }
+      }
     },
     {
       "id": "zone.sandfall_cave",
@@ -404,7 +478,12 @@
       "canFreeAscend": false,
       "ambushEncounters": ["combat.blind_eel_solo", "combat.cave_octopus_solo"],
       "weakHunts": true,
-      "weakHuntEncounters": ["combat.blind_eel_juv_solo"]
+      "weakHuntEncounters": ["combat.blind_eel_juv_solo"],
+      "_gates_doc": "感知门激活·中洞档（草案 §3·chamber·最深端 50m 恰够 mid 边缘）。灯为主·声呐辅。密度占位保守·defer-number-tuning。hiddenRatio 浅≈0→mid 略升 0.15。",
+      "gates": {
+        "lamp": { "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.15 },
+        "sonar": { "mid": 0.1, "hiddenRatio": 0.15 }
+      }
     },
     {
       "id": "zone.blue_throat",
@@ -422,7 +501,12 @@
       "canFreeAscend": false,
       "ambushEncounters": ["combat.blind_eel_solo", "combat.cave_octopus_solo"],
       "weakHunts": true,
-      "weakHuntEncounters": ["combat.blind_eel_juv_solo"]
+      "weakHuntEncounters": ["combat.blind_eel_juv_solo"],
+      "_gates_doc": "感知门激活·中洞档（草案 §3·chamber·最深端 72m 够到 mid）。灯为主·声呐辅。密度占位保守·defer-number-tuning。hiddenRatio 浅≈0→mid 略升 0.15。",
+      "gates": {
+        "lamp": { "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.15 },
+        "sonar": { "mid": 0.1, "hiddenRatio": 0.15 }
+      }
     },
     {
       "id": "zone.thermal_pocket",
@@ -437,7 +521,12 @@
       "mapShape": "maze",
       "depthCurveRange": [2.2, 3.2],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.blind_eel_solo"]
+      "ambushEncounters": ["combat.blind_eel_solo"],
+      "_gates_doc": "感知门激活·中洞档（草案 §3·vent·最深端 86m 够到 mid）。灯为主·声呐辅。密度占位保守·defer-number-tuning。hiddenRatio 浅≈0→mid 略升 0.15。",
+      "gates": {
+        "lamp": { "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.15 },
+        "sonar": { "mid": 0.1, "hiddenRatio": 0.15 }
+      }
     },
     {
       "id": "zone.submerged_arch",
@@ -453,7 +542,9 @@
       "mapShape": "maze",
       "depthCurveRange": [0.9, 1.4],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.cave_octopus_solo"]
+      "ambushEncounters": ["combat.cave_octopus_solo"],
+      "_gates_doc": "感知门激活·浅洞档（草案 §3·grotto·最深端 48m 只够 shal）。灯门全 locked 诚实预告。密度占位保守·defer-number-tuning。",
+      "gates": { "lamp": { "shallow": 0.1, "hiddenRatio": 0 } }
     },
     {
       "id": "zone.lava_branch",
@@ -469,7 +560,12 @@
       "mapShape": "maze",
       "depthCurveRange": [0.2, 0.55],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.blind_eel_solo"]
+      "ambushEncounters": ["combat.blind_eel_solo"],
+      "_gates_doc": "感知门激活·深洞档（草案 §3·chamber·最深端 90m 够到 deep）。灯为主·声呐辅·深⇒更藏。密度占位保守·defer-number-tuning。hiddenRatio deep 最高≈0.30。",
+      "gates": {
+        "lamp": { "deep": 0.3, "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.3 },
+        "sonar": { "deep": 0.2, "mid": 0.1, "hiddenRatio": 0.3 }
+      }
     },
     {
       "id": "zone.murk_gallery",
@@ -485,7 +581,12 @@
       "mapShape": "maze",
       "depthCurveRange": [1.8, 2.8],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.blind_eel_solo", "combat.cave_octopus_solo"]
+      "ambushEncounters": ["combat.blind_eel_solo", "combat.cave_octopus_solo"],
+      "_gates_doc": "感知门激活·中洞档 + 语义洞 override（草案 §3.3·浑水廊·deep_cave·最深端 84m 够到 mid）。灯门加重（lamp mid 密度上调一档 0.2→0.3·「光在这里消耗得比别处快」）·reason 走内容侧（占位「光被这里的水吃得快，越往里越不够——需要灯」）。密度占位保守·defer-number-tuning。hiddenRatio mid≈0.15。",
+      "gates": {
+        "lamp": { "mid": 0.3, "shallow": 0.1, "hiddenRatio": 0.15 },
+        "sonar": { "mid": 0.1, "hiddenRatio": 0.15 }
+      }
     },
     {
       "id": "zone.black_basin",
@@ -500,7 +601,12 @@
       "mapShape": "maze",
       "depthCurveRange": [0.15, 0.45],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.blind_eel_solo"]
+      "ambushEncounters": ["combat.blind_eel_solo"],
+      "_gates_doc": "感知门激活·深洞档（草案 §3·deep_cave·最深端 120m 够到 deep）。灯为主·声呐辅·深⇒更藏。密度占位保守·defer-number-tuning。hiddenRatio deep 最高≈0.30。",
+      "gates": {
+        "lamp": { "deep": 0.3, "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.3 },
+        "sonar": { "deep": 0.2, "mid": 0.1, "hiddenRatio": 0.3 }
+      }
     },
     {
       "id": "zone.serpentine_deep",
@@ -516,7 +622,12 @@
       "mapShape": "maze",
       "depthCurveRange": [0.9, 1.5],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.blind_eel_solo", "combat.cave_octopus_solo"]
+      "ambushEncounters": ["combat.blind_eel_solo", "combat.cave_octopus_solo"],
+      "_gates_doc": "感知门激活·中洞档 + 语义洞 override（草案 §3.3·蛇行深处·deep_cave·最深端 82m 够到 mid）。声呐 hidden 岔口展示（sonar.hiddenRatio 上调 0.15→0.3·蛇形绕晕·声呐找真路）·reason 走内容侧（占位「水道一直转，来路都认不出，得靠声呐记住岔口」）。密度占位保守·defer-number-tuning。",
+      "gates": {
+        "lamp": { "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.15 },
+        "sonar": { "mid": 0.1, "hiddenRatio": 0.3 }
+      }
     },
     {
       "id": "zone.collapsed_caldera",
@@ -531,7 +642,12 @@
       "mapShape": "maze",
       "depthCurveRange": [2.0, 3.5],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.blind_eel_solo"]
+      "ambushEncounters": ["combat.blind_eel_solo"],
+      "_gates_doc": "感知门激活·深洞档（草案 §3·deep_cave·最深端 124m 够到 deep）。灯为主·声呐辅·深⇒更藏。密度占位保守·defer-number-tuning。hiddenRatio deep 最高≈0.30。",
+      "gates": {
+        "lamp": { "deep": 0.3, "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.3 },
+        "sonar": { "deep": 0.2, "mid": 0.1, "hiddenRatio": 0.3 }
+      }
     },
     {
       "id": "zone.mirror_maze",
@@ -547,7 +663,12 @@
       "mapShape": "maze",
       "depthCurveRange": [1.8, 3.2],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.cave_octopus_solo"]
+      "ambushEncounters": ["combat.cave_octopus_solo"],
+      "_gates_doc": "感知门激活·中洞档 + 语义洞 override（草案 §3.3·镜廊·deep_cave·最深端 70m 够到 mid）。声呐 hidden 岔口展示（sonar.hiddenRatio 上调 0.15→0.3·反光假岔口·声呐辨真伪）·reason 走内容侧（占位「反光让人以为还有一条对称的路，扫一记声呐才分得清」）。密度占位保守·defer-number-tuning。",
+      "gates": {
+        "lamp": { "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.15 },
+        "sonar": { "mid": 0.1, "hiddenRatio": 0.3 }
+      }
     },
     {
       "id": "zone.the_deep_gate",
@@ -562,7 +683,12 @@
       "mapShape": "maze",
       "depthCurveRange": [0.5, 2.5],
       "canFreeAscend": false,
-      "ambushEncounters": ["combat.blind_eel_solo"]
+      "ambushEncounters": ["combat.blind_eel_solo"],
+      "_gates_doc": "感知门激活·深洞档（草案 §3·chasm·最深端 148m·全库最深·可当次旗舰）。灯为主·声呐辅·深⇒更藏。密度占位保守·defer-number-tuning。hiddenRatio deep 最高≈0.30。",
+      "gates": {
+        "lamp": { "deep": 0.3, "mid": 0.2, "shallow": 0.1, "hiddenRatio": 0.3 },
+        "sonar": { "deep": 0.2, "mid": 0.1, "hiddenRatio": 0.3 }
+      }
     }
   ]
 }
