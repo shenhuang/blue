@@ -38,7 +38,17 @@ import {
   HALLUCINATION_SANITY,
 } from '../src/engine/clarity';
 import { startCombat, applyPlayerAction, getEncounter } from '../src/engine/combat';
+import { makeLcg } from '../src/engine/rng';
 import { makeHarness, type PtAssert } from './lib/pt';
+
+// ── 焊死 flaky（quirk #129）─────────────────────────────────────────────────
+// 本文件早期「纯引擎·不碰 combat」故无需种子；#261 增的 §13/§14 幻觉遭遇引入 combat.ts
+// （敌攻走 Math.random），却漏补种子 → §14a「对照真遭遇敌攻打出体力伤（6 回合内 ≥1 击）」
+// 在未种子化下并发偶失（#268 收尾实测 92/93 ↔ 93/93 抖动）。照 playthrough.ts 同一份 LCG
+// （src/engine/rng.ts）全程定死随机 → 确定性；内容改动若让该 seed 落到失败分支，regress
+// 会**确定性**变红（非 flaky）→ 调 PLAYTHROUGH_SEED 重选。调试：PT_SEED=<n> npx tsx …。
+const PLAYTHROUGH_SEED = Number(process.env.PT_SEED) || 20260622;
+Math.random = makeLcg(PLAYTHROUGH_SEED);
 
 const pt = makeHarness('微观感知 / 灯门 clarity 回归');
 const { L } = pt;
