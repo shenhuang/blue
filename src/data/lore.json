@@ -1,5 +1,5 @@
 {
-  "_doc": "见闻/生态志条目注册表（#137·图鉴 LoreView 的显示来源·单一来源）。事件 outcome 的 loreEntry 只写一个 id 进 profile.loreEntries（Set·持久）；本文件给每个 id 配显示文案（title/body/group）。引擎侧 engine/lore.ts 读本文件→getLoreEntry/allLoreEntries；UI LoreView 按 profile.loreEntries 过滤已记录的渲染（守发现感·不露未记录·不报总数）。**目前只登记鲸落支线 8 条**；既有散落 lore.*（trench/wreck_graveyard/drowned_lantern/ch1 等）显示文案待后续批补登记（缺登记＝LoreView 不显示·无害·不崩）。文案 [待过稿]（quirk #117）。",
+  "_doc": "见闻/生态志条目注册表（#137·图鉴 LoreView 的显示来源·单一来源）。事件 outcome 的 loreEntry 只写一个 id 进 profile.loreEntries（Set·持久）；本文件给每个 id 配显示文案（title/body/group）。引擎侧 engine/lore.ts 读本文件→getLoreEntry/allLoreEntries；UI LoreView 按 profile.loreEntries 过滤已记录的渲染（守发现感·不露未记录·不报总数）。条目覆盖鲸落/生物志/各区域生态（蓝洞群·东礁各档·深水·远洋中层·旧灯塔礁·沉船墓园·海沟热液场）+ lore.ch1.* 一章剧情，随内容持续增补——数量以 entries 数组为准、勿在此硬抄计数（防漂移·同 STATUS「活数字」约定）。缺登记的 id＝LoreView 不显示·无害·不崩。文案剧透红线照 quirk #117 机制化守门（断片说/单程下行零泄漏·尸体脸不可见）。",
   "entries": [
     {
       "id": "lore.whalefall.sighting_1",
