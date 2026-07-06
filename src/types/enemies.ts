@@ -310,6 +310,23 @@ export interface EnemyDef {
     adultAttacksOverride: EnemyAttack[];
     cocoonBreakBonus?: LootEntry[];
   };
+
+  /**
+   * The Warren 女王（the Gravid Queen·蜂群 boss SPEC §4/§9.1）：被巢一节节「撤」向更深处 + 死后崩解。
+   * **仅女王 def 带此字段**；她本身无攻击（威胁来自巢·§5·别给她塞 attacks）。
+   * relocate 是否真的触发由 CombatState.warrenRoom?.isHatchery 门控——死角（the Hatchery）禁撤 ⇒
+   * 女王在此退无可退、可被打死＝取胜（§4）；非死角房间 HP 比例 ≤ exposureThreshold 时巢把她拽走、
+   * 本场以「房间清空·女王逃脱」收束（combat.ts::maybeSwarmQueenRelocate → finalizeSwarmRelocate），
+   * 下一间她满血重来（回满血＝「被喂 Spawn/卵」的表现层·§4）。数值 defer（§10·待作者调）。
+   */
+  swarmRelocate?: {
+    /** 暴露窗阈值：女王 HP 比例 ≤ 此值（且非死角）时巢把她撤向下一间（0..1·待作者调）。 */
+    exposureThreshold: number;
+    /** 被巢拽向更深处的叙事（maybeSwarmQueenRelocate 推入 log）。 */
+    relocateText: string;
+    /** 女王 HP→0（只会在死角）后的崩解叙事（maybeSwarmCollapse 推入 log·§9.6）。 */
+    collapseText: string;
+  };
 }
 
 export interface EnemyAttack {

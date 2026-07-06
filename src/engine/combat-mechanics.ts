@@ -610,3 +610,61 @@ export function applyMaternalEnrageIfAlone(state: GameState): GameState {
 
   return s;
 }
+
+/**
+ * maybeSwarmQueenRelocate（The Warren 女王·蜂群 boss SPEC §9.1）：女王被打进暴露窗 → 巢把她「撤」走。
+ * 触发：目标是女王（def.swarmRelocate）且**非死角**（combat.warrenRoom?.isHatchery !== true）且 HP 比例
+ * ≤ exposureThreshold（含被一击/DoT 打穿到 ≤0——非死角她永不死、只逃·§4）→ 推 relocateText、置 pendingSwarmRelocate。
+ * applyPlayerAction 第 4a 步（**先于**胜负判定）据此走 finalizeSwarmRelocate（房间清空·女王逃脱·下一间满血重来）。
+ * 幂等：已 pendingSwarmRelocate 跳过。死角房间（the Hatchery）恒 no-op ⇒ 女王可被打死＝取胜（§4）。
+ * 非女王 def / 无 swarmRelocate ⇒ 逐字节不变（普通 boss 战不受影响）。
+ */
+export function maybeSwarmQueenRelocate(state: GameState, instanceId: string): GameState {
+  if (state.phase.kind !== 'combat') return state;
+  const combat = state.phase.combat;
+  if (combat.warrenRoom?.isHatchery) return state; // 死角禁撤（§4·§9.2）
+  if (combat.pendingSwarmRelocate) return state; // 幂等
+  const queen = combat.enemies.find((e) => e.instanceId === instanceId);
+  if (!queen) return state;
+  const def = getEnemyDef(queen.defId);
+  const sr = def?.swarmRelocate;
+  if (!sr) return state; // 非女王
+  if (queen.hp > def.hp * sr.exposureThreshold) return state; // 未进暴露窗
+  let s = pushCombatLog(state, { actor: 'system', text: sr.relocateText });
+  s = setCombat(s, (c) => ({ ...c, pendingSwarmRelocate: true }));
+  return s;
+}
+
+/**
+ * maybeSwarmCollapse（The Warren 崩解·蜂群 boss SPEC §9.6）：女王死 → 取胜（§4）+ 残余崩解演出。
+ * **仅死角（the Hatchery）落地**——非死角女王在 hp≤threshold 即被 relocate 撤走、永不到 hp≤0（§4），故本函数
+ * 用 warrenRoom.isHatchery 收窄，杜绝「非死角 overkill 到 0 被误判为击杀」的窗（否则会抢在 relocate 前 finalizeVictory）。
+ * 触发：死角里存在死亡的女王（def.swarmRelocate 且 hp≤0）→ 推 collapseText，把其余存活单位一并 hp→0 并记入
+ * fledInstanceIds（无首失序·崩解不给战利品·§4「群本已所剩无几」）。女王死后 allEnemiesDefeated ⇒ 下一判定
+ * finalizeVictory 自然收束＝取胜。幂等：无存活非女王残余时 no-op。非死角 / 非女王 ⇒ 逐字节不变。
+ */
+export function maybeSwarmCollapse(state: GameState): GameState {
+  if (state.phase.kind !== 'combat') return state;
+  const combat = state.phase.combat;
+  if (!combat.warrenRoom?.isHatchery) return state; // 崩解只在死角落地（非死角只逃不死·§4）
+  const deadQueen = combat.enemies.find((e) => {
+    const d = getEnemyDef(e.defId);
+    return !!d?.swarmRelocate && e.hp <= 0;
+  });
+  if (!deadQueen) return state;
+  const survivors = combat.enemies.filter((e) => e.hp > 0);
+  if (survivors.length === 0) return state; // 已崩解（幂等）
+  const def = getEnemyDef(deadQueen.defId);
+  let s = pushCombatLog(state, {
+    actor: 'system',
+    text:
+      def?.swarmRelocate?.collapseText ??
+      '中心一死，巢群失去了所有秩序——它们开始互相撕咬，很快什么都不剩。',
+  });
+  s = setCombat(s, (c) => ({
+    ...c,
+    enemies: c.enemies.map((e) => (e.hp > 0 ? { ...e, hp: 0 } : e)),
+    fledInstanceIds: [...(c.fledInstanceIds ?? []), ...survivors.map((e) => e.instanceId)],
+  }));
+  return s;
+}

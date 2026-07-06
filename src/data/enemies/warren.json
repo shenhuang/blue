@@ -1,0 +1,247 @@
+{
+  "_comment": "The Warren（蜂群 boss·the Gravid Queen / Spawn / Wardens / Guards）· 蜂群 boss SPEC docs/spec/深海回响_蜂群boss_SPEC.md · Phase 1 core spine（2026-07-06）。机制全复用已 ship 钩子 + 一枚新字段 swarmRelocate：①女王 attacks=[]（不攻击·§5·runEnemyTurn 无攻击表 passive 跳过）；②shieldedBy=[warden,guard]（破墙才暴露女王·checkActionAvailability 门）；③swarmRelocate（非死角 HP≤exposureThreshold → 巢撤走·房间清空·女王逃脱·finalizeSwarmRelocate；死角 the Hatchery 由 encounter.warrenRoom.isHatchery 禁撤 → 女王可致死＝取胜；死后 maybeSwarmCollapse 崩解）；④droneReplenish（巢持续补 Spawn·chaff·不 shield）；⑤corpseEating（女王吃倒下的单位回血）；⑥environmentalPressure（封闭巢耗氧·§7）；Warden→Berserker 走已 ship 的 metamorphosis 茧化（cocoonBreakBonus 击破奖励）。数值/文案全占位·待作者调（defer-number-tuning·文风克制冷短句·守剧透红线 quirk #117·不点古文明关联·§2）。DEFER（非 core spine·§E4/§5）：Spawn→Puffer 自爆（远程豁免·需新 hook）、封口墙独立 party、蜂巢 mapgen 覆写、撤退月相存档窗。",
+  "enemies": [
+    {
+      "id": "enemy.warren_queen",
+      "name": "[待过稿] 巢母",
+      "tier": "uncanny",
+      "bands": ["band.vent.t3", "band.trench.t4"],
+      "biomes": ["hydrothermal_vent", "trench"],
+      "role": "boss",
+      "threatTier": "high",
+      "hp": 60,
+      "armor": 2,
+      "evasion": 0,
+      "speed": 2,
+      "threat": 8,
+      "hostility": "aggressive",
+      "initialStance": "attacking",
+      "aiPattern": "caster",
+      "shieldedBy": ["enemy.warren_warden", "enemy.warren_guard"],
+      "swarmRelocate": {
+        "exposureThreshold": 0.7,
+        "relocateText": "[待过稿] 你刚够到它，几只更壮的就从两侧挤进来，把那具臃肿的身体拖向更深的通道——它自己一动没动。",
+        "collapseText": "[待过稿] 它终于不再搏动。没有了那个中心，剩下的东西开始互相撕咬——它们连方向都没有了，很快什么都不剩。"
+      },
+      "droneReplenish": {
+        "spawnDefId": "enemy.warren_spawn",
+        "minCount": 2,
+        "maxPartySize": 6
+      },
+      "corpseEating": {
+        "hpGainPerCorpse": 4
+      },
+      "environmentalPressure": {
+        "oxygenDrainBonus": 1
+      },
+      "attacks": [],
+      "physicalDamage": [0, 0],
+      "loot": {
+        "guaranteed": [{ "itemId": "item.eel_skin", "qty": [1, 1], "weight": 1 }],
+        "rolls": [{ "itemId": "item.coral_shard", "qty": [2, 4], "weight": 1 }],
+        "rollCount": 1,
+        "victoryModifier": { "kill": 1.0 }
+      },
+      "victoryConditions": ["kill"],
+      "codex": {
+        "habitat": "[待过稿] 洞的最深处，一处温热的水域旁。它从不移动——是它周围的一切在为它移动。",
+        "behavior": "[待过稿] 它不攻击你。它只产卵、只吞食。被逼急了，它连自己的卵都吃。你得把它逼到再没有下一间可退的地方，才杀得掉它。",
+        "appearance": "[待过稿] 一张很小的、盲眼的鱼脸，接在一个巨大、苍白、半透的腹囊上。隔着薄皮你看得见里面的东西在翻搅。它的嘴大得不成比例，一直在动。",
+        "firstSeenHint": "[待过稿] 你先破开一层护着它的东西，才看清它——然后你发现它连躲都不会躲，是那些护着它的把它拖走的。"
+      }
+    },
+    {
+      "id": "enemy.warren_spawn",
+      "name": "[待过稿] 巢役",
+      "tier": "uncanny",
+      "bands": ["band.vent.t3", "band.trench.t4"],
+      "biomes": ["hydrothermal_vent", "trench"],
+      "role": "swarm",
+      "threatTier": "low",
+      "hp": 6,
+      "armor": 0,
+      "evasion": 2,
+      "speed": 6,
+      "threat": 2,
+      "hostility": "aggressive",
+      "initialStance": "attacking",
+      "aiPattern": "crowd",
+      "attacks": [
+        {
+          "id": "warren_spawn.bite",
+          "name": "[待过稿] 群咬",
+          "damageType": "physical",
+          "damage": [1, 3],
+          "description": "[待过稿] 一条半透明的小东西扑上来咬了一口——没什么力气，但它后面还有一片。"
+        }
+      ],
+      "physicalDamage": [1, 3],
+      "loot": {
+        "rolls": [],
+        "rollCount": 0,
+        "victoryModifier": { "kill": 1.0 }
+      },
+      "victoryConditions": ["kill"],
+      "codex": {
+        "habitat": "[待过稿] 从最深处的卵室里孵出来，成群地涌，越靠近核心越密。",
+        "behavior": "[待过稿] 可弃的燃料。挡在你和更里面之间，被驱赶着往前送死；巢母也吃它们回血。",
+        "appearance": "[待过稿] 最小、最多，像没长完的幼体，苍白抽搐。有的还没成形，刚从卵里出来。"
+      }
+    },
+    {
+      "id": "enemy.warren_warden",
+      "name": "[待过稿] 巢卫",
+      "tier": "uncanny",
+      "bands": ["band.vent.t3", "band.trench.t4"],
+      "biomes": ["hydrothermal_vent", "trench"],
+      "role": "miniboss",
+      "threatTier": "medium",
+      "hp": 18,
+      "armor": 2,
+      "evasion": 1,
+      "speed": 4,
+      "threat": 5,
+      "hostility": "aggressive",
+      "initialStance": "attacking",
+      "aiPattern": "aggressor",
+      "attacks": [
+        {
+          "id": "warren_warden.maul",
+          "name": "[待过稿] 碾咬",
+          "damageType": "physical",
+          "damage": [4, 7],
+          "description": "[待过稿] 它头颚肥大得不成样子，一口咬合下来像两块石头对撞。"
+        }
+      ],
+      "physicalDamage": [4, 7],
+      "metamorphosis": {
+        "cocoonTriggerOxygen": 12,
+        "cocoonArmor": 8,
+        "cocoonMaxTurns": 2,
+        "adultHp": 22,
+        "adultAttacksOverride": [
+          {
+            "id": "warren_warden.berserk_maul",
+            "name": "[待过稿] 狂突",
+            "damageType": "physical",
+            "damage": [8, 13],
+            "description": "[待过稿] 壳裂开，里面的东西痉挛着冲出来——颚和肌肉都胀大了一圈，它不再守，只扑。"
+          }
+        ],
+        "cocoonBreakBonus": [{ "itemId": "item.coral_shard", "qty": [1, 2], "weight": 1 }]
+      },
+      "loot": {
+        "rolls": [{ "itemId": "item.coral_shard", "qty": [1, 2], "weight": 1 }],
+        "rollCount": 1,
+        "victoryModifier": { "kill": 1.0 }
+      },
+      "victoryConditions": ["kill"],
+      "codex": {
+        "habitat": "[待过稿] 只在巢母与最深的卵室近旁，不满图撒。",
+        "behavior": "[待过稿] 精英兵种，贴身护着核心；真正会伤你的是它。被逼急时结茧，破壳后更狂。",
+        "appearance": "[待过稿] 比巢役大得多、更成形，头颚特化成了武器。看着像被投资过——所以它被喂进去时更瘆人。"
+      }
+    },
+    {
+      "id": "enemy.warren_guard",
+      "name": "[待过稿] 巢障",
+      "tier": "uncanny",
+      "bands": ["band.vent.t3", "band.trench.t4"],
+      "biomes": ["hydrothermal_vent", "trench"],
+      "role": "miniboss",
+      "threatTier": "medium",
+      "hp": 22,
+      "armor": 5,
+      "evasion": 0,
+      "speed": 2,
+      "threat": 5,
+      "hostility": "aggressive",
+      "initialStance": "attacking",
+      "aiPattern": "aggressor",
+      "attacks": [
+        {
+          "id": "warren_guard.slam",
+          "name": "[待过稿] 壳撞",
+          "damageType": "physical",
+          "damage": [3, 5],
+          "description": "[待过稿] 它结着一层厚壳，迟缓地把整个身体压过来堵住去路。"
+        }
+      ],
+      "physicalDamage": [3, 5],
+      "loot": {
+        "rolls": [{ "itemId": "item.coral_shard", "qty": [1, 2], "weight": 1 }],
+        "rollCount": 1,
+        "victoryModifier": { "kill": 1.0 }
+      },
+      "victoryConditions": ["kill"],
+      "codex": {
+        "habitat": "[待过稿] 更深的巢室与死角，堵在通道上。",
+        "behavior": "[待过稿] 结了硬壳的活盾，专门做「墙」——巢母被撤走后，是它们留下来封住你追进去的路。",
+        "appearance": "[待过稿] 迟缓、厚壳，几乎不动。你得凿穿它才过得去。"
+      }
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.warren_approach",
+      "party": {
+        "members": [
+          { "defId": "enemy.warren_spawn" },
+          { "defId": "enemy.warren_spawn" },
+          { "defId": "enemy.warren_spawn" }
+        ]
+      },
+      "showIntro": true,
+      "introText": "[待过稿] 隧道被世代啃凿磨得溜光，壁上布满卵室。还没看见核心，成群的小东西就先涌了上来。"
+    },
+    {
+      "id": "combat.warren_room1",
+      "party": {
+        "members": [
+          { "defId": "enemy.warren_warden" },
+          { "defId": "enemy.warren_warden" },
+          { "defId": "enemy.warren_spawn" },
+          { "defId": "enemy.warren_spawn" },
+          { "defId": "enemy.warren_queen" }
+        ]
+      },
+      "showIntro": true,
+      "introText": "[待过稿] 你破进第一间巢室。那具臃肿的身体就在里面——但两只巢卫立刻挤到它前面。先过它们，才够得着它。"
+    },
+    {
+      "id": "combat.warren_room2",
+      "party": {
+        "members": [
+          { "defId": "enemy.warren_guard" },
+          { "defId": "enemy.warren_guard" },
+          { "defId": "enemy.warren_spawn" },
+          { "defId": "enemy.warren_queen" }
+        ]
+      },
+      "showIntro": true,
+      "introText": "[待过稿] 更深一间。这次挡在前面的是结了硬壳的活盾——它们不快，但你得凿穿才过得去。"
+    },
+    {
+      "id": "combat.warren_hatchery",
+      "warrenRoom": { "isHatchery": true },
+      "party": {
+        "members": [
+          { "defId": "enemy.warren_guard" },
+          { "defId": "enemy.warren_guard" },
+          { "defId": "enemy.warren_warden" },
+          { "defId": "enemy.warren_queen" }
+        ]
+      },
+      "showIntro": true,
+      "introText": "[待过稿] 最深的卵室。四壁嵌满温热的卵，那具身体插在正中——再没有下一间可退了。这一次，它逃不掉。"
+    },
+    {
+      "_comment": "死角单挑 baseline 载体（照 cave_grouper_boss_solo 的 _solo 约定）：只放女王 + isHatchery（禁撤·可致死）→ 验「杀女王＝取胜 + 崩解」这条；实战死角用 combat.warren_hatchery（带 Guards/Warden 墙）。droneReplenish 仍会补 Spawn 当 chip。",
+      "id": "combat.warren_hatchery_solo",
+      "warrenRoom": { "isHatchery": true },
+      "party": { "members": [{ "defId": "enemy.warren_queen" }] },
+      "showIntro": false,
+      "introText": "[待过稿] 死角里只剩她——巢卫都碎在了外面的通道上。她逃不掉了。"
+    }
+  ]
+}

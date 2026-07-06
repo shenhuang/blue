@@ -1,0 +1,144 @@
+{
+  "_comment": "The Warren 死角单挑 baseline (SPEC §4/§9.6): the Hatchery(isHatchery)禁撤→女王退无可退→打到 HP0＝取胜→maybeSwarmCollapse 残余(droneReplenish 补的 Spawn)崩解归零→victory·enemies 0·掉女王 loot。covers queen·验 kill+collapse+Hatchery-terminal。数值占位·待作者调·EXPECT 实跑抄。",
+  "combatId": "combat.warren_hatchery_solo",
+  "seed": 1,
+  "bonuses": {
+    "staminaMaxBonus": 400,
+    "oxygenMaxBonus": 200
+  },
+  "stats": {
+    "stamina": 500,
+    "oxygen": 400
+  },
+  "actions": [
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "survived": true,
+    "finalPhase": "dive",
+    "enemiesAlive": 0,
+    "lootGained": {
+      "item.eel_skin": 1
+    }
+  }
+}

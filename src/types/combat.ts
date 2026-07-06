@@ -184,6 +184,20 @@ export interface CombatState {
    * 北极星）；理智耗尽仍是既有「疯狂上浮」（非怪物击杀）。缺省/false ⇒ 真遭遇逐字节不变。
    */
   hallucination?: boolean;
+
+  /**
+   * The Warren（蜂群 boss SPEC §9.2/§9.10）：本场遭遇的房间标记（startCombat 从 CombatEncounterDef.warrenRoom 拷入）。
+   * isHatchery=true ⇒ 死角（the Hatchery）：女王 relocate 禁用、退无可退可被打死（§4）。
+   * 缺省（普通遭遇/非死角房间）⇒ 不写 ⇒ 逐字节不变。CombatState 不入存档（战斗态不序列化）⇒ 零存档影响。
+   */
+  warrenRoom?: { isHatchery?: boolean };
+
+  /**
+   * The Warren 女王在暴露窗被巢「撤走」的标记（typed flag·sibling of pendingFleeSuccess）：
+   * maybeSwarmQueenRelocate 命中阈值时置，applyPlayerAction 据此走 finalizeSwarmRelocate（房间清空·女王逃脱）。
+   * 缺省 ⇒ 无 ⇒ 普通战斗逐字节不变。
+   */
+  pendingSwarmRelocate?: boolean;
 }
 
 export interface CombatLogEntry {
@@ -229,6 +243,14 @@ export interface CombatEncounterDef {
    * ambushEncounters 时改走 StartCombatOptions.hallucination（不改共享 def）。缺省/false ⇒ 真遭遇逐字节不变。
    */
   hallucination?: boolean;
+
+  /**
+   * The Warren 房间标记（蜂群 boss SPEC §8/§9.2）：把本遭遇标为女王巢室之一。
+   * isHatchery=true ⇒ 最深死角（the Hatchery）：女王 relocate 禁用、可被打死＝取胜（§4）。
+   * 非死角房间省略（或 isHatchery=false）⇒ 女王 HP≤exposureThreshold 时逃向下一间。
+   * startCombat 拷入 CombatState.warrenRoom；缺省（普通遭遇）⇒ 不写 ⇒ 逐字节不变。
+   */
+  warrenRoom?: { isHatchery?: boolean };
 }
 
 /**

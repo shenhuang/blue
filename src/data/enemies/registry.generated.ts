@@ -17,6 +17,7 @@ import reef_barracuda from './reef_barracuda.json';
 import reef_grouper from './reef_grouper.json';
 import reef_shark from './reef_shark.json';
 import scavenger from './scavenger.json';
+import warren from './warren.json';
 import wreck_field_patrol from './wreck_field_patrol.json';
 import wreck_spider_crab from './wreck_spider_crab.json';
 
@@ -38,6 +39,7 @@ export const ENEMY_FILE_MODULES: EnemyFileModule[] = [
   reef_grouper,
   reef_shark,
   scavenger,
+  warren,
   wreck_field_patrol,
   wreck_spider_crab,
 ] as unknown as EnemyFileModule[];

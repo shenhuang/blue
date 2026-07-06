@@ -432,6 +432,19 @@ export interface RunState {
    * 同走「生还才落袋」语义）。真条件字段（quirk #106）：无 save 级采集即缺席·createNewRun 不种·hydrate 不补。
    */
   harvestedSaveItems?: Set<string>;
+  /**
+   * The Warren 追猎态（蜂群 boss SPEC §9.11·map-level hybrid 追猎循环）：跨房间进度。
+   * roomsCleared＝已把女王「撤」走的次数（破一间 +1）；queenNodeId＝女王当前所在节点（追猎定位·核心 spine 占位）；
+   * inHatchery＝已进死角。**唯一写者＝engine 战斗收束（finalizeSwarmRelocate）+ 追猎推进**（UI 只读）。
+   * 真条件字段（quirk #106·absent＝不在 Warren 追猎中）：createNewRun 不种、hydrateGameState 不补；
+   * 纯对象 JSON 自动 round-trip、不 bump SAVE_VERSION（#99）。读取处 `run.warrenHunt?.roomsCleared ?? 0` 兜底。
+   * 撤退/月相存档窗（§9.11·按总天数 bank）留后续 Phase——本字段即其挂点。
+   */
+  warrenHunt?: {
+    roomsCleared: number;
+    queenNodeId?: string;
+    inHatchery?: boolean;
+  };
 }
 
 /** 装备配置（9 槽纸娃娃·作者 2026-06-19·见 types/items.ts EquipmentSlot 注释） */

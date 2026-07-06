@@ -50,6 +50,8 @@ import {
   maybeInterceptJuvenile,
   maybeConsumeJuvenile,
   applyMaternalEnrageIfAlone,
+  maybeSwarmQueenRelocate,
+  maybeSwarmCollapse,
 } from './combat-mechanics';
 
 // ——— 数据索引 ———
@@ -171,6 +173,8 @@ export function startCombat(
     // → 标 CombatState.hallucination（enemyAttackPlayer 0 体力伤·finalizeVictory 无战利品·暧昧收场）。
     // 二者皆无（真遭遇）⇒ 不写此字段 ⇒ 逐字节不变。
     ...(enc.hallucination || options?.hallucination ? { hallucination: true as const } : {}),
+    // The Warren（蜂群 boss SPEC §9.2）：房间标记（死角禁撤）从 encounter 拷入；缺省普通遭遇不写 ⇒ 逐字节不变。
+    ...(enc.warrenRoom ? { warrenRoom: enc.warrenRoom } : {}),
   };
 
   // 图鉴发现门（敌人库·只显示已遭遇）：开战即把本场敌人（含 enemyRef 取到的）记入
@@ -447,6 +451,15 @@ export function applyPlayerAction(
       .filter((st) => st.remaining > 0),
   }));
 
+  // —— The Warren：女王死（仅死角 the Hatchery）→ 残余崩解（取胜＝女王死·§9.6 演出·令 allEnemiesDefeated 成立）——
+  s = maybeSwarmCollapse(s);
+
+  // —— 4a. The Warren：女王被巢撤走 → 房间清空·女王逃脱（非死角·**先于**胜负判定·§9.1）——
+  //   非死角她被打进暴露窗即被拖走，即便本击/DoT overkill 到 hp≤0 也算「逃脱」而非「击杀」——故须先于 allEnemiesDefeated。
+  if (s.phase.kind === 'combat' && s.phase.combat.pendingSwarmRelocate) {
+    return finalizeSwarmRelocate(s);
+  }
+
   // —— 4. 战后判定：是否胜利 ——
   const after = (s.phase.kind === 'combat' ? s.phase.combat : null);
   if (after && allEnemiesDefeated(after)) {
@@ -611,6 +624,8 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
   });
   // boss 阶段检查（HP 因玩家攻击下降·每次命中后触发）
   s = maybeBossPhaseShift(s, target.instanceId);
+  // The Warren 女王：被打进暴露窗（HP≤阈值·非死角）→ 巢把她撤走（§9.1·置 pendingSwarmRelocate·applyPlayerAction 4a 收束）
+  s = maybeSwarmQueenRelocate(s, target.instanceId);
   // 清道夫（corpseEating）：玩家攻击致死 → 触发尸食钩子
   s = maybeCorpseEat(s, target.instanceId);
   // 口孵深鱼护巢仔全灭检查（玩家攻击致死护巢仔时·幂等·护巢仔未全灭 = no-op）
@@ -798,6 +813,10 @@ function runEnemyTurn(state: GameState): GameState {
     }
     // 茧化居民茧（metamorphosisStage='cocoon'）：同样 passive，不出手。
     if (def.metamorphosis && e.metamorphosisStage === 'cocoon') continue;
+    // 无攻击表的敌人（The Warren 女王·蜂群 boss SPEC §5/§9.3「别给女王塞攻击表」）：passive 存在体，不出手——
+    // 直接跳过（威胁来自巢·非女王本体）。**同时是 enemyAttackPlayer 空 attacks 的护栏**（否则 chosen=undefined→.name 崩）。
+    // 全库通用（守 SPEC §3「不给单只敌人写专属分支」）：任何 attacks 空且无覆盖/吸收的敌人皆 passive。
+    if ((e.phaseAttacksOverride ?? def.attacks).length === 0 && !e.absorbedAttacks?.length) continue;
     // 逃跑的敌人不打人
     if (e.stance === 'fleeing') {
       s = pushCombatLog(s, { actor: 'enemy', text: `${def.name} 向远处游开。` });
@@ -854,6 +873,8 @@ function runEnemyTurn(state: GameState): GameState {
       s = pushCombatLog(s, { actor: 'system', text: `${dname} 因持续伤势失去 ${dot} 点生命。` });
       // boss 阶段检查（HP 因 DoT 下降）
       s = maybeBossPhaseShift(s, e.instanceId);
+      // The Warren 女王：DoT 也可能把她打进暴露窗（非死角）→ 巢撤走（§9.1·下一玩家行动 4a 收束）
+      s = maybeSwarmQueenRelocate(s, e.instanceId);
       // 清道夫（corpseEating）：DoT 致死同样触发尸食钩子
       s = maybeCorpseEat(s, e.instanceId);
       // 口孵深鱼护巢仔全灭检查（DoT 致死护巢仔时·幂等）
@@ -1055,6 +1076,29 @@ function finalizeFlee(state: GameState): CombatTurnResult {
     s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
   }
   return { state: s, outcome: 'flee' };
+}
+
+/**
+ * finalizeSwarmRelocate（The Warren·蜂群 boss SPEC §9.1）：女王在暴露窗被巢撤走 → 本场以「房间清空·女王逃脱」收束。
+ * 推进 warrenHunt.roomsCleared（破一间 +1·唯一写者·§9.11 挂点），路由回 dive：有 victoryEventId（房间清空事件·
+ * 由内容侧揭示下一间节点）→ event 子阶段；否则回 rest。**不结算战利品**（她带着身子逃了·残墙料留内容/死角·§4）。
+ * 镜 finalizeVictory/finalizeFlee 的返回形状（CombatTurnResult·outcome 复用 'victory'＝房间已破）。
+ */
+function finalizeSwarmRelocate(state: GameState): CombatTurnResult {
+  if (state.phase.kind !== 'combat' || !state.run) return { state, outcome: 'victory' };
+  const combat = state.phase.combat;
+  const prev = state.run.warrenHunt ?? { roomsCleared: 0 };
+  let s: GameState = {
+    ...state,
+    run: { ...state.run, warrenHunt: { ...prev, roomsCleared: prev.roomsCleared + 1 } },
+  };
+  s = appendLog(s, { tone: 'realistic', text: '通道在你身后合拢——你得重新用声呐找出巢把她拖去了哪一间。' });
+  if (combat.victoryEventId) {
+    s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: combat.victoryEventId } } };
+  } else {
+    s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
+  }
+  return { state: s, outcome: 'victory' };
 }
 
 /**
