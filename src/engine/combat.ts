@@ -44,7 +44,6 @@ import {
   applyEnvironmentalPressure,
   maybeEnemySplit,
   maybeCorpseEat,
-  maybeReplenishDrones,
   maybeMetamorphosis,
   maybeCocoonCountdown,
   maybeInterceptJuvenile,
@@ -55,9 +54,9 @@ import {
   pufferArmed,
   detonateSelfDestruct,
   maybePufferMeleeDetonate,
-  maybeWarrenPheromone,
-  maybeWarrenReinforce,
 } from './combat-mechanics';
+// The Warren 女王身体库存主线（§15·#271·从 combat-mechanics 外移·守 file-budget）：六分支树 + 动态 screen 门 + 起盾 + 伤害计数。
+import { maybeWarrenQueenAct, queenScreened, recordQueenDamage, warrenInitScreen } from './combat-warren';
 
 // ——— 数据索引 ———
 
@@ -202,6 +201,7 @@ export function startCombat(
   if (enc.introText) {
     s = pushCombatLog(s, { actor: 'system', text: enc.introText });
   }
+  s = warrenInitScreen(s); // The Warren 女王·开战起手起初始肉盾（§15.2·否则第 1 回合玩家先手·女王裸露·丢「先破墙」手感）
   return s;
 }
 
@@ -372,6 +372,12 @@ export function checkActionAvailability(
         }
       }
     }
+  }
+
+  // The Warren 女王·动态 screen 门（§15.2·替静态 shieldedBy·queenScreened 仅 warrenScreen 女王）：女王拉的肉盾（screeningFor）还有活的 → 不可选中女王·杀穿才够得着。
+  if (targetInstanceId !== undefined && action.effect.kind === 'attack' &&
+      state.phase.kind === 'combat' && queenScreened(state.phase.combat.enemies, targetInstanceId)) {
+    return { available: false, reason: '肉盾还挡在她前面——先凿穿挡路的，才够得着她。' };
   }
 
   return { available: true };
@@ -631,6 +637,7 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
   s = maybeBossPhaseShift(s, target.instanceId);
   // The Warren 女王：被打进暴露窗（HP≤阈值·非死角）→ 巢把她撤走（§9.1·置 pendingSwarmRelocate·applyPlayerAction 4a 收束）
   s = maybeSwarmQueenRelocate(s, target.instanceId);
+  s = recordQueenDamage(s, target.instanceId, dmg); // §15.4 screen 触发计数：本次对女王伤害记进滚动窗口
   // The Warren·Puffer 自爆（§9.9）：近战命中 armed Puffer → 当场引爆·溅玩家；远程命中豁免（不溅）。见 combat-mechanics。
   s = maybePufferMeleeDetonate(s, action.requiresEquipment === 'ranged', target.instanceId);
   // 清道夫（corpseEating）：玩家攻击致死 → 触发尸食钩子
@@ -792,13 +799,9 @@ function runEnemyTurn(state: GameState): GameState {
   if (state.phase.kind !== 'combat' || !state.run) return state;
   let s: GameState = state;
 
-  // 菌群鱼（droneReplenish）：女王行动前补充工蜂（仅带 droneReplenish 的敌人进分支）。
-  s = maybeReplenishDrones(s);
-  // The Warren 女王·吼叫/信息素（warrenPheromones·§5）：择一释放（②引爆 Puffer / ③催孵**既有**茧卵 / ①↑结茧率）。
-  // **先于** reinforce：本回合新产的卵不会被同回合 forceHatch 秒孵 → 留一个「凿破卵」的窗（§9.5「不打掉就孵化」）。
-  s = maybeWarrenPheromone(s);
-  // The Warren 女王·产卵/召唤（warrenReinforce·§9.5）：场上单位少时产卵（cap 按 roomsCleared 每次 relocate 递增）。
-  s = maybeWarrenReinforce(s);
+  // The Warren 女王·身体库存主线 dispatcher（§15·#271）：每女王敌方回合从六分支优先级树择一（feed>screen>lay/force-hatch>detonate>hatch>cocoon-boost·
+  // 女王无攻击表·威胁来自巢）·「一回合一动作」天然保凿破卵窗（lay/force-hatch 互斥回合）·退役 droneReplenish→繁殖储备节流（§15.1）。
+  s = maybeWarrenQueenAct(s);
   // 口孵深鱼（maternalBehavior）：母鱼回合开头检查 HP < 50%——有存活护巢仔时消耗一只回血。
   // 在 order 捕获**之前**执行：被消耗的护巢仔 HP→0 后不会出现在行动队列里（无幽灵行动）。
   s = maybeConsumeJuvenile(s);

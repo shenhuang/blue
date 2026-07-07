@@ -322,6 +322,24 @@
 - `maternalBehavior` 除被动回血外若有别的效果（吞仔的**减员**表现等）——退役时只收回血侧、还是整个并进 feed？impl 读 `maternalBehavior` 全字段再定。
 - feed/screen 的「可献祭 / 可拉盾单位」是否含**结茧中**的茧（不能动 vs 可被拽出来当消耗）——占位「只活动单位·茧不算」·手感期再定。
 
+### 15.8 实装状态（2026-07-07 · Cowork 交互 · Opus · #271 续 · 沙箱 regress 95/95 绿 · 未提交待 nightly）
+
+**① 单动作 dispatcher（§15.3 落地）**：`combat-warren.ts::maybeWarrenQueenAct`（**新文件**——§15 一整族从 `combat-mechanics.ts` 外移·守 check-file-budget 900 默认·参照 combat-mechanics/mapgen-* 拆法）每女王敌方回合**择一**执行：先 `warrenRecoverReserve`，再 `[warrenTryFeed, warrenTryScreen, warrenTryLayOrHatch, warrenTryFiller]` 取第一个非 null 的。退役独立 `maybeWarrenReinforce`（并入 lay 分支）+ `maybeReplenishDrones`（退役 droneReplenish）。runEnemyTurn 三调用 → 一调用。「一回合一动作」天然保「凿破卵窗」（lay/force-hatch 互斥不同回合）。
+
+**② 六动作映射**：feed＝`warrenFeed`（替 `corpseEating` 被动回血·主动献祭·被吞进 `fledInstanceIds` 不掉料·#244）；screen＝`warrenScreen`（替静态 `shieldedBy`·`EnemyInstance.screeningFor` 动态盾·`checkActionAvailability::queenScreened` 门·开战 `warrenInitScreen` 起初始盾）；lay＝`warrenReinforce`+繁殖储备节流；detonate/hatch/cocoon-boost＝`warrenPheromones` filler（`roarChance` **退役**·按需触发非每回合掷骰）。
+
+**③ droneReplenish 退役 → 繁殖储备（作者 2026-07-07 拍·§15.1 跑步机护栏机制化）**：`warrenReinforce.{reserveMax,reserveCostPerLay,reserveRecoveryPerTurn,minLayInterval,lowReserveIntervalBonus}` + `EnemyInstance.{layReserve,lastLayTurn}`（不入档）。每产卵扣 `reserveCostPerLay`、每女王回合缓慢恢复 `reserveRecoveryPerTurn`；低储备 → 产卵间隔拉长（`minLayInterval + (1−储备比)×lowReserveIntervalBonus`）+ 每次产卵量按储备比缩减（`ceil(基础量×储备比)`·见底＝0＝产不出→落 filler）。**⚠ 死角护栏＝硬止恢复·非仅节流**（impl review catch）：节流会**自纠到非零平衡**（低储备拉长间隔→间隔里多攒恢复）→单靠数值**不保证净耗尽**；故 `warrenRecoverReserve` 在 `warrenRoom.isHatchery` **直接 no-op**（死角不恢复→储备只降不升→有限窝耗尽→补池熄火→池子只出不进＝§15.1 **结构保证**·女王吃光己卵后可杀·长局 evade 实测死角产卵封顶 2 次即停）。**非死角**照常恢复＝「前两间净不减」。**方向占位＝低储备更慢更少（treadmill-safe）·作者若要「攒够爆发式大产」翻公式即可**。
+
+**④ 新战斗态（§15.4·全不入档·CombatState 不序列化·SAVE 未 bump）**：`EnemyInstance.screeningFor`（screen 标）/`recentDamageLog`（screen 触发计数·`recordQueenDamage` 于 applyAttack 挂点追加+按窗口修剪）/`layReserve`/`lastLayTurn`。
+
+**⑤ 两开放叉决议（§15.7）**：叉一——查实女王 JSON **从无** `maternalBehavior`（那是 mycelial_fish 口孵深鱼的·**未动**），feed 只替 `corpseEating`（女王唯一被动回血源）；叉二——screen 燃料**排除茧**（茧不能站岗）；feed 燃料也排除茧、**唯 `eggDefId` 卵例外**（§4「Spawn 光了吃卵」·`stage!=='cocoon' || defId===eggId`）。
+
+**⑥ baseline（scenarios/combat/·实跑抄 quirk #43·bless）**：redesign `warren_hatchery_solo__kill_collapse`（feed 回血耗尽赛 + kill·**§4 canon terminal＝0 survivor**·故不断言「崩解-带残余」文案）+ `warren_queen__reinforce_egg_lifecycle`（lay + breakDestroys「在孵化前被凿破」+ hatch）+ 新 `warren_queen__feed_sacrifice`（feed「同类推着送进去」+ screen 门「肉盾还挡在她前面」端到端）；screen（「肉墙」）/ lay（「产道」）亦被 `warren_room1/room2__queen_relocate` 覆盖。沙箱 `npm run regress` **95/95 全绿**（prod build 缺 rollup 留 nightly）。
+
+**⑦ 数值全占位（defer-number-tuning）**：reserve 各档 / `triggerHpRatio`(0.5) / `hpGainPerSacrifice`(6) / `shieldCount`(2) / `recentDamageThreshold`(8)+`Window`(2) / 与 `swarmRelocate.exposureThreshold`(0.7) 的耦合。**手感期须 screen×暴露窗×池子一起调**（§15.2 跑步机风险）。
+
+**⑧ 遗留 note**：「崩解-带残余」演出（`maybeSwarmCollapse` 推 collapseText + 归零 survivors）在 §4-canon terminal（女王把整窝吃光后再死）下多为 **0-survivor 平凡收束**·不易 deterministic 覆盖；如需显式演出 baseline，后补一条「女王死时尚有残余」的构造场景（当前判定它不属实战 terminal 常态·不阻塞）。
+
 ---
 
 ## 16. 生物本体重定义：寄生 · 水鬼伞 · 命名（2026-07-07 · #271 · 作者拍板 · 待实装 / 待 canon 整合）

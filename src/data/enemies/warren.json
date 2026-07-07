@@ -1,5 +1,5 @@
 {
-  "_comment": "The Warren（蜂群 boss·the Gravid Queen / Spawn / Wardens / Guards）· 蜂群 boss SPEC docs/spec/深海回响_蜂群boss_SPEC.md · Phase 1 core spine（2026-07-06）。机制全复用已 ship 钩子 + 一枚新字段 swarmRelocate：①女王 attacks=[]（不攻击·§5·runEnemyTurn 无攻击表 passive 跳过）；②shieldedBy=[warden,guard]（破墙才暴露女王·checkActionAvailability 门）；③swarmRelocate（非死角 HP≤exposureThreshold → 巢撤走·房间清空·女王逃脱·finalizeSwarmRelocate；死角 the Hatchery 由 encounter.warrenRoom.isHatchery 禁撤 → 女王可致死＝取胜；死后 maybeSwarmCollapse 崩解）；④droneReplenish（巢持续补 Spawn·chaff·不 shield）；⑤corpseEating（女王吃倒下的单位回血）；⑥environmentalPressure（封闭巢耗氧·§7）；Warden→Berserker 走已 ship 的 metamorphosis 茧化（cocoonBreakBonus 击破奖励）；⑦warren_puffer＝Spawn→Puffer 自爆活炸弹（selfDestruct·近战溅/远程豁免/到点炸·§9.9·独立 def·复用茧化计时器·武装仅 adult 态）。数值/文案全占位·待作者调（defer-number-tuning·文风克制冷短句·守剧透红线 quirk #117·不点古文明关联·§2）。DEFER（非 core spine·§E5/§8）：封口墙独立 party、蜂巢 mapgen 覆写 + Spawn/Puffer 密度距离派生（Puffer 进正式巢室 room2/hatchery 在此步）、撤退月相存档窗。",
+  "_comment": "The Warren（蜂群 boss·the Gravid Queen / Spawn / Wardens / Guards）· 蜂群 boss SPEC docs/spec/深海回响_蜂群boss_SPEC.md · §15 身体库存主线（#271·2026-07-07·替 Phase 1 分散钩子）。女王 attacks=[]（不攻击·§5·威胁来自巢）；每敌方回合走**六分支优先级树**（combat-warren.ts::maybeWarrenQueenAct）择一执行——一个池子（活的非女王单位 + 卵）、一个反制你打法的动作：①warrenFeed（血低→主动献祭一只活单位回血·替 §13 corpseEating 被动回血·被吞进 fledInstanceIds 不掉料·茧不算·唯卵例外＝§4 吃己卵）；②warrenScreen（近期挨打+无活盾→从池子拉 shieldCount 只活单位当动态肉盾·screeningFor 标·checkActionAvailability 门：杀穿才够得着女王·替 §13 静态 shieldedBy·**池空则拉不出＝跑步机护栏**·须与 swarmRelocate.exposureThreshold 一起调）；③warrenReinforce（作战单位少→有卵 force-hatch·否则产卵·**繁殖储备节流**：reserveMax/reserveCostPerLay/reserveRecoveryPerTurn/minLayInterval/lowReserveIntervalBonus·**退役 droneReplenish**·储备低→产卵更慢更少·死角净耗尽·§15.1）；④warrenPheromones（吼·填充档：detonate 引爆 armed Puffer > hatch 催孵茧卵 > cocoon-boost·roarChance 已退役·按需触发）。swarmRelocate（非死角 HP≤exposureThreshold→巢撤走·房间清空·finalizeSwarmRelocate；死角 isHatchery 禁撤→可致死＝取胜·死后 maybeSwarmCollapse 崩解）；environmentalPressure（封闭巢耗氧·§7）；Warden→Berserker/Guard 走 metamorphosis 茧化（cocoonBreakBonus 击破奖励）；warren_puffer＝Spawn→Puffer 自爆活炸弹（selfDestruct·近战溅/远程豁免/到点炸·§9.9·武装仅 adult 态）。数值/文案全占位·待作者调（defer-number-tuning·文风克制冷短句·守剧透红线 quirk #117·不点古文明关联·§2）。DEFER（§E5/§8）：封口墙独立 party、蜂巢 mapgen 覆写 + Spawn/Puffer 密度距离派生、撤退月相存档窗（§9.11 桥 PlayerProfile.warrenHunt 已 ship）。",
   "enemies": [
     {
       "id": "enemy.warren_queen",
@@ -17,25 +17,27 @@
       "hostility": "aggressive",
       "initialStance": "attacking",
       "aiPattern": "caster",
-      "shieldedBy": ["enemy.warren_warden", "enemy.warren_guard"],
       "swarmRelocate": {
         "exposureThreshold": 0.7,
         "relocateText": "[待过稿] 你刚够到它，几只更壮的就从两侧挤进来，把那具臃肿的身体拖向更深的通道——它自己一动没动。",
         "collapseText": "[待过稿] 它终于不再搏动。没有了那个中心，剩下的东西开始互相撕咬——它们连方向都没有了，很快什么都不剩。"
       },
-      "droneReplenish": {
-        "spawnDefId": "enemy.warren_spawn",
-        "minCount": 2,
-        "maxPartySize": 6
-      },
-      "corpseEating": {
-        "hpGainPerCorpse": 4
-      },
       "environmentalPressure": {
         "oxygenDrainBonus": 1
       },
+      "warrenFeed": {
+        "triggerHpRatio": 0.5,
+        "hpGainPerSacrifice": 6,
+        "sacrificePriority": ["enemy.warren_spawn", "enemy.warren_warden", "enemy.warren_egg"],
+        "feedText": "[待过稿] 她不动，只张开那张不成比例的嘴——一只巢役被身后的同类推着送进去，她的躯体随之搏动了一下。"
+      },
+      "warrenScreen": {
+        "shieldCount": 2,
+        "recentDamageThreshold": 8,
+        "recentDamageWindow": 2,
+        "screenText": "[待过稿] 你逼得太近。几只活物被驱到她身前挤成一堵肉墙——先过它们。"
+      },
       "warrenPheromones": {
-        "roarChance": 1,
         "cocoonBoostChance": 1,
         "detonatePuffers": true,
         "forceHatch": true,
@@ -47,7 +49,12 @@
         "capPerRelocate": 1,
         "eggDefId": "enemy.warren_egg",
         "maxPartySize": 8,
-        "layText": "[待过稿] 她腹囊一缩，几枚半透的卵顺着产道滑出来，贴在四壁上开始搏动。"
+        "layText": "[待过稿] 她腹囊一缩，几枚半透的卵顺着产道滑出来，贴在四壁上开始搏动。",
+        "reserveMax": 6,
+        "reserveCostPerLay": 3,
+        "reserveRecoveryPerTurn": 1,
+        "minLayInterval": 2,
+        "lowReserveIntervalBonus": 3
       },
       "attacks": [],
       "physicalDamage": [0, 0],
@@ -384,7 +391,7 @@
       "introText": "[待过稿] 最深的卵室。四壁嵌满温热的卵，那具身体插在正中——再没有下一间可退了。这一次，它逃不掉。"
     },
     {
-      "_comment": "死角单挑 baseline 载体（照 cave_grouper_boss_solo 的 _solo 约定）：只放女王 + isHatchery（禁撤·可致死）→ 验「杀女王＝取胜 + 崩解」这条；实战死角用 combat.warren_hatchery（带 Guards/Warden 墙）。droneReplenish 仍会补 Spawn 当 chip。",
+      "_comment": "死角单挑 baseline 载体（照 cave_grouper_boss_solo 的 _solo 约定）：只放女王 + isHatchery（禁撤·可致死）→ 验「杀女王＝取胜 + 崩解」这条；实战死角用 combat.warren_hatchery（带 Guards/Warden 墙）。§15：女王独处时靠 warrenReinforce 产卵补池（繁殖储备节流·退役 droneReplenish→储备见底熄火）。",
       "id": "combat.warren_hatchery_solo",
       "warrenRoom": { "isHatchery": true },
       "party": { "members": [{ "defId": "enemy.warren_queen" }] },

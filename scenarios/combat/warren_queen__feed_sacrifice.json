@@ -1,0 +1,23 @@
+{
+  "_comment": "女王 feed（献祭回血·§15.2/§15.3①·#271）baseline：死角女王(isHatchery)。§15 身体库存主线分支 1——女王 HP≤triggerHpRatio(血低)时**主动**献祭一只活单位回血(替 §13 corpseEating 被动回血·被吞进 fledInstanceIds 不掉料)。序列：T1-2 evade 让女王产卵+羽化 Spawn 攒身体；T3 knife 女王(她随即拉动态肉盾自卫)；T4-5 knife 凿穿肉盾；T6-7 knife 把女王打进血低窗→她 feed 吞一只巢役回血(「同类推着送进去」)。验 feed 分支 + screen 门(中途「肉盾还挡在她前面」)端到端。level-5 刀给足 burst 越过 feed 阈值。数值占位·seed 1·EXPECT 实跑抄(bless)。",
+  "combatId": "combat.warren_queen_behavior_test",
+  "seed": 1,
+  "bonuses": { "staminaMaxBonus": 800, "oxygenMaxBonus": 600 },
+  "stats": { "oxygen": 140 },
+  "equipment": { "tool": { "itemId": "item.dive_knife.standard", "slot": "tool", "level": 5 } },
+  "actions": [
+    { "actionId": "action.evade" },
+    { "actionId": "action.evade" },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 1 },
+    { "actionId": "action.knife_slash", "targetIndex": 2 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "noActionProvided",
+    "survived": true,
+    "logIncludes": ["同类推着送进去"],
+    "notes": "logIncludes「同类推着送进去」＝warrenFeed 主动献祭回血(§15.3① feed·血低+池子有可献祭单位)。序列先 evade 攒 Spawn、再 burst 把女王打进 HP≤50% 血低窗触发 feed（feed 分支 1 优先于 screen 分支 2）。数值调后须 bless 重录。"
+  }
+}

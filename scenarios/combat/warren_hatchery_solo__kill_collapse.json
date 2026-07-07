@@ -1,144 +1,25 @@
 {
-  "_comment": "The Warren 死角单挑 baseline (SPEC §4/§9.6): the Hatchery(isHatchery)禁撤→女王退无可退→打到 HP0＝取胜→maybeSwarmCollapse 残余(droneReplenish 补的 Spawn)崩解归零→victory·enemies 0·掉女王 loot。covers queen·验 kill+collapse+Hatchery-terminal。数值占位·待作者调·EXPECT 实跑抄。",
+  "_comment": "The Warren 死角单挑 kill+attrition baseline（SPEC §4/§9.6/§15）：the Hatchery(isHatchery)禁撤→女王退无可退，成为一场「回血耗尽赛」——§15 起女王独处会自己产卵(warrenReinforce·繁殖储备)、羽化 Spawn、血低时**献祭自己的仔回血**(warrenFeed·§4「吃 Spawn·Spawn 光了吃卵」)。你要在耗光她食源前打穿 60 HP。她把整窝吃干净后再无得吃→你补最后一刀→victory·enemies 0·掉女王 guaranteed loot(eel_skin)。§4 canon：女王死时残余通常已被她自己吃光(0 survivors→maybeSwarmCollapse 平凡收束)，故不断言崩解-带残余演出文案。covers queen kill + Hatchery-terminal + feed 回血耗尽赛 + lay。数值占位·待作者调·EXPECT 实跑抄(quirk #43·bless)。",
   "combatId": "combat.warren_hatchery_solo",
   "seed": 1,
-  "bonuses": {
-    "staminaMaxBonus": 400,
-    "oxygenMaxBonus": 200
-  },
-  "stats": {
-    "stamina": 500,
-    "oxygen": 400
-  },
+  "bonuses": { "staminaMaxBonus": 600, "oxygenMaxBonus": 400 },
+  "stats": { "oxygen": 80 },
+  "equipment": { "tool": { "itemId": "item.dive_knife.standard", "slot": "tool", "level": 3 } },
   "actions": [
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    },
-    {
-      "actionId": "action.knife_slash",
-      "targetIndex": 0
-    }
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
   ],
   "expect": {
     "outcome": "victory",
     "survived": true,
     "finalPhase": "dive",
     "enemiesAlive": 0,
-    "lootGained": {
-      "item.eel_skin": 1
-    }
+    "lootGained": { "item.eel_skin": 1 },
+    "logIncludes": ["同类推着送进去"],
+    "notes": "logIncludes「同类推着送进去」＝warrenFeed 献祭回血（§4 死角回血耗尽赛：女王吃自己的仔续命）。outcome=victory + enemiesAlive=0 ＝把她连同被她吃剩的空巢一并收束（§4 canon terminal·0 survivors）。数值调后须 bless 重录。"
   }
 }

@@ -87,10 +87,9 @@ for (const f of enemyFiles) {
       loot: e.loot,
       defaultSkin: e.defaultSkin,
       headEnrage: e.headEnrage,
-      // 动态产出的 defId（droneReplenish.spawnDefId / warrenReinforce.eggDefId）：被覆盖的产出者
-      // 会在战斗中生成它们 ⇒ baseline 覆盖到产出者即传递覆盖到产物（见下 (d) 传递闭包）。
+      // 动态产出的 defId（warrenReinforce.eggDefId·lay 产卵）：被覆盖的产出者会在战斗中生成它们 ⇒
+      // baseline 覆盖到产出者即传递覆盖到产物（见下 (d) 传递闭包）。droneReplenish 已退役（#271→繁殖储备节流）。
       spawnChildren: [
-        ...(e.droneReplenish?.spawnDefId ? [e.droneReplenish.spawnDefId] : []),
         ...(e.warrenReinforce?.eggDefId ? [e.warrenReinforce.eggDefId] : []),
       ],
       file: f,

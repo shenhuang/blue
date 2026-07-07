@@ -265,16 +265,6 @@ export interface EnemyDef {
   shieldedBy?: string[];
 
   /**
-   * 菌群鱼女王工蜂补充：女王每次行动前，若场上 spawnDefId 类敌人数量 < minCount 则自动补至 minCount。
-   * maybeReplenishDrones 在 runEnemyTurn 开头调用；仅带此字段的敌人才进该分支。
-   */
-  droneReplenish?: {
-    spawnDefId: string;
-    minCount: number;
-    maxPartySize: number;
-  };
-
-  /**
    * 口孵深鱼（maternal mouthbrooder）：母鱼护巢仔行为系。
    * - 玩家攻击命中护巢仔（shieldedBy 列出的 defId）时，interceptChance 概率把伤害转移到母鱼
    *   （maybeInterceptJuvenile·以 armorWhileProtected 替代 def.armor 计算截击减伤）。
@@ -354,47 +344,103 @@ export interface EnemyDef {
   };
 
   /**
-   * The Warren 女王·吼叫 / 信息素（蜂群 boss SPEC §5·2026-07-07 作者加）：女王每敌方回合开头可吼叫释放**一种**
-   * 信息素（maybeWarrenPheromone·敌方回合起手·女王仍无攻击表·威胁来自巢）。三效果按**条件优先级**择一：
-   *   ② detonatePuffers：场上有 armed Puffer → 令其**立即引爆**（复用 detonateSelfDestruct）。
-   *   ③ forceHatch：场上有茧/卵 → 令其 cocoonTurnsLeft→0 **立即孵化**（下个 maybeMetamorphosis 羽化）。
-   *   ① cocoonBoostChance：给符合条件（larva·带 metamorphosis）的单位一个**立即结茧**概率（↑结茧率）。
-   * roarChance 为吼叫触发概率（占位·1=每回合·rollChance≥1 零 RNG·作者调低节流）。**仅女王 def 带此字段** ⇒ 普通敌人逐字节不变。
-   * 数值 / 文案占位·defer（§10·守剧透红线 quirk #117·不点古文明·§2）。
+   * The Warren 女王·吼叫（蜂群 boss SPEC §5/§15·2026-07-07·#271 身体库存主线）：女王的**听得见的号令**一族——
+   * detonate（引爆 armed Puffer）/ hatch（催孵茧卵）/ cocoon-boost（↑结茧率）。§15 起：这三支是六分支优先级树
+   * （maybeWarrenQueenAct·§15.3）的**填充档**（都不满足 feed/screen/lay 时·按 detonate>hatch>cocoon-boost 序取一个
+   * 有对象的执行）。**roarChance 已退役**——不再每回合无脑掷骰吼，改由优先级树按需触发（§15.6）。
+   * detonatePuffers/forceHatch＝启用开关（缺省关）；cocoonBoostChance＝①每 larva 立即结茧概率。**仅女王 def 带此字段** ⇒
+   * 普通敌人逐字节不变。数值 / 文案占位·defer（§10·守剧透红线 quirk #117·不点古文明·§2）。
    */
   warrenPheromones?: {
-    /** 每敌方回合吼叫释放信息素的概率（占位·1=必吼·rollChance≥1 零 RNG）。 */
-    roarChance: number;
-    /** 信息素①：给 larva·带 metamorphosis 的单位立即结茧的概率（缺省/0＝不启用①）。 */
+    /** cocoon-boost：给 larva·带 metamorphosis 的单位立即结茧的概率（缺省/0＝不启用）。 */
     cocoonBoostChance?: number;
-    /** 信息素②：令所有 armed Puffer 立即引爆（缺省/false＝不启用②）。 */
+    /** detonate：令所有 armed Puffer 立即引爆（缺省/false＝不启用）。 */
     detonatePuffers?: boolean;
-    /** 信息素③：令所有茧/卵 cocoonTurnsLeft→0 立即孵化（缺省/false＝不启用③）。 */
+    /** hatch：令所有茧/卵 cocoonTurnsLeft→0 立即孵化（缺省/false＝不启用）。 */
     forceHatch?: boolean;
-    /** 吼叫叙事（推入 log·占位·克制冷短句）。 */
+    /** 吼叫叙事（推入 log·占位·克制冷短句·detonate/hatch/cocoon-boost 三支共用）。 */
     roarText: string;
   };
 
   /**
-   * The Warren 女王·产卵 / 召唤（蜂群 boss SPEC §5/§9.5·2026-07-07 作者加）：敌方回合开头，若场上**活的非女王
-   * 单位** ≤ lowUnitThreshold → 女王立即产下若干**卵**（eggDefId·passive 计时实体·不打掉就孵化成敌人·复用
-   * metamorphosis·maybeWarrenReinforce）。产卵数 = baseCap + warrenHunt.roomsCleared × capPerRelocate（**每次被
-   * 击退／relocate 上限递增**·roomsCleared 派生·不入存档·§9.5 quirk #99），受 maxPartySize 场上硬上限约束。
-   * **仅女王 def 带此字段** ⇒ 普通敌人逐字节不变。数值占位·defer（§10）。
+   * The Warren 女王·产卵（lay·蜂群 boss SPEC §5/§9.5/§15·2026-07-07·#271）：§15 六分支优先级树的**唯一补池支**
+   * （maybeWarrenQueenAct 的 lay 分支·§15.2/§15.3）。作战单位少（活的非女王非茧单位 ≤ lowUnitThreshold）时女王产下
+   * 若干**卵**（eggDefId·passive 计时实体·不打掉就孵化成敌人·复用 metamorphosis）。基础产卵数 = baseCap +
+   * warrenHunt.roomsCleared × capPerRelocate（每次被击退递增·roomsCleared 派生·不入存档·quirk #99），受 maxPartySize
+   * 场上硬上限约束。
+   *
+   * **繁殖储备节流（fecundity reserve·#271 作者拍·退役 droneReplenish·防死角补池跑步机·§15.1）**：女王有一个内置
+   * 储备值（EnemyInstance.layReserve·缺省 reserveMax）——**每次产卵消耗 reserveCostPerLay·每女王回合缓慢恢复
+   * reserveRecoveryPerTurn**。储备低时：①产卵**间隔拉长**（minLayInterval + (1-储备比)×lowReserveIntervalBonus）；
+   * ②每次**产卵量按储备比缩减**（ceil(基础量×储备比)·见底＝0＝产不出）。**非死角**：储备照常恢复→节流会自纠到
+   * **非零平衡**（低储备拉长间隔→间隔里多攒恢复），即「持续补池但压住速率」＝§15.1「前两间净不减」。**死角
+   * the Hatchery**：`warrenRecoverReserve` 直接 no-op（**不恢复**）→储备只降不升→reserveMax/reserveCostPerLay 批后见底
+   * 归零→补池熄火→池子只出不进＝§15.1 跑步机护栏的**结构保证**（**节流自纠平衡故单靠数值不保证净耗尽·死角硬止
+   * 恢复才保证**·见 combat-warren.ts::warrenRecoverReserve）。**方向可调**：低储备→更慢更少是占位默认（作者若要
+   * 「攒够爆发式大产」翻公式即可·defer-number-tuning）。**仅女王 def 带此字段** ⇒ 普通敌人逐字节不变。
    */
   warrenReinforce?: {
-    /** 场上活的非女王单位 ≤ 此数 → 触发产卵（占位）。 */
+    /** 场上活的非女王非茧单位 ≤ 此数 → lay 分支触发（占位）。 */
     lowUnitThreshold: number;
-    /** 基础一次产卵数（占位）。 */
+    /** 基础一次产卵数（满储备时·占位）。 */
     baseCap: number;
     /** 每次被击退（warrenHunt.roomsCleared）额外 +n 产卵上限（占位·escalation）。 */
     capPerRelocate: number;
     /** 产的卵 defId（卵＝passive 计时实体·hatches to 敌人·复用 metamorphosis）。 */
     eggDefId: string;
-    /** 场上总单位硬上限（防爆场·同 droneReplenish.maxPartySize）。 */
+    /** 场上总单位硬上限（防爆场）。 */
     maxPartySize: number;
     /** 产卵叙事（推入 log·占位）。 */
     layText: string;
+    /** 繁殖储备上限（layReserve 初值·占位）。 */
+    reserveMax: number;
+    /** 每次产卵消耗的储备（占位·须 > recovery 才净耗尽）。 */
+    reserveCostPerLay: number;
+    /** 每女王回合缓慢恢复的储备（占位·<< cost ＝持续作战里净降）。 */
+    reserveRecoveryPerTurn: number;
+    /** 满储备时的产卵间隔基线回合数（占位）。 */
+    minLayInterval: number;
+    /** 储备见底时额外拉长的产卵间隔（占位·低储备→更长间隔）。 */
+    lowReserveIntervalBonus: number;
+  };
+
+  /**
+   * The Warren 女王·feed（献祭回血·蜂群 boss SPEC §4/§15.2·2026-07-07·#271）：§15 六分支优先级树的分支 1。**替换
+   * §13 的 corpseEating 被动回血**——你清怪不再顺手喂她，只她**主动**献祭一只活单位（巢送进嘴·她不动）才回血。
+   * 触发＝女王 HP 比例 ≤ triggerHpRatio（血低·§15.3①）且池子里有可献祭单位。按 sacrificePriority（defId 顺序·缺省
+   * spawn→warden→egg·实例化 §4「吃 Spawn·Spawn 光了吃卵」）取第一个有活实例的种类吞一只——被吞单位 hp→0 并记入
+   * fledInstanceIds（**不掉料**·#244 同款）。**茧不算献祭燃料·但 egg 例外**（§4 终局吃己卵·fork 2 impl 决议：茧不能拽
+   * 出来当盾/献祭·唯 eggDefId 卵是女王的口粮）。**仅女王 def 带此字段** ⇒ 普通敌人逐字节不变。数值/文案占位·defer。
+   */
+  warrenFeed?: {
+    /** 女王 HP 比例 ≤ 此值 → feed 进入候选（血低·§15.3①·占位）。 */
+    triggerHpRatio: number;
+    /** 每次献祭的回血量（不超 def.hp·占位）。 */
+    hpGainPerSacrifice: number;
+    /** 献祭优先顺序（defId·从上取第一个有活实例的种类·缺省时取任意活的非女王非茧单位）。 */
+    sacrificePriority?: string[];
+    /** 献祭回血叙事（推入 log·占位·克制冷短句·守剧透红线 #117·不点古文明）。 */
+    feedText: string;
+  };
+
+  /**
+   * The Warren 女王·screen（动态肉盾·蜂群 boss SPEC §5/§15.2·2026-07-07·#271）：§15 六分支优先级树的分支 2。**替换
+   * §13 的静态 shieldedBy**——不再「有 warden/guard 活着就挡」，改为女王**主动**从池子拉 shieldCount 只活单位站到身前当
+   * 肉盾（EnemyInstance.screeningFor＝女王 instanceId·checkActionAvailability 门读：有活 screener ⇒ 女王不可选中·杀穿
+   * 才够得着她）。触发＝**近期对女王伤害**（EnemyInstance.recentDamageLog·滚动 recentDamageWindow 回合累计）≥
+   * recentDamageThreshold（你突脸了·§15.3②）且当前无活 screener 且池子有可拉单位。**茧不算肉盾**（fork 2·茧不能站岗）。
+   * **跑步机护栏**：池子空了就拉不出盾（screen 熄火）→ 暴露窗常开 → 可杀（§15.2·须与 swarmRelocate.exposureThreshold
+   * 一起调）。开战时 warrenInitScreen 先起一层初始盾（否则第 1 回合女王裸露）。**仅女王 def 带此字段** ⇒ 普通敌人逐字节不变。
+   */
+  warrenScreen?: {
+    /** 一次拉起的肉盾数 N（从池子取活的非女王非茧单位·占位）。 */
+    shieldCount: number;
+    /** 触发 screen 所需的近期对女王累计伤害阈值（滚动窗口内·占位）。 */
+    recentDamageThreshold: number;
+    /** 近期伤害滚动窗口回合数（占位）。 */
+    recentDamageWindow: number;
+    /** 拉起肉盾的叙事（推入 log·占位·克制冷短句）。 */
+    screenText: string;
   };
 }
 
@@ -474,6 +520,27 @@ export interface EnemyInstance {
    * enemyAttackPlayer 用此值代替 def.armor 计算物理减伤（仅 physical）。
    */
   phaseArmorOverride?: number;
+
+  // ——— The Warren 女王·身体库存主线（§15·#271·全不入档·CombatState 不序列化）———
+  /**
+   * 本单位正在为哪只女王当肉盾（screen·§15.2）：值＝女王 instanceId（warrenRaiseScreen 标·warrenInitScreen 开战起盾）。
+   * checkActionAvailability 门读：目标女王有活 screener（screeningFor==该女王）时不可选中——杀穿肉盾才够得着她。
+   * 仅被拉去当盾的单位写此字段 ⇒ 普通敌人逐字节不变。
+   */
+  screeningFor?: string;
+  /**
+   * 女王近期挨打的滚动记录（{turn,dmg}·screen 触发条件·§15.4「唯一真·新增战斗态」）：applyAttack 命中带
+   * warrenScreen 的女王时追加、按 recentDamageWindow 修剪。screen 分支读窗口内累计伤害 ≥ recentDamageThreshold。
+   * 仅女王（warrenScreen）写此字段 ⇒ 普通敌人逐字节不变。
+   */
+  recentDamageLog?: { turn: number; dmg: number }[];
+  /**
+   * 女王繁殖储备当前值（lay 节流·§15.1·缺省＝warrenReinforce.reserveMax）：warrenLayEggs 每次产卵消耗、每女王回合
+   * 缓慢恢复。低→产卵间隔拉长 + 每次产卵量缩减（死角净耗尽跑步机护栏）。仅女王（warrenReinforce）写此字段。
+   */
+  layReserve?: number;
+  /** 女王上次产卵的回合号（配 minLayInterval 节流·warrenLayEggs 写）。 */
+  lastLayTurn?: number;
 }
 
 export interface EnemyStatus {

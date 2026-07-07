@@ -1,8 +1,9 @@
 // 特殊敌人机制钩子（战斗系统 SPEC §7 一族·数据驱动）
 //
-// 11 个自包含钩子，全部由 EnemyDef 数据字段驱动（phases / headEnrage / environmentalPressure /
-// splitBehavior / corpseEating / droneReplenish / metamorphosis / maternalBehavior）：不带对应字段的
-// 普通敌人在每个钩子里都是 no-op ⇒ 普通战斗逐字节不变。形状统一 GameState→GameState
+// 自包含钩子，全部由 EnemyDef 数据字段驱动（phases / headEnrage / environmentalPressure /
+// splitBehavior / corpseEating / metamorphosis / maternalBehavior / swarmRelocate / selfDestruct /
+// warrenPheromones+warrenReinforce+warrenFeed+warrenScreen＝The Warren 女王身体库存主线 §15）：不带对应
+// 字段的普通敌人在每个钩子里都是 no-op ⇒ 普通战斗逐字节不变。形状统一 GameState→GameState
 // （maybeInterceptJuvenile 例外：返回 GameState|null，供 applyAttack 在截击命中时短路返回）。
 //
 // 共享工具（getEnemyDef / setCombat / pushCombatLog / applyStatsDelta / randRange / rollChance）
@@ -289,55 +290,6 @@ export function maybeCorpseEat(state: GameState, killedInstanceId: string): Game
         text: `${def.name} 消化了${killedDef.name}——它的本能变成了它自己的。`,
       });
     }
-  }
-
-  return s;
-}
-
-/**
- * maybeReplenishDrones（菌群鱼·droneReplenish）：女王行动前检查场上工蜂数量，
- * 不足 minCount 则补充（总 party 不超 maxPartySize）。仅带 droneReplenish 的敌人触发；普通敌人逐字节不变。
- */
-export function maybeReplenishDrones(state: GameState): GameState {
-  if (state.phase.kind !== 'combat') return state;
-  const combat = state.phase.combat;
-  let s = state;
-
-  for (const e of combat.enemies) {
-    if (e.hp <= 0) continue;
-    const def = getEnemyDef(e.defId);
-    const dr = def?.droneReplenish;
-    if (!dr) continue;
-
-    const liveDrones = combat.enemies.filter((x) => x.hp > 0 && x.defId === dr.spawnDefId).length;
-    if (liveDrones >= dr.minCount) continue;
-
-    const curTotal = combat.enemies.filter((x) => x.hp > 0).length;
-    const need = dr.minCount - liveDrones;
-    const slots = Math.max(0, dr.maxPartySize - curTotal);
-    const toSpawn = Math.min(need, slots);
-    if (toSpawn <= 0) continue;
-
-    const spawnDef = getEnemyDef(dr.spawnDefId);
-    if (!spawnDef) continue;
-
-    const encId = s.phase.kind === 'combat' ? s.phase.combat.combatId : 'drone';
-    // 唯一性后缀＝状态内单调计数 spawnSeq（同 maybeEnemySplit·同毫秒批次 Date.now() 必撞号）
-    const seqStart = (s.phase.kind === 'combat' ? s.phase.combat.spawnSeq : undefined) ?? 0;
-    const newDrones = Array.from({ length: toSpawn }, (_, i) => ({
-      instanceId: `${encId}.drone.${seqStart + i}`,
-      defId: dr.spawnDefId,
-      hp: spawnDef.hp,
-      stance: 'attacking' as const,
-      aggro: spawnDef.threat,
-      statuses: [],
-    }));
-
-    s = setCombat(s, (c) => ({ ...c, enemies: [...c.enemies, ...newDrones], spawnSeq: seqStart + toSpawn }));
-    s = pushCombatLog(s, {
-      actor: 'system',
-      text: `${def.name} 排出 ${toSpawn} 只${spawnDef.name}——它们从缝隙里钻出来。`,
-    });
   }
 
   return s;
@@ -750,120 +702,4 @@ export function maybePufferMeleeDetonate(state: GameState, isRanged: boolean, ta
     return pushCombatLog(state, { actor: 'system', text: def.selfDestruct.defusedText });
   }
   return state;
-}
-
-// ——— The Warren 女王·吼叫 / 信息素 + 产卵召唤（SPEC §5/§9.5·2026-07-07 作者加）———
-
-/**
- * maybeWarrenPheromone（女王吼叫·信息素·§5）：敌方回合开头女王吼叫、按**条件优先级**择一释放信息素。
- * 优先级：② armed Puffer 存在 → 全部立即引爆（detonateSelfDestruct）；③ 否则有茧/卵 → 全部 cocoonTurnsLeft→0
- * 立即孵化（下个 maybeMetamorphosis 羽化）；① 否则给 larva·带 metamorphosis 的单位一个立即结茧概率。
- * roarChance 门控吼叫（≥1 零 RNG·守 seeded baseline）。女王仍无攻击表（威胁来自巢）。
- * 仅带 warrenPheromones 的敌人进分支；普通战斗逐字节不变。
- */
-export function maybeWarrenPheromone(state: GameState): GameState {
-  if (state.phase.kind !== 'combat' || !state.run) return state;
-  let s = state;
-  for (const q of (s.phase.kind === 'combat' ? s.phase.combat.enemies : [])) {
-    if (q.hp <= 0) continue;
-    const ph = getEnemyDef(q.defId)?.warrenPheromones;
-    if (!ph) continue;
-    if (!rollChance(ph.roarChance)) continue;
-
-    const live = () => (s.phase.kind === 'combat' ? s.phase.combat.enemies.filter((e) => e.hp > 0) : []);
-
-    // ② armed Puffer → 立即引爆
-    if (ph.detonatePuffers) {
-      const armed = live().filter((e) => pufferArmed(getEnemyDef(e.defId), e));
-      if (armed.length > 0) {
-        s = pushCombatLog(s, { actor: 'enemy', text: ph.roarText });
-        for (const p of armed) s = detonateSelfDestruct(s, p.instanceId);
-        continue;
-      }
-    }
-    // ③ 茧/卵 → 立即孵化（cocoonTurnsLeft→0·下个 maybeMetamorphosis 羽化）
-    if (ph.forceHatch) {
-      const cocoons = live().filter((e) => e.metamorphosisStage === 'cocoon');
-      if (cocoons.length > 0) {
-        s = pushCombatLog(s, { actor: 'enemy', text: ph.roarText });
-        s = setCombat(s, (c) => ({
-          ...c,
-          enemies: c.enemies.map((e) =>
-            e.hp > 0 && e.metamorphosisStage === 'cocoon' ? { ...e, cocoonTurnsLeft: 0 } : e,
-          ),
-        }));
-        continue;
-      }
-    }
-    // ① 结茧概率↑：larva·带 metamorphosis → 立即结茧（每只掷 cocoonBoostChance）
-    if (ph.cocoonBoostChance && ph.cocoonBoostChance > 0) {
-      const larvae = live().filter((e) => {
-        const d = getEnemyDef(e.defId);
-        return !!d?.metamorphosis && (e.metamorphosisStage ?? 'larva') === 'larva';
-      });
-      if (larvae.length > 0) {
-        s = pushCombatLog(s, { actor: 'enemy', text: ph.roarText });
-        for (const l of larvae) {
-          if (!rollChance(ph.cocoonBoostChance)) continue;
-          const meta = getEnemyDef(l.defId)!.metamorphosis!;
-          s = setCombat(s, (c) => ({
-            ...c,
-            enemies: c.enemies.map((e) =>
-              e.instanceId === l.instanceId
-                ? { ...e, metamorphosisStage: 'cocoon' as const, cocoonTurnsLeft: meta.cocoonMaxTurns, phaseArmorOverride: meta.cocoonArmor }
-                : e,
-            ),
-          }));
-        }
-      }
-    }
-  }
-  return s;
-}
-
-/**
- * maybeWarrenReinforce（女王产卵/召唤·§5/§9.5）：敌方回合开头，若场上活的**非女王**单位 ≤ lowUnitThreshold →
- * 女王产下 baseCap + warrenHunt.roomsCleared × capPerRelocate 枚卵（**每次被击退／relocate 上限递增**·roomsCleared
- * 派生不入存档·quirk #99），受 maxPartySize 场上硬上限约束。卵＝eggDefId 的 passive 实体，初始化为 **cocoon 阶段**
- * （复用 metamorphosis 计时·不打掉就孵化成敌人·打掉即毁＝breakDestroys）。仅带 warrenReinforce 的敌人进分支。
- */
-export function maybeWarrenReinforce(state: GameState): GameState {
-  if (state.phase.kind !== 'combat' || !state.run) return state;
-  let s = state;
-  for (const q of (s.phase.kind === 'combat' ? s.phase.combat.enemies : [])) {
-    if (q.hp <= 0) continue;
-    const wr = getEnemyDef(q.defId)?.warrenReinforce;
-    if (!wr) continue;
-    const combat = s.phase.kind === 'combat' ? s.phase.combat : null;
-    if (!combat) continue;
-
-    const liveNonQueen = combat.enemies.filter((e) => e.hp > 0 && e.instanceId !== q.instanceId).length;
-    if (liveNonQueen > wr.lowUnitThreshold) continue;
-
-    const roomsCleared = s.run?.warrenHunt?.roomsCleared ?? 0;
-    const curTotal = combat.enemies.filter((e) => e.hp > 0).length;
-    const want = wr.baseCap + roomsCleared * wr.capPerRelocate;
-    const toLay = Math.min(want, Math.max(0, wr.maxPartySize - curTotal));
-    if (toLay <= 0) continue;
-
-    const eggDef = getEnemyDef(wr.eggDefId);
-    if (!eggDef?.metamorphosis) continue;
-    const meta = eggDef.metamorphosis;
-    const seqStart = combat.spawnSeq ?? 0;
-    const eggs = Array.from({ length: toLay }, (_, i) => ({
-      instanceId: `${combat.combatId}.egg.${seqStart + i}`,
-      defId: wr.eggDefId,
-      hp: eggDef.hp,
-      stance: 'unaware' as const,
-      aggro: 0,
-      statuses: [],
-      // 初始化为「卵」＝cocoon 阶段（passive·计时孵化·breakDestroys 打掉即毁）
-      metamorphosisStage: 'cocoon' as const,
-      cocoonTurnsLeft: meta.cocoonMaxTurns,
-      phaseArmorOverride: meta.cocoonArmor,
-    }));
-    s = setCombat(s, (c) => ({ ...c, enemies: [...c.enemies, ...eggs], spawnSeq: seqStart + toLay }));
-    s = pushCombatLog(s, { actor: 'enemy', text: wr.layText });
-  }
-  return s;
 }
