@@ -63,6 +63,19 @@ export function handleReturnToPort(state: GameState): ReturnToPortResult {
       acquired = { ...acquired, caveMaps };
     }
   }
+  // 撤退/月相存档窗（蜂群 boss SPEC §9.11）：离港这一刻，若本 run 带着 Warren 追猎进度，把它整个搬到
+  // profile.warrenHunt（run 级字段随 run:null 一起丢——这是它跨港口边界的唯一挂点）并盖章当前总天数
+  // （profile.day 口径·同 chart.ts::chartSeed / advanceDays 的兜底）——下次 startDive 据此算跨过几个相位边界。
+  // 只读不写 day 本身（离港不推进时间，advanceDays 才推）；真条件字段（run.warrenHunt 缺席＝非 Warren 追猎·原样跳过、
+  // 结转档也不新建——同「死亡则不入账」的「生还才落袋」语义，本函数只在生还回港路径被调）。
+  if (state.run.warrenHunt) {
+    const departDay = state.profile.day ?? state.profile.runsCompleted;
+    acquired = {
+      ...acquired,
+      warrenHunt: { ...state.run.warrenHunt, lastVisitDay: departDay },
+    };
+  }
+
   const next: GameState = {
     ...state,
     // 回港即补满 Mira 备货（清空 shopStock → getShopStock 懒默认成满货）：soft per-run 限量

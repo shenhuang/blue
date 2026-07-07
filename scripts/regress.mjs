@@ -103,7 +103,7 @@ tasks.push({ name: 'check-event-poi', cmd: ['node', join('scripts', 'check-event
 // 主角语调门（纯 node·禁直白情绪/生理戏剧化命名·扫事件正文+日志页·把 [[protagonist-voice]] 散文落成会红的门·漂移修 quirk #184·见 scripts/check-protagonist-voice.mjs）
 tasks.push({ name: 'check-protagonist-voice', cmd: ['node', join('scripts', 'check-protagonist-voice.mjs')] });
 
-// 术语单一来源门（纯 node·禁 live 内容〔src+scenarios〕出现「穿尸」·逼回与代码/敌人库对齐的「尸衣者」·收口 #224·见 scripts/check-terminology.mjs）
+// 术语单一来源门（纯 node·禁 live 内容〔src+scenarios+scripts〕出现两个已退役旧称·逼回与代码/敌人库对齐的「水鬼」·收口 #224/#271·见 scripts/check-terminology.mjs）
 tasks.push({ name: 'check-terminology', cmd: ['node', join('scripts', 'check-terminology.mjs')] });
 
 // 声呐欺骗拆干净门（纯 node·感知重做 SPEC §6·src 扫到 spoofsSonar/evadesSonar/sonarReturn/sonarDeception/sonarPhantoms/applySonarDeception/effectiveFalseEchoSanity/nodeSonarView 任一残留即红·声呐诚实·欺骗移交低理智轴·见 scripts/check-no-sonar-deception.mjs）

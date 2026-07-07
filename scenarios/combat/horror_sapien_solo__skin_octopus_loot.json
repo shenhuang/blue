@@ -1,6 +1,6 @@
 {
-  "_comment": "尸衣者 baseline ①·皮囊=洞穴章鱼 → loot 替换为 章鱼角喙（item.cave_octopus_beak）。验证『击杀按 wornSkin 给 skinLoot 变体』路径（combat.ts::effectiveLoot）。wornSkin 经 startCombat 的 options 注入（= 未来「拾尸触发」的尸体来源）。默认满状态（staminaMax=100/oxygenMax=60）足够 ~5 回合稳杀尸衣者（hp=38/armor=2）且不被耗死——**别写 stats:{stamina:300} 之类超 max 大数**：会被 clampStats 夹到 100/60 无效（quirk #151）；真要长命战斗得提 max（equipment/upgrades）。guaranteed qty=[1,1] ⇒ lootGained 确定性=1（与 seed 无关·不锁 turnsElapsed/statsDelta·unaware→predatory 唤醒 + 双攻击 RNG 路径多）。对照同 encounter 的 skin_eel baseline：同一只敌人、不同皮囊 → 不同 loot。",
-  "combatId": "combat.corpse_wearer_solo",
+  "_comment": "水鬼 baseline ①·皮囊=洞穴章鱼 → loot 替换为 章鱼角喙（item.cave_octopus_beak）。验证『击杀按 wornSkin 给 skinLoot 变体』路径（combat.ts::effectiveLoot）。wornSkin 经 startCombat 的 options 注入（= 未来「拾尸触发」的尸体来源）。默认满状态（staminaMax=100/oxygenMax=60）足够 ~5 回合稳杀水鬼（hp=38/armor=2）且不被耗死——**别写 stats:{stamina:300} 之类超 max 大数**：会被 clampStats 夹到 100/60 无效（quirk #151）；真要长命战斗得提 max（equipment/upgrades）。guaranteed qty=[1,1] ⇒ lootGained 确定性=1（与 seed 无关·不锁 turnsElapsed/statsDelta·unaware→predatory 唤醒 + 双攻击 RNG 路径多）。对照同 encounter 的 skin_eel baseline：同一只敌人、不同皮囊 → 不同 loot。",
+  "combatId": "combat.horror_sapien_solo",
   "wornSkin": "enemy.cave_octopus",
   "seed": 1,
   "actions": [

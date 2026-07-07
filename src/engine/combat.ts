@@ -96,14 +96,14 @@ export function listAllEncounters(): CombatEncounterDef[] { return [...COMBAT_EN
 /** startCombat 可选项。 */
 export interface StartCombatOptions {
   /**
-   * 尸衣者专属：开战时为带 skinLoot 的敌人指定当前穿戴的皮囊 id（= 被翻动尸体所属敌种）。
+   * 水鬼专属：开战时为带 skinLoot 的敌人指定当前穿戴的皮囊 id（= 被翻动尸体所属敌种）。
    * 缺省 → 该敌 def.defaultSkin；普通敌人忽略此项（不写 wornSkin·EnemyInstance 形状不变）。
-   * 这是未来「拾尸触发」钩子注入「翻的是哪具尸体」的入口（boss 设计蓝图 2026-06-21「尸衣者新定位」）。
+   * 这是未来「拾尸触发」钩子注入「翻的是哪具尸体」的入口（boss 设计蓝图 2026-06-21「水鬼新定位」）。
    * 注：EnemyPartyMemberDef.wornSkin 优先于此全局值（成员级 > 战斗级 > def.defaultSkin）。
    */
   wornSkin?: string;
   /**
-   * 尸衣者占据玩家尸体专属：战斗结束（胜/逃）后路由回此 DeathRecord.id 的 corpse subPhase。
+   * 水鬼占据玩家尸体专属：战斗结束（胜/逃）后路由回此 DeathRecord.id 的 corpse subPhase。
    * 未设 → 普通路由（victoryEventId / rest）。由 dive-move.ts case 'corpse': 注入。
    */
   sourceCorpseId?: string;
@@ -142,13 +142,13 @@ export function startCombat(
       aggro: def.threat,
       statuses: [],
     };
-    // 尸衣者：记录开战时穿戴的皮囊（loot-trigger 的尸体来源·成员级 > 战斗级 > defaultSkin）。
+    // 水鬼：记录开战时穿戴的皮囊（loot-trigger 的尸体来源·成员级 > 战斗级 > defaultSkin）。
     // 仅对带 skinLoot 的敌人写此字段 ⇒ 普通敌人 EnemyInstance 逐字节不变（守 #99 + 既有 combat baseline）。
     if (def.skinLoot) {
       const worn = m.wornSkin ?? options?.wornSkin ?? def.defaultSkin;
       if (worn !== undefined) inst.wornSkin = worn;
     }
-    // 运行时攻击覆盖（尸衣者穿玩家武器时注入·静态 JSON 不设此字段 → 逐字节不变）。
+    // 运行时攻击覆盖（水鬼穿玩家武器时注入·静态 JSON 不设此字段 → 逐字节不变）。
     if (m.attacksOverride) {
       inst.phaseAttacksOverride = m.attacksOverride;
     }
@@ -170,7 +170,7 @@ export function startCombat(
     log: [],
     victoryEventId: enc.victoryEventId,
     resumeNodeId: state.run.currentNodeId,
-    // 尸衣者玩家尸体战斗：胜/逃后路由回 corpse subPhase（未设 → 普通路由不变）。
+    // 水鬼玩家尸体战斗：胜/逃后路由回 corpse subPhase（未设 → 普通路由不变）。
     ...(options?.sourceCorpseId ? { sourceCorpseId: options.sourceCorpseId } : {}),
     // 链鳗（分节实体）：按序攻击分节链标记（仅显式标 true 的遭遇带·普通 party 不写 ⇒ 逐字节不变）。
     ...(enc.attackInOrder ? { attackInOrder: true as const } : {}),
@@ -1016,7 +1016,7 @@ function allEnemiesDefeated(c: CombatState): boolean {
 }
 
 /**
- * effectiveLoot：尸衣者 loot 变体解析（纯函数·无副作用·可单测）。
+ * effectiveLoot：水鬼 loot 变体解析（纯函数·无副作用·可单测）。
  * 穿着某皮囊（instance.wornSkin 命中 def.skinLoot）→ 返回该皮囊的 LootTable（**替换** def.loot·非叠加）；
  * 否则（普通敌人无 skinLoot / 无 wornSkin / 皮囊不在表内）→ 返回 def.loot 原对象（同一引用）。
  * ⇒ 普通敌人恒返回 def.loot ⇒ finalizeVictory 普通路径的 randRange 调用次数与结果逐字节不变
@@ -1036,7 +1036,7 @@ function finalizeVictory(state: GameState): CombatTurnResult {
 
   // 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：看破 / 打「赢」＝它散了——**无战利品**（从没有东西可捞），
   // 收场暧昧（「你眨眼，那里只有空水」＝它从没在那儿·是你疯了、不是世界有东西）。跳过整段 loot 结算（effectiveLoot /
-  // randRange 都不跑）；路由沿用真遭遇（尸衣者 corpse / victoryEventId / rest），但幻觉一般无 victoryEventId ⇒ 回 rest。
+  // randRange 都不跑）；路由沿用真遭遇（水鬼 corpse / victoryEventId / rest），但幻觉一般无 victoryEventId ⇒ 回 rest。
   if (combat.hallucination) {
     s = appendLog(s, { tone: 'uncanny', text: '你眨眼，那里只有空水——刚才那东西没有留下任何痕迹，仿佛从来没在那儿。' });
     if (combat.sourceCorpseId) {
@@ -1049,7 +1049,7 @@ function finalizeVictory(state: GameState): CombatTurnResult {
     return { state: s, outcome: 'victory' };
   }
 
-  // 战利品（尸衣者按 wornSkin 替换 loot·普通敌人 effectiveLoot 恒回 def.loot ⇒ 逐字节不变）
+  // 战利品（水鬼按 wornSkin 替换 loot·普通敌人 effectiveLoot 恒回 def.loot ⇒ 逐字节不变）
   const looted: InventoryItem[] = []; // 本次战斗所有掉落·收齐后批量一格弹「获得物品」（enqueuePickup·见 state.ts）
   const fled = new Set(combat.fledInstanceIds ?? []);
   for (const e of combat.enemies) {
@@ -1071,7 +1071,7 @@ function finalizeVictory(state: GameState): CombatTurnResult {
 
   s = appendLog(s, { tone: 'realistic', text: `战斗结束。` });
 
-  // 跳转：尸衣者玩家尸体战斗 → 回 corpse subPhase 让玩家仍可打捞；普通战斗 → 旧路由。
+  // 跳转：水鬼玩家尸体战斗 → 回 corpse subPhase 让玩家仍可打捞；普通战斗 → 旧路由。
   if (combat.sourceCorpseId) {
     s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'corpse', deathRecordId: combat.sourceCorpseId } } };
   } else if (combat.victoryEventId) {
@@ -1087,7 +1087,7 @@ function finalizeFlee(state: GameState): CombatTurnResult {
   if (state.phase.kind !== 'combat') return { state, outcome: 'flee' };
   const sourceCorpseId = state.phase.combat.sourceCorpseId;
   let s = appendLog(state, { tone: 'realistic', text: `你脱离了战斗。` });
-  // 尸衣者玩家尸体战斗：脱战后仍可回 corpse subPhase 打捞；普通脱战 → rest。
+  // 水鬼玩家尸体战斗：脱战后仍可回 corpse subPhase 打捞；普通脱战 → rest。
   if (sourceCorpseId) {
     s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'corpse', deathRecordId: sourceCorpseId } } };
   } else {

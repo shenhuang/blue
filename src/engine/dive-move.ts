@@ -12,10 +12,10 @@ import { enterNodeSelection } from './dive-select';
 import { stalkerStep, weakStalkerStep, maybeApproachEncounter, maybeHallucinationEncounter } from './dive-stalker';
 import { startCombat } from './combat';
 import {
-  resolveCorpseWearerTier,
-  corpseWearerChance,
+  resolveHorrorSapienTier,
+  horrorSapienChance,
   buildInhabitedCorpseEncounter,
-} from './corpse-wearer';
+} from './horror-sapien';
 
 /** 编译期穷尽性检查：将来新增 NodeKind 却忘了在 moveToNode 里处理时，这里会直接报类型错误。 */
 function assertNever(x: never): never {
@@ -167,11 +167,11 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
       return { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
 
     case 'corpse': {
-      // 重访已被回收的尸体没意义；未回收则判断有无尸衣者占据
+      // 重访已被回收的尸体没意义；未回收则判断有无水鬼占据
       if (target.corpseRecordId && !isRevisit) {
         const record = s.profile.deaths.find((d) => d.id === target.corpseRecordId);
-        const tier = resolveCorpseWearerTier(target.depth);
-        if (record && tier > 0 && Math.random() < corpseWearerChance(tier)) {
+        const tier = resolveHorrorSapienTier(target.depth);
+        if (record && tier > 0 && Math.random() < horrorSapienChance(tier)) {
           // 被占据：先打一场战斗；胜/逃后 finalizeVictory/finalizeFlee 自动路由回 corpse subPhase
           const encounter = buildInhabitedCorpseEncounter(record, tier as 1 | 2 | 3);
           return startCombat(s, encounter, undefined, { sourceCorpseId: record.id });

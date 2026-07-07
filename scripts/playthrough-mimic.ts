@@ -5,7 +5,7 @@
 //   3. 横渡：startDiveFromPoi(mimic) 强制把开场设成兑现事件 mimic.false_beacon
 //   4. d_reveal 机制：setProfileFlags 持久写 profile.flags（≠ applyFlags 的 run 局部）+ 存档 round-trip
 //   5. 事件数据铁律：读穿成功 → d_reveal + survived flag + forceAscend；读错/盲信/拒看 → 不置 d_reveal（保持暧昧）；全 loot-free / 无战斗
-//   6. corpse-wearer 姊妹 apex（the_wearer_apex）：读穿给 lore、不置 d_reveal（d_reveal 只由 mimic 触发）
+//   6. horror-sapien 姊妹 apex（the_wearer_apex）：读穿给 lore、不置 d_reveal（d_reveal 只由 mimic 触发）
 //
 // 跑法： npx tsx scripts/playthrough-mimic.ts
 
@@ -129,9 +129,9 @@ for (const id of ['swim_for_it', 'douse_and_back']) {
 L('  读穿→d_reveal+survived+forceAscend / 读错·盲信·拒看→不交底 / 全 loot-free 无战斗 ✓');
 
 // ============================================================
-// 6. corpse-wearer 姊妹 apex：读穿给 lore、不置 d_reveal
+// 6. horror-sapien 姊妹 apex：读穿给 lore、不置 d_reveal
 // ============================================================
-L('\n========== 6. corpse-wearer 姊妹 apex ==========');
+L('\n========== 6. horror-sapien 姊妹 apex ==========');
 const wearer = getEventById('mimic.the_wearer_apex')!;
 assert(wearer, '6: mimic.the_wearer_apex 已注册');
 assert((wearer.zoneTags ?? []).includes('abyssal'), '6: 挂 abyssal tag（深渊 organic 遭遇）');

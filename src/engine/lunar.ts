@@ -79,3 +79,14 @@ export function daysUntilAnyPhase(day: number, phases: LunarPhase[]): number {
   }
   return 0;
 }
+
+/**
+ * 两个总天数之间跨越了几个相位边界（蜂群 boss SPEC §9.11「撤退/月相存档窗」·`warrenHunt.lastVisitDay`
+ * 消费方）：数的是**相位边界**，不是天差——「窗非天差」（同一相位内往返仍算 0，哪怕隔了 6 天；
+ * 跨 1 个边界＝1，如此类推）。纯函数·确定性·允许 fromDay > toDay（倒退返回负数，调用方按 `> 阈值` 判自然只在
+ * 正向流逝时触发）。
+ */
+export function moonPhasesElapsed(fromDay: number, toDay: number): number {
+  const seg = LUNAR_CYCLE_DAYS / PHASES.length;
+  return Math.floor(toDay / seg) - Math.floor(fromDay / seg);
+}

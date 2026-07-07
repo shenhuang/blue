@@ -70,8 +70,8 @@
 
 - **灯 = 自曝**（signature / alert / power / 相关升级）**保留**。
 - **SonarScanPanel 探图渲染整套**保留（有机洞穴 SDF / 雷达扫 / 猎手红点 / 射程揭示）。
-- **B · apex 一律冻结**（作者：「这些有别的计划，晚点做」）：`ChartPoi.mimic` / `shouldLureMimic` / `mimic.json` / 尸衣者事件——靠海图 + 事件检定、**不依赖**被拆的声呐欺骗引擎；原样留着。拆 §3 时核 `mimic.json` 未引用被拆符号（别误伤）。
-- **mimic / 尸衣者伏笔事件**（无灯之光 / 穿尸引诱 / 假信标那批）**冻结不改写**，随 B 一起以后做——别把要保留内容的铺垫先拆了。
+- **B · apex 一律冻结**（作者：「这些有别的计划，晚点做」）：`ChartPoi.mimic` / `shouldLureMimic` / `mimic.json` / 水鬼事件——靠海图 + 事件检定、**不依赖**被拆的声呐欺骗引擎；原样留着。拆 §3 时核 `mimic.json` 未引用被拆符号（别误伤）。
+- **mimic / 水鬼伏笔事件**（无灯之光 / 穿尸引诱 / 假信标那批）**冻结不改写**，随 B 一起以后做——别把要保留内容的铺垫先拆了。
 
 ## 5. 内容改写（A = iii · 逐条过 trench / abyssal / hadal / subhadal）
 
@@ -85,8 +85,8 @@
 - `trench.json`「回波对不上」母题：8 个 beat（the_return / the_wall / the_answer / the_moving_floor / the_remembered / the_opening / the_sounding / no_walls）→ **改写进低 san 框**（诚实早回波 + 你自己硬读成形）或软化诚实氛围；`_doc` 母题头改写。
 - `midwater.json` 的 `false_bottom` 一个 beat → 软化（鱼鳔返声非撒谎）。
 - `lore.json` 6 条 trench lore body → 同步改写。
-- **冻结（未动·随 B）**：`trench.second_diver`（+ `lore.trench.the_company`）/ `the_leftover_echo`〔borderline·保守冻结·**待作者定**是否属 sonar-phantom 该改〕/ `the_shelf`——corpse-wearer / 尸衣者伏笔。
-- 守则守住：loot-free / 无脚本死（留关声呐·摸黑出口）/ 叙述永不交底（「是水，还是你」永不判）/ 主角 voice（memory `protagonist-voice`）/ 名字不音译 / 尸衣者术语门。scenario baseline 快照 id+deltas 非文本 → 无需改。
+- **冻结（未动·随 B）**：`trench.second_diver`（+ `lore.trench.the_company`）/ `the_leftover_echo`〔borderline·保守冻结·**待作者定**是否属 sonar-phantom 该改〕/ `the_shelf`——corpse-wearer / 水鬼伏笔。
+- 守则守住：loot-free / 无脚本死（留关声呐·摸黑出口）/ 叙述永不交底（「是水，还是你」永不判）/ 主角 voice（memory `protagonist-voice`）/ 名字不音译 / 水鬼术语门。scenario baseline 快照 id+deltas 非文本 → 无需改。
 
 ## 6. 机制化守则（regress 门 · 别让约定随 churn 丢）
 

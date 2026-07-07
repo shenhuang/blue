@@ -1,5 +1,5 @@
 {
-  "_comment": "深水伏笔深段 · 招手的人（cosmic·44-56m·oncePerRun·[wreck]）——把 corpse-wearer 母题从中段 wreck_graveyard.no_bubbles 推进到深段、做成最强伏笔：旧式铜盔潜水服、无灯无泡却知道你在哪、招手引你过去＝deep-game vision 里『尸衣者引诱』的直接预告，承浅段 the_other / 中段 no_bubbles 的同步潜水员暗线。读 tell 而不过去（sanity vs 55，呼应 vision『够强+读出 tell 才能活』——埋可读 tell：无灯/无泡/老古董装备/招手机械重复）。满 sanity→rate 0.95，seed 1 确定性通过：lore.wreck_graveyard.the_wearer〔新〕+ sanity -5 + oxygenTurnCost 2，loot-free。叙述永不交底（既给『挂断缆的旧尸被深流摆着』又留错读，『你挑不出哪个更真』），刻意不触发 d_reveal、无 combat（伏笔非敌人，守 2/zone）。statsDelta event-runner --out json 实跑抄（quirk #43）。",
+  "_comment": "深水伏笔深段 · 招手的人（cosmic·44-56m·oncePerRun·[wreck]）——把 horror-sapien 母题从中段 wreck_graveyard.no_bubbles 推进到深段、做成最强伏笔：旧式铜盔潜水服、无灯无泡却知道你在哪、招手引你过去＝deep-game vision 里『水鬼引诱』的直接预告，承浅段 the_other / 中段 no_bubbles 的同步潜水员暗线。读 tell 而不过去（sanity vs 55，呼应 vision『够强+读出 tell 才能活』——埋可读 tell：无灯/无泡/老古董装备/招手机械重复）。满 sanity→rate 0.95，seed 1 确定性通过：lore.wreck_graveyard.the_wearer〔新〕+ sanity -5 + oxygenTurnCost 2，loot-free。叙述永不交底（既给『挂断缆的旧尸被深流摆着』又留错读，『你挑不出哪个更真』），刻意不触发 d_reveal、无 combat（伏笔非敌人，守 2/zone）。statsDelta event-runner --out json 实跑抄（quirk #43）。",
   "eventId": "wreck_graveyard.the_wearer",
   "depth": 50,
   "seed": 1,

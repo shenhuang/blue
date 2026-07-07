@@ -113,6 +113,24 @@ export interface PlayerProfile {
    * 通用 __set 分支原生 round-trip（同 flags）·**不 bump SAVE_VERSION**（quirk #99）。
    */
   seenChoices?: Set<string>;
+  /**
+   * The Warren 追猎进度的**离港结转**（蜂群 boss SPEC §9.11「撤退/月相存档窗」）：`RunState.warrenHunt`
+   * 是 run 级、`run: null` 时連 roomsCleared/queenNodeId 一起被丢弃——本字段是它跨越港口边界的唯一挂点。
+   * `engine/port.ts::handleReturnToPort` 离港时把 `run.warrenHunt`（若存在）整个搬来这里、附带
+   * `lastVisitDay`（离港那一刻的总天数·profile.day 口径）；`engine/dive-start.ts::startDive` 下次开潜时
+   * 读它：`moonPhasesElapsed(lastVisitDay, 当前 day) ≤ 阈值` ⇒ 原样接回 `run.warrenHunt`（续追猎）；
+   * `> 阈值` ⇒ 蜂巢重新聚拢，追猎从头开始（本字段清掉·run.warrenHunt 保持 undefined 让新战斗从零建）。
+   * 真条件字段（quirk #106·absent＝从未有过 Warren 追猎结转，或已过窗被清）：createInitialProfile 不种、
+   * hydrateGameState 不补（同 `trust?`/`stalker?`/`decoy?` 同族·纯对象 JSON 原生 round-trip）；
+   * additive·不 bump SAVE_VERSION（#99）。
+   */
+  warrenHunt?: {
+    roomsCleared: number;
+    queenNodeId?: string;
+    inHatchery?: boolean;
+    /** 离港那一刻的总天数（profile.day 口径）——下次开潜据此算跨过几个相位边界。 */
+    lastVisitDay: number;
+  };
 }
 
 /** 死亡记录，用于尸体回收 */
@@ -438,7 +456,8 @@ export interface RunState {
    * inHatchery＝已进死角。**唯一写者＝engine 战斗收束（finalizeSwarmRelocate）+ 追猎推进**（UI 只读）。
    * 真条件字段（quirk #106·absent＝不在 Warren 追猎中）：createNewRun 不种、hydrateGameState 不补；
    * 纯对象 JSON 自动 round-trip、不 bump SAVE_VERSION（#99）。读取处 `run.warrenHunt?.roomsCleared ?? 0` 兜底。
-   * 撤退/月相存档窗（§9.11·按总天数 bank）留后续 Phase——本字段即其挂点。
+   * 撤退/月相存档窗（§9.11·按总天数 bank）的结转挂点在 `PlayerProfile.warrenHunt`（离港时 bank·见那里的
+   * `lastVisitDay`）——本 run 级字段只在潜水中累积 roomsCleared，跨港口边界靠 profile 那份镜像、run 内不带 lastVisitDay。
    */
   warrenHunt?: {
     roomsCleared: number;

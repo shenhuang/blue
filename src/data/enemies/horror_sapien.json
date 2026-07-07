@@ -1,7 +1,7 @@
 {
   "enemies": [
     {
-      "id": "enemy.corpse_wearer",
+      "id": "enemy.horror_sapien",
       "bands": ["zone.wreck_graveyard", "zone.blue_caves"],
       "biomes": ["wreck_field", "cave_anchialine"],
       "role": "ambusher",
@@ -13,7 +13,7 @@
         "appearance": "你先看见的是一张你认得的脸——某条鱼、某只蟹，皮还在，只是不太合身。皮底下撑着它的，不是那东西的骨头。",
         "firstSeenHint": "那具尸体动了。不是水流——它在从里面把自己撑起来。"
       },
-      "name": "尸衣者",
+      "name": "水鬼",
       "tier": "uncanny",
       "hp": 38,
       "armor": 2,
@@ -26,7 +26,7 @@
       "hitBonus": 0.1,
       "attacks": [
         {
-          "id": "corpse_wearer.lunge",
+          "id": "horror_sapien.lunge",
           "name": "撑裂",
           "damageType": "physical",
           "damage": [5, 9],
@@ -34,7 +34,7 @@
           "weight": 3
         },
         {
-          "id": "corpse_wearer.wrong_face",
+          "id": "horror_sapien.wrong_face",
           "name": "戴着的脸",
           "damageType": "sanity",
           "damage": [0, 0],
@@ -72,9 +72,9 @@
   ],
   "combatEncounters": [
     {
-      "id": "combat.corpse_wearer_solo",
+      "id": "combat.horror_sapien_solo",
       "party": {
-        "members": [{ "defId": "enemy.corpse_wearer" }]
+        "members": [{ "defId": "enemy.horror_sapien" }]
       },
       "introText": "你伸手去翻那具尸体——它先动了。皮还挂在身上，撑起它的却是另一样东西。"
     }

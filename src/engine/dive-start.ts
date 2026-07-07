@@ -37,7 +37,7 @@ import { getBand, bandDiveModifier } from './bands';
 import { MIMIC_DIVE_EVENT_ID } from './chart';
 import { ch1Story, CH1_ANCHORS, type Ch1Anchor } from './story';
 import { enterNodeSelection } from './dive-select';
-import { tideLevel } from './lunar';
+import { tideLevel, moonPhasesElapsed } from './lunar';
 import type { PoiModifier, CurrentStrength } from '@/types';
 
 /**
@@ -46,6 +46,14 @@ import type { PoiModifier, CurrentStrength } from '@/types';
  * 阈值 SPRING_TIDE_THRESHOLD·占位·defer-number-tuning。
  */
 const SPRING_TIDE_THRESHOLD = 0.7; // 占位·defer-number-tuning：大潮触发线（tideLevel ∈[-1,1]·新/满月接近 1）
+
+/**
+ * 撤退/月相存档窗（蜂群 boss SPEC §9.11）：`profile.warrenHunt.lastVisitDay` 到本次开潜 `profile.day`
+ * 跨过的相位边界数（`moonPhasesElapsed`）**超过**此值 ⇒ 蜂巢重新聚拢、追猎进度清零重来；
+ * `≤` 此值 ⇒ 原样续上（见 startDive 内 run0 的 warrenHunt 重播种）。精确阈值留 §10 数值 tuning，
+ * 单点常量集中改（别散落魔数）。
+ */
+const WARREN_SAVE_WINDOW_PHASES = 1; // 占位·defer-number-tuning：≤1 个相位边界内回来算「窗内」
 
 /** 洋流升档：only goes up, never down. */
 function upgradeCurrent(existing: CurrentStrength | undefined): CurrentStrength {
@@ -66,6 +74,23 @@ export function lunarDiveModifier(poi: PoiModifier | undefined, day: number): Po
   if (tide < SPRING_TIDE_THRESHOLD) return poi; // 小潮 / 非大潮 → 零贡献
   // 大潮：升档洋流（加法·不碰其他字段）
   return { ...poi, current: upgradeCurrent(poi?.current) };
+}
+
+/**
+ * 撤退/月相存档窗（蜂群 boss SPEC §9.11）：本次开潜要不要把 `profile.warrenHunt`（离港时结转的追猎进度）
+ * 接回 `run.warrenHunt`。纯函数·确定性：无结转档 → undefined（新追猎从零建，同旧行为）；有结转档 →
+ * 按 `moonPhasesElapsed(lastVisitDay, currentDay)` 是否 `≤ WARREN_SAVE_WINDOW_PHASES` 二选一——
+ * 窗内原样续上（roomsCleared/queenNodeId/inHatchery 照抄，只是形状换回 RunState 那份、不带 lastVisitDay）；
+ * 窗外＝蜂巢重新聚拢 → 返回 undefined（追猎从零建，同「没有结转档」）。
+ */
+function resolveWarrenHuntCarry(
+  carry: PlayerProfile['warrenHunt'],
+  currentDay: number,
+): RunState['warrenHunt'] {
+  if (!carry) return undefined;
+  const elapsed = moonPhasesElapsed(carry.lastVisitDay, currentDay);
+  if (elapsed > WARREN_SAVE_WINDOW_PHASES) return undefined; // 窗外：蜂巢重新聚拢，追猎重来
+  return { roomsCleared: carry.roomsCleared, queenNodeId: carry.queenNodeId, inHatchery: carry.inHatchery };
 }
 
 /**
@@ -175,6 +200,9 @@ export function startDive(
     // 这一潜点亮你这次没扫过的地方（作者报「一条不该亮的线」）。两者皆 run 级派生·不入存档，重置即新图新雾。
     scanMemory: {},
     stalker: undefined,
+    // 撤退/月相存档窗（蜂群 boss SPEC §9.11）：把离港结转的 Warren 追猎档接回 run（窗内续上·窗外蜂巢
+    // 重新聚拢清零）。没有结转档（从未打过 Warren / 已清）→ undefined，同旧行为逐字节不变。
+    warrenHunt: resolveWarrenHuntCarry(state.profile.warrenHunt, state.profile.day ?? state.profile.runsCompleted),
   };
 
   const startNode = map.nodes[map.startNodeId];

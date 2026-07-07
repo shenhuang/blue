@@ -131,7 +131,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
   );
   const isOrderedEncounter = form.mode === 'combatId' ? !!selectedCombat?.attackInOrder : false;
 
-  // 当前遭遇里第一个带 skinLoot 的敌人 → 它的皮囊下拉（defaultSkin + 各 key）。无尸衣者 → null。
+  // 当前遭遇里第一个带 skinLoot 的敌人 → 它的皮囊下拉（defaultSkin + 各 key）。无水鬼 → null。
   const skinOptions = useMemo(() => {
     const defIds = form.mode === 'combatId' ? selectedCombat?.memberDefIds ?? [] : form.enemyDefIds;
     for (const id of defIds) {
@@ -737,7 +737,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
           </div>
 
           <div className="dev-section">
-            <h4 className="dev-sub-title">wornSkin（尸衣者皮囊·#162）</h4>
+            <h4 className="dev-sub-title">wornSkin（水鬼皮囊·#162）</h4>
             {skinOptions ? (
               <label className="dev-stack">
                 <span>{skinOptions.enemyId} 穿哪具皮囊（换 loot 变体）</span>
@@ -755,7 +755,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
                 </select>
               </label>
             ) : (
-              <p className="dev-faint">（当前遭遇无带 skinLoot 的尸衣者；此项忽略）</p>
+              <p className="dev-faint">（当前遭遇无带 skinLoot 的水鬼；此项忽略）</p>
             )}
           </div>
 

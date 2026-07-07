@@ -1,5 +1,5 @@
 {
-  "_comment": "竖井·口 · 回波里的人（uncanny·60-82m·[twilight]）——声呐画出一个跟你同步、隔固定距离的人形，灯里是空的（corpse-wearer 母题的声呐侧回声、不推进 Phase 3）。把灯钉住照（理智 vs 50）。满 sanity→rate 0.95、seed 1 成功：平淡解释（声呐把悬浮物扫成影子）+ sanity -4 + oxygenTurnCost 2，无 lore、loot-free。永不交底、不触发 d_reveal。#43 实跑抄。",
+  "_comment": "竖井·口 · 回波里的人（uncanny·60-82m·[twilight]）——声呐画出一个跟你同步、隔固定距离的人形，灯里是空的（horror-sapien 母题的声呐侧回声、不推进 Phase 3）。把灯钉住照（理智 vs 50）。满 sanity→rate 0.95、seed 1 成功：平淡解释（声呐把悬浮物扫成影子）+ sanity -4 + oxygenTurnCost 2，无 lore、loot-free。永不交底、不触发 d_reveal。#43 实跑抄。",
   "eventId": "trench.second_diver",
   "depth": 70,
   "seed": 1,

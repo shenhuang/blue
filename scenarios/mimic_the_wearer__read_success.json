@@ -1,5 +1,5 @@
 {
-  "_comment": "Phase 3 corpse-wearer 姊妹 apex · 招手的人 读穿成功（理智 vs 60·满 san seed1→0.95）。数他的不对〔无泡/无灯/招手太匀〕、绕开退进黑里 → lore.wreck_graveyard.the_wearer + sanity -11 + oxygenTurnCost 4。不置 d_reveal（d_reveal 只由 mimic 触发，作者定）、不 forceAscend（organic 深渊遭遇，回收 the_other→no_bubbles→the_wearer）（#43 实跑抄）。",
+  "_comment": "Phase 3 horror-sapien 姊妹 apex · 招手的人 读穿成功（理智 vs 60·满 san seed1→0.95）。数他的不对〔无泡/无灯/招手太匀〕、绕开退进黑里 → lore.wreck_graveyard.the_wearer + sanity -11 + oxygenTurnCost 4。不置 d_reveal（d_reveal 只由 mimic 触发，作者定）、不 forceAscend（organic 深渊遭遇，回收 the_other→no_bubbles→the_wearer）（#43 实跑抄）。",
   "eventId": "mimic.the_wearer_apex",
   "depth": 150,
   "seed": 1,

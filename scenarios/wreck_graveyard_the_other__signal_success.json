@@ -1,5 +1,5 @@
 {
-  "_comment": "沉船墓园浅段 · 水里的另一个人，打灯光信号（sanity vs 48，uncanny，fresh shallow-wrongness，foreshadow corpse-wearer）。满 sanity→rate 0.95 seed 1 通过。验证墓园浅段 uncanny sanity check 通过分支：lore.wreck_graveyard.the_other + sanity -4 + oxygenTurnCost 2。loot-free。叙述永不交底（『像你的光弹回来的影』＝既可读成倒影也可读成有人学你），刻意不触发 d_reveal。",
+  "_comment": "沉船墓园浅段 · 水里的另一个人，打灯光信号（sanity vs 48，uncanny，fresh shallow-wrongness，foreshadow horror-sapien）。满 sanity→rate 0.95 seed 1 通过。验证墓园浅段 uncanny sanity check 通过分支：lore.wreck_graveyard.the_other + sanity -4 + oxygenTurnCost 2。loot-free。叙述永不交底（『像你的光弹回来的影』＝既可读成倒影也可读成有人学你），刻意不触发 d_reveal。",
   "eventId": "wreck_graveyard.the_other",
   "depth": 20,
   "seed": 1,

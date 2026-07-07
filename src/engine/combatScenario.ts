@@ -103,7 +103,7 @@ export interface CombatScenarioInput {
   actions?: CombatActionInput[];
 
   /**
-   * 尸衣者专属：开战时为带 skinLoot 的敌人指定穿戴皮囊 id（透传 startCombat 的 wornSkin·见 combat.ts）。
+   * 水鬼专属：开战时为带 skinLoot 的敌人指定穿戴皮囊 id（透传 startCombat 的 wornSkin·见 combat.ts）。
    * 缺省 → 该敌 def.defaultSkin；普通敌人忽略。baseline 用它钉定「皮囊→loot 变体」路径。
    */
   wornSkin?: string;
@@ -270,7 +270,7 @@ function startAdHocCombat(state: GameState, enemyDefIds: string[], wornSkin?: st
       aggro: def.threat,
       statuses: [],
     };
-    // 尸衣者：与 startCombat 同口径——仅带 skinLoot 的敌人记 wornSkin（缺省 defaultSkin）·普通敌人形状不变。
+    // 水鬼：与 startCombat 同口径——仅带 skinLoot 的敌人记 wornSkin（缺省 defaultSkin）·普通敌人形状不变。
     if (def.skinLoot) {
       const worn = wornSkin ?? def.defaultSkin;
       if (worn !== undefined) inst.wornSkin = worn;

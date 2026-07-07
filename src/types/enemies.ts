@@ -114,13 +114,13 @@ export interface EnemyPartyMemberDef {
   enemyRef?: EnemyRef;
   /**
    * 运行时注入的攻击表覆盖（不写进静态 JSON·startCombat 写入 EnemyInstance.phaseAttacksOverride）。
-   * 尸衣者占据玩家尸体时用：基础攻击 + 玩家武器变体合并后传入（corpse-wearer.ts::buildInhabitedCorpseEncounter）。
+   * 水鬼占据玩家尸体时用：基础攻击 + 玩家武器变体合并后传入（horror-sapien.ts::buildInhabitedCorpseEncounter）。
    * 普通 JSON 遭遇不设此字段·不影响任何既有 combat baseline。
    */
   attacksOverride?: EnemyAttack[];
   /**
    * 运行时指定的皮囊 id（优先于 StartCombatOptions.wornSkin 和 def.defaultSkin）。
-   * 尸衣者：'player' = 穿了潜水员尸体（effectiveLoot 找不到此 key → 回落 def.loot，动物皮囊行为不变）。
+   * 水鬼：'player' = 穿了潜水员尸体（effectiveLoot 找不到此 key → 回落 def.loot，动物皮囊行为不变）。
    */
   wornSkin?: string;
 }
@@ -214,15 +214,15 @@ export interface EnemyDef {
   environmentalPressure?: EnvironmentalPressure;
 
   /**
-   * 尸衣者（corpse-wearer）专属：按当前穿戴「皮囊」决定的 loot 变体表（深水区 SPEC §5 / boss 设计蓝图 2026-06-21「尸衣者新定位」）。
+   * 水鬼（horror-sapien）专属：按当前穿戴「皮囊」决定的 loot 变体表（深水区 SPEC §5 / boss 设计蓝图 2026-06-21「水鬼新定位」）。
    * key = 皮囊 id（＝被翻动尸体所属敌种 id，如 'enemy.blind_eel'）；value = 该皮囊下的完整 LootTable。
    * 运行时由 EnemyInstance.wornSkin 选中其一（startCombat 写入 → combat.ts::effectiveLoot 消费）；
    * wornSkin 未设或不在表内 → 回落 def.loot（**替换语义·非叠加**·见 effectiveLoot）。
-   * 仅尸衣者类敌人声明此字段；check-enemy-refs (c3) 验证其形状 + defaultSkin∈skinLoot（约定落成 regress 门）。
+   * 仅水鬼类敌人声明此字段；check-enemy-refs (c3) 验证其形状 + defaultSkin∈skinLoot（约定落成 regress 门）。
    */
   skinLoot?: Record<string, LootTable>;
   /**
-   * 尸衣者缺省皮囊（startCombat 未显式传入 wornSkin 时用·= 它「默认穿着」的尸皮）。
+   * 水鬼缺省皮囊（startCombat 未显式传入 wornSkin 时用·= 它「默认穿着」的尸皮）。
    * 必须是 skinLoot 的一个 key（check-enemy-refs (c3) 守）。
    */
   defaultSkin?: string;
@@ -448,8 +448,8 @@ export interface EnemyInstance {
    */
   phaseAiPattern?: AiPattern;
   /**
-   * 尸衣者运行时穿戴的「皮囊」id（startCombat 写入·来自 loot-trigger 的尸体来源·缺省 def.defaultSkin）。
-   * finalizeVictory 经 effectiveLoot 用它从 def.skinLoot 选 loot 变体；undefined = 非尸衣者/未指定 → def.loot。
+   * 水鬼运行时穿戴的「皮囊」id（startCombat 写入·来自 loot-trigger 的尸体来源·缺省 def.defaultSkin）。
+   * finalizeVictory 经 effectiveLoot 用它从 def.skinLoot 选 loot 变体；undefined = 非水鬼/未指定 → def.loot。
    * 仅带 skinLoot 的敌人会被写此字段 ⇒ 普通敌人 EnemyInstance 形状逐字节不变（守 #99 + 既有 combat baseline）。
    */
   wornSkin?: string;

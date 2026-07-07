@@ -6,7 +6,7 @@
 //   (a) registry 不过期    —— registry.generated.ts 与 src/data/enemies/*.json 一致（调 gen --check）。
 //   (b) 引用完整           —— 每个 combatEncounter 引用的敌人 defId（含增援池）都已注册。
 //   (c) 无孤儿敌人         —— 每只敌人 ≥1 bands 且 ≥1 biomes（否则 pickEnemy 永选不中＝死库存）。
-//       (c2) boss/miniboss phases 降序；(c3) 尸衣者 skinLoot 形状 + defaultSkin∈skinLoot。
+//       (c2) boss/miniboss phases 降序；(c3) 水鬼 skinLoot 形状 + defaultSkin∈skinLoot。
 //   (d) 有 baseline        —— 每只敌人被 ≥1 个 scenarios/combat/*.json 实跑覆盖。
 //   (e) flee/scare 零掉落  —— #244 裁决：材料只走 kill——任何 loot 表（def.loot 与 skinLoot 皮囊变体）
 //       的 victoryModifier.flee / .scare 一旦写成非 0 → 红（逃跑/吓退仍是有效脱离结局·只是不掉料）。
@@ -178,8 +178,8 @@ for (const e of enemyDefs) {
   }
 }
 
-// —— (c3) 尸衣者 skinLoot 形状 + defaultSkin∈skinLoot ——
-// 约定（深水区 SPEC §5 / boss 设计蓝图「尸衣者新定位」）：声明 skinLoot 的敌人（尸衣者类）——
+// —— (c3) 水鬼 skinLoot 形状 + defaultSkin∈skinLoot ——
+// 约定（深水区 SPEC §5 / boss 设计蓝图「水鬼新定位」）：声明 skinLoot 的敌人（水鬼类）——
 // skinLoot 必须是非空对象（皮囊 id → LootTable）；每个皮囊变体须是合法 LootTable（guaranteed/rolls
 // 至少其一为数组·entry 形如 {itemId:string, qty:[n,n]}）；defaultSkin（若有）必须是 skinLoot 的一个 key。
 // 引擎 effectiveLoot 按 EnemyInstance.wornSkin 命中此表替换 loot——数据侧拦截优于运行时静默回落 def.loot。
@@ -328,5 +328,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  `✓ check-enemy-refs：${enemyDefs.length} 敌人 / ${encounters.length} encounter · 引用完整 · 无孤儿 · boss 阶段降序 · 尸衣 skinLoot 合规 · 链鳗按序节序合规 · 全有 baseline · flee/scare 零掉落 · registry 最新`,
+  `✓ check-enemy-refs：${enemyDefs.length} 敌人 / ${encounters.length} encounter · 引用完整 · 无孤儿 · boss 阶段降序 · 水鬼 skinLoot 合规 · 链鳗按序节序合规 · 全有 baseline · flee/scare 零掉落 · registry 最新`,
 );

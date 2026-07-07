@@ -51,7 +51,7 @@ const ENEMY_SILHOUETTE: Record<string, EnemySilhouette> = {
   'enemy.fissure_sphere': 'orb',
   'enemy.mycelial_drone': 'fungal',
   'enemy.mycelial_queen': 'fungal',
-  'enemy.corpse_wearer': 'humanoid',
+  'enemy.horror_sapien': 'humanoid',
 };
 
 export function enemySilhouette(defId: string): EnemySilhouette {

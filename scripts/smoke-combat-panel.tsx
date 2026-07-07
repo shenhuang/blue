@@ -47,14 +47,14 @@ assert(html.includes('进入实战'), '应渲染「进入实战」模式按钮')
 // 今日新字段控件（#162/#164·负伤 §10）
 assert(html.includes('staminaMaxBonus'), '应渲染 bonuses.staminaMaxBonus 控件（#164）');
 assert(html.includes('oxygenMaxBonus'), '应渲染 bonuses.oxygenMaxBonus 控件（#164）');
-assert(html.includes('wornSkin'), '应渲染 wornSkin（尸衣者皮囊）区块（#162）');
+assert(html.includes('wornSkin'), '应渲染 wornSkin（水鬼皮囊）区块（#162）');
 assert(html.includes('起始伤势'), '应渲染「起始伤势」（负伤 §10 baseline）区块');
 
 // ── ② serializer round-trip（form ↔ input·新字段不丢 + 装备槽派生）──────────
 const injDef = listInjuryDefs()[0];
 assert(injDef, '至少应有一种负伤 def（injuries.json）');
 
-const f = emptyCombatFormState('combat.corpse_wearer_solo');
+const f = emptyCombatFormState('combat.horror_sapien_solo');
 f.bonuses.staminaMaxBonus = 200;
 f.bonuses.oxygenMaxBonus = 30;
 f.wornSkin = 'enemy.cave_octopus';
@@ -124,39 +124,39 @@ assert(eelStart[0].reachable === true, '链鳗最前节 reachable=true');
 assert(eelStart[3].reachable === false, '链鳗头节 reachable=false（被前节挡·EnemySnapshot.reachable）');
 
 // (d) wornSkin 透传到 EnemyInstance（#162）+ buildCombatEntryState 造出 combat 相位（实战预览入口）
-const octoEntry = buildCombatEntryState({ combatId: 'combat.corpse_wearer_solo', wornSkin: 'enemy.cave_octopus' });
+const octoEntry = buildCombatEntryState({ combatId: 'combat.horror_sapien_solo', wornSkin: 'enemy.cave_octopus' });
 assert(octoEntry.state?.phase.kind === 'combat', 'buildCombatEntryState 造出 combat 相位 state（实战预览入口·不跑回合）');
 const octoInst = octoEntry.state.phase.combat.enemies[0];
 assert(octoInst.wornSkin === 'enemy.cave_octopus', 'wornSkin 透传到 EnemyInstance（#162 皮囊路径）');
 
-const defEntry = buildCombatEntryState({ combatId: 'combat.corpse_wearer_solo' });
+const defEntry = buildCombatEntryState({ combatId: 'combat.horror_sapien_solo' });
 const defInst = defEntry.state?.phase.kind === 'combat' ? defEntry.state.phase.combat.enemies[0] : null;
 assert(defInst?.wornSkin === 'enemy.blind_eel', '缺省 wornSkin → def.defaultSkin（blind_eel）');
 
 // (e) wornSkin → loot 变体（胜利掉落·给压倒性 loadout 确保确定性击杀·#162）
 const killActions = Array.from({ length: 40 }, () => ({ actionId: 'action.knife_slash', targetIndex: 0 }));
-const wearerDefault = runCombatScenario({
-  combatId: 'combat.corpse_wearer_solo',
+const sapienDefault = runCombatScenario({
+  combatId: 'combat.horror_sapien_solo',
   bonuses: { staminaMaxBonus: 2000 },
   stats: { stamina: 2000 },
   seed: 1,
   actions: killActions,
 });
-const wearerOcto = runCombatScenario({
-  combatId: 'combat.corpse_wearer_solo',
+const sapienOcto = runCombatScenario({
+  combatId: 'combat.horror_sapien_solo',
   bonuses: { staminaMaxBonus: 2000 },
   stats: { stamina: 2000 },
   seed: 1,
   wornSkin: 'enemy.cave_octopus',
   actions: killActions,
 });
-assert(wearerDefault.summary.outcome === 'victory', 'corpse_wearer 默认皮囊战斗胜利（压倒性 loadout）');
+assert(sapienDefault.summary.outcome === 'victory', 'horror_sapien 默认皮囊战斗胜利（压倒性 loadout）');
 assert(
-  wearerDefault.summary.lootGained.some((l) => l.itemId === 'item.eel_skin'),
+  sapienDefault.summary.lootGained.some((l) => l.itemId === 'item.eel_skin'),
   '默认皮囊（blind_eel）掉 eel_skin',
 );
 assert(
-  wearerOcto.summary.lootGained.some((l) => l.itemId === 'item.cave_octopus_beak'),
+  sapienOcto.summary.lootGained.some((l) => l.itemId === 'item.cave_octopus_beak'),
   'cave_octopus 皮囊掉 cave_octopus_beak（loot 变体·#162）',
 );
 

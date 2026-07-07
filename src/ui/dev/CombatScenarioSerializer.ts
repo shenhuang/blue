@@ -88,7 +88,7 @@ export interface CombatScenarioFormState {
   };
 
   /**
-   * 尸衣者专属皮囊（#162）：开战时为带 skinLoot 的敌人指定穿戴皮囊 id（透传 startCombat·effectiveLoot 据此换 loot）。
+   * 水鬼专属皮囊（#162）：开战时为带 skinLoot 的敌人指定穿戴皮囊 id（透传 startCombat·effectiveLoot 据此换 loot）。
    * 空字符串 = 不指定 → 该敌 def.defaultSkin；普通敌人忽略。
    */
   wornSkin: string;

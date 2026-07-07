@@ -1,4 +1,4 @@
-// 尸衣者占据玩家尸体变体
+// 水鬼占据玩家尸体变体
 // 纯函数层：tier 判定、占据概率、武器→攻击映射、动态 encounter 构建。
 // 调用方：dive-move.ts case 'corpse':（唯一插入点）。
 // 不改动：skinLoot 动物尸体行为、recoverFromCorpse、salvage_guild 逻辑。
@@ -9,13 +9,13 @@ import { getEnemyDef } from './combat';
 // ——— Tier 判定 ———
 
 /**
- * 节点深度 → 尸衣者占据档位（纯函数·无副作用）。
+ * 节点深度 → 水鬼占据档位（纯函数·无副作用）。
  *  0 (<30m)   ：不占据玩家尸体，直接进回收界面。
  *  1 (30–60m) ：占据，基础两攻击 + 潜水员版 introText。
  *  2 (60–90m) ：取 inventorySnapshot 第一件武器映射成额外攻击。
  *  3 (>90m)   ：取前两件武器，两个变体都加进攻击表。
  */
-export function resolveCorpseWearerTier(depth: number): 0 | 1 | 2 | 3 {
+export function resolveHorrorSapienTier(depth: number): 0 | 1 | 2 | 3 {
   if (depth < 30) return 0;
   if (depth < 60) return 1;
   if (depth < 90) return 2;
@@ -23,10 +23,10 @@ export function resolveCorpseWearerTier(depth: number): 0 | 1 | 2 | 3 {
 }
 
 /**
- * 档位 → 尸衣者占据概率（纯函数）。
+ * 档位 → 水鬼占据概率（纯函数）。
  * 与现有 corpseChance=0.6（是否生成尸体节点）独立——先生成节点，再判断有没有被占。
  */
-export function corpseWearerChance(tier: 0 | 1 | 2 | 3): number {
+export function horrorSapienChance(tier: 0 | 1 | 2 | 3): number {
   switch (tier) {
     case 0: return 0;
     case 1: return 0.25;
@@ -38,15 +38,15 @@ export function corpseWearerChance(tier: 0 | 1 | 2 | 3): number {
 // ——— 武器 → 攻击变体 ———
 
 /**
- * 物品 id → 尸衣者附加攻击变体（纯函数）。
+ * 物品 id → 水鬼附加攻击变体（纯函数）。
  * 识别不了的 itemId 返回 null，跳过，不报错。
- * 叙事立场：尸衣者穿着你的装备、用你的东西来对付你。
+ * 叙事立场：水鬼穿着你的装备、用你的东西来对付你。
  */
 export function weaponToAttack(itemId: string): EnemyAttack | null {
   switch (itemId) {
     case 'item.dive_knife.standard':
       return {
-        id: 'corpse_wearer.worn_knife',
+        id: 'horror_sapien.worn_knife',
         name: '熟悉的刀',
         damageType: 'physical',
         damage: [3, 6],
@@ -55,7 +55,7 @@ export function weaponToAttack(itemId: string): EnemyAttack | null {
       };
     case 'item.weapon.rescue_axe':
       return {
-        id: 'corpse_wearer.worn_axe',
+        id: 'horror_sapien.worn_axe',
         name: '劈落的斧',
         damageType: 'physical',
         damage: [5, 9],
@@ -64,7 +64,7 @@ export function weaponToAttack(itemId: string): EnemyAttack | null {
       };
     case 'item.weapon.pneumatic_pistol':
       return {
-        id: 'corpse_wearer.worn_pistol',
+        id: 'horror_sapien.worn_pistol',
         name: '气动点射',
         damageType: 'physical',
         damage: [4, 7],
@@ -73,7 +73,7 @@ export function weaponToAttack(itemId: string): EnemyAttack | null {
       };
     case 'item.weapon.harpoon_rifle':
       return {
-        id: 'corpse_wearer.worn_harpoon',
+        id: 'horror_sapien.worn_harpoon',
         name: '鱼叉',
         damageType: 'physical',
         damage: [7, 12],
@@ -104,7 +104,7 @@ export function buildInhabitedCorpseEncounter(
   record: DeathRecord,
   tier: 1 | 2 | 3,
 ): CombatEncounterDef {
-  const baseDef = getEnemyDef('enemy.corpse_wearer');
+  const baseDef = getEnemyDef('enemy.horror_sapien');
   const baseAttacks: EnemyAttack[] = baseDef?.attacks ?? [];
 
   // 从 inventorySnapshot 按顺序找武器攻击变体（最多取 tier-1 件）
@@ -121,7 +121,7 @@ export function buildInhabitedCorpseEncounter(
     extraAttacks.length > 0 ? [...baseAttacks, ...extraAttacks] : undefined;
 
   const member: EnemyPartyMemberDef = {
-    defId: 'enemy.corpse_wearer',
+    defId: 'enemy.horror_sapien',
     wornSkin: 'player',
     ...(attacksOverride ? { attacksOverride } : {}),
   };
