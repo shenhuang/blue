@@ -243,3 +243,22 @@
 **④ Deferred（非 core spine·留后续 Phase）：** Spawn→Puffer **自爆 + 远程豁免**（§9.9/E4·唯一真·新 hook）；**封口墙独立 party**（§9.10·现折叠进 `shieldedBy`「破墙才暴露」）；**蜂巢 mapgen 覆写 + Spawn 密度距离派生**（§8/§9.5/§9.7/E6/E9·现用既有 encounter + 占位节点）；**撤退/月相存档窗**（§9.11/E8·`warrenHunt` 已留挂点·接 `lunar.ts`）；**数值/文案 tuning**（§10·`exposureThreshold` 现占位 0.7＝短暴露窗）。
 
 **⑤ 验证：** 沙箱 `npm run regress` **94/94 绿**（含 `playthrough-combat-scenarios` 验三 baseline·`check-enemy-refs` 四门·`check-boundaries`·`typecheck`）；vite production build 缺 `rollup-linux` 沙箱跳过 → **留 Mac/nightly ship 门补跑**（`blue_regress_sandbox`）。未提交（交互 session·push 留 Mac/nightly·quirk #104）。
+
+---
+
+## 14. Puffer 自爆 + 女王吼叫/信息素/产卵（2026-07-07 · Cowork 交互 · Opus · on main · 未提交 · 沙箱 regress 94/94 绿）
+
+**① Puffer 自爆 + 远程豁免（§9.9/E4·接 §13④ deferred·本 session 落地）。** 全 additive·不 bump SAVE：
+- 新 `EnemyDef.selfDestruct{staminaDamage,sanityDamage?,detonateText,defusedText?}`·武装门 `pufferArmed`（有 metamorphosis 仅 **adult** 态武装·否则恒武装）。
+- 三触发点（`combat.ts`/`combat-mechanics.ts::maybePufferMeleeDetonate`+`detonateSelfDestruct`）：**近战**命中 armed Puffer → 当场引爆·溅玩家（含被这一击打死·detonate 不 guard hp≤0）；**远程**击破 → 豁免不溅（走普通死亡·可选 defusedText）；**到点** → 其敌方回合自爆（`runEnemyTurn`·**先于**无攻击表 passive 守栏 quirk #231·否则 adult 空攻击表被跳过不炸）。战斗无位置 ⇒ AoE 落点＝玩家。
+- 新 `enemy.warren_puffer`（larva 弱咬→茧→adult 活炸弹·复用茧化计时器）+ 3 baseline（近战溅伤 / 远程豁免 / 到点自爆·判据＝`sanity` delta·抗数值调）。
+
+**② 女王吼叫 / 信息素 + 产卵召唤（作者 2026-07-07 加·§5 扩展）。** 女王仍无攻击表；新行为在 `runEnemyTurn` 起手（`maybeWarrenPheromone` **先于** `maybeWarrenReinforce`·后者新产的卵不被同回合 forceHatch 秒孵＝留「凿破卵」窗）：
+- 新 `EnemyDef.warrenPheromones{roarChance,cocoonBoostChance?,detonatePuffers?,forceHatch?,roarText}`·**条件优先级择一**：② armed Puffer 存在→全部立即引爆；③ 否则有茧/卵→全部 `cocoonTurnsLeft→0` 立即孵化；① 否则 larva·带 metamorphosis 的单位掷 `cocoonBoostChance` 立即结茧（↑结茧率）。
+- 新 `EnemyDef.warrenReinforce{lowUnitThreshold,baseCap,capPerRelocate,eggDefId,maxPartySize,layText}`·场上活的**非女王**单位 ≤ 阈值 → 产 `baseCap + warrenHunt.roomsCleared × capPerRelocate` 枚卵（**每次被击退／relocate 上限递增**·roomsCleared 派生不入档·quirk #99）·受 maxPartySize 约束。
+- 新 `enemy.warren_egg`（passive·spawn 时初始化 cocoon 阶段·复用 metamorphosis 计时·**不打掉就孵化成敌人**；`metamorphosis.breakDestroys=true`＝**打掉即毁·不复活**·§9.5）+ 2 baseline（产卵/卵生命周期·信息素引爆 Puffer）。
+- 新 `metamorphosis.breakDestroys?`（缺省=既有「破茧复活成体」·Puffer/Warden 用；true=销毁·卵用）。
+
+**③ 仍 Deferred：** 蜂巢 mapgen 覆写 + Spawn/Puffer 密度距离派生 + 封口墙独立 party（§8/§9.5/§9.7/§9.10·**架构敏感·有未建依赖多口持久洞 + encounter→node 绑定缺失·留专门 session**）；撤退/月相存档窗（§9.11·`warrenHunt.lastVisitDay` 待接 `lunar.ts` `moonPhasesElapsed`）；数值/文案 tuning（§10·全占位）。
+
+**④ 验证：** 沙箱 `npm run regress` **94/94 全绿**（5 warren baseline + `check-enemy-refs` 传递闭包覆盖动态产出 defId + `check-file-budget`〔`combat.ts` melee 触发抽进 `combat-mechanics.ts` 守 1170 预算〕+ `check-boundaries` + `typecheck`）；build 留 nightly。未提交（push 留 Mac/nightly·quirk #104）。

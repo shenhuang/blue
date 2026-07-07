@@ -1,0 +1,20 @@
+{
+  "_comment": "The Warren·Puffer 自爆·近战击破溅伤（SPEC §9.9）：低氧→T1 evade 让巢囊结茧（不破茧）→ T2 knife_slash 命中已羽化的 armed 活炸弹 → 当场引爆·溅玩家（体力+理智）。理智掉＝自爆确证（刀/氧/该场无其它理智源）→ 对照 ranged_defuse（同布局换远程＝不溅）。selfDestruct 数值占位·调后 sanityDeltaAtMost 仍稳（掉≥1 即可）。seed 1。",
+  "combatId": "combat.warren_puffer_solo",
+  "seed": 1,
+  "bonuses": { "staminaMaxBonus": 300, "oxygenMaxBonus": 100 },
+  "stats": { "oxygen": 18 },
+  "actions": [
+    { "actionId": "action.evade" },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 2,
+    "survived": true,
+    "finalPhase": "dive",
+    "enemiesAlive": 0,
+    "sanityDeltaAtMost": -1,
+    "notes": "sanityDeltaAtMost -1＝近战引爆确证（自爆带理智伤·刀无理智伤·该场无其它理智源）。对照 ranged_defuse 同布局无理智掉＝远程豁免。"
+  }
+}

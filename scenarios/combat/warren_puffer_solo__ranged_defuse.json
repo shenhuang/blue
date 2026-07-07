@@ -1,0 +1,22 @@
+{
+  "_comment": "The Warren·Puffer 自爆·远程击破豁免（SPEC §9.9）：同 melee_detonate 布局（低氧→T1 evade 结茧→T2 攻击已羽化 adult），仅换远程 fire_pneumatic → 隔水拆除·不溅玩家。statsDelta 无 sanity＝无自爆溅伤（对照 melee_detonate 有 sanity）＝远程豁免确证。stamina 为 evade+射击行动费（非 selfDestruct 数值）。seed 1。",
+  "combatId": "combat.warren_puffer_solo",
+  "seed": 1,
+  "bonuses": { "staminaMaxBonus": 300, "oxygenMaxBonus": 100 },
+  "stats": { "oxygen": 18 },
+  "equipment": { "ranged": { "itemId": "item.weapon.pneumatic_pistol", "slot": "ranged", "level": 1 } },
+  "inventory": [{ "itemId": "item.ammo.pneumatic", "qty": 12 }],
+  "actions": [
+    { "actionId": "action.evade" },
+    { "actionId": "action.fire_pneumatic", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 2,
+    "survived": true,
+    "finalPhase": "dive",
+    "enemiesAlive": 0,
+    "statsDelta": { "stamina": -17, "oxygen": -1 },
+    "notes": "statsDelta 无 sanity 键＝远程击破 armed Puffer 不触发自爆溅伤（§9.9 豁免）。对照 melee_detonate 同布局有 sanity 掉。"
+  }
+}

@@ -309,6 +309,31 @@ export interface EnemyDef {
     adultHp: number;
     adultAttacksOverride: EnemyAttack[];
     cocoonBreakBonus?: LootEntry[];
+    /**
+     * 茧被击破（hp≤0）时的收束：缺省/false＝**成体复活**（既有行为·Puffer/Warden 破茧羽化更凶）；
+     * true＝**销毁**（不复活·卵/易碎茧用·「不打掉就孵化、打掉即毁」·SPEC §9.5 eggs·2026-07-07）。
+     */
+    breakDestroys?: boolean;
+  };
+
+  /**
+   * Puffer 自爆（The Warren·蜂群 boss SPEC §9.9）：胀成活炸弹的单位——被**近战**攻击、或到点（其
+   * 敌人回合）自爆，对玩家造成 AoE 伤害；**远程击破不触发溅伤**（拉距 / 换鱼叉·气动枪＝解法·刀斧近战会吃爆）。
+   * 战斗无位置（party 制）⇒ AoE 落点＝玩家（SPEC 只述「对玩家」）。
+   * **武装门**：带 metamorphosis 的 def 仅 **adult** 态武装——larva/cocoon 期击破安全（＝「趁茧别让它孵」·§5）；
+   * 无 metamorphosis 的 def 恒武装（从头就是炸弹的地雷类）。判定见 combat-mechanics.ts::pufferArmed。
+   * **仅带本字段的敌人进自爆分支** ⇒ 普通敌人 EnemyInstance/combat 流逐字节不变（守既有 baseline·#99）。
+   * 数值 / 文案占位·defer（§10·待作者调）。
+   */
+  selfDestruct?: {
+    /** 自爆对玩家的体力伤（占位·defer-number-tuning）。 */
+    staminaDamage: [number, number];
+    /** 可选：自爆附带理智伤（占位·缺省＝无理智伤）。 */
+    sanityDamage?: [number, number];
+    /** 近战击破 / 到点自爆时推入 log 的叙事（克制冷短句·守剧透红线 quirk #117·不点古文明关联·§2）。 */
+    detonateText: string;
+    /** 远程「隔水拆除」击破时推入 log 的叙事（可选·缺省＝静默死亡）。 */
+    defusedText?: string;
   };
 
   /**
@@ -326,6 +351,50 @@ export interface EnemyDef {
     relocateText: string;
     /** 女王 HP→0（只会在死角）后的崩解叙事（maybeSwarmCollapse 推入 log·§9.6）。 */
     collapseText: string;
+  };
+
+  /**
+   * The Warren 女王·吼叫 / 信息素（蜂群 boss SPEC §5·2026-07-07 作者加）：女王每敌方回合开头可吼叫释放**一种**
+   * 信息素（maybeWarrenPheromone·敌方回合起手·女王仍无攻击表·威胁来自巢）。三效果按**条件优先级**择一：
+   *   ② detonatePuffers：场上有 armed Puffer → 令其**立即引爆**（复用 detonateSelfDestruct）。
+   *   ③ forceHatch：场上有茧/卵 → 令其 cocoonTurnsLeft→0 **立即孵化**（下个 maybeMetamorphosis 羽化）。
+   *   ① cocoonBoostChance：给符合条件（larva·带 metamorphosis）的单位一个**立即结茧**概率（↑结茧率）。
+   * roarChance 为吼叫触发概率（占位·1=每回合·rollChance≥1 零 RNG·作者调低节流）。**仅女王 def 带此字段** ⇒ 普通敌人逐字节不变。
+   * 数值 / 文案占位·defer（§10·守剧透红线 quirk #117·不点古文明·§2）。
+   */
+  warrenPheromones?: {
+    /** 每敌方回合吼叫释放信息素的概率（占位·1=必吼·rollChance≥1 零 RNG）。 */
+    roarChance: number;
+    /** 信息素①：给 larva·带 metamorphosis 的单位立即结茧的概率（缺省/0＝不启用①）。 */
+    cocoonBoostChance?: number;
+    /** 信息素②：令所有 armed Puffer 立即引爆（缺省/false＝不启用②）。 */
+    detonatePuffers?: boolean;
+    /** 信息素③：令所有茧/卵 cocoonTurnsLeft→0 立即孵化（缺省/false＝不启用③）。 */
+    forceHatch?: boolean;
+    /** 吼叫叙事（推入 log·占位·克制冷短句）。 */
+    roarText: string;
+  };
+
+  /**
+   * The Warren 女王·产卵 / 召唤（蜂群 boss SPEC §5/§9.5·2026-07-07 作者加）：敌方回合开头，若场上**活的非女王
+   * 单位** ≤ lowUnitThreshold → 女王立即产下若干**卵**（eggDefId·passive 计时实体·不打掉就孵化成敌人·复用
+   * metamorphosis·maybeWarrenReinforce）。产卵数 = baseCap + warrenHunt.roomsCleared × capPerRelocate（**每次被
+   * 击退／relocate 上限递增**·roomsCleared 派生·不入存档·§9.5 quirk #99），受 maxPartySize 场上硬上限约束。
+   * **仅女王 def 带此字段** ⇒ 普通敌人逐字节不变。数值占位·defer（§10）。
+   */
+  warrenReinforce?: {
+    /** 场上活的非女王单位 ≤ 此数 → 触发产卵（占位）。 */
+    lowUnitThreshold: number;
+    /** 基础一次产卵数（占位）。 */
+    baseCap: number;
+    /** 每次被击退（warrenHunt.roomsCleared）额外 +n 产卵上限（占位·escalation）。 */
+    capPerRelocate: number;
+    /** 产的卵 defId（卵＝passive 计时实体·hatches to 敌人·复用 metamorphosis）。 */
+    eggDefId: string;
+    /** 场上总单位硬上限（防爆场·同 droneReplenish.maxPartySize）。 */
+    maxPartySize: number;
+    /** 产卵叙事（推入 log·占位）。 */
+    layText: string;
   };
 }
 

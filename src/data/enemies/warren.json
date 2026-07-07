@@ -1,5 +1,5 @@
 {
-  "_comment": "The Warren（蜂群 boss·the Gravid Queen / Spawn / Wardens / Guards）· 蜂群 boss SPEC docs/spec/深海回响_蜂群boss_SPEC.md · Phase 1 core spine（2026-07-06）。机制全复用已 ship 钩子 + 一枚新字段 swarmRelocate：①女王 attacks=[]（不攻击·§5·runEnemyTurn 无攻击表 passive 跳过）；②shieldedBy=[warden,guard]（破墙才暴露女王·checkActionAvailability 门）；③swarmRelocate（非死角 HP≤exposureThreshold → 巢撤走·房间清空·女王逃脱·finalizeSwarmRelocate；死角 the Hatchery 由 encounter.warrenRoom.isHatchery 禁撤 → 女王可致死＝取胜；死后 maybeSwarmCollapse 崩解）；④droneReplenish（巢持续补 Spawn·chaff·不 shield）；⑤corpseEating（女王吃倒下的单位回血）；⑥environmentalPressure（封闭巢耗氧·§7）；Warden→Berserker 走已 ship 的 metamorphosis 茧化（cocoonBreakBonus 击破奖励）。数值/文案全占位·待作者调（defer-number-tuning·文风克制冷短句·守剧透红线 quirk #117·不点古文明关联·§2）。DEFER（非 core spine·§E4/§5）：Spawn→Puffer 自爆（远程豁免·需新 hook）、封口墙独立 party、蜂巢 mapgen 覆写、撤退月相存档窗。",
+  "_comment": "The Warren（蜂群 boss·the Gravid Queen / Spawn / Wardens / Guards）· 蜂群 boss SPEC docs/spec/深海回响_蜂群boss_SPEC.md · Phase 1 core spine（2026-07-06）。机制全复用已 ship 钩子 + 一枚新字段 swarmRelocate：①女王 attacks=[]（不攻击·§5·runEnemyTurn 无攻击表 passive 跳过）；②shieldedBy=[warden,guard]（破墙才暴露女王·checkActionAvailability 门）；③swarmRelocate（非死角 HP≤exposureThreshold → 巢撤走·房间清空·女王逃脱·finalizeSwarmRelocate；死角 the Hatchery 由 encounter.warrenRoom.isHatchery 禁撤 → 女王可致死＝取胜；死后 maybeSwarmCollapse 崩解）；④droneReplenish（巢持续补 Spawn·chaff·不 shield）；⑤corpseEating（女王吃倒下的单位回血）；⑥environmentalPressure（封闭巢耗氧·§7）；Warden→Berserker 走已 ship 的 metamorphosis 茧化（cocoonBreakBonus 击破奖励）；⑦warren_puffer＝Spawn→Puffer 自爆活炸弹（selfDestruct·近战溅/远程豁免/到点炸·§9.9·独立 def·复用茧化计时器·武装仅 adult 态）。数值/文案全占位·待作者调（defer-number-tuning·文风克制冷短句·守剧透红线 quirk #117·不点古文明关联·§2）。DEFER（非 core spine·§E5/§8）：封口墙独立 party、蜂巢 mapgen 覆写 + Spawn/Puffer 密度距离派生（Puffer 进正式巢室 room2/hatchery 在此步）、撤退月相存档窗。",
   "enemies": [
     {
       "id": "enemy.warren_queen",
@@ -33,6 +33,21 @@
       },
       "environmentalPressure": {
         "oxygenDrainBonus": 1
+      },
+      "warrenPheromones": {
+        "roarChance": 1,
+        "cocoonBoostChance": 1,
+        "detonatePuffers": true,
+        "forceHatch": true,
+        "roarText": "[待过稿] 巢母的身体一鼓，喉腔里滚出一阵压在水下的低吼——四周泛起一层看不见的东西，整座巢跟着躁动。"
+      },
+      "warrenReinforce": {
+        "lowUnitThreshold": 2,
+        "baseCap": 2,
+        "capPerRelocate": 1,
+        "eggDefId": "enemy.warren_egg",
+        "maxPartySize": 8,
+        "layText": "[待过稿] 她腹囊一缩，几枚半透的卵顺着产道滑出来，贴在四壁上开始搏动。"
       },
       "attacks": [],
       "physicalDamage": [0, 0],
@@ -179,9 +194,142 @@
         "behavior": "[待过稿] 结了硬壳的活盾，专门做「墙」——巢母被撤走后，是它们留下来封住你追进去的路。",
         "appearance": "[待过稿] 迟缓、厚壳，几乎不动。你得凿穿它才过得去。"
       }
+    },
+    {
+      "_selfDestruct_comment": "Puffer（河豚型·SPEC §9.9）：巢役结茧羽化成的活炸弹。larva 弱咬 passive → 低氧结茧 → adult 羽化后 selfDestruct 武装。被近战命中当场引爆·溅玩家（含被这一击打死）；远程击破隔水拆除·不溅（defusedText）；不处理则到点（其回合）自爆。adultAttacksOverride=[] ⇒ 靠 runEnemyTurn 到点自爆分支出手（先于无攻击表 passive 守栏·quirk #231）。数值/文案占位·defer。",
+      "id": "enemy.warren_puffer",
+      "name": "[待过稿] 巢囊",
+      "tier": "uncanny",
+      "bands": ["band.vent.t3", "band.trench.t4"],
+      "biomes": ["hydrothermal_vent", "trench"],
+      "role": "swarm",
+      "threatTier": "medium",
+      "hp": 5,
+      "armor": 0,
+      "evasion": 2,
+      "speed": 5,
+      "threat": 4,
+      "hostility": "aggressive",
+      "initialStance": "attacking",
+      "aiPattern": "crowd",
+      "attacks": [
+        {
+          "id": "warren_puffer.nip",
+          "name": "[待过稿] 蹭咬",
+          "damageType": "physical",
+          "damage": [1, 2],
+          "description": "[待过稿] 还没胀起来的时候，它只有气无力地蹭你一下。"
+        }
+      ],
+      "physicalDamage": [1, 2],
+      "metamorphosis": {
+        "cocoonTriggerOxygen": 20,
+        "cocoonArmor": 6,
+        "cocoonMaxTurns": 1,
+        "adultHp": 6,
+        "adultAttacksOverride": [],
+        "cocoonBreakBonus": [{ "itemId": "item.coral_shard", "qty": [1, 1], "weight": 1 }]
+      },
+      "selfDestruct": {
+        "staminaDamage": [7, 11],
+        "sanityDamage": [1, 2],
+        "detonateText": "[待过稿] 它猛地一缩，整个囊体在你脸前炸开——一团高压的水和碎肉糊了你满身。",
+        "defusedText": "[待过稿] 隔着一段水，钢钉先扎穿了那层绷紧的皮，气压泄在原地——碎沫没够到你。"
+      },
+      "loot": {
+        "rolls": [],
+        "rollCount": 0,
+        "victoryModifier": { "kill": 1.0 }
+      },
+      "victoryConditions": ["kill"],
+      "codex": {
+        "habitat": "[待过稿] 混在巢役里，越往深处越多。空气一薄，它们就开始胀。",
+        "behavior": "[待过稿] 平时不起眼，一旦胀成活炸弹就只剩一个用途：贴上来炸。近身会吃满，隔远了点破反而安全。",
+        "appearance": "[待过稿] 半透的囊体一点点鼓起来，里面的气和液在皮下晃——绷到发亮，随时会破。"
+      }
+    },
+    {
+      "_egg_comment": "巢卵（§9.5·2026-07-07 作者加）：女王 warrenReinforce 产下的 passive 计时实体·spawn 时初始化为 cocoon 阶段。不打掉→cocoonMaxTurns 后孵化成 adult（一只咬人的巢役型）；打掉（击破 cocoon·hp≤0）→breakDestroys 销毁不复活。女王信息素③ forceHatch 令 cocoonTurnsLeft→0 立即孵化。cocoonTriggerOxygen=0＝正常不经 larva 结茧（只被 reinforce 直接置 cocoon）。数值/文案占位。",
+      "id": "enemy.warren_egg",
+      "name": "[待过稿] 巢卵",
+      "tier": "uncanny",
+      "bands": ["band.vent.t3", "band.trench.t4"],
+      "biomes": ["hydrothermal_vent", "trench"],
+      "role": "swarm",
+      "threatTier": "low",
+      "hp": 3,
+      "armor": 0,
+      "evasion": 0,
+      "speed": 1,
+      "threat": 1,
+      "hostility": "aggressive",
+      "initialStance": "unaware",
+      "aiPattern": "crowd",
+      "attacks": [
+        {
+          "id": "warren_egg.hatchling_bite",
+          "name": "[待过稿] 啃咬",
+          "damageType": "physical",
+          "damage": [2, 4],
+          "description": "[待过稿] 刚孵出来的东西扑上来咬了一口——它还湿着。"
+        }
+      ],
+      "physicalDamage": [2, 4],
+      "metamorphosis": {
+        "cocoonTriggerOxygen": 0,
+        "cocoonArmor": 1,
+        "cocoonMaxTurns": 2,
+        "adultHp": 6,
+        "adultAttacksOverride": [
+          {
+            "id": "warren_egg.hatchling_bite",
+            "name": "[待过稿] 啃咬",
+            "damageType": "physical",
+            "damage": [2, 4],
+            "description": "[待过稿] 刚孵出来的巢役扑上来咬。"
+          }
+        ],
+        "breakDestroys": true
+      },
+      "loot": {
+        "rolls": [],
+        "rollCount": 0,
+        "victoryModifier": { "kill": 1.0 }
+      },
+      "victoryConditions": ["kill"],
+      "codex": {
+        "habitat": "[待过稿] 巢母在战斗中随时产下，越被逼急产得越多。",
+        "behavior": "[待过稿] 一开始只是个搏动的囊——你不趁早凿破，它就孵成又一张嘴。",
+        "appearance": "[待过稿] 半透的卵，里面蜷着还没成形的东西，隔着膜在动。"
+      }
     }
   ],
   "combatEncounters": [
+    {
+      "_comment": "女王信息素/产卵 baseline 载体（§5/§9.5·2026-07-07）：死角（isHatchery·禁 relocate·女王留场）单放女王。场上非女王单位≤threshold→warrenReinforce 每回合产卵；信息素择一（无 Puffer/larva 时 forceHatch 催孵刚产的卵）。验产卵+卵孵化/打掉即毁+信息素。数值文案占位。",
+      "id": "combat.warren_queen_behavior_test",
+      "warrenRoom": { "isHatchery": true },
+      "party": { "members": [{ "defId": "enemy.warren_queen" }] },
+      "showIntro": false,
+      "introText": "[待过稿] 死角里只剩她——她开始产卵。"
+    },
+    {
+      "_comment": "女王信息素·引爆 Puffer + 结茧率↑ baseline 载体（§5·2026-07-07）：死角女王 + 一只 Puffer。女王吼叫①令 larva Puffer 立即结茧→羽化 armed→②信息素令其立即引爆（溅玩家·理智伤确证）。数值文案占位。",
+      "id": "combat.warren_pheromone_test",
+      "warrenRoom": { "isHatchery": true },
+      "party": {
+        "members": [{ "defId": "enemy.warren_queen" }, { "defId": "enemy.warren_puffer" }]
+      },
+      "showIntro": false,
+      "introText": "[待过稿] 死角里，她伏在卵床上，一只巢役在她脚边开始发胀。"
+    },
+    {
+      "_comment": "Puffer 自爆机制 baseline 载体（SPEC §9.9）：单只 warren_puffer·低氧起手→结茧→羽化成 armed 活炸弹。三条 baseline 覆盖近战击破溅伤 / 远程击破豁免（defusedText）/ 到点自爆。数值文案占位·非正式巢室（Puffer 进 room2/hatchery 留后续 mapgen 步）。",
+      "id": "combat.warren_puffer_solo",
+      "party": { "members": [{ "defId": "enemy.warren_puffer" }] },
+      "showIntro": false,
+      "introText": "[待过稿] 一只巢役卡在窄口——空气薄了，它开始胀。"
+    },
     {
       "id": "combat.warren_approach",
       "party": {

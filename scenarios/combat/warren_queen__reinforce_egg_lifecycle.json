@@ -1,0 +1,21 @@
+{
+  "_comment": "女王产卵/召唤 + 卵生命周期 baseline（§5/§9.5·2026-07-07）：死角女王(isHatchery·不 relocate)·T1 evade→droneReplenish 补 2 巢役 + warrenReinforce 产 2 卵(cocoon·先于产卵的信息素不秒孵→留窗)。T2 凿破卵#3(cocoon hp→0)。T3 maybeMetamorphosis：卵#3 breakDestroys 销毁(「在孵化前被凿破」·不复活)、未打的卵#4 到点孵化(「茧化完成」)。验产卵+打掉即毁+不打即孵。logIncludes 断言引擎稳定文案(抗占位人名 churn)。数值占位。seed 1。",
+  "combatId": "combat.warren_queen_behavior_test",
+  "seed": 1,
+  "bonuses": { "staminaMaxBonus": 600, "oxygenMaxBonus": 200 },
+  "stats": { "oxygen": 40 },
+  "actions": [
+    { "actionId": "action.evade" },
+    { "actionId": "action.knife_slash", "targetIndex": 3 },
+    { "actionId": "action.knife_slash", "targetIndex": 3 },
+    { "actionId": "action.evade" }
+  ],
+  "expect": {
+    "outcome": "noActionProvided",
+    "turnsElapsed": 4,
+    "survived": true,
+    "enemiesAlive": 4,
+    "logIncludes": ["在孵化前被凿破", "茧化完成"],
+    "notes": "logIncludes「在孵化前被凿破」＝卵被打掉即毁(breakDestroys·不复活)；「茧化完成」＝未打的卵到点孵化成敌人。enemiesAlive=女王+2巢役+1孵化幼体(另1卵已毁)。数值调后 turnsElapsed/enemiesAlive 须 bless 重录。"
+  }
+}

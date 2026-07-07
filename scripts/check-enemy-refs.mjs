@@ -87,6 +87,12 @@ for (const f of enemyFiles) {
       loot: e.loot,
       defaultSkin: e.defaultSkin,
       headEnrage: e.headEnrage,
+      // 动态产出的 defId（droneReplenish.spawnDefId / warrenReinforce.eggDefId）：被覆盖的产出者
+      // 会在战斗中生成它们 ⇒ baseline 覆盖到产出者即传递覆盖到产物（见下 (d) 传递闭包）。
+      spawnChildren: [
+        ...(e.droneReplenish?.spawnDefId ? [e.droneReplenish.spawnDefId] : []),
+        ...(e.warrenReinforce?.eggDefId ? [e.warrenReinforce.eggDefId] : []),
+      ],
       file: f,
     });
   }
@@ -273,6 +279,17 @@ for (const f of scenFiles) {
     for (const d of encRefById.get(s.combatId)) covered.add(d);
   }
   if (Array.isArray(s.enemyDefIds)) for (const d of s.enemyDefIds) covered.add(d);
+}
+// 传递闭包：被 baseline 覆盖的产出者，其战斗中动态生成的 defId（spawnChildren）也算被覆盖——
+// 它们由已覆盖的产出者实跑生成（如 warren_egg 由女王 warrenReinforce 产下·warren_queen__reinforce_egg_lifecycle）。
+for (let grew = true; grew; ) {
+  grew = false;
+  for (const e of enemyDefs) {
+    if (!covered.has(e.id)) continue;
+    for (const child of e.spawnChildren ?? []) {
+      if (!covered.has(child)) { covered.add(child); grew = true; }
+    }
+  }
 }
 for (const e of enemyDefs) {
   if (!covered.has(e.id)) {

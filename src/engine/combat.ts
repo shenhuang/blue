@@ -52,6 +52,11 @@ import {
   applyMaternalEnrageIfAlone,
   maybeSwarmQueenRelocate,
   maybeSwarmCollapse,
+  pufferArmed,
+  detonateSelfDestruct,
+  maybePufferMeleeDetonate,
+  maybeWarrenPheromone,
+  maybeWarrenReinforce,
 } from './combat-mechanics';
 
 // ——— 数据索引 ———
@@ -626,6 +631,8 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
   s = maybeBossPhaseShift(s, target.instanceId);
   // The Warren 女王：被打进暴露窗（HP≤阈值·非死角）→ 巢把她撤走（§9.1·置 pendingSwarmRelocate·applyPlayerAction 4a 收束）
   s = maybeSwarmQueenRelocate(s, target.instanceId);
+  // The Warren·Puffer 自爆（§9.9）：近战命中 armed Puffer → 当场引爆·溅玩家；远程命中豁免（不溅）。见 combat-mechanics。
+  s = maybePufferMeleeDetonate(s, action.requiresEquipment === 'ranged', target.instanceId);
   // 清道夫（corpseEating）：玩家攻击致死 → 触发尸食钩子
   s = maybeCorpseEat(s, target.instanceId);
   // 口孵深鱼护巢仔全灭检查（玩家攻击致死护巢仔时·幂等·护巢仔未全灭 = no-op）
@@ -787,6 +794,11 @@ function runEnemyTurn(state: GameState): GameState {
 
   // 菌群鱼（droneReplenish）：女王行动前补充工蜂（仅带 droneReplenish 的敌人进分支）。
   s = maybeReplenishDrones(s);
+  // The Warren 女王·吼叫/信息素（warrenPheromones·§5）：择一释放（②引爆 Puffer / ③催孵**既有**茧卵 / ①↑结茧率）。
+  // **先于** reinforce：本回合新产的卵不会被同回合 forceHatch 秒孵 → 留一个「凿破卵」的窗（§9.5「不打掉就孵化」）。
+  s = maybeWarrenPheromone(s);
+  // The Warren 女王·产卵/召唤（warrenReinforce·§9.5）：场上单位少时产卵（cap 按 roomsCleared 每次 relocate 递增）。
+  s = maybeWarrenReinforce(s);
   // 口孵深鱼（maternalBehavior）：母鱼回合开头检查 HP < 50%——有存活护巢仔时消耗一只回血。
   // 在 order 捕获**之前**执行：被消耗的护巢仔 HP→0 后不会出现在行动队列里（无幽灵行动）。
   s = maybeConsumeJuvenile(s);
@@ -813,6 +825,12 @@ function runEnemyTurn(state: GameState): GameState {
     }
     // 茧化居民茧（metamorphosisStage='cocoon'）：同样 passive，不出手。
     if (def.metamorphosis && e.metamorphosisStage === 'cocoon') continue;
+    // The Warren·Puffer 到点自爆（§9.9）：羽化成 armed Puffer 的单位在它的回合自爆（AoE 溅玩家）·随即自毁。
+    // **必须先于**下方「无攻击表 passive 守栏」——adult Puffer 的 phaseAttacksOverride=[] 否则会被当 passive 跳过（不炸）。
+    if (pufferArmed(def, e)) {
+      s = detonateSelfDestruct(s, e.instanceId);
+      continue;
+    }
     // 无攻击表的敌人（The Warren 女王·蜂群 boss SPEC §5/§9.3「别给女王塞攻击表」）：passive 存在体，不出手——
     // 直接跳过（威胁来自巢·非女王本体）。**同时是 enemyAttackPlayer 空 attacks 的护栏**（否则 chosen=undefined→.name 崩）。
     // 全库通用（守 SPEC §3「不给单只敌人写专属分支」）：任何 attacks 空且无覆盖/吸收的敌人皆 passive。

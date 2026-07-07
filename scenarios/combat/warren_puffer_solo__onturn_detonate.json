@@ -1,0 +1,21 @@
+{
+  "_comment": "The Warren·Puffer 自爆·到点自爆（SPEC §9.9）：低氧→T1 evade 结茧→T2 evade（不攻击）让它羽化成 adult 并轮到它的回合 → 到点自爆（AoE 溅玩家·runEnemyTurn 分支·先于无攻击表 passive 守栏）→ 自毁 → T3 收束胜利。sanityDeltaAtMost -1＝自爆确证。seed 1。",
+  "combatId": "combat.warren_puffer_solo",
+  "seed": 1,
+  "bonuses": { "staminaMaxBonus": 300, "oxygenMaxBonus": 100 },
+  "stats": { "oxygen": 18 },
+  "actions": [
+    { "actionId": "action.evade" },
+    { "actionId": "action.evade" },
+    { "actionId": "action.evade" }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 3,
+    "survived": true,
+    "finalPhase": "dive",
+    "enemiesAlive": 0,
+    "sanityDeltaAtMost": -1,
+    "notes": "到点自爆：玩家不攻击·adult 在其回合自炸伤玩家（sanity 掉＝确证）并自毁。turnsElapsed 3＝结茧→羽化→到点收束。"
+  }
+}

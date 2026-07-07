@@ -1,0 +1,21 @@
+{
+  "_comment": "女王信息素·结茧率↑ + 引爆 Puffer baseline（§5·2026-07-07）：死角女王 + 一只 Puffer。T1 女王吼叫①令 larva Puffer 立即结茧(cocoonBoost)；T2 Puffer 羽化成 armed(「茧化完成」)→女王吼叫②令其立即引爆·溅玩家(体力+理智)。sanityDeltaAtMost -1＝引爆确证(自爆带理智伤·evade/巢役咬无理智源)。数值文案占位。seed 1。",
+  "combatId": "combat.warren_pheromone_test",
+  "seed": 1,
+  "bonuses": { "staminaMaxBonus": 600, "oxygenMaxBonus": 200 },
+  "stats": { "oxygen": 40 },
+  "actions": [
+    { "actionId": "action.evade" },
+    { "actionId": "action.evade" },
+    { "actionId": "action.evade" },
+    { "actionId": "action.evade" }
+  ],
+  "expect": {
+    "outcome": "noActionProvided",
+    "turnsElapsed": 4,
+    "survived": true,
+    "sanityDeltaAtMost": -1,
+    "logIncludes": ["茧化完成"],
+    "notes": "sanityDeltaAtMost -1＝女王信息素引爆 Puffer 确证(自爆带理智伤)。logIncludes「茧化完成」＝Puffer 被信息素①催结茧后羽化成 armed。数值调后须 bless 重录机械字段。"
+  }
+}
