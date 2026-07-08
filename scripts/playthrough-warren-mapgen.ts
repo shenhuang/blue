@@ -1,0 +1,190 @@
+// The Warren 三角洞型 + 追猎态回归（蜂群 boss SPEC §4/§8·作者 2026-07-08 三卵室重设计）
+//
+// 把「三角拓扑」的硬不变量做成**会在 regress 里红的门**（CLAUDE.md：能机制化的别留散文）。
+// 最关键的一条：**三间卵室两两等距（各 2 跳）**。它不是装饰——正因为等距，且她逃走那刻你正站在她原来
+// 那间里（剩下两间对你也都是 2 跳），「离玩家最远 / 离当前最远」双双退化，**随机撤退才是唯一有信息量的规则**
+// （quirk #239）。谁把三条边改成不等长，这个门就会红，提醒他先回去读那条 quirk。
+//
+// 覆盖：
+//   A. 洞型不变量（跨 200 seed）：三卵室 kind='boss'·两两 2 跳·离入口 ≥3 跳·三气穴各挂一个中间房且 degree-1·
+//      全图从入口连通·卵室不贴洞口·卵室钉在最深。
+//   B. hopField：与朴素 BFS 同解 + 源点为 0 + 不可达不出现。
+//   C. 追猎态：ensureQueenPlaced 落在卵室里且幂等；advanceQueenRelocation 永不重复用过的卵室、
+//      两次撤退后 isWarrenLastStand=true；非 warren 图上不动位置且**不消耗 rng**（守既有 baseline）。
+//   D. 密度热度：女王处最厚、离她越远越薄、表长之外恒 0（「入口无敌人」是定理不是巧合）。
+//
+// 跑法： npx tsx scripts/playthrough-warren-mapgen.ts
+
+import type { DiveMap, RunState } from '../src/types';
+import { generateDiveMap } from '../src/engine/mapgen';
+import { hopField } from '../src/engine/graph';
+import {
+  warrenChambers,
+  warrenSpawnDensity,
+  ensureQueenPlaced,
+  advanceQueenRelocation,
+  WARREN_DENSITY_BY_HOPS,
+} from '../src/engine/warren-hunt';
+import { isWarrenLastStand } from '../src/engine/combat-warren';
+import { makeHarness, type PtAssert } from './lib/pt';
+
+const pt = makeHarness('The Warren 三角洞型 + 追猎态（蜂群 boss SPEC §4/§8）');
+const { L } = pt;
+const assert: PtAssert = pt.assert;
+
+const D0 = 120;
+const D1 = 240;
+const zone = {
+  id: 'zone.warren',
+  mapShape: 'warren',
+  depthRange: [D0, D1],
+  canFreeAscend: false,
+  layerCount: 8,
+} as unknown as Parameters<typeof generateDiveMap>[0]['zone'];
+
+const genMap = (seedKey: string): DiveMap =>
+  generateDiveMap({ zone, profileFlags: new Set<string>(), seedKey });
+
+/** 朴素 BFS（对照实现·验 hopField） */
+function naiveHops(map: DiveMap, from: string): Record<string, number> {
+  const adj: Record<string, Set<string>> = {};
+  for (const id of Object.keys(map.nodes)) adj[id] = new Set();
+  for (const [id, n] of Object.entries(map.nodes)) {
+    for (const v of n.connectsTo) {
+      adj[id].add(v);
+      adj[v]?.add(id);
+    }
+  }
+  const d: Record<string, number> = { [from]: 0 };
+  const q = [from];
+  while (q.length) {
+    const u = q.shift()!;
+    for (const v of adj[u]) if (d[v] === undefined) ((d[v] = d[u] + 1), q.push(v));
+  }
+  return d;
+}
+
+// ── A. 洞型不变量（跨 seed） ─────────────────────────────────────────────
+L('\n========== A. 三角洞型不变量（200 seed） ==========');
+{
+  for (let i = 0; i < 200; i++) {
+    const map = genMap(`s${i}`);
+    const tag = `seed s${i}`;
+    const chambers = warrenChambers(map);
+    assert(chambers.length === 3, `${tag}：卵室应恰好 3 间（当前 ${chambers.length}）`);
+
+    const [a, b, c] = chambers;
+    const dA = naiveHops(map, a);
+    const dB = naiveHops(map, b);
+    assert(dA[b] === 2 && dB[c] === 2 && dA[c] === 2, `${tag}：三间卵室须两两 2 跳等距（当前 ${dA[b]}/${dB[c]}/${dA[c]}）——等距是「随机撤退」成立的前提·见 quirk #239`);
+
+    const hE = naiveHops(map, map.startNodeId);
+    for (const ch of chambers) {
+      assert((hE[ch] ?? -1) >= 3, `${tag}：${ch} 离洞口仅 ${hE[ch]} 跳（女王绝不靠近洞口·SPEC §8）`);
+      assert(map.nodes[ch].depth === D1, `${tag}：${ch} 应钉在最深 ${D1}`);
+    }
+    assert(
+      !map.nodes[map.startNodeId].connectsTo.some((n) => chambers.includes(n)),
+      `${tag}：卵室不该贴着洞口`,
+    );
+
+    const airs = Object.values(map.nodes).filter((n) => n.kind === 'air_pocket');
+    assert(airs.length === 3, `${tag}：气穴应恰好 3 个（每个中间房各一·当前 ${airs.length}）`);
+    const hosts = new Set<string>();
+    for (const air of airs) {
+      assert(air.connectsTo.length === 1, `${tag}：${air.id} 应是 degree-1 死路（当前 ${air.connectsTo.length}）`);
+      hosts.add(air.connectsTo[0]);
+    }
+    assert(hosts.size === 3, `${tag}：三个气穴应各挂在不同的中间房上`);
+
+    for (const id of Object.keys(map.nodes)) assert(hE[id] !== undefined, `${tag}：${id} 与洞口不连通`);
+  }
+  L('  ✓ 200 seed：三卵室等距 2 跳 · 离洞口 ≥3 跳 · 三气穴各挂一中间房(degree-1) · 全图连通 · 卵室最深不贴洞口');
+}
+
+// ── B. hopField 与朴素 BFS 同解 ─────────────────────────────────────────
+L('\n========== B. hopField（通用无向 BFS 跳数场） ==========');
+{
+  const map = genMap('alpha');
+  const src = warrenChambers(map)[0];
+  const mine = hopField(map, [src]);
+  const naive = naiveHops(map, src);
+  assert(mine[src] === 0, '源点跳数应为 0');
+  for (const id of Object.keys(naive)) assert(mine[id] === naive[id], `hopField 与朴素 BFS 应同解（${id}: ${mine[id]} vs ${naive[id]}）`);
+  assert(Object.keys(mine).length === Object.keys(naive).length, 'hopField 不该多算/漏算节点');
+
+  const capped = hopField(map, [src], 1);
+  assert(Object.values(capped).every((d) => d <= 1), 'maxHops=1 时不应出现 >1 跳的节点');
+  const multi = hopField(map, warrenChambers(map));
+  assert(warrenChambers(map).every((c) => multi[c] === 0), '多源 BFS：每个源点自身应为 0');
+  L('  ✓ hopField 与朴素 BFS 同解 · maxHops 截断生效 · 多源各自为 0');
+}
+
+// ── C. 追猎态：落位 / 撤退 / 背水一战 ───────────────────────────────────
+L('\n========== C. 追猎态（落位·随机撤退·背水一战） ==========');
+{
+  const map = genMap('bravo');
+  const chambers = warrenChambers(map);
+  const baseRun = { map, warrenHunt: undefined } as unknown as RunState;
+
+  const placed = ensureQueenPlaced(baseRun, () => 0.42);
+  const q0 = placed.warrenHunt!.queenNodeId!;
+  assert(chambers.includes(q0), '女王起始必须落在某间卵室里');
+  assert(ensureQueenPlaced(placed, () => 0.99).warrenHunt!.queenNodeId === q0, 'ensureQueenPlaced 应幂等（月相窗内续追猎不重掷）');
+
+  // 两次撤退：永不重复、每次换一间、第三间＝背水一战
+  let run = placed;
+  const seen = [q0];
+  for (let step = 1; step <= 2; step++) {
+    run = { ...run, warrenHunt: advanceQueenRelocation(run, () => 0.5) } as RunState;
+    const q = run.warrenHunt!.queenNodeId!;
+    assert(chambers.includes(q), `第 ${step} 次撤退后仍应在卵室里`);
+    assert(!seen.includes(q), `第 ${step} 次撤退不得回到用过的卵室（她每间只用一次）`);
+    assert(run.warrenHunt!.roomsCleared === step, `roomsCleared 应为 ${step}`);
+    assert(run.warrenHunt!.wallDown === false, '每次撤退都要重置 wallDown＝新一道封口墙堵在她新那间门口');
+    seen.push(q);
+  }
+  assert(seen.length === 3 && new Set(seen).size === 3, '三间卵室应被各用一次');
+  assert(isWarrenLastStand(run), '撤退两次后应进入背水一战（禁撤·可杀）');
+  assert(!isWarrenLastStand(placed), '起始那间不该是背水一战');
+
+  // 非 warren 图：不动位置、**不消耗 rng**（守既有 combat baseline 的 rng 流）
+  const plainMap = { nodes: { 'node.0': { id: 'node.0', kind: 'rest', connectsTo: [] } }, startNodeId: 'node.0' } as unknown as DiveMap;
+  let rngCalls = 0;
+  const countingRng = () => (rngCalls++, 0.5);
+  const plainRun = { map: plainMap, warrenHunt: { roomsCleared: 0 } } as unknown as RunState;
+  const afterPlain = advanceQueenRelocation(plainRun, countingRng);
+  assert(afterPlain!.roomsCleared === 1, '非 warren 图仍应 roomsCleared+1');
+  assert(afterPlain!.queenNodeId === undefined, '非 warren 图不应凭空落位女王');
+  assert(rngCalls === 0, '非 warren 图不得消耗 rng（否则既有 combat baseline 的 rng 流会漂）');
+  L('  ✓ 落位在卵室且幂等 · 撤退永不重复 · 两次后背水一战 · 非 warren 图不动位置且零 rng 消耗');
+}
+
+// ── D. 密度热度场 ───────────────────────────────────────────────────────
+L('\n========== D. 密度热度 f(到女王跳数) ==========');
+{
+  const map = genMap('charlie');
+  const run = ensureQueenPlaced({ map } as unknown as RunState, () => 0.1);
+  const queen = run.warrenHunt!.queenNodeId!;
+  const d = hopField(map, [queen]);
+  const row = WARREN_DENSITY_BY_HOPS[0];
+
+  assert(warrenSpawnDensity(map, run, queen) === row[0], '女王所在节点密度应最厚（f(0)）');
+  const entrance = map.startNodeId;
+  assert((d[entrance] ?? 0) >= row.length, `洞口应落在表长(${row.length})之外——「入口无敌人」是定理不是巧合`);
+  assert(warrenSpawnDensity(map, run, entrance) === 0, '洞口密度必须恰好为 0（表长即作用半径·不靠 epsilon）');
+
+  for (const id of Object.keys(map.nodes)) {
+    const hops = d[id];
+    const expect = hops === undefined || hops >= row.length ? 0 : row[hops];
+    assert(warrenSpawnDensity(map, run, id) === expect, `${id}：密度应为 f(${hops}) = ${expect}`);
+  }
+  // 单调不增（越近越厚）
+  for (let h = 1; h < row.length; h++) assert(row[h] <= row[h - 1], `密度表应单调不增（f(${h}) > f(${h - 1})）`);
+
+  const noQueen = { map } as unknown as RunState;
+  assert(warrenSpawnDensity(map, noQueen, queen) === 0, '女王未落位 ⇒ 密度恒 0（普通下潜零回归）');
+  L('  ✓ 女王处最厚 · 逐跳单调不增 · 表长之外恒 0 · 女王未落位则全图 0');
+}
+
+pt.done();

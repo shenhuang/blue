@@ -1,5 +1,5 @@
 {
-  "_comment": "The Warren（蜂群 boss·the Gravid Queen / Spawn / Wardens / Guards）· 蜂群 boss SPEC docs/spec/深海回响_蜂群boss_SPEC.md · §15 身体库存主线（#271·2026-07-07·替 Phase 1 分散钩子）。女王 attacks=[]（不攻击·§5·威胁来自巢）；每敌方回合走**六分支优先级树**（combat-warren.ts::maybeWarrenQueenAct）择一执行——一个池子（活的非女王单位 + 卵）、一个反制你打法的动作：①warrenFeed（血低→主动献祭一只活单位回血·替 §13 corpseEating 被动回血·被吞进 fledInstanceIds 不掉料·茧不算·唯卵例外＝§4 吃己卵）；②warrenScreen（近期挨打+无活盾→从池子拉 shieldCount 只活单位当动态肉盾·screeningFor 标·checkActionAvailability 门：杀穿才够得着女王·替 §13 静态 shieldedBy·**池空则拉不出＝跑步机护栏**·须与 swarmRelocate.exposureThreshold 一起调）；③warrenReinforce（作战单位少→有卵 force-hatch·否则产卵·**繁殖储备节流**：reserveMax/reserveCostPerLay/reserveRecoveryPerTurn/minLayInterval/lowReserveIntervalBonus·**退役 droneReplenish**·储备低→产卵更慢更少·死角净耗尽·§15.1）；④warrenPheromones（吼·填充档：detonate 引爆 armed Puffer > hatch 催孵茧卵 > cocoon-boost·roarChance 已退役·按需触发）。swarmRelocate（非死角 HP≤exposureThreshold→巢撤走·房间清空·finalizeSwarmRelocate；死角 isHatchery 禁撤→可致死＝取胜·死后 maybeSwarmCollapse 崩解）；environmentalPressure（封闭巢耗氧·§7）；Warden→Berserker/Guard 走 metamorphosis 茧化（cocoonBreakBonus 击破奖励）；warren_puffer＝Spawn→Puffer 自爆活炸弹（selfDestruct·近战溅/远程豁免/到点炸·§9.9·武装仅 adult 态）。数值/文案全占位·待作者调（defer-number-tuning·文风克制冷短句·守剧透红线 quirk #117·不点古文明关联·§2）。DEFER（§E5/§8）：封口墙独立 party、蜂巢 mapgen 覆写 + Spawn/Puffer 密度距离派生、撤退月相存档窗（§9.11 桥 PlayerProfile.warrenHunt 已 ship）。",
+  "_comment": "The Warren（蜂群 boss·the Gravid Queen / Spawn / Wardens / Guards）· 蜂群 boss SPEC docs/spec/深海回响_蜂群boss_SPEC.md · §15 身体库存主线（#271·2026-07-07·替 Phase 1 分散钩子）。女王 attacks=[]（不攻击·§5·威胁来自巢）；每敌方回合走**六分支优先级树**（combat-warren.ts::maybeWarrenQueenAct）择一执行——一个池子（活的非女王单位 + 卵）、一个反制你打法的动作：①warrenFeed（血低→主动献祭一只活单位回血·替 §13 corpseEating 被动回血·被吞进 fledInstanceIds 不掉料·茧不算·唯卵例外＝§4 吃己卵）；②warrenScreen（近期挨打+无活盾→从池子拉 shieldCount 只活单位当动态肉盾·screeningFor 标·checkActionAvailability 门：杀穿才够得着女王·替 §13 静态 shieldedBy·**池空则拉不出＝跑步机护栏**·须与 swarmRelocate.exposureThreshold 一起调）；③warrenReinforce（作战单位少→有卵 force-hatch·否则产卵·**繁殖储备节流**：reserveMax/reserveCostPerLay/reserveRecoveryPerTurn/minLayInterval/lowReserveIntervalBonus·**退役 droneReplenish**·储备低→产卵更慢更少·死角净耗尽·§15.1）；④warrenPheromones（吼·填充档：detonate 引爆 armed Puffer > hatch 催孵茧卵 > cocoon-boost·roarChance 已退役·按需触发）。swarmRelocate（还有卵室可退时 HP≤exposureThreshold→巢撤走·房间清空·finalizeSwarmRelocate；背水一战（warrenLastStand·roomsCleared>=2）禁撤→可致死＝取胜·死后 maybeSwarmCollapse 崩解）；environmentalPressure（封闭巢耗氧·§7）；Warden→Berserker/Guard 走 metamorphosis 茧化（cocoonBreakBonus 击破奖励）；warren_puffer＝Spawn→Puffer 自爆活炸弹（selfDestruct·近战溅/远程豁免/到点炸·§9.9·武装仅 adult 态）。数值/文案全占位·待作者调（defer-number-tuning·文风克制冷短句·守剧透红线 quirk #117·不点古文明关联·§2）。DEFER（§E5/§8）：封口墙独立 party、蜂巢 mapgen 覆写 + Spawn/Puffer 密度距离派生、撤退月相存档窗（§9.11 桥 PlayerProfile.warrenHunt 已 ship）。",
   "enemies": [
     {
       "id": "enemy.warren_queen",
@@ -313,9 +313,8 @@
   ],
   "combatEncounters": [
     {
-      "_comment": "女王信息素/产卵 baseline 载体（§5/§9.5·2026-07-07）：死角（isHatchery·禁 relocate·女王留场）单放女王。场上非女王单位≤threshold→warrenReinforce 每回合产卵；信息素择一（无 Puffer/larva 时 forceHatch 催孵刚产的卵）。验产卵+卵孵化/打掉即毁+信息素。数值文案占位。",
+      "_comment": "女王信息素/产卵 baseline 载体（§5/§9.5·2026-07-07）：背水一战（warrenLastStand·禁 relocate·女王留场）单放女王。场上非女王单位≤threshold→warrenReinforce 每回合产卵；信息素择一（无 Puffer/larva 时 forceHatch 催孵刚产的卵）。验产卵+卵孵化/打掉即毁+信息素。数值文案占位。",
       "id": "combat.warren_queen_behavior_test",
-      "warrenRoom": { "isHatchery": true },
       "party": { "members": [{ "defId": "enemy.warren_queen" }] },
       "showIntro": false,
       "introText": "[待过稿] 死角里只剩她——她开始产卵。"
@@ -323,7 +322,6 @@
     {
       "_comment": "女王信息素·引爆 Puffer + 结茧率↑ baseline 载体（§5·2026-07-07）：死角女王 + 一只 Puffer。女王吼叫①令 larva Puffer 立即结茧→羽化 armed→②信息素令其立即引爆（溅玩家·理智伤确证）。数值文案占位。",
       "id": "combat.warren_pheromone_test",
-      "warrenRoom": { "isHatchery": true },
       "party": {
         "members": [{ "defId": "enemy.warren_queen" }, { "defId": "enemy.warren_puffer" }]
       },
@@ -378,7 +376,6 @@
     },
     {
       "id": "combat.warren_hatchery",
-      "warrenRoom": { "isHatchery": true },
       "party": {
         "members": [
           { "defId": "enemy.warren_guard" },
@@ -391,9 +388,8 @@
       "introText": "[待过稿] 最深的卵室。四壁嵌满温热的卵，那具身体插在正中——再没有下一间可退了。这一次，它逃不掉。"
     },
     {
-      "_comment": "死角单挑 baseline 载体（照 cave_grouper_boss_solo 的 _solo 约定）：只放女王 + isHatchery（禁撤·可致死）→ 验「杀女王＝取胜 + 崩解」这条；实战死角用 combat.warren_hatchery（带 Guards/Warden 墙）。§15：女王独处时靠 warrenReinforce 产卵补池（繁殖储备节流·退役 droneReplenish→储备见底熄火）。",
+      "_comment": "背水一战单挑 baseline 载体（照 cave_grouper_boss_solo 的 _solo 约定）：只放女王 + warrenLastStand（禁撤·可致死）→ 验「杀女王＝取胜 + 崩解」这条；实战第三间卵室用 combat.warren_hatchery（带 Guards/Warden 墙）。§15：女王独处时靠 warrenReinforce 产卵补池（繁殖储备节流·退役 droneReplenish→储备见底熄火）。",
       "id": "combat.warren_hatchery_solo",
-      "warrenRoom": { "isHatchery": true },
       "party": { "members": [{ "defId": "enemy.warren_queen" }] },
       "showIntro": false,
       "introText": "[待过稿] 死角里只剩她——巢卫都碎在了外面的通道上。她逃不掉了。"

@@ -56,7 +56,7 @@ import {
   maybePufferMeleeDetonate,
 } from './combat-mechanics';
 // The Warren 女王身体库存主线（§15·#271·从 combat-mechanics 外移·守 file-budget）：六分支树 + 动态 screen 门 + 起盾 + 伤害计数。
-import { maybeWarrenQueenAct, queenScreened, recordQueenDamage, warrenInitScreen } from './combat-warren';
+import { maybeWarrenQueenAct, queenScreened, recordQueenDamage, warrenInitScreen, isWarrenLastStand, finalizeSwarmRelocate } from './combat-warren';
 
 // ——— 数据索引 ———
 
@@ -113,6 +113,11 @@ export interface StartCombatOptions {
    * 未设 → 取 def.hallucination（缺省 false ＝真遭遇逐字节不变）。
    */
   hallucination?: boolean;
+  /**
+   * The Warren 背水一战覆写（§4·详见 types/combat.ts::CombatState.warrenLastStand）。未设 → 从追猎进度派生
+   * （`isWarrenLastStand(run)`）。只给 scenario/adhoc 用：构造背水一战而不必拨动 roomsCleared（那会连带改产卵上限）。
+   */
+  warrenLastStand?: boolean;
 }
 
 export function startCombat(
@@ -177,8 +182,8 @@ export function startCombat(
     // → 标 CombatState.hallucination（enemyAttackPlayer 0 体力伤·finalizeVictory 无战利品·暧昧收场）。
     // 二者皆无（真遭遇）⇒ 不写此字段 ⇒ 逐字节不变。
     ...(enc.hallucination || options?.hallucination ? { hallucination: true as const } : {}),
-    // The Warren（蜂群 boss SPEC §9.2）：房间标记（死角禁撤）从 encounter 拷入；缺省普通遭遇不写 ⇒ 逐字节不变。
-    ...(enc.warrenRoom ? { warrenRoom: enc.warrenRoom } : {}),
+    // The Warren 背水一战＝**状态不是地点**，从追猎进度派生；scenario/adhoc 可覆写。非 Warren 恒 false ⇒ 逐字节不变。
+    ...(options?.warrenLastStand ?? isWarrenLastStand(state.run) ? { warrenLastStand: true as const } : {}),
   };
 
   // 图鉴发现门（敌人库·只显示已遭遇）：开战即把本场敌人（含 enemyRef 取到的）记入
@@ -1097,29 +1102,6 @@ function finalizeFlee(state: GameState): CombatTurnResult {
     s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
   }
   return { state: s, outcome: 'flee' };
-}
-
-/**
- * finalizeSwarmRelocate（The Warren·蜂群 boss SPEC §9.1）：女王在暴露窗被巢撤走 → 本场以「房间清空·女王逃脱」收束。
- * 推进 warrenHunt.roomsCleared（破一间 +1·唯一写者·§9.11 挂点），路由回 dive：有 victoryEventId（房间清空事件·
- * 由内容侧揭示下一间节点）→ event 子阶段；否则回 rest。**不结算战利品**（她带着身子逃了·残墙料留内容/死角·§4）。
- * 镜 finalizeVictory/finalizeFlee 的返回形状（CombatTurnResult·outcome 复用 'victory'＝房间已破）。
- */
-function finalizeSwarmRelocate(state: GameState): CombatTurnResult {
-  if (state.phase.kind !== 'combat' || !state.run) return { state, outcome: 'victory' };
-  const combat = state.phase.combat;
-  const prev = state.run.warrenHunt ?? { roomsCleared: 0 };
-  let s: GameState = {
-    ...state,
-    run: { ...state.run, warrenHunt: { ...prev, roomsCleared: prev.roomsCleared + 1 } },
-  };
-  s = appendLog(s, { tone: 'realistic', text: '通道在你身后合拢——你得重新用声呐找出巢把她拖去了哪一间。' });
-  if (combat.victoryEventId) {
-    s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: combat.victoryEventId } } };
-  } else {
-    s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
-  }
-  return { state: s, outcome: 'victory' };
 }
 
 /**

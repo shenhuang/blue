@@ -8,9 +8,50 @@
 // 依赖：combat.ts 的共享工具（getEnemyDef/setCombat/pushCombatLog/rollChance）+ combat-mechanics.ts 的 Puffer 自爆原语
 // （pufferArmed/detonateSelfDestruct）。三者互为静态 import·模块顶层互不调用（只运行时进函数体）·ESM 循环加载安全。
 
-import type { GameState, EnemyInstance } from '@/types';
+import type { GameState, RunState } from '@/types';
+import type { EnemyInstance } from '@/types';
+import type { CombatTurnResult } from './combat';
 import { getEnemyDef, setCombat, pushCombatLog, rollChance } from './combat';
 import { pufferArmed, detonateSelfDestruct } from './combat-mechanics';
+import { appendLog } from './state';
+import { advanceQueenRelocation } from './warren-hunt';
+
+/**
+ * finalizeSwarmRelocate（The Warren·蜂群 boss SPEC §9.1）：女王在暴露窗被巢撤走 → 本场以「房间清空·女王逃脱」收束。
+ * 巢把她拖进**剩下未用过的卵室中随机一间**（warren-hunt.ts::advanceQueenRelocation·三角两两等距 ⇒ 「最远」退化 ⇒
+ * 随机是唯一有信息量的规则），roomsCleared+1（唯一写者·§9.11 挂点）+ 重置 wallDown（新一道封口墙堵在她新那间门口·§5）。
+ * 路由回 dive：有 victoryEventId → event 子阶段；否则回 rest。**不结算战利品**（她带着身子逃了·§4）。
+ * 镜 finalizeVictory/finalizeFlee 的返回形状（outcome 复用 'victory'＝房间已破）。
+ * 非 warren 图（无卵室节点）⇒ advanceQueenRelocation 只 +1 不动位置、**不消耗 rng** ⇒ 既有 baseline 逐字节不变。
+ * 从 combat.ts 外移（#274·守 check-file-budget·warren 一族归位·同 §15 那批的拆法）。
+ */
+export function finalizeSwarmRelocate(state: GameState): CombatTurnResult {
+  if (state.phase.kind !== 'combat' || !state.run) return { state, outcome: 'victory' };
+  const combat = state.phase.combat;
+  let s: GameState = { ...state, run: { ...state.run, warrenHunt: advanceQueenRelocation(state.run) } };
+  s = appendLog(s, { tone: 'realistic', text: '通道在你身后合拢——你得重新用声呐找出巢把她拖去了哪一间。' });
+  if (combat.victoryEventId) {
+    s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: combat.victoryEventId } } };
+  } else {
+    s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
+  }
+  return { state: s, outcome: 'victory' };
+}
+
+/**
+ * 女王一共有三间卵室（作者 2026-07-08 三卵室重设计）：随机起于其一，被打退随机换一间，**撤进第三间＝背水一战**。
+ * 故「无处可退」＝已撤过 2 次 ＝ `roomsCleared >= 2`。三卵室数量若变，只改这一个常量。
+ */
+export const WARREN_LAST_STAND_ROOMS = 2;
+
+/**
+ * 背水一战判据（**状态不是地点**·蜂群 boss SPEC §4）：她已把三间卵室用尽、正在最后一间。
+ * 唯一真相——`startCombat` 据此写 `CombatState.warrenLastStand`，三处门控（禁撤 / 崩解取胜 / 储备零恢复）只读那个标记。
+ * 无追猎档（普通遭遇 / 从未打过 Warren）⇒ roomsCleared 视作 0 ⇒ false ⇒ 一切逐字节不变。
+ */
+export function isWarrenLastStand(run: RunState): boolean {
+  return (run.warrenHunt?.roomsCleared ?? 0) >= WARREN_LAST_STAND_ROOMS;
+}
 
 //
 // §14 分散的吼叫/信息素/产卵/回血/结盾 → §15 收口成**一条主线＝耗空她的身体库存**（活的非女王单位 + 卵）。
@@ -96,13 +137,14 @@ export function warrenInitScreen(state: GameState): GameState {
 
 /**
  * 繁殖储备缓慢恢复（每女王回合·先于可能的产卵消耗·§15.1）。
- * **死角（the Hatchery）不恢复**——储备只降不升 ⇒ 有限窝（reserveMax/reserveCostPerLay 批后见底）⇒ 补池熄火 ⇒
+ * **背水一战（第三间卵室）不恢复**——储备只降不升 ⇒ 有限窝（reserveMax/reserveCostPerLay 批后见底）⇒ 补池熄火 ⇒
  * 池子只出不进·女王吃光自己的卵后再无得吃、暴露窗常开、可杀（§4「卵有限·吃光即再无得吃」+ §15.1 跑步机护栏
- * 的**结构保证**·非仅靠数值节流——节流会自纠到非零平衡·不保证净耗尽，死角硬止恢复才保证。非死角照常缓慢恢复）。
+ * 的**结构保证**·非仅靠数值节流——节流会自纠到非零平衡·不保证净耗尽，硬止恢复才保证。前两间照常缓慢恢复
+ * ＝「前两间净不减·打不死她」）。谓词从地点换成进度（见 `isWarrenLastStand`·作者 2026-07-08 三卵室重设计）。
  */
 function warrenRecoverReserve(state: GameState, queenId: string): GameState {
   if (state.phase.kind !== 'combat') return state;
-  if (state.phase.combat.warrenRoom?.isHatchery) return state; // 死角只出不进（§4/§15.1·见上）
+  if (state.phase.combat.warrenLastStand) return state; // 背水一战只出不进（§4/§15.1·见上）
   const q = state.phase.combat.enemies.find((e) => e.instanceId === queenId);
   const wr = q && getEnemyDef(q.defId)?.warrenReinforce;
   if (!q || !wr) return state;

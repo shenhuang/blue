@@ -80,8 +80,10 @@ export function lunarDiveModifier(poi: PoiModifier | undefined, day: number): Po
  * 撤退/月相存档窗（蜂群 boss SPEC §9.11）：本次开潜要不要把 `profile.warrenHunt`（离港时结转的追猎进度）
  * 接回 `run.warrenHunt`。纯函数·确定性：无结转档 → undefined（新追猎从零建，同旧行为）；有结转档 →
  * 按 `moonPhasesElapsed(lastVisitDay, currentDay)` 是否 `≤ WARREN_SAVE_WINDOW_PHASES` 二选一——
- * 窗内原样续上（roomsCleared/queenNodeId/inHatchery 照抄，只是形状换回 RunState 那份、不带 lastVisitDay）；
- * 窗外＝蜂巢重新聚拢 → 返回 undefined（追猎从零建，同「没有结转档」）。
+ * 窗内原样续上（roomsCleared/queenNodeId 照抄，只是形状换回 RunState 那份、不带 lastVisitDay）——**她还在你上次
+ * 把她逼进的那间卵室，不必重新搜寻**（作者 2026-07-08）。
+ * 窗外＝蜂巢重新聚拢 → 返回 undefined（追猎从零建，同「没有结转档」）：`queenNodeId` 一并丢弃 ⇒ 下次进洞
+ * **重掷她的起始卵室、重新搜寻**（＝作者要的「完全重置」）。
  */
 function resolveWarrenHuntCarry(
   carry: PlayerProfile['warrenHunt'],
@@ -90,7 +92,12 @@ function resolveWarrenHuntCarry(
   if (!carry) return undefined;
   const elapsed = moonPhasesElapsed(carry.lastVisitDay, currentDay);
   if (elapsed > WARREN_SAVE_WINDOW_PHASES) return undefined; // 窗外：蜂巢重新聚拢，追猎重来
-  return { roomsCleared: carry.roomsCleared, queenNodeId: carry.queenNodeId, inHatchery: carry.inHatchery };
+  return {
+    roomsCleared: carry.roomsCleared,
+    queenNodeId: carry.queenNodeId,
+    usedChambers: carry.usedChambers,
+    wallDown: carry.wallDown,
+  };
 }
 
 /**

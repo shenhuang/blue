@@ -186,11 +186,17 @@ export interface CombatState {
   hallucination?: boolean;
 
   /**
-   * The Warren（蜂群 boss SPEC §9.2/§9.10）：本场遭遇的房间标记（startCombat 从 CombatEncounterDef.warrenRoom 拷入）。
-   * isHatchery=true ⇒ 死角（the Hatchery）：女王 relocate 禁用、退无可退可被打死（§4）。
-   * 缺省（普通遭遇/非死角房间）⇒ 不写 ⇒ 逐字节不变。CombatState 不入存档（战斗态不序列化）⇒ 零存档影响。
+   * The Warren 背水一战标记（蜂群 boss SPEC §4·作者 2026-07-08 三卵室重设计）。
+   * **死角是状态、不是地点**：三间卵室都是 hatchery，女王随机起于其一、被打退随机换一间，撤进第三间
+   * ＝无处可退。故本标记由 startCombat 从**追猎进度**派生（`warrenHunt.roomsCleared >= WARREN_LAST_STAND_ROOMS`），
+   * 不再是某个「最深房间」的静态属性（旧 `warrenRoom.isHatchery` 已废——它在三卵室下会全局为真、
+   * 令女王从第一间起就不撤、储备到处只出不进，§4「前两间打不死她」当场塌掉）。
+   * true ⇒ 女王 relocate 禁用（`maybeSwarmQueenRelocate`）+ 崩解取胜可落地（`maybeSwarmCollapse`）
+   *        + 繁殖储备零恢复（`warrenRecoverReserve`·§15.1 净耗尽硬护栏·quirk #234）。
+   * scenario/adhoc 可用 `StartCombatOptions.warrenLastStand` 直接构造（不动 roomsCleared ⇒ 产卵上限不变）。
+   * 缺省 ⇒ 不写 ⇒ 逐字节不变。CombatState 不入存档（战斗态不序列化）⇒ 零存档影响。
    */
-  warrenRoom?: { isHatchery?: boolean };
+  warrenLastStand?: boolean;
 
   /**
    * The Warren 女王在暴露窗被巢「撤走」的标记（typed flag·sibling of pendingFleeSuccess）：
@@ -244,13 +250,9 @@ export interface CombatEncounterDef {
    */
   hallucination?: boolean;
 
-  /**
-   * The Warren 房间标记（蜂群 boss SPEC §8/§9.2）：把本遭遇标为女王巢室之一。
-   * isHatchery=true ⇒ 最深死角（the Hatchery）：女王 relocate 禁用、可被打死＝取胜（§4）。
-   * 非死角房间省略（或 isHatchery=false）⇒ 女王 HP≤exposureThreshold 时逃向下一间。
-   * startCombat 拷入 CombatState.warrenRoom；缺省（普通遭遇）⇒ 不写 ⇒ 逐字节不变。
-   */
-  warrenRoom?: { isHatchery?: boolean };
+  // The Warren 房间标记 `warrenRoom.isHatchery` **已删**（作者 2026-07-08 三卵室重设计）：死角是**状态不是地点**，
+  // 由 startCombat 从 `run.warrenHunt.roomsCleared` 派生进 `CombatState.warrenLastStand`。遭遇 def 不再承载它。
+  // scenario/adhoc 要构造背水一战 → `StartCombatOptions.warrenLastStand`（见 combat.ts）。
 }
 
 /**

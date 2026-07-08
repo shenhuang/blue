@@ -18,6 +18,7 @@ import type { DiveMap, DiveNode } from '@/types';
 import { type GenOpts, makeSeededRng, applyHarvestDepletion, resolveLayoutStyle, sprinkleGates } from './mapgen-shared';
 import { generateLayeredMap } from './mapgen-layered';
 import { generateMazeMap } from './mapgen-maze';
+import { generateWarrenMap } from './mapgen-warren';
 
 export {
   caveSeededRng,
@@ -88,9 +89,11 @@ export function generateDiveMap(opts: GenOpts): DiveMap {
 
   // 随机图：按 mapShape 分流（缺省 = layered，保持现有 zone 行为不变）
   const map =
-    zone.mapShape === 'maze'
-      ? generateMazeMap(genOpts, baseD0, baseD1)
-      : generateLayeredMap(genOpts, baseD0, baseD1);
+    zone.mapShape === 'warren'
+      ? generateWarrenMap(genOpts, baseD0, baseD1)
+      : zone.mapShape === 'maze'
+        ? generateMazeMap(genOpts, baseD0, baseD1)
+        : generateLayeredMap(genOpts, baseD0, baseD1);
   // 渲染自描述盖章（纯渲染·不入存档·不影响拓扑/rng）：让 deriveMapLayout 与所有消费者无需拿 zone 即知形状。
   // 层状开阔水域天然走 vertical（resolveLayoutStyle 兜底）；只有声明了 layoutStyle/orientation 的 zone 变形。
   map.layoutStyle = resolveLayoutStyle(zone);

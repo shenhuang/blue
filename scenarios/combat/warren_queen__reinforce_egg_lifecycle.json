@@ -1,6 +1,7 @@
 {
-  "_comment": "女王产卵(lay·繁殖储备)+卵生命周期 baseline（§5/§9.5/§15）：死角女王(isHatchery·不 relocate)。§15 起女王身体库存主线——作战单位少→warrenReinforce 产卵(繁殖储备节流·退役 droneReplenish)。T1 evade→产 2 卵(cocoon)。T2 knife 卵#1(cocoon hp→0)。T3 maybeMetamorphosis：卵#1 breakDestroys 销毁(「在孵化前被凿破」·不复活)、未打的卵到点孵化(「茧化完成」)+女王再产卵(「产道」)。验 lay+打掉即毁+不打即孵。logIncludes 断言引擎稳定文案(抗占位人名 churn)。数值占位·seed 1·EXPECT 实跑抄(bless)。",
+  "_comment": "女王产卵(lay·繁殖储备)+卵生命周期 baseline（§5/§9.5/§15）：背水一战女王(warrenLastStand·不 relocate)。§15 起女王身体库存主线——作战单位少→warrenReinforce 产卵(繁殖储备节流·退役 droneReplenish)。T1 evade→产 2 卵(cocoon)。T2 knife 卵#1(cocoon hp→0)。T3 maybeMetamorphosis：卵#1 breakDestroys 销毁(「在孵化前被凿破」·不复活)、未打的卵到点孵化(「茧化完成」)+女王再产卵(「产道」)。验 lay+打掉即毁+不打即孵。logIncludes 断言引擎稳定文案(抗占位人名 churn)。数值占位·seed 1·EXPECT 实跑抄(bless)。",
   "combatId": "combat.warren_queen_behavior_test",
+  "warrenLastStand": true,
   "seed": 1,
   "bonuses": { "staminaMaxBonus": 600, "oxygenMaxBonus": 200 },
   "stats": { "oxygen": 40 },

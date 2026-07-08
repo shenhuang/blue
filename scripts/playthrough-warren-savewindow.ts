@@ -6,7 +6,8 @@
 //   1. moonPhasesElapsed 纯函数边界（同相位内 0·跨 1 边界 1·跨周期正确·允许倒退出负数）。
 //   2. handleReturnToPort：run.warrenHunt 存在 → 结转进 profile.warrenHunt + 盖章 lastVisitDay；
 //      run.warrenHunt 缺席（非 Warren 追猎）→ 不新建结转档（原样跳过）。
-//   3. startDive：≤ 阈值（WARREN_SAVE_WINDOW_PHASES=1）→ 原样续上 roomsCleared/queenNodeId/inHatchery；
+//   3. startDive：≤ 阈值（WARREN_SAVE_WINDOW_PHASES=1）→ 原样续上 roomsCleared/queenNodeId/usedChambers/wallDown
+//      （＝她还在你上次把她逼进的那间卵室·不必重新搜寻·作者 2026-07-08）；
 //      > 阈值 → 蜂巢重新聚拢，run.warrenHunt 回到 undefined（同「从未结转过」的新追猎起点）。
 //   4. 全程无 profile.warrenHunt（普通潜水·非 Warren）→ startDive 后 run.warrenHunt 仍 undefined（零回归）。
 //
@@ -44,7 +45,7 @@ L('========== A. moonPhasesElapsed 边界 ==========');
 }
 
 // ── 构造一个"带 Warren 追猎进度"的 GameState 的小 helper ──────────────
-function stateWithWarrenRun(day: number, warrenHunt: { roomsCleared: number; queenNodeId?: string; inHatchery?: boolean }): GameState {
+function stateWithWarrenRun(day: number, warrenHunt: { roomsCleared: number; queenNodeId?: string; usedChambers?: string[]; wallDown?: boolean }): GameState {
   const base = createInitialGameState();
   const profile = { ...base.profile, day };
   const run = { ...createNewRun({ zoneId: ZONE }), warrenHunt };
@@ -54,13 +55,14 @@ function stateWithWarrenRun(day: number, warrenHunt: { roomsCleared: number; que
 // ── B. handleReturnToPort：结转 + 盖章 lastVisitDay ─────────────────────
 L('\n========== B. handleReturnToPort 结转 ==========');
 {
-  const s0 = stateWithWarrenRun(10, { roomsCleared: 2, queenNodeId: 'node.room3', inHatchery: false });
+  const s0 = stateWithWarrenRun(10, { roomsCleared: 1, queenNodeId: 'w.chamber.b', usedChambers: ['w.chamber.a', 'w.chamber.b'], wallDown: false });
   const { state: s1 } = handleReturnToPort(s0);
   assert(s1.run === null, '回港后 run 应清空');
   assert(s1.profile.warrenHunt !== undefined, '回港后 profile.warrenHunt 应被写入（结转挂点）');
-  assert(s1.profile.warrenHunt!.roomsCleared === 2, `roomsCleared 应原样结转（当前 ${s1.profile.warrenHunt!.roomsCleared}）`);
-  assert(s1.profile.warrenHunt!.queenNodeId === 'node.room3', `queenNodeId 应原样结转（当前 ${s1.profile.warrenHunt!.queenNodeId}）`);
-  assert(s1.profile.warrenHunt!.inHatchery === false, 'inHatchery 应原样结转');
+  assert(s1.profile.warrenHunt!.roomsCleared === 1, `roomsCleared 应原样结转（当前 ${s1.profile.warrenHunt!.roomsCleared}）`);
+  assert(s1.profile.warrenHunt!.queenNodeId === 'w.chamber.b', `queenNodeId 应原样结转（当前 ${s1.profile.warrenHunt!.queenNodeId}）`);
+  assert(s1.profile.warrenHunt!.wallDown === false, 'wallDown 应原样结转');
+  assert((s1.profile.warrenHunt!.usedChambers ?? []).length === 2, 'usedChambers 应原样结转（她用过的卵室·撤退候选＝三间减去这些）');
   assert(s1.profile.warrenHunt!.lastVisitDay === 10, `lastVisitDay 应盖章离港时的 profile.day=10（当前 ${s1.profile.warrenHunt!.lastVisitDay}）`);
   L('  ✓ run.warrenHunt 存在时正确结转到 profile.warrenHunt 并盖章 lastVisitDay');
 }
@@ -78,7 +80,7 @@ L('\n========== B. handleReturnToPort 结转 ==========');
 L('\n========== C. startDive 存档窗判断 ==========');
 {
   // 窗内（≤1 个相位边界）：离港 day=10，隔 3 天后开潜（day=13，仍在同一相位窗内·10 和 13 都落在同一 7 天段）。
-  const s0 = stateWithWarrenRun(10, { roomsCleared: 3, queenNodeId: 'node.hatchery', inHatchery: true });
+  const s0 = stateWithWarrenRun(10, { roomsCleared: 2, queenNodeId: 'w.chamber.c', usedChambers: ['w.chamber.a', 'w.chamber.b', 'w.chamber.c'], wallDown: true });
   const { state: afterPort } = handleReturnToPort(s0);
   assert(afterPort.profile.warrenHunt!.lastVisitDay === 10, '前置：lastVisitDay=10');
 
@@ -88,14 +90,15 @@ L('\n========== C. startDive 存档窗判断 ==========');
   const dived1 = startDive(s1, ZONE);
   assert(dived1.run !== null, 'startDive 后 run 不应为 null');
   assert(dived1.run!.warrenHunt !== undefined, '窗内（≤1 相位边界）→ run.warrenHunt 应被续上（非 undefined）');
-  assert(dived1.run!.warrenHunt!.roomsCleared === 3, `窗内续上 roomsCleared 应为 3（当前 ${dived1.run!.warrenHunt!.roomsCleared}）`);
-  assert(dived1.run!.warrenHunt!.queenNodeId === 'node.hatchery', 'queenNodeId 应原样续上');
-  assert(dived1.run!.warrenHunt!.inHatchery === true, 'inHatchery 应原样续上');
+  assert(dived1.run!.warrenHunt!.roomsCleared === 2, `窗内续上 roomsCleared 应为 2（当前 ${dived1.run!.warrenHunt!.roomsCleared}）`);
+  assert(dived1.run!.warrenHunt!.queenNodeId === 'w.chamber.c', 'queenNodeId 应原样续上（窗内不重掷·她还在那间）');
+  assert(dived1.run!.warrenHunt!.wallDown === true, 'wallDown 应原样续上（封口墙状态不重置）');
+  assert((dived1.run!.warrenHunt!.usedChambers ?? []).length === 3, 'usedChambers 应原样续上（三间用尽＝背水一战）');
   L('  ✓ 窗内（≤1 相位边界）：run.warrenHunt 原样续上');
 }
 {
   // 窗外（>1 个相位边界）：离港 day=10，隔 15 天再开潜（day=25，跨了 2 个边界：floor(10/7)=1 → floor(25/7)=3 → elapsed=2）。
-  const s0 = stateWithWarrenRun(10, { roomsCleared: 3, queenNodeId: 'node.hatchery', inHatchery: true });
+  const s0 = stateWithWarrenRun(10, { roomsCleared: 2, queenNodeId: 'w.chamber.c', usedChambers: ['w.chamber.a', 'w.chamber.b', 'w.chamber.c'], wallDown: true });
   const { state: afterPort } = handleReturnToPort(s0);
 
   let s1 = advanceDays(afterPort, 15); // day 10 → 25

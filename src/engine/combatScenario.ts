@@ -108,6 +108,12 @@ export interface CombatScenarioInput {
    */
   wornSkin?: string;
   /**
+   * The Warren 背水一战（蜂群 boss SPEC §4·透传 startCombat 的 warrenLastStand）：把本场标为「女王无处可退」
+   * ⇒ 禁撤 + 崩解取胜可落地 + 繁殖储备零恢复。真实玩法从 `warrenHunt.roomsCleared>=2` 派生；baseline 用本项
+   * 直接构造，**不动 roomsCleared**（否则连带抬高产卵上限、改变既有 baseline 输出）。缺省 ⇒ 逐字节不变。
+   */
+  warrenLastStand?: boolean;
+  /**
    * createNewRun bonuses 透传（staminaMaxBonus / oxygenMaxBonus 等）。
    * 主要用途：boss 战 baseline 需要超过默认 staminaMax=100 的体力上限（否则 stats.stamina 被 clampStats 压回 100）。
    * 缺省 → 无加成（staminaMax=100 / oxygenMax 默认值）。
@@ -255,7 +261,7 @@ function buildInitialState(input: CombatScenarioInput): GameState {
 }
 
 /** ad-hoc encounter：手工合成一个 CombatState（不经 startCombat 注册） */
-function startAdHocCombat(state: GameState, enemyDefIds: string[], wornSkin?: string): GameState | null {
+function startAdHocCombat(state: GameState, enemyDefIds: string[], wornSkin?: string, warrenLastStand?: boolean): GameState | null {
   if (!state.run) return null;
   const enemies: EnemyInstance[] = [];
   for (let idx = 0; idx < enemyDefIds.length; idx++) {
@@ -291,6 +297,8 @@ function startAdHocCombat(state: GameState, enemyDefIds: string[], wornSkin?: st
         log: [],
         victoryEventId: undefined,
         resumeNodeId: state.run.currentNodeId,
+        // The Warren 背水一战（§4）：adhoc fixture 显式构造；缺省不写 ⇒ 逐字节不变。
+        ...(warrenLastStand ? { warrenLastStand: true as const } : {}),
       },
     },
   };
@@ -430,13 +438,16 @@ function enterCombat(input: CombatScenarioInput): EnterCombatResult {
     // seeded 窗口内，否则当 enemyRef 匹配多于一只敌人时 baseline 不可复现（此前 startCombat 在
     // seeded 块外·见 enemyLibrary 注释）。defId 成员零 Math.random 消耗，故现有 defId 战斗 baseline
     // 逐字节不变；回合循环另起的 withSeededRandom(seed) 各自从 seed 重置 LCG，turn RNG 流不受影响。
+    // 只在 fixture 显式给了 wornSkin / warrenLastStand 时才传 options 对象（都没给 ⇒ 传 undefined ⇒ 逐字节不变）。
+    const startOpts =
+      input.wornSkin !== undefined || input.warrenLastStand !== undefined
+        ? {
+            ...(input.wornSkin !== undefined ? { wornSkin: input.wornSkin } : {}),
+            ...(input.warrenLastStand !== undefined ? { warrenLastStand: input.warrenLastStand } : {}),
+          }
+        : undefined;
     withSeededRandom(input.seed, () => {
-      state = startCombat(
-        state,
-        input.combatId!,
-        undefined,
-        input.wornSkin !== undefined ? { wornSkin: input.wornSkin } : undefined,
-      );
+      state = startCombat(state, input.combatId!, undefined, startOpts);
     });
   } else if (input.enemyDefIds) {
     for (const id of input.enemyDefIds) {
@@ -444,7 +455,7 @@ function enterCombat(input: CombatScenarioInput): EnterCombatResult {
         return { ok: false, resolvedInitialState, reason: 'invalidEnemyDef', errors: [`enemyDefId "${id}" 未注册`] };
       }
     }
-    const next = startAdHocCombat(state, input.enemyDefIds, input.wornSkin);
+    const next = startAdHocCombat(state, input.enemyDefIds, input.wornSkin, input.warrenLastStand);
     if (!next) {
       return { ok: false, resolvedInitialState, reason: 'invalidEnemyDef', errors: ['ad-hoc encounter 构造失败（无 run 或 enemyDef 缺失）'] };
     }

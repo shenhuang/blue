@@ -127,7 +127,10 @@ export interface PlayerProfile {
   warrenHunt?: {
     roomsCleared: number;
     queenNodeId?: string;
-    inHatchery?: boolean;
+    // `inHatchery` **已删**（作者 2026-07-08 三卵室重设计）：三间卵室都是 hatchery，此标记恒真无意义。
+    // 「无处可退」改由 `roomsCleared >= WARREN_LAST_STAND_ROOMS` 派生（combat-warren.ts::isWarrenLastStand）。
+    usedChambers?: string[];
+    wallDown?: boolean;
     /** 离港那一刻的总天数（profile.day 口径）——下次开潜据此算跨过几个相位边界。 */
     lastVisitDay: number;
   };
@@ -452,8 +455,10 @@ export interface RunState {
   harvestedSaveItems?: Set<string>;
   /**
    * The Warren 追猎态（蜂群 boss SPEC §9.11·map-level hybrid 追猎循环）：跨房间进度。
-   * roomsCleared＝已把女王「撤」走的次数（破一间 +1）；queenNodeId＝女王当前所在节点（追猎定位·核心 spine 占位）；
-   * inHatchery＝已进死角。**唯一写者＝engine 战斗收束（finalizeSwarmRelocate）+ 追猎推进**（UI 只读）。
+   * roomsCleared＝已把女王「撤」走的次数（撤一次 +1·`>=WARREN_LAST_STAND_ROOMS` 即背水一战）；
+   * queenNodeId＝女王当前所在的**卵室节点**（三间之一·追猎搜寻的唯一真相·密度热度场的源点）。
+   * `inHatchery` **已删**（三卵室重设计·2026-07-08）：三间都是 hatchery，恒真无意义。
+   * **唯一写者＝engine 战斗收束（finalizeSwarmRelocate）+ 追猎推进**（UI 只读）。
    * 真条件字段（quirk #106·absent＝不在 Warren 追猎中）：createNewRun 不种、hydrateGameState 不补；
    * 纯对象 JSON 自动 round-trip、不 bump SAVE_VERSION（#99）。读取处 `run.warrenHunt?.roomsCleared ?? 0` 兜底。
    * 撤退/月相存档窗（§9.11·按总天数 bank）的结转挂点在 `PlayerProfile.warrenHunt`（离港时 bank·见那里的
@@ -462,7 +467,10 @@ export interface RunState {
   warrenHunt?: {
     roomsCleared: number;
     queenNodeId?: string;
-    inHatchery?: boolean;
+    /** 她用过的卵室（每间只用一次：起始 + 两次撤退＝三间用尽＝背水一战）——撤退候选＝三间减去这些。 */
+    usedChambers?: string[];
+    /** 她当前那间卵室门口的封口墙是否已被打穿（每次 relocate 重置＝新一道墙·SPEC §5）。 */
+    wallDown?: boolean;
   };
 }
 

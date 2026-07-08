@@ -85,9 +85,13 @@ export interface ZoneDef {
    *  - 'maze'：洞穴"迷路"图——双向边的连通图，有环（绕一圈回到原点）、死路（dead-end）、
    *    多个"最深点"（局部深度极大）。入口与"洞另一头的出口"都是 ascent_point，其余内部节点
    *    在 canFreeAscend=false 时仍被 isAscentBlocked 锁住。蓝洞群用这套。
+   *  - 'warren'（蜂群 boss·SPEC 深海回响_蜂群boss_SPEC §8）：确定性攻坚脊柱（entrance→安全进近→
+   *    room1→wall1→room2→wall2→hatchery 死角·女王恒在深处）+ 挂在脊柱上的迷路式分支（死路/汇聚/
+   *    资源袋）。脊柱硬保证 §8「外层进近 + 三内层巢室 + 最深 Hatchery 死角」；分支给探索质感。
+   *    → mapgen-warren.ts。仍 canFreeAscend=false（唯 entrance 上浮）。
    * 注：mapShape 只决定拓扑；上浮语义仍由 canFreeAscend 单独控制（解耦，便于未来组合）。
    */
-  mapShape?: 'layered' | 'maze';
+  mapShape?: 'layered' | 'maze' | 'warren';
   /**
    * 地图朝向（仅 mapShape='maze' 生效）：
    *  - 'vertical'（默认）：深度随树距递增，危险轴 = 「太深了」（现有行为）。
@@ -179,6 +183,14 @@ export interface DiveNode {
    * 多 feature 房间用下面的 `features`，此字段留空（moveToNode 据 features 路由到房间菜单而非自动触发）。
    */
   eventId?: string;
+  /**
+   * 节点→战斗绑定（蜂群 boss SPEC §9·补「encounter→node 绑定缺失」）：到达该节点直接触发指定 combat
+   * encounter（`CombatEncounterDef.id`），而非从 zone ambush 池随机抽。数据驱动·可复用超出 Warren（任何想把
+   * 特定战斗钉到特定节点的图都能用）。moveToNode 见到它就 startCombat(该 id)（本字段落地在节点→战斗触发实装批）。
+   * 与 `eventId`/`features` 互斥（一个节点要么事件房、要么钉死战斗）。缺省 undefined ⇒ 普通节点·byte-identical。
+   * 蜂群图脊柱：approach/room1/wall1/room2/wall2/hatchery 各钉一枚（见 mapgen-warren.ts）。
+   */
+  combatEncounterId?: string;
   /**
    * 多事件房间（声呐与房间 SPEC §6「房间可含多个事件点」· §7 S1）。设了即「大房间」：
    * 到达不自动触发，而是把房内**未探**的 feature ＋ 出口一起摆成选项（enterNodeSelection），

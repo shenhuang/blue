@@ -1,6 +1,7 @@
 {
-  "_comment": "The Warren 死角单挑 kill+attrition baseline（SPEC §4/§9.6/§15）：the Hatchery(isHatchery)禁撤→女王退无可退，成为一场「回血耗尽赛」——§15 起女王独处会自己产卵(warrenReinforce·繁殖储备)、羽化 Spawn、血低时**献祭自己的仔回血**(warrenFeed·§4「吃 Spawn·Spawn 光了吃卵」)。你要在耗光她食源前打穿 60 HP。她把整窝吃干净后再无得吃→你补最后一刀→victory·enemies 0·掉女王 guaranteed loot(eel_skin)。§4 canon：女王死时残余通常已被她自己吃光(0 survivors→maybeSwarmCollapse 平凡收束)，故不断言崩解-带残余演出文案。covers queen kill + Hatchery-terminal + feed 回血耗尽赛 + lay。数值占位·待作者调·EXPECT 实跑抄(quirk #43·bless)。",
+  "_comment": "The Warren 背水一战单挑 kill+attrition baseline（SPEC §4/§9.6/§15）：背水一战(warrenLastStand·第三间卵室)禁撤→女王退无可退，成为一场「回血耗尽赛」——§15 起女王独处会自己产卵(warrenReinforce·繁殖储备)、羽化 Spawn、血低时**献祭自己的仔回血**(warrenFeed·§4「吃 Spawn·Spawn 光了吃卵」)。你要在耗光她食源前打穿 60 HP。她把整窝吃干净后再无得吃→你补最后一刀→victory·enemies 0·掉女王 guaranteed loot(eel_skin)。§4 canon：女王死时残余通常已被她自己吃光(0 survivors→maybeSwarmCollapse 平凡收束)，故不断言崩解-带残余演出文案。covers queen kill + last-stand-terminal + feed 回血耗尽赛 + lay。数值占位·待作者调·EXPECT 实跑抄(quirk #43·bless)。",
   "combatId": "combat.warren_hatchery_solo",
+  "warrenLastStand": true,
   "seed": 1,
   "bonuses": { "staminaMaxBonus": 600, "oxygenMaxBonus": 400 },
   "stats": { "oxygen": 80 },
