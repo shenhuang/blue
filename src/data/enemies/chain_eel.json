@@ -45,7 +45,7 @@
       "tier": "uncanny",
       "bands": ["band.midwater.t4"],
       "biomes": ["midwater"],
-      "role": "predator",
+      "role": "miniboss",
       "threatTier": "high",
       "hp": 14,
       "armor": 1,

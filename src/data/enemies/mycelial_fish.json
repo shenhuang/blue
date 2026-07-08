@@ -45,7 +45,7 @@
       "tier": "uncanny",
       "bands": ["band.vent.t3", "band.trench.t4"],
       "biomes": ["hydrothermal_vent", "trench"],
-      "role": "boss",
+      "role": "miniboss",
       "threatTier": "high",
       "hp": 40,
       "armor": 2,
