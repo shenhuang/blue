@@ -41,12 +41,12 @@
         },
         {
           "id": "voss_tank",
-          "label": "（问他，给那个打听章鱼的人做过什么）",
+          "label": "（问他，有没有人来定过养章鱼的东西）",
           "next": "otto.voss_tank",
           "visibleIf": {
             "kind": "all",
             "of": [
-              { "kind": "hasFlag", "flag": "flag.aldo.voss_seen" },
+              { "kind": "hasFlag", "flag": "flag.voss.recording_heard" },
               { "kind": "notHasFlag", "flag": "flag.otto.voss_seen" }
             ]
           }

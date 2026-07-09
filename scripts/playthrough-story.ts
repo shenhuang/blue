@@ -1050,7 +1050,7 @@ L('§4d Otto 进度对话门控');
 // ═══════════════════════════════════════════════════════════════
 // §4e Voss 头足目问询链（录音 → Aldo → Otto·gate 链 + 一次性退场自洽·#280）
 //   录音置 recording_heard（单一来源·任一 Ch1 录音开门）→ Aldo 认人（点出「打听章鱼的人」）
-//   → Otto 追问（gate 在 aldo.voss_seen·SPEC「接 Aldo 之后」）。两 NPC 各 onEnter 置己方 seen 退场。
+//   Otto 追问独立 gate 在 recording_heard（作者 #280：任一顺序·不强制先过 Aldo）。两 NPC 各 onEnter 置己方 seen 退场。
 // ═══════════════════════════════════════════════════════════════
 L('§4e Voss 问询链门控');
 
@@ -1105,7 +1105,7 @@ L('§4e Voss 问询链门控');
   const ottoEntry = otto.npc.dialogRoot.choices.find((c) => c.next === 'otto.voss_tank');
   assert(ottoEntry, '§4e otto.root 应有通向 otto.voss_tank 的 choice');
   const ottoConds = flat(ottoEntry!.visibleIf);
-  assert(ottoConds.some((c) => c.kind === 'hasFlag' && c.flag === ALDO_VOSS_SEEN), '§4e Otto Voss 入口应 gate hasFlag(aldo.voss_seen)——接 Aldo 之后');
+  assert(ottoConds.some((c) => c.kind === 'hasFlag' && c.flag === RECORDING_FLAG), '§4e Otto Voss 入口应 gate hasFlag(recording_heard)——任一录音开门·不强制先过 Aldo');
   assert(ottoConds.some((c) => c.kind === 'notHasFlag' && c.flag === OTTO_VOSS_SEEN), '§4e Otto Voss 入口应 notHasFlag(otto.voss_seen)——问过退场');
   assert(otto.dialogs['otto.voss_tank'], '§4e otto.voss_tank 节点应存在');
   assert(
@@ -1127,8 +1127,8 @@ L('§4e Voss 问询链门控');
   assert(!evalCondition(afterAldo, aldoReal.visibleIf!), '§4e 问过 Aldo 后其入口退场');
 
   const ottoReal = getNpc('npc.otto')!.dialogRoot.choices!.find((c) => c.next === 'otto.voss_tank')!;
-  assert(!evalCondition(heard, ottoReal.visibleIf!), '§4e 未问 Aldo 时 Otto Voss 入口隐藏（接 Aldo 之后）');
-  assert(evalCondition(afterAldo, ottoReal.visibleIf!), '§4e 问过 Aldo 后 Otto Voss 入口现身');
+  assert(!evalCondition(tutOnly, ottoReal.visibleIf!), '§4e 无录音时 Otto Voss 入口隐藏');
+  assert(evalCondition(heard, ottoReal.visibleIf!), '§4e 听过录音后 Otto Voss 入口现身（任一顺序·不强制先过 Aldo）');
 
   const afterOtto = applyDialogEffects(afterAldo, getDialogNode('otto.voss_tank')!.onEnter);
   assert(afterOtto.profile.flags.has(OTTO_VOSS_SEEN), '§4e 问过 Otto 后置 otto.voss_seen');
