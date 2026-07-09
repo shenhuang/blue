@@ -1,4 +1,4 @@
-// StatsDevPanel —— 内容分布统计 dev 面板（Shift+S / ?dev&panel=stats / 剧情编辑器「内容统计」按钮）
+// StatsDevPanel —— 内容分布统计 dev 面板（`?editor=stats` / 剧情编辑器「内容统计」按钮·游戏内浮层已撤·2026-07-09）
 //
 // BI 风格·两页签（ZONE 与 TONE 互不直接关联·分开切换）：
 //   ZONE 分布：KPI + zone 事件量排行 + 建议补的池 + zone×深度 热力图（带色阶图例）
@@ -50,7 +50,7 @@ export function StatsDevPanel({ onClose }: StatsDevPanelProps) {
         <div>
           <div className="dev-panel-title">内容分布统计</div>
           <div className="dev-panel-sub">
-            {stats.total} 事件 · {stats.zones.length} zone · {stats.tones.length} tone · ?dev&panel=stats
+            {stats.total} 事件 · {stats.zones.length} zone · {stats.tones.length} tone · ?editor=stats
           </div>
         </div>
         <div className="dev-panel-header-actions">

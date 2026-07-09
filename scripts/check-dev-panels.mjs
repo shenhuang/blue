@@ -4,13 +4,15 @@
 // 背景：dev 可视化面板（src/ui/dev/*）若手抄清单 / 绕过引擎单一源，近期重构后会静默展示错乱——
 //       近期审计实锤三处（事件 zone 过滤手抄漏 17 个 tag〔已改数据派生·typecheck 守〕、海图漏深度柱 POI、
 //       战场压力把已死敌人算进去、tone 第三档无样式）。typecheck 抓字段级重命名，但抓不到「运行期字符串/
-//       语义/绕过派生」这层。本门补三条**纯静态**断言（沙箱也跑·与 check-* 同类·廉价护栏）：
+//       语义/绕过派生」这层。本门补四条**纯静态**断言（沙箱也跑·与 check-* 同类·廉价护栏）：
 //   ① ChartViewDevPanel 必须引用 buildColumnPois —— 守「海图调试器展示深度柱 POI」
 //      （之前只读 chart_pois.json·漏掉 generateChart 注入的柱 POI）。
 //   ② CombatDevPanel 战场压力按 enemiesAlive 聚合（非 enemiesFinal）——
 //      守与引擎 applyEnvironmentalPressure「只累计 hp>0 的 boss」一致、别虚报。
 //   ③ dev-panel.css 为 Tone 每个值（src/types/events.ts 单一源）都备 .dev-step-tone-<t> ——
 //      守事件步骤三档（realistic/uncanny/cosmic）视觉不丢。
+//   ④ 游戏入口（App.tsx + main.tsx）不得直接挂 dev 面板 / 走旧 `?dev&panel=` 路由 ——
+//      dev 面板只经 ?editor 工作台（EditorApp）；焊死「游戏内地图调试器已撤·编辑器是唯一调试地图的地方」（2026-07-09）。
 //
 // 深层行为另由 smoke-chart-editor（柱 POI 实际渲染/接入）与 smoke-combat-panel（面板渲染）守（tsx·Mac/nightly）；
 // 本门是沙箱可跑的那一半。改了被守的写法 → 同步更新这里的正则（单一源在注释里点名）。
@@ -71,6 +73,30 @@ if (!toneMatch) {
   }
 }
 
+// ④ 游戏入口不得直接挂 dev 面板 / 走 ?dev&panel= 路由 ----------------------------------------
+//   编辑器是唯一调试地图（及一切 dev 面板）的地方：dev 面板只经 ?editor 工作台（EditorApp）。
+//   App.tsx 已由 check-boundaries 规则五（game⇿dev）覆盖；main.tsx 是工作台装配器、被规则五豁免
+//   （可 import EditorApp/ScenePreview），故此门盯住 App+main 两个入口：不得 import `dev/<X>DevPanel`（直接挂面板）、
+//   不得读旧 `?dev&panel=` 选择器（get/has('panel') 或 panel=）。焊死「游戏内地图调试器已撤·2026-07-09」。
+const ENTRY_FILES = ['src/App.tsx', 'src/main.tsx'];
+const DEVPANEL_IMPORT_RE = /['\"][^'\"]*\/dev\/[A-Za-z]+DevPanel['\"]/; // ./dev/MapDevPanel · @/ui/dev/XDevPanel（含 import() 动态）
+const PANEL_ROUTE_RE = /(?:get|has)\(\s*['\"]panel['\"]\s*\)|[?&]panel=/; // 旧 ?dev&panel= 选择器
+for (const rel of ENTRY_FILES) {
+  const src = read(rel);
+  if (DEVPANEL_IMPORT_RE.test(src)) {
+    fail(
+      `${rel} 直接 import 了 dev 面板（*DevPanel）—— 游戏入口不得挂 dev 面板。\n` +
+        '      dev 面板只经 ?editor 工作台（EditorApp）作为 tab 渲染；别在 App/main 直接挂（编辑器是唯一调试地图的地方·DEV_TOOLS.md）。',
+    );
+  }
+  if (PANEL_ROUTE_RE.test(src)) {
+    fail(
+      `${rel} 出现旧 ?dev&panel= 路由选择器（get/has('panel') 或 panel=）—— 该内联 dev 面板路由已废。\n` +
+        '      dev 面板改由 ?editor=<key> 深链进（EditorApp）；别复活 ?dev&panel=（游戏内地图调试器已撤·2026-07-09）。',
+    );
+  }
+}
+
 // ---- 汇报 ----
 if (errors.length) {
   console.error(`✗ check-dev-panels: dev 工作台漂移门发现 ${errors.length} 处：\n`);
@@ -78,5 +104,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  '✓ check-dev-panels: 三条 dev 面板↔引擎漂移门通过（柱 POI 接入 / 战场压力存活聚合 / tone 档位样式齐）',
+  '✓ check-dev-panels: 四条 dev 面板门通过（柱 POI 接入 / 战场压力存活聚合 / tone 档位样式齐 / 游戏入口 App+main 不挂 dev 面板）',
 );

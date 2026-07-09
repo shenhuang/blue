@@ -1,7 +1,7 @@
 // eventStats —— 事件内容「分布统计」纯聚合层（叶子·无 UI·无副作用）
 //
 // 目的：把「内容平衡」从靠人眼/散文，变成一处可复用的派生数据——
-//   - StatsDevPanel（Shift+S / ?dev&panel=stats）渲染它，作者一眼看出最薄/最饱和的池；
+//   - StatsDevPanel（?editor=stats）渲染它，作者一眼看出最薄/最饱和的池；
 //   - 将来若要把「分布太偏就报警」升成 regress 机制（见 docs/QUIRKS 散文→机制约定），
 //     CLI / 检查脚本直接 import 本文件，不必在 UI 里复刻聚合逻辑。
 //

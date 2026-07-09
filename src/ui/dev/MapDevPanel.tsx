@@ -1,4 +1,4 @@
-// MapDevPanel —— 地图调试器 dev 面板（仅 import.meta.env.DEV 下挂载）
+// MapDevPanel —— 地图调试器（`?editor` 工作台「地图调试」tab·EditorApp 承载·不再有游戏内浮层·2026-07-09）
 //
 // 目的：可视化迭代迷路 mapgen 的布局，不用反复编译跑 playthrough。
 //   左栏：ZONE 选择（洞穴/开阔水域两组·分类条可收起各自 zone 列表）
@@ -7,8 +7,8 @@
 //
 // 设计（沿用 quirk #23/#24 套路，与 Event/Combat 面板一致）：
 //   - 所有计算走 engine：generateDiveMap + analyzeMap，绝不在 UI 里复刻拓扑逻辑
-//   - 不写新 GamePhase；devPanel 开关只在 App.tsx 顶层 useState 里管（DevPanelKind 加 'map'）
-//   - 只读 import.meta.env.DEV；prod build 时 App.tsx 的 lazy + DEV 守卫让本文件不进 bundle
+//   - 不写新 GamePhase；本面板只作 ?editor 工作台的一个 tab 渲染（游戏内 Shift+M 浮层 / DevPanelKind 已撤·2026-07-09）
+//   - 经 EditorApp lazy() 加载（工作台专属 chunk）；game↛dev 边界（check-boundaries 规则五 + check-dev-panels）保证不进游戏主包
 //   - 布局确定性：固定 LCG(1)（与 scripts/playthrough-*.ts 同算法）·同 zone 同图
 //
 // 详见 docs/STATUS.md「真'迷路' mapgen」+「地图调试器 dev 面板」。
@@ -218,7 +218,7 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
         <div>
           <div className="dev-panel-title">地图调试器 · MapDevPanel</div>
           <div className="dev-panel-sub">
-            generateDiveMap + analyzeMap · 确定性布局 LCG(1) · Shift+M 切换 / Esc 关闭
+            generateDiveMap + analyzeMap · 确定性布局 LCG(1) · ?editor=map
           </div>
         </div>
         <div className="dev-panel-header-actions">
