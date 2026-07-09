@@ -1,0 +1,348 @@
+{
+  "_comment": "The Warren 空卵室（brood chamber）静态 def baseline（SPEC §8）：清空基础巢役→victory（实战由 buildWarrenArrival 追加密度 Spawn + 该间存卵 cocoon·此为静态 def baseline）。数值占位·EXPECT 实跑抄(quirk #43·bless)。",
+  "combatId": "combat.warren_brood_chamber",
+  "seed": 1,
+  "bonuses": {
+    "staminaMaxBonus": 900,
+    "oxygenMaxBonus": 500
+  },
+  "stats": {
+    "stamina": 1000,
+    "oxygen": 600
+  },
+  "equipment": {
+    "tool": {
+      "itemId": "item.dive_knife.standard",
+      "slot": "tool",
+      "level": 3
+    }
+  },
+  "actions": [
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    },
+    {
+      "actionId": "action.knife_slash",
+      "targetIndex": 0
+    }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "survived": true,
+    "finalPhase": "dive",
+    "enemiesAlive": 0
+  }
+}

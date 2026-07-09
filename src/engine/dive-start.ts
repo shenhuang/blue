@@ -16,6 +16,7 @@ import type {
   PersistentCave,
 } from '@/types';
 import { generateDiveMap, generatePersistentCaveMap, applyCaveOverlays, cavePortalsOf, caveSeededRng, caveHash } from './mapgen';
+import { ensureQueenPlaced } from './warren-hunt';
 import { getZone, getEventById } from './zones';
 import { getCave } from './caves';
 import {
@@ -217,6 +218,11 @@ export function startDive(
   // 落地不自动扫（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：起始节点声呐 off（scanMemory 空·全黑）——
   // 想看掉进的那片洞＝落地后主动 ping 一记（付电 + 暴露）。旧「按 profile 偏好种 sonarOn/sonarNext + 落地自动扫」已删。
   let run: RunState = run0;
+
+  // The Warren 女王落位（蜂群 boss SPEC §8/§9·三卵室追猎·作者 2026-07-08）：warren 图（有 boss 卵室节点）进洞时若
+  // 追猎档没有 queenNodeId 就随机落位她 + 给三间各种初始存卵（幂等·月相窗内续追猎不重掷）。非 warren 图 no-op 且
+  // 不消耗 rng（pickOne 对空数组直接返回）⇒ 既有下潜逐字节不变。
+  run = ensureQueenPlaced(run);
 
   // 教学首潜锁上浮（教学关 node 化·#221+·SPEC 深海回响_教学关node化）：linearScripted zone 且其 scriptedStart 未见过＝首潜
   // ⇒ run.ascentLocked（isAscentBlocked 恒挡 + UI 藏自愿上浮钮 ⇒ 玩家只能沿单向图前进、靠 forceAscend 事件退出）。

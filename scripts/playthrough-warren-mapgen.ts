@@ -25,7 +25,7 @@ import {
   advanceQueenRelocation,
   WARREN_DENSITY_BY_HOPS,
 } from '../src/engine/warren-hunt';
-import { isWarrenLastStand } from '../src/engine/combat-warren';
+import { isWarrenLastStand, warrenArrivalEncounterId, WARREN_ENC } from '../src/engine/warren-hunt';
 import { makeHarness, type PtAssert } from './lib/pt';
 
 const pt = makeHarness('The Warren 三角洞型 + 追猎态（蜂群 boss SPEC §4/§8）');
@@ -185,6 +185,48 @@ L('\n========== D. 密度热度 f(到女王跳数) ==========');
   const noQueen = { map } as unknown as RunState;
   assert(warrenSpawnDensity(map, noQueen, queen) === 0, '女王未落位 ⇒ 密度恒 0（普通下潜零回归）');
   L('  ✓ 女王处最厚 · 逐跳单调不增 · 表长之外恒 0 · 女王未落位则全图 0');
+}
+
+// ── E. 到达路由决策（warrenArrivalEncounterId·纯函数·SPEC §5/§8/§9·作者 2026-07-08 三卵室追猎） ──
+L('\n========== E. 到达路由决策（封口墙 / 女王阶段 · 空卵室↔安静水域 · rc 递进） ==========');
+{
+  const map = genMap('echo');
+  const chambers = warrenChambers(map);
+  const [qA, qB, qC] = chambers;
+  const entrance = map.startNodeId;
+  const eggs0: Record<string, number> = Object.fromEntries(chambers.map((c) => [c, 3]));
+
+  // 起始：女王在 qA · 墙未破 · rc0 · 三间有卵
+  const run0 = { map, warrenHunt: { roomsCleared: 0, queenNodeId: qA, usedChambers: [qA], wallDown: false, eggs: eggs0 } } as unknown as RunState;
+  assert(warrenArrivalEncounterId(run0, qA) === WARREN_ENC.wallSpawn, '她那间·墙未破·rc0 → Spawn 封口墙（找到封口＝找到她）');
+  assert(warrenArrivalEncounterId(run0, qB) === WARREN_ENC.brood, '非她那间·有卵 → 空卵室');
+  assert(warrenArrivalEncounterId(run0, qC) === WARREN_ENC.brood, '非她那间·有卵 → 空卵室');
+  assert(warrenArrivalEncounterId(run0, entrance) === null, '非卵室节点（入口）→ null（安静水域·逐字节不变）');
+
+  // 墙已破 → 女王阶段 room1
+  const run0b = { ...run0, warrenHunt: { ...run0.warrenHunt!, wallDown: true } } as unknown as RunState;
+  assert(warrenArrivalEncounterId(run0b, qA) === WARREN_ENC.room1, '她那间·墙已破·rc0 → 女王阶段 room1');
+
+  // 预清 qB 的卵 → qB 变安静水域（重访不重播）；qC 仍有卵（预清是 50% 赌注·quirk #239）
+  const run0c = { ...run0, warrenHunt: { ...run0.warrenHunt!, eggs: { ...eggs0, [qB]: 0 } } } as unknown as RunState;
+  assert(warrenArrivalEncounterId(run0c, qB) === null, '非她那间·卵已清空 → null（重访不重播·finalizeVictory 清零）');
+  assert(warrenArrivalEncounterId(run0c, qC) === WARREN_ENC.brood, '另一间仍有卵 → 空卵室（预清一间是 50% 赌注·两间都清要拿氧气换）');
+
+  // rc1：第二道墙＝Guards 墙；墙破→room2；她撤离的旧那间(卵已清)→null
+  const run1 = { map, warrenHunt: { roomsCleared: 1, queenNodeId: qB, usedChambers: [qA, qB], wallDown: false, eggs: { ...eggs0, [qA]: 0 } } } as unknown as RunState;
+  assert(warrenArrivalEncounterId(run1, qB) === WARREN_ENC.wallGuards, '她那间·墙未破·rc1 → Guards 封口墙（第二次更难打）');
+  assert(warrenArrivalEncounterId({ ...run1, warrenHunt: { ...run1.warrenHunt!, wallDown: true } } as unknown as RunState, qB) === WARREN_ENC.room2, '她那间·墙已破·rc1 → 女王阶段 room2');
+  assert(warrenArrivalEncounterId(run1, qA) === null, '她撤离的旧那间（卵已清）→ null（安静水域）');
+
+  // rc2 背水一战：墙破→hatchery
+  const run2 = { map, warrenHunt: { roomsCleared: 2, queenNodeId: qC, usedChambers: [qA, qB, qC], wallDown: true, eggs: { ...eggs0, [qA]: 0, [qB]: 0 } } } as unknown as RunState;
+  assert(warrenArrivalEncounterId(run2, qC) === WARREN_ENC.hatchery, '她那间·墙已破·rc2（背水一战·无处可退）→ hatchery');
+
+  // 无追猎档 / 非 warren 图 → null（普通下潜零回归）
+  assert(warrenArrivalEncounterId({ map } as unknown as RunState, qA) === null, '无 warrenHunt → null');
+  const plainMap = { nodes: { 'node.0': { id: 'node.0', kind: 'rest', connectsTo: [] } }, startNodeId: 'node.0' } as unknown as DiveMap;
+  assert(warrenArrivalEncounterId({ map: plainMap, warrenHunt: { roomsCleared: 0, queenNodeId: 'node.0' } } as unknown as RunState, 'node.0') === null, '非 warren 图（无 boss 卵室节点）→ null');
+  L('  ✓ 墙↔女王阶段路由 · 空卵室↔安静水域(存卵) · rc 递进 wall_spawn→wall_guards→hatchery · 无档/非warren图 → null');
 }
 
 pt.done();

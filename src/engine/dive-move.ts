@@ -11,6 +11,7 @@ import { computeModifiers } from './modifiers';
 import { enterNodeSelection } from './dive-select';
 import { stalkerStep, weakStalkerStep, maybeApproachEncounter, maybeHallucinationEncounter } from './dive-stalker';
 import { startCombat } from './combat';
+import { buildWarrenArrival } from './combat-warren';
 import {
   resolveHorrorSapienTier,
   horrorSapienChance,
@@ -182,8 +183,16 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
     }
 
     case 'shop':
-    case 'boss':
       return { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
+
+    case 'boss': {
+      // The Warren 到达路由（蜂群 boss SPEC §5/§8/§9·三卵室追猎·作者 2026-07-08）：她那间墙未破→封口墙 party；
+      // 墙已破→女王阶段遭遇；非她那间且有卵→空卵室（提前凿卵）；已清空→安静水域（重访不重播）。
+      // 非 warren 图 / 未落位 ⇒ buildWarrenArrival 返回 null ⇒ 落 rest（逐字节不变）。
+      const warrenEnc = buildWarrenArrival(s, target.id);
+      if (warrenEnc) return startCombat(s, warrenEnc);
+      return { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
+    }
 
     default:
       return assertNever(target.kind);

@@ -56,7 +56,8 @@ import {
   maybePufferMeleeDetonate,
 } from './combat-mechanics';
 // The Warren 女王身体库存主线（§15·#271·从 combat-mechanics 外移·守 file-budget）：六分支树 + 动态 screen 门 + 起盾 + 伤害计数。
-import { maybeWarrenQueenAct, queenScreened, recordQueenDamage, warrenInitScreen, isWarrenLastStand, finalizeSwarmRelocate } from './combat-warren';
+import { maybeWarrenQueenAct, queenScreened, recordQueenDamage, warrenInitScreen, finalizeSwarmRelocate, applyWarrenVictory } from './combat-warren';
+import { isWarrenLastStand } from './warren-hunt';
 
 // ——— 数据索引 ———
 
@@ -156,9 +157,14 @@ export function startCombat(
     if (m.attacksOverride) {
       inst.phaseAttacksOverride = m.attacksOverride;
     }
-    // 茧化居民：开战时初始化为幼体阶段（仅带 metamorphosis 的敌人写此字段·普通敌人逐字节不变）。
+    // 茧化居民：开战默认幼体阶段；成员可显式覆写（The Warren 到达路由注入卵＝'cocoon'·蜂群 boss SPEC §9.5/§15·buildWarrenArrival）。
     if (def.metamorphosis) {
-      inst.metamorphosisStage = 'larva';
+      const stage = m.metamorphosisStage ?? 'larva';
+      inst.metamorphosisStage = stage;
+      if (stage === 'cocoon') {
+        inst.cocoonTurnsLeft = def.metamorphosis.cocoonMaxTurns;
+        inst.phaseArmorOverride = def.metamorphosis.cocoonArmor;
+      }
     }
     return inst;
   });
@@ -184,6 +190,8 @@ export function startCombat(
     ...(enc.hallucination || options?.hallucination ? { hallucination: true as const } : {}),
     // The Warren 背水一战＝**状态不是地点**，从追猎进度派生；scenario/adhoc 可覆写。非 Warren 恒 false ⇒ 逐字节不变。
     ...(options?.warrenLastStand ?? isWarrenLastStand(state.run) ? { warrenLastStand: true as const } : {}),
+    // The Warren 封口墙（她那间门口·§5）：破墙胜利 → finalizeVictory 置 warrenHunt.wallDown。仅到达路由构造的墙遭遇带此标 ⇒ 逐字节不变。
+    ...(enc.warrenWall ? { warrenWall: true as const } : {}),
   };
 
   // 图鉴发现门（敌人库·只显示已遭遇）：开战即把本场敌人（含 enemyRef 取到的）记入
@@ -1041,6 +1049,9 @@ function finalizeVictory(state: GameState): CombatTurnResult {
   const combat = state.phase.combat;
 
   let s = state;
+
+  // The Warren 胜利态回写（破封口墙→wallDown / 清空非女王卵室→存卵清零·§5/§8·外移守 file-budget·见 combat-warren.ts）。
+  s = applyWarrenVictory(s);
 
   // 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：看破 / 打「赢」＝它散了——**无战利品**（从没有东西可捞），
   // 收场暧昧（「你眨眼，那里只有空水」＝它从没在那儿·是你疯了、不是世界有东西）。跳过整段 loot 结算（effectiveLoot /

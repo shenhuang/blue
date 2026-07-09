@@ -393,6 +393,45 @@
       "party": { "members": [{ "defId": "enemy.warren_queen" }] },
       "showIntro": false,
       "introText": "[待过稿] 死角里只剩她——巢卫都碎在了外面的通道上。她逃不掉了。"
+    },
+    {
+      "_comment": "封口墙①（Spawn 墙·SPEC §5·到达路由 buildWarrenArrival 构造·作者 2026-07-08）：她那间门口第一道墙（roomsCleared=0）。纯 Spawn（到达时按密度热度 warrenSpawnDensity 追加）。warrenWall:true ⇒ 打穿→finalizeVictory 置 warrenHunt.wallDown（下次到达她那间＝女王阶段遭遇）。数值/文案占位·defer。",
+      "id": "combat.warren_wall_spawn",
+      "warrenWall": true,
+      "party": {
+        "members": [
+          { "defId": "enemy.warren_spawn" },
+          { "defId": "enemy.warren_spawn" },
+          { "defId": "enemy.warren_spawn" }
+        ]
+      },
+      "showIntro": true,
+      "introText": "[待过稿] 一堵活物堵死了通往里间的甬道——半透明的小东西层层叠叠，先凿穿它们，才够得着她。"
+    },
+    {
+      "_comment": "封口墙②（Guards 墙·SPEC §5）：她第二次被撤后门口的墙（roomsCleared>=1）＝结了硬壳的活盾。warrenWall:true。数值/文案占位·defer。",
+      "id": "combat.warren_wall_guards",
+      "warrenWall": true,
+      "party": {
+        "members": [
+          { "defId": "enemy.warren_guard" },
+          { "defId": "enemy.warren_guard" },
+          { "defId": "enemy.warren_spawn" }
+        ]
+      },
+      "showIntro": true,
+      "introText": "[待过稿] 这一次堵路的是结了硬壳的活盾，迟缓地把整个身体压过来封住通道。"
+    },
+    {
+      "_comment": "空卵室（brood chamber·SPEC §8·到达路由 buildWarrenArrival 构造）：非女王那间。基础少量巢役 + 到达时按密度热度追加 Spawn + 该间存卵（warrenHunt.eggs·metamorphosisStage='cocoon' 注入·趁 cocoonMaxTurns 内凿破 breakDestroys 销毁不复活）。提前凿卵 ⇒ 她撤过去时库存更少（§15.1）。清空后 eggs=0 ⇒ 重访安静水域（不重播·finalizeVictory 清零）。数值/文案占位·defer。",
+      "id": "combat.warren_brood_chamber",
+      "party": {
+        "members": [
+          { "defId": "enemy.warren_spawn" }
+        ]
+      },
+      "showIntro": true,
+      "introText": "[待过稿] 一间温热的卵室，四壁嵌满搏动的卵——她不在这儿，但卵已经在动了。"
     }
   ]
 }

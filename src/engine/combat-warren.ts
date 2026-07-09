@@ -8,13 +8,13 @@
 // 依赖：combat.ts 的共享工具（getEnemyDef/setCombat/pushCombatLog/rollChance）+ combat-mechanics.ts 的 Puffer 自爆原语
 // （pufferArmed/detonateSelfDestruct）。三者互为静态 import·模块顶层互不调用（只运行时进函数体）·ESM 循环加载安全。
 
-import type { GameState, RunState } from '@/types';
-import type { EnemyInstance } from '@/types';
+import type { GameState } from '@/types';
+import type { EnemyInstance, CombatEncounterDef } from '@/types';
 import type { CombatTurnResult } from './combat';
-import { getEnemyDef, setCombat, pushCombatLog, rollChance } from './combat';
+import { getEnemyDef, getEncounter, setCombat, pushCombatLog, rollChance } from './combat';
 import { pufferArmed, detonateSelfDestruct } from './combat-mechanics';
 import { appendLog } from './state';
-import { advanceQueenRelocation } from './warren-hunt';
+import { advanceQueenRelocation, warrenChambers, warrenSpawnDensity, warrenArrivalEncounterId, isWarrenWallEncounter } from './warren-hunt';
 
 /**
  * finalizeSwarmRelocate（The Warren·蜂群 boss SPEC §9.1）：女王在暴露窗被巢撤走 → 本场以「房间清空·女王逃脱」收束。
@@ -39,18 +39,49 @@ export function finalizeSwarmRelocate(state: GameState): CombatTurnResult {
 }
 
 /**
- * 女王一共有三间卵室（作者 2026-07-08 三卵室重设计）：随机起于其一，被打退随机换一间，**撤进第三间＝背水一战**。
- * 故「无处可退」＝已撤过 2 次 ＝ `roomsCleared >= 2`。三卵室数量若变，只改这一个常量。
+ * The Warren 到达路由构造（蜂群 boss SPEC §5/§8/§9·三卵室追猎·作者 2026-07-08）：把玩家到达某间卵室时该打的那场
+ * 组装成 CombatEncounterDef——路由（她那间墙未破＝封口墙 / 墙已破＝女王阶段 / 非她那间有卵＝空卵室）由纯函数
+ * warren-hunt.ts::warrenArrivalEncounterId 决定；本函数在基础 party 上按**密度热度**追加 Spawn（§9.5 搜寻信号）、
+ * 按**该间存卵**追加卵（metamorphosisStage='cocoon'·§15.1 提前凿卵削她库存），封口墙则标 warrenWall
+ * （打穿→finalizeVictory 置 wallDown）。非 warren 图 / 非卵室 / 已清空 ⇒ null（dive-move 落安静水域·逐字节不变）。
+ * 背水一战判据 isWarrenLastStand + 三卵室常量已移 warren-hunt（追猎态单一真相·本文件与 combat.ts 从那儿 import）。
  */
-export const WARREN_LAST_STAND_ROOMS = 2;
+export function buildWarrenArrival(state: GameState, nodeId: string): CombatEncounterDef | null {
+  const run = state.run;
+  if (!run?.map) return null;
+  const id = warrenArrivalEncounterId(run, nodeId);
+  if (!id) return null;
+  const base = getEncounter(id);
+  if (!base) return null;
+  const isWall = isWarrenWallEncounter(id);
+  const density = warrenSpawnDensity(run.map, run, nodeId);
+  const eggCount = isWall ? 0 : (run.warrenHunt?.eggs?.[nodeId] ?? 0);
+  const members = [...base.party.members];
+  for (let i = 0; i < density; i++) members.push({ defId: 'enemy.warren_spawn' });
+  for (let i = 0; i < eggCount; i++) members.push({ defId: 'enemy.warren_egg', metamorphosisStage: 'cocoon' });
+  return { ...base, party: { members }, ...(isWall ? { warrenWall: true as const } : {}) };
+}
 
 /**
- * 背水一战判据（**状态不是地点**·蜂群 boss SPEC §4）：她已把三间卵室用尽、正在最后一间。
- * 唯一真相——`startCombat` 据此写 `CombatState.warrenLastStand`，三处门控（禁撤 / 崩解取胜 / 储备零恢复）只读那个标记。
- * 无追猎档（普通遭遇 / 从未打过 Warren）⇒ roomsCleared 视作 0 ⇒ false ⇒ 一切逐字节不变。
+ * The Warren 胜利态回写（蜂群 boss SPEC §5/§8·三卵室追猎·作者 2026-07-08）：finalizeVictory 收束时调一次——
+ * 破封口墙（combat.warrenWall·她那间门口）→ wallDown=true（下次到达她那间＝女王阶段遭遇·非再一道墙）；
+ * 清空非女王卵室 → 该间存卵清零（提前凿卵削她未来库存·§15.1·+ 重访不重播·eggs=0 ⇒ 路由 null）。
+ * 非 Warren（无 warrenHunt / resumeNodeId 非卵室）⇒ 原样返回 ⇒ 逐字节不变。
+ * 从 combat.ts::finalizeVictory 外移（守 check-file-budget·warren 一族归位·同 finalizeSwarmRelocate 的拆法）。
  */
-export function isWarrenLastStand(run: RunState): boolean {
-  return (run.warrenHunt?.roomsCleared ?? 0) >= WARREN_LAST_STAND_ROOMS;
+export function applyWarrenVictory(state: GameState): GameState {
+  if (state.phase.kind !== 'combat' || !state.run?.warrenHunt || !state.run.map) return state;
+  const combat = state.phase.combat;
+  const node = combat.resumeNodeId;
+  if (!node || !warrenChambers(state.run.map).includes(node)) return state;
+  const wh = state.run.warrenHunt;
+  if (node === wh.queenNodeId && combat.warrenWall) {
+    return { ...state, run: { ...state.run, warrenHunt: { ...wh, wallDown: true } } };
+  }
+  if (node !== wh.queenNodeId) {
+    return { ...state, run: { ...state.run, warrenHunt: { ...wh, eggs: { ...(wh.eggs ?? {}), [node]: 0 } } } };
+  }
+  return state;
 }
 
 //

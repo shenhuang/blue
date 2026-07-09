@@ -3,6 +3,20 @@
   "ch1": {
     "anchors": [
       {
+        "_doc": "占位 anchor（蜂群 boss·The Warren·作者 2026-07-08 三卵室重设计·蜂群boss SPEC §8/§11）：owner/门控/深度档全 defer。owner 暂挂 home（恒在坐标基准）；requiresFlags 挂 flag.warren_discovered（当前无事件设置 ⇒ 不出现·纯占位·待作者接发现门/深度档）。",
+        "id": "poi.anchor.warren",
+        "zoneId": "zone.warren",
+        "name": "[待过稿] 巢窟",
+        "blurb": "[待过稿] 图上一处被反复描黑的坐标——没有注记，只有一圈圈叠上去的墨。",
+        "distance": 5,
+        "owner": "lighthouse.home",
+        "mapX": 0.19,
+        "mapY": 0.17,
+        "persistent": true,
+        "requiresFlags": ["flag.warren_discovered"],
+        "modifier": { "depthRange": [120, 160] }
+      },
+      {
         "id": "poi.anchor.corin_cache",
         "zoneId": "zone.open_midwater",
         "name": "Corin 的坐标",

@@ -131,6 +131,8 @@ export interface PlayerProfile {
     // 「无处可退」改由 `roomsCleared >= WARREN_LAST_STAND_ROOMS` 派生（combat-warren.ts::isWarrenLastStand）。
     usedChambers?: string[];
     wallDown?: boolean;
+    /** 每间卵室的存卵数（提前凿卵→她撤过去时库存更少·§15.1·蜂群 boss SPEC §8）。随 warrenHunt 一并 bank / 窗过期重置。 */
+    eggs?: Record<string, number>;
     /** 离港那一刻的总天数（profile.day 口径）——下次开潜据此算跨过几个相位边界。 */
     lastVisitDay: number;
   };
@@ -471,6 +473,8 @@ export interface RunState {
     usedChambers?: string[];
     /** 她当前那间卵室门口的封口墙是否已被打穿（每次 relocate 重置＝新一道墙·SPEC §5）。 */
     wallDown?: boolean;
+    /** 每间卵室的存卵数（提前凿卵→她撤过去时库存更少·§15.1）。ensureQueenPlaced 初始化·advanceQueenRelocation 清旧那间。 */
+    eggs?: Record<string, number>;
   };
 }
 

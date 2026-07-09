@@ -4,6 +4,8 @@
 
 ---
 
+> **⚠ 三卵室重设计 canon 覆盖（#275 落地骨架 · #276 接线完成 · 2026-07-08）——本 SPEC 下方凡「the Hatchery ＝最深那一间 / 唯一死角 / 只是地方」的措辞一律以本条为准作废。** 现行 canon：**「死角」是状态、不是地点**——三间卵室**都是** hatchery，女王随机起于其一、被打退随机换一间、撤进第三间＝无处可退（`isWarrenLastStand(run)` ＝ `roomsCleared >= 2` · `CombatState.warrenLastStand`；旧静态 `warrenRoom.isHatchery` 已删——三卵室下它全局为真会塌掉「前两间打不死她」）。地图＝**三角**（三卵室两两经一中间房 2 跳等距·随机撤退是唯一有信息量的规则·quirk #239）。搜寻＝**密度热度**（`f(到 queenNodeId 跳数)`·查表·表长即作用半径 ⇒「入口无敌人」是定理）**＋封口墙**（只封她真进的那间·找到封口＝找到她）；声呐听得见「大团活物」但无分辨率 ⇒ 射程升满不消解三选一。**§7「越近核心水越稠」失去机械载体**（作者否决耗氧耦合：氧气来自气瓶·且已通过「更多遭遇⇒更多回合」重复计数）→ 降为纯氛围文案。落地/接线状态见 **§17**；机制细节见 §13④/§14③（deferred 已清）+ quirk #238/#239。
+
 ## 1. 北极星 / 为什么
 
 - **让玩家的身体先学会「这个形状＝残酷」**：这场战斗的唯一目的，是让玩家亲手体会真社会性巢的残酷——个体的命随时可弃、整巢只为一个中心运转。不是读到的、是打出来的。
@@ -98,7 +100,7 @@
 
 ## 4. 取胜＝杀死女王（她会逃 + 回血·唯死角杀得掉 · 作者锁 2026-07-06）
 
-> 取胜条件极简：**杀死 the Gravid Queen ＝取胜**。the Hatchery 只是她退无可退的**地方**，不是要摧毁的目标（早前「摧毁 the Hatchery 才能杀她」的写法是误加·已废）。
+> 取胜条件极简：**杀死 the Gravid Queen ＝取胜**。她退无可退的死角是**状态、不是某间「最深的」卵室**（三卵室重设计·见顶部 canon 覆盖 + §17）——三间卵室都是 hatchery，她随机起于其一、被打退随机换一间、撤进第三间＝`roomsCleared>=2`＝背水一战（`warrenLastStand`·禁撤·可致死）。不是要摧毁的目标（早前「摧毁 the Hatchery 才能杀她」的写法是误加·已废）。
 
 - **为什么前两间杀不掉她**：**她会逃 + 回满血**。你在开阔巢室把她打到阈值，巢就把她拖走、途中吞 Spawn/卵回满 → 她跑了，你没能收尾。不是「有个总源在补所以砍不动」，是**她根本没留在原地给你砍死**。
 - **死角＝唯一能杀掉她的地方**：退到最深的 the Hatchery，**无处可撤**（禁 evacuation·§3）。她仍想回血——吃 Spawn、Spawn 光了吃自己的卵（§5 终局最狞一拍）——但**这些有限、且她逃不掉**。你**耗过/压过她那点递减的回血**，把她打死 → **取胜**。
@@ -129,7 +131,7 @@
 
 **女王本人**：仍**不攻击**——只 ①**战斗中持续产卵**（补 the Clutch → 孵 Spawn·the Hatchery 供养）②**吞食回血**（吃 Spawn/卵，Spawn 光了连 Warden 也吃）。（可选终局反射：喷卵/痉挛一次·纯演出。）**别给女王塞攻击表**——她的无力正是主题（不是强大的暴君，是最彻底的被剥夺者）。
 
-- **环境**：封闭巢内耗氧（§7）；越近核心水越「稠」＝靠近 the Hatchery 的额外压力。
+- **环境**：封闭巢内耗氧（§7）。~~越近核心水越「稠」＝靠近 the Hatchery 的额外压力~~ **失去机械载体·降为纯氛围文案**（作者 2026-07-08 否决耗氧耦合：氧气来自气瓶、靠近她而流失不合常理，且「更近⇒更多遭遇⇒更多回合⇒气瓶更快见底」已重复计数了这层压力·见顶部 canon 覆盖 + quirk #239）。
 
 ---
 
@@ -155,7 +157,7 @@
 结构反过来定死了场地形态——之前搁置的「占用现有洞 vs 新生成」由此解决：
 
 - **占用持久洞 + 蜂巢覆写**：复用多口持久洞（`深海回响_多口持久洞_SPEC`）+ 地图形状层（`map-layout-styles` 记忆·`LayoutStyle`/`mapShape` 单一来源）。把「蜂巢」做成一个布局变体，**覆写**在一个既有洞穴上——主题上蜂群＝殖民/感染，占据并掏空一个空间，比凭空造巢更有「蔓延/殖民」的恐怖，且比一次性专用 arena 更可扩展（约定落成机制、别一次性）。
-- **拓扑要求**：图内含**一段外层进近区（无女王·Spawn 防守）** ＋ **女王的三间内层巢室**（最深一间是 the Hatchery·终局死角·禁 evacuation）；**女王起点已在深处、绝不靠近洞口**（作者锁）；Spawn 遭遇密度**按到女王当前巢室的距离缩放**（越深越密越强），女王被撤后重算（派生字段·不入存档）。
+- **拓扑要求（三卵室三角·#275 落地·见顶部 canon 覆盖）**：图内含**一段外层进近区（无女王·Spawn 防守）** ＋ **三间内层卵室（都是 hatchery·`kind==='boss'`）**，两两经一中间房相连＝恰好 2 跳等距（每个中间房各挂一个一次性气穴·入口在外围 ≥3 跳外）。**女王随机起于三间之一、被打退随机换一间、撤进第三间＝背水一战**（「死角」是状态非地点·`roomsCleared>=2`）；等距 ⇒ 随机撤退是唯一有信息量的规则（别改成「最远」·quirk #239）。Spawn 遭遇密度**按到 `queenNodeId` 的跳数查表**（`WARREN_DENSITY_BY_HOPS`·越近越密·表长即作用半径），女王被撤后重算（派生·不入存档）。实装：`mapgen-warren.ts`（三角生成器）+ `warren-hunt.ts`（密度/落位/撤退）+ `graph.ts::hopField`。
 - **具体拓扑/节点数/连通**：留 mapgen 实装期定；SPEC 只约束「外层进近 + 三间内层女王巢室 + 最深 the Hatchery 死角 + 女王恒在深处 + 密度随近女王递增」这几条硬性。
 
 ---
@@ -245,6 +247,7 @@
 - baseline（`scenarios/combat/`·实跑抄 quirk #43）：`warren_room1__queen_relocate`（破巢卫墙→relocate·covers warden+spawn+queen）·`warren_room2__queen_relocate`（破 Guards 墙→relocate·covers guard+spawn+queen）·`warren_hatchery_solo__kill_collapse`（死角杀女王→崩解·covers queen）。
 
 **④ Deferred（非 core spine·留后续 Phase）：** Spawn→Puffer **自爆 + 远程豁免**（§9.9/E4·唯一真·新 hook）；**封口墙独立 party**（§9.10·现折叠进 `shieldedBy`「破墙才暴露」）；**蜂巢 mapgen 覆写 + Spawn 密度距离派生**（§8/§9.5/§9.7/E6/E9·现用既有 encounter + 占位节点）；**撤退/月相存档窗**（§9.11/E8·`warrenHunt` 已留挂点·接 `lunar.ts`）；**数值/文案 tuning**（§10·`exposureThreshold` 现占位 0.7＝短暴露窗）。
+> **[#276 更新·2026-07-08]** 上列「蜂巢 mapgen 覆写 + Spawn 密度距离派生」「封口墙」**已不再 deferred**——#275 建三角 mapgen + 密度查表 + `DiveNode.combatEncounterId`，#276 接到达路由（封口墙独立 party `warren_wall_spawn`/`warren_wall_guards` + 空卵室 + 女王阶段三选一）+ 每间存卵 + `ensureQueenPlaced` + 密度接遭遇构造 + 占位 zone/POI（见 §17）；Puffer 自爆+远程豁免已于 #270 落地（§14①）。仍 deferred：撤退/月相存档窗完整手感（挂点 + `playthrough-warren-savewindow` 已在·数值待调）、数值/文案 tuning（§10）。
 
 **⑤ 验证：** 沙箱 `npm run regress` **94/94 绿**（含 `playthrough-combat-scenarios` 验三 baseline·`check-enemy-refs` 四门·`check-boundaries`·`typecheck`）；vite production build 缺 `rollup-linux` 沙箱跳过 → **留 Mac/nightly ship 门补跑**（`blue_regress_sandbox`）。未提交（交互 session·push 留 Mac/nightly·quirk #104）。
 
@@ -264,6 +267,7 @@
 - 新 `metamorphosis.breakDestroys?`（缺省=既有「破茧复活成体」·Puffer/Warden 用；true=销毁·卵用）。
 
 **③ 仍 Deferred：** 蜂巢 mapgen 覆写 + Spawn/Puffer 密度距离派生 + 封口墙独立 party（§8/§9.5/§9.7/§9.10·**架构敏感·有未建依赖多口持久洞 + encounter→node 绑定缺失·留专门 session**）；撤退/月相存档窗（§9.11·`warrenHunt.lastVisitDay` 待接 `lunar.ts` `moonPhasesElapsed`）；数值/文案 tuning（§10·全占位）。
+> **[#276 更新·2026-07-08]** 「蜂巢 mapgen 覆写 + Spawn/Puffer 密度距离派生 + 封口墙」**已接线完成**（#275 三角 mapgen + 密度查表 + `DiveNode.combatEncounterId` 补齐 encounter→node 绑定；#276 `dive-move` 到达路由 + 封口墙 party + 每间存卵 `warrenHunt.eggs` + `ensureQueenPlaced` 接 dive-start + 密度接遭遇构造 + 占位 `zone.warren`/POI·见 §17）。「未建依赖多口持久洞」由**新建轻量蜂巢 mapShape** 解耦绕过（#275）。
 
 **④ 验证：** 沙箱 `npm run regress` **94/94 全绿**（5 warren baseline + `check-enemy-refs` 传递闭包覆盖动态产出 defId + `check-file-budget`〔`combat.ts` melee 触发抽进 `combat-mechanics.ts` 守 1170 预算〕+ `check-boundaries` + `typecheck`）；build 留 nightly。未提交（push 留 Mac/nightly·quirk #104）。
 
@@ -396,3 +400,24 @@ in-world 的人**看不见寄生虫**、只看见宿主。他们按**外观**（
 - **人类版 B / 祭祀文明起源已迁出**：见新档 `深海回响_祭祀文明_SPEC.md`（前 / 后祭祀文明史 · 邪教 · 仪式 · 成功即诅咒 · 美化版→真相）。§16.3 只留 B 的**生物 / 行为设定**。
 - **code-id 解耦 scheme（视开发定·零代码 now）**：需要新机制时 `horror_sapien_*`——`_octopus`（头足·现 `horror_sapien`）/ `_human`（B）/ `_queen`（B 女王）/ `_dead_player`（主角尸体变体·冻结 apex 线）。落地过 check-terminology。
 - **canon 三档分工**：髓织虫生物学锚本档 §16；人类版 / 祭祀文明→`深海回响_祭祀文明_SPEC.md`；被膜拜的「神」→`深海回响_古文明_SPEC.md` §2/§6。三档交叉引用（check-doc-links 门守死链）。
+
+
+---
+
+## 17. 接线收尾实装状态（2026-07-08 · #276 · Cowork 交互 · Opus · on main · 未提交待 nightly · 沙箱 regress 95/95 绿）
+
+接 #275「三卵室重设计」——#275 建了空间/追猎骨架，本 session 把**消费侧**全接上（形状已由作者拍死·未重新设计）：
+
+- **① 到达路由（§5/§8/§9·`dive-move.ts::moveToNode` case 'boss'）**：纯决策 `warren-hunt.ts::warrenArrivalEncounterId(run,nodeId)` → `combat-warren.ts::buildWarrenArrival` 组装遭遇 → `startCombat`。她那间墙未破→封口墙（`roomsCleared=0` Spawn 墙 / `>=1` Guards 墙）；墙已破→女王阶段（room1/room2/hatchery 按 roomsCleared）；非她那间且有卵→空卵室（brood）；已清空（eggs=0）→ null（安静水域·重访不重播）。
+- **② 封口墙 + wallDown（§5）**：新遭遇 `combat.warren_wall_spawn`/`combat.warren_wall_guards`（`CombatEncounterDef.warrenWall:true`）；新 `CombatState.warrenWall`（startCombat 从 enc 传）；打穿胜利 → `combat-warren.ts::applyWarrenVictory`（finalizeVictory 调）置 `warrenHunt.wallDown=true`。墙只封她真进的那间。
+- **③ 每间存卵（§8/§15.1·作者「很重要」）**：新 `warrenHunt.eggs: Record<nodeId,number>`（`ensureQueenPlaced` 给三间各种 `WARREN_EGGS_PER_CHAMBER` 初始·随 warrenHunt bank / 窗过期重置）。空卵室 + 女王阶段遭遇按该间 `eggs[node]` 注入 `warren_egg`（`metamorphosisStage:'cocoon'`·复用 `breakDestroys`）；**提前凿卵**（清空空卵室 → `applyWarrenVictory` 置 `eggs[node]=0`）⇒ 她撤过去时库存更少 ⇒ 缩短终局回血耗尽赛；她撤离旧那间时该间存卵清零（`advanceQueenRelocation`）。撤退随机 ⇒ 预清一间是 50% 赌注（quirk #239 张力·别削）。
+- **④ 女王落位（§8·`dive-start.ts::startDive`）**：`ensureQueenPlaced(run)` 每次开潜调一次（warren 图无 `queenNodeId` 则随机落位 + 种卵·幂等）；非 warren 图 no-op 且不消耗 rng（既有下潜逐字节不变）。POI 下潜经 `startDiveFromPoi` 汇流 `startDive`·同一挂点。
+- **⑤ 密度接遭遇（§9.5·`buildWarrenArrival`）**：到达遭遇按 `warrenSpawnDensity(map,run,node)` 追加 Spawn（搜寻信号）。**耗氧不吃热度场**（作者否决·§7 已降氛围）。
+- **⑥ 占位 zone + POI（§11）**：`zone.warren`（`mapShape:'warren'`·`canFreeAscend:false`·`requiresFlags:['flag.warren_discovered']` 当前无事件设置 ⇒ 暂不可达占位·gates 省略同 `zone.horizontal_test`）；`chart_pois.json` 占位 anchor `poi.anchor.warren`（owner home·门控/深度档/owner defer）。
+- **⑦ baseline**：`playthrough-warren-mapgen` 新增 E 段（`warrenArrivalEncounterId` 全状态机）；新 combat baseline `warren_wall_spawn__break`/`warren_wall_guards__break`/`warren_brood_chamber__clear`（静态 def·bless·quirk #43）。既有 47 combat baseline 零重录通过（`startCombat` 成员级 `metamorphosisStage` 覆写 + `warrenWall` 传播 + `applyWarrenVictory` 对非 warren 逐字节不变）。
+
+**全 additive·不 bump SAVE**（`warrenHunt.eggs` 派生结转字段·`CombatState.warrenWall` 不序列化·`EnemyPartyMemberDef.metamorphosisStage` 运行时注入）。**架构**：warren 追猎态 + 路由决策纯逻辑归 `warren-hunt.ts`（`WARREN_LAST_STAND_ROOMS`/`isWarrenLastStand` 从 combat-warren 移来·单一真相·免 import 环）；需 `getEncounter` 的组装/胜利回写（`buildWarrenArrival`/`applyWarrenVictory`）归 `combat-warren.ts`（守 file-budget·combat.ts≤1170）。
+
+**仍 defer（§10·作者最后一次性调·别无人值守调）**：女王/Spawn/Warden/Puffer/Egg HP、`WARREN_DENSITY_BY_HOPS`、`WARREN_EGGS_PER_CHAMBER`、`exposureThreshold`×screen 盾数×繁殖储备（跑步机风险·§15.2/§15.8）、三卵室深度档、zone/POI owner+门控+深度档。手感验收建议作者在场逐拍死角终局（§11 排期 task 5）。
+
+**验证**：沙箱 `npm run regress --skip build` **95/95 全绿**（`playthrough-warren-mapgen` E 段 + `playthrough-combat-scenarios` 50 + `playthrough-warren-savewindow` + `check-enemy-refs`/`check-boundaries`/`check-file-budget`/`typecheck` 等）；prod build 缺 rollup-linux 留 nightly（#147）。未提交（push 留 Mac/nightly·quirk #104）。

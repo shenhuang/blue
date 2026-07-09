@@ -123,6 +123,11 @@ export interface EnemyPartyMemberDef {
    * 水鬼：'player' = 穿了潜水员尸体（effectiveLoot 找不到此 key → 回落 def.loot，动物皮囊行为不变）。
    */
   wornSkin?: string;
+  /**
+   * 运行时指定茧化阶段（The Warren 到达路由注入卵＝'cocoon'·蜂群 boss SPEC §9.5/§15·buildWarrenArrival）。
+   * 仅带 metamorphosis 的 def 生效；缺省 startCombat 置 'larva'（既有遭遇逐字节不变）。
+   */
+  metamorphosisStage?: 'larva' | 'cocoon' | 'adult';
 }
 
 /** 敌人定义（数据模板） */

@@ -204,6 +204,13 @@ export interface CombatState {
    * 缺省 ⇒ 无 ⇒ 普通战斗逐字节不变。
    */
   pendingSwarmRelocate?: boolean;
+
+  /**
+   * The Warren 封口墙标记（蜂群 boss SPEC §5·作者 2026-07-08 三卵室追猎）：本场是她那间门口的封口墙
+   * （buildWarrenArrival 构造的墙遭遇·startCombat 从 enc.warrenWall 写入）。打穿＝胜利 → finalizeVictory 置
+   * run.warrenHunt.wallDown（下次到达她那间＝女王阶段遭遇·非再一道墙）。缺省 ⇒ 无 ⇒ 逐字节不变。
+   */
+  warrenWall?: boolean;
 }
 
 export interface CombatLogEntry {
@@ -253,6 +260,12 @@ export interface CombatEncounterDef {
   // The Warren 房间标记 `warrenRoom.isHatchery` **已删**（作者 2026-07-08 三卵室重设计）：死角是**状态不是地点**，
   // 由 startCombat 从 `run.warrenHunt.roomsCleared` 派生进 `CombatState.warrenLastStand`。遭遇 def 不再承载它。
   // scenario/adhoc 要构造背水一战 → `StartCombatOptions.warrenLastStand`（见 combat.ts）。
+
+  /**
+   * The Warren 封口墙遭遇（蜂群 boss SPEC §5）：标 true ⇒ startCombat 写 CombatState.warrenWall ⇒ 打穿胜利后
+   * finalizeVictory 置 run.warrenHunt.wallDown。仅 warren_wall_* 遭遇（+ buildWarrenArrival 运行时构造）带此标·缺省逐字节不变。
+   */
+  warrenWall?: boolean;
 }
 
 /**
