@@ -907,7 +907,8 @@
             "deltas": {
               "sanity": -1
             },
-            "loreEntry": "lore.voss.cephalopod.3"
+            "loreEntry": "lore.voss.cephalopod.3",
+            "setProfileFlags": ["flag.voss.recording_heard"]
           }
         },
         {

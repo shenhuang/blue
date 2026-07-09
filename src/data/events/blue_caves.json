@@ -2100,7 +2100,8 @@
             "deltas": {
               "sanity": -1
             },
-            "loreEntry": "lore.voss.cephalopod.1"
+            "loreEntry": "lore.voss.cephalopod.1",
+            "setProfileFlags": ["flag.voss.recording_heard"]
           }
         },
         {

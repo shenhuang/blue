@@ -100,10 +100,32 @@
           "visibleIf": { "kind": "notHasFlag", "flag": "intel.aldo.lunar_tides" }
         },
         {
+          "id": "voss_recall",
+          "label": "（问他，从前有没有一个打听章鱼的人）",
+          "next": "aldo.voss_recall",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "flag.voss.recording_heard" },
+              { "kind": "notHasFlag", "flag": "flag.aldo.voss_seen" }
+            ]
+          }
+        },
+        {
           "id": "leave",
           "label": "（再坐一会儿，然后起身）",
           "next": "end"
         }
+      ]
+    },
+    "aldo.voss_recall": {
+      "id": "aldo.voss_recall",
+      "text": "Aldo 没马上答。\n\n「见过一个。好些年前。」他望着海，「一个人来的，话少。眼睛跟称秤似的，把你也称进去。」\n\n他顿了顿。「满口问章鱼——哪儿有，什么时候出。我说这片水里没那东西。他不争，只看着你——像没弄明白的是你。」",
+      "onEnter": [
+        { "kind": "setFlag", "flag": "flag.aldo.voss_seen" }
+      ],
+      "choices": [
+        { "id": "back", "label": "（记下）", "next": "aldo.harbor_morning" }
       ]
     },
     "aldo.about_mentor": {

@@ -40,6 +40,18 @@
           }
         },
         {
+          "id": "voss_tank",
+          "label": "（问他，给那个打听章鱼的人做过什么）",
+          "next": "otto.voss_tank",
+          "visibleIf": {
+            "kind": "all",
+            "of": [
+              { "kind": "hasFlag", "flag": "flag.aldo.voss_seen" },
+              { "kind": "notHasFlag", "flag": "flag.otto.voss_seen" }
+            ]
+          }
+        },
+        {
           "id": "leave",
           "label": "没事，先这样。",
           "next": "end"
@@ -48,6 +60,16 @@
     }
   },
   "dialogs": {
+    "otto.voss_tank": {
+      "id": "otto.voss_tank",
+      "text": "Otto 停下扳手。\n\n「那个人。」他哼了一声，「找我定过一口缸——大，要夹层，要上锁，还要架一圈盯着看的机关。说是养章鱼。」\n\n他摇头。「养章鱼。这片海连章鱼影子都没有；真有，一只软东西，值当这阵仗？我说过他，没用。」\n\n扳手转了半圈。「不过钱给得痛快。我照做了。」",
+      "onEnter": [
+        { "kind": "setFlag", "flag": "flag.otto.voss_seen" }
+      ],
+      "choices": [
+        { "id": "back", "label": "（记下了）", "next": "end" }
+      ]
+    },
     "otto.upgrade_table": {
       "id": "otto.upgrade_table",
       "text": "「放这里。」\n\nOtto 拍了拍改装台，又拿起扳手。\n\n「材料够就能做。不够——去弄够。」",

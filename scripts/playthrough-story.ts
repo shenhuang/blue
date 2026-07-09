@@ -1047,4 +1047,94 @@ L('§4d Otto 进度对话门控');
   L('  Otto 声呐 possession-keyed：首发一次 + 重访催料去重 + 反锁死自愈 ✓');
 }
 
+// ═══════════════════════════════════════════════════════════════
+// §4e Voss 头足目问询链（录音 → Aldo → Otto·gate 链 + 一次性退场自洽·#280）
+//   录音置 recording_heard（单一来源·任一 Ch1 录音开门）→ Aldo 认人（点出「打听章鱼的人」）
+//   → Otto 追问（gate 在 aldo.voss_seen·SPEC「接 Aldo 之后」）。两 NPC 各 onEnter 置己方 seen 退场。
+// ═══════════════════════════════════════════════════════════════
+L('§4e Voss 问询链门控');
+
+{
+  const RECORDING_FLAG = 'flag.voss.recording_heard';
+  const ALDO_VOSS_SEEN = 'flag.aldo.voss_seen';
+  const OTTO_VOSS_SEEN = 'flag.otto.voss_seen';
+
+  // (a) 三条 Ch1 录音 read outcome 都置 recording_heard（gate 单一来源·任一开门）
+  for (const [file, evId] of [
+    ['src/data/events/blue_caves.json', 'bluecaves.soaked_notebook'],
+    ['src/data/events/wreck_graveyard.json', 'wreck_graveyard.jarred_page'],
+    ['src/data/events/whalefall.json', 'whalefall.nest_recorder'],
+  ] as const) {
+    const raw = JSON.parse(readFileSync(resolve(ROOT, file), 'utf-8')) as {
+      events: { id: string; options: { id: string; outcome: { setProfileFlags?: string[] } }[] }[];
+    };
+    const ev = raw.events.find((e) => e.id === evId);
+    assert(ev, `§4e ${file} 应含事件 ${evId}`);
+    const read = ev!.options.find((o) => o.id === 'read');
+    assert(read, `§4e ${evId} 应有 read 选项`);
+    assert(
+      (read!.outcome.setProfileFlags ?? []).includes(RECORDING_FLAG),
+      `§4e ${evId} read outcome 应 setProfileFlags 含 ${RECORDING_FLAG}（听录音=开问询链单一来源）`,
+    );
+  }
+
+  type Cond = { kind: string; flag?: string; of?: Cond[] };
+  const flat = (c: Cond | undefined): { kind: string; flag?: string }[] =>
+    !c ? [] : c.of ? c.of.flatMap(flat) : [{ kind: c.kind, flag: c.flag }];
+
+  // (b) Aldo：harbor_morning 有 voss_recall 入口·gate all[hasFlag(recording), notHasFlag(voss_seen)]·onEnter 置 voss_seen
+  const aldo = JSON.parse(readFileSync(resolve(ROOT, 'src/data/npcs/aldo.json'), 'utf-8')) as {
+    dialogs: Record<string, { onEnter?: { kind: string; flag?: string }[]; choices?: { next: string; visibleIf?: Cond }[] }>;
+  };
+  const aldoEntry = (aldo.dialogs['aldo.harbor_morning'].choices ?? []).find((c) => c.next === 'aldo.voss_recall');
+  assert(aldoEntry, '§4e aldo.harbor_morning 应有通向 aldo.voss_recall 的 choice');
+  const aldoConds = flat(aldoEntry!.visibleIf);
+  assert(aldoConds.some((c) => c.kind === 'hasFlag' && c.flag === RECORDING_FLAG), '§4e Aldo Voss 入口应 gate hasFlag(recording_heard)');
+  assert(aldoConds.some((c) => c.kind === 'notHasFlag' && c.flag === ALDO_VOSS_SEEN), '§4e Aldo Voss 入口应 notHasFlag(voss_seen)——问过退场');
+  assert(aldo.dialogs['aldo.voss_recall'], '§4e aldo.voss_recall 节点应存在');
+  assert(
+    (aldo.dialogs['aldo.voss_recall'].onEnter ?? []).some((e) => e.kind === 'setFlag' && e.flag === ALDO_VOSS_SEEN),
+    '§4e aldo.voss_recall 应 onEnter setFlag(voss_seen)（自洽退场）',
+  );
+
+  // (c) Otto：root 有 voss_tank 入口·gate all[hasFlag(aldo.voss_seen), notHasFlag(otto.voss_seen)]·onEnter 置 otto.voss_seen
+  const otto = JSON.parse(readFileSync(resolve(ROOT, 'src/data/npcs/otto.json'), 'utf-8')) as {
+    npc: { dialogRoot: { choices: { next: string; visibleIf?: Cond }[] } };
+    dialogs: Record<string, { onEnter?: { kind: string; flag?: string }[] }>;
+  };
+  const ottoEntry = otto.npc.dialogRoot.choices.find((c) => c.next === 'otto.voss_tank');
+  assert(ottoEntry, '§4e otto.root 应有通向 otto.voss_tank 的 choice');
+  const ottoConds = flat(ottoEntry!.visibleIf);
+  assert(ottoConds.some((c) => c.kind === 'hasFlag' && c.flag === ALDO_VOSS_SEEN), '§4e Otto Voss 入口应 gate hasFlag(aldo.voss_seen)——接 Aldo 之后');
+  assert(ottoConds.some((c) => c.kind === 'notHasFlag' && c.flag === OTTO_VOSS_SEEN), '§4e Otto Voss 入口应 notHasFlag(otto.voss_seen)——问过退场');
+  assert(otto.dialogs['otto.voss_tank'], '§4e otto.voss_tank 节点应存在');
+  assert(
+    (otto.dialogs['otto.voss_tank'].onEnter ?? []).some((e) => e.kind === 'setFlag' && e.flag === OTTO_VOSS_SEEN),
+    '§4e otto.voss_tank 应 onEnter setFlag(otto.voss_seen)（自洽退场）',
+  );
+
+  // (d) 端到端链行为：走真引擎 evalCondition + applyDialogEffects
+  const base = createInitialGameState();
+  const tutOnly: GameState = { ...base, profile: profileWith([TUTORIAL_COMPLETE_FLAG]) };
+  const heard: GameState = { ...base, profile: profileWith([TUTORIAL_COMPLETE_FLAG, RECORDING_FLAG]) };
+
+  const aldoReal = getDialogNode('aldo.harbor_morning')!.choices!.find((c) => c.next === 'aldo.voss_recall')!;
+  assert(!evalCondition(tutOnly, aldoReal.visibleIf!), '§4e 无录音时 Aldo Voss 入口隐藏');
+  assert(evalCondition(heard, aldoReal.visibleIf!), '§4e 听过录音后 Aldo Voss 入口现身');
+
+  const afterAldo = applyDialogEffects(heard, getDialogNode('aldo.voss_recall')!.onEnter);
+  assert(afterAldo.profile.flags.has(ALDO_VOSS_SEEN), '§4e 问过 Aldo 后置 aldo.voss_seen');
+  assert(!evalCondition(afterAldo, aldoReal.visibleIf!), '§4e 问过 Aldo 后其入口退场');
+
+  const ottoReal = getNpc('npc.otto')!.dialogRoot.choices!.find((c) => c.next === 'otto.voss_tank')!;
+  assert(!evalCondition(heard, ottoReal.visibleIf!), '§4e 未问 Aldo 时 Otto Voss 入口隐藏（接 Aldo 之后）');
+  assert(evalCondition(afterAldo, ottoReal.visibleIf!), '§4e 问过 Aldo 后 Otto Voss 入口现身');
+
+  const afterOtto = applyDialogEffects(afterAldo, getDialogNode('otto.voss_tank')!.onEnter);
+  assert(afterOtto.profile.flags.has(OTTO_VOSS_SEEN), '§4e 问过 Otto 后置 otto.voss_seen');
+  assert(!evalCondition(afterOtto, ottoReal.visibleIf!), '§4e 问过 Otto 后其入口退场');
+
+  L('  录音 → Aldo → Otto 链：gate 顺序 + 一次性退场自洽 ✓');
+}
+
 pt.done();
