@@ -2917,6 +2917,46 @@
           }
         }
       ]
+    },
+    {
+      "id": "wreck_graveyard.jarred_page",
+      "depthRange": [
+        42,
+        50
+      ],
+      "zoneTags": [
+        "wreck"
+      ],
+      "weight": 3,
+      "oncePerRun": true,
+      "title": "铁肋间的录音笔",
+      "body": "残骸的铁肋深处掏着一个窝，垫着扯碎的渔网和一层碎壳。窝里收着些不成套的旧物——一段黄铜、半块表盘，还有一支黑色的录音笔，塞在最里头，像压箱底的东西。\n这么深，这么暗，有人来过；又有什么，把他丢下的东西一件件收拢了起来。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "read",
+          "label": "揩掉滑腻，按下播放",
+          "outcome": {
+            "text": "机器一按就响，声音闷在铁壳里发瓮。还是那个男人，平稳得过了头，说的仍是头足目——这一段，讲的是一只被他关进罐、又不声不响走掉的。录的人不在了，机器替他记着。你听完，把录音笔收进怀里。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -1
+            },
+            "loreEntry": "lore.voss.cephalopod.2"
+          }
+        },
+        {
+          "id": "leave",
+          "label": "别掏那窝，绕开",
+          "outcome": {
+            "text": "你没去掏那个窝。让那些被收拢的旧物留在原处。你贴着另一侧铁肋绕过去，身后那点黑壳很快没进锈里。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -1
+            }
+          }
+        }
+      ]
     }
   ]
 }

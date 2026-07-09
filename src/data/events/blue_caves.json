@@ -2075,6 +2075,46 @@
           }
         }
       ]
+    },
+    {
+      "id": "bluecaves.soaked_notebook",
+      "depthRange": [
+        26,
+        44
+      ],
+      "zoneTags": [
+        "cave"
+      ],
+      "weight": 3,
+      "oncePerRun": true,
+      "title": "窝里的录音笔",
+      "body": "水道拐进一个背光的死角，塌落的岩板下掏空成一个窝。洞口码着一圈收集来的东西——空贝壳、一枚锈死的铅锤、几块磨圆的玻璃，摆得有讲究。堆里压着个不属于海的东西：一支黑色的录音笔，外壳磨花，防水圈还严丝合缝。\n这么深，这么黑，是谁把它带下来的；又是什么，把它当宝贝收进了窝。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "read",
+          "label": "揩掉滑腻，按下播放",
+          "outcome": {
+            "text": "它还有电——他挑的本就是能扛的那种。一个男人的声音，平稳得像在念别人的病历，开口就是头足目。录的人早不在了，机器替他记着。你听完这一段，把录音笔收进怀里。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -1
+            },
+            "loreEntry": "lore.voss.cephalopod.1"
+          }
+        },
+        {
+          "id": "leave",
+          "label": "别翻那窝，绕开走",
+          "outcome": {
+            "text": "你没去翻那个窝。让它替不在的收藏者守着。你贴着另一侧岩壁绕过去，那圈摆好的东西很快没进黑里。",
+            "oxygenTurnCost": 1,
+            "deltas": {
+              "sanity": -1
+            }
+          }
+        }
+      ]
     }
   ]
 }

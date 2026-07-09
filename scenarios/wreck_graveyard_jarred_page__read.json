@@ -1,0 +1,18 @@
+{
+  "_comment": "沉船墓园 · 罐里的一页（wreck uncanny·42-50m）——Voss 观察手记第二片（标本十·残骸章鱼·认得观察者）的发现事件 baseline。选『读』→ 解锁 lore.voss.cephalopod.2（journal 分册『观察手记』第二页）+ oxygen-1/sanity-1，无 check。守『加内容必配 baseline』。",
+  "eventId": "wreck_graveyard.jarred_page",
+  "depth": 48,
+  "seed": 1,
+  "choices": [
+    "read"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "statsDelta": {
+      "oxygen": -1,
+      "sanity": -1
+    }
+  }
+}
