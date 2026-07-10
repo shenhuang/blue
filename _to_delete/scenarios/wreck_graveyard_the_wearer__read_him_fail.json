@@ -1,0 +1,15 @@
+{
+  "_comment": "深水伏笔深段 · 招手的人，读 tell 失败分支（cosmic sanity vs 55）。sanity=22（≤dc-30=25）→rate 0.05（clamp 下限）seed 1 确定性失败。验证 cosmic check 失败惩罚：sanity -12 + oxygenTurnCost 4（无 lore）。起步 22→失败后 10 不触 0 底，statsDelta 严格 -12（quirk #43/#54 双分支）。失败＝读不出 tell、被引诱：『它招的节奏跟上了你的心跳……铜盔慢慢偏过来对正你，没有蹬腿，整个人朝你这边平平地滑近』，仍不触发 d_reveal（低 sanity 腐蚀读 tell 的能力＝vision 生存铁律的反面）。",
+  "eventId": "wreck_graveyard.the_wearer",
+  "stats": { "sanity": 22 },
+  "depth": 50,
+  "seed": 1,
+  "choices": ["read_him"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": { "oxygen": -4, "sanity": -12 }
+  }
+}

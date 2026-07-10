@@ -9,7 +9,7 @@
 
 ## 1. 北极星 / 为什么
 
-- **声呐＝核心欺骗面（深水区 SPEC §3.2）**：本作的声呐返回**不可信**（可被生物躲 `evadesSonar` / 喂假回波 `spoofsSonar` / 低 san 幻觉）。把声呐做成「扫描出洞穴形状 + 房间里的读数」之后，**那张图本身就成了会骗你的东西**——这是把「是世界坏了还是你疯了」做成一块可看的屏上之物的最佳载体。这个功能**推进**北极星，不是偏离。
+- ~~**声呐＝核心欺骗面（深水区 SPEC §3.2）**~~ « tombstone·#259/#284（见顶 banner）»：原「声呐返回不可信 · 生物躲 `evadesSonar` · 假回波 `spoofsSonar` · 低 san 幻觉声呐」整条作废——声呐现**永远诚实**（现状＝灯/声呐/电三件诚实感知）。「是世界坏了还是你疯了」的欺骗载体母题失去理智轴，如何重挂见 `深海回响_感知重做_SPEC.md`；原「洞里方位感」诉求（诚实侧）仍由 §5 扫描渲染兑现。
 - **回收三个旧诉求**：①「玩家该知道自己在洞里的大致位置」（扫描 + 深度 + 到上浮口的距离＝靠 ping 挣来的方位感）；②「越深越欺骗」（深处扫描更不可信）；③ mimic capstone（#69）的海图假信标在**下潜层**也有了对应物——声呐图上一条不存在的通道 / 一处假房间。
 - **节点≠流程图**：真实洞穴是**大小不一的房间 + 粗细不一的隧道**，大房间里可能有不止一处可探的东西。多事件房间让下潜从「点一格事件」变成「进一个洞室、看见里头几处读数、挑着去」，更像探洞、更少像走流程图。
 
@@ -21,7 +21,7 @@
 - **节点图 → 有机洞穴**：节点＝洞室、边＝隧道，喂进一个**距离场（SDF）**＋**多层值噪声**扰动边界 → 拓扑精确照搬 mapgen，但轮廓读起来是凹凸不平的真岩壁。大房间＝几个不同半径的 blob 叠出的不规则洞室；隧道＝粗细不同的 capsule；窄缝＝极细 capsule。**房间大小/形状的多样性在渲染侧零成本**。
 - **接触式点亮**：bright 返回是**贴着波前的一条窄带**——墙只在扩散环**扫到它**的那一刻发亮，身后留一道**渐隐余像**（作者要保留余像）。
 - **多事件房间（视觉）**：大画廊里两颗 teal 菱形＝同一房间、不同位置的两处事件。
-- **威胁接触 + 低 san 撒谎**：扫到敌人 → amber 接触 blip + 近似距离；低 san → 假通道 / 假读数 / 闪烁假接触 / 真敌人「无回波」。
+- **威胁接触**：扫到敌人 → amber 接触 blip + 近似距离（诚实侧·今由 §7 S3 / 猎手兑现）。~~低 san 撒谎（假通道 / 假读数 / 闪烁假接触 / 真敌人「无回波」）~~ « #259/#284 作废·见顶 banner »。
 
 **所以本 SPEC 不是论证可行性，而是「怎么把它接进真实游戏」的实装计划。**
 
@@ -40,9 +40,9 @@
 ## 4. 与现有代码的接点（别另起炉灶）
 
 - **`types/dive.ts::DiveNode`**：现有 `layer/depth/zoneTag/kind/connectsTo/eventId(单个)/preview/evadesSonar?/spoofsSonar?`。**节点没存 2D 坐标** → 扫描渲染需要一套**布局推导**（按 layer/depth + 图结构铺点，`ui/dev/MapDevPanel` 已经在做类似的事，可抽公共布局函数）。多事件＝给 DiveNode 加 `features?`（§6）。
-- **`engine/clarity.ts::sonarReturn` + `evadesSonar`/`spoofsSonar`（已就位、未填）**：声呐的**不可信**全住这里。扫描的每个读数过 `sonarReturn`；`spoofsSonar` 节点画成假的、`evadesSonar` 节点不出现/无 blip、低 san 注入假回波。**这是 §3.2 欺骗面 + #69 mimic 节点版的落点。**
+- ~~**`engine/clarity.ts::sonarReturn` + `evadesSonar`/`spoofsSonar` 声呐不可信落点**~~ « tombstone·#259/#284（见顶 banner）»：声呐欺骗接点（`sonarReturn` 注入 / `spoofsSonar` 假象 / `evadesSonar` 无回波 / 低 san 假回波）整条作废——声呐现永远诚实（本节另有 « #284 » 注记 `run.stats.sanity` 抗欺骗档删除）。
 - **`run.power` / `sonarPingCost`（升级派生）**：每记 ping 的电耗。**`run.alert` / `alertDelta`**：ping 抬警觉（暴露双刃，深水区 Phase 0b）。
-- ~~**`run.stats.sanity` / `run.sensorTuning`（抗欺骗档）**：可信度随 san + 升级变化（深 band 更不可信，地板：永不完全可信）。~~ « 2026-07-10 理智系统移除 »：`run.stats.sanity` 已删·此接点作废（`run.sensorTuning` 仍在·只是不再有 san 输入）。
+- « #284 理智系统移除 »：原 `run.stats.sanity` 抗欺骗档接点已删（`run.sensorTuning` 仍在·只是不再有 san 输入）。
 - **`engine/mapgen.ts`**：生成房间大小 + 给大房间布多 feature；布局坐标可在此一并产出（省掉运行时推导）。
 - **`ui/NodeSelectView.tsx`**：声呐图面板（ping 后显示）+ 房间内 feature 选项 + 出口。碰 UI 必补 `smoke-chart-ui`（#38）。
 - **`mapShape`（maze/layered）+ `canFreeAscend`**：扫描在两种拓扑都成立；maze（洞穴）最受益（迷路 + 找上浮口）。
@@ -56,11 +56,11 @@
 - **怎么画**：接触式描线（波前扫到才亮）+ **渐隐余像**（作者要保留：扫过的形状留一道会淡的草图，不是永久地图）。**实现：用「覆盖遮罩」**——扫到的地方记成「已揭示」、按**固定亮度**画墙，**重复 ping 同一处不会越来越亮**（原型早期「每过一次更亮」是错的、已改）；遮罩随时间淡＝记忆过时（接下一条）。
 - **地图是记忆、会过时（作者 2026-06-05）**：余像是你**上一记 ping** 的记忆、不是实时真相——**会改变房间的事件**（塌方/开口/水位）只在**下一记 ping** 才反映；**敌人位置只在被扫到的瞬间更新**（两记 ping 之间它在动、你看到的是旧 blip）。所以你常按着**过时的图**行动，要刷新就得再 ping（再耗电、再暴露）——staleness 本身就是张力（原型已演示冻结的接触 blip）。
 - **代价（双刃，深水区 §3.2-3.3）**：每 ping 耗 `sonarPingCost` 电 + 抬 `alert`（点亮水里＝招捕食者）。所以「要不要 ping」是真两难：ping 才看得见洞与威胁，但费电、暴露、还可能骗你。摸黑＝瞎着摸，但最省最隐。
-- **不可信（核心）**：高 san＝大致为真；san 越低 → 假通道 / 假房间 / 假读数（`sonarReturn` 注入）；`spoofsSonar` 节点画成它伪装的样子（mimic ＝空水/信标/地形）；`evadesSonar`＝无回波（捕食者躲过你的 ping）。**深 band 更狠**（band 倍率思路同 #64）。
+- ~~**不可信（核心）**~~ « tombstone·#259/#284（见顶 banner）»：原「高/低 san 可信度 · 假通道/假房间/假读数 `sonarReturn` · `spoofsSonar` 伪装 · `evadesSonar` 无回波 · 深 band 更狠」整条作废——声呐图现永远诚实。§5 其余为诚实扫描渲染（限程/缩放/余像/洞形/回合/定向），保留。
 - **形状要像真·水下洞（渲染层，2026-06-05 据真实洞穴形态校准）**：别画成「圆房间 + 直棍」。被淹的（phreatic）洞穴是**圆/椭圆截面的管道**（截面对了——用 capsule SDF），但平面形态是**蜿蜒、忽宽忽窄、回环互通（anastomotic）/ 沿裂隙的折线网（network maze）**，房间＝裂隙交汇处的**不规则扩大**（fracture-controlled rooms），不是圆。实现＝把每条 `connectsTo` 边渲染成**带中途偏移的弯折折线 + 沿途变宽变窄的 capsule SDF**，房间＝交汇处几个不同半径 blob 的簇；外加值噪声扰墙 + 半分辨率 SDF 提速。**纯渲染/生成层、节点图模型不变**（节点＝交汇/房、边＝passage，只是画得像真洞）。参考：Palmer 洞穴形态分类（branchwork / network / anastomotic / spongework）、Sistema Sac Actun（最长水下洞·linear phreatic conduits·anastomotic·fracture-controlled rooms·椭圆 passage）。
 - **起手全黑、靠扫描点亮（作者 2026-06-05）**：进洞**默认全黑**——只看得见自己 + 一圈很淡的量程环；地图**只随声呐 ping（远）/ 点灯凑近（近）一块块点亮**，扫过的还会渐隐（上面「余像」）。＝把现有 `visibility:dark` + clarity `none`（盲航）做成「黑里靠主动感知一块块拼图」，不是开局就给地图。
 - **回合制 · 每回合 1 次扫描（作者 2026-06-05）**：游戏**回合制、非实时**——扩散环只是表现动画，一记 ping ＝**一个回合动作**（耗电 + 抬警觉 + 占掉该回合的扫描）。**1 scan / turn** 足够；要刷新地图 / 敌人位置就得下一个回合再 ping（接 §5「地图是会过时的记忆」）。
-- **低 san 可视化＝看不出真假的伪接触 + 读数化成不可读字符（作者 2026-06-05 再厘清：要「不明显是假的」）**：别用「洞壁明显错位 / 画个怪物」那种**一眼就假**的——**要 subtle**。做法：① **伪接触**——和真接触**一模一样**的 blip 偶尔出现又淡去（你分不清哪个才是真敌人）；② **读数损坏**——深度 / 距离 / 接触标签等仪表字偶尔**变成乱码 / 不可读字符**（连自己的读数都信不过）。配合 §3.2 的 `evadesSonar`——**狡猾的深处敌人真能躲过声呐、无回波**：真敌人可能不显、假敌人却显 → **低 san + 会藏的敌人＝玩家真的不确定看到的是真是假**。这正是北极星「是世界坏了还是你疯了 · 拒绝裁决」要的：他们疯了，但分不清眼前是真是假，且**不是一眼能看穿的假**。（曾试过洞壁 morph / 人形 apparition，作者判「不够好 + 太明显假」，弃。）
+- ~~**低 san 可视化（伪接触 + 乱码读数）**~~ « tombstone·#259/#284（见顶 banner）»：低 san 幻觉声呐（与真无异的伪接触 / 仪表字乱码 / 配合 `evadesSonar` 会藏的敌人）随理智系统删除整条作废——现无低 san 轴、声呐诚实。
 - **扫描从「你所在的位置」发出（不是任点遥扫，作者 2026-06-05 厘清）**：声呐是从**当前节点**全向 ping、有限程；你**扫不到没去过的地方**——要扫别处就**移动过去再 ping**（回合制，每步换个位置扫，地图一段段拼）。原型里「点任意处开扫」只是 sandbox 方便看；游戏里 ping 原点＝你。**定向 ping（作者 2026-06-05 采纳）**：把声呐**朝一个方向聚焦**——那方向探更远（别处更短）＝「选扫哪边」的可控感；并有**战术隐蔽用途**：**别朝有敌人的方向 ping**＝不照亮它、少招它注意（暴露/警觉**按方向计**，不再全向一律）。仍从你当前位置发出。可做成升级（解锁定向 + 各方向 reach）。 **✅ 已实装（#86，2026-06-06·作者拍板「方向扇区」）**：三向扇区（朝深处/侧向/来路·按 `node.layer` 差分·与布局 x∝layer 一致）·`sonar.ts::revealSonarScanDirectional`（聚焦探更远·别处更短·近场仍全向·波束只沿聚焦扇区扩＝连贯·封顶 `SONAR_DIR_RANGE_MAX`）·暴露按方向计（`clarity.ts::sonarPingAlertDelta(run,dir)`·窄波束更安静×0.55·正对**声/双感**猎手扇区尖峰×1.7＝照亮它·`pingAimsAtSoundStalker` 真实位置算暴露·`seenStalkerSector` 会过时位置给 UI 警示）·`pingSonar(state,dir?)`·UI 三向按钮（朝猎手向 `aims-threat ⚠`）+ omni 标「全向」+ 聚焦标注。**定向本身免费**（解锁声呐即有·一层纯战术 breadth↔depth+隐蔽取舍·非 power-up）。omni（dir 缺省）逐字节不变。`playthrough-sonar` §13 + smoke E4b。**✅ 「各方向 reach 各自升级」已实装（#90·2026-06-06）**：新 `sonarDirReachBonus`（带 `dir` 判别）沿同款传感器升级桥落 `SensorTuning.sonarDirReach: Record<SonarDir,number>`（逐向夹 `[0, SONAR_DIR_REACH_MAX]`），`revealSonarScanDirectional` 新增第 5 参 `dirReach`＝聚焦那一向的专精焦距（`min(SONAR_DIR_RANGE_MAX+reach, base+FOCUS+reach)`·别向/近场不延长＝守北极星）；data `sonar_rig` lv6/7/8 三向各 +1（定向免费仍成立·reach 才是 power-up）。缺省全 0 → 定向行为逐字节不变。`playthrough-sonar` §13(i/j) + `-upgrades` §11 + `-save` round-trip + smoke J9。
 - **✅（原 later·#90 已实装）接触有大小 + 开放水域也能扫**：① **接触带大小**——大型生物（比玩家还大，如 abyssal `the_rising` / apex）读成**一大团**而非小点：`Stalker.large?`（spawn 时 `depth ≥ STALKER_LARGE_DEPTH`108m 派生·缺省小 blip）→ `stalkerSonarBlip` 透传 → `SonarScanPanel` 画弥散质量 `sonar-stalker-mass` + 更大中心（CSS 特异性陷阱见 quirk #91）。② **开放水域也能扫**——声呐**不限洞穴**：层状 zone（开阔海域·`!zoneAllowsBacktrack`）声呐图**不画洞壁通道边**（`sonar-edge`）、只显接触与读数（标 `is-open-water`）；迷路 zone（洞穴）仍画通道。纯渲染（引擎早已不门控 zone）。smoke E4c/E8 + `playthrough-stalker` §2b。
 - **🔄 布局朝向 + 扇区基准已被 #92 取代（2026-06-06·见深水区 SPEC §13「地图垂直性＝深度」·本 SPEC 已关闭·此处仅留指针）**：上文「按 `node.layer` 差分·与布局 x∝layer 一致」「lateral 上下两瓣」均已过时——声呐图纵轴改 `y∝node.depth`（上浅下深·真实米数），`engine/sonar.ts::nodeSector` 改按 **`node.depth`** 差分（deeper↓ / back↑ / lateral←→·容差 `SECTOR_DEPTH_EPS`），`SonarScanPanel` viewBox 转 portrait、`focusWedgePath` 与量程/接触半径随之重映。详见深水区 SPEC §13 + QUIRKS #93。
@@ -96,7 +96,7 @@
 
 - **S0 · 扫描读真图（只读、不改模型）** ✅ **已实装（2026-06-05，提交 `f57b17e`，STATUS quirk #71）**：抽公共**布局推导** + `NodeSelectView` 加声呐图面板：ping 揭示附近节点为草图（接触描线 + 余像），耗电 + 抬 alert。**不动 DiveNode 模型**（仍单事件）。先把「ping 读真图 + 渲染 + 代价」在游戏里跑通。补 smoke。〔交付：`ui/mapLayout.ts` + `engine/sonar.ts` + `run.scanMemory` + `pingSonar` 抬 alert/1-scan guard + `ui/SonarScanPanel` + `playthrough-sonar`(9 节)+smoke E4，见 §11 决策日志〕
 - **S1 · 多事件房间** ✅ **已实装（2026-06-05，STATUS quirk #74）**：`DiveNode.features?: NodeFeature[]` + mapgen `maybeMultiFeatureRoom`（`maxRoomFeatures>1` 才派·`DepthBand.maxRoomFeatures` 门控·大房间稀有·同房去重）+ `enterNodeSelection` 把房内未探 feature ＋ 出口并列摆出（`FeatureChoice`/`subPhase.features`）+ `exploreFeature`（连探付氧·标记 `run.activeFlags`）+ `SonarScanPanel` 房间大轮廓(is-room)＋feature blip。**向后兼容（单 feature＝走旧 `eventId` 路径＝旧图逐字节不变）·不 bump SAVE_VERSION**。`playthrough-sonar` §10 / `-mapgen-scenarios` 不变量 / smoke E5 全绿。见 §11 决策日志。
-- **S2 · 不可信扫描（欺骗）** ✅ **已实装（2026-06-05，STATUS quirk #78）**：欺骗逻辑收在 `clarity.ts` 一处、`SonarScanPanel` 纯渲染。`nodeSonarView`（spoof→`displayKind` 画成假信标〔节点版 mimic·上浮口〕 / evade→`noEcho` 不画 / 低 san→`garbled` 读数乱码）+ `sonarPhantoms`（低 san 伪接触·与真无异·锚真实接触随余像渐隐）+ `effectiveFalseEchoSanity`（深 band `DepthBand.sonarDeception` 抬高失真阈值·封顶留可信·**非单调**：throat→hadal 升、subhadal 回落＝『把戏都停了』）。节点版 mimic 落点＝mapgen `applySonarDeception`（确定性 FNV·零 rng·仅 `sonarDeception>0` 进·地标/起点/尸体豁免）。**不触发 d_reveal（#42），只由 mimic 兑现事件触发**；缺省零行为变化（守 sensors 回归）。`playthrough-sonar` §11 + `-mapgen-scenarios` 失真不变量扫 + smoke E6。见 §11 决策日志。
+- **S2 · 不可信扫描（欺骗）** — ~~✅ 已实装 (#78)~~ « tombstone·2026-07-04 #259 → 2026-07-10 #284（见顶 banner）»：`nodeSonarView`（spoof/evade/garbled）+ `sonarPhantoms`（低 san 伪接触）+ `effectiveFalseEchoSanity`（深 band `sonarDeception` 失真）+ mapgen `applySonarDeception` 整套——先被感知重做取代（#259 声呐改诚实）、再随 `run.stats.sanity` 删除（#284）作废。S0/S1/S3 诚实侧保留；原实装史留 §11 决策日志（历史留档）。
 - **S3 · 威胁定位** ✅ **廉价版已实装（2026-06-06，STATUS quirk #80）**：`clarity.ts::threatContact(run)`（单一来源·面板纯渲染）把抽象的 `run.alert` 做成声呐图上一处**近似接触**——alert<预警线→null，越线→`{angle 按 turn 漂移·定不住,proximity 随 alert 涨,range 远/中/近,imminent ≥接近线,garbled 低 san 读不出}`，**不锚到节点**（确定性·不耗 RNG）。`SonarScanPanel` 画琥珀 `.sonar-threat` blip（`.is-near` 偏红脉动）。**与低 san 伪接触分两轴**：威胁＝alert 驱动（真危险·琥珀）/ 伪接触＝san 驱动（你脑子·cyan）。〔交付：`threatContact`+`ThreatContact`+`THREAT_CONTACT_ALERT`·`playthrough-sonar` §12·smoke E7。〕**定位 stalker（捕食者在图上占位·逐回合逼近·可 `evadesSonar` 躲扫描·位置只在被扫到时更新）是更大改动、§8.7 留作者拍板（本次只做廉价 blip）。**
 
 > 每阶段守深水区 §9 回归文化（typecheck + 全 playthrough + scenarios + verify-tutorial + smoke + prod build）。S0 可独立交付价值、风险最低，建议起手。

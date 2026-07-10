@@ -1,0 +1,22 @@
+{
+  "_comment": "搅泥·摸线失败（sanity<46·sanity-8·oxygen-4）",
+  "eventId": "trench.the_silt_wake",
+  "seed": 1,
+  "zoneId": "zone.trench",
+  "depth": 68,
+  "stats": {
+    "sanity": 25
+  },
+  "choices": [
+    "line_out_slow"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "statsDelta": {
+      "oxygen": -4,
+      "sanity": -8
+    }
+  }
+}

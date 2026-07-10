@@ -1,0 +1,15 @@
+{
+  "_comment": "旧灯塔礁浅段 · 一下，一下 失败分支。sanity=20→rate 0.05 seed 1 失败。cosmic 惩罚 sanity -12 + oxygenTurnCost 5。起步 20→8 不触底（quirk #43）。",
+  "eventId": "reef.the_low_note",
+  "stats": { "sanity": 20 },
+  "depth": 18,
+  "seed": 1,
+  "choices": ["hold_for_note"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": { "oxygen": -5, "sanity": -12 }
+  }
+}

@@ -96,7 +96,7 @@ pickEnemy(
 
 ### 工作流 A · 描述 → 实装（交互一次性）
 作者用自然语言描述一只敌人（如"蓝洞深处、嗅觉型伏击者、中威胁、低频共振冲击"〔« 2026-07-10 理智系统移除 »：原示例"掉理智"改物理·如 blind_eel eel.hum→physical〕），一个新 session 接手代码库，产出完整合规的敌人入库。映射步骤：
-1. NL 描述 → 解析成 schema 字段（tier/hp/attacks〔~~含 sanityDamage~~·已删·« 2026-07-10 »〕/hostility/aiPattern/`bands`/`biomes`/`role`/`threatTier`/weakness/loot/victoryConditions/`codex`）。
+1. NL 描述 → 解析成 schema 字段（tier/hp/attacks/hostility/aiPattern/`bands`/`biomes`/`role`/`threatTier`/weakness/loot/victoryConditions/`codex`）。
 2. **数值锚定**：不是凭空编——`pickEnemy`/`--list-enemies` 找同 band×biome 的近邻，贴着它们的量级给数。
 3. **`combat-runner` 实跑出 baseline**（quirk #43「实跑抄」），不手写期望值。
 4. **绿门**：跑 §6 的 checks + 相关 regress 子集，全绿才算完成。

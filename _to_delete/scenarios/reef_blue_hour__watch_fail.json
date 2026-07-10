@@ -1,0 +1,22 @@
+{
+  "_comment": "旧灯塔礁深边 · 蓝的时辰 · 失败分支。sanity=20→rate 0.05 clamp seed 1 失败(#43)。cosmic 惩罚 sanity -12 + oxygenTurnCost 5，无 lore，20→8 不触底，跟着星图越过礁边沉一截。",
+  "eventId": "reef.blue_hour",
+  "stats": {
+    "sanity": 20
+  },
+  "depth": 40,
+  "seed": 1,
+  "choices": [
+    "watch_lights"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": {
+      "oxygen": -5,
+      "sanity": -12
+    }
+  }
+}

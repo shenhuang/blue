@@ -11,8 +11,8 @@ const file = bandsData as unknown as BandsFile;
 
 /**
  * 全部 band，按 order 升序（order 越大越深）。两个来源（#131）：
- *   - depth_bands.json：手写 band——现仅剩 abyssal/hadal/subhadal/nameless『另一个世界』预留 band
- *     （暂无深度柱档抵达·专门 Phase 接·见 deep_game_vision）+ 任何非柱 band；
+ *   - depth_bands.json：手写 band——现为空表（原『另一个世界』abyssal/hadal 预留 band 已删·Phase 3
+ *     下行入口改由海沟柱 t4 科考站电梯 capstone 之下长出·见 deep_game_vision）+ 任何非柱 band；
  *   - columnBands()：depth_columns.json 各柱每级派生的深度档 band（band.<短名>.t<tier>·#131 主体）。
  * 合并后按 order 排序（柱 band 的 order＝顶深·与预留 band 的深度顺序一致）。
  */

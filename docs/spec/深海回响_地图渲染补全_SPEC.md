@@ -4,7 +4,7 @@
 > **已落地**：`LayoutStyle`（vertical/horizontal/serpentine/radial/spiral）· `deriveMapLayout` 策略分派（vertical byte-identical·其余 `normalize` 保证不裁切）· mapgen 盖章 `DiveMap.layoutStyle` + `nodeCountMultiplier`（非竖向 ×3 POI）· MapDevPanel 风格下拉 + `CAVE_GEOM_MARGIN` 接入 · 8 zone 配 layoutStyle。
 > 真相源上游：渲染管线＝`src/ui/mapLayout.ts`（单一来源）；形状数据＝`src/data/zones.json`；朝向/深度赋值＝`src/engine/mapgen.ts`。
 > 关联 quirk：#92「位置即深度·垂直化」· #98「同地点同 seed」· #100「洞穴一致性」· #114/#115「洞型谱/平廊」· #176「orientation 横向」· #95「engine ↛ ui 边界」· #99「未发布不写迁移」。
-> 关联 SPEC：`cave_zones_spec.md`（设计章·形状清单）· `深海回响_多口持久洞_SPEC.md`（T2/T2b）· `cave_roadmap.md`（排期）· `深海回响_声呐渲染重做_SPEC.md`（渲染重做史）。
+> 关联 SPEC：`cave_zones_spec.md`（设计章·形状清单）· `深海回响_多口持久洞_SPEC.md`（T2/T2b）· `cave_roadmap.md`（排期）。
 
 ---
 

@@ -1,0 +1,16 @@
+{
+  "_comment": "Phase 3 capstone · 无灯之光 读错（理智 vs 62·sanity=22→0.05 clamp seed1 确定失败）。信了它一瞬、伸手、被合拢、扯开钻出 → sanity -20 + stamina -22 + oxygenTurnCost 6 + forceAscend，无 lore、不置 d_reveal（保持暧昧）。无脚本死：读错仍活着但惨重（#43 实跑抄）。",
+  "eventId": "mimic.false_beacon",
+  "stats": { "sanity": 22 },
+  "depth": 150,
+  "seed": 1,
+  "zoneId": "zone.blue_caves",
+  "choices": ["read_the_tell"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "ascent",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": { "oxygen": -6, "sanity": -20, "stamina": -22 }
+  }
+}

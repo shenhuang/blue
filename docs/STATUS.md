@@ -1,10 +1,11 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。**活数字（事件 / 敌人 / 脚本 / scenario 计数）以 `npm run handoff` 的 git 真值为准·本档不再硬抄**（防 STATUS 随内容 churn 漂移）。近期 session（新→旧）：
+> **2026-07-10 #284 理智删除文档侧深清——23 个 SPEC/STATUS/工程文件清理旧 sanity 散文与死引用 + 2 份 SPEC 归档删除（Cowork 交互·Opus→Sonnet 收尾·纯 docs·零代码·regress 43/43〔沙箱子集·全量留 Mac/nightly〕·无新 quirk·CHANGELOG #286）**：作者三轮拍板「能删都删·深清到教学关台词」，5 路并行 subagent 清理主 SPEC/战斗/感知重做/声呐与房间/剧情/深水区/教学关剧本等，`深海回响_主线柱迁移_提案.md`／`深海回响_声呐渲染重做_SPEC.md` 移入 `_to_delete/`。保留活设计缺口（禁岛幻觉雾/猎手双轴）不动。净 −225 行·树：main·未提交待作者审阅。
 > **2026-07-10 理智值系统整套删除——发疯改二态「地点缝」节点门（`DiveNode.seam`·无定心坠〔steady_mind〕过 seam→`executeDeath`·**DORMANT** 0 节点·作者后置放点）· 战斗心智攻击 / 事件理智检定 / 幻觉 / 氮醉扣理智 全清（Cowork 交互·Opus·#284·新 quirk #241·SAVE 13→14·regress 97/97〔云端 tar→npm ci→esbuild·含 prod build〕·未提交待作者/nightly）**：`run.stats.sanity` 整删（70 代码文件）；166 事件 `check.stat:'sanity'` 塌成成功 outcome（铁律「默认走成功」·对抗复审确认 12 处 story-flag 保证行为等价·含 mimic d_reveal / ch1 锚点）；6 敌纯 sanity 招转物理/删（drowned_lantern role→ambusher）；`scripts/check-no-sanity.mjs` 收口门入 regress；327 scenario 清 sanity 断言＋删 42 张塌陷失败路径 scenario；**修真 code bug**（`breathe`/调息 去 sanity 后 `deltas` 空·`applyRecover` 未护栏 `Object.entries`→`RecoverEffect.deltas` 改可选＋两处 `?? {}`）。**仍要（future·承 07-08 需重建）**：定心坠物品＋St2 破损修复流程＋recording_1 文案；回影坠闪回。SPEC 按新态改·设计缺口留 «TODO(作者)»（深水区三章「降理智入幻=基因路解锁」失去载体）。combat-nitrogen WIP 正交未碰。
 > **2026-07-10 重量系统三改：dockyard「+1格」死字段拔除 + 装备负重档位改百分比制（`LOADOUT_WEIGHT_CAP=20` 单源·cap=20 逐字节等价旧绝对阈值）+ 上浮与重量彻底解耦（Cowork 交互·Opus·#283·新 quirk #240·收口/清理非新机制·不 bump SAVE·regress 95/95〔云端 tar+npm ci·build 留 nightly〕·12+3 文件未提交待 nightly·树内另有非本 session WIP 已 --only 隔离）**
 > **2026-07-10 Voss 147/156/163+Aldo/Otto 声线终审通过（作者批准定稿）+ 7 月积压 40 提交推送上线 origin/main（Cowork 交互·Opus·#282·纯 docs/发布·零代码·不 bump SAVE·沙箱内容门 11/11·全量留 Mac/nightly·SPEC 清标记 `9158c2b`）**
-> **2026-07-09 Voss 档案 163「夺卵起家」接线——鲸落隐藏区发现录音笔 + baseline（Cowork 交互·Opus·#279·内容/数据·零代码·不 bump SAVE·`regress --skip build` 95/95·未提交待 nightly）**：接 #278 遗留把 Ch1 可无人值守那份接进游戏。`lore.voss.cephalopod.3`＝档案 163（成年雌体引路·珍珠蚌行贿引开·败在他「什么都不要」·夺卵起家＝阶梯顶+道德底+起家钥匙）+ 发现事件 `whalefall.nest_recorder`「鲸骨间的录音笔」（[whalefall] 池·80-110m·无 poiId 共享氛围·whalefall_found zone 门控·read→cephalopod.3·oxygen/sanity−1）+ baseline。发现幕正文/读白＝照 147/156 新写（连同 163 录音待作者声线）。doc `观察手记_档案系列.md` §三/§五/§六·五/§八 标 163 实装 + `状态：`banner。event id `nest_recorder` 录音笔母题（前向兼容 §八 改名）。`regress --skip build` 95/95 绿（scenarios 跑新 baseline·whalefall §6 不破·lore-refs 124·build 留 nightly #147）。树：main·未提交待 nightly。
+
 
 ## 1. 一句话状态
 
@@ -61,7 +62,7 @@ barrel + 兄弟文件拆分的子系统（`dive.ts` = barrel·住 `dive-start/-s
 
 - `state.ts` — GameState 构造 + 不可变操作 + inventory 工具 + **存档层**（`SAVE_VERSION = 13`；版本不符 / 损坏一律弃旧档从头开始——`migrateSave` 迁移链已删·quirk #99/#173；纯加字段不必 bump·`createNewRun` 种默认 + 反序列化 `?? 兜底`）。
 - `chart.ts` / `columns.ts` / `bands.ts` / `regions.ts` — 海图 POI + 数据驱动深度柱派生（band/probe/POI）+ 区域揭示配置化。
-- `clarity.ts` / `sonar.ts` — 双传感器感知（灯近距真相 / 声呐远距不可信表象·可被 spoof / 低 san 幻觉）+ 探测暴露（深水区 Phase 0a/0b）。
+- `clarity.ts` / `sonar.ts` — 双传感器感知（灯＝诚实近场硬门 / 声呐＝诚实远场侦察）+ 探测暴露（深水区 Phase 0a/0b）。
 - `dive-*.ts` — startDive / 海图出海 / 前哨蛙跳 / 节点选择与移动 / 传感器 / 猎手接近 / 气穴换气 / 扎营。
 - `mapgen.ts` — 层状 DAG + 迷路图双生成器（`analyzeMap` 结构分析器·dev 面板与回归共用）。
 - `combat.ts` / `enemyLibrary.ts` — 战斗状态机 + 敌人库（目录自动加载·`pickEnemy`/`matchEnemies`·`enemyRef` 解析）。
@@ -86,7 +87,7 @@ barrel + 兄弟文件拆分的子系统（`dive.ts` = barrel·住 `dive-start/-s
 
 ### 关键数值（占位平衡·未细调·见准则 defer-number-tuning）
 
-- 起始：体力 100、氧气 60 回合、理智 100、氮气 0
+- 起始：体力 100、氧气 60 回合、氮气 0
 - 检定公式：`successRate = clamp(0.5 + (stat - dc) × 0.015, 5%, 95%)`
 - 减压：氮气 < 40 安全 / < 60 一停 / < 80 二停 / ≥ 80 三停
 - 节点过渡 turn 数：`1 + Math.floor(depthDelta / 5)`
@@ -102,11 +103,11 @@ barrel + 兄弟文件拆分的子系统（`dive.ts` = barrel·住 `dive-start/-s
 | 地图结构 | 随机节点 + 深度推进（开阔 = 层状 DAG / 洞穴 = 迷路图） |
 | 时间粒度 | 回合制，事件可加额外消耗 |
 | 死亡模型 | 硬核 Roguelike + 尸体回收 + 材料经济永久积累 |
-| 恐惧节奏 | 理智值驱动 + 深度加速衰减 |
+| 恐惧节奏 | 环境压迫 + 二态「地点缝」死亡门（seam·DORMANT·作者后置放点） |
 | 上浮 | 随时可上浮 + 应急上浮必得严重减压病 |
 | 装备 | 5 固定槽位 + 装备 + 词缀（MVP 仅等级）|
 | 战斗经济 | 双资源直读（体力 + 氧气回合）·无位置维度（武器性格代替） |
-| 伤害类型 | 双轨（物理 + 理智） |
+| 伤害类型 | 物理单轨 |
 | 重生叙事 | **D 设定**：早期不同潜水员 → 中期故障 → 终局揭示一直是同一人（`flag.d_reveal` 冻结·归 St7 capstone） |
 | 深度纵轴 | 数据驱动深度柱（越深越欺骗·灯塔=信息基建·见 deep_game_vision / 探深深度柱 SPEC） |
 
@@ -116,7 +117,7 @@ barrel + 兄弟文件拆分的子系统（`dive.ts` = barrel·住 `dive-start/-s
 
 > 已 ship 的功能进度史在 [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)（按编号·别回堆进本档）；方向性北极星 / SPEC 在 `docs/spec/`（按本 session 方向懒加载·别开局全读）。下面只留**未建**的开放项：
 
-- [ ] **战斗中氮气 ×1.5 / 理智 ×1.2** —— per 战斗 SPEC §10，未实装。
+- [ ] **战斗中氮气 ×1.5** —— per 战斗 SPEC §10，未实装。
 - 数值/手感统一留最后一次性调（准则 defer-number-tuning）·机制/内容侧不受限。
 
 ---

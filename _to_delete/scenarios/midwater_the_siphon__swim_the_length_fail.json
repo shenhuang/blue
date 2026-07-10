@@ -1,0 +1,23 @@
+{
+  "_comment": "中层·管水母·游完全长失败（理智 vs 50·低理智·氧-3 理智-9）",
+  "eventId": "midwater.the_siphon",
+  "depth": 135,
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "stats": {
+    "sanity": 20
+  },
+  "choices": [
+    "swim_the_length"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": false,
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": -9
+    }
+  }
+}

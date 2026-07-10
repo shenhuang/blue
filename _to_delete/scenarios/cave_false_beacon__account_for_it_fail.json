@@ -1,0 +1,15 @@
+{
+  "_comment": "深水伏笔深段 · 灯塔的光，想清楚那是什么的失败分支（cosmic sanity vs 55）。sanity=22（≤dc-30=25）→rate 0.05（clamp 下限）seed 1 确定性失败。验证 cosmic check 失败惩罚：sanity -13 + oxygenTurnCost 5（无 lore）。起步 22→失败后 9 不触 0 底，statsDelta 严格 -13（quirk #43/#54 双分支，对照 reef.no_bottom）。失败＝错读把人往深里领：『它不明也不暗了，就那么稳稳地悬着……你不记得自己什么时候开始朝它游的』，仍不触发 d_reveal。",
+  "eventId": "cave.false_beacon",
+  "stats": { "sanity": 22 },
+  "depth": 52,
+  "seed": 1,
+  "choices": ["account_for_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": { "oxygen": -5, "sanity": -13 }
+  }
+}

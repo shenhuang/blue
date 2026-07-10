@@ -1,0 +1,22 @@
+{
+  "_comment": "旧灯塔礁中段 · 舌头 · 失败分支。sanity=20→rate 0.08 seed 1 失败(#43/#49)。uncanny 惩罚 sanity -10 + oxygenTurnCost 3，无 lore，20→10 不触底。",
+  "eventId": "reef.borrowed_tongue",
+  "stats": {
+    "sanity": 20
+  },
+  "depth": 36,
+  "seed": 1,
+  "choices": [
+    "look_closer_tongue"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": -10
+    }
+  }
+}

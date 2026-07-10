@@ -1,0 +1,22 @@
+{
+  "_comment": "中层海雪·追雪片检定失败（sanity 20 < dc 50·氧-2 理智-5）。",
+  "eventId": "midwater.marine_snow",
+  "depth": 70,
+  "seed": 1,
+  "choices": [
+    "track_one_flake"
+  ],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": {
+      "oxygen": -2,
+      "sanity": -5
+    }
+  },
+  "stats": {
+    "sanity": 20
+  }
+}

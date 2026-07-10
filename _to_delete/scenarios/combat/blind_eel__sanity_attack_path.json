@@ -1,0 +1,19 @@
+{
+  "_comment": "盲鳗 baseline · knife_slash × N 击杀，验证 sanityDamage 在战斗中走通（eel.coil 含 [3,6] sanity，eel.hum 含 [4,8] sanity）。seed=3 下确定性击杀，且至少有一次 enemy 攻击命中 sanity，summary.statsDelta.sanity < 0 即可。",
+  "combatId": "combat.blind_eel_solo",
+  "seed": 3,
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "turnsElapsed": 3,
+    "survived": true,
+    "finalPhase": "dive",
+    "lootGained": { "item.eel_skin": 1 },
+    "enemiesAlive": 0,
+    "sanityDeltaAtMost": -1
+  }
+}

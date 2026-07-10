@@ -1,0 +1,23 @@
+{
+  "_comment": "热液氛围·数灯失败（sanity 24·seed 1）：越数越匀+最近处亮起一盏（cosmic 错读·不交底）。",
+  "eventId": "vent.the_anglers",
+  "seed": 1,
+  "zoneId": "zone.vent_trench",
+  "depth": 105,
+  "stats": {
+    "sanity": 24
+  },
+  "choices": [
+    "count_the_lights"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": false,
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": -8
+    }
+  }
+}

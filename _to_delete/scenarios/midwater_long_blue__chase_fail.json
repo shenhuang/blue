@@ -1,0 +1,23 @@
+{
+  "_comment": "中层氛围·追银光失败（sanity 20·seed 1 确定失败）：平游却在下沉+气白烧（气量误读母题·不交底）。",
+  "eventId": "midwater.the_long_blue",
+  "seed": 1,
+  "zoneId": "zone.open_midwater",
+  "depth": 72,
+  "stats": {
+    "sanity": 20
+  },
+  "choices": [
+    "chase_the_glint"
+  ],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive",
+    "checkPassed": false,
+    "statsDelta": {
+      "oxygen": -3,
+      "sanity": -6
+    }
+  }
+}

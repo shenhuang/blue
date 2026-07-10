@@ -11,8 +11,8 @@
 // 各级 cost＝该 tier 的账单）——bands.ts / lighthouses.ts 在加载时把它们并进各自注册表，
 // 现成的 getBand / canBuildAt / buildAtLighthouse / 设施面板渲染零改即可消费。
 //
-// 最深留后续 Phase：各柱只下到「能见底」的中段（海沟 6 级止于 ~108m）；abyssal/hadal/nameless
-// 「另一个世界」是专门 Phase（depth_bands.json 保留这些 band 作预留·暂无柱档抵达·见 deep_game_vision）。
+// 最深留后续 Phase：各柱只下到「能见底」的中段（海沟 6 级止于 ~108m）；『另一个世界』下行入口
+// 改由海沟柱 t4 科考站电梯 capstone 之下长出（原 abyssal/hadal 预留 band 已删·见 deep_game_vision）。
 
 import type { UpgradeCost, MaterialCost } from './upgrades';
 import type { CurrentStrength } from './chart';

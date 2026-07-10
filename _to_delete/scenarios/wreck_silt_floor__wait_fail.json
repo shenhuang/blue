@@ -1,0 +1,15 @@
+{
+  "_comment": "wreck t3·底泥·停住等泥落·sanity 20 seed 1 → fail：ox -4，sanity -5。",
+  "eventId": "wreck_graveyard.silt_floor_keel",
+  "depth": 85,
+  "seed": 1,
+  "stats": { "sanity": 20 },
+  "choices": ["stop_and_wait"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "statsDelta": { "oxygen": -4, "sanity": -5 }
+  }
+}

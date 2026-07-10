@@ -1,0 +1,16 @@
+{
+  "_comment": "蓝洞群深段 · 慢半拍的影子 cosmic check 失败路径。sanity=20 时 rate=0.05（clamp 下限），seed 1 确定性失败（rng~0.236 > 0.05）。验证 onFailure 分支：sanity -12, oxygen -5, 无 lore。起步 sanity 设 20 而非更低，确保 -12 不触 0 下限（20→8，statsDelta 才对得上，quirk #43）。",
+  "eventId": "bluecaves.late_shadow",
+  "stats": { "sanity": 20 },
+  "depth": 50,
+  "seed": 1,
+  "choices": ["watch_it"],
+  "expect": {
+    "steps": 1,
+    "finalPhase": "dive",
+    "errors": [],
+    "checkPassed": false,
+    "loreAdded": [],
+    "statsDelta": { "oxygen": -5, "sanity": -12 }
+  }
+}
