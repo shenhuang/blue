@@ -247,7 +247,6 @@ export function createNewRun(opts: {
   bonuses?: {
     oxygenMaxBonus?: number;
     staminaMaxBonus?: number;
-    extraConsumableSlot?: number;
     /** 声呐能力是否已解锁（深水区 Phase 0a；省略 = 未解锁 = 早期仅有灯）。 */
     sonarUnlocked?: boolean;
     // 深水区 Phase 0 升级轨（省略 = 未升级 = 基线，行为与 0a/0b 一致）。
@@ -296,7 +295,7 @@ export function createNewRun(opts: {
     equipment: opts.equipment ?? createStarterLoadout(),
     inventory: [],
     // 背包承载上限（kg·#资源重量制 2026-06-21）。base = RUN_CARRY_WEIGHT；未来升级可在此加成（同 powerMax 模式）。
-    // 旧的 extraConsumableSlot（按「格数」加位）不再折进承载——它是格制遗物，待作者按重量重新定义升级。
+    // 未来「背包升级」可在此加成（改 carryWeightLimitFor·同 powerMax 模式）；旧 dockyard「+1格」效果已删 2026-07-10。
     carryWeightLimit: opts.carryWeightLimit ?? RUN_CARRY_WEIGHT,
     gold: 0,
     currentDepth: 0,

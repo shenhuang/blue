@@ -31,9 +31,6 @@ function lighthouseEffectSet(effects: LighthouseEffect[]): EffectSet {
   const stats: StatLine[] = [];
   for (const e of effects) {
     switch (e.kind) {
-      case 'extraConsumableSlot':
-        stats.push({ label: e.kind, value: e.value, render: (v) => `消耗品槽 +${v}` });
-        break;
       case 'rechargeBonus':
         stats.push({ label: e.kind, value: e.value, render: (v) => `出潜电量 +${v}` });
         break;

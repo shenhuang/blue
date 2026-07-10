@@ -31,7 +31,6 @@ export interface Lighthouse {
  * 未来扩：服务型（尸体提示/自由上浮/减压）、防御型。
  */
 export type LighthouseEffect =
-  | { kind: 'extraConsumableSlot'; value: number } // 随身消耗品槽 +value（家灯塔「船坞」设施，桥接进 run 加成；Phase C 迁移自全局 dockyard）
   // —— 深水区前哨补给设施（建成即全额生效·能源容量门控已删 2026-06-21·engine/dive-start.ts 消费）——
   | { kind: 'rechargeBonus'; value: number } // 充电设施：从该前哨深入下潜时电池总量 +value
   | { kind: 'oxygenSupply'; value: number }; // 充氧设施：从该前哨深入下潜时氧气上限 +value
@@ -177,8 +176,6 @@ export interface LighthouseUpgradesFile {
 
 /** 聚合某座灯塔已建设施的派生加成（Phase C 读取消费）。 */
 export interface LighthouseBonuses {
-  /** 随身消耗品槽 +value（仅家灯塔的「船坞」设施会贡献；桥接进 createNewRun 的 run 加成）。 */
-  extraConsumableSlot: number;
   // —— 深水区前哨补给（建成即全额生效·能源容量门控已删 2026-06-21·dive-start.ts 消费）——
   /** 充电设施给的电池总量加成（深入下潜时计入随身加成）。 */
   rechargeBonus: number;

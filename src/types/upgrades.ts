@@ -6,7 +6,6 @@
 /** 单条升级的副作用 —— 引擎按 kind 分发 */
 export type UpgradeEffect =
   | { kind: 'unlockZone'; zoneId: string }
-  | { kind: 'extraConsumableSlot'; value: number }
   | { kind: 'oxygenMaxBonus'; value: number }
   | { kind: 'staminaMaxBonus'; value: number }
   | { kind: 'preservationBonus'; value: number }
@@ -66,7 +65,6 @@ export interface UpgradesFile {
 export interface UpgradeBonuses {
   oxygenMaxBonus: number;
   staminaMaxBonus: number;
-  extraConsumableSlot: number;
   preservationBonus: number;
   revealCorpseHint: boolean;
   preDiveCorpseSelect: boolean;

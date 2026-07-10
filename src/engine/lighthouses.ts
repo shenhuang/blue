@@ -229,7 +229,6 @@ export function devBuildAtLighthouse(
 /** 聚合某座灯塔已建设施的派生加成（Phase C 读取消费 reveal/reach）。 */
 export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses {
   const bonuses: LighthouseBonuses = {
-    extraConsumableSlot: 0,
     rechargeBonus: 0,
     oxygenSupply: 0,
   };
@@ -238,9 +237,6 @@ export function getLighthouseBonuses(lighthouse: Lighthouse): LighthouseBonuses 
     if (!def) continue;
     for (const e of def.effects) {
       switch (e.kind) {
-        case 'extraConsumableSlot':
-          bonuses.extraConsumableSlot += e.value;
-          break;
         case 'rechargeBonus':
           bonuses.rechargeBonus += e.value;
           break;
@@ -262,7 +258,6 @@ export function getHomeLighthouse(profile: PlayerProfile): Lighthouse | undefine
 export interface RunStartBonuses {
   oxygenMaxBonus: number;
   staminaMaxBonus: number;
-  extraConsumableSlot: number;
   /** 声呐能力是否已解锁（段2：声呐＝Otto 打造的装备件·由 hasSonarEquipped 派生·见 getRunBonuses）。 */
   sonarUnlocked: boolean;
   // 深水区 Phase 0 升级轨（全局升级派生，前哨灯塔暂不贡献）：createNewRun 据此种 powerMax / sensorTuning。
@@ -281,14 +276,12 @@ export interface RunStartBonuses {
 }
 
 /**
- * 合并"全局随身升级"+"家灯塔设施"的随身加成，供出海（startDive / startDiveFromPoi）注入 run。
- * 唯一的桥：dockyard 迁成家灯塔「船坞」设施后，其 extraConsumableSlot 不再走 getUpgradeBonuses，
- * 在此并回——只取**家灯塔**（你的出海基地），前哨灯塔不贡献随身槽。
+ * 合并"全局随身升级"+穿戴件的随身加成，供出海（startDive / startDiveFromPoi）注入 run。
+ * （dockyard 旧 extraConsumableSlot「+1格」桥已删 2026-07-10·家灯塔设施只做 POI 门·不贡献随身加成。）
  */
 export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
+  // dockyard 旧 extraConsumableSlot「+1格」桥已删 2026-07-10·家灯塔设施只做 POI 门·不贡献随身加成。
   const g = getUpgradeBonuses(profile);
-  const home = getHomeLighthouse(profile);
-  const homeSlot = home ? getLighthouseBonuses(home).extraConsumableSlot : 0;
   // 段1：并入穿戴件升级增量（Otto·equipment.ts 单点）——starter 全 Lv.1 时为 0、对既有基线零扰动。
   const eq = profile.equipment ? getEquipmentStats(profile.equipment) : emptyEquipmentStats();
   // 段2（2026-06-19）+ A 档位件（2026-06-20）+ 感知重做精简（车道 4）：传感器加成全部来源＝穿戴件 eq（getEquipmentStats·单点）——
@@ -303,7 +296,6 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
   return {
     oxygenMaxBonus: g.oxygenMaxBonus + eq.oxygenMaxBonus,
     staminaMaxBonus: g.staminaMaxBonus + eq.staminaMaxBonus,
-    extraConsumableSlot: g.extraConsumableSlot + homeSlot,
     sonarUnlocked: sonarPresent,
     powerMaxBonus: eq.powerMaxBonus,
     sonarPingCostReduction: eq.sonarPingCostReduction,

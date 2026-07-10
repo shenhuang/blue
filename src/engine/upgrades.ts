@@ -183,7 +183,6 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
   const bonuses: UpgradeBonuses = {
     oxygenMaxBonus: 0,
     staminaMaxBonus: 0,
-    extraConsumableSlot: 0,
     preservationBonus: 0,
     revealCorpseHint: false,
     preDiveCorpseSelect: false,
@@ -202,9 +201,6 @@ export function getUpgradeBonuses(profile: PlayerProfile): UpgradeBonuses {
           break;
         case 'staminaMaxBonus':
           bonuses.staminaMaxBonus += e.value;
-          break;
-        case 'extraConsumableSlot':
-          bonuses.extraConsumableSlot += e.value;
           break;
         case 'preservationBonus':
           // 保鲜按"最大值"取（与 engine/death.ts::getPreservationBonus 保持一致）

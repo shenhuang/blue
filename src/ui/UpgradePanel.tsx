@@ -191,9 +191,6 @@ function upgradeEffectSet(effects: UpgradeEffect[]): EffectSet {
   const unlocks: string[] = [];
   for (const e of effects) {
     switch (e.kind) {
-      case 'extraConsumableSlot':
-        stats.push({ label: e.kind, value: e.value, render: (v) => `背包格 +${v}` });
-        break;
       case 'oxygenMaxBonus':
         stats.push({ label: e.kind, value: e.value, render: (v) => `氧气上限 +${v} 回合` });
         break;

@@ -93,7 +93,7 @@ export interface ItemDef {
    * （一匣 ≤stackSize 发·最后一匣可能不满）＝更可读。例：AP-12 气动弹 stackSize 8、PR-40 鱼叉弹 stackSize 30。
    */
   stackSize?: number;
-  /** 负重（影响上浮速度与氧气消耗·负重档位见 engine/equipment.ts::weightTier） */
+  /** 负重（用于背包承载 weightForItem 与装备负重档位 weightTier；与上浮/氧气无关·作者 2026-07-10 拍板解耦） */
   weight?: number;
   /** 出售价格（金币） */
   sellPrice?: number;

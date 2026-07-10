@@ -1,5 +1,5 @@
 {
-  "_doc": "灯塔设施升级（每灯塔，建成写进 lighthouse.builtUpgrades）。账单 = 材料＋金币双资源（同全局升级，基建地图 §2.3/§3.3）。Phase C：reveal/reach 已实装（chart.ts/dive.ts 消费 getLighthouseBonuses）；dockyard 迁来（lhtrack.dockyard，homeOnly，给 extraConsumableSlot + 远海 POI 的 requiresLighthouseUpgrade 门控）；新增 ruins[]（修复废弃灯塔 → push 新灯塔）。数值为占位，待平衡（SPEC §9）。**所有 beacon 位置全在本文件**（编辑器统一读写）：家＝顶层 `home`（state.ts 消费），前哨＝`outposts[].result`，废弃灯塔＝`ruins[].result`。",
+  "_doc": "灯塔设施升级（每灯塔，建成写进 lighthouse.builtUpgrades）。账单 = 材料＋金币双资源（同全局升级，基建地图 §2.3/§3.3）。Phase C：reveal/reach 已实装（chart.ts/dive.ts 消费 getLighthouseBonuses）；dockyard 迁来（lhtrack.dockyard，homeOnly，远海 POI 的 requiresLighthouseUpgrade 门控·旧 extraConsumableSlot「+1格」效果已删 2026-07-10）；新增 ruins[]（修复废弃灯塔 → push 新灯塔）。数值为占位，待平衡（SPEC §9）。**所有 beacon 位置全在本文件**（编辑器统一读写）：家＝顶层 `home`（state.ts 消费），前哨＝`outposts[].result`，废弃灯塔＝`ruins[].result`。",
   "home": {
     "id": "lighthouse.home",
     "name": "旧灯塔",
@@ -31,13 +31,8 @@
             ],
             "gold": 20
           },
-          "effects": [
-            {
-              "kind": "extraConsumableSlot",
-              "value": 1
-            }
-          ],
-          "description": "修起灯塔脚下的船坞。出海前可多带 1 个消耗品；远海点位（旧灯塔礁等）从此出得去。",
+          "effects": [],
+          "description": "修起灯塔脚下的船坞——有了它才出得了远海点位（旧灯塔礁等）。",
           "requiresLighthouseLevel": 1
         }
       ]

@@ -397,10 +397,13 @@ function describeCraftCost(cost: { materials: { itemId: string; qty: number }[];
 export type WeightTier = 'light' | 'medium' | 'heavy' | 'overloaded';
 
 /** 档位阈值（含上界）：0–8 轻 / 9–14 中 / 15–20 重 / 21+ 过载。数值＝提案可调。 */
-export function weightTier(weight: number): WeightTier {
-  if (weight <= 8) return 'light';
-  if (weight <= 14) return 'medium';
-  if (weight <= 20) return 'heavy';
+export const LOADOUT_WEIGHT_CAP = 20;
+
+export function weightTier(weight: number, cap: number = LOADOUT_WEIGHT_CAP): WeightTier {
+  const pct = cap > 0 ? weight / cap : Infinity;
+  if (pct <= 0.4) return 'light';
+  if (pct <= 0.7) return 'medium';
+  if (pct <= 1.0) return 'heavy';
   return 'overloaded';
 }
 
