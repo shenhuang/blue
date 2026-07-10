@@ -116,7 +116,6 @@ barrel + 兄弟文件拆分的子系统（`dive.ts` = barrel·住 `dive-start/-s
 > 已 ship 的功能进度史在 [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)（按编号·别回堆进本档）；方向性北极星 / SPEC 在 `docs/spec/`（按本 session 方向懒加载·别开局全读）。下面只留**未建**的开放项：
 
 - [ ] **战斗中氮气 ×1.5 / 理智 ×1.2** —— per 战斗 SPEC §10，未实装。
-- [ ] **背包负重影响上浮速度** —— per 主 SPEC §8.2，未实装。
 - 数值/手感统一留最后一次性调（准则 defer-number-tuning）·机制/内容侧不受限。
 
 ---
