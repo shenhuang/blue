@@ -4,9 +4,7 @@
   "seed": 1,
   "zoneId": "zone.open_midwater",
   "depth": 100,
-  "stats": {
-    "sanity": 60,
-    "stamina": 80
+  "stats": {"stamina": 80
   },
   "choices": [
     "push_through_chain"

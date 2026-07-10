@@ -10,6 +10,6 @@
     "errors": [],
     "checkPassed": true,
     "loreAdded": ["lore.bluecaves.the_line"],
-    "statsDelta": { "oxygen": -2, "sanity": -4 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

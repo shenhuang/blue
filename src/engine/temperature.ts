@@ -109,7 +109,7 @@ export function expectedReach(intensity: number): TempReach {
 
 /**
  * 超阈后果：应力越过 WARN 后按归一化超阈量连续扣体力（热极=过热脱力 / 冷极=失温麻木·叙事分极性·数学同款）。
- * 低超阈几乎为 0（平方）；纯输出数字·不碰 state（落由调用方·仿氮醉 narcosisSanityDrain）。
+ * 低超阈几乎为 0（平方）；纯输出数字·不碰 state（落由调用方）。
  */
 export function thermalStaminaDrain(stress: number, turns: number): number {
   if (turns <= 0) return 0;

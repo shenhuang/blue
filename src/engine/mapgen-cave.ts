@@ -173,7 +173,7 @@ export function generatePersistentCaveMap(opts: GenOpts, params: CaveGenParams):
         preview = '一处可以稳住呼吸的水兜。';
       } else {
         const pool = buildEventPool({
-          zone, depth: depthI, sanity: 100, profileFlags, triggeredEventIds: triggeredFakeIds,
+          zone, depth: depthI, profileFlags, triggeredEventIds: triggeredFakeIds,
           tagsOverride: opts.bandTags, poiId: opts.poiId, poiTemplateId: opts.poiTemplateId,
         });
         if (pool.length === 0) {

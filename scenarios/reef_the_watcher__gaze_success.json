@@ -10,13 +10,11 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
     "loreAdded": [
       "lore.reef.the_watcher"
     ],
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -4
+      "oxygen": -2
     }
   }
 }

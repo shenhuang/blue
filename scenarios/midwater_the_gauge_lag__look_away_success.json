@@ -3,14 +3,12 @@
   "eventId": "midwater.the_gauge_lag",
   "depth": 160,
   "seed": 1,
-  "sanity": 80,
   "zoneId": "zone.open_midwater",
   "choices": ["look_away_and_back"],
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
-    "statsDelta": { "oxygen": -1, "sanity": -2 }
+    "statsDelta": { "oxygen": -1 }
   }
 }

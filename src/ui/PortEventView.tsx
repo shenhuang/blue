@@ -53,7 +53,7 @@ export function PortEventView({ state, eventId, onStateChange }: Props) {
               return (
                 <li key={opt.id}>
                   <button
-                    className={`btn event-option ${opt.hallucination ? 'hallucination' : ''}`}
+                    className="btn event-option"
                     onClick={() => handleChoose(opt)}
                     disabled={!enabled}
                   >

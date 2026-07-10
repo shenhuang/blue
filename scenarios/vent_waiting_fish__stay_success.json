@@ -3,13 +3,11 @@
   "eventId": "vent.waiting_fish",
   "depth": 45,
   "seed": 100,
-  "stats": { "sanity": 100 },
   "choices": ["stay_and_watch"],
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
     "statsDelta": { "oxygen": -2 }
   }
 }

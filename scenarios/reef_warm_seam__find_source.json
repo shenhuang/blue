@@ -9,6 +9,6 @@
     "finalPhase": "dive",
     "errors": [],
     "loreAdded": ["lore.reef_shallows.the_warm_crack"],
-    "statsDelta": { "oxygen": -2, "sanity": -3 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

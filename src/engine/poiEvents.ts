@@ -288,7 +288,7 @@ export function derivePoiDivePool(key: string): PoiDivePool {
   const ids = new Set<string>();
   for (let d = lo; d <= hi; d++) {
     for (const ev of buildEventPool({
-      zone, depth: d, sanity: 100, profileFlags: NO_FLAGS,
+      zone, depth: d, profileFlags: NO_FLAGS,
       triggeredEventIds: [], tagsOverride, poiId, poiTemplateId, ignoreProfileGates: true,
     })) {
       ids.add(ev.id);

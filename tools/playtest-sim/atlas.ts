@@ -30,7 +30,7 @@ for (const [zone, label, dr, o2] of ZONES) {
   console.log(`【${label}】 O2=${o2}`);
   console.log(`  存活    avoid ${(av.survival*100).toFixed(0)}%   fight ${(ft.survival*100).toFixed(0)}%`);
   console.log(`  收益    avoid 卖料 ${av.avgLootGold.toFixed(0)}g/潜   fight 卖料 ${ft.avgLootGold.toFixed(0)}g/潜`);
-  console.log(`  战斗    fight ${(ft.combats/N).toFixed(2)} 次/潜   存活转身氧余 ~${ft.avgO2Turnaround.toFixed(0)}@${ft.avgDepthTurnaround.toFixed(0)}m   最低理智 ~${ft.avgMinSanity.toFixed(0)}`);
+  console.log(`  战斗    fight ${(ft.combats/N).toFixed(2)} 次/潜   存活转身氧余 ~${ft.avgO2Turnaround.toFixed(0)}@${ft.avgDepthTurnaround.toFixed(0)}m`);
   const fmats = Object.entries(ft.drops).filter(([k]) => /chitin|eel_skin|beak|lantern_gland|shark_tooth|barracuda_jaw|grouper_maw|sulfide|nodule|concretion|crust/.test(k))
     .sort((a,b)=>b[1]-a[1]).map(([k,v]) => k.replace('item.','')+' '+(v/N).toFixed(2)+'/潜').join('  ') || '(无材料)';
   console.log(`  关键素材掉率(fight): ${fmats}`);

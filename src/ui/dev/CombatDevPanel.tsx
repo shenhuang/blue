@@ -62,7 +62,7 @@ export interface CombatDevPanelProps {
   onClose?: () => void;
 }
 
-const STAT_KEYS: Stat[] = ['stamina', 'oxygen', 'sanity', 'nitrogen'];
+const STAT_KEYS: Stat[] = ['stamina', 'oxygen', 'nitrogen'];
 const SLOT_KEYS = EQUIPMENT_SLOTS;
 
 export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
@@ -102,7 +102,6 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
           turnsElapsed: 0,
           finalHp: 0,
           finalOxygen: 0,
-          finalSanity: 0,
           finalNitrogen: 0,
           statsDelta: {},
           lootGained: [],
@@ -591,8 +590,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
               <ul>
                 {enemyDescribed.attackSummary.map((a) => (
                   <li key={a.id}>
-                    <strong>{a.name}</strong> ({a.id}) · {a.damageType} dmg={a.damage[0]}-{a.damage[1]}
-                    {a.sanityDamage ? `, sanity=${a.sanityDamage[0]}-${a.sanityDamage[1]}` : ''}, w={a.weight}
+                    <strong>{a.name}</strong> ({a.id}) · {a.damageType} dmg={a.damage[0]}-{a.damage[1]}, w={a.weight}
                   </li>
                 ))}
               </ul>
@@ -629,7 +627,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
                 <input
                   type="range"
                   min={0}
-                  max={k === 'sanity' || k === 'nitrogen' ? 100 : 200}
+                  max={k === 'nitrogen' ? 100 : 200}
                   value={form.stats[k]}
                   disabled={!form.statsActive[k]}
                   onChange={(e) => setStat(k, Number(e.target.value))}
@@ -1123,7 +1121,6 @@ function TurnBlock({ turn }: { turn: CombatTurnSnapshot }) {
       <div className="dev-combat-player-stats">
         <span>HP={turn.playerStatsAfter.stamina.toFixed(0)}</span>
         <span>O2={turn.playerStatsAfter.oxygen.toFixed(1)}</span>
-        <span>San={turn.playerStatsAfter.sanity.toFixed(0)}</span>
         <span>N2={turn.playerStatsAfter.nitrogen.toFixed(1)}</span>
         <span className="dev-combat-player-delta">
           Δ {formatStatsDelta(turn.playerStatsDelta) || '—'}
@@ -1167,7 +1164,7 @@ function EnemyHpLine({ enemy }: { enemy: EnemySnapshot }) {
 }
 
 function formatStatsDelta(d: Partial<Record<Stat, number>>): string {
-  return (['stamina', 'oxygen', 'sanity', 'nitrogen'] as const)
+  return (['stamina', 'oxygen', 'nitrogen'] as const)
     .filter((k) => d[k] !== undefined)
     .map((k) => `${k} ${(d[k] as number) >= 0 ? '+' : ''}${d[k]}`)
     .join(', ');
@@ -1195,7 +1192,7 @@ function CombatSummaryBlock({ result }: { result: CombatScenarioResult }) {
           <tr>
             <td>final stats</td>
             <td>
-              HP={s.finalHp.toFixed(0)} O2={s.finalOxygen.toFixed(1)} San={s.finalSanity.toFixed(0)} N2=
+              HP={s.finalHp.toFixed(0)} O2={s.finalOxygen.toFixed(1)} N2=
               {s.finalNitrogen.toFixed(1)}
             </td>
           </tr>
@@ -1242,14 +1239,12 @@ function CombatSummaryBlock({ result }: { result: CombatScenarioResult }) {
 interface EnvPressureAgg {
   oxygenDrainBonus: number;
   staminaTickBonus: number;
-  sanityDamagePerTurn: number;
 }
 
 /** 把一组 defId 的 environmentalPressure 累加（caller 决定喂「去重的类型」还是「存活实例」）。无压力 → null。 */
 function sumEnvPressure(defIds: string[]): EnvPressureAgg | null {
   let oxygenDrainBonus = 0;
   let staminaTickBonus = 0;
-  let sanityDamagePerTurn = 0;
   let any = false;
   for (const id of defIds) {
     const ep = describeEnemy(id)?.def.environmentalPressure;
@@ -1257,16 +1252,14 @@ function sumEnvPressure(defIds: string[]): EnvPressureAgg | null {
     any = true;
     oxygenDrainBonus += ep.oxygenDrainBonus ?? 0;
     staminaTickBonus += ep.staminaTickBonus ?? 0;
-    sanityDamagePerTurn += ep.sanityDamagePerTurn ?? 0;
   }
-  return any ? { oxygenDrainBonus, staminaTickBonus, sanityDamagePerTurn } : null;
+  return any ? { oxygenDrainBonus, staminaTickBonus } : null;
 }
 
 function envPressureText(p: EnvPressureAgg): string {
   const parts: string[] = [];
   if (p.oxygenDrainBonus) parts.push(`氧气 -${p.oxygenDrainBonus}`);
   if (p.staminaTickBonus) parts.push(`体力 -${p.staminaTickBonus}`);
-  if (p.sanityDamagePerTurn) parts.push(`理智 -${p.sanityDamagePerTurn}`);
   return parts.join(' · ') || '无';
 }
 
@@ -1427,8 +1420,7 @@ function LiveTerminalCard({
             <tr>
               <td>final stats</td>
               <td>
-                HP={live.run.stats.stamina.toFixed(0)} O2={live.run.stats.oxygen.toFixed(1)} San=
-                {live.run.stats.sanity.toFixed(0)} N2={live.run.stats.nitrogen.toFixed(1)}
+                HP={live.run.stats.stamina.toFixed(0)} O2={live.run.stats.oxygen.toFixed(1)} N2={live.run.stats.nitrogen.toFixed(1)}
               </td>
             </tr>
           )}

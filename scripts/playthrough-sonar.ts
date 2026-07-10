@@ -264,7 +264,7 @@ L('\n========== 9. scanMemory round-trip ==========');
   const s = pingSonar(mk({ depth: 50 }));
   const back = deserializeGameState(serializeGameState(s));
   assert(back !== null, '9: 反序列化成功');
-  assert(back!.version === 13, '9: SAVE_VERSION 13（感知门 diveModifier.gate bump·scanMemory 本身不影响）');
+  assert(back!.version === 14, '9: SAVE_VERSION 14（理智系统移除 bump·scanMemory 本身不影响）');
   assert(
     sameSet(sortedKeys(back!.run!.scanMemory ?? {}), sortedKeys(s.run!.scanMemory ?? {})),
     '9: scanMemory 原样 round-trip（普通对象、无需迁移）',
@@ -325,18 +325,18 @@ L('\n========== 10. 多事件房间（S1）==========');
 }
 
 // ============================================================
-// 11. 不可信扫描（声呐与房间 S2）：spoof/evade 表象 + 深 band 失真阈值 + 低 san 伪接触/读数乱码 + mapgen 欺骗 pass
-//   → **整节随感知重做删除**（声呐诚实、欺骗移交低理智轴·SPEC §2.2/§2.3/§3）。
+// 11. 不可信扫描（声呐与房间 S2）：spoof/evade 表象 + 深 band 失真阈值 + mapgen 欺骗 pass
+//   → **整节随感知重做删除**（声呐诚实、欺骗移交地点缝·SPEC §2.2/§2.3/§3）。
 // ============================================================
 
 // ============================================================
-// 12. 威胁定位（声呐与房间 S3 廉价版）：run.alert → 近似接触 + 粗距档（诚实·感知重做后无 san 侧失真）
+// 12. 威胁定位（声呐与房间 S3 廉价版）：run.alert → 近似接触 + 粗距档（诚实·感知重做后无失真）
 // ============================================================
 // ============================================================
 L('\n========== 12. 威胁定位（S3 廉价版）==========');
 {
-  const tr = (o: { alert?: number; sanity?: number; turn?: number }): RunState =>
-    ({ alert: o.alert ?? 0, stats: { sanity: o.sanity ?? 100 }, turn: o.turn ?? 0, sensorTuning: deriveSensorTuning({}) } as unknown as RunState);
+  const tr = (o: { alert?: number; turn?: number }): RunState =>
+    ({ alert: o.alert ?? 0, stats: {}, turn: o.turn ?? 0, sensorTuning: deriveSensorTuning({}) } as unknown as RunState);
 
   // (a) 预警线下 → 无接触（水里还算静）
   assert(threatContact(tr({ alert: THREAT_CONTACT_ALERT - 1 })) === null, '12a: 警觉未到预警线 → 无威胁接触');
@@ -349,9 +349,8 @@ L('\n========== 12. 威胁定位（S3 廉价版）==========');
   const near = threatContact(tr({ alert: ALERT_THRESHOLD }))!;
   assert(near.imminent && near.range === 'near', '12c: 越过接近线 → imminent + 近');
   assert(!warn.imminent, '12c: 预警线刚到 → 未 imminent（还有熄灯反应窗口）');
-  // (d) 感知重做：威胁诚实（garbled 恒 false）——低 san 也读得出距离（失真移交低理智轴·SPEC §2.2/§2.3）。
-  assert(!threatContact(tr({ alert: ALERT_MAX, sanity: 100 }))!.garbled, '12d: 高 san → 威胁诚实（不 garbled）');
-  assert(!threatContact(tr({ alert: ALERT_MAX, sanity: 15 }))!.garbled, '12d: 低 san 也不 garbled（威胁诚实·感知重做）');
+  // (d) 感知重做：威胁诚实（garbled 恒 false·失真移交地点缝·SPEC §2.2/§2.3）。
+  assert(!threatContact(tr({ alert: ALERT_MAX }))!.garbled, '12d: 威胁诚实（garbled 恒 false）');
   // (e) 确定性（不耗 RNG·SSR 安全）：同输入同方位/逼近度
   const a = threatContact(tr({ alert: 70, turn: 3 }))!;
   const b = threatContact(tr({ alert: 70, turn: 3 }))!;
@@ -384,7 +383,7 @@ L('\n========== 14. 一记 ping 单动作（§2.2）==========');
 
   // (e) 存档 round-trip：sonar 普通枚举·保真·不 bump SAVE_VERSION
   const rt = deserializeGameState(serializeGameState(movedOff));
-  assert(rt!.version === 13, '14e: SAVE_VERSION 13（感知门 diveModifier.gate bump·感知重做删 sonarOn 不影响）');
+  assert(rt!.version === 14, '14e: SAVE_VERSION 14（理智系统移除 bump·感知重做删 sonarOn 不影响）');
   assert(rt!.run!.sensors.sonar === 'off', '14e: sensors.sonar round-trip 保真');
   L('  默认不扫 / ping 付暴露 / 移动归 off(不自动扫) / 暴露按状态 / 存档 round-trip ✓');
 }

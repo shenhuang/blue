@@ -1,7 +1,6 @@
 {
   "_comment": "海沟深档 108-160m · 收窄的（cosmic·oncePerRun·midnight）· sanity vs 58 高 sanity seed 1 通过 → 掉头按线返回通道恢复宽。loot-free。statsDelta 实跑抄（quirk #43）。",
   "eventId": "trench.the_narrowing",
-  "stats": { "sanity": 80 },
   "depth": 130,
   "seed": 1,
   "choices": ["go_back"],
@@ -9,7 +8,6 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
-    "statsDelta": { "oxygen": -2, "sanity": 3 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

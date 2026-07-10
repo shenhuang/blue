@@ -62,10 +62,9 @@ export function CorpseView({ state, deathRecordId, onStateChange }: Props) {
 
   function handleSayWords() {
     let s = state;
-    s = { ...s, run: { ...s.run!, stats: { ...s.run!.stats, sanity: Math.min(100, s.run!.stats.sanity + 5) } } };
     s = appendLog(s, {
       tone: 'realistic',
-      text: '你在尸体旁待了一会儿。水流很轻。你不知道说什么，但说了。理智 +5。',
+      text: '你在尸体旁待了一会儿。水流很轻。你不知道说什么，但说了。',
     });
     s = enterNodeSelection(s);
     onStateChange(s);
@@ -125,7 +124,7 @@ export function CorpseView({ state, deathRecordId, onStateChange }: Props) {
           </li>
           <li>
             <button className="btn event-option" onClick={handleSayWords}>
-              说几句话再走（理智 +5，氧气 −1）
+              说几句话再走（氧气 −1）
             </button>
           </li>
           <li>

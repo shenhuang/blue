@@ -15,8 +15,7 @@
           "label": "把手贴上断面",
           "outcome": {
             "text": "你把掌心按上去。面是凉的，比周围的水还凉几度，平得手底分不出一丝起伏。你贴了一会，指尖先开始不受控地轻轻发颤，你把手收了回来。",
-            "oxygenTurnCost": 1,
-            "deltas": { "sanity": -4 }
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -57,8 +56,7 @@
           "label": "穿过那层界面往上",
           "outcome": {
             "text": "你顶进交界面。那一瞬光纹在脸前散开，耳压闷闷地顶了一下，水从凉变温。穿过去之后，气泡又正常地往上走了。",
-            "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -66,8 +64,7 @@
           "label": "停在界面下，看着自己的气泡",
           "outcome": {
             "text": "你停在凉层里，看气泡一颗颗顶到那条线就停下、横着铺开，谁也上不去。你看了很久，久到忘了自己也得呼吸。一阵耳鸣提醒了你，你才动。",
-            "oxygenTurnCost": 2,
-            "deltas": { "sanity": -4 }
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -84,7 +81,6 @@
       "id": "deep_cave.wall_marking",
       "depthRange": [45, 92],
       "zoneTags": ["deep_cave"],
-      "sanityRange": [0, 85],
       "weight": 6,
       "cooldown": 4,
       "title": "壁上的几道槽",
@@ -96,8 +92,7 @@
           "label": "把手指按进槽里比一比",
           "outcome": {
             "text": "你把四指叉开按进去。槽比你的指距宽出小半指，每道的弧度又都一样。你抽回手，在裤腿上蹭了蹭，没擦掉那点凉。",
-            "oxygenTurnCost": 1,
-            "deltas": { "sanity": -4 }
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -111,18 +106,7 @@
               { "itemId": "item.coral_shard", "qty": [1, 1], "chance": 0.3 }
             ]
           }
-        },
-        {
-          "id": "follow_grooves",
-          "label": "顺着槽划进去的方向往里看",
-          "hallucination": true,
-          "outcome": {
-            "text": "你顺着四道槽斜下去的方向往里照。灯尽头，那几道槽像是没断，一直顺着壁拐进黑里，再往里还有——你眨了下眼，灯下又只剩这一段四道浅槽。你白搭进去一截气，撑了回来。",
-            "oxygenTurnCost": 3,
-            "deltas": { "sanity": -6 }
-          }
-        }
-      ]
+        } ]
     },
     {
       "id": "deep_cave.dead_vent",
@@ -172,7 +156,6 @@
       "id": "deep_cave.echo_delay",
       "depthRange": [48, 100],
       "zoneTags": ["deep_cave"],
-      "sanityRange": [0, 80],
       "weight": 5,
       "cooldown": 3,
       "title": "回声慢了",
@@ -182,18 +165,9 @@
         {
           "id": "knock_again",
           "label": "再敲一次，确认是不是听岔了",
-          "check": {
-            "stat": "sanity",
-            "dc": 13,
-            "onSuccess": {
-              "text": "你定了定神，又磕了一记，这回盯着秒数听。回声还是慢，但方向对得上了——是前一下你自己慌了、把方向记串了。你松了半口气，把这段壁的回声特性记下，继续走。",
-              "oxygenTurnCost": 1
-            },
-            "onFailure": {
-              "text": "第二下磕出去，回声又从一个不对的方向、隔着不对的时间回来，和第一下还不一样。你数不清这是第几面壁在应你。手指攥着刀柄，半天没敢松。",
-              "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 }
-            }
+          "outcome": {
+            "text": "你定了定神，又磕了一记，这回盯着秒数听。回声还是慢，但方向对得上了——是前一下你自己慌了、把方向记串了。你松了半口气，把这段壁的回声特性记下，继续走。",
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -201,8 +175,7 @@
           "label": "不再试，认着来路往前",
           "outcome": {
             "text": "你不去较真那声回声从哪儿来。声音在这种地方本就不可信，你只认手底壁的走向往前蹭。",
-            "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -237,8 +210,7 @@
             },
             "onFailure": {
               "text": "你越核越没准头：耳压、气泡、表上的针，三样给你三个不一样的深度。到底在多深，你说不上来。你只能挑最深的那个数，按它扣气——宁可亏，不能赌。",
-              "oxygenTurnCost": 3,
-              "deltas": { "sanity": -3 }
+              "oxygenTurnCost": 3
             }
           }
         },
@@ -256,7 +228,6 @@
       "id": "deep_cave.the_quiet",
       "depthRange": [80, 124],
       "zoneTags": ["deep_cave"],
-      "sanityRange": [0, 70],
       "weight": 4,
       "cooldown": 0,
       "title": "这里的安静",
@@ -268,8 +239,7 @@
           "label": "停下，让自己适应这种静",
           "outcome": {
             "text": "你停在原地，由着那片静压上来。呼吸不自觉地放慢，跟上了周围的没有声音。过了一会，你的手指头开始一下下轻敲气瓶——不为什么，只是想确认那点声还是你发出来的。",
-            "oxygenTurnCost": 2,
-            "deltas": { "sanity": -4 }
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -277,8 +247,7 @@
           "label": "故意弄出点声音，把这静填满",
           "outcome": {
             "text": "你拿刀背连磕了几下壁。声响出去，没有一点回来，落进这片静里小得可怜，像从没响过。你停了手。这地方不还你声音。",
-            "oxygenTurnCost": 1,
-            "deltas": { "sanity": -5 }
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -286,8 +255,7 @@
           "label": "不停留，按住呼吸往前",
           "outcome": {
             "text": "你不在这片静里多待，刻意把呼吸压成一个稳的节拍，一蹬一蹬往前。只要还在动，那片静就追不上你。",
-            "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -311,8 +279,7 @@
             "dc": 14,
             "onSuccess": {
               "text": "你贴着磨痕，放慢到几乎不带起一丝泥，一点点挪过这段窄道。什么都没来。出了道口你才发觉自己一路屏着气。",
-              "oxygenTurnCost": 2,
-              "deltas": { "sanity": -3 }
+              "oxygenTurnCost": 2
             },
             "onFailure": {
               "text": "你的气瓶磕响了道壁。那点声一落，前头磨亮的线尽头，黑里有什么顺着同一条线朝你冲了过来。",
@@ -336,8 +303,7 @@
           "label": "退出去，另寻一条道",
           "outcome": {
             "text": "你倒着退出这条被走熟的窄道，把它让回给常走它的那个。绕路要多花气，但你不跟有主的道抢。",
-            "oxygenTurnCost": 2,
-            "deltas": { "sanity": -2 }
+            "oxygenTurnCost": 2
           }
         }
       ]

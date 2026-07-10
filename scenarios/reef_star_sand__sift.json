@@ -9,6 +9,6 @@
     "finalPhase": "dive",
     "errors": [],
     "loreAdded": ["lore.reef_shallows.the_star_sand"],
-    "statsDelta": { "oxygen": -1, "sanity": -3 }
+    "statsDelta": { "oxygen": -1 }
   }
 }

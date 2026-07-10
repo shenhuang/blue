@@ -4,9 +4,6 @@
   "depth": 205,
   "seed": 1,
   "zoneId": "zone.vent_trench",
-  "stats": {
-    "sanity": 90
-  },
   "choices": [
     "touch_outer_wall"
   ],
@@ -14,10 +11,8 @@
     "steps": 1,
     "errors": [],
     "finalPhase": "dive",
-    "checkPassed": true,
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -2
+      "oxygen": -2
     }
   }
 }

@@ -4,9 +4,6 @@
   "depth": 258,
   "seed": 1,
   "zoneId": "zone.blue_caves",
-  "stats": {
-    "sanity": 90
-  },
   "choices": [
     "stay_in_cold"
   ],
@@ -14,10 +11,8 @@
     "steps": 1,
     "errors": [],
     "finalPhase": "dive",
-    "checkPassed": true,
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -3
+      "oxygen": -2
     }
   }
 }

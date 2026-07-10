@@ -14,8 +14,7 @@
       "lore.deep_water.the_silt"
     ],
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -1
+      "oxygen": -2
     }
   }
 }

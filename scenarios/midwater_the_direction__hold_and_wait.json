@@ -3,7 +3,6 @@
   "eventId": "midwater.the_direction",
   "depth": 110,
   "seed": 1,
-  "sanity": 60,
   "choices": ["hold_and_wait"],
   "expect": {
     "steps": 1,

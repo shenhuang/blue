@@ -4,9 +4,6 @@
   "depth": 210,
   "seed": 1,
   "zoneId": "zone.vent_trench",
-  "stats": {
-    "sanity": 80
-  },
   "choices": [
     "push_straight_through"
   ],

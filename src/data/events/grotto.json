@@ -28,8 +28,7 @@
           "label": "绕着柱子转一圈，把每一面都看到",
           "outcome": {
             "text": "你慢慢绕了一圈。十二条棱，每条的间距一致，棱角利得像是用器具划出来的。你找不到一处节瘤或者偏角——这根柱子一路长到顶，没有偏过一下。",
-            "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -68,8 +67,7 @@
           "label": "挑几块骨头仔细看，认认是什么动物",
           "outcome": {
             "text": "你捡起一节长骨，在灯下转了转。骨壁薄，是什么游得快的动物的骨头。旁边一截脊柱是鱼的，没问题；但压在最底下的那几节椎骨形状不对，太大，椎孔也不是鱼有的那种圆。你把它放回去。",
-            "oxygenTurnCost": 1,
-            "deltas": { "sanity": -3 }
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -94,18 +92,9 @@
         {
           "id": "map_acoustics",
           "label": "沿着各面墙依次敲，用回声判断哪里有空洞",
-          "check": {
-            "stat": "sanity",
-            "dc": 12,
-            "onSuccess": {
-              "text": "你沿四壁挨个敲了一遍，仔细记着声音从哪里回来。敲到第七下，回声方向突然对上了——那面壁后面是空的，可能通着什么。你记住这个位置。",
-              "oxygenTurnCost": 2
-            },
-            "onFailure": {
-              "text": "越敲越乱，回声的方向在洞里绕了又绕，对不准任何一面壁。你停下来，手指还搭在岩面上，脑子里那个声音的图已经散了。",
-              "oxygenTurnCost": 2,
-              "deltas": { "sanity": -4 }
-            }
+          "outcome": {
+            "text": "你沿四壁挨个敲了一遍，仔细记着声音从哪里回来。敲到第七下，回声方向突然对上了——那面壁后面是空的，可能通着什么。你记住这个位置。",
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -113,8 +102,7 @@
           "label": "朝声音回来的那个方向走，看看那里有什么",
           "outcome": {
             "text": "你朝左边那面实心岩走过去，把灯凑近。没有裂缝，没有口，但壁面的颜色和旁边的略有不同——像是比旁边薄，或者背后是另一种东西。",
-            "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -153,8 +141,7 @@
           "label": "游进天井，在那段光里停一会儿",
           "outcome": {
             "text": "你挤进那个圆口，悬在天井里。光从顶上漫下来，把你照成白的。你没有出路，但光是真实的，比洞里的灯光淡，也更干净。你在里面停了一会儿才下来。",
-            "oxygenTurnCost": 2,
-            "deltas": { "sanity": 3 }
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -205,7 +192,7 @@
             "onFailure": {
               "text": "你往浓的方向多游了几下，气泡起来得快，头开始有点发沉——像是供气不稳，但表上没有显示。你没有坚持，退了回来。",
               "oxygenTurnCost": 3,
-              "deltas": { "stamina": -3, "sanity": -2 }
+              "deltas": { "stamina": -3 }
             }
           }
         },
@@ -266,7 +253,6 @@
       "id": "grotto.dark_corner",
       "depthRange": [44, 82],
       "zoneTags": ["grotto"],
-      "sanityRange": [0, 70],
       "weight": 5,
       "cooldown": 3,
       "title": "灯照不到的那个角",
@@ -276,18 +262,9 @@
         {
           "id": "approach_corner",
           "label": "游过去，正面把灯对准那个角",
-          "check": {
-            "stat": "sanity",
-            "dc": 14,
-            "onSuccess": {
-              "text": "你游到那个角前面，把灯直接对准。是一处内凹，岩面的角度刚好让光绕开——什么都没有，只有岩壁本身的纹路，和一道很深的、被水冲过的竖沟。你的手还是稳的。",
-              "oxygenTurnCost": 2
-            },
-            "onFailure": {
-              "text": "你游到离那个角还剩一米的时候，灯从你手里滑了一下——没有掉，但你下意识往后退了半米。你重新稳住，没有继续过去。角还在那里，还是照不进去。",
-              "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 }
-            }
+          "outcome": {
+            "text": "你游到那个角前面，把灯直接对准。是一处内凹，岩面的角度刚好让光绕开——什么都没有，只有岩壁本身的纹路，和一道很深的、被水冲过的竖沟。你的手还是稳的。",
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -302,8 +279,7 @@
           "label": "不经过那个角，退回来路",
           "outcome": {
             "text": "你倒退出去，找别的路绕。多走一段，不合算，但你不想背对着那个角经过。",
-            "oxygenTurnCost": 2,
-            "deltas": { "sanity": -1 }
+            "oxygenTurnCost": 2
           }
         }
       ]

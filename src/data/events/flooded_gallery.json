@@ -74,7 +74,7 @@
             "onFailure": {
               "text": "你刮得太投入，等直起腰，才发觉气比预想的掉得快。你慌忙收手，心里把回程重算了一遍。",
               "oxygenTurnCost": 4,
-              "deltas": { "stamina": -3, "sanity": -2 }
+              "deltas": { "stamina": -3 }
             }
           }
         },
@@ -127,7 +127,7 @@
             "onFailure": {
               "text": "你一使劲，整片淤泥翻起来，廊里瞬间糊成一锅黄汤。你呛着退开，什么都没抓住，还得等泥沉。",
               "oxygenTurnCost": 4,
-              "deltas": { "stamina": -4, "sanity": -2 }
+              "deltas": { "stamina": -4 }
             }
           }
         },
@@ -169,8 +169,7 @@
             "dc": 14,
             "onSuccess": {
               "text": "你贴着对侧的柱缝，放慢到几乎不动，一点点挪过它的射程。它变着色盯着，终究没扑。",
-              "oxygenTurnCost": 2,
-              "deltas": { "sanity": -3 }
+              "oxygenTurnCost": 2
             },
             "onFailure": {
               "text": "窄缝里你的气瓶磕响了柱子。那点声一落，它就从柱背扑了出来。",
@@ -183,8 +182,7 @@
           "label": "退回上一段廊，再想办法",
           "outcome": {
             "text": "你倒退回上一段柱列。绕不开就先不绕——可往回的每一蹬，都是从回程那口气里借的。",
-            "oxygenTurnCost": 2,
-            "deltas": { "sanity": -2 }
+            "oxygenTurnCost": 2
           }
         }
       ]
@@ -193,7 +191,6 @@
       "id": "flooded.return_budget",
       "depthRange": [60, 82],
       "zoneTags": ["flooded"],
-      "sanityRange": [0, 80],
       "weight": 5,
       "cooldown": 3,
       "title": "回头的账",
@@ -203,18 +200,9 @@
         {
           "id": "do_the_math",
           "label": "认真算一遍：到这儿，还回得去吗",
-          "check": {
-            "stat": "sanity",
-            "dc": 12,
-            "onSuccess": {
-              "text": "你强迫自己冷静地算：来时多少蹬，回去就得留多少。算下来还有富余，但不多。手稳了。",
-              "oxygenTurnCost": 1
-            },
-            "onFailure": {
-              "text": "数字在脑子里打结，越算越没把握。那股「会回不去」的念头一旦起来就压不下去，手指在柱面上掐得发白。",
-              "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 }
-            }
+          "outcome": {
+            "text": "你强迫自己冷静地算：来时多少蹬，回去就得留多少。算下来还有富余，但不多。手稳了。",
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -275,7 +263,6 @@
       "id": "flooded.far_pit",
       "depthRange": [78, 86],
       "zoneTags": ["flooded"],
-      "sanityRange": [0, 70],
       "weight": 4,
       "cooldown": 0,
       "title": "廊尽头的直坑",
@@ -287,8 +274,7 @@
           "label": "往坑里落一块石头，听底",
           "outcome": {
             "text": "你掰下一块柱石松进坑里。你等着那一声落底——等了很久，久到你开始怀疑自己漏听了。你收回灯，退离坑沿。",
-            "oxygenTurnCost": 2,
-            "deltas": { "sanity": -5 }
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -296,21 +282,9 @@
           "label": "到此为止，认着刻印往回赶",
           "outcome": {
             "text": "你在坑沿的柱子上补刻一道印，转身往回。这趟到坑口为止——回程的账你早扣好了，现在该花了。",
-            "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "oxygenTurnCost": 1
           }
-        },
-        {
-          "id": "lean_into_pit",
-          "label": "再往坑沿探一点，看清坑壁",
-          "hallucination": true,
-          "outcome": {
-            "text": "你扒着坑沿又探进去一点。有那么一瞬，坑壁上像是有一排朝下的、规整的凹口，像是给手脚留的——等你定睛，又只是被水蚀直的素壁。你白搭进去一截气，赶紧撑回廊里。",
-            "oxygenTurnCost": 4,
-            "deltas": { "sanity": -6 }
-          }
-        }
-      ]
+        } ]
     }
   ]
 }

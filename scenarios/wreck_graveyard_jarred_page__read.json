@@ -12,8 +12,7 @@
     "errors": [],
     "flagsAdded": ["flag.voss.recording_heard"],
     "statsDelta": {
-      "oxygen": -1,
-      "sanity": -1
+      "oxygen": -1
     }
   }
 }

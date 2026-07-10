@@ -76,7 +76,7 @@ export interface CombatScenarioInput {
   /** ad-hoc encounter：直接列出 EnemyDef.id（不用注册）。与 combatId 互斥。 */
   enemyDefIds?: string[];
 
-  /** 起始 stats 覆写（默认满状态：stamina=staminaMax, oxygen=oxygenMax, sanity=100, nitrogen=0） */
+  /** 起始 stats 覆写（默认满状态：stamina=staminaMax, oxygen=oxygenMax, nitrogen=0） */
   stats?: Partial<Stats>;
   /** 起始装备覆写（默认 createStarterLoadout()） */
   equipment?: Partial<EquipmentLoadout>;
@@ -127,7 +127,7 @@ export interface CombatScenarioInput {
 /** 战斗结束的原因（细化于 combat.ts 的 outcome） */
 export type CombatScenarioOutcome =
   | 'victory'              // 全敌人 hp ≤ 0
-  | 'defeat'               // 玩家死亡（窒息 / 失血 / 理智崩溃）
+  | 'defeat'               // 玩家死亡（窒息 / 失血）
   | 'flee'                 // 屏息潜逃成功
   | 'maxTurns'             // 达到 maxTurns 上限，未分出胜负
   | 'noActionProvided'     // actions 用完
@@ -194,7 +194,6 @@ export interface CombatScenarioSummary {
   turnsElapsed: number;
   finalHp: number;
   finalOxygen: number;
-  finalSanity: number;
   finalNitrogen: number;
   /** 玩家 stats 起→终 delta */
   statsDelta: Partial<Stats>;
@@ -245,7 +244,6 @@ function buildInitialState(input: CombatScenarioInput): GameState {
   const defaultStats: Stats = {
     stamina: run.staminaMax,
     oxygen: run.oxygenMax,
-    sanity: 100,
     nitrogen: 0,
     thermalStress: 0,
   };
@@ -271,7 +269,6 @@ function startAdHocCombat(state: GameState, enemyDefIds: string[], wornSkin?: st
       instanceId: `adhoc.${idx}`,
       defId: def.id,
       hp: def.hp,
-      sanityHp: def.sanityHp,
       stance: def.initialStance,
       aggro: def.threat,
       statuses: [],
@@ -369,7 +366,7 @@ function deriveTerminalEnemiesSnapshot(
 // ---------------------------------------------------------------------------
 
 function emptyStats(): Stats {
-  return { stamina: 0, oxygen: 0, sanity: 0, nitrogen: 0, thermalStress: 0 };
+  return { stamina: 0, oxygen: 0, nitrogen: 0, thermalStress: 0 };
 }
 
 function makeEmptySummary(reason: CombatScenarioOutcome, state: GameState): CombatScenarioSummary {
@@ -379,7 +376,6 @@ function makeEmptySummary(reason: CombatScenarioOutcome, state: GameState): Comb
     turnsElapsed: 0,
     finalHp: stats.stamina,
     finalOxygen: stats.oxygen,
-    finalSanity: stats.sanity,
     finalNitrogen: stats.nitrogen,
     statsDelta: {},
     lootGained: [],
@@ -655,7 +651,6 @@ export function runCombatScenario(input: CombatScenarioInput): CombatScenarioRes
     turnsElapsed: turns.length,
     finalHp: finalStats.stamina,
     finalOxygen: finalStats.oxygen,
-    finalSanity: finalStats.sanity,
     finalNitrogen: finalStats.nitrogen,
     statsDelta: diffStats(startStats, finalStats),
     lootGained,
@@ -704,7 +699,6 @@ export interface EnemyAttackSummary {
   id: string;
   name: string;
   damage: [number, number];
-  sanityDamage?: [number, number];
   damageType: string;
   weight: number;
   description: string;
@@ -770,7 +764,6 @@ export function describeEnemy(enemyId: string): EnemyDescription | null {
     id: a.id,
     name: a.name,
     damage: a.damage,
-    sanityDamage: a.sanityDamage,
     damageType: a.damageType,
     weight: a.weight ?? 1,
     description: a.description,
@@ -810,7 +803,7 @@ function summarizeEffect(a: CombatAction): string {
     case 'defend':
       return `defend reduce=${(eff.damageReduction * 100).toFixed(0)}% turns=${eff.turns}`;
     case 'recover':
-      return `recover ${Object.entries(eff.deltas)
+      return `recover ${Object.entries(eff.deltas ?? {})
         .map(([k, v]) => `${k}${(v as number) >= 0 ? '+' : ''}${v}`)
         .join(',')}`;
     case 'flee':

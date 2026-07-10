@@ -32,7 +32,6 @@ import {
   createInitialGameState,
   createNewRun,
 } from './state';
-import { HALLUCINATION_VISIBLE_SANITY } from './clarity';
 import {
   withSeededRandom,
   diffStats,
@@ -52,7 +51,7 @@ import { getEventById, EVENT_DB } from './zones';
 export interface ScenarioInput {
   /** 起始事件 id */
   eventId: string;
-  /** 覆写 stats（默认满状态：stamina/oxygen 取 staminaMax/oxygenMax，sanity=100，nitrogen=0） */
+  /** 覆写 stats（默认满状态：stamina/oxygen 取 staminaMax/oxygenMax，nitrogen=0） */
   stats?: Partial<Stats>;
   /** 起始 inventory（默认空） */
   inventory?: InventoryItem[];
@@ -91,7 +90,6 @@ export interface VisibleOption {
   label: string;
   hasCheck: boolean;
   checkInfo?: { stat: Stat; dc: number; estimatedSuccessRate: number };
-  hallucination?: boolean;
 }
 
 export interface HiddenOption {
@@ -208,14 +206,7 @@ export function describeCondition(c: Condition): string {
   }
 }
 
-function describeHiddenReason(state: GameState, opt: EventOption): string {
-  if (opt.hallucination) {
-    const sanity = state.run?.stats.sanity;
-    if (!state.run) return `幻觉选项需要 run（且 sanity ≤ ${HALLUCINATION_VISIBLE_SANITY}）`;
-    if (sanity !== undefined && sanity > HALLUCINATION_VISIBLE_SANITY) {
-      return `幻觉选项：sanity (${sanity}) > ${HALLUCINATION_VISIBLE_SANITY}，不出现`;
-    }
-  }
+function describeHiddenReason(opt: EventOption): string {
   if (opt.visibleIf) return describeCondition(opt.visibleIf);
   return '未知条件';
 }
@@ -269,7 +260,6 @@ function buildInitialState(input: ScenarioInput, ev: DiveEvent): GameState {
   const defaultStats: Stats = {
     stamina: run.staminaMax,
     oxygen: run.oxygenMax,
-    sanity: 100,
     nitrogen: 0,
     thermalStress: 0,
   };
@@ -387,7 +377,6 @@ export function runEventScenario(
             id: opt.id,
             label: opt.label,
             hasCheck: !!opt.check,
-            hallucination: opt.hallucination,
           };
           if (opt.check && state.run) {
             info.checkInfo = {
@@ -403,7 +392,7 @@ export function runEventScenario(
           hiddenOptions.push({
             id: opt.id,
             label: opt.label,
-            blockedBy: describeHiddenReason(state, opt),
+            blockedBy: describeHiddenReason(opt),
           });
         }
       }
@@ -446,7 +435,7 @@ export function runEventScenario(
       }
       if (!isOptionVisible(state, targetOpt)) {
         errors.push(
-          `step ${stepIndex}: 选项 "${chosenId}" 当前不可见（${describeHiddenReason(state, targetOpt)}）`,
+          `step ${stepIndex}: 选项 "${chosenId}" 当前不可见（${describeHiddenReason(targetOpt)}）`,
         );
         step.next = { kind: 'end', reason: 'optionNotVisible' };
         steps.push(step);

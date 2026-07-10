@@ -52,7 +52,6 @@ function outcomeVal(oc: any): number {
   v += oc.goldDelta || 0;
   const d = oc.deltas || {};
   v += (d.oxygen || 0) * 1.0;
-  v += (d.sanity || 0) * 0.4;
   v += (d.stamina || 0) * 0.2;
   v -= (oc.oxygenTurnCost || 0) * 1.0;
   if (oc.triggerCombatId) v -= 40;          // cautious players avoid fights
@@ -83,7 +82,6 @@ export interface RunResult {
   o2AtTurnaround: number | null;   // O2 left the moment ascent began (margin metric)
   depthAtTurnaround: number | null;
   minO2: number;
-  minSanity: number;
   lootGold: number;            // Mira value of what was brought up
   goldEarned: number;          // event gold banked
   bends: number | null;        // bends type at ascent (0..4)
@@ -136,7 +134,7 @@ export function playDive(state0: any, opts: PlayOpts): RunResult {
   const rec: RunResult = {
     zoneId: state0.run?.zoneId ?? '?', end: 'maxSteps', survived: false,
     startDepth, maxDepth: startDepth, turns: 0, o2AtTurnaround: null, depthAtTurnaround: null,
-    minO2: state0.run?.stats.oxygen ?? 0, minSanity: state0.run?.stats.sanity ?? 100,
+    minO2: state0.run?.stats.oxygen ?? 0,
     lootGold: 0, goldEarned: 0, bends: null, deathCause: null, combats: 0, lootItems: {}, steps: 0,
   };
   let state = state0;
@@ -148,7 +146,6 @@ export function playDive(state0: any, opts: PlayOpts): RunResult {
     if (state.run) {
       rec.maxDepth = Math.max(rec.maxDepth, state.run.currentDepth);
       rec.minO2 = Math.min(rec.minO2, state.run.stats.oxygen);
-      rec.minSanity = Math.min(rec.minSanity, state.run.stats.sanity);
       rec.turns = state.run.turn;
     }
 
@@ -220,7 +217,7 @@ export function playDive(state0: any, opts: PlayOpts): RunResult {
       if (sub.kind === 'nodeSelect') {
         const run = state.run;
         const reserve = ascentReserveO2(run.currentDepth, run.stats.nitrogen);
-        const mustGo = run.stats.oxygen <= reserve + opts.margin || run.stats.sanity <= 12 || run.stats.stamina <= 3 || rec.combats >= 14;
+        const mustGo = run.stats.oxygen <= reserve + opts.margin || run.stats.stamina <= 3 || rec.combats >= 14;
         const choices: any[] = sub.choices ?? [];
         const features: any[] = sub.features ?? [];
 
@@ -301,7 +298,7 @@ export function setupDive(zoneId: string, depthRange: [number, number] | null, o
 export interface Agg {
   label: string; zoneId: string; band: string; o2max: number; margin: number; n: number;
   survival: number; avgMaxDepth: number; avgTurns: number;
-  avgO2Turnaround: number; avgDepthTurnaround: number; avgMinSanity: number;
+  avgO2Turnaround: number; avgDepthTurnaround: number;
   avgLootGold: number; medLootGold: number; avgGoldEarned: number;
   deaths: Record<string, number>; bends: Record<string, number>; ends: Record<string, number>;
   combats: number; drops: Record<string, number>;
@@ -317,7 +314,7 @@ export function runCell(
     try { r = playDive(setupDive(zoneId, depthRange, o2max), { margin, fightForLoot: fight }); }
     catch (e: any) {
       r = { zoneId, end: 'error:' + (e?.message ?? e).slice(0, 80), survived: false, startDepth: 0, maxDepth: 0,
-        turns: 0, o2AtTurnaround: null, depthAtTurnaround: null, minO2: 0, minSanity: 0, lootGold: 0,
+        turns: 0, o2AtTurnaround: null, depthAtTurnaround: null, minO2: 0, lootGold: 0,
         goldEarned: 0, bends: null, deathCause: 'harness', combats: 0, lootItems: {}, steps: 0 } as RunResult;
     }
     results.push(r);
@@ -341,7 +338,6 @@ export function runCell(
     avgTurns: avg(results.map((r) => r.turns)),
     avgO2Turnaround: avg(turnarounds.map((r) => r.o2AtTurnaround as number)),
     avgDepthTurnaround: avg(turnarounds.map((r) => r.depthAtTurnaround as number)),
-    avgMinSanity: avg(results.map((r) => r.minSanity)),
     avgLootGold: avg(survived.map((r) => r.lootGold)),
     medLootGold: med,
     avgGoldEarned: avg(survived.map((r) => r.goldEarned)),

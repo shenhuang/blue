@@ -38,7 +38,6 @@ export function StatusBar({ run }: Props) {
         <StatPill label="体力" value={stats.stamina} max={staminaMax} tint="green" />
         <StatPill label="氧气" value={stats.oxygen} max={oxygenMax} tint="cyan" suffix=" 回合" />
         <StatPill label="氮气" value={stats.nitrogen} max={100} tint="yellow" invert />
-        <StatPill label="理智" value={stats.sanity} max={100} tint="violet" />
         <StatPill label="电量" value={run.power} max={run.powerMax} tint="amber" />
       </div>
       {badges.length > 0 && (
@@ -77,7 +76,7 @@ interface PillProps {
   label: string;
   value: number;
   max: number;
-  tint: 'green' | 'cyan' | 'yellow' | 'violet' | 'amber';
+  tint: 'green' | 'cyan' | 'yellow' | 'amber';
   suffix?: string;
   invert?: boolean;
 }

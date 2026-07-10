@@ -4,7 +4,6 @@
   "depth": 240,
   "seed": 1,
   "zoneId": "zone.blue_caves",
-  "stats": { "sanity": 80 },
   "choices": ["check_bc"],
   "expect": {
     "steps": 1,

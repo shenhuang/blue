@@ -4,9 +4,6 @@
   "depth": 160,
   "seed": 1,
   "zoneId": "zone.open_midwater",
-  "stats": {
-    "sanity": 95
-  },
   "choices": [
     "swim_up_closer"
   ],
@@ -14,10 +11,8 @@
     "steps": 1,
     "errors": [],
     "finalPhase": "dive",
-    "checkPassed": true,
     "statsDelta": {
-      "oxygen": -3,
-      "sanity": -4
+      "oxygen": -3
     }
   }
 }

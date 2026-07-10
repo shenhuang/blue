@@ -4,9 +4,6 @@
   "seed": 1,
   "zoneId": "zone.hydrothermal_vent",
   "depth": 185,
-  "stats": {
-    "sanity": 60
-  },
   "choices": [
     "tap_all_over"
   ],
@@ -15,8 +12,7 @@
     "errors": [],
     "finalPhase": "dive",
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -3
+      "oxygen": -2
     },
     "loreAdded": [
       "lore.vent.the_crust"

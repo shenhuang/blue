@@ -225,7 +225,6 @@ export type EquipmentEffect =
   | { kind: 'staminaMaxBonus'; value: number }
   | { kind: 'oxygenMaxBonus'; value: number }
   | { kind: 'physicalArmor'; value: number }
-  | { kind: 'sanityResist'; value: number }
   // 潜服保温（温度系统接线·2026-06-25）：累进 EquipmentStats.insulation，喂 engine/equipment.ts::loadoutInsulation
   // → 温度纯函数（intensity − insulation = 净暴露·见 engine/temperature.ts）。本棒单标量·不分热/冷保温（未来可拆）。
   // 当前无装备声明此 kind（保温全走 BASELINE_INSULATION 兜底）——给未来热/冷保温服的机制挂点（数值待作者调）。
@@ -280,7 +279,7 @@ export interface ConsumableMeta {
   usableIn: ('port' | 'dive' | 'combat')[];
   /** 使用效果（直接套用 Outcome 子集） */
   effectOnUse: {
-    deltas?: Partial<Record<'stamina' | 'oxygen' | 'sanity' | 'nitrogen', number>>;
+    deltas?: Partial<Record<'stamina' | 'oxygen' | 'nitrogen', number>>;
     text?: string;
   };
   /**

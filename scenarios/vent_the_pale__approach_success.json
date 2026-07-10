@@ -4,12 +4,11 @@
   "seed": 1,
   "zoneId": "zone.vent_trench",
   "depth": 95,
-  "stats": { "sanity": 80 },
   "choices": ["approach_slowly"],
   "expect": {
     "steps": 1,
     "errors": [],
     "finalPhase": "dive",
-    "statsDelta": { "oxygen": -2, "sanity": -3 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

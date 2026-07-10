@@ -66,7 +66,7 @@ assert(
   revealAttribution(state, mk('e', {
     kind: 'all',
     of: [
-      { kind: 'statAtLeast', stat: 'sanity', value: 1 },
+      { kind: 'statAtLeast', stat: 'stamina', value: 1 },
       { kind: 'hasEquipment', slot: 'tool' },
     ],
   })) === '潜水刀',
@@ -84,7 +84,7 @@ assert(
 assert(revealAttribution(state, mk('e')) === null, '无 visibleIf → 无归因（null）');
 // 负样本：纯数值门 → null（不是「你带了什么」）
 assert(
-  revealAttribution(state, mk('e', { kind: 'statAtLeast', stat: 'sanity', value: 1 })) === null,
+  revealAttribution(state, mk('e', { kind: 'statAtLeast', stat: 'stamina', value: 1 })) === null,
   '数值门 statAtLeast → 无归因（null）',
 );
 // 负样本：flag 门 → null

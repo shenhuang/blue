@@ -3,13 +3,11 @@
   "eventId": "midwater.the_still",
   "depth": 120,
   "seed": 1,
-  "sanity": 80,
   "choices": ["check_instruments"],
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
-    "statsDelta": { "oxygen": -1, "sanity": -3 }
+    "statsDelta": { "oxygen": -1 }
   }
 }

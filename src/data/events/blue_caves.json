@@ -141,10 +141,7 @@
           "label": "停下来看一会儿",
           "outcome": {
             "text": "你浮在水里，看着这片蓝。理智上你知道这是矿物折射。但好看。",
-            "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": 5
-            }
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -218,10 +215,7 @@
           "label": "把手伸进冷流里探一下",
           "outcome": {
             "text": "冷得指节发疼。再深一点，指尖碰到一个光滑的、不像石头的东西——你抽回了手。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -3
-            }
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -255,9 +249,6 @@
           "outcome": {
             "text": "刀走得很稳，一道一道，把编号刮得干干净净——像是刮的人不想被自己认出来。\n你下意识摸了摸自己带子上的编号。还在。",
             "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -4
-            },
             "loreEntry": "lore.bluecaves.others_before"
           }
         },
@@ -265,10 +256,7 @@
           "id": "leave_it",
           "label": "不碰它，往里走",
           "outcome": {
-            "text": "你绕开那条带子。游出去几米，才发现自己一直屏着呼吸。",
-            "deltas": {
-              "sanity": -2
-            }
+            "text": "你绕开那条带子。游出去几米，才发现自己一直屏着呼吸。"
           }
         }
       ]
@@ -291,20 +279,9 @@
         {
           "id": "read_current",
           "label": "用手感受水流方向",
-          "check": {
-            "stat": "sanity",
-            "dc": 14,
-            "onSuccess": {
-              "text": "右边的水有非常轻微的回流——意思是那边通向开阔。你选右边。",
-              "oxygenTurnCost": 1
-            },
-            "onFailure": {
-              "text": "两边的水都是死的。你猜了一边。一阵之后你发现这边在收窄。你折返。",
-              "oxygenTurnCost": 4,
-              "deltas": {
-                "sanity": -4
-              }
-            }
+          "outcome": {
+            "text": "右边的水有非常轻微的回流——意思是那边通向开阔。你选右边。",
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -320,10 +297,7 @@
           "label": "走右边",
           "outcome": {
             "text": "右边的水颜色更深。你跟着颜色走。",
-            "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -2
-            }
+            "oxygenTurnCost": 2
           }
         }
       ]
@@ -365,10 +339,7 @@
           "label": "什么也不动，只是看",
           "outcome": {
             "text": "你浮在中央。你想到——这个厅在没有人来的时候是什么样子的。\n你呼出一口气，气泡顺着石笋升起。",
-            "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": 8
-            }
+            "oxygenTurnCost": 2
           }
         }
       ]
@@ -390,25 +361,23 @@
       "options": [
         {
           "id": "camp_short",
-          "label": "短暂休整（3 回合，体力 +15，理智 +5）",
+          "label": "短暂休整（3 回合，体力 +15）",
           "outcome": {
             "text": "你卡住自己。听着自己的呼吸。三回合后再起身——膝盖松了一些。",
             "oxygenTurnCost": 3,
             "deltas": {
-              "stamina": 15,
-              "sanity": 5
+              "stamina": 15
             }
           }
         },
         {
           "id": "camp_long",
-          "label": "认真扎一会儿（6 回合，体力 +30，理智 +10，氮气 −5）",
+          "label": "认真扎一会儿（6 回合，体力 +30，氮气 −5）",
           "outcome": {
             "text": "你关掉灯。完全黑下来的时候，你才意识到自己一直没好好呼吸。\n等你重新打开灯，状态好多了。",
             "oxygenTurnCost": 6,
             "deltas": {
               "stamina": 30,
-              "sanity": 10,
               "nitrogen": -5
             }
           }
@@ -440,25 +409,10 @@
         {
           "id": "push_through",
           "label": "推开穿过去",
-          "check": {
-            "stat": "sanity",
-            "dc": 55,
-            "onSuccess": {
-              "text": "你伸手——是亿万只发光的小生物，被你的手分开。\n你穿过去的时候它们贴在你的护目镜上，又散开。",
-              "oxygenTurnCost": 1,
-              "deltas": {
-                "sanity": -3
-              },
-              "loreEntry": "lore.bluecaves.living_curtain"
-            },
-            "onFailure": {
-              "text": "你伸手——它们爬进你的面镜密封圈。\n你呛了一口水。等你稳下来，你忘了刚才是怎么过来的。",
-              "oxygenTurnCost": 3,
-              "deltas": {
-                "sanity": -10,
-                "stamina": -5
-              }
-            }
+          "outcome": {
+            "text": "你伸手——是亿万只发光的小生物，被你的手分开。\n你穿过去的时候它们贴在你的护目镜上，又散开。",
+            "oxygenTurnCost": 1,
+            "loreEntry": "lore.bluecaves.living_curtain"
           }
         },
         {
@@ -466,10 +420,7 @@
           "label": "贴着洞壁绕过去",
           "outcome": {
             "text": "你蹭着壁过去。它们没看你——也许它们没在看任何东西。",
-            "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -2
-            }
+            "oxygenTurnCost": 2
           }
         }
       ]
@@ -510,10 +461,7 @@
             "dc": 13,
             "onSuccess": {
               "text": "你的气泡完全停了几个回合。它转过头，又缩进岩缝。",
-              "oxygenTurnCost": 3,
-              "deltas": {
-                "sanity": -5
-              }
+              "oxygenTurnCost": 3
             },
             "onFailure": {
               "text": "你憋不住了。气泡漏出来——它扑了过来。",
@@ -527,9 +475,7 @@
           "outcome": {
             "text": "你倒着踢水。它没追，但你能感觉它在听。",
             "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -4,
-              "stamina": -3
+            "deltas": {"stamina": -3
             }
           }
         }
@@ -546,10 +492,6 @@
       ],
       "weight": 4,
       "cooldown": 6,
-      "sanityRange": [
-        0,
-        85
-      ],
       "title": "沉默的厅",
       "body": "你进入一个圆形的厅。\n灯关上一秒钟——\n你听不到自己的呼吸。也听不到水。也听不到任何东西。\n灯打开。一切回来。",
       "tone": "cosmic",
@@ -557,25 +499,10 @@
         {
           "id": "stay_a_moment",
           "label": "停留观察",
-          "hideCheck": true,
-          "check": {
-            "stat": "sanity",
-            "dc": 50,
-            "onSuccess": {
-              "text": "你逼自己再关一次灯。这次你听见了——非常远，像在水的另一边——有人在敲什么。\n你打开灯，离开。",
-              "oxygenTurnCost": 2,
-              "deltas": {
-                "sanity": -6
-              },
-              "loreEntry": "lore.bluecaves.silent_chamber"
-            },
-            "onFailure": {
-              "text": "你不知道你在这里待了多久。等回过神，氧气表已经掉了。",
-              "oxygenTurnCost": 5,
-              "deltas": {
-                "sanity": -12
-              }
-            }
+          "outcome": {
+            "text": "你逼自己再关一次灯。这次你听见了——非常远，像在水的另一边——有人在敲什么。\n你打开灯，离开。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.bluecaves.silent_chamber"
           }
         },
         {
@@ -583,10 +510,7 @@
           "label": "立刻穿过这个厅",
           "outcome": {
             "text": "你不停下。出来后你回头看——那个厅看起来很普通。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -3
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -630,8 +554,7 @@
               "text": "你卡了一下。气瓶顶住岩壁，进退不得。你慌掉半口气，才退出来，喘着。",
               "oxygenTurnCost": 2,
               "deltas": {
-                "stamina": -8,
-                "sanity": -2
+                "stamina": -8
               }
             }
           }
@@ -668,9 +591,6 @@
           "outcome": {
             "text": "你往下沉了一个身位。气泡还在升，从比你的灯更深的地方上来，节奏没变。你停住了，没有再往下。",
             "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -6
-            },
             "loreEntry": "lore.bluecaves.someone_below"
           }
         },
@@ -679,10 +599,7 @@
           "label": "告诉自己那是岩缝放的陈气，游开",
           "outcome": {
             "text": "你告诉自己，是岩缝在放积了很久的气。你转身游开。背后那串气泡还在按自己的节奏上来。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -3
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -722,10 +639,7 @@
             "dc": 13,
             "onSuccess": {
               "text": "你停掉所有动作，连灯都压在胸口。那只眼睛盯了你很久，然后腕一条一条缩回洞里。你倒退着离开。",
-              "oxygenTurnCost": 2,
-              "deltas": {
-                "sanity": -2
-              }
+              "oxygenTurnCost": 2
             },
             "onFailure": {
               "text": "你退得太急，脚蹼搅起一团沙。它把这当成了扑过来的东西——软身子从洞里弹出来。",
@@ -764,24 +678,10 @@
         {
           "id": "watch_it",
           "label": "再做一个动作，看准那半拍",
-          "check": {
-            "stat": "sanity",
-            "dc": 50,
-            "onSuccess": {
-              "text": "你慢慢地、清楚地比了一个手势。影子原封不动地学，每一次都迟那半拍——像隔着很厚的什么在传话。你记下了，把灯从墙上移开。",
-              "oxygenTurnCost": 2,
-              "deltas": {
-                "sanity": -6
-              },
-              "loreEntry": "lore.bluecaves.late_shadow"
-            },
-            "onFailure": {
-              "text": "你盯着它做了一个又一个动作，想抓住那半拍的差。等你回过神，不知道过了多久——影子和你的手早就对不上了。它在做你没做过的动作。",
-              "oxygenTurnCost": 5,
-              "deltas": {
-                "sanity": -12
-              }
-            }
+          "outcome": {
+            "text": "你慢慢地、清楚地比了一个手势。影子原封不动地学，每一次都迟那半拍——像隔着很厚的什么在传话。你记下了，把灯从墙上移开。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.bluecaves.late_shadow"
           }
         },
         {
@@ -789,10 +689,7 @@
           "label": "把灯从墙上移开，不看了",
           "outcome": {
             "text": "你把光柱从那面壁上拖开。影子散进黑里。你没有再回头照它。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -3
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -821,17 +718,13 @@
             "onSuccess": {
               "text": "你一把一把往上收。坠子上来了——一块公会的铅，裹着一只烂掉的手套。\n铅块底下，绳还接着往更深处去，磨得很细，断口是平的。是被人从下面割断的。",
               "oxygenTurnCost": 2,
-              "deltas": {
-                "sanity": -4
-              },
               "loreEntry": "lore.bluecaves.the_line"
             },
             "onFailure": {
               "text": "你拽。绳比一块铅该有的重——像下面也有什么东西在拽。你松了手。绳哧地滑回黑里，缝口冒出一点很旧的气。",
               "oxygenTurnCost": 2,
               "deltas": {
-                "stamina": -8,
-                "sanity": -4
+                "stamina": -8
               }
             }
           }
@@ -841,10 +734,7 @@
           "label": "不碰，记下这道缝往里走",
           "outcome": {
             "text": "你绕开那根绳。游出去一段，才发现自己一直在用眼角盯着它有没有动。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -2
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -871,9 +761,6 @@
           "outcome": {
             "text": "你蹬进那个球。鱼让开，又在你身后合上——有一瞬间四面八方全是白的、没有眼睛的身体，贴着你又不碰你。\n你顶出去。回头看，球又转了过来，对着你。",
             "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -6
-            },
             "loreEntry": "lore.bluecaves.blind_school"
           }
         },
@@ -882,10 +769,7 @@
           "label": "贴着洞壁慢慢绕开",
           "outcome": {
             "text": "你贴着壁绕。那个球跟着你转，始终把同一面留给你。直到水道拐弯，把它挡在身后。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -3
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -908,24 +792,10 @@
         {
           "id": "follow_up",
           "label": "跟着它升的方向走一段，看尽头",
-          "check": {
-            "stat": "sanity",
-            "dc": 50,
-            "onSuccess": {
-              "text": "你跟着那场倒着下的雪往上。它们全汇进洞顶一道缝，被吸进去，没有声音。\n是股上升的冷流，你告诉自己，只是比周围冷的水把碎屑托着走。你记下这道缝，离开。",
-              "oxygenTurnCost": 2,
-              "deltas": {
-                "sanity": -6
-              },
-              "loreEntry": "lore.bluecaves.wrong_down"
-            },
-            "onFailure": {
-              "text": "你跟着雪往上、再往上。等你停下，分不清哪头是回去的路了——你吐的气泡和那些白屑往同一个方向走。你照着浮力计才重新找到上面在哪。",
-              "oxygenTurnCost": 5,
-              "deltas": {
-                "sanity": -12
-              }
-            }
+          "outcome": {
+            "text": "你跟着那场倒着下的雪往上。它们全汇进洞顶一道缝，被吸进去，没有声音。\n是股上升的冷流，你告诉自己，只是比周围冷的水把碎屑托着走。你记下这道缝，离开。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.bluecaves.wrong_down"
           }
         },
         {
@@ -933,10 +803,7 @@
           "label": "闭上眼，只信浮力找上面",
           "outcome": {
             "text": "你闭上眼，让身体自己浮。再睁眼时白屑还在往上落，但你知道自己朝着哪。你不再看它们。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -3
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -963,8 +830,7 @@
             "text": "你逼自己往下。水裹着你，每一下都像在推一面软墙。压到某个深度，它忽然又松开了——下面是寻常的黑水，仿佛刚才那段从没存在。你回头照那段水，看不出任何分界。",
             "oxygenTurnCost": 3,
             "deltas": {
-              "stamina": -6,
-              "sanity": -8
+              "stamina": -6
             },
             "loreEntry": "lore.bluecaves.thick_water"
           }
@@ -974,10 +840,7 @@
           "label": "退回到水还正常的深度",
           "outcome": {
             "text": "你停下，慢慢退上去，直到每一蹬腿都重新推得动水。你在那条看不见的线上方停了一会儿，才接着找别的路。",
-            "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -3
-            }
+            "oxygenTurnCost": 2
           }
         }
       ]
@@ -1004,32 +867,15 @@
           "outcome": {
             "text": "你转过去，死盯着那片蓝。你盯着的整段时间里，它一动不动，大小分毫不差。\n直到你转开眼——就在转开的那一下，你对它的大小，不再有把握了。",
             "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -5
-            },
             "loreEntry": "lore.bluecaves.the_way_out"
           }
         },
         {
           "id": "mark_the_rim",
           "label": "在洞口边的岩上刻一道，记住它的大小",
-          "check": {
-            "stat": "sanity",
-            "dc": 50,
-            "onSuccess": {
-              "text": "你游到口边，在岩沿上刻一道深痕，正卡着那片蓝的边。\n有了这道痕，你就有了个能信的数。你带着它往里走。",
-              "oxygenTurnCost": 2,
-              "deltas": {
-                "sanity": -3
-              }
-            },
-            "onFailure": {
-              "text": "你刻好那道痕，回头核对——痕还在，可那片蓝比痕该框住的小了一圈。\n是你刻歪了。一定是你刻歪了。",
-              "oxygenTurnCost": 3,
-              "deltas": {
-                "sanity": -9
-              }
-            }
+          "outcome": {
+            "text": "你游到口边，在岩沿上刻一道深痕，正卡着那片蓝的边。\n有了这道痕，你就有了个能信的数。你带着它往里走。",
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -1037,10 +883,7 @@
           "label": "打定主意不再回头，往里游",
           "outcome": {
             "text": "你盯着前面的黑往里走，不再回头。\n身后那片蓝你看不见了——但你越往里，越觉得黑离你近了一点。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -4
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -1120,32 +963,15 @@
           "outcome": {
             "text": "你加快手脚奔那点光去。拐过石壁——光不在了。该亮着的地方是一面实心的岩壁，你的灯扫过去，什么也没有。\n你回头，光又在另一头亮起来了，还是那么远，还是那个颜色。在等你换个方向。",
             "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -5
-            },
             "loreEntry": "lore.bluecaves.the_glow"
           }
         },
         {
           "id": "douse_lamp",
           "label": "关掉自己的灯，看那点光的真样子",
-          "check": {
-            "stat": "sanity",
-            "dc": 48,
-            "onSuccess": {
-              "text": "你按灭头灯。黑里，那点光淡了下去，散成岩壁上一小片冷冷的磷光——是洞里那种自己会亮的东西，贴着石头长。\n是虫，是菌，你重新拧亮灯。是会发光的虫子，你对自己说，往里走，没再回头确认。",
-              "oxygenTurnCost": 2,
-              "deltas": {
-                "sanity": -4
-              }
-            },
-            "onFailure": {
-              "text": "你按灭头灯。黑里那点光没有淡——反而清楚了，也近了，近得不对，不是你刚才估的那么远。\n它不是一片，是一个点，悬在水里，没有贴着任何东西。你手忙脚乱去摸头灯开关，摸了三下才拧亮。亮起来时，前面的水是空的。",
-              "oxygenTurnCost": 4,
-              "deltas": {
-                "sanity": -10
-              }
-            }
+          "outcome": {
+            "text": "你按灭头灯。黑里，那点光淡了下去，散成岩壁上一小片冷冷的磷光——是洞里那种自己会亮的东西，贴着石头长。\n是虫，是菌，你重新拧亮灯。是会发光的虫子，你对自己说，往里走，没再回头确认。",
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -1153,10 +979,7 @@
           "label": "用自己的灯照着它，绕开往别处走",
           "outcome": {
             "text": "你把头灯死死对着那点光，侧身往另一条道退。\n你的灯照到哪儿，它就在哪儿的更远处亮着，始终停在你灯柱够不到的那一点上。直到水道一拐，把它关在身后。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -3
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -1182,9 +1005,6 @@
           "outcome": {
             "text": "你的手伸进钟口。里面是另一种水——更凉、更稠、说不清的滑。指尖碰到钟壁内侧，一层软的、活的东西，不是石头。你抽回手，那只钟轻轻晃了晃，没出一点声音。",
             "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -3
-            },
             "loreEntry": "lore.bluecaves.hells_bells"
           }
         },
@@ -1193,10 +1013,7 @@
           "label": "伸指叩一下钟壁，听个响",
           "outcome": {
             "text": "指节碰上钟壁。没有响——这么薄的壳，本该清脆地响一声的。声音被这层水吃得干干净净，只剩指骨里一点闷震。你忽然很想离开这儿。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -4
-            }
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -1230,9 +1047,7 @@
           "outcome": {
             "text": "你排掉一点气，脚先沉进去。白雾合到头顶，世界没了上下——再睁眼，你悬在一片空荡荡的蓝里，那片『地面』成了头顶的天。你在它底下，像一件落进了别人天空的东西。",
             "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -4,
-              "nitrogen": 2
+            "deltas": {"nitrogen": 2
             },
             "loreEntry": "lore.bluecaves.sulfur_cloud"
           }
@@ -1242,10 +1057,7 @@
           "label": "停在雾面上方，看那片『落叶』",
           "outcome": {
             "text": "你停下来看。落叶不动，枝桠不动，连你呼出的泡撞上雾面，都软软地散开、不肯钻进去。看得越久越觉得，那不是雾托着叶子，是叶子下头有什么，正托着这一整层雾。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -3
-            }
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -1358,9 +1170,6 @@
           "outcome": {
             "text": "你把灯凑到那只大颌前。牙是食肉的牙，比你手掌长。它朝着的方向，正是你进来的那条水路。你说不清它是被淹死在朝着出口的姿势，还是从那时起就一直这么等着。",
             "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -3
-            },
             "loreEntry": "lore.bluecaves.dry_bones"
           }
         },
@@ -1387,10 +1196,7 @@
           "label": "不碰，绕开这面墙走",
           "outcome": {
             "text": "你把灯从骨头上移开，绕着这面墙游过去。它们在黑里继续嵌着，朝着各自当年没跑成的方向。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -1
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -1444,10 +1250,7 @@
           "label": "不钻根，贴着旁边石壁绕远过去",
           "outcome": {
             "text": "你不碰那片根，贴着另一侧的石壁绕过去。多花了些气。根在你侧后方一直晃着，你没回头看第二眼。",
-            "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -1
-            }
+            "oxygenTurnCost": 2
           }
         }
       ]
@@ -1472,10 +1275,7 @@
           "label": "压低身子贴着底，让泥从背上落过去",
           "outcome": {
             "text": "你把自己压到最低，几乎贴着底，让那阵泥雨落在背上、慢慢过去。等水清回来，前面的路还在。慢，但你看得见。",
-            "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -1
-            }
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -1529,10 +1329,7 @@
           "label": "不翻，从壳滩上方游过去",
           "outcome": {
             "text": "你没去动那滩壳，从上面慢慢游过。鳍尖带起一小片，白壳浮起来又落下，无声无息。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -1
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -1576,10 +1373,7 @@
           "label": "扣住石壁，等它自己平下来再走",
           "outcome": {
             "text": "你扣住一块凸岩，由它一推一拽，不跟它较劲。涌慢慢小了——也可能只是你习惯了。等松了些，你才放手往里。",
-            "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -1
-            }
+            "oxygenTurnCost": 2
           }
         }
       ]
@@ -1602,24 +1396,10 @@
         {
           "id": "hold_still",
           "label": "停下不动，看那些须要够到哪里",
-          "check": {
-            "stat": "sanity",
-            "dc": 47,
-            "onSuccess": {
-              "text": "你停住，连气都放轻。那些须在你面前的水里探着、收着，没碰到你——它们够的是你搅起的那点水，是你身上化进水里的味道。是嗅，不是看。\n道理是这个道理。你还是等它们都缩回去，才敢动。",
-              "oxygenTurnCost": 2,
-              "deltas": {
-                "sanity": -3
-              },
-              "loreEntry": "lore.bluecaves.the_feelers"
-            },
-            "onFailure": {
-              "text": "你盯着那片须看得太久。它们越探越多，整面墙的白须一齐朝你够，慢慢地、准准地，往你这边收。\n你分不清是水在动还是它们在挪近。你蹬腿就退，撞了下顶，灯都晃了。",
-              "oxygenTurnCost": 3,
-              "deltas": {
-                "sanity": -8
-              }
-            }
+          "outcome": {
+            "text": "你停住，连气都放轻。那些须在你面前的水里探着、收着，没碰到你——它们够的是你搅起的那点水，是你身上化进水里的味道。是嗅，不是看。\n道理是这个道理。你还是等它们都缩回去，才敢动。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.bluecaves.the_feelers"
           }
         },
         {
@@ -1627,10 +1407,7 @@
           "label": "不看了，贴着对侧壁退出去",
           "outcome": {
             "text": "你把灯从那片白上移开，贴着对面的壁退。须够不到这么远——大概够不到。你退到拐角才转身。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -2
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -1653,24 +1430,10 @@
         {
           "id": "touch_it",
           "label": "伸手探那层平面",
-          "check": {
-            "stat": "sanity",
-            "dc": 47,
-            "onSuccess": {
-              "text": "你把手伸过去。那层一碰就乱，化成一片摇晃的雾，又慢慢抚平。\n是盐线——上面淡水，底下是从海里渗进来的咸水，两层不肯混，光在交界上拐了个弯。一面假的水面，悬在半水里。\n你知道了是什么，还是绕着它走，没敢从底下钻上去。",
-              "oxygenTurnCost": 2,
-              "deltas": {
-                "sanity": -3
-              },
-              "loreEntry": "lore.bluecaves.the_false_surface"
-            },
-            "onFailure": {
-              "text": "你朝那面亮平的『水面』伸手，手过去了，头也跟着想抬上去出水——\n没有出水。你头顶还是水，化开的、摇晃的水，一层下面又是一层。有那么一下，你不知道哪边是上。你乱蹬了几下才找回方向。",
-              "oxygenTurnCost": 4,
-              "deltas": {
-                "sanity": -9
-              }
-            }
+          "outcome": {
+            "text": "你把手伸过去。那层一碰就乱，化成一片摇晃的雾，又慢慢抚平。\n是盐线——上面淡水，底下是从海里渗进来的咸水，两层不肯混，光在交界上拐了个弯。一面假的水面，悬在半水里。\n你知道了是什么，还是绕着它走，没敢从底下钻上去。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.bluecaves.the_false_surface"
           }
         },
         {
@@ -1678,10 +1441,7 @@
           "label": "记住它，从底下绕过，不抬头",
           "outcome": {
             "text": "你认下那层假面，贴着底从它下方过去，眼睛盯着脚下的石头，不去看那片亮。过去了，背后那面镜子还平平地悬着。",
-            "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -1
-            }
+            "oxygenTurnCost": 2
           }
         }
       ]
@@ -1707,33 +1467,16 @@
           "outcome": {
             "text": "你把脸侧贴到洞口边，让那股凉一下下扫过来。它有拍子，比你的呼吸慢，比你的心跳慢，自顾自地，从底下某个你进不去的地方匀匀往外送。\n你贴得太久，凉到耳根。你撤开，那股气还在吹，不为谁停。",
             "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -3
-            },
             "loreEntry": "lore.bluecaves.the_breath"
           }
         },
         {
           "id": "block_it",
           "label": "用手堵住洞口，看那股气会不会停",
-          "check": {
-            "stat": "sanity",
-            "dc": 47,
-            "onSuccess": {
-              "text": "你把掌心严严地压上洞口。气在你手底下顶了一会儿，憋住，又从指缝里挤出来——是潮，是远处涌进来的水在窄道里被挤着，一来一回，自然得很。\n你松开手。它接着吹，跟你松手前一模一样。",
-              "oxygenTurnCost": 2,
-              "deltas": {
-                "sanity": -2
-              },
-              "loreEntry": "lore.bluecaves.the_breath"
-            },
-            "onFailure": {
-              "text": "你压住洞口。气憋了一下——然后停了。彻底停了，连水都静下来。\n你手底下那块石头，安安静静地等着你松手。你越等越慌，猛地抽回手。气『呼』地又来了，比刚才重，像憋了很久的一口。",
-              "oxygenTurnCost": 3,
-              "deltas": {
-                "sanity": -8
-              }
-            }
+          "outcome": {
+            "text": "你把掌心严严地压上洞口。气在你手底下顶了一会儿，憋住，又从指缝里挤出来——是潮，是远处涌进来的水在窄道里被挤着，一来一回，自然得很。\n你松开手。它接着吹，跟你松手前一模一样。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.bluecaves.the_breath"
           }
         },
         {
@@ -1741,10 +1484,7 @@
           "label": "不碰，离那个洞远点走",
           "outcome": {
             "text": "你绕开那个小洞，从水道另一边过去。那股凉一直够着你的脚后跟，到拐弯才断。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -1
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -1770,33 +1510,16 @@
           "outcome": {
             "text": "你顺着印往里。鳍沟、掌印，一前一后，匀匀地朝深处去，像谁不慌不忙地往里走。\n走了十几米，印还在，还是新的，还是朝里。你停下——再往里，灯就够不着回头的光了。你没接着跟。",
             "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -3
-            },
             "loreEntry": "lore.bluecaves.fresh_silt"
           }
         },
         {
           "id": "press_beside",
           "label": "在旁边按一个自己的掌印，比一比",
-          "check": {
-            "stat": "sanity",
-            "dc": 47,
-            "onSuccess": {
-              "text": "你在那个掌印边上，把自己的手按进灰里。一样大，一样深。\n静水里的印能存很久，你告诉自己，这也许是上一拨人留的，灰只是看着新。两个掌印并排在灰里，分不出哪个先。\n你抽回手，没去想另一个是谁按的。",
-              "oxygenTurnCost": 2,
-              "deltas": {
-                "sanity": -3
-              },
-              "loreEntry": "lore.bluecaves.fresh_silt"
-            },
-            "onFailure": {
-              "text": "你把手按进那个印边上的灰里。抬手时，你那个印——边塌了，灰漫回去，慢慢平了。\n旁边那个还在。利利的边，没塌，像刚按下。你盯着它，它一点要塌的意思都没有。你把手缩回胸口。",
-              "oxygenTurnCost": 3,
-              "deltas": {
-                "sanity": -8
-              }
-            }
+          "outcome": {
+            "text": "你在那个掌印边上，把自己的手按进灰里。一样大，一样深。\n静水里的印能存很久，你告诉自己，这也许是上一拨人留的，灰只是看着新。两个掌印并排在灰里，分不出哪个先。\n你抽回手，没去想另一个是谁按的。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.bluecaves.fresh_silt"
           }
         },
         {
@@ -1804,10 +1527,7 @@
           "label": "不碰那串印，从旁边绕过去",
           "outcome": {
             "text": "你贴着另一侧的壁，绕开那串朝里的印走。眼睛没离开它们，直到拐过弯，看不见为止。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -2
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -1831,24 +1551,10 @@
         {
           "id": "look_down",
           "label": "停在井口，把那片蓝看到底",
-          "check": {
-            "stat": "sanity",
-            "dc": 50,
-            "onSuccess": {
-              "text": "你扣住井沿，逼自己只用眼睛看，不许身子动。\n是氮，你告诉自己，是深一点的水让人发飘、发傻、什么都想试；是光在干净水里散成的蓝，越深越纯，本来就好看。没有谁在下面等你。\n道理都对。你退回水道时手心全是汗，井口那片蓝在你身后，安安静静地，还开着。",
-              "oxygenTurnCost": 2,
-              "deltas": {
-                "sanity": -5
-              },
-              "loreEntry": "lore.bluecaves.the_deep_blue"
-            },
-            "onFailure": {
-              "text": "你往那片暖蓝里多看了一会儿。它不催你，只是开着、等着，蓝得让人放心。你松开了井沿——就下去一点点，看一眼就回来。\n等你回过神，井口在你头顶老高，水凉了，蓝却没近多少，还在更下面开着。你这才害怕，拼命往那口越来越小的光爬。",
-              "oxygenTurnCost": 5,
-              "deltas": {
-                "sanity": -12
-              }
-            }
+          "outcome": {
+            "text": "你扣住井沿，逼自己只用眼睛看，不许身子动。\n是氮，你告诉自己，是深一点的水让人发飘、发傻、什么都想试；是光在干净水里散成的蓝，越深越纯，本来就好看。没有谁在下面等你。\n道理都对。你退回水道时手心全是汗，井口那片蓝在你身后，安安静静地，还开着。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.bluecaves.the_deep_blue"
           }
         },
         {
@@ -1856,10 +1562,7 @@
           "label": "别看井里，蹬回水道贴着壁走",
           "outcome": {
             "text": "你把背朝着那口竖井，几下蹬回水道，扣住一块实石。\n指头底下是凉的、糙的、长在原地的石头。你没再往井那边看。那片蓝在你身后开着，你能感觉到它开着。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -3
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -1883,24 +1586,10 @@
         {
           "id": "mark_and_go",
           "label": "在断钟乳石上刻个记号，往前走，看还会不会回来",
-          "check": {
-            "stat": "sanity",
-            "dc": 50,
-            "onSuccess": {
-              "text": "你在断口上划了道印，记下，接着往前。\n水道弯、岔、收窄，又开。过了好一阵，前面的壁干干净净，没有你的记号——你出来了。是洞绕人，你告诉自己，黑里没有参照，谁都会把转过的弯走直、把走过的当新的。\n你没再回头找那道印还在不在。",
-              "oxygenTurnCost": 2,
-              "deltas": {
-                "sanity": -5
-              },
-              "loreEntry": "lore.bluecaves.the_same_passage"
-            },
-            "onFailure": {
-              "text": "你在断口上划了印，往前走。水道弯、岔、收窄——又开，断钟乳石、压着贝的石头、你划的那道印，就在眼前。\n你又回来了。你再走，再回来。第三回你不敢划印了，怕看见它已经划在那儿。",
-              "oxygenTurnCost": 5,
-              "deltas": {
-                "sanity": -12
-              }
-            }
+          "outcome": {
+            "text": "你在断口上划了道印，记下，接着往前。\n水道弯、岔、收窄，又开。过了好一阵，前面的壁干干净净，没有你的记号——你出来了。是洞绕人，你告诉自己，黑里没有参照，谁都会把转过的弯走直、把走过的当新的。\n你没再回头找那道印还在不在。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.bluecaves.the_same_passage"
           }
         },
         {
@@ -1908,10 +1597,7 @@
           "label": "不管它，挑一个岔口闷头走出去",
           "outcome": {
             "text": "你不再认路，逮着下一个岔口就钻，专挑没走过的那边，闷头往有光的方向去。\n绕了几绕，前面亮了一格。你没去想刚才那段为什么会回来，也没去想这次是真出来了，还是又一圈的开头。",
-            "oxygenTurnCost": 2,
-            "deltas": {
-              "sanity": -4
-            }
+            "oxygenTurnCost": 2
           }
         }
       ]
@@ -1965,10 +1651,7 @@
           "label": "摸着矿脉走，记一记它延伸的方向",
           "outcome": {
             "text": "你沿着那道灰白横纹游了一段。洞越深它越宽。你记住了它的走向。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": 2
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]
@@ -2060,10 +1743,7 @@
           "label": "贴着顶量一量这条廊还往里多远",
           "outcome": {
             "text": "你贴着廊顶游了一段，结壳一路没断。廊不往下，只往里，里到灯照不见头。\n你记下：来路有多长，回头的路就有多长。气还剩大半，掉头。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": 1
-            }
+            "oxygenTurnCost": 1
           }
         },
         {
@@ -2097,9 +1777,6 @@
           "outcome": {
             "text": "它还有电——他挑的本就是能扛的那种。一个男人的声音，平稳得像在念别人的病历，开口就是头足目。录的人早不在了，机器替他记着。你听完这一段，把录音笔收进怀里。",
             "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -1
-            },
             "loreEntry": "lore.voss.cephalopod.1",
             "setProfileFlags": ["flag.voss.recording_heard"]
           }
@@ -2109,10 +1786,7 @@
           "label": "别翻那窝，绕开走",
           "outcome": {
             "text": "你没去翻那个窝。让它替不在的收藏者守着。你贴着另一侧岩壁绕过去，那圈摆好的东西很快没进黑里。",
-            "oxygenTurnCost": 1,
-            "deltas": {
-              "sanity": -1
-            }
+            "oxygenTurnCost": 1
           }
         }
       ]

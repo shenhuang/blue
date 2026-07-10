@@ -13,7 +13,7 @@ interface Props {
 }
 
 /** check.stat → 徽章用词（①根治版·#109：徽章从数据渲染·label 纯 fiction·词表与旧 lint 一致 + 氮预留）。 */
-const STAT_LABEL: Record<string, string> = { sanity: '理智', stamina: '体力', oxygen: '氧气', nitrogen: '氮' };
+const STAT_LABEL: Record<string, string> = { stamina: '体力', oxygen: '氧气', nitrogen: '氮' };
 
 export function EventView({ state, eventId, onStateChange }: Props) {
   // 新事件 → 滚回顶部（作者 06-13）：事件链（continueEvent）换 eventId 但 EventView 不卸载，
@@ -82,7 +82,7 @@ export function EventView({ state, eventId, onStateChange }: Props) {
               return (
                 <li key={opt.id}>
                   <button
-                    className={`btn event-option ${opt.hallucination ? 'hallucination' : ''} ${!enabled ? 'disabled' : ''}`}
+                    className={`btn event-option ${!enabled ? 'disabled' : ''}`}
                     onClick={() => handleChoose(opt)}
                     disabled={!enabled}
                   >

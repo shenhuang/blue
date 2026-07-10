@@ -9,7 +9,7 @@ import { startCombat } from './combat';
 import { beginAscent } from './transitions';
 import { getItemDef } from './items';
 import { tickTurns } from './events';
-import { predatorApproaches, hallucinationApproaches, ALERT_AFTER_TRIGGER, ALERT_MIN_DEPTH } from './clarity';
+import { predatorApproaches, ALERT_AFTER_TRIGGER, ALERT_MIN_DEPTH } from './clarity';
 import {
   maybeSpawnStalker,
   maybeSpawnWeakStalker,
@@ -41,35 +41,6 @@ export function maybeApproachEncounter(state: GameState, target: DiveNode): Game
     text: '你举着的光招来了东西——它从黑里径直朝你来，没有半点犹豫。',
   });
   return startCombat(s, combatId);
-}
-
-/**
- * 低理智幻觉遭遇的注入钩子（感知重做 SPEC §2.3/§7① 形态 a·「改怪物」的怪物半边·mirror maybeApproachEncounter）。
- * 与真伏击是**平行的一根轴**：真伏击读警觉（predatorApproaches·你点灯/ping 招来的真危险），幻觉读低 san
- * （hallucinationApproaches·是你疯了、世界诚实）。只在没触发真遭遇时才轮到它（moveToNode 里放在 stalker/ambush
- * 之后·真遭遇会提前 return）——避免一步撞两场战斗。
- *
- * 复用 zone 现有 ambushEncounters 怪（不加新内容·SPEC §7① 只做钩子 + 一处示例 wiring），但开战时经
- * StartCombatOptions.hallucination 标 hallucination:true——**不改共享 def**，仅这一场软化结算（敌攻 0 体力伤·
- * 无战利品·暧昧收场·永不能把你打死）。选遭遇用确定性索引（不掷 RNG·保 mapgen/场景确定性·同真伏击）。
- * 高 san（控制组）→ hallucinationApproaches 恒假 → 返回 null → moveToNode 照常进节点（世界诚实·无幻觉怪）。
- * 只在事件/尸体节点触发（落脚点不 jump scare·同真伏击守则）。
- */
-export function maybeHallucinationEncounter(state: GameState, target: DiveNode): GameState | null {
-  const run = state.run;
-  if (!run) return null;
-  if (!hallucinationApproaches(run)) return null; // 高 san → 恒假（控制组）
-  if (target.kind !== 'event' && target.kind !== 'corpse') return null;
-  const pool = getZone(run.zoneId)?.ambushEncounters;
-  if (!pool || pool.length === 0) return null;
-  // 确定性选取（不消耗 Math.random）——用一个与真伏击**不同**的移位，免得低 san 深水里两根轴永远选同一只怪。
-  const combatId = pool[(run.visitedNodeIds.length + 1) % pool.length];
-  let s: GameState = appendLog(state, {
-    tone: 'uncanny',
-    // 读得出「从黑里长出来」的不真实感——不点破是幻觉（守欺骗轴的暧昧·北极星「你分不清是不是真的」）。
-    text: '黑水在你眼前拧了一下——有什么从那团黑里长出来，朝你逼过来。它的轮廓不太对，可你说不清哪里不对。',
-  });
-  return startCombat(s, combatId, undefined, { hallucination: true });
 }
 
 /**

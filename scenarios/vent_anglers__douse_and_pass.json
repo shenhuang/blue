@@ -4,9 +4,6 @@
   "seed": 1,
   "zoneId": "zone.vent_trench",
   "depth": 105,
-  "stats": {
-    "sanity": 60
-  },
   "choices": [
     "douse_and_pass"
   ],
@@ -15,8 +12,7 @@
     "errors": [],
     "finalPhase": "dive",
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -2
+      "oxygen": -2
     }
   }
 }

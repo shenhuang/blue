@@ -512,7 +512,7 @@ export function buildLegalActions(state: any): LegalAction[] {
 
 /**
  * 数值显示：四舍五入到 1 位小数·去尾零（step 摘要喂给 player-agent·别灌全精度浮点）。
- * 氧/精神/体力/氮 都在事件里按倍率分数累减 ⇒ 裸打会出「氮 0.9982382441532973」这种噪声（playtest 报告 ⑤）。
+ * 氧/体力/氮 都在事件里按倍率分数累减 ⇒ 裸打会出「氮 0.9982382441532973」这种噪声（playtest 报告 ⑤）。
  */
 function fmtStat(n: number): string {
   return Number.isFinite(n) ? String(Math.round(n * 10) / 10) : String(n);
@@ -528,7 +528,6 @@ export function buildSummary(state: any, _ctx: ReplayContext): string {
   parts.push(`第 ${run.turn} 回合`);
   parts.push(`深度 ${run.currentDepth}m`);
   parts.push(`O₂ ${fmtStat(stats.oxygen)}`);
-  parts.push(`精神 ${fmtStat(stats.sanity)}`);
   parts.push(`体力 ${fmtStat(stats.stamina)}`);
   // 氮债攒起来时显化状态（裸数字看不出「氮气是债」·playtest 报告④）：safe 只打数字·过 SAFE 阈给减压提示。
   const n2 = nitrogenStatus(stats.nitrogen);

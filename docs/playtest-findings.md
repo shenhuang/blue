@@ -190,7 +190,7 @@
 
 - ✅ **P2-4　`item.spare_tank` 未定义 — 已解决（#242·R 删死约定）**：起底＝双重失效——`upgrades.json` 气瓶库 Lv1 effect `unlockShopItem: item.spare_tank` 既引用未定义物品，且 `unlockShopItem` 机制**全仓无消费方**（itemId 只 `add` 进 `bonuses.unlockedShopItems` Set·Mira 货架走 `port.ts::SHOP_STOCK_*` 显式表·不读它）＝死通路。**作者拍 R**（删死约定·非 W 接线做实）：删该 effect + 描述去「解锁备用气瓶购买」+ 连同死的 `unlockShopItem` 通路一并删（types/engine/ui）；**不**补 spare_tank——「潜中回氧件」＝P2-2，有平衡分量，留作者将来 design 的新道具，不是 spare_tank。新 `scripts/check-upgrade-refs.mjs` 门把「升级引用悬空」整类钉成 regress 红（补 `check-data-schema` 不跨文件核引用的缺口）。
 
-扫描澄清（非 bug）：① lore 条目**内联定义在各 event 文件里**——「~90 条悬空 lore」是误报；② 47 条「未接好选项」全是对话/区域 schema——事件文件里真·未接好选项 = 0；③ DC：体力 12–50、理智 14–80、氧 30——满状态都 ≥35% 可过。
+扫描澄清（非 bug）：① lore 条目**内联定义在各 event 文件里**——「~90 条悬空 lore」是误报；② 47 条「未接好选项」全是对话/区域 schema——事件文件里真·未接好选项 = 0；③ DC：体力 12–50、~~理智 14–80~~〔理智 DC 已随理智移除失效·« 2026-07-10 »〕、氧 30——满状态都 ≥35% 可过。
 
 > 关联：roster 单薄（P0-2/P1-4/P2-3）对接 [[boss_enemy_design]]（boss/复杂敌人 + 六种生物系统 + 实装排期）——按区补原生敌人走那条线。
 
@@ -206,4 +206,4 @@
   - 报告落 `tools/playtest-sim/reports/`（已 gitignore·保留历史·前后对比）。
 - 也挂了 schedule `blue-playtest-sim`（每月 1 号兜底自动跑 + 任务列表里随时手动「Run now」）。
 - 沙箱 esbuild 由 run.sh 自适应处理（对齐 tsx 版本·见 [[blue_regress_sandbox]]）；Mac 本机直接 `npx tsx` 即可。
-- 决策器＝「理性谨慎玩家」：捞料、预估回程氧、躲必死/战斗、氧≤reserve+margin 或 sanity≤12 上浮；`fightForLoot` 切接战。改判定改 `player.ts`。
+- 决策器＝「理性谨慎玩家」：捞料、预估回程氧、躲必死/战斗、氧≤reserve+margin ~~或 sanity≤12~~〔理智已删·« 2026-07-10 »：该上浮触发失效·sim `player.ts` 需去掉 sanity 判据〕上浮；`fightForLoot` 切接战。改判定改 `player.ts`。

@@ -37,7 +37,7 @@ const TIERS: [string, string, [number, number] | null, boolean][] = [
   ['zone.blue_caves', 'trench T4 270-310', [270, 310], false],
 ];
 
-console.log('band'.padEnd(20), 'O2'.padEnd(4), 'surv'.padEnd(6), 'maxD'.padEnd(6), 'o2turn@d'.padEnd(11), 'loot'.padEnd(7), 'sanity'.padEnd(7), 'ends/deaths');
+console.log('band'.padEnd(20), 'O2'.padEnd(4), 'surv'.padEnd(6), 'maxD'.padEnd(6), 'o2turn@d'.padEnd(11), 'loot'.padEnd(7), 'ends/deaths');
 for (const [zone, band, dr, hunts] of TIERS) {
   for (const o2 of O2S) {
     const a: Agg = runCell(zone, band, dr, o2, 5, N, SEED);
@@ -50,7 +50,6 @@ for (const [zone, band, dr, hunts] of TIERS) {
       a.avgMaxDepth.toFixed(0).padEnd(6),
       o2t.padEnd(11),
       (a.avgLootGold.toFixed(0) + 'g').padEnd(7),
-      a.avgMinSanity.toFixed(0).padEnd(7),
       JSON.stringify(a.ends) + deathsStr + (a.combats ? ' combats=' + a.combats : ''),
     );
   }

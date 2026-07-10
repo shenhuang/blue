@@ -148,7 +148,7 @@
 - **奖励激进**：女王靠吞食回血、巢不停补 Spawn，龟缩只会让你耗氧而巢无损。设计上**逼玩家快速推进、把她逼进死角、在自己氧气耗光前耗干她的食源拿下**——这也顺手压住单潜攻坚的氧气预算，不让战斗拖沓。
 - **逃生阀门始终在**（无脚本死）：`flee`（需氧≥3）随时退出、拉开 graph 距离脱离。
 - **撤退与重来（作者 2026-07-06 定·接月相潮汐）**：撤退不清零——**一个月相之内回来，女王位置不变**（不用从①重推）；窗口**按总天数算、不按月相跳变**（离开时起算固定天数·公平·复用月相潮汐 `advanceDays`/总天数·见 `lunar-tide-system` 记忆）。**超过一个月相**没回 → 巢已恢复、女王退回起点、**整场重来**（Spawn/Warden 补满、卵室复原）。这不是「跨潜持久猎杀」（那条早否了），是**一个有时限的存档窗**：核心仍是单潜规模攻坚，只是允许你撤出补给、限期内接着打。
-- **理智**（可选·tunable）：绞肉机的目击可给轻微 `sanityDamagePerTurn`；默认以氧气为主压力轴，理智留小量或关闭，避免与感知重做的「低 san 幻觉轴」抢戏。
+- ~~**理智**（可选·tunable）：绞肉机的目击可给轻微 `sanityDamagePerTurn`；默认以氧气为主压力轴，理智留小量或关闭，避免与感知重做的「低 san 幻觉轴」抢戏。~~ « 2026-07-10 理智系统移除 »：`EnvironmentalPressure.sanityDamagePerTurn` 已删·压力轴现纯氧气（＋温度）。
 
 ---
 
@@ -256,9 +256,9 @@
 ## 14. Puffer 自爆 + 女王吼叫/信息素/产卵（2026-07-07 · Cowork 交互 · Opus · on main · 未提交 · 沙箱 regress 94/94 绿）
 
 **① Puffer 自爆 + 远程豁免（§9.9/E4·接 §13④ deferred·本 session 落地）。** 全 additive·不 bump SAVE：
-- 新 `EnemyDef.selfDestruct{staminaDamage,sanityDamage?,detonateText,defusedText?}`·武装门 `pufferArmed`（有 metamorphosis 仅 **adult** 态武装·否则恒武装）。
+- 新 `EnemyDef.selfDestruct{staminaDamage,detonateText,defusedText?}`（« 2026-07-10 理智系统移除 »：`sanityDamage?` 已删·Puffer 自爆现纯 `staminaDamage`）·武装门 `pufferArmed`（有 metamorphosis 仅 **adult** 态武装·否则恒武装）。
 - 三触发点（`combat.ts`/`combat-mechanics.ts::maybePufferMeleeDetonate`+`detonateSelfDestruct`）：**近战**命中 armed Puffer → 当场引爆·溅玩家（含被这一击打死·detonate 不 guard hp≤0）；**远程**击破 → 豁免不溅（走普通死亡·可选 defusedText）；**到点** → 其敌方回合自爆（`runEnemyTurn`·**先于**无攻击表 passive 守栏 quirk #231·否则 adult 空攻击表被跳过不炸）。战斗无位置 ⇒ AoE 落点＝玩家。
-- 新 `enemy.warren_puffer`（larva 弱咬→茧→adult 活炸弹·复用茧化计时器）+ 3 baseline（近战溅伤 / 远程豁免 / 到点自爆·判据＝`sanity` delta·抗数值调）。
+- 新 `enemy.warren_puffer`（larva 弱咬→茧→adult 活炸弹·复用茧化计时器）+ 3 baseline（近战溅伤 / 远程豁免 / 到点自爆·判据＝~~`sanity`~~→**`stamina`** delta〔« 2026-07-10 理智系统移除 »：自爆改判 staminaDamage〕·抗数值调）。
 
 **② 女王吼叫 / 信息素 + 产卵召唤（作者 2026-07-07 加·§5 扩展）。** 女王仍无攻击表；新行为在 `runEnemyTurn` 起手（`maybeWarrenPheromone` **先于** `maybeWarrenReinforce`·后者新产的卵不被同回合 forceHatch 秒孵＝留「凿破卵」窗）：
 - 新 `EnemyDef.warrenPheromones{roarChance,cocoonBoostChance?,detonatePuffers?,forceHatch?,roarText}`·**条件优先级择一**：② armed Puffer 存在→全部立即引爆；③ 否则有茧/卵→全部 `cocoonTurnsLeft→0` 立即孵化；① 否则 larva·带 metamorphosis 的单位掷 `cocoonBoostChance` 立即结茧（↑结茧率）。

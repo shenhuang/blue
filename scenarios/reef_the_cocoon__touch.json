@@ -14,8 +14,7 @@
       "lore.reef.the_cocoon"
     ],
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -3
+      "oxygen": -2
     }
   }
 }

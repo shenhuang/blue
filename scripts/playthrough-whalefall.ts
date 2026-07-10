@@ -81,7 +81,6 @@ const poolIds = (
     buildEventPool({
       zone: getZone(zoneId)!,
       depth,
-      sanity: 80,
       profileFlags: new Set(flags),
       triggeredEventIds: triggered,
       poiId,

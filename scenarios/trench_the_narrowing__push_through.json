@@ -3,7 +3,6 @@
   "eventId": "trench.the_narrowing",
   "depth": 130,
   "seed": 1,
-  "sanity": 60,
   "choices": ["push_through"],
   "expect": {
     "steps": 1,

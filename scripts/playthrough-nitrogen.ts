@@ -1,11 +1,10 @@
-// 氮气系统回归门（饱和模型 + 氮醉）·见 docs/spec/深海回响_氮气系统_SPEC.md §6
+// 氮气系统回归门（饱和模型）·见 docs/spec/深海回响_氮气系统_SPEC.md §6
 //   1. ceiling 随深单调、浅水封顶（< SAFE）、水面 = 0、最深仍 <100
 //   2. stepNitrogen 深处吸氮(趋 ceiling) / 水面排氮(趋 0) / clamp / 逐回合 == 一次性（守 stalker 一致性）
-//   3. narcosisSanityDrain 随氮、随深单调；零氮 / 水面 / 低氮 ≈ 0
 //
 // 跑法： npx tsx scripts/playthrough-nitrogen.ts
 
-import { N2, nitrogenCeiling, stepNitrogen, narcosisSanityDrain } from '../src/engine/nitrogen';
+import { N2, nitrogenCeiling, stepNitrogen } from '../src/engine/nitrogen';
 import { makeHarness, type PtAssert } from './lib/pt';
 
 const pt = makeHarness('氮气系统回归门');
@@ -34,14 +33,5 @@ for (let i = 0; i < 6; i++) perTurn = stepNitrogen(perTurn, 42, 1);
 const oneShot = stepNitrogen(30, 42, 6);
 assert(near(perTurn, oneShot, 1e-9), '逐回合 tick ×6 == 一次性 tick(6)（定深·守 stalker 一致性）');
 L(`  逐回合=${perTurn.toFixed(6)} 一次性=${oneShot.toFixed(6)} ✓`);
-
-// ── 3. 氮醉扣理智 ──
-L('========== 3. narcosisSanityDrain ==========');
-assert(near(narcosisSanityDrain(0, 100, 5), 0), '零氮 → 无氮醉');
-assert(near(narcosisSanityDrain(90, 0, 5), 0), '水面（深度 0）→ 无氮醉');
-assert(narcosisSanityDrain(90, 100, 5) > narcosisSanityDrain(50, 100, 5), '同深 · 氮越高扣越多');
-assert(narcosisSanityDrain(90, 180, 5) > narcosisSanityDrain(90, 100, 5), '同氮 · 越深扣越多');
-assert(narcosisSanityDrain(20, 60, 1) < 0.1, '低氮浅处氮醉极轻');
-L(`  N90@100m/5t = ${narcosisSanityDrain(90, 100, 5).toFixed(2)} 理智`);
 
 pt.done();

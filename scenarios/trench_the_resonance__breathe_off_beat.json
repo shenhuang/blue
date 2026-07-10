@@ -4,12 +4,11 @@
   "depth": 230,
   "seed": 1,
   "zoneId": "zone.blue_caves",
-  "stats": { "sanity": 80 },
   "choices": ["breathe_off_beat"],
   "expect": {
     "steps": 1,
     "errors": [],
     "finalPhase": "dive",
-    "statsDelta": { "oxygen": -2, "sanity": -2 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

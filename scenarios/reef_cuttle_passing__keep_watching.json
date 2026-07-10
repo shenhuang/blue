@@ -9,6 +9,6 @@
     "finalPhase": "dive",
     "errors": [],
     "loreAdded": ["lore.reef_shallows.the_passing"],
-    "statsDelta": { "oxygen": -4, "sanity": -3 }
+    "statsDelta": { "oxygen": -4 }
   }
 }

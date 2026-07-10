@@ -4,9 +4,6 @@
   "seed": 1,
   "zoneId": "zone.trench",
   "depth": 70,
-  "stats": {
-    "sanity": 60
-  },
   "choices": [
     "bypass_with_reel"
   ],
@@ -15,8 +12,7 @@
     "errors": [],
     "finalPhase": "dive",
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": 1
+      "oxygen": -2
     }
   }
 }

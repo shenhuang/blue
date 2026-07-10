@@ -4,7 +4,6 @@
   "depth": 190,
   "seed": 1,
   "zoneId": "zone.vent_trench",
-  "stats": { "sanity": 80 },
   "choices": ["back_up_wait"],
   "expect": {
     "steps": 1,

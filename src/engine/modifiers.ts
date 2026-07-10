@@ -2,7 +2,7 @@
 //
 // 消费点全部走 computeModifiers，引擎内禁止散读 run.injuries（check-boundaries 规则四）：
 //   - engine/combat.ts：行动消耗（costStamina/costOxygenTurns ×mult·向上取整）、行动可用性、
-//     敌攻理智结算（sd × sanityTakenMult）、回合开始 staminaTickPerTurn、clamp 上限。
+//     回合开始 staminaTickPerTurn、clamp 上限。
 //   - engine/dive-move.ts：移动 tick 氧耗 ×o2CostMult、洋流额外消耗 ×mult。
 //   - effectiveStaminaMax：体力上限派生（staminaMaxDelta 与装备加成同点折算——装备加成在
 //     createNewRun 烤进 run.staminaMax，负伤是 run 中途发生的债，故在读点叠）。
@@ -21,7 +21,6 @@ export function computeModifiers(run: RunState): DerivedModifiers {
   const m: DerivedModifiers = {
     staminaCostMult: 1,
     o2CostMult: 1,
-    sanityTakenMult: 1,
     staminaMaxDelta: 0,
     staminaTickPerTurn: 0,
     scentTrail: false,
@@ -34,7 +33,6 @@ export function computeModifiers(run: RunState): DerivedModifiers {
     if (!eff) continue;
     if (eff.staminaCostMult !== undefined) m.staminaCostMult *= eff.staminaCostMult;
     if (eff.o2CostMult !== undefined) m.o2CostMult *= eff.o2CostMult;
-    if (eff.sanityTakenMult !== undefined) m.sanityTakenMult *= eff.sanityTakenMult;
     if (eff.staminaMaxDelta) m.staminaMaxDelta += eff.staminaMaxDelta;
     if (eff.staminaTickPerTurn) m.staminaTickPerTurn += eff.staminaTickPerTurn;
     if (eff.scentTrail) m.scentTrail = true;

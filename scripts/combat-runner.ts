@@ -146,7 +146,6 @@ function printHelp() {
 支持的 flag：
   --stamina <n>       起始 stamina（默认满状态）
   --oxygen <n>        起始 oxygen
-  --sanity <n>        起始 sanity
   --nitrogen <n>      起始 nitrogen
   --depth <n>         起始 depth
   --zone <id>         起始 zoneId
@@ -179,12 +178,12 @@ function renderTurn(t: CombatTurnSnapshot): string[] {
     lines.push(`  [${l.actor}] ${l.text}`);
   }
   const dp = t.playerStatsDelta;
-  const parts = (['stamina', 'oxygen', 'sanity', 'nitrogen'] as const)
+  const parts = (['stamina', 'oxygen', 'nitrogen'] as const)
     .filter((k) => dp[k] !== undefined)
     .map((k) => `${k} ${(dp[k] as number) >= 0 ? '+' : ''}${dp[k]}`);
   if (parts.length > 0) lines.push(`  player Δ: ${parts.join(', ')}`);
   lines.push(
-    `  player: HP=${t.playerStatsAfter.stamina.toFixed(0)} O2=${t.playerStatsAfter.oxygen.toFixed(1)} San=${t.playerStatsAfter.sanity.toFixed(0)} N2=${t.playerStatsAfter.nitrogen.toFixed(1)}`,
+    `  player: HP=${t.playerStatsAfter.stamina.toFixed(0)} O2=${t.playerStatsAfter.oxygen.toFixed(1)} N2=${t.playerStatsAfter.nitrogen.toFixed(1)}`,
   );
   const enemyParts = t.enemiesAfter.map(
     (e) =>
@@ -204,9 +203,9 @@ function renderSummary(r: CombatScenarioResult): string[] {
   lines.push(`  outcome:         ${s.outcome}`);
   lines.push(`  turnsElapsed:    ${s.turnsElapsed}`);
   lines.push(
-    `  final stats:     HP=${s.finalHp.toFixed(0)} O2=${s.finalOxygen.toFixed(1)} San=${s.finalSanity.toFixed(0)} N2=${s.finalNitrogen.toFixed(1)}`,
+    `  final stats:     HP=${s.finalHp.toFixed(0)} O2=${s.finalOxygen.toFixed(1)} N2=${s.finalNitrogen.toFixed(1)}`,
   );
-  const parts = (['stamina', 'oxygen', 'sanity', 'nitrogen'] as const)
+  const parts = (['stamina', 'oxygen', 'nitrogen'] as const)
     .filter((k) => s.statsDelta[k] !== undefined)
     .map((k) => `${k} ${(s.statsDelta[k] as number) >= 0 ? '+' : ''}${s.statsDelta[k]}`);
   lines.push(`  stats Δ (total): ${parts.length > 0 ? parts.join(', ') : '(无变化)'}`);
@@ -300,14 +299,12 @@ function buildInput(args: CliArgs): CombatScenarioInput {
   if (enemyList && enemyList.length > 0) input.enemyDefIds = [...enemyList];
 
   // stats
-  const stats: Partial<{ stamina: number; oxygen: number; sanity: number; nitrogen: number }> = {};
+  const stats: Partial<{ stamina: number; oxygen: number; nitrogen: number }> = {};
   const stamina = flagNumber(args, '--stamina');
   const oxygen = flagNumber(args, '--oxygen');
-  const sanity = flagNumber(args, '--sanity');
   const nitrogen = flagNumber(args, '--nitrogen');
   if (stamina !== undefined) stats.stamina = stamina;
   if (oxygen !== undefined) stats.oxygen = oxygen;
-  if (sanity !== undefined) stats.sanity = sanity;
   if (nitrogen !== undefined) stats.nitrogen = nitrogen;
   if (Object.keys(stats).length > 0) input.stats = stats;
 
@@ -521,9 +518,8 @@ function handleShowEnemy(args: CliArgs) {
   console.log(`flee: ${info.fleeThresholdDescription}`);
   console.log(`attacks:`);
   for (const a of info.attackSummary) {
-    const sd = a.sanityDamage ? `, sanity=${a.sanityDamage[0]}-${a.sanityDamage[1]}` : '';
     console.log(
-      `  - ${a.id.padEnd(18)} ${a.name.padEnd(10)} ${a.damageType.padEnd(9)} dmg=${a.damage[0]}-${a.damage[1]}${sd} w=${a.weight}`,
+      `  - ${a.id.padEnd(18)} ${a.name.padEnd(10)} ${a.damageType.padEnd(9)} dmg=${a.damage[0]}-${a.damage[1]} w=${a.weight}`,
     );
     console.log(`      "${a.description}"`);
   }

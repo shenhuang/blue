@@ -70,11 +70,10 @@
             "weight": 2
           },
           {
-            "id": "mycelial_queen.enraged_sanity",
+            "id": "mycelial_queen.enraged_wail",
             "name": "[待过稿] 绝嗣哀鸣",
-            "damageType": "sanity",
-            "sanityDamage": [5, 10],
-            "damage": [0, 0],
+            "damageType": "physical",
+            "damage": [5, 10],
             "description": "[待过稿] 一种低频的哀鸣从它喉咙里溢出来，你的脑子里突然空了一块。",
             "weight": 1
           }
@@ -91,16 +90,14 @@
         },
         {
           "id": "mycelial_queen.sonic_burst",
-          "name": "[待过稿] 声呐致幻",
-          "damageType": "sanity",
-          "damage": [0, 0],
-          "sanityDamage": [3, 6],
+          "name": "[待过稿] 声呐冲击",
+          "damageType": "physical",
+          "damage": [3, 6],
           "description": "[待过稿] 它发出一声超出你听力范围的鸣叫——你没听到什么，但你感觉到了，像是什么在你内耳里划破了什么。",
           "weight": 1
         }
       ],
       "physicalDamage": [5, 9],
-      "sanityDamage": [3, 6],
       "loot": {
         "guaranteed": [{ "itemId": "item.eel_skin", "qty": [1, 1], "weight": 1 }],
         "rolls": [{ "itemId": "item.coral_shard", "qty": [2, 4], "weight": 1 }],

@@ -20,8 +20,6 @@ export interface InjuryTierEffects {
   staminaCostMult?: number;
   /** 氧耗 ×（战斗 costOxygenTurns 与下潜移动 tick 同口径·向上取整） */
   o2CostMult?: number;
-  /** 理智承伤 ×（敌攻 sanityDamage 结算处） */
-  sanityTakenMult?: number;
   /** 体力上限 ±（与装备加成同点折算·见 modifiers.ts::effectiveStaminaMax） */
   staminaMaxDelta?: number;
   /** 每战斗回合体力增减（流血·重 = −2；负数＝流失） */
@@ -66,7 +64,6 @@ export interface ActiveInjury {
 export interface DerivedModifiers {
   staminaCostMult: number;
   o2CostMult: number;
-  sanityTakenMult: number;
   staminaMaxDelta: number;
   staminaTickPerTurn: number;
   scentTrail: boolean;

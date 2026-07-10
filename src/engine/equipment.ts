@@ -25,7 +25,6 @@ export interface EquipmentStats {
   oxygenMaxBonus: number;
   staminaMaxBonus: number;
   physicalArmor: number;
-  sanityResist: number;
   /** 潜服保温累计（温度系统·喂 loadoutInsulation→温度纯函数抵消洞强度·见 engine/temperature.ts）。 */
   insulation: number;
   lightRadius: number;
@@ -47,7 +46,7 @@ export interface EquipmentStats {
 
 export function emptyEquipmentStats(): EquipmentStats {
   return {
-    oxygenMaxBonus: 0, staminaMaxBonus: 0, physicalArmor: 0, sanityResist: 0, insulation: 0, lightRadius: 0,
+    oxygenMaxBonus: 0, staminaMaxBonus: 0, physicalArmor: 0, insulation: 0, lightRadius: 0,
     sonarPingCostReduction: 0, sonarScanRangeBonus: 0,
     lampEfficiency: 0, signatureReduction: 0,
     soundAbsorbBonus: 0, camoBonus: 0, powerMaxBonus: 0, weaponDamage: 0,
@@ -63,7 +62,6 @@ function addEffects(acc: EquipmentStats, effects: EquipmentEffect[], isBase: boo
       case 'oxygenMaxBonus': acc.oxygenMaxBonus += e.value; break;
       case 'staminaMaxBonus': acc.staminaMaxBonus += e.value; break;
       case 'physicalArmor': acc.physicalArmor += e.value; break;
-      case 'sanityResist': acc.sanityResist += e.value; break;
       case 'insulation': acc.insulation += e.value; break;
       case 'lightRadius': acc.lightRadius += e.value; break;
       case 'lampEfficiency': acc.lampEfficiency += e.value; break;

@@ -4,9 +4,6 @@
   "seed": 1,
   "zoneId": "zone.hydrothermal_vent",
   "depth": 185,
-  "stats": {
-    "sanity": 60
-  },
   "choices": [
     "float_above"
   ],

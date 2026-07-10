@@ -17,8 +17,7 @@
     "checkPassed": false,
     "statsDelta": {
       "stamina": -2,
-      "oxygen": -2,
-      "sanity": -6
+      "oxygen": -2
     }
   }
 }

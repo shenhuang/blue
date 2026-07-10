@@ -26,7 +26,7 @@ export type AiPattern =
   | 'observer'
   | 'crowd';
 
-export type DamageType = 'physical' | 'sanity' | 'electricity' | 'fire';
+export type DamageType = 'physical' | 'electricity' | 'fire';
 export type Weakness =
   | 'light'
   | 'sound'
@@ -41,7 +41,7 @@ export type VictoryPath = 'kill' | 'flee' | 'tame' | 'scare' | 'commune';
 // —— 敌人库元数据类型（敌人库 SPEC 支柱一·docs/spec/深海回响_敌人库_SPEC.md §2） ——
 
 /** 战斗生态位（与 aiPattern 正交：aiPattern=战斗 AI 行为；role=内容侧"这段需要什么样的威胁"）。草案词表·可增。 */
-export type EnemyRole = 'predator' | 'gatekeeper' | 'sanity' | 'swarm' | 'ambusher' | 'boss' | 'miniboss';
+export type EnemyRole = 'predator' | 'gatekeeper' | 'swarm' | 'ambusher' | 'boss' | 'miniboss';
 
 /** 粗档威胁。缺省时由 enemyLibrary 从 threat 数值派生（开放问题①·派生 + 可显式覆盖）。 */
 export type ThreatTier = 'low' | 'mid' | 'high';
@@ -83,8 +83,6 @@ export interface EnvironmentalPressure {
   oxygenDrainBonus?: number;
   /** 每回合额外体力流失 */
   staminaTickBonus?: number;
-  /** 每回合理智伤害 */
-  sanityDamagePerTurn?: number;
 }
 
 /** 背景/图鉴文本（喂未来图鉴 + 辅助判断场景契合·非机器过滤项·能过滤的信息一律走 bands/biomes/role）。 */
@@ -138,7 +136,6 @@ export interface EnemyDef {
 
   // —— 基础属性 ——
   hp: number;
-  sanityHp?: number; // 仅克苏鲁敌人
   armor: number;
   evasion: number;
   speed: number;
@@ -169,7 +166,6 @@ export interface EnemyDef {
 
   // —— 伤害与抗性 ——
   physicalDamage: [number, number];
-  sanityDamage?: [number, number];
   weakness?: Weakness[];
   immunity?: DamageType[];
 
@@ -323,8 +319,6 @@ export interface EnemyDef {
   selfDestruct?: {
     /** 自爆对玩家的体力伤（占位·defer-number-tuning）。 */
     staminaDamage: [number, number];
-    /** 可选：自爆附带理智伤（占位·缺省＝无理智伤）。 */
-    sanityDamage?: [number, number];
     /** 近战击破 / 到点自爆时推入 log 的叙事（克制冷短句·守剧透红线 quirk #117·不点古文明关联·§2）。 */
     detonateText: string;
     /** 远程「隔水拆除」击破时推入 log 的叙事（可选·缺省＝静默死亡）。 */
@@ -454,7 +448,6 @@ export interface EnemyAttack {
   name: string;
   damageType: DamageType;
   damage: [number, number];
-  sanityDamage?: [number, number];
   description: string; // 战斗叙事文本
   weight?: number; // AI 选用此攻击的权重
   /**
@@ -484,7 +477,6 @@ export interface EnemyInstance {
   instanceId: string;
   defId: string;
   hp: number;
-  sanityHp?: number;
   stance: EnemyStance;
   aggro: number; // 对玩家的仇恨度
   statuses: EnemyStatus[];
@@ -564,6 +556,5 @@ export interface EnemyParty {
   members: EnemyInstance[];
   joinRules?: {
     triggerOnNoise?: { threshold: number; addFromPool: string[]; max: number };
-    triggerOnSanity?: { threshold: number; addFromPool: string[]; max: number };
   };
 }

@@ -3,13 +3,11 @@
   "eventId": "vent.eelpout",
   "depth": 140,
   "seed": 1,
-  "sanity": 80,
   "choices": ["test_it"],
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
-    "statsDelta": { "oxygen": -2, "sanity": -4 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

@@ -3,13 +3,11 @@
   "eventId": "midwater.the_count",
   "depth": 110,
   "seed": 1,
-  "sanity": 80,
   "choices": ["try_to_remember"],
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
-    "statsDelta": { "oxygen": -1, "sanity": -2 }
+    "statsDelta": { "oxygen": -1 }
   }
 }

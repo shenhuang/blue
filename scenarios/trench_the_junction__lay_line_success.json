@@ -4,9 +4,7 @@
   "seed": 1,
   "zoneId": "zone.trench",
   "depth": 70,
-  "stats": {
-    "sanity": 60,
-    "stamina": 80
+  "stats": {"stamina": 80
   },
   "choices": [
     "lay_line_right"

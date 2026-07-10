@@ -34,7 +34,9 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // age = profile.day − diedOnDay 纯派生·SPEC §2.2）；形状变（reshape，非纯加字段）→ 按 quirk #99 不写迁移、bump 弃旧档。
 // 12→13（感知门·2026-07-05）：diveModifier.visibility:'clear'|'dark' → diveModifier.gate?:NodeGate（灯/声呐×隐藏/锁住）——
 // run.diveModifier 形状变（'dark'→{sense:'lamp',mode:'locked'}）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始。
-const SAVE_VERSION = 13;
+// 13→14（理智系统移除·2026-07-10）：删连续「理智」stat（run.stats 少一字段·原 0–100）+ 全套理智机制（战斗/事件/幻觉/氮醉）——
+// run.stats 形状变（少一字段）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始（「疯掉」改由地点缝 seam 二元门·见 types/dive.ts）。
+const SAVE_VERSION = 14;
 
 /** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile 用。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
@@ -218,7 +220,6 @@ export function createInitialStats(): Stats {
   return {
     stamina: 100,
     oxygen: 60, // 蓝鳍 Mk.I 基础值
-    sanity: 100,
     nitrogen: 0,
     thermalStress: 0, // 温度系统：起手无热应力（仅热/冷极洞累积·见 engine/temperature.ts）
   };
@@ -386,7 +387,6 @@ export function clampStats(stats: Stats, max: { stamina: number; oxygen: number 
   return {
     stamina: Math.max(0, Math.min(stats.stamina, max.stamina)),
     oxygen: Math.max(0, Math.min(stats.oxygen, max.oxygen)),
-    sanity: Math.max(0, Math.min(stats.sanity, 100)),
     nitrogen: Math.max(0, Math.min(stats.nitrogen, 100)),
     thermalStress: Math.max(0, Math.min(stats.thermalStress, 100)),
   };

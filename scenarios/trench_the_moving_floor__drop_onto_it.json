@@ -10,6 +10,6 @@
     "finalPhase": "dive",
     "errors": [],
     "loreAdded": ["lore.trench.the_moving_floor"],
-    "statsDelta": { "oxygen": -3, "sanity": -6 }
+    "statsDelta": { "oxygen": -3 }
   }
 }

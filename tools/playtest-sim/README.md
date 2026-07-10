@@ -12,7 +12,7 @@ bash tools/playtest-sim/run.sh --deep   # 额外全分档 sweep（慢·~2000 潜
 **改完平衡（掉率/氧/新内容/敌人）后跑一次**，看存活/刷子曲线/可达性有没有如预期变化。
 
 ## 文件
-- `player.ts` — 决策核（捞料·预估回程氧·躲必死/战斗·氧≤reserve+margin 或 sanity≤12 上浮；`fightForLoot` 切接战）。改判定逻辑改这里。
+- `player.ts` — 决策核（捞料·预估回程氧·躲必死/战斗·氧≤reserve+margin 上浮；`fightForLoot` 切接战）。改判定逻辑改这里。
 - `atlas.ts` — 每区 avoider vs fighter：存活/收益/战斗/掉率/敌人分布。
 - `sweep.ts` — 全区 × 深度档 × 4 氧档存活/氧余量扫描。
 - `fighter.ts` — 接战 farm 对照。

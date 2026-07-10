@@ -96,6 +96,13 @@ function pickName(seed: number): string {
 }
 
 /**
+ * 「疯狂上浮」死因常量（旧连续「理智」轴的收束死因·现由地点缝 seam 门复用·quirk #99 无迁移）：
+ * 进入未持 bypassCapability 能力的 seam 节点即以此死因 executeDeath（见 dive-move.ts::moveToNode）。
+ * 单一来源——别再在别处内联该字面量。
+ */
+export const MADNESS_ASCENT_CAUSE = '理智崩溃，疯狂上浮';
+
+/**
  * 死亡时调用。
  * 1) 把当前 run 快照成 DeathRecord 入 profile.deaths（diedOnDay = 当天·age 纯派生）
  * 2) 把已有 deaths 老化到当天（按 diedOnDay 派生 age·SPEC §2.2）

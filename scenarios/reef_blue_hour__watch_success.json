@@ -10,13 +10,11 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
     "loreAdded": [
       "lore.reef_deep.blue_hour"
     ],
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -5
+      "oxygen": -2
     }
   }
 }

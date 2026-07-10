@@ -1,5 +1,5 @@
 // 游戏全局状态
-// 与主 SPEC §3 四属性、§7 死亡与元进度对齐
+// 与主 SPEC §3 三属性、§7 死亡与元进度对齐
 
 import type { EquipmentSlot, DecoyKind } from './items';
 import type { DiveMap, NodeKind, PersistentCave, GateSense } from './dive';
@@ -8,14 +8,13 @@ import type { ActiveInjury } from './injuries';
 import type { PoiModifier } from './chart';
 import type { Lighthouse } from './lighthouse';
 
-/** 四属性 stat 名称（注意：氧气在战斗/事件中以"回合数"消耗） */
-export type Stat = 'stamina' | 'oxygen' | 'sanity' | 'nitrogen';
+/** stat 名称（注意：氧气在战斗/事件中以"回合数"消耗） */
+export type Stat = 'stamina' | 'oxygen' | 'nitrogen';
 
-/** 四属性即时数值 */
+/** 即时数值 */
 export interface Stats {
   stamina: number; // 0–staminaMax
   oxygen: number; // 0–oxygenMax（按"剩余回合数"计）
-  sanity: number; // 0–100
   nitrogen: number; // 0–100
   /**
    * 热应力（温度系统·热/冷双极局部环境债·0–100·见 engine/temperature.ts）。

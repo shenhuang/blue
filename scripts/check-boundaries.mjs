@@ -29,7 +29,7 @@
 //   （EditorApp·main.tsx 不扫）入口；把「dev 不进游戏主包/不揭整张图」从散文升成机制（dev工作台 SPEC §6）。
 //
 // 规则六：nitrogen 债务写口收窄（氮气单写口·quirk #128·仿规则四 run.injuries）。
-//   氮气债（深度/时间）的计算单点在 engine/nitrogen.ts（stepNitrogen/narcosis）+ ascent.ts（上升减压）。
+//   氮气债（深度/时间）的计算单点在 engine/nitrogen.ts（stepNitrogen）+ ascent.ts（上升减压）。
 //   nitrogen 到处被「读」（computeRequiredStops 等·合法）→ 只查「写」：就地变异 x.nitrogen=/+=/-=/++/--，
 //   或 stat 构造里内联 +/- 债务算术 nitrogen:<…±…>。白名单（nitrogen/ascent/events/state）外的
 //   src/engine 命中即违例（当前 0 处：step 走 stepNitrogen()、clamp 走 Math、fixture 只写 0）。
@@ -216,7 +216,7 @@ for (const file of gameFiles) {
 // `=(?!=)` 排除 == / === 比较；构造分支要求 `nitrogen:` 后同行出现 +/-（step 用 stepNitrogen()、clamp 用 Math·均不含 +/-）。
 const NITROGEN_MUT_RE = /\bnitrogen\s*(?:\+\+|--|[-+*/]?=(?!=))|\bnitrogen\s*:\s*[^,}\n]*[-+][^,}\n]*/;
 const NITROGEN_WHITELIST = new Set([
-  'src/engine/nitrogen.ts', // 氮气债数学单点（step / narcosis）
+  'src/engine/nitrogen.ts', // 氮气债数学单点（step）
   'src/engine/ascent.ts',   // 上升减压（nitrogen 债的另一正当写者）
   'src/engine/events.ts',   // 每回合 step 构造（走 stepNitrogen）
   'src/engine/state.ts',    // createNewRun 种子 + hydrate clamp
@@ -326,7 +326,7 @@ if (nitrogenViolations.length) {
     console.error(`  ${v.file}:${v.line}  直接写 / 内联算 nitrogen 债务`);
   }
   console.error(
-    `\n共 ${nitrogenViolations.length} 处。氮气债（步进/减压）走 engine/nitrogen.ts 的 stepNitrogen / narcosis` +
+    `\n共 ${nitrogenViolations.length} 处。氮气债（步进/减压）走 engine/nitrogen.ts 的 stepNitrogen` +
       `\n（+ ascent.ts 上升减压）；别在别处就地变异 nitrogen 或散写 +/- 债务算术（quirk #128·仿 run.injuries 规则四）。\n`,
   );
 }

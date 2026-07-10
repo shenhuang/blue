@@ -10,6 +10,6 @@
     "errors": [],
     "checkPassed": true,
     "combatTriggered": null,
-    "statsDelta": { "oxygen": -2, "sanity": -2 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

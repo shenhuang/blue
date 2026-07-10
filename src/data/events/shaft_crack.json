@@ -116,7 +116,7 @@
             "onFailure": {
               "text": "你卡在最窄那段，进退都动不了。一阵憋闷顶上来，你只能慢慢吐气、把自己一点点退回去，重来一次才挤过来。",
               "oxygenTurnCost": 4,
-              "deltas": { "stamina": -5, "sanity": -3 }
+              "deltas": { "stamina": -5 }
             }
           }
         },
@@ -158,8 +158,7 @@
             "dc": 13,
             "onSuccess": {
               "text": "你把气泡彻底停了几个回合。它在水里转着头，找不到落点，又慢慢盘回横缝深处。",
-              "oxygenTurnCost": 3,
-              "deltas": { "sanity": -5 }
+              "oxygenTurnCost": 3
             },
             "onFailure": {
               "text": "你憋不住，一串气泡漏出来。它顺着那点动静直扑过来。",
@@ -173,7 +172,7 @@
           "outcome": {
             "text": "你倒着退出它那段缝。它没追，但你下井的一路上，都觉得那段黑在听着你的气泡。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": -4, "stamina": -3 }
+            "deltas": {"stamina": -3 }
           }
         }
       ]
@@ -243,18 +242,9 @@
         {
           "id": "push_through",
           "label": "凭感觉摸着往下穿过去",
-          "check": {
-            "stat": "sanity",
-            "dc": 12,
-            "onSuccess": {
-              "text": "你闭着没用的眼睛，单凭手底缝壁的走向往下摸。等泥散开，方向没乱。",
-              "oxygenTurnCost": 2
-            },
-            "onFailure": {
-              "text": "黄雾里上下失了准。等你重新看清，已分不清这是来路还是去路，心口一阵发紧，手指在缝壁上攥得发白。",
-              "oxygenTurnCost": 3,
-              "deltas": { "sanity": -5 }
-            }
+          "outcome": {
+            "text": "你闭着没用的眼睛，单凭手底缝壁的走向往下摸。等泥散开，方向没乱。",
+            "oxygenTurnCost": 2
           }
         }
       ]
@@ -263,7 +253,6 @@
       "id": "shaftcrack.bottom_dark",
       "depthRange": [62, 78],
       "zoneTags": ["crack"],
-      "sanityRange": [0, 70],
       "weight": 4,
       "cooldown": 0,
       "title": "井底的横走",
@@ -275,8 +264,7 @@
           "label": "把灯举到最亮，照清楚横道尽头",
           "outcome": {
             "text": "你把灯调到最亮。光照过去，尽头还是只有更深一层的黑，连块实在的岩面都没还给你。你收回灯，没再往那边去。",
-            "oxygenTurnCost": 2,
-            "deltas": { "sanity": -4 }
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -284,21 +272,9 @@
           "label": "在岔口刻个记号，原路退回去",
           "outcome": {
             "text": "你在转角的岩面上刻下一道印，转身往回。回程那口气你算得很紧，没敢回头去看那段不反光的黑。",
-            "oxygenTurnCost": 2,
-            "deltas": { "sanity": -2 }
+            "oxygenTurnCost": 2
           }
-        },
-        {
-          "id": "follow_echo",
-          "label": "顺着那串太长的回声往里走",
-          "hallucination": true,
-          "outcome": {
-            "text": "你跟着那点比理该更久的回声往横道深处走了几步。等回过神，灯把你照在一面再普通不过的死壁前——什么都没有，气却白白少了一截。",
-            "oxygenTurnCost": 4,
-            "deltas": { "sanity": -6 }
-          }
-        }
-      ]
+        } ]
     }
   ]
 }

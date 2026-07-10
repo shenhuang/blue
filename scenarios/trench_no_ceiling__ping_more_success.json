@@ -3,13 +3,11 @@
   "eventId": "trench.no_ceiling",
   "depth": 140,
   "seed": 1,
-  "sanity": 80,
   "choices": ["ping_more"],
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
-    "statsDelta": { "oxygen": -2, "sanity": -2 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

@@ -46,7 +46,7 @@ function pretty(label: string) {
     log.push(
       `  [${label}] phase=${state.phase.kind} depth=${state.run.currentDepth}m ` +
         `O2=${state.run.stats.oxygen.toFixed(1)} N2=${state.run.stats.nitrogen.toFixed(1)} ` +
-        `San=${state.run.stats.sanity.toFixed(0)} HP=${state.run.stats.stamina.toFixed(0)} ` +
+        `HP=${state.run.stats.stamina.toFixed(0)} ` +
         `turn=${state.run.turn}`,
     );
   } else {

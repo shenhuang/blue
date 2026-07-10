@@ -4,13 +4,13 @@
 // 尽量全部可见/可过——这样剧情编辑器里「永远满足任何条件」是一个纯函数，可被 regress 守。
 //
 // 设计要点：
-//   1. 两层满足。**门槛满足**（depth/zone/sanity/prereqFlags/¬forbiddenFlags/¬event_seen）恒做；
-//      **选项揭示**（每个 option.visibleIf / check / hallucination）尽力做。
-//   2. 诚实暴露互斥。有些条件天生不能同时满足（幻觉 sanity≤50 vs 正常、statAtMost vs 高 DC、
+//   1. 两层满足。**门槛满足**（depth/zone/prereqFlags/¬forbiddenFlags/¬event_seen）恒做；
+//      **选项揭示**（每个 option.visibleIf / check）尽力做。
+//   2. 诚实暴露互斥。有些条件天生不能同时满足（statAtMost vs 高 DC、
 //      同一 flag 既被要求又被禁止）——这些进 conflicts[]，不假装全亮（守「越深越欺骗」设计轴）。
 //   3. 不复刻 evalCondition/isOptionVisible：本函数只「产出覆写」，真正判定仍由 events.ts 跑。
 //      由 playthrough-satisfy.ts 闭环校验：satisfyEvent → runEventScenario 首步无意外 hidden。
-//   4. 数据现状（2026-06：仅 hasEquipment{tool} + 少量 sanityRange/prereq/forbiddenFlags 在用）下
+//   4. 数据现状（2026-06：仅 hasEquipment{tool} + 少量 prereq/forbiddenFlags 在用）下
 //      多数事件本就默认可满足；本函数覆盖全 Condition 种类，为编辑器后续加门控选项留好机制。
 
 import type {
@@ -26,7 +26,6 @@ import type { ScenarioInput } from './eventScenario';
 import { getEventById } from './zones';
 import { createStarterLoadout } from './state';
 import { allItems } from './items';
-import { HALLUCINATION_VISIBLE_SANITY } from './clarity';
 
 type EquipSlot = keyof EquipmentLoadout; // 'tank' | 'suit' | 'light' | 'tool' | 'charm'
 
@@ -38,7 +37,6 @@ export interface EventGate {
   eventId: string;
   depthRange: [number, number];
   zoneTags: ZoneTag[];
-  sanityRange: [number, number] | null;
   prereqFlags: string[];
   forbiddenFlags: string[];
   prereqEventIds: string[];
@@ -61,7 +59,6 @@ export function eventGate(
     eventId: ev.id,
     depthRange: ev.depthRange,
     zoneTags: ev.zoneTags ?? [],
-    sanityRange: ev.sanityRange ?? null,
     prereqFlags: ev.prereqFlags ?? [],
     forbiddenFlags: ev.forbiddenFlags ?? [],
     prereqEventIds: ev.prereqEventIds ?? [],
@@ -78,7 +75,7 @@ export function eventGate(
 // ---------------------------------------------------------------------------
 
 export interface SatisfyConflict {
-  scope: 'flag' | 'stat' | 'depth' | 'sanity' | 'equipment' | 'prereqEvent';
+  scope: 'flag' | 'stat' | 'depth' | 'equipment' | 'prereqEvent';
   /** 人类可读的「为什么调和不了」。 */
   detail: string;
   /** 受影响的选项 id（如该互斥来自某个 option.visibleIf）。 */
@@ -92,13 +89,11 @@ export interface SatisfyResult {
   gate: EventGate;
   /** 调和不了的互斥点（逐条）。空 = 该事件所有门槛+选项可一次同时满足。 */
   conflicts: SatisfyConflict[];
-  /** 有意留作隐藏的选项 id（未开幻觉模式时的 hallucination 选项 / 因冲突无法揭示者）。regress 放行用。 */
+  /** 有意留作隐藏的选项 id（因冲突无法揭示者）。regress 放行用。 */
   intentionallyHidden: string[];
 }
 
 export interface SatisfyOptions {
-  /** 走幻觉分支：把 sanity 压到 ≤50 让 hallucination 选项现身（与正常 sanity 互斥）。默认 false。 */
-  hallucinations?: boolean;
   /** 让带检定的选项倾向通过：把对应属性顶到 dc+30。默认 true（只影响成功率，不影响可见性）。 */
   passChecks?: boolean;
   /** 固定 RNG 种子（默认 1·确定性）。 */
@@ -110,8 +105,6 @@ export interface SatisfyOptions {
 // ---------------------------------------------------------------------------
 // 条件收集器：把一棵 Condition 树摊平成「需要的状态」累加器
 // ---------------------------------------------------------------------------
-
-// 幻觉「可见层」阈值统一收口到 clarity.ts::HALLUCINATION_VISIBLE_SANITY（原局部 HALLUCINATION_SANITY_MAX 已并入·别再各写字面量 50）
 
 interface Accum {
   requiredFlags: Set<string>;
@@ -255,7 +248,7 @@ function equipInstanceForSlot(slot: EquipSlot): EquipmentInstance {
 // 主函数
 // ---------------------------------------------------------------------------
 
-const ALL_STATS: Stat[] = ['stamina', 'oxygen', 'sanity', 'nitrogen'];
+const ALL_STATS: Stat[] = ['stamina', 'oxygen', 'nitrogen'];
 
 export function satisfyEvent(eventId: string, opts: SatisfyOptions = {}): SatisfyResult {
   const passChecks = opts.passChecks ?? true;
@@ -273,7 +266,6 @@ export function satisfyEvent(eventId: string, opts: SatisfyOptions = {}): Satisf
         eventId,
         depthRange: [0, 0],
         zoneTags: [],
-        sanityRange: null,
         prereqFlags: [],
         forbiddenFlags: [],
         prereqEventIds: [],
@@ -294,32 +286,19 @@ export function satisfyEvent(eventId: string, opts: SatisfyOptions = {}): Satisf
   for (const f of gate.forbiddenFlags) acc.forbiddenFlags.add(f);
 
   // ----- 累加每个选项的可见性条件（只看 visibleIf；check 不影响可见性，稍后单独抬属性） -----
-  const wantHalluc = !!opts.hallucinations;
-  const hasHalluc = ev.options.some((o) => o.hallucination);
   for (const opt of ev.options) {
-    // 幻觉选项：要 sanity ≤ 50 才现身。不开幻觉模式则有意留它隐藏（非冲突·是模式）。
-    if (opt.hallucination && !wantHalluc) {
-      intentionallyHidden.push(opt.id);
-      continue;
-    }
     if (opt.visibleIf) collect(opt.visibleIf, acc);
   }
 
   // ----- check：让带检定选项倾向通过——抬属性地板，但不越过 statAtMost 的 cap（可见性优先于过检定） -----
-  // sanity 不在此抬：它由下方单独钉（与幻觉模式 ≤50 互斥·默认满血对 sanity 检定本就最有利）。
   if (passChecks) {
     for (const opt of ev.options) {
-      if (opt.hallucination && !wantHalluc) continue;
-      if (!opt.check || opt.check.stat === 'sanity') continue;
+      if (!opt.check) continue;
       const want = opt.check.dc + 30;
       const cap = acc.statCap.get(opt.check.stat);
       raiseFloor(acc.statFloor, opt.check.stat, cap !== undefined ? Math.min(want, cap) : want);
     }
   }
-
-  // ----- sanity 单独定：唯一影响可见性的是 hallucination 阈值；sanityRange 只是池门（runner 直接落点·不需要） -----
-  // 默认满血（对正常选项 + sanity 检定都最有利）；幻觉模式压到 ≤50 让 hallucination 选项现身。
-  const sanity = wantHalluc && hasHalluc ? HALLUCINATION_VISIBLE_SANITY : 100;
 
   // ----- flag 调和：required ∩ forbidden = 冲突 -----
   for (const f of acc.requiredFlags) {
@@ -330,10 +309,9 @@ export function satisfyEvent(eventId: string, opts: SatisfyOptions = {}): Satisf
   const finalFlags = [...acc.requiredFlags].filter((f) => !acc.forbiddenFlags.has(f));
   // oncePerSave：只要不带 event_seen:<id> 就过——finalFlags 本就不含它。
 
-  // ----- 非 sanity 属性调和：floor > cap = 真冲突（statAtLeast/检定 vs statAtMost·同一属性） -----
-  const statsOverride: Partial<Stats> = { sanity };
+  // ----- 属性调和：floor > cap = 真冲突（statAtLeast/检定 vs statAtMost·同一属性） -----
+  const statsOverride: Partial<Stats> = {};
   for (const stat of ALL_STATS) {
-    if (stat === 'sanity') continue;
     const floor = acc.statFloor.get(stat);
     const cap = acc.statCap.get(stat);
     if (floor !== undefined && cap !== undefined && floor > cap) {
@@ -374,7 +352,6 @@ export function satisfyEvent(eventId: string, opts: SatisfyOptions = {}): Satisf
       // 这不是「impossible gate」（flag 既要又禁那种硬冲突），只是 fixture 单次只能装一件——
       // 胜者选项已可见·败者选项放 intentionallyHidden·不进 conflicts（否则破 §1 断言）。
       for (const opt of ev.options) {
-        if (opt.hallucination && !wantHalluc) continue;
         if (!opt.visibleIf || intentionallyHidden.includes(opt.id)) continue;
         if (capabilityInCondition(opt.visibleIf, cap)) {
           intentionallyHidden.push(opt.id);
@@ -420,7 +397,6 @@ export function describeEventGate(gate: EventGate): string[] {
   const lines: string[] = [];
   lines.push(`深度 ${gate.depthRange[0]}–${gate.depthRange[1]}m`);
   if (gate.zoneTags.length > 0) lines.push(`区域标签 ∈ {${gate.zoneTags.join(', ')}}`);
-  if (gate.sanityRange) lines.push(`理智 ${gate.sanityRange[0]}–${gate.sanityRange[1]}`);
   if (gate.prereqFlags.length > 0) lines.push(`需要 flag：${gate.prereqFlags.join(', ')}`);
   if (gate.forbiddenFlags.length > 0) lines.push(`禁止 flag：${gate.forbiddenFlags.join(', ')}`);
   if (gate.prereqEventIds.length > 0) lines.push(`需先经过事件：${gate.prereqEventIds.join(', ')}`);

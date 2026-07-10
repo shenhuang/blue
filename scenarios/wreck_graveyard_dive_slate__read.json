@@ -9,6 +9,6 @@
     "finalPhase": "dive",
     "errors": [],
     "loreAdded": ["lore.wreck_graveyard.the_slate"],
-    "statsDelta": { "oxygen": -1, "sanity": -6 }
+    "statsDelta": { "oxygen": -1 }
   }
 }

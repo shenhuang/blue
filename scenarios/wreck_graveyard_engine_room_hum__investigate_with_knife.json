@@ -9,6 +9,6 @@
     "finalPhase": "dive",
     "errors": [],
     "combatTriggered": "combat.wreck_spider_crabs_pair",
-    "statsDelta": { "oxygen": -1, "sanity": -4 }
+    "statsDelta": { "oxygen": -1 }
   }
 }

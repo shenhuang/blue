@@ -17,7 +17,7 @@
 //   - enemiesAlive      number（活敌数量，严格相等）
 //   - lootGained        { itemId: qty }（每个 itemId 的 qty 至少要够）
 //   - statsDelta        { stat: number }（严格相等）
-//   - sanityDeltaAtMost / hpDeltaAtMost / oxygenDeltaAtMost
+//   - hpDeltaAtMost / oxygenDeltaAtMost
 //                       number（实际 delta ≤ 给定值；用于"至少损失这么多"断言）
 //   - injuriesFinal     { defId: tier }（**精确集合匹配**：总数一致且每条档位相等；
 //                       {} = 断言全程无伤。负伤 SPEC §10 baseline 用）
@@ -82,7 +82,6 @@ interface ScenarioFile extends CombatScenarioInput {
     enemiesAlive?: number;
     lootGained?: Record<string, number>;
     statsDelta?: Record<string, number>;
-    sanityDeltaAtMost?: number;
     hpDeltaAtMost?: number;
     oxygenDeltaAtMost?: number;
     injuriesFinal?: Record<string, number>;
@@ -161,7 +160,7 @@ function assertScenario(name: string, result: CombatScenarioResult, expect: Scen
     }
   }
 
-  function atMost(field: 'sanity' | 'stamina' | 'oxygen', threshold: number, label: string) {
+  function atMost(field: 'stamina' | 'oxygen', threshold: number, label: string) {
     const got = (s.statsDelta as Record<string, number | undefined>)[field] ?? 0;
     if (got > threshold) {
       fail(name, `${label} 不符：期望 ≤ ${threshold}，实际 ${got}`);
@@ -196,9 +195,6 @@ function assertScenario(name: string, result: CombatScenarioResult, expect: Scen
     }
   }
 
-  if (expect.sanityDeltaAtMost !== undefined) {
-    atMost('sanity', expect.sanityDeltaAtMost, 'sanityDeltaAtMost');
-  }
   if (expect.hpDeltaAtMost !== undefined) {
     atMost('stamina', expect.hpDeltaAtMost, 'hpDeltaAtMost');
   }

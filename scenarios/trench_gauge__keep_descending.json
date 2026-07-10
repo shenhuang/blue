@@ -4,9 +4,6 @@
   "depth": 260,
   "seed": 1,
   "zoneId": "zone.blue_caves",
-  "stats": {
-    "sanity": 80
-  },
   "choices": [
     "keep_descending_blind"
   ],
@@ -15,8 +12,7 @@
     "errors": [],
     "finalPhase": "dive",
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -3
+      "oxygen": -2
     }
   }
 }

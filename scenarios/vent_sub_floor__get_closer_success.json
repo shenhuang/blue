@@ -3,13 +3,11 @@
   "eventId": "vent.sub_floor",
   "depth": 140,
   "seed": 1,
-  "sanity": 80,
   "choices": ["get_closer"],
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
-    "statsDelta": { "oxygen": -2, "sanity": -3 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

@@ -9,8 +9,7 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
     "loreAdded": ["lore.trench.the_opening"],
-    "statsDelta": { "oxygen": -2, "sanity": -4 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

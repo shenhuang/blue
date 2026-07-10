@@ -27,8 +27,7 @@
             "dc": 12,
             "onSuccess": {
               "text": "你压住每一次踢动，顺着船壳的阴影退了出去。那点动静停在原处，没有跟来。",
-              "oxygenTurnCost": 2,
-              "deltas": { "sanity": -2 }
+              "oxygenTurnCost": 2
             },
             "onFailure": {
               "text": "你的脚蹼蹭到一截垂下的缆绳，锈屑簌簌落下。那边的动静一下有了方向——朝你来了。",
@@ -41,8 +40,7 @@
           "label": "关灯，屏住，赌它认不出你",
           "outcome": {
             "text": "你掐了灯。黑里只剩自己的心跳，和那团动静擦过钢板的声音——越来越近，又……偏开了。你慢慢把那口气放出来。",
-            "oxygenTurnCost": 1,
-            "deltas": { "sanity": -4 }
+            "oxygenTurnCost": 1
           }
         }
       ]

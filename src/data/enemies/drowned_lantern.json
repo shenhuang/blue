@@ -4,7 +4,7 @@
       "id": "enemy.drowned_lantern",
       "bands": ["zone.wreck_graveyard"],
       "biomes": ["wreck_field"],
-      "role": "sanity",
+      "role": "ambusher",
       "codex": {
         "habitat": "沉船之间不动的静水。哪儿最暗，它在哪儿亮着。",
         "behavior": "以光引你近，再一收一张地照进你不愿想的地方。它不急——你会自己过去。",
@@ -26,9 +26,8 @@
         {
           "id": "lantern.pulse",
           "name": "脉光",
-          "damageType": "sanity",
-          "damage": [0, 0],
-          "sanityDamage": [4, 7],
+          "damageType": "physical",
+          "damage": [4, 7],
           "description": "钟形的伞缓缓一收一张，亮一下，是冷的。它不照你——它照进你脑子里那间没开灯的屋。",
           "weight": 3
         },
@@ -37,13 +36,11 @@
           "name": "曳丝",
           "damageType": "physical",
           "damage": [2, 4],
-          "sanityDamage": [1, 2],
           "description": "它身后那几根丝扫过你的手腕。沾上的地方先是麻，然后那股冷往里走，不肯停。",
           "weight": 2
         }
       ],
       "physicalDamage": [2, 4],
-      "sanityDamage": [1, 7],
       "loot": {
         "guaranteed": [{ "itemId": "item.lantern_gland", "qty": [1, 1], "weight": 1 }],
         "rolls": [],

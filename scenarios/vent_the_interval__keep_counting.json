@@ -11,11 +11,7 @@
     "finalPhase": "dive",
     "errors": [],
     "statsDelta": {
-      "oxygen": -3,
-      "sanity": 2
+      "oxygen": -3
     }
-  },
-  "stats": {
-    "sanity": 80
   }
 }

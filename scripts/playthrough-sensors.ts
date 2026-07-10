@@ -1,5 +1,5 @@
 // 微观感知 / 灯门 clarity 回归（感知重做 SPEC·docs/spec/深海回响_感知重做_SPEC.md）。
-// 覆盖新北极星的核心断言（纯引擎，不碰 combat）——欺骗全部移交低理智轴（非本回归·SPEC §2.3）：
+// 覆盖新北极星的核心断言（纯引擎，不碰 combat）——欺骗全部移交地点缝（非本回归·SPEC §2.3）：
 //   1. 灯 + 清水 → full → 相邻"地面真相"（非黑水不需灯就 full·灯门不锁）
 //   2. 灯 + 黑水 → 灯门解锁 → full（黑处正是灯起作用的地方·SPEC §2.1 INVERSION）；关灯 → 锁住（none·locked）
 //   4. 深度不再降档：任意深的陡降在灯下也是 full（darkness 是唯一的门·SPEC §2.1 CLARITY COLLAPSE）
@@ -19,7 +19,6 @@ import { tickTurns } from '../src/engine/events';
 import {
   clarity,
   lampGateLocked,
-  lampPreview,
   signature,
   lampPowerDrain,
   POWER_MAX,
@@ -33,22 +32,8 @@ import {
   SIGNATURE_LIGHT,
   SIGNATURE_MIN_ACTIVE,
   SIGNATURE_REDUCTION_MAX,
-  // 低理智轴：改怪物钩子（section 13/14·感知重做 SPEC §2.3/§7① 形态 a）
-  hallucinationApproaches,
-  HALLUCINATION_SANITY,
 } from '../src/engine/clarity';
-import { startCombat, applyPlayerAction, getEncounter } from '../src/engine/combat';
-import { makeLcg } from '../src/engine/rng';
 import { makeHarness, type PtAssert } from './lib/pt';
-
-// ── 焊死 flaky（quirk #129）─────────────────────────────────────────────────
-// 本文件早期「纯引擎·不碰 combat」故无需种子；#261 增的 §13/§14 幻觉遭遇引入 combat.ts
-// （敌攻走 Math.random），却漏补种子 → §14a「对照真遭遇敌攻打出体力伤（6 回合内 ≥1 击）」
-// 在未种子化下并发偶失（#268 收尾实测 92/93 ↔ 93/93 抖动）。照 playthrough.ts 同一份 LCG
-// （src/engine/rng.ts）全程定死随机 → 确定性；内容改动若让该 seed 落到失败分支，regress
-// 会**确定性**变红（非 flaky）→ 调 PLAYTHROUGH_SEED 重选。调试：PT_SEED=<n> npx tsx …。
-const PLAYTHROUGH_SEED = Number(process.env.PT_SEED) || 20260622;
-Math.random = makeLcg(PLAYTHROUGH_SEED);
 
 const pt = makeHarness('微观感知 / 灯门 clarity 回归');
 const { L } = pt;
@@ -76,7 +61,6 @@ function mk(opts?: {
   sonarUnlocked?: boolean;
   light?: boolean;
   power?: number;
-  sanity?: number;
 }): GameState {
   const base = createInitialGameState();
   const r0 = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: opts?.sonarUnlocked } });
@@ -87,7 +71,6 @@ function mk(opts?: {
     currentDepth: 20,
     power: opts?.power ?? r0.power,
     sensors: { ...r0.sensors, light: opts?.light ?? true },
-    stats: { ...r0.stats, sanity: opts?.sanity ?? 100 },
     diveModifier: opts?.visibility ? { gate: { sense: 'lamp', mode: 'locked' } } : undefined,
   };
   return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
@@ -206,20 +189,6 @@ L('\n========== 5. power 归零 → 灯失效 ==========');
 }
 
 // ============================================================
-// 6/7. 低 san 声呐假回波 / 灯幻觉：**整节随感知重做删除**（欺骗移交低理智轴·SPEC §2.3）。
-//   灯下恒真：lampPreview 现无 san 分支——极低 san 也给真相（控制组）。
-// ============================================================
-L('\n========== 6/7. 灯下恒真（无低 san 幻觉）==========');
-{
-  const node = makeMap().nodes.n1;
-  assert(lampPreview(mk({ sanity: 100 }).run!, node) === N1_TRUTH, '6/7: 高 san 灯下真相');
-  assert(lampPreview(mk({ sanity: 5 }).run!, node) === N1_TRUTH, '6/7: 极低 san 灯下仍真相（幻觉移交低理智轴·SPEC §2.3）');
-  const cs = choicesOf(enterNodeSelection(mk({ sanity: 5 })));
-  assert(byId(cs, 'n1').clarity === 'full' && byId(cs, 'n1').preview === N1_TRUTH, '6/7: 端到端极低 san 清水灯下＝诚实真相');
-  L('  灯下恒真·无低 san 改写（控制组）✓');
-}
-
-// ============================================================
 // 8. tickTurns 灯耗电：清水近免费 / 黑水耗 / 关灯不耗
 // ============================================================
 L('\n========== 8. tickTurns 灯耗电（水况分级）==========');
@@ -301,7 +270,7 @@ L('\n========== 10. signature 排序 ==========');
 /** 同 mk() 但带升级 bonuses（经 createNewRun 烤成 run.sensorTuning / powerMax）。 */
 function mkUp(
   bonuses: NonNullable<Parameters<typeof createNewRun>[0]['bonuses']>,
-  opts?: { visibility?: 'dark'; light?: boolean; sanity?: number; power?: number },
+  opts?: { visibility?: 'dark'; light?: boolean; power?: number },
 ): GameState {
   const base = createInitialGameState();
   const r0 = createNewRun({ zoneId: 'zone.blue_caves', bonuses });
@@ -312,7 +281,6 @@ function mkUp(
     currentDepth: 20,
     power: opts?.power ?? r0.power,
     sensors: { ...r0.sensors, light: opts?.light ?? true },
-    stats: { ...r0.stats, sanity: opts?.sanity ?? 100 },
     diveModifier: opts?.visibility ? { gate: { sense: 'lamp', mode: 'locked' } } : undefined,
   };
   return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
@@ -351,7 +319,7 @@ L('\n========== 11. 升级轨：传感器随升级成长 ==========');
   assert(upDark === baseDark * 0.5 && upDark < baseDark, '11c: 灯效率 → 黑水耗电减半');
   assert(deriveSensorTuning({ lampEfficiency: 1 }).lampDrainMult === LAMP_DRAIN_MULT_MIN, '11c: 灯耗电乘子有地板');
 
-  // 11d/11e 声呐/灯抗欺骗旋钮：**随感知重做退成惰性**（欺骗移交低理智轴·SPEC §2.3）——不再断言其行为。
+  // 11d/11e 声呐/灯抗欺骗旋钮：**随感知重做退成惰性**（欺骗移交地点缝·SPEC §2.3）——不再断言其行为。
 
   // 11f 隐蔽：降 signature + 上限 + 结构地板（点灯永不归零暴露·暴露脊柱 PRESERVE）
   const sigBase = signature(mk().run!); // 灯开清水 = BASE + LIGHT
@@ -445,148 +413,6 @@ L('\n========== 12. 尸体定位豁免（Lv.1·灯门约束）==========');
   assert(byId(csDarkOff, 'dcorpse').locked === true, '12d: 黑水关灯 Lv.1 尸体也锁住（需要灯才认得出）');
   assert(byId(csDarkOff, 'dcorpse').hasCorpseHint !== true, '12d: 黑水关灯 Lv.1 尸体无 hint（锁住时读不出轮廓）');
   L('  Lv.1 尸体不被深度藏 / 无 Lv.1 无 hint / 黑水灯开给 hint·关灯锁住（守 quirk #36）✓');
-}
-
-// ============================================================
-// 13. 低理智「改怪物」——幻觉遭遇注入 + 控制组（感知重做 SPEC §2.3/§7① 形态 a）
-// ============================================================
-// 欺骗只剩低 san 一根轴：san 够低 → moveToNode 可注入**幻觉遭遇**（复用 zone 现有怪·标 hallucination:true）；
-// san 满（控制组）→ 恒不注入（世界诚实·无幻觉怪）。判定 hallucinationApproaches 纯派生·可复现。
-// fixture 用 zone.blue_caves（ambushEncounters=[combat.blind_eel_solo]）·够深（≥25·§7.5 浅水免压）·
-// huntEnabled=false（走旧路径·幻觉钩子在真伏击之后）·alert=0（真伏击不触发·把「真危险」隔离掉、只测 san 轴）。
-L('\n========== 13. 低 san 幻觉遭遇注入 + 控制组 ==========');
-{
-  const DEEP = 40; // ≥ ALERT_MIN_DEPTH(25)·让 hallucinationApproaches 的深度门过
-  const makeDeepEventMap = (): DiveMap => ({
-    zoneId: 'zone.blue_caves',
-    generatedAt: 0,
-    startNodeId: 'h0',
-    nodes: {
-      h0: { id: 'h0', layer: 0, depth: DEEP, zoneTag: 'cave', kind: 'event', connectsTo: ['h1'], preview: '起点。' },
-      h1: { id: 'h1', layer: 1, depth: DEEP, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '一条通往深处的窄道。' },
-    },
-  });
-  const mkDive = (sanity: number): GameState => {
-    const base = createInitialGameState();
-    const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
-    const run: RunState = {
-      ...r0,
-      map: makeDeepEventMap(),
-      currentNodeId: 'h0',
-      currentDepth: DEEP,
-      alert: 0,          // 真伏击线（predatorApproaches）不触发——隔离掉「真危险」，只测低 san 轴
-      huntEnabled: false, // 走旧 alert→伏击路径（幻觉钩子在其后）
-      stats: { ...r0.stats, sanity, oxygen: 999 }, // 富氧·免过渡耗氧致死污染断言
-    };
-    return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
-  };
-
-  // 13a 判定层：低 san + 够深 → true；高 san → false（控制组）；浅水低 san → false（§7.5 浅水免压）。
-  assert(hallucinationApproaches(mkDive(HALLUCINATION_SANITY).run!) === true, '13a: san≤阈值+够深 → hallucinationApproaches true');
-  assert(hallucinationApproaches(mkDive(100).run!) === false, '13a: 高 san → hallucinationApproaches false（控制组·世界诚实）');
-  {
-    const shallow = mkDive(10);
-    shallow.run!.currentDepth = 15; // < ALERT_MIN_DEPTH
-    assert(hallucinationApproaches(shallow.run!) === false, '13a: 浅水低 san → false（§7.5 浅水免压）');
-  }
-
-  // 13b 注入层：低 san 走进事件节点 → 进入 combat 且该场标 hallucination:true。
-  const lowSan = moveToNode(mkDive(HALLUCINATION_SANITY), 'h1');
-  assert(lowSan.phase.kind === 'combat', '13b: 低 san 进节点 → 注入幻觉遭遇（进入 combat）');
-  if (lowSan.phase.kind === 'combat') {
-    assert(lowSan.phase.combat.hallucination === true, '13b: 注入的这场标 hallucination:true');
-  }
-
-  // 13c 控制组：高 san 走进同一节点 → 不注入（照常进节点·世界诚实·无幻觉怪）。
-  const highSan = moveToNode(mkDive(100), 'h1');
-  assert(highSan.phase.kind !== 'combat', '13c: 高 san 进节点 → 不注入幻觉怪（控制组·照常进节点）');
-  L('  低 san→注入 hallucination 战斗 / 高 san→不注入（单轴·控制组可复现）✓');
-}
-
-// ============================================================
-// 14. 幻觉遭遇「看破即消」——无战利品·无实体伤·打不死（感知重做 SPEC §2.3/§7① 形态 a）
-// ============================================================
-// 直接起一场标 hallucination:true 的战斗（复用真敌 combat.blind_eel_solo·不改 def），断言：
-//   ① 敌攻不扣真实体力（幻爪穿不透·实体伤 0）——用战斗 log 隔离敌伤与行动费（真伤 log 含「体力 -」·幻觉含「没有痛」）；
-//   ② 敌攻/理智打不死你（体力+san 死亡窗封死·无脚本死改由应急上浮兜）·但**氧气例外**：你自己把氧耗光仍当场淹死（14d·SPEC §7①）；③ 打赢后无战利品 + 暧昧收场「只有空水」（它从没在那儿）。
-// san 是软代价（可恢复·耗尽走既有疯狂上浮·非怪物击杀）。以 action.evade（不伤敌·让敌人一直打你）挨打·knife 打赢。
-L('\n========== 14. 幻觉遭遇看破即消（无 loot·无实体伤·打不死）==========');
-{
-  const HALLUC_ENC = 'combat.blind_eel_solo'; // 复用真敌·只是这一场被标幻觉（不改 def·SPEC §7① 只做钩子）
-  assert(getEncounter(HALLUC_ENC) !== undefined, '14: fixture 前提——combat.blind_eel_solo 存在');
-
-  /** 起一场（可选幻觉）· 富体力免行动费耗尽污染断言（我们用 log 隔离敌伤·不靠体力守恒）。 */
-  const mkCombat = (halluc: boolean): GameState => {
-    const base = createInitialGameState();
-    const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
-    const run: RunState = {
-      ...r0,
-      currentNodeId: null,
-      currentDepth: 40,
-      stats: { ...r0.stats, stamina: 100, sanity: 20, oxygen: 999 },
-    };
-    const s0: GameState = { ...base, run, phase: { kind: 'port' } };
-    return startCombat(s0, HALLUC_ENC, undefined, halluc ? { hallucination: true } : undefined);
-  };
-  /** 收集战斗全程敌人 log 文本（combat.log 内 actor==='enemy'）。 */
-  const enemyLog = (s: GameState): string[] =>
-    s.phase.kind === 'combat' ? s.phase.combat.log.filter((e) => e.actor === 'enemy').map((e) => e.text) : [];
-
-  // 14a 对照：**不标**幻觉起同一场——敌攻打出真实体力伤（log 含「体力 -」）。证明这只怪本会打人（幻觉侧 0 伤非因敌人不打）。
-  {
-    let s = mkCombat(false);
-    assert(s.phase.kind === 'combat' && s.phase.combat.hallucination !== true, '14a: 对照场 hallucination≠true');
-    for (let i = 0; i < 6 && s.phase.kind === 'combat'; i++) s = applyPlayerAction(s, 'action.evade').state; // evade 不伤敌·让它一直打
-    const realHit = enemyLog(s).some((t) => t.includes('体力 -'));
-    assert(realHit, '14a: 对照（真遭遇）敌攻打出真实体力伤（log 含「体力 -」·证明这只怪本会打人）');
-  }
-
-  // 14b 幻觉场：同样挨打——敌攻**零真实体力伤**（log 无「体力 -」·有「没有痛」暧昧句），且玩家全程不死。
-  {
-    let s = mkCombat(true);
-    assert(s.phase.kind === 'combat' && s.phase.combat.hallucination === true, '14b: 幻觉场 hallucination:true');
-    let died = false;
-    for (let i = 0; i < 12 && s.phase.kind === 'combat'; i++) {
-      const r = applyPlayerAction(s, 'action.evade');
-      s = r.state;
-      if (r.outcome === 'defeat') { died = true; break; }
-    }
-    assert(!died, '14b: 幻觉敌攻打不死你（实体伤 0·体力/理智死亡窗封死；本场富氧故氧气不参与——氧气例外见 14d）');
-    const log = enemyLog(s);
-    assert(log.length > 0, '14b: fixture 事实——敌人确实出手了（有敌 log）');
-    assert(!log.some((t) => t.includes('体力 -')), '14b: 幻觉敌攻零真实体力伤（敌 log 无「体力 -」·幻爪穿不透）');
-    assert(log.some((t) => t.includes('没有痛')), '14b: 幻觉敌攻暧昧文案（「没有痛，皮也没破」＝它不真在那儿）');
-  }
-
-  // 14c 看破即消（打赢）：胜利后**无战利品** + 暧昧收场文案「只有空水」（appendLog 落 GameState.log·战斗已结束）。
-  {
-    let s = mkCombat(true);
-    const inv0 = s.run!.inventory.reduce((a, it) => a + it.qty, 0);
-    // 目标 instanceId（applyPlayerAction 第 3 参是 instanceId 字符串·非数组下标；单敌场取首个活敌）。
-    const targetId = s.phase.kind === 'combat' ? s.phase.combat.enemies.find((e) => e.hp > 0)?.instanceId : undefined;
-    let outcome = 'continue';
-    for (let i = 0; i < 20 && s.phase.kind === 'combat'; i++) {
-      const r = applyPlayerAction(s, 'action.knife_slash', targetId);
-      s = r.state;
-      outcome = r.outcome;
-      if (outcome !== 'continue') break;
-    }
-    assert(outcome === 'victory', '14c: 幻觉遭遇能被「打赢」（看破即消）');
-    const inv1 = s.run!.inventory.reduce((a, it) => a + it.qty, 0);
-    assert(inv1 === inv0, '14c: 幻觉遭遇胜利后无战利品（背包总数不变·它从没在那儿）');
-    const sawEmptyWater = s.log.some((e) => e.text.includes('只有空水'));
-    assert(sawEmptyWater, '14c: 幻觉收场文案暧昧（「只有空水」＝从没在那儿·GameState.log）');
-  }
-
-  // 14d 氧气例外（作者 2026-07-05·SPEC §7①·combat.ts）：幻觉里敌攻/理智打不死你，但你自己把氧耗光仍当场淹死
-  //   ——「你自己耗光的、不是鬼杀的」（无脚本死改由应急上浮兜·非全封）。与 14b 富氧对照：把氧压到 0 → defeat（窒息）。
-  {
-    let s = mkCombat(true);
-    if (s.phase.kind === 'combat') s = { ...s, run: { ...s.run!, stats: { ...s.run!.stats, oxygen: 0 } } };
-    const r = applyPlayerAction(s, 'action.evade');
-    assert(r.outcome === 'defeat', '14d: 幻觉里氧气≤0 仍当场淹死（氧气例外·非全封·SPEC §7①）');
-  }
-  L('  对照真伤 / 幻觉 0 伤打不死 / 打赢无 loot + 暧昧收场 / 氧气例外仍淹死 ✓');
 }
 
 pt.done();

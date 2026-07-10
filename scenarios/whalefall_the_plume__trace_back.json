@@ -15,11 +15,7 @@
       "lore.whalefall.the_plume"
     ],
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": 2
+      "oxygen": -2
     }
-  },
-  "stats": {
-    "sanity": 80
   }
 }

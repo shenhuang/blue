@@ -10,13 +10,8 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": 3
+      "oxygen": -2
     }
-  },
-  "stats": {
-    "sanity": 90
   }
 }

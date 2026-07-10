@@ -129,8 +129,8 @@ export function emptyCombatFormState(combatId = ''): CombatScenarioFormState {
     combatId,
     enemyDefIds: [],
     variant: 'draft',
-    stats: { stamina: 100, oxygen: 60, sanity: 100, nitrogen: 0 },
-    statsActive: { stamina: false, oxygen: false, sanity: false, nitrogen: false },
+    stats: { stamina: 100, oxygen: 60, nitrogen: 0 },
+    statsActive: { stamina: false, oxygen: false, nitrogen: false },
     zoneId: '',
     depth: '',
     equipment: { ...DEFAULT_SLOTS_LOADOUT },
@@ -183,7 +183,7 @@ function buildEquipmentOverride(form: CombatScenarioFormState): Partial<Equipmen
 function buildStatsOverride(form: CombatScenarioFormState): Partial<Stats> | undefined {
   const out: Partial<Stats> = {};
   let any = false;
-  const keys: Stat[] = ['stamina', 'oxygen', 'sanity', 'nitrogen'];
+  const keys: Stat[] = ['stamina', 'oxygen', 'nitrogen'];
   for (const k of keys) {
     if (!form.statsActive[k]) continue;
     out[k] = Math.round(form.stats[k]);
@@ -292,7 +292,7 @@ export function combatScenarioInputToForm(input: CombatScenarioInput): CombatSce
   }
 
   if (input.stats) {
-    const keys: Stat[] = ['stamina', 'oxygen', 'sanity', 'nitrogen'];
+    const keys: Stat[] = ['stamina', 'oxygen', 'nitrogen'];
     for (const k of keys) {
       const v = input.stats[k];
       if (v !== undefined) {

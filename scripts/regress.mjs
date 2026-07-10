@@ -94,7 +94,7 @@ tasks.push({ name: 'check-branch', cmd: ['node', join('scripts', 'check-branch.m
 // 架构边界：engine ↛ ui + src/ui 禁 phase 字面量（纯 node，把解耦约定做成会红的门，见 scripts/check-boundaries.mjs）
 tasks.push({ name: 'check-boundaries', cmd: ['node', join('scripts', 'check-boundaries.mjs')] });
 
-// 事件选项 check 标注一致性（纯 node·label「（理智 vs N）」双写必须 == check.{stat,dc}，见 scripts/check-event-dc.mjs）
+// 事件选项 check 标注一致性（纯 node·label「（体力 vs N）」双写必须 == check.{stat,dc}，见 scripts/check-event-dc.mjs）
 tasks.push({ name: 'check-event-dc', cmd: ['node', join('scripts', 'check-event-dc.mjs')] });
 
 // POI 专属事件门（纯 node·DiveEvent.poiId 必须命中 chart_pois.json 真实 POI·拼错=软锁，见 scripts/check-event-poi.mjs）
@@ -106,8 +106,11 @@ tasks.push({ name: 'check-protagonist-voice', cmd: ['node', join('scripts', 'che
 // 术语单一来源门（纯 node·禁 live 内容〔src+scenarios+scripts〕出现两个已退役旧称·逼回与代码/敌人库对齐的「水鬼」·收口 #224/#271·见 scripts/check-terminology.mjs）
 tasks.push({ name: 'check-terminology', cmd: ['node', join('scripts', 'check-terminology.mjs')] });
 
-// 声呐欺骗拆干净门（纯 node·感知重做 SPEC §6·src 扫到 spoofsSonar/evadesSonar/sonarReturn/sonarDeception/sonarPhantoms/applySonarDeception/effectiveFalseEchoSanity/nodeSonarView 任一残留即红·声呐诚实·欺骗移交低理智轴·见 scripts/check-no-sonar-deception.mjs）
+// 声呐欺骗拆干净门（纯 node·感知重做 SPEC §6·src 扫到 spoofsSonar/evadesSonar/sonarReturn/sonarDeception/sonarPhantoms/applySonarDeception/effectiveFalseEchoSanity/nodeSonarView 任一残留即红·声呐诚实·欺骗移交地点缝·见 scripts/check-no-sonar-deception.mjs）
 tasks.push({ name: 'check-no-sonar-deception', cmd: ['node', join('scripts', 'check-no-sonar-deception.mjs')] });
+
+// 理智系统拆干净门（纯 node·理智系统移除 2026-07-10·src 扫到 sanity/hallucination 任一残留即红·发疯改地点缝 seam 二态门·见 scripts/check-no-sanity.mjs）
+tasks.push({ name: 'check-no-sanity', cmd: ['node', join('scripts', 'check-no-sanity.mjs')] });
 
 // 文案草稿泄漏门（纯 node·src/data/events 玩家可见字段禁 [待过稿]·playtest 报告⑤ 根治·见 scripts/check-draft-leak.mjs）
 tasks.push({ name: 'check-draft-leak', cmd: ['node', join('scripts', 'check-draft-leak.mjs')] });

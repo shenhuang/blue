@@ -8,7 +8,6 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "combatTriggered": "combat.reef_barracuda_solo",
-    "statsDelta": {}
+    "combatTriggered": "combat.reef_barracuda_solo"
   }
 }

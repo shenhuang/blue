@@ -4,12 +4,11 @@
   "depth": 195,
   "seed": 1,
   "zoneId": "zone.open_midwater",
-  "stats": { "sanity": 80 },
   "choices": ["ignore_sonar"],
   "expect": {
     "steps": 1,
     "errors": [],
     "finalPhase": "dive",
-    "statsDelta": { "oxygen": -1, "sanity": -2 }
+    "statsDelta": { "oxygen": -1 }
   }
 }

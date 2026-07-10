@@ -218,7 +218,7 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
 
   // 应用属性
   const newStats: Stats = clampStats(
-    { ...run.stats, oxygen, nitrogen, sanity: run.stats.sanity },
+    { ...run.stats, oxygen, nitrogen },
     { stamina: effectiveStaminaMax(run), oxygen: run.oxygenMax }
   );
 

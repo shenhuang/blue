@@ -16,8 +16,7 @@
     "finalPhase": "dive",
     "checkPassed": true,
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -2
+      "oxygen": -2
     }
   }
 }

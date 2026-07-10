@@ -218,6 +218,16 @@ export interface DiveNode {
    */
   gate?: NodeGate;
   /**
+   * 地点缝（seam·二态致命节点门·**DORMANT**）：进入声明了 seam 的节点时，若玩家不具备
+   * `bypassCapability` 能力 → 视作「理智崩溃，疯狂上浮」当场致死（moveToNode 复用
+   * `executeDeath(MADNESS_ASCENT_CAUSE)`·见 dive-move.ts / death.ts）。这是取代旧连续「疯掉」轴的
+   * **一记二元节点门**：有能力＝安然通过、无能力＝死。**休眠**：当前 0 个节点声明 seam ⇒ 检查永不触发
+   * ⇒ 运行时逐字节不变；由作者后续在图上放置（预警/铺垫电报属放置期内容·非本机制）。
+   * bypassCapability 能力 id（如 'steady_mind'）走 hasCapability 双源扫描（装备+背包·同
+   * events.ts::evalCondition 的 hasCapability 分支）。
+   */
+  seam?: { bypassCapability: string };
+  /**
    * 多口持久洞（多口持久洞 SPEC §2.2）：该 ascent_point 是洞的哪类口。
    *  - 'entrance'：带 POI 的入口（可下潜起手 + 上浮）。
    *  - 'exit'：只能上浮的出口（非 POI·穿流泄流口/烟囱/塌口）。
@@ -245,7 +255,7 @@ export type NodeKind =
   | 'ascent_point' // 上浮口
   | 'rest' // 休息点（可消耗回合恢复体力）
   | 'air_pocket' // 气穴：上浮换气，恢复氧气（一次性，用过即枯）
-  | 'camp' // 扎营点：消耗较多回合，恢复体力/理智（可重复，自带氧气代价）
+  | 'camp' // 扎营点：消耗较多回合，恢复体力（可重复，自带氧气代价）
   | 'corpse' // 尸体回收点
   | 'shop' // 水下黑市（后期）
   | 'boss'; // 区域 BOSS

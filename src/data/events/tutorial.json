@@ -52,10 +52,9 @@
         },
         {
           "id": "linger",
-          "label": "停下来看看（氧气 -2 回合，理智 +2）",
+          "label": "停下来看看（氧气 -2 回合）",
           "outcome": {
             "text": "你定在水中，珊瑚的颜色比你记忆里更浓。一只小章鱼在岩缝里看你。它的眼睛比你想象的聪明。",
-            "deltas": { "sanity": 2 },
             "oxygenTurnCost": 2
           }
         },
@@ -196,31 +195,17 @@
             "text": "你抓起日志，转身往出口游。回头时桌子后面什么都没有。\n或者说——什么都没有了。",
             "oxygenTurnCost": 1,
             "loot": [{ "itemId": "item.captain_log", "qty": [1, 1] }],
-            "deltas": { "sanity": -3 },
             "endDive": "forceAscend"
           }
         },
         {
           "id": "look_closer",
           "label": "看清楚那个影子",
-          "hideCheck": true,
-          "check": {
-            "stat": "sanity",
-            "dc": 80,
-            "onSuccess": {
-              "text": "你撑住了。眨一下眼，影子不在了。书桌只是书桌。\n但有一行字在你脑子里一闪——\n\n⟪ 那不是人影。但那也不是没有什么。 ⟫",
-              "deltas": { "sanity": -5 },
-              "setProfileFlags": ["flag.seen_first_uncanny"],
-              "loot": [{ "itemId": "item.captain_log", "qty": [1, 1] }],
-              "endDive": "forceAscend"
-            },
-            "onFailure": {
-              "text": "你没撑住。\n你看见了——你不知道你看见了什么。等你回过神，气泡已经狂涌。",
-              "deltas": { "sanity": -15 },
-              "setProfileFlags": ["flag.seen_first_uncanny"],
-              "loot": [{ "itemId": "item.captain_log", "qty": [1, 1] }],
-              "endDive": "forceAscend"
-            }
+          "outcome": {
+            "text": "眨一下眼，影子不在了。书桌只是书桌。\n但有一行字在你脑子里一闪——\n\n⟪ 那不是人影。但那也不是没有什么。 ⟫",
+            "setProfileFlags": ["flag.seen_first_uncanny"],
+            "loot": [{ "itemId": "item.captain_log", "qty": [1, 1] }],
+            "endDive": "forceAscend"
           }
         }
       ]

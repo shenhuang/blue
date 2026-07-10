@@ -41,9 +41,8 @@ export function exploreFeature(state: GameState, featureId: string): GameState {
   activeFlags.add(doneFlag);
   let s: GameState = { ...state, run: { ...ticked, activeFlags } };
 
-  // 氧气/理智死亡判定（与 moveToNode 同口径——连探也会把氧/理智耗到见底）
+  // 氧气死亡判定（与 moveToNode 同口径——连探也会把氧耗到见底）
   if (s.run!.stats.oxygen <= 0) return executeDeath(s, '氧气耗尽，溺亡');
-  if (s.run!.stats.sanity <= 0) return executeDeath(s, '理智崩溃，疯狂上浮');
 
   return { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: feat.eventId } } };
 }
@@ -70,7 +69,7 @@ export function restAtNode(state: GameState, turns: number = 3): GameState {
 }
 
 /**
- * 气穴换气：恢复氧气 + 一点理智，不耗回合（一瞬间的事）。
+ * 气穴换气：恢复氧气，不耗回合（一瞬间的事）。
  * 一次性——用过把节点记进 `run.activeFlags`（`air_used:<nodeId>`），重访不再生效，
  * 避免迷路图里来回蹭气穴刷无限氧气。
  */
@@ -83,19 +82,18 @@ export function breatheAtAirPocket(state: GameState): GameState {
     return appendLog(s, { tone: 'realistic', text: '气穴已经被你吸空了，水面不再晃。' });
   }
   const oxygen = Math.min(run.oxygenMax, run.stats.oxygen + 6);
-  const sanity = Math.min(100, run.stats.sanity + 4);
   const activeFlags = new Set(run.activeFlags);
   activeFlags.add(usedFlag);
-  s = { ...s, run: { ...run, stats: { ...run.stats, oxygen, sanity }, activeFlags } };
+  s = { ...s, run: { ...run, stats: { ...run.stats, oxygen }, activeFlags } };
   s = appendLog(s, {
     tone: 'realistic',
-    text: '你的头露出水面。空气有股陈年的金属味，但能用。你深吸了几口。（氧气 +6 / 理智 +4）',
+    text: '你的头露出水面。空气有股陈年的金属味，但能用。你深吸了几口。（氧气 +6）',
   });
   return s;
 }
 
 /**
- * 扎营点休整：短 / 长两档，消耗回合换体力 + 理智（长档还排掉一点氮）。
+ * 扎营点休整：短 / 长两档，消耗回合换体力（长档还排掉一点氮）。
  * 可重复——但 tick 的耗氧是自带代价（与普通 rest 同理，洞里氧气是硬上限）。
  * 作者 06-10：同 restAtNode——猎手同拍推进，被摸上来＝开打且不发任何休整收益（觉没扎完）。
  */
@@ -104,7 +102,6 @@ export function campAtNode(state: GameState, mode: 'short' | 'long'): GameState 
   if (!s.run) return s;
   const turns = mode === 'long' ? 6 : 3;
   const staGain = mode === 'long' ? 30 : 15;
-  const sanGain = mode === 'long' ? 10 : 5;
   // 氮气不在原深休息时平白排出（饱和模型：休息这几回合由 passTurnsWithStalker→tickTurns
   // 按 ceiling 自然处理·在原深 N 反而微涨）。排氮只走升浅/上浮——见氮气 SPEC §2 单写者。
   const passed = passTurnsWithStalker(s, turns);
@@ -114,15 +111,14 @@ export function campAtNode(state: GameState, mode: 'short' | 'long'): GameState 
   const stats = {
     ...run.stats,
     stamina: Math.min(effectiveStaminaMax(run), run.stats.stamina + staGain),
-    sanity: Math.min(100, run.stats.sanity + sanGain),
   };
   s = { ...s, run: { ...run, stats } };
   s = appendLog(s, {
     tone: 'realistic',
     text:
       mode === 'long'
-        ? `你关掉灯，认真扎了一会儿。重新打开灯时状态好多了。（${turns} 回合 · 体力 +${staGain} · 理智 +${sanGain}）`
-        : `你卡住自己，听着呼吸。${turns} 回合后再起身，膝盖松了些。（体力 +${staGain} · 理智 +${sanGain}）`,
+        ? `你关掉灯，认真扎了一会儿。重新打开灯时状态好多了。（${turns} 回合 · 体力 +${staGain}）`
+        : `你卡住自己，听着呼吸。${turns} 回合后再起身，膝盖松了些。（体力 +${staGain}）`,
   });
   return s;
 }

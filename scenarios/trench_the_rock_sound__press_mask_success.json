@@ -3,13 +3,11 @@
   "eventId": "trench.the_rock_sound",
   "depth": 260,
   "seed": 1,
-  "sanity": 80,
   "choices": ["press_mask_to_wall"],
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
-    "statsDelta": { "oxygen": -2, "sanity": -3 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

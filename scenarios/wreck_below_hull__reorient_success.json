@@ -3,13 +3,11 @@
   "eventId": "wreck_graveyard.below_the_hull",
   "depth": 85,
   "seed": 100,
-  "stats": { "sanity": 100 },
   "choices": ["reorient"],
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
-    "statsDelta": { "oxygen": -3, "sanity": -4 }
+    "statsDelta": { "oxygen": -3 }
   }
 }

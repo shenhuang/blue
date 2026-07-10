@@ -1,5 +1,5 @@
 // 事件 schema —— 与主 SPEC §12 对齐
-// 数据驱动：所有事件由 JSON 配置，引擎在运行时按 depth/sanity/flags 过滤抽取
+// 数据驱动：所有事件由 JSON 配置，引擎在运行时按 depth/flags 过滤抽取
 
 import type { Stat } from './state';
 import type { EquipmentSlot } from './items';
@@ -41,7 +41,6 @@ export interface DiveEvent {
   // —— 触发条件 ——
   depthRange: [number, number]; // [min, max] 米
   zoneTags?: ZoneTag[];
-  sanityRange?: [number, number];
   weight: number; // 抽取权重；教程事件可设为 0（仅通过 forceTrigger 进入）
   /**
    * POI 专属事件池（POI 固定资源耗尽 SPEC·2026-06-25 / roaming 内容·2026-06-25）。设了 poiId ⇒ 本事件**只**在
@@ -89,9 +88,6 @@ export interface EventOption {
   /** 显示条件（不满足则灰显或隐藏） */
   visibleIf?: Condition;
   hiddenIfFails?: boolean; // visibleIf 不满足时是否隐藏（true）或灰显（false）
-
-  /** 幻觉选项：仅当玩家理智低于阈值时出现，且结果通常是坏的 */
-  hallucination?: boolean;
 
   /** 是否需要属性检定 */
   check?: SkillCheck;

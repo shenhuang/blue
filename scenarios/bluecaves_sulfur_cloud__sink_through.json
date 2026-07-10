@@ -12,7 +12,6 @@
     "errors": [],
     "statsDelta": {
       "oxygen": -2,
-      "sanity": -4,
       "nitrogen": 2
     },
     "loreAdded": [

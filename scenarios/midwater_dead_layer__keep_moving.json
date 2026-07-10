@@ -4,7 +4,6 @@
   "depth": 135,
   "seed": 1,
   "zoneId": "zone.open_midwater",
-  "stats": { "sanity": 80 },
   "choices": ["keep_moving"],
   "expect": {
     "steps": 1,

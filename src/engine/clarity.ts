@@ -4,7 +4,7 @@
 // 新北极星（替代旧「越深越欺骗」·SPEC §1）：三件感知各司其职、诚实。
 //   灯 = 诚实近场硬门：整潜 lamp 门（diveModifier.gate.sense==='lamp'）没有效灯 → 可见但锁住；开灯 → 解锁可探。灯到即真、不再有「灯下幻觉」。
 //   声呐 = 诚实远场侦察：ping 才扫、揭示前方地图规划纵深；永不撒谎、不碰选点（渲染在 SonarScanPanel）。声呐门（浑浊）＝扫一记才认得清（诚实揭示·非欺骗）。
-//   欺骗 = 只剩低理智轴（本文件不再承担）：san 低 → 改选项 / 改怪物；世界诚实。
+//   欺骗轴已整体移除（2026-07-10 理智系统移除）：世界诚实，感知三件各司其职、不再产幻觉/改选项。
 // 深度不再降档预览——**门（NodeGate·感知门 SPEC）是唯一的门**：整潜门 live-combine（本文件的薄 helper）+ per-node 门（dive-select）。
 // 选点门判定（per-node·整潜门归一）收在 dive-select.ts（enterNodeSelection·effectiveGate/gateUnlocked·per-choice locked + preview）；本文件留传感器派生态 + 暴露脊柱 + run 级整潜门薄 helper。
 //
@@ -26,8 +26,8 @@ export const SONAR_PING_COST = 6;
 export const LIGHT_POWER_PER_TURN = 1;
 
 // 假回波 / 伪接触 / 灯幻觉的**行为**（连同深 band 失真标度、伪装表象常量、假回波阈值曲线·及曾种进
-// SensorTuning 的 sonarFalseEchoSanity/lampHallucinationSanity 阈值字段与其 _MIN 地板）已随感知重做**彻底删除**——
-// 欺骗全部移交低理智轴（SPEC §2.3/§3），灯到即真、诚实侦察永不撒谎（车道 4 收尾·task #8 清干净惰性旋钮）。
+// SensorTuning 的假回波/灯幻觉阈值字段与其 _MIN 地板）已随感知重做**彻底删除**——
+// 灯到即真、诚实侦察永不撒谎（车道 4 收尾·task #8 清干净惰性旋钮）；欺骗轴已整体移除（2026-07-10 理智系统移除）。
 
 /** signature（被探测度，0b 消费遭遇/伏击；0a 只派生）权重：灯高、声呐中、静默低。 */
 export const SIGNATURE_BASE = 1;
@@ -243,40 +243,6 @@ export function predatorApproaches(run: RunState): boolean {
   return run.alert >= ALERT_THRESHOLD && run.currentDepth >= ALERT_MIN_DEPTH;
 }
 
-// ============================================================
-// 低理智轴：改怪物钩子（感知重做 SPEC §2.3/§7① 形态 a）
-// ============================================================
-// 欺骗只剩「低 san」这一根轴：san 够低 → 除了改选项（events.ts::isOptionVisible 读的 EventOption.hallucination·
-// 阈值 HALLUCINATION_SANITY_MAX=50〕），还能**改怪物**——注入只在低 san 才出现的幻觉遭遇（看破/打赢即消·无实体伤）。
-// 北极星：是**你疯了**、不是世界骗你；san 回上来 → 幻觉消失、控制组（高 san）永不出幻觉怪。
-// 判定纯派生（读 run·不掷 RNG）；注入 wiring 在 dive-stalker.ts::maybeHallucinationEncounter（复用 zone 现有怪·
-// 起战时标 hallucination:true·结算软化在 combat.ts）。
-
-/**
- * 低理智幻觉「可见层」san 阈值（≤ 此值起，改选项类幻觉现身：假选项 / 改写文案·本身不致命）。
- * 单一真相收口点：events.ts::isOptionVisible / eventSatisfy.ts / eventScenario.ts / StoryEditor.tsx
- * 一律 import 本常量，别再各写字面量 50（SPEC §2.3 可见层）。占位·defer-number-tuning（作者最终统一调）。
- */
-export const HALLUCINATION_VISIBLE_SANITY = 50;
-
-/**
- * 低理智幻觉「致命层」san 阈值（≤ 此值才可能出幻觉战斗遭遇＝会致命的那半）。
- * 作者 2026-07-05 定分层：san≤50 只看得到（可见层·改选项 HALLUCINATION_VISIBLE_SANITY）· san≤20 才致命
- * （本层·改怪物 / 幻觉战 + 氧气当场致命）。渐进恐怖曲线（50→20 玩家能察觉「在滑」、有机会回 san 自救）；
- * 20 的高门槛天然是「氧气幻觉致命」的护栏（SPEC §2.3/§7①·gate＝hallucinationApproaches→maybeHallucinationEncounter）。
- * 占位·defer-number-tuning（作者最终统一调）。
- */
-export const HALLUCINATION_SANITY = 20;
-
-/**
- * 是否可能撞上低理智幻觉遭遇（moveToNode 据此走注入钩子·mirror predatorApproaches）：
- * san ≤ HALLUCINATION_SANITY 且够深（§7.5 浅水免压·与真遭遇同守——浅水/教学区绝对安全）。
- * 高 san → 恒 false（控制组：世界诚实、无幻觉怪）。纯派生·不掷 RNG。
- */
-export function hallucinationApproaches(run: RunState): boolean {
-  return run.stats.sanity <= HALLUCINATION_SANITY && run.currentDepth >= ALERT_MIN_DEPTH;
-}
-
 /**
  * 一记扫描当场抬升的警觉量（pingSonar 调用）：浅水免压（深度因子 0）、深 band 更狠（band 倍率）。
  * 与逐回合积累分开——扫描是离散的主动暴露事件，故在动作里直接结算、不依赖之后是否移动。
@@ -306,7 +272,7 @@ export interface ThreatContact {
   imminent: boolean;
   /**
    * 读数损坏——**感知重做后恒为 false**：威胁接触由 alert（真危险）驱动、诚实（SPEC §2.2 声呐永不撒谎）。
-   * 「读不出距离」这类失真属低理智轴（SPEC §2.3·非本车道），字段暂留给 UI 类型稳定（SonarScanPanel 仍读）。
+   * 「读不出距离」这类失真属已移除的欺骗轴（2026-07-10），字段暂留给 UI 类型稳定（SonarScanPanel 仍读）。
    */
   garbled: boolean;
 }

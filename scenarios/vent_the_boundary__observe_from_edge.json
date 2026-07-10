@@ -4,9 +4,6 @@
   "seed": 1,
   "zoneId": "zone.hydrothermal_vent",
   "depth": 185,
-  "stats": {
-    "sanity": 60
-  },
   "choices": [
     "observe_from_edge"
   ],
@@ -15,8 +12,7 @@
     "errors": [],
     "finalPhase": "dive",
     "statsDelta": {
-      "oxygen": -1,
-      "sanity": 2
+      "oxygen": -1
     }
   }
 }

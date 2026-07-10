@@ -52,7 +52,6 @@ interface StepContinue {
   phase: string;
   depth: number;
   o2: number;
-  sanity: number;
   stamina: number;
   nitrogen: number;
   turn: number;
@@ -135,7 +134,6 @@ function cmdStep(tokenPath: string, zone: string, o2: number): void {
     phase: ph.kind === 'dive' ? `dive.${ph.subPhase?.kind}` : ph.kind,
     depth: r1(run?.currentDepth ?? 0),
     o2: r1(run?.stats.oxygen ?? 0),
-    sanity: r1(run?.stats.sanity ?? 0),
     stamina: r1(run?.stats.stamina ?? 0),
     nitrogen: r1(run?.stats.nitrogen ?? 0),
     turn: run?.turn ?? 0,

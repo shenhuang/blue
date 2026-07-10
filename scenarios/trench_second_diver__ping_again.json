@@ -10,6 +10,6 @@
     "finalPhase": "dive",
     "errors": [],
     "loreAdded": ["lore.trench.the_company"],
-    "statsDelta": { "oxygen": -2, "sanity": -6 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

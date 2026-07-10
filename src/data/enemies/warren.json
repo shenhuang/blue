@@ -239,7 +239,6 @@
       },
       "selfDestruct": {
         "staminaDamage": [7, 11],
-        "sanityDamage": [1, 2],
         "detonateText": "[待过稿] 它猛地一缩，整个囊体在你脸前炸开——一团高压的水和碎肉糊了你满身。",
         "defusedText": "[待过稿] 隔着一段水，钢钉先扎穿了那层绷紧的皮，气压泄在原地——碎沫没够到你。"
       },
@@ -320,7 +319,7 @@
       "introText": "[待过稿] 死角里只剩她——她开始产卵。"
     },
     {
-      "_comment": "女王信息素·引爆 Puffer + 结茧率↑ baseline 载体（§5·2026-07-07）：死角女王 + 一只 Puffer。女王吼叫①令 larva Puffer 立即结茧→羽化 armed→②信息素令其立即引爆（溅玩家·理智伤确证）。数值文案占位。",
+      "_comment": "女王信息素·引爆 Puffer + 结茧率↑ baseline 载体（§5·2026-07-07）：死角女王 + 一只 Puffer。女王吼叫①令 larva Puffer 立即结茧→羽化 armed→②信息素令其立即引爆（溅玩家·体力伤确证）。数值文案占位。",
       "id": "combat.warren_pheromone_test",
       "party": {
         "members": [{ "defId": "enemy.warren_queen" }, { "defId": "enemy.warren_puffer" }]

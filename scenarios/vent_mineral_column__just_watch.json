@@ -3,7 +3,6 @@
   "eventId": "vent.mineral_column",
   "depth": 140,
   "seed": 1,
-  "sanity": 60,
   "choices": ["just_watch"],
   "expect": {
     "steps": 1,

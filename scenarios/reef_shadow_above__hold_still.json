@@ -14,8 +14,7 @@
       "lore.reef_deep.shadow_above"
     ],
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -3
+      "oxygen": -2
     }
   }
 }

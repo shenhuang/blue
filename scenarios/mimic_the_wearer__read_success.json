@@ -9,8 +9,7 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
     "loreAdded": ["lore.wreck_graveyard.the_wearer"],
-    "statsDelta": { "oxygen": -4, "sanity": -11 }
+    "statsDelta": { "oxygen": -4 }
   }
 }

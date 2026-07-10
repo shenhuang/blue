@@ -19,7 +19,6 @@ import { PanelShell } from './PanelShell';
 const ROLE_LABEL: Record<EnemyRole, string> = {
   predator: '捕食者',
   gatekeeper: '守口者',
-  sanity: '蚀心者',
   swarm: '群涌',
   ambusher: '伏击者',
   boss: '首领',

@@ -2,7 +2,7 @@
 //
 // §1 satisfyEvent 保证：遍历 EVENT_DB 每个事件，satisfyEvent(id) → runEventScenario(input) 后
 //    首步不应再有「非有意」隐藏选项，且全库不应出现互斥冲突（impossible gate）。
-//    现状（仅 hasEquipment{tool}+少量 sanityRange/prereq/forbiddenFlags 在用）下几乎平凡通过；
+//    现状（仅 hasEquipment{tool}+少量 prereq/forbiddenFlags 在用）下几乎平凡通过；
 //    但一旦有人在编辑器里给选项加门控条件，这条门会立刻抓住「加了条件却没法被满足」的回潮。
 // §2 eventArc 图重建 + 全库 triggerEventId 引用完整（与 check-dive-refs 同向双保险）。
 //
@@ -42,7 +42,7 @@ L('§1 satisfyEvent 一键满足保证（遍历全库）');
     assert(res.errors.length === 0, `${ev.id} runner 报错：${res.errors.join(' / ')}`);
     assert(res.steps.length >= 1, `${ev.id} 应至少扫描出首步`);
 
-    // (c) 首步的隐藏选项必须都是「有意隐藏」（未开幻觉模式的 hallucination 选项）
+    // (c) 首步的隐藏选项必须都是「有意隐藏」（satisfyEvent 有意保留的隐藏选项）
     const step0 = res.steps[0];
     const intended = new Set(r.intentionallyHidden);
     for (const h of step0.hiddenOptions) {

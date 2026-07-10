@@ -11,8 +11,7 @@
     "finalPhase": "dive",
     "errors": [],
     "statsDelta": {
-      "oxygen": -1,
-      "sanity": -3
+      "oxygen": -1
     },
     "loreAdded": [
       "lore.wreck_graveyard.rusticles"

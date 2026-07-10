@@ -4,9 +4,6 @@
   "seed": 1,
   "zoneId": "zone.trench",
   "depth": 68,
-  "stats": {
-    "sanity": 60
-  },
   "choices": [
     "wait_it_out"
   ],
@@ -15,8 +12,7 @@
     "errors": [],
     "finalPhase": "dive",
     "statsDelta": {
-      "oxygen": -3,
-      "sanity": -2
+      "oxygen": -3
     }
   }
 }

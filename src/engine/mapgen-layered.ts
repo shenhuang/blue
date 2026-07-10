@@ -85,7 +85,6 @@ export function generateLayeredMap(opts: GenOpts, baseD0: number, baseD1: number
         const pool = buildEventPool({
           zone,
           depth,
-          sanity: 100, // 生成时按 100 算；真实 sanity 在抽取那一刻可能改变可见性，但 MVP 阶段先这样
           profileFlags,
           triggeredEventIds: triggeredFakeIds,
           tagsOverride: opts.bandTags,

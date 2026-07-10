@@ -106,11 +106,10 @@ export function tagsForDepth(zone: ZoneDef, depth: number): ZoneTag[] {
   return active;
 }
 
-/** 给定 zone + depth + sanity + flags，从 EVENT_DB 中筛出可抽取池 */
+/** 给定 zone + depth + flags，从 EVENT_DB 中筛出可抽取池 */
 export function buildEventPool(opts: {
   zone: ZoneDef;
   depth: number;
-  sanity: number;
   profileFlags: Set<string>;
   triggeredEventIds: string[];
   excludeIds?: Set<string>;
@@ -130,7 +129,7 @@ export function buildEventPool(opts: {
   poiTemplateId?: string;
   /**
    * 编辑器全量目录派生（剧情编辑器「真·POI 下潜」走查·2026-06-27·poiEvents.derivePoiDivePool）：
-   * true ⇒ 跳过**运行态**门控（sanity / prereqFlags / forbiddenFlags / oncePerRun / oncePerSave），
+   * true ⇒ 跳过**运行态**门控（prereqFlags / forbiddenFlags / oncePerRun / oncePerSave），
    * 只留**路由**门控（weight>0 / excludeIds / poiId / depth / zoneTags）。让编辑器列出「按深度/zoneTag/poiId
    * 能路由到此 POI 的全部事件」（各事件门控由 UI 另行标注·不在此过滤）。缺省 false ⇒ 与游戏内逐字一致（零影响）。
    */
@@ -157,14 +156,9 @@ export function buildEventPool(opts: {
     if (!ev.zoneTags || ev.zoneTags.length === 0) continue;
     if (!ev.zoneTags.some((t) => tags.has(t))) continue;
 
-    // 运行态门控（sanity / flag / once）：编辑器全量目录派生（ignoreProfileGates）跳过这一段——只看
+    // 运行态门控（flag / once）：编辑器全量目录派生（ignoreProfileGates）跳过这一段——只看
     // 路由能否到达此 POI，门控留给 UI 标注。游戏内缺省 false ⇒ 逐字一致。
     if (!opts.ignoreProfileGates) {
-      // sanity 匹配
-      if (ev.sanityRange) {
-        if (opts.sanity < ev.sanityRange[0] || opts.sanity > ev.sanityRange[1]) continue;
-      }
-
       // 前置 flag
       if (ev.prereqFlags && !ev.prereqFlags.every((f) => opts.profileFlags.has(f))) continue;
       if (ev.forbiddenFlags && ev.forbiddenFlags.some((f) => opts.profileFlags.has(f))) continue;

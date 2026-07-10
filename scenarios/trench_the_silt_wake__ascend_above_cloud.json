@@ -4,9 +4,6 @@
   "seed": 1,
   "zoneId": "zone.trench",
   "depth": 68,
-  "stats": {
-    "sanity": 60
-  },
   "choices": [
     "ascend_above_cloud"
   ],
@@ -15,8 +12,7 @@
     "errors": [],
     "finalPhase": "dive",
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -1
+      "oxygen": -2
     }
   }
 }

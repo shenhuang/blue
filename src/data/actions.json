@@ -108,15 +108,13 @@
     {
       "id": "action.breathe",
       "name": "调息",
-      "description": "稳住呼吸，恢复 5 理智。被打中会失效。",
+      "description": "稳住呼吸，重整姿态。被打中会失效。",
       "costStamina": 2,
       "costOxygenTurns": 2,
       "targeting": "self",
       "effect": {
         "kind": "recover",
-        "deltas": { "sanity": 5 },
-        "disruptable": true,
-        "disruptPenalty": { "sanity": -5 }
+        "disruptable": true
       }
     },
     {

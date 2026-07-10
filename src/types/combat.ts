@@ -66,7 +66,8 @@ export interface DefendEffect {
 
 export interface RecoverEffect {
   kind: 'recover';
-  deltas: Partial<Record<Stat, number>>;
+  /** 属性恢复量。可缺省（无属性效果的纯"稳住呼吸"stall 动作·理智系统移除后 breathe 即此形态）——读点须 `?? {}`。 */
+  deltas?: Partial<Record<Stat, number>>;
   /** 是否受攻击会打断（被打断时按 disruptPenalty 扣属性） */
   disruptable?: boolean;
   disruptPenalty?: Partial<Record<Stat, number>>;
@@ -116,7 +117,7 @@ export interface CombatState {
 
   /** 当前战场上的敌人 */
   enemies: EnemyInstance[];
-  /** 待加入战斗的潜在敌人池（噪声/理智阈值触发增援） */
+  /** 待加入战斗的潜在敌人池（噪声阈值触发增援） */
   reinforcementPool: EnemyParty['joinRules'];
 
   /** 玩家状态 */
@@ -173,17 +174,6 @@ export interface CombatState {
    * 缺省/false ⇒ 无序多成员 party 逐字节不变。CombatState 不入存档（战斗态不序列化）⇒ 零存档影响。
    */
   attackInOrder?: boolean;
-
-  /**
-   * 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a·「改怪物」的怪物半边）：本场战斗是你**疯出来的**，
-   * 不是世界里真有东西——北极星「是你疯了、不是世界骗你」。startCombat 从 enc.hallucination 或
-   * StartCombatOptions.hallucination（注入钩子复用 zone 怪时用后者·不改共享 def）写入 CombatState。
-   * 效果（全部 gate 在 combat.ts::这场是幻觉时）：敌攻**不扣真实体力·不留伤**（幻爪打不穿你）——
-   * 代价软化到理智/氧气/慌（sanityDamage 照扣＝「你自己的脑子」·氧气照 tick）；胜/看破后**无战利品**、
-   * 收场文案暧昧（「你眨眼，那里只有空水」＝它从没在那儿）。**永不能靠它把你打死**（0 体力伤＝无脚本死·
-   * 北极星）；理智耗尽仍是既有「疯狂上浮」（非怪物击杀）。缺省/false ⇒ 真遭遇逐字节不变。
-   */
-  hallucination?: boolean;
 
   /**
    * The Warren 背水一战标记（蜂群 boss SPEC §4·作者 2026-07-08 三卵室重设计）。
@@ -247,15 +237,6 @@ export interface CombatEncounterDef {
    * （zone ambushEncounters → maybeSpawnStalker）时的个体差异。缺省/缺字段 → 沿用深度派生默认（逐字节不变）。
    */
   stalker?: StalkerProfile;
-
-  /**
-   * 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a·「改怪物」的怪物半边·与 EventOption.hallucination 对称）：
-   * 标 true → 这场遭遇是玩家**低 san 疯出来的**（不是真敌）。startCombat 据此把 CombatState.hallucination 置 true，
-   * 由 combat.ts 软化结算：敌攻 0 体力伤·不留负伤 + 胜利无战利品 + 暧昧收场文案。**永不能靠它把你打死**（北极星）。
-   * 数据侧可显式声明幻觉专属遭遇；低 san 注入钩子（dive-stalker.ts::maybeHallucinationEncounter）复用 zone 现有
-   * ambushEncounters 时改走 StartCombatOptions.hallucination（不改共享 def）。缺省/false ⇒ 真遭遇逐字节不变。
-   */
-  hallucination?: boolean;
 
   // The Warren 房间标记 `warrenRoom.isHatchery` **已删**（作者 2026-07-08 三卵室重设计）：死角是**状态不是地点**，
   // 由 startCombat 从 `run.warrenHunt.roomsCleared` 派生进 `CombatState.warrenLastStand`。遭遇 def 不再承载它。

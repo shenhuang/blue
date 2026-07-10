@@ -8,8 +8,7 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
     "loreAdded": ["lore.wreck_graveyard.the_other"],
-    "statsDelta": { "oxygen": -2, "sanity": -4 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

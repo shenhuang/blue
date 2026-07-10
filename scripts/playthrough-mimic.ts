@@ -105,14 +105,14 @@ assert(fb, '5: mimic.false_beacon 已注册');
 assert(fb.weight === 0, '5: weight 0（不入节点池、只由横渡强制开场、不可错过）');
 const optMap = new Map(fb.options.map((o: EventOption) => [o.id, o]));
 const readTell = optMap.get('read_the_tell')!;
-const success = readTell.check!.onSuccess;
-const failure = readTell.check!.onFailure;
-assert((success.setProfileFlags ?? []).includes(D_REVEAL), '5: 读穿成功 → setProfileFlags 含 d_reveal');
-assert((success.setProfileFlags ?? []).includes(SURVIVED), '5: 读穿成功 → 含 survived 解锁钩子');
-assert(success.endDive === 'forceAscend', '5: 读穿成功 → forceAscend（活着离开）');
-assert(success.loreEntry === 'lore.deep_water.the_false_beacon', '5: 读穿成功 → 回收 false_beacon 伏笔 lore');
-assert(!(failure.setProfileFlags ?? []).length, '5: 读错 → 不置任何 profile flag（保持暧昧、不廉价交底）');
-assert(failure.endDive === 'forceAscend', '5: 读错 → 仍活着离开（无脚本死）');
+// 理智检定移除后：read_the_tell 从「掷骰成功才揭示 / 读错保持暧昧」坍缩为单一 outcome（旧 onSuccess）——
+// 读穿即揭示，不再有失败暧昧支（"其余保持暧昧"母题改由下方盲信 / 拒看两选项独立承载）。
+assert(!readTell.check, '5: read_the_tell 已坍缩为单一 outcome（无 check·理智检定移除）');
+const success = readTell.outcome!;
+assert((success.setProfileFlags ?? []).includes(D_REVEAL), '5: 读穿 → setProfileFlags 含 d_reveal');
+assert((success.setProfileFlags ?? []).includes(SURVIVED), '5: 读穿 → 含 survived 解锁钩子');
+assert(success.endDive === 'forceAscend', '5: 读穿 → forceAscend（活着离开）');
+assert(success.loreEntry === 'lore.deep_water.the_false_beacon', '5: 读穿 → 回收 false_beacon 伏笔 lore');
 for (const o of fb.options) {
   const outs: Outcome[] = o.check ? [o.check.onSuccess, o.check.onFailure] : o.outcome ? [o.outcome] : [];
   for (const out of outs) {
@@ -126,7 +126,7 @@ for (const id of ['swim_for_it', 'douse_and_back']) {
   assert(!(out.setProfileFlags ?? []).length, `5:「${id}」不置 d_reveal（不读＝不揭）`);
   assert(out.endDive === 'forceAscend', `5:「${id}」活着离开`);
 }
-L('  读穿→d_reveal+survived+forceAscend / 读错·盲信·拒看→不交底 / 全 loot-free 无战斗 ✓');
+L('  读穿→d_reveal+survived+forceAscend / 盲信·拒看→不交底 / 全 loot-free 无战斗 ✓');
 
 // ============================================================
 // 6. horror-sapien 姊妹 apex：读穿给 lore、不置 d_reveal
@@ -136,7 +136,8 @@ const wearer = getEventById('mimic.the_wearer_apex')!;
 assert(wearer, '6: mimic.the_wearer_apex 已注册');
 assert((wearer.zoneTags ?? []).includes('abyssal'), '6: 挂 abyssal tag（深渊 organic 遭遇）');
 const wRead = wearer.options.find((o: EventOption) => o.id === 'read_him')!;
-assert(wRead.check!.onSuccess.loreEntry === 'lore.wreck_graveyard.the_wearer', '6: 读穿 → 回收 the_wearer 伏笔 lore');
+assert(!wRead.check, '6: read_him 已坍缩为单一 outcome（无 check·理智检定移除）');
+assert(wRead.outcome!.loreEntry === 'lore.wreck_graveyard.the_wearer', '6: 读穿 → 回收 the_wearer 伏笔 lore');
 for (const o of wearer.options) {
   const outs: Outcome[] = o.check ? [o.check.onSuccess, o.check.onFailure] : o.outcome ? [o.outcome] : [];
   for (const out of outs) {

@@ -1,7 +1,6 @@
 {
   "_comment": "沉船墓园最底层 · 开着的内舱门（门里是开阔黑水 + 远处冷光 + 一呼一吸的水流，cosmic, oncePerRun, sanity vs 55）。满 sanity 时 rate=0.95（clamp 上限），seed 1 确定性通过。验证墓园最深 cosmic check 通过分支：lore.wreck_graveyard.the_door + sanity -9 + oxygenTurnCost 2，无 loot。门槛/吸力意象，呼应跨 zone『深处有光』暗线但不触发 flag.d_reveal。dc/惩罚对照 engine_room_hum、与听觉系 cosmic 形成空间系对照。",
   "eventId": "wreck_graveyard.the_open_door",
-  "stats": { "sanity": 100 },
   "depth": 45,
   "seed": 1,
   "choices": ["look_in"],
@@ -9,8 +8,7 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
     "loreAdded": ["lore.wreck_graveyard.the_door"],
-    "statsDelta": { "oxygen": -2, "sanity": -9 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

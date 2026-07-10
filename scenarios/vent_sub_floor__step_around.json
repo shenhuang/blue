@@ -3,7 +3,6 @@
   "eventId": "vent.sub_floor",
   "depth": 140,
   "seed": 1,
-  "sanity": 60,
   "choices": ["step_around"],
   "expect": {
     "steps": 1,

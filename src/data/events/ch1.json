@@ -16,7 +16,6 @@
           "outcome": {
             "text": "你用刀背一点点撬，避开活珊瑚——这是导师教的手法，你的手自己记得。\n密封圈还有弹性，十年了，它咬得很紧。盒里是一管固定液，液里一条小鱼，背鳍上一道淡蓝的纹路，在你的灯下仍然发光。标签上的字迹你认得：\n「萤光背礁鳚·标本 No.7。活体群落仍在此丛——天黑了才找得见。」\n坐标对得上。原来日志一句没乱写。你把盒子收好，手有点抖。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": 4 },
             "loreEntry": "lore.ch1.anchor_reef",
             "setProfileFlags": ["story.ch1.anchor.reef"]
           }
@@ -24,30 +23,18 @@
         {
           "id": "wait_in_shadow",
           "label": "贴着礁影等一等——日志那句话是写给你的",
-          "check": {
-            "stat": "sanity",
-            "dc": 50,
-            "onSuccess": {
-              "text": "你把灯压到最低，贴着礁影，把呼吸放匀。\n几分钟。珊瑚丛深处那点淡蓝亮起来——一条，两条，七八条。背鳍的萤纹在暗处明明灭灭，像谁把一行字写进水里又轻轻擦掉。\n活体群落还在。导师标的样地，十年了还活着。你看够了，才去起那只盒子。",
-              "oxygenTurnCost": 2,
-              "deltas": { "sanity": 5 },
-              "loreEntry": "lore.ch1.fish_blenny",
-              "setProfileFlags": ["story.ch1.anchor.reef"]
-            },
-            "onFailure": {
-              "text": "你等。暗下来的珊瑚缝里有东西动了一下——不是鱼。\n一角织物，洗白的科考服那种蓝，在两簇珊瑚之间飘了一下，没了。你追过去，缝里只有海葵收拢的触手。\n你回到漆号底下，把盒子起出来。手抖得比预想的厉害。",
-              "oxygenTurnCost": 2,
-              "deltas": { "sanity": -6 },
-              "setProfileFlags": ["story.ch1.anchor.reef"]
-            }
+          "outcome": {
+            "text": "你把灯压到最低，贴着礁影，把呼吸放匀。\n几分钟。珊瑚丛深处那点淡蓝亮起来——一条，两条，七八条。背鳍的萤纹在暗处明明灭灭，像谁把一行字写进水里又轻轻擦掉。\n活体群落还在。导师标的样地，十年了还活着。你看够了，才去起那只盒子。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.ch1.fish_blenny",
+            "setProfileFlags": ["story.ch1.anchor.reef"]
           }
         },
         {
           "id": "not_today",
           "label": "先不动它——把位置描进本子，今天到此为止",
           "outcome": {
-            "text": "你只把漆号和盒子的位置描进自己的本子，一笔一笔，照着导师画样地的格式。\n十年都等了。它不差这一潜。",
-            "deltas": { "sanity": 2 }
+            "text": "你只把漆号和盒子的位置描进自己的本子，一笔一笔，照着导师画样地的格式。\n十年都等了。它不差这一潜。"
           }
         }
       ]
@@ -68,7 +55,6 @@
           "outcome": {
             "text": "海图室的桌面早空了，抽屉全开着，像被人按顺序清过。\n但铜锁孔里卡着半页纸——从一本日志上撕下来的，铅笔字泡得发胀，还能读。导师的字。\n页脚一行小字：「群落比坐标重要。坐标会漂，生态锚点不会。」\n你把纸页夹进自己的日志——导师那撕走的半本，回来一页。\n可这屋子清得太干净了。在你之前，还有第三双手到过这儿。",
             "oxygenTurnCost": 2,
-            "deltas": { "sanity": 4 },
             "loreEntry": "lore.ch1.anchor_wreck",
             "setProfileFlags": ["story.ch1.anchor.wreck"]
           }
@@ -76,30 +62,18 @@
         {
           "id": "follow_the_rust_fish",
           "label": "跟着那条锈色的鱼——它认得这条船",
-          "check": {
-            "stat": "sanity",
-            "dc": 52,
-            "onSuccess": {
-              "text": "货舱深处一条手掌长的鲷，鳞片锈红，一层叠一层，像船壳剥落的漆。它贴着龙骨啃食腐殖，吃几口，换个舱，路线很熟。\n你跟着它穿过两道你自己绝不敢钻的舱口——它认得哪里塌不下来。锈甲沉船鲷。日志里的第二张草图，活的。\n它把你带到海图室门口，自己拐进了黑里。锁孔里卡着的那半页纸，导师的字。你收好它。",
-              "oxygenTurnCost": 1,
-              "deltas": { "sanity": 3 },
-              "loreEntry": "lore.ch1.fish_rust_bream",
-              "setProfileFlags": ["story.ch1.anchor.wreck"]
-            },
-            "onFailure": {
-              "text": "你跟丢了。转过舱角，舱室正中挂着一顶旧潜水头盔，面窗朝你。\n里面当然是空的。可你在那扇面窗前停了太久——久到船里那阵金属轻响，几乎敲出一个你认得的节奏。\n你退出来，摸回海图室，从锁孔里取下那半页纸。导师的字。你的手停稳了才去碰它。",
-              "oxygenTurnCost": 3,
-              "deltas": { "sanity": -7 },
-              "setProfileFlags": ["story.ch1.anchor.wreck"]
-            }
+          "outcome": {
+            "text": "货舱深处一条手掌长的鲷，鳞片锈红，一层叠一层，像船壳剥落的漆。它贴着龙骨啃食腐殖，吃几口，换个舱，路线很熟。\n你跟着它穿过两道你自己绝不敢钻的舱口——它认得哪里塌不下来。锈甲沉船鲷。日志里的第二张草图，活的。\n它把你带到海图室门口，自己拐进了黑里。锁孔里卡着的那半页纸，导师的字。你收好它。",
+            "oxygenTurnCost": 1,
+            "loreEntry": "lore.ch1.fish_rust_bream",
+            "setProfileFlags": ["story.ch1.anchor.wreck"]
           }
         },
         {
           "id": "back_out",
           "label": "船身在响——今天不进去",
           "outcome": {
-            "text": "你退开两个身位，把破口的位置记下。\n那队鳕鱼还在舷窗后面看你。你上浮的时候，它们的眼睛一起转了一个角度。",
-            "deltas": { "sanity": -2 }
+            "text": "你退开两个身位，把破口的位置记下。\n那队鳕鱼还在舷窗后面看你。你上浮的时候，它们的眼睛一起转了一个角度。"
           }
         }
       ]
@@ -117,23 +91,11 @@
         {
           "id": "read_the_lights",
           "label": "稳住——数它们的节奏，分辨那是什么",
-          "check": {
-            "stat": "sanity",
-            "dc": 55,
-            "onSuccess": {
-              "text": "你数。亮灭不同步；间距随水流漂；每对「眼睛」中间，有一道几乎透明的膜在折光。\n是鱼。半透明的帆鳍贴着体侧，整群幻光流帆鱼在你的灯外缘巡游，把光折成一圈一圈的晕。眼睛是晕，膜是鱼。道理都对。\n你把日志里那页草图对着活群落补完了最后两笔。补完才发现自己一直屏着气。",
-              "oxygenTurnCost": 2,
-              "deltas": { "sanity": -4 },
-              "loreEntry": "lore.ch1.fish_sailfilm",
-              "setProfileFlags": ["story.ch1.anchor.midwater"]
-            },
-            "onFailure": {
-              "text": "你数到一半，光点忽然全停了。\n整片中层只剩你的气泡声。然后那些成对的光开始排队——排成十年前码头送行那天的队形。你看见你自己的位置：队尾，没上船的那一个。\n你闭眼，再睁开。光点散成普通的鱼群，游走了。\n你的气压表读数跳了一下。刚才那一会儿，比你以为的久得多。",
-              "oxygenTurnCost": 4,
-              "deltas": { "sanity": -10 },
-              "loreEntry": "lore.ch1.midwater_void",
-              "setProfileFlags": ["story.ch1.anchor.midwater"]
-            }
+          "outcome": {
+            "text": "你数。亮灭不同步；间距随水流漂；每对「眼睛」中间，有一道几乎透明的膜在折光。\n是鱼。半透明的帆鳍贴着体侧，整群幻光流帆鱼在你的灯外缘巡游，把光折成一圈一圈的晕。眼睛是晕，膜是鱼。道理都对。\n你把日志里那页草图对着活群落补完了最后两笔。补完才发现自己一直屏着气。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.ch1.fish_sailfilm",
+            "setProfileFlags": ["story.ch1.anchor.midwater"]
           }
         },
         {
@@ -142,7 +104,6 @@
           "outcome": {
             "text": "你游进光点中间。它们绕着你转，把你的灯折成一团晕，晕里没有上下。\n你转了向。凭气泡爬升的方向才找回「上」。等你稳住，光点已经散远了。\n掌心里剩一小片蹭掉的鳍膜，半透明，薄得像没有。你把它夹进日志那页草图旁边。",
             "oxygenTurnCost": 3,
-            "deltas": { "sanity": -6 },
             "setProfileFlags": ["story.ch1.anchor.midwater"]
           }
         },
@@ -150,8 +111,7 @@
           "id": "hold_position",
           "label": "不去碰它们——记下方位，先退",
           "outcome": {
-            "text": "你记下方位和深度，慢慢退开。\n那片光跟了你两个呼吸的距离，停住，留在原地继续亮、灭。\n像送到这儿为止。",
-            "deltas": { "sanity": -2 }
+            "text": "你记下方位和深度，慢慢退开。\n那片光跟了你两个呼吸的距离，停住，留在原地继续亮、灭。\n像送到这儿为止。"
           }
         }
       ]
@@ -178,31 +138,18 @@
         {
           "id": "read_the_smoke",
           "label": "先稳一拍——看清烟柱之间还有什么",
-          "check": {
-            "stat": "sanity",
-            "dc": 58,
-            "onSuccess": {
-              "text": "烟柱根部的黑岩上有东西在动。巴掌大的鱼贴着岩面，鳞像烧结过的黑甲，一片一片，啃食喷口边缘的菌膜。一条，一片，一整面岩壁的群落。\n热液岩鳞鱼。日志的最后一张草图，画的就是它。\n你把最后一页补完。然后才朝那道光游过去。",
-              "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5 },
-              "loreEntry": "lore.ch1.fish_ventscale",
-              "triggerEventId": "ch1.ending_station"
-            },
-            "onFailure": {
-              "text": "你盯着烟柱之间看。黑烟里走出来的不是鱼——是一支科考编队，蛙鞋的节奏整齐得像一个人，列队往更深处去。\n你差点跟上去。差一脚。\n是那道光扫回来，落在你面罩上，你才停住。编队没了。烟还是烟。\n你朝光游过去，不敢再看烟柱中间。",
-              "oxygenTurnCost": 3,
-              "deltas": { "sanity": -9 },
-              "loreEntry": "lore.ch1.vent_descent",
-              "triggerEventId": "ch1.ending_station"
-            }
+          "outcome": {
+            "text": "烟柱根部的黑岩上有东西在动。巴掌大的鱼贴着岩面，鳞像烧结过的黑甲，一片一片，啃食喷口边缘的菌膜。一条，一片，一整面岩壁的群落。\n热液岩鳞鱼。日志的最后一张草图，画的就是它。\n你把最后一页补完。然后才朝那道光游过去。",
+            "oxygenTurnCost": 2,
+            "loreEntry": "lore.ch1.fish_ventscale",
+            "triggerEventId": "ch1.ending_station"
           }
         },
         {
           "id": "turn_back",
           "label": "今天不进去——你还没准备好",
           "outcome": {
-            "text": "你在烟柱外停了很久，看那道光一遍一遍扫它的样地。\n然后你掉头。有些门推开之前，你得先确定自己撑得住门后的任何一种答案。",
-            "deltas": { "sanity": -3 }
+            "text": "你在烟柱外停了很久，看那道光一遍一遍扫它的样地。\n然后你掉头。有些门推开之前，你得先确定自己撑得住门后的任何一种答案。"
           }
         }
       ]
@@ -222,7 +169,6 @@
           "label": "把你抄满的日志递给他",
           "outcome": {
             "text": "他接过去，一页页翻，在你补完的四张草图上各停了一拍。\n「萤纹丛还活着。锈甲群换了条船。薄膜群东移了两海里。岩鳞群在第三烟柱。」他说的每一句你都在日志里读过——他说出来，它们就都成了真的。\n他领你看完整面观察墙：四种鱼，四个群落，十年的记录没有断过一天。「群落比坐标重要，」他把一支笔放进你手里，「记录接着写。写的人换一个，海不在乎。」\n器材舱里有人影在忙。你想看清，每次却都差一个转头的角度——他们只在玻璃的反光里。\n你没有再追上去看。\n临走你从记录架上拿了样东西收着——他贴身戴的那枚小坠子，金属托裂了，搁在笔筒边。\n你找到他了。",
-            "deltas": { "sanity": 18 },
             "loot": [{ "itemId": "item.ch1.steadying_charm_broken", "qty": [1, 1] }],
             "loreEntry": "lore.ch1.the_station",
             "setProfileFlags": ["story.ch1.anchor.vent", "story.ch1.ending.fulfilled", "story.ch1.charm_found"],
@@ -234,7 +180,6 @@
           "label": "先看看这座站——十年，他是怎么过的",
           "outcome": {
             "text": "他不催你。你沿着观察墙慢慢走。\n记录从十年前你认得的那种蓝墨水开始，一摞一摞，没有断过。器材舱里有人影在忙——你每次都差一个转头的角度，只在玻璃反光里看见他们晃过去。\n「人手一直够，」导师在你身后说，「海上不缺肯留下的人。」这句话日志的扉页上也有。他说出来的时候，你没接话——有些话一开口，这一刻就散了。\n他把一支笔放进你手里：「记录接着写。」\n你接了。\n记录架上搁着他贴身戴的那枚小坠子，托裂了。你拿起来收进口袋。\n你找到他了。",
-            "deltas": { "sanity": 18 },
             "loot": [{ "itemId": "item.ch1.steadying_charm_broken", "qty": [1, 1] }],
             "loreEntry": "lore.ch1.the_station",
             "setProfileFlags": ["story.ch1.anchor.vent", "story.ch1.ending.fulfilled", "story.ch1.charm_found"],

@@ -4,9 +4,7 @@
   "seed": 1,
   "zoneId": "zone.hydrothermal_vent",
   "depth": 185,
-  "stats": {
-    "sanity": 60,
-    "stamina": 5
+  "stats": {"stamina": 5
   },
   "choices": [
     "press_on_it"
@@ -16,8 +14,7 @@
     "errors": [],
     "finalPhase": "dive",
     "statsDelta": {
-      "oxygen": -1,
-      "sanity": -3
+      "oxygen": -1
     }
   }
 }

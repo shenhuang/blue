@@ -4,9 +4,6 @@
   "seed": 1,
   "zoneId": "zone.open_midwater",
   "depth": 100,
-  "stats": {
-    "sanity": 60
-  },
   "choices": [
     "continue_course"
   ],

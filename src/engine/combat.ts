@@ -35,6 +35,7 @@ import { getItemDef } from './items';
 import { computeModifiers, effectiveStaminaMax } from './modifiers';
 import { addInjury, injuryIdForDamageType, applyMedkitHeal } from './injuries';
 import { resolveEncounterMember, enemySeenFlag } from './enemyLibrary';
+import { combatNitrogenGain } from './nitrogen';
 import { frontmostLivingSegment, isSegmentReachable, chainSegmentDamageBonus } from './chain-eel';
 // 特殊敌人机制钩子（boss 阶段 / 链鳗 enrage / 环境压力 / 分裂 / 食尸 / 补蜂 / 茧化 / 口孵——
 // 全部 EnemyDef 数据字段驱动·普通敌人恒 no-op）：见 combat-mechanics.ts。
@@ -108,13 +109,6 @@ export interface StartCombatOptions {
    */
   sourceCorpseId?: string;
   /**
-   * 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：把本场标为幻觉（写 CombatState.hallucination）。
-   * 低 san 注入钩子（dive-stalker.ts::maybeHallucinationEncounter）复用 zone 现有怪时用它——**不改共享 def**
-   * 就让这一场软化结算（敌攻 0 体力伤·无战利品·暧昧收场）。def 自带 enc.hallucination:true 时也会被或上（下方）。
-   * 未设 → 取 def.hallucination（缺省 false ＝真遭遇逐字节不变）。
-   */
-  hallucination?: boolean;
-  /**
    * The Warren 背水一战覆写（§4·详见 types/combat.ts::CombatState.warrenLastStand）。未设 → 从追猎进度派生
    * （`isWarrenLastStand(run)`）。只给 scenario/adhoc 用：构造背水一战而不必拨动 roomsCleared（那会连带改产卵上限）。
    */
@@ -142,7 +136,6 @@ export function startCombat(
       instanceId: `${combatId}.${idx}`,
       defId: def.id,
       hp: def.hp,
-      sanityHp: def.sanityHp,
       stance: scentTrail && def.scent && def.initialStance === 'unaware' ? 'alerted' : def.initialStance,
       aggro: def.threat,
       statuses: [],
@@ -184,10 +177,6 @@ export function startCombat(
     ...(options?.sourceCorpseId ? { sourceCorpseId: options.sourceCorpseId } : {}),
     // 链鳗（分节实体）：按序攻击分节链标记（仅显式标 true 的遭遇带·普通 party 不写 ⇒ 逐字节不变）。
     ...(enc.attackInOrder ? { attackInOrder: true as const } : {}),
-    // 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：def 自带 enc.hallucination 或注入钩子传 options.hallucination
-    // → 标 CombatState.hallucination（enemyAttackPlayer 0 体力伤·finalizeVictory 无战利品·暧昧收场）。
-    // 二者皆无（真遭遇）⇒ 不写此字段 ⇒ 逐字节不变。
-    ...(enc.hallucination || options?.hallucination ? { hallucination: true as const } : {}),
     // The Warren 背水一战＝**状态不是地点**，从追猎进度派生；scenario/adhoc 可覆写。非 Warren 恒 false ⇒ 逐字节不变。
     ...(options?.warrenLastStand ?? isWarrenLastStand(state.run) ? { warrenLastStand: true as const } : {}),
     // The Warren 封口墙（她那间门口·§5）：破墙胜利 → finalizeVictory 置 warrenHunt.wallDown。仅到达路由构造的墙遭遇带此标 ⇒ 逐字节不变。
@@ -449,6 +438,15 @@ export function applyPlayerAction(
     oxygen: -costs.oxygen,
   });
 
+  // —— 1a. 战斗氮气累积（战斗 SPEC §2.1/§10 与主系统耦合）：按当前深度累积氮气，逼近速率 ×1.5（剧烈呼吸·
+  //   时间制·渐近深度 ceiling 不越过）。**仅喂减压债**（氮气已与旧「头脑不正常」轴脱钩·2026-07-10 理智系统移除·
+  //   那条留待地点缝 seam）。此前战斗不累积氮气是 gap。债数学单点在 nitrogen.ts::combatNitrogenGain·此处只经
+  //   applyStatsDelta 落增量（守规则六 nitrogen 单写口·无内联 ± 债务算术）。
+  const nitrogenGain = combatNitrogenGain(s.run!.stats.nitrogen, s.run!.currentDepth, action.costOxygenTurns);
+  if (nitrogenGain !== 0) {
+    s = applyStatsDelta(s, { nitrogen: nitrogenGain });
+  }
+
   // —— 1b. 物品消耗统一在此（任何 requiresItemId + consumesItem 的行动·#108）——
   // 此前只有 use_item 在 applyUseItem 里自扣；decoy 是 flee 效果也带道具，消耗就近收口到行动入口，
   // 效果分发各分支不再各管各的（availability 已在上面校验过持有）。
@@ -500,25 +498,14 @@ export function applyPlayerAction(
 
   // —— 7. 玩家死亡判定 ——
   if (!s.run) return { state: s, outcome: 'defeat' };
-  // 幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：本场是你**疯出来的**·没有真实赌注。
-  // 体力/理智：幻觉战里**软化不判死**（敌攻软化体力伤为 0；理智照吃 sanityDamage 但本场不结算死）——
-  // 这两条的真危险留到幻象散后（finalizeVictory / 你逃开）的下一记真判定：耗到 0 的是你自己，不是这只从没在那儿的东西。
-  // **氧气例外·仍当场致命**（作者 2026-07-05 定·SPEC §7①）：氧气是行动经济里你自己 tick 掉的、与幻觉怪无关；
-  // 全封会让「进幻觉＝无敌」→ 泄掉张力，让它当场淹死你＝「你自己耗光的、不是鬼杀的」当场成立。
+  // 战斗中两条即死窗：氧气耗尽（窒息）/ 体力耗尽（被撕碎）。
   // 出口是 flee / beginAscent（都不经本函数）：开阔水或站在上浮口 → CombatView 弃战上浮（beginAscent·零成本·任意回合）；
   // 其余水域靠 action.flee（需氧≥3）。**封闭水域低氧确实无出路＝有意 attrition**（蓝洞头顶岩顶·作者 2026-07-05 拍·非 bug）。
-  // 真遭遇（非幻觉）三条死亡窗逐字节不变。
-  const inHallucination = s.phase.kind === 'combat' && s.phase.combat.hallucination === true;
   if (s.run.stats.oxygen <= 0) {
     return { state: executeDeath(s, '战斗中窒息'), outcome: 'defeat' };
   }
-  if (!inHallucination) {
-    if (s.run.stats.stamina <= 0) {
-      return { state: executeDeath(s, '被敌人撕碎'), outcome: 'defeat' };
-    }
-    if (s.run.stats.sanity <= 0) {
-      return { state: executeDeath(s, '理智崩溃，疯狂上浮'), outcome: 'defeat' };
-    }
+  if (s.run.stats.stamina <= 0) {
+    return { state: executeDeath(s, '被敌人撕碎'), outcome: 'defeat' };
   }
 
   // —— 8. 回合 +1 ——
@@ -700,7 +687,7 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
 
 function applyRecover(state: GameState, action: CombatAction): GameState {
   if (action.effect.kind !== 'recover') return state;
-  let s = applyStatsDelta(state, action.effect.deltas);
+  let s = applyStatsDelta(state, action.effect.deltas ?? {});
   s = pushCombatLog(s, { actor: 'player', text: `${action.name}：你稳住呼吸。` });
   // disruptable 标记由敌人回合处理：如果本回合被打中且玩家有 'recovering' 标签则惩罚
   // MVP 简化：不实现 disrupt，让 recover 总是生效
@@ -983,36 +970,16 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
     dmg = Math.max(1, dmg - armor);
   }
 
-  // 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：幻爪打不穿你——**物理体力伤软化到 0**（无实体伤）。
-  // 代价留在理智（下方 sanityDamage 照扣＝「你自己的脑子」）+ 氧气（行动经济照 tick）+ 慌。0 体力伤 ⇒ 敌人
-  // 永远打不死你（stamina 死亡窗封死·北极星「无脚本死」）；真遭遇（非幻觉）dmg 逐字节不变。
-  const isHallucination = state.phase.combat.hallucination === true;
-  if (isHallucination) dmg = 0;
-
   let s = applyStatsDelta(state, { stamina: -dmg });
   s = pushCombatLog(s, {
     actor: 'enemy',
-    // 幻觉：读得出「牙贴上来却没有痛」——它不真在那儿（不写机制·守欺骗轴的暧昧）。真遭遇：原文案逐字节不变。
-    text: isHallucination
-      ? `${chosen.description}——可牙咬下来的地方没有痛，皮也没破。`
-      : `${chosen.description}（体力 -${dmg}）`,
+    text: `${chosen.description}（体力 -${dmg}）`,
   });
-
-  // 理智伤害（负伤 SPEC §5 敌攻理智消费点：sd × sanityTakenMult·向上取整；无伤 ×1 逐字节不变）。
-  // 幻觉遭遇照扣＝「代价是你的脑子」（软伤·SPEC §2.3）；但理智耗尽仍走既有「疯狂上浮」（events/combat 死亡判定），
-  // 不是被这只幻觉怪「击杀」——北极星「幻觉怪不能有脚本死」由 0 体力伤保证，理智侧沿用既有可恢复轴。
-  if (chosen.sanityDamage) {
-    const sd = Math.ceil(randRange(chosen.sanityDamage) * computeModifiers(state.run).sanityTakenMult);
-    s = applyStatsDelta(s, { sanity: -sd });
-    s = pushCombatLog(s, { actor: 'enemy', text: `你的脑子里像是被人按了一下（理智 -${sd}）。` });
-  }
 
   // 负伤判定（负伤 SPEC §4.1）：**仅带 injuryOnHit 的攻击才掷骰**——不带的攻击零额外 RNG 消耗，
   // 既有 seed 基线不被搅（只有配了数据的敌人的 baseline 需要重抄）。injuryId 缺省 → 按
   // damageType 查 cause 默认派生（physical→流血）；同类升档/上限顶替封死在 addInjury。
-  // 幻觉遭遇**不留伤**（幻爪穿不透·无实体伤·SPEC §2.3）：直接跳过掷骰——注意这会改变幻觉战斗的 RNG 流，
-  // 但幻觉遭遇是新路径（无既有 baseline）⇒ 不影响任何真遭遇的 seeded 基线。
-  if (!isHallucination && chosen.injuryOnHit && s.run && Math.random() < chosen.injuryOnHit.chance) {
+  if (chosen.injuryOnHit && s.run && Math.random() < chosen.injuryOnHit.chance) {
     const injuryId = chosen.injuryOnHit.injuryId ?? injuryIdForDamageType(chosen.damageType);
     if (injuryId) {
       const change = addInjury(s.run, injuryId);
@@ -1052,21 +1019,6 @@ function finalizeVictory(state: GameState): CombatTurnResult {
 
   // The Warren 胜利态回写（破封口墙→wallDown / 清空非女王卵室→存卵清零·§5/§8·外移守 file-budget·见 combat-warren.ts）。
   s = applyWarrenVictory(s);
-
-  // 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a）：看破 / 打「赢」＝它散了——**无战利品**（从没有东西可捞），
-  // 收场暧昧（「你眨眼，那里只有空水」＝它从没在那儿·是你疯了、不是世界有东西）。跳过整段 loot 结算（effectiveLoot /
-  // randRange 都不跑）；路由沿用真遭遇（水鬼 corpse / victoryEventId / rest），但幻觉一般无 victoryEventId ⇒ 回 rest。
-  if (combat.hallucination) {
-    s = appendLog(s, { tone: 'uncanny', text: '你眨眼，那里只有空水——刚才那东西没有留下任何痕迹，仿佛从来没在那儿。' });
-    if (combat.sourceCorpseId) {
-      s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'corpse', deathRecordId: combat.sourceCorpseId } } };
-    } else if (combat.victoryEventId) {
-      s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: combat.victoryEventId } } };
-    } else {
-      s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'rest' } } };
-    }
-    return { state: s, outcome: 'victory' };
-  }
 
   // 战利品（水鬼按 wornSkin 替换 loot·普通敌人 effectiveLoot 恒回 def.loot ⇒ 逐字节不变）
   const looted: InventoryItem[] = []; // 本次战斗所有掉落·收齐后批量一格弹「获得物品」（enqueuePickup·见 state.ts）

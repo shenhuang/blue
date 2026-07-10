@@ -8,8 +8,7 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
     "loreAdded": ["lore.bluecaves.fresh_silt"],
-    "statsDelta": { "oxygen": -2, "sanity": -3 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

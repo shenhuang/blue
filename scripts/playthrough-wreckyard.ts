@@ -99,7 +99,6 @@ for (const depth of [20, 30, 40, 50]) {
   const pool = buildEventPool({
     zone: zone!,
     depth,
-    sanity: 100,
     profileFlags: flags,
     triggeredEventIds: [],
   });
@@ -113,7 +112,7 @@ for (const depth of [20, 30, 40, 50]) {
 }
 // reef.json::wreck.* 应跨 zone 共享给沉船墓园
 const pool30 = buildEventPool({
-  zone: zone!, depth: 30, sanity: 100, profileFlags: flags, triggeredEventIds: [],
+  zone: zone!, depth: 30, profileFlags: flags, triggeredEventIds: [],
 });
 const reefShared = pool30.filter((e) => e.id === 'wreck.fishing_boat' || e.id === 'wreck.compass');
 assert(reefShared.length >= 1, 'reef.json::wreck.* 应至少有一个能在沉船墓园抽到（跨 zone 复用）');
@@ -154,7 +153,6 @@ assert(
   `应触发 pair 战斗，实际 ${erResult.summary.combatTriggered}`,
 );
 L(`  triggerCombatId = ${erResult.summary.combatTriggered}`);
-L(`  sanity δ = ${erResult.summary.statsDelta.sanity}`);
 
 // ============================================
 // Phase 5: solo 战斗 playthrough（端到端：从 startCombat 一路打到 victory）
@@ -389,7 +387,6 @@ const poolIdsAt = (poiId?: string, poiTemplateId?: string) =>
     buildEventPool({
       zone: zone!,
       depth: roamDepth,
-      sanity: 100,
       profileFlags: flags,
       triggeredEventIds: [],
       poiId,

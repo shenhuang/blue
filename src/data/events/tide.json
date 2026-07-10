@@ -100,7 +100,7 @@
           "label": "凑进去换气",
           "outcome": {
             "text": "你把头送进凹槽。气有股旧味——不是臭，是闷，像拧紧盖子的铁罐。能用。你换了两口，把这口气压进肺里。",
-            "deltas": { "oxygen": 4, "sanity": -2 }
+            "deltas": { "oxygen": 4 }
           }
         },
         {
@@ -112,7 +112,7 @@
             "dc": 11,
             "onSuccess": {
               "text": "你呼出一大口，把凹槽里最旧的那段气挤出去，等了几秒再进。气还是有点闷，但好多了。",
-              "deltas": { "oxygen": 4, "sanity": -1 }
+              "deltas": { "oxygen": 4 }
             },
             "onFailure": {
               "text": "你呼多了，凹槽给你的气还没换好，自己先吸进一口旧气，咳了半下才压住。",
@@ -143,19 +143,9 @@
         {
           "id": "lamp_close",
           "label": "把灯压低，靠近看清楚",
-          "hideCheck": true,
-          "check": {
-            "stat": "sanity",
-            "dc": 48,
-            "onSuccess": {
-              "text": "是一条大的花纹蛸，八条臂收成一坨，等着涨潮冲进来的食物。它转了一只眼过来看你，没动。你绕开出去了。",
-              "oxygenTurnCost": 2
-            },
-            "onFailure": {
-              "text": "灯扫过它的时候，它忽然展开了——整个礁石的阴影里都是它，大得没有预期。你退了几步才站住。",
-              "oxygenTurnCost": 2,
-              "deltas": { "sanity": -5, "stamina": -3 }
-            }
+          "outcome": {
+            "text": "是一条大的花纹蛸，八条臂收成一坨，等着涨潮冲进来的食物。它转了一只眼过来看你，没动。你绕开出去了。",
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -200,8 +190,7 @@
           "label": "按住洞壁，数下一次压变多久来",
           "outcome": {
             "text": "你扣住一块礁棱，等着。数到二十九，第二次轻微的平衡来了。节拍很稳——是活跃的涨潮，不是回流。你把这个数收进脑子里，游走了。",
-            "oxygenTurnCost": 2,
-            "deltas": { "sanity": -1 }
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -245,7 +234,7 @@
             "onFailure": {
               "text": "摸到一处分叉，你进了错的那边。等泥沉下来，来路不在你面前了，洞壁的花纹也不对。",
               "oxygenTurnCost": 3,
-              "deltas": { "stamina": -4, "sanity": -3 }
+              "deltas": { "stamina": -4 }
             }
           }
         },
@@ -287,8 +276,7 @@
           "visibleIf": { "kind": "hasEquipment", "slot": "tool" },
           "outcome": {
             "text": "你在那道白线旁边划了一刀。刀口是白的，很新。旁边那些颜色对比之下都是旧的——你的这一刀，和别的那些年一样，留在这里了。",
-            "oxygenTurnCost": 1,
-            "deltas": { "sanity": -1 }
+            "oxygenTurnCost": 1
           }
         },
         {

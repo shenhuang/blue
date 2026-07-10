@@ -3,12 +3,11 @@
   "eventId": "midwater.viperfish",
   "depth": 110,
   "seed": 1,
-  "sanity": 60,
   "choices": ["back_away_slowly"],
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "statsDelta": { "oxygen": -2, "sanity": -2 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

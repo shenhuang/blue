@@ -188,9 +188,6 @@ function describeEffects(eff: InjuryTierEffects): string[] {
   if (eff.o2CostMult !== undefined && eff.o2CostMult !== 1) {
     lines.push(`呼吸变贵（氧耗 ×${eff.o2CostMult}）`);
   }
-  if (eff.sanityTakenMult !== undefined && eff.sanityTakenMult !== 1) {
-    lines.push(`更扛不住吓（理智承伤 ×${eff.sanityTakenMult}）`);
-  }
   if (eff.staminaMaxDelta) {
     lines.push(`使不上全力（体力上限 ${eff.staminaMaxDelta > 0 ? '+' : ''}${eff.staminaMaxDelta}）`);
   }

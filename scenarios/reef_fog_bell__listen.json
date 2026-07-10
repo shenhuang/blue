@@ -9,6 +9,6 @@
     "finalPhase": "dive",
     "errors": [],
     "loreAdded": ["lore.old_lighthouse.bell"],
-    "statsDelta": { "oxygen": -1, "sanity": -4 }
+    "statsDelta": { "oxygen": -1 }
   }
 }

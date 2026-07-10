@@ -4,9 +4,6 @@
   "seed": 1,
   "zoneId": "zone.open_midwater",
   "depth": 110,
-  "stats": {
-    "sanity": 60
-  },
   "choices": [
     "ascend_five"
   ],
@@ -15,8 +12,7 @@
     "errors": [],
     "finalPhase": "dive",
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -2
+      "oxygen": -2
     }
   }
 }

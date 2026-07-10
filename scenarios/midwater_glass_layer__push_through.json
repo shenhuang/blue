@@ -4,9 +4,6 @@
   "depth": 195,
   "seed": 1,
   "zoneId": "zone.open_midwater",
-  "stats": {
-    "sanity": 80
-  },
   "choices": [
     "push_through"
   ],
@@ -15,8 +12,7 @@
     "errors": [],
     "finalPhase": "dive",
     "statsDelta": {
-      "oxygen": -1,
-      "sanity": -1
+      "oxygen": -1
     }
   }
 }

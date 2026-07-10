@@ -9,8 +9,7 @@
     "steps": 1,
     "finalPhase": "ascent",
     "errors": [],
-    "checkPassed": true,
     "loreAdded": ["lore.deep_water.the_false_beacon"],
-    "statsDelta": { "oxygen": -5, "sanity": -12 }
+    "statsDelta": { "oxygen": -5 }
   }
 }

@@ -9,7 +9,6 @@ import type {
   Outcome,
   Condition,
   Stats,
-  NodeGate,
   InventoryItem,
 } from '@/types';
 import { addToInventory, addToPoiSetMap, appendLog, clampStats, enqueuePickup, totalRunInventoryWeight } from './state';
@@ -18,9 +17,9 @@ import { getUpgradeDef } from './upgrades';
 import { equipmentUnlocksAction, loadoutInsulation } from './equipment';
 import { EQUIPMENT_SLOTS } from '@/types/items';
 import { restoreLighthouse, advanceOutpost } from './lighthouses';
-import { lampPowerDrain, alertDelta, ALERT_MAX, HALLUCINATION_VISIBLE_SANITY } from './clarity';
+import { lampPowerDrain, alertDelta, ALERT_MAX } from './clarity';
 import { effectiveStaminaMax } from './modifiers';
-import { stepNitrogen, narcosisSanityDrain } from './nitrogen';
+import { stepNitrogen } from './nitrogen';
 import { getCaveTemperature, stepThermalStress, thermalStaminaDrain } from './temperature';
 import { getBands } from './bands';
 import { trustTier } from './trust';
@@ -117,9 +116,6 @@ export function evalCondition(state: GameState, c: Condition): boolean {
 
 /** 一个选项是否对当前 state 可见 */
 export function isOptionVisible(state: GameState, opt: EventOption): boolean {
-  if (opt.hallucination) {
-    if (!state.run || state.run.stats.sanity > HALLUCINATION_VISIBLE_SANITY) return false;
-  }
   if (opt.visibleIf && !evalCondition(state, opt.visibleIf)) {
     return opt.hiddenIfFails === false; // false = 仅灰显
   }
@@ -504,18 +500,6 @@ export function resolveOption(
   return result;
 }
 
-/**
- * 整潜门（感知门 SPEC）对理智的额外消耗：黑处（lamp 门）看不清越久越压抑（＝旧 `visibility:'dark'` 行为）。
- * sonar 门（浑浊）/ 无门 → 0（只 lamp-dark 掉 san·守旧行为）。纯函数，便于回归断言。
- */
-export function visibilitySanityDrain(
-  gate: NodeGate | undefined,
-  turns: number,
-): number {
-  if (gate?.sense === 'lamp') return 0.35 * turns;
-  return 0;
-}
-
 /** 将一个 RunState 推进 N 个标准回合的氧气/氮气消耗（不处理事件内额外消耗） */
 export function tickTurns(
   run: RunState,
@@ -545,23 +529,8 @@ export function tickTurns(
     // 温度：指数逼近 ceiling（同管累积/恢复）·逐回合 step == 一次性 step(turns)（守 stalker 一致性·同氮气）
     thermalStress: stepThermalStress(run.stats.thermalStress, thermalIntensity, insulation, turns),
   };
-  // 深度→理智的「即时压抑」基础衰减（与氮气无关·一沉到深就压）
-  if (depth >= 30) {
-    const decayPerTurn = depth < 60 ? 0.2 : depth < 100 ? 0.5 : 1.0;
-    stats.sanity = Math.max(0, stats.sanity - decayPerTurn * turns);
-  }
-  // 氮醉：高氮 × 深度 → 额外扣理智（连续·叠加在基础衰减之上·氮气 SPEC §3）
-  const narcosisDrain = narcosisSanityDrain(run.stats.nitrogen, depth, turns);
-  if (narcosisDrain > 0) {
-    stats.sanity = Math.max(0, stats.sanity - narcosisDrain);
-  }
-  // 整潜门（感知门·黑处 lamp 门）：看不清 → 额外理智压力（sonar 门不掉·守旧 'dark' 行为）
-  const visDrain = visibilitySanityDrain(run.diveModifier?.gate, turns);
-  if (visDrain > 0) {
-    stats.sanity = Math.max(0, stats.sanity - visDrain);
-  }
   // 温度超阈后果（温度 SPEC §5）：热应力过 WARN → 扣体力（热极脱力 / 冷极麻木·叙事分极性·数学同款）。
-  // 用进入本段前的应力估算（与 narcosis 同口径·确定性）。中性洞应力恒 0 ⇒ drain 0 ⇒ 体力不动（逐字节不变）。
+  // 用进入本段前的应力估算（与氧耗同口径·确定性）。中性洞应力恒 0 ⇒ drain 0 ⇒ 体力不动（逐字节不变）。
   const thermalDrain = thermalStaminaDrain(run.stats.thermalStress, turns);
   if (thermalDrain > 0) {
     stats.stamina = Math.max(0, stats.stamina - thermalDrain);

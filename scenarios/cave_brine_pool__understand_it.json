@@ -10,13 +10,11 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
     "loreAdded": [
       "lore.deep_water.the_shore"
     ],
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -5
+      "oxygen": -2
     }
   }
 }

@@ -106,7 +106,7 @@ export function DiveHeader({ state, onStateChange, choices = [], pendingNodeId =
 
   return (
     <div className={`dive-pinned dive-header${activePanel !== 'none' ? ' has-dive-panel' : ''}`}>
-      {/* 状态条常显（作者拍板：氧/体/理智一直可见·不收进图标）。 */}
+      {/* 状态条常显（作者拍板：氧/体一直可见·不收进图标）。 */}
       <StatusBar run={run} />
       <div className="dive-sensor-bar">
         {/* 图标栏（互斥面板·SPEC §6）：灯开关 + 声呐图（已解锁时）+ 战利品 + 装备。

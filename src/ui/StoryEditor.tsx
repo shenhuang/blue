@@ -2,7 +2,7 @@
 //
 // 测的是「剧情库」本身（EVENT_DB / src/data/events/*.json），不碰玩家存档。三栏：
 //   左：全库事件列表（按 zoneTag 分组 + 文本过滤 + 只看弧头）。
-//   中：① 条件读出（事件级门槛 describeEventGate + 每选项 visibleIf/check/幻觉）
+//   中：① 条件读出（事件级门槛 describeEventGate + 每选项 visibleIf/check）
 //       ② 「像游戏内一样过剧情」——复用真实 EventView，喂 satisfyEvent 合成的已满足 GameState，
 //          任意分支都能走；EventView 的 handleChoose 自带跟链（continueEvent→下一事件）。
 //   右：当前事件的链/分支树（eventArc·缩进树·点节点跳转·标分支名·标环/断链/上游）。
@@ -19,7 +19,6 @@ import { listAllEvents, describeCondition, buildScenarioState } from '@/engine/e
 import { satisfyEvent, describeEventGate, eventGate } from '@/engine/eventSatisfy';
 import type { SatisfyResult } from '@/engine/eventSatisfy';
 import { eventArc, eventRoots, type EventArc, type ArcEdge } from '@/engine/eventGraph';
-import { HALLUCINATION_VISIBLE_SANITY } from '@/engine/clarity';
 import {
   listPoiEventSets,
   poiEventIds,
@@ -36,7 +35,7 @@ const StatsDevPanel = lazy(() =>
   import('./dev/StatsDevPanel').then((m) => ({ default: m.StatsDevPanel })),
 );
 
-const STAT_LABEL: Record<string, string> = { sanity: '理智', stamina: '体力', oxygen: '氧气', nitrogen: '氮' };
+const STAT_LABEL: Record<string, string> = { stamina: '体力', oxygen: '氧气', nitrogen: '氮' };
 const TONE_COLOR: Record<string, string> = { realistic: '#7fc89a', uncanny: '#d7b46a', cosmic: '#c98bd0' };
 const TONE_LABEL: Record<string, string> = { realistic: '写实', uncanny: '诡异', cosmic: '宇宙', system: '系统' };
 const NO_ZONE = '（无 zoneTag）'; // facet 筛子与左栏分组共用的「无 zoneTag」桶名（单一来源·别两处各写各的）
@@ -84,7 +83,6 @@ export default function StoryEditor() {
   const [poiOpen, setPoiOpen] = useState<ReadonlySet<string>>(() => new Set<string>()); // 展开的 POI（默认全收）
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [live, setLive] = useState<GameState | null>(null);
-  const [hallucinations, setHallucinations] = useState(false);
   const [showStats, setShowStats] = useState(false);
 
   // 弧头集合（只看弧头时用）。单一来源＝eventGraph.eventRoots（含战斗胜利续接·与右栏弧树同图·别再内联重算漂走）。
@@ -156,20 +154,20 @@ export default function StoryEditor() {
 
   // satisfyEvent 结果（条件读出 + 起点 state 来源）
   const sat: SatisfyResult | null = useMemo(
-    () => (selectedId ? satisfyEvent(selectedId, { hallucinations }) : null),
-    [selectedId, hallucinations],
+    () => (selectedId ? satisfyEvent(selectedId) : null),
+    [selectedId],
   );
   const selectedEvent = selectedId ? getEventById(selectedId) : null;
   const arc: EventArc | null = useMemo(() => (selectedId ? eventArc(selectedId) : null), [selectedId]);
 
   function startWalk(id: string) {
     setSelectedId(id);
-    const s = satisfyEvent(id, { hallucinations });
+    const s = satisfyEvent(id);
     setLive(buildScenarioState(s.input));
   }
   // 跳到树上某节点 = 以它为起点重新满足并回放（保持 selectedId 不变以维持当前弧视图）
   function jumpTo(id: string) {
-    const s = satisfyEvent(id, { hallucinations });
+    const s = satisfyEvent(id);
     setLive(buildScenarioState(s.input));
   }
   function replay() {
@@ -186,10 +184,6 @@ export default function StoryEditor() {
         <strong style={{ fontSize: 16 }}>剧情编辑器</strong>
         <span style={S.faint}>剧情库测试工具 · ?storyeditor · {allEvents.length} 事件</span>
         <span style={{ flex: 1 }} />
-        <label style={S.toggle}>
-          <input type="checkbox" checked={hallucinations} onChange={(e) => setHallucinations(e.target.checked)} />
-          幻觉模式（露 sanity≤{HALLUCINATION_VISIBLE_SANITY} 选项）
-        </label>
         <button style={S.btn} onClick={() => setShowStats(true)}>内容统计</button>
         <span style={{ ...S.faint, opacity: 0.6 }}>编辑 / 保存：Phase 3</span>
       </header>
@@ -474,13 +468,12 @@ const GATE_LABEL: Record<string, string> = { lamp: '黑水（需灯）', sonar: 
 
 /**
  * 门控标注（Q1「全量目录+门控标注」）：一条事件的运行态门槛压成一行紧凑串——解释「为什么这条在某次下潜里没出现」。
- * 复用 eventGate（单一真相·不自己重读字段）；深度/zoneTag 由路由头覆盖、此处略，只留 sanity/flag/once/强制。
+ * 复用 eventGate（单一真相·不自己重读字段）；深度/zoneTag 由路由头覆盖、此处略，只留 flag/once/强制。
  */
 function gateHint(id: string): string | null {
   const g = eventGate(id);
   if (!g) return null;
   const bits: string[] = [];
-  if (g.sanityRange && (g.sanityRange[0] > 0 || g.sanityRange[1] < 100)) bits.push(`san ${g.sanityRange[0]}–${g.sanityRange[1]}`);
   if (g.prereqFlags.length) bits.push(`需 ${g.prereqFlags.join(',')}`);
   if (g.forbiddenFlags.length) bits.push(`禁 ${g.forbiddenFlags.join(',')}`);
   if (g.prereqEventIds.length) bits.push(`需经 ${g.prereqEventIds.join(',')}`);
@@ -569,7 +562,6 @@ function PoiEvents({ p, selectedId, onPick }: { p: PoiEventSet; selectedId: stri
 function OptionCond({ opt, intended }: { opt: EventOption; intended: boolean }) {
   const bits: string[] = [];
   if (opt.visibleIf) bits.push(describeCondition(opt.visibleIf));
-  if (opt.hallucination) bits.push(`幻觉（sanity≤${HALLUCINATION_VISIBLE_SANITY}）`);
   if (opt.check) bits.push(`检定 ${STAT_LABEL[opt.check.stat] ?? opt.check.stat} ${opt.check.dc}`);
   return (
     <div style={S.condLine}>

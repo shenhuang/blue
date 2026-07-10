@@ -57,7 +57,7 @@ export interface EventDevPanelProps {
 const ALL_ZONE_TAGS: readonly string[] = Array.from(
   new Set(listAllEvents().flatMap((e) => e.zoneTags ?? [])),
 ).sort();
-const STAT_KEYS: Stat[] = ['stamina', 'oxygen', 'sanity', 'nitrogen'];
+const STAT_KEYS: Stat[] = ['stamina', 'oxygen', 'nitrogen'];
 const SLOT_KEYS = EQUIPMENT_SLOTS;
 
 export function EventDevPanel({ onClose }: EventDevPanelProps) {
@@ -315,7 +315,7 @@ export function EventDevPanel({ onClose }: EventDevPanelProps) {
         <div className="dev-import-row">
           <textarea
             className="dev-input dev-textarea"
-            placeholder='粘贴 ScenarioInput JSON，例如 {"eventId":"tutorial.descent","stats":{"sanity":70},"choices":["continue"]}'
+            placeholder='粘贴 ScenarioInput JSON，例如 {"eventId":"tutorial.descent","stats":{"stamina":70},"choices":["continue"]}'
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
           />
@@ -399,7 +399,7 @@ export function EventDevPanel({ onClose }: EventDevPanelProps) {
                 <input
                   type="range"
                   min={0}
-                  max={k === 'sanity' || k === 'nitrogen' ? 100 : 200}
+                  max={k === 'nitrogen' ? 100 : 200}
                   value={form.stats[k]}
                   disabled={!form.statsActive[k]}
                   onChange={(e) => setStat(k, Number(e.target.value))}
@@ -769,7 +769,7 @@ function StepBlock({ step }: { step: ScenarioStep }) {
               key={opt.id}
               className={`dev-option-row ${
                 opt.id === step.chosenId ? 'chosen' : ''
-              } ${opt.hallucination ? 'hallucination' : ''}`}
+              }`}
             >
               <span className="dev-option-mark">{opt.id === step.chosenId ? '►' : '✓'}</span>
               <span className="dev-option-id">{opt.id}</span>

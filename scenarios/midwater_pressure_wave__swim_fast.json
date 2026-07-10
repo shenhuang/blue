@@ -4,9 +4,6 @@
   "depth": 195,
   "seed": 1,
   "zoneId": "zone.open_midwater",
-  "stats": {
-    "sanity": 80
-  },
   "choices": [
     "swim_fast_out"
   ],

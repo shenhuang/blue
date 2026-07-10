@@ -1,7 +1,7 @@
 {
   "_comment": "礁台扎营 · camp_long 长扎。多属性同时变化的回归（stamina +30, sanity +10, nitrogen -5），且 oxygenTurnCost=6 是较大消耗。验证 deltas 复合计算 + 负 nitrogen（罕见的恢复型 outcome）。",
   "eventId": "bluecaves.makeshift_ledge",
-  "stats": { "stamina": 50, "sanity": 70, "nitrogen": 20 },
+  "stats": { "stamina": 50, "nitrogen": 20 },
   "depth": 35,
   "seed": 99,
   "choices": ["camp_long"],
@@ -9,6 +9,6 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "statsDelta": { "stamina": 30, "sanity": 10, "nitrogen": -5, "oxygen": -6 }
+    "statsDelta": { "stamina": 30, "nitrogen": -5, "oxygen": -6 }
   }
 }

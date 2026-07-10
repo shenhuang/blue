@@ -10,13 +10,11 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
     "loreAdded": [
       "lore.reef.false_cleaner"
     ],
     "statsDelta": {
-      "oxygen": -2,
-      "sanity": -4
+      "oxygen": -2
     }
   }
 }

@@ -3,13 +3,11 @@
   "eventId": "wreck_graveyard.silt_floor_keel",
   "depth": 85,
   "seed": 100,
-  "stats": { "sanity": 100 },
   "choices": ["stop_and_wait"],
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
     "statsDelta": { "oxygen": -2 }
   }
 }

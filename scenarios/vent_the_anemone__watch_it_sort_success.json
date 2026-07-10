@@ -4,9 +4,6 @@
   "depth": 145,
   "seed": 1,
   "zoneId": "zone.vent_trench",
-  "stats": {
-    "sanity": 80
-  },
   "choices": [
     "watch_it_sort"
   ],
@@ -14,10 +11,8 @@
     "steps": 1,
     "errors": [],
     "finalPhase": "dive",
-    "checkPassed": true,
     "statsDelta": {
-      "oxygen": -3,
-      "sanity": -3
+      "oxygen": -3
     }
   }
 }

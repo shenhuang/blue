@@ -1,10 +1,11 @@
-// 氮气系统：饱和累积 + 氮醉扣理智的单点模型
+// 氮气系统：饱和累积的单点模型
 // 见 docs/spec/深海回响_氮气系统_SPEC.md
 //
 // 单房间饱和模型（Haldane-lite）：深度定饱和上限 ceiling，停留定逼近程度；
 // 同一公式同管吸氮（深处 N<ceiling → 涨）与排氮（升浅/水面 ceiling 低 → 降）。
 // 本模块是潜水期氮气演化的【唯一计算点】——tickTurns 调用；升浮 surfacing 与
 // 物品效果是另两个合法写者。别在别处手算氮气增减（见 SPEC §2 单写者原则）。
+// 氮气已脱钩旧「头脑不正常」轴（2026-07-10 理智系统移除）：只喂减压债·不产生任何额外压力。
 
 /** 氮气分档阈值（0–100）。减压停留次数与减压病分型共用——与饱和曲线同住，单点可调。 */
 export const N2 = { SAFE: 40, ONE_STOP: 60, TWO_STOP: 80 } as const;
@@ -17,15 +18,7 @@ const NITROGEN = {
   CEILING_D0: 100,
   /** 吸/排氮半衰期（回合）：每 τ 回合向 ceiling 靠拢一半。越小 → 停留越快见效。 */
   HALF_TIME: 4,
-  /** 氮醉扣理智系数 / 指数：drain=K·(N/100)^P·(P(d)−1)。 */
-  NARCOSIS_K: 0.4,
-  NARCOSIS_P: 2,
 } as const;
-
-/** 环境压代理（atm·游戏调校）。深度 clamp ≥0。 */
-export function ambientPressure(depth: number): number {
-  return 1 + Math.max(0, depth) / NITROGEN.PRESSURE_SCALE;
-}
 
 /** 当前深度的氮气饱和上限（久留渐近值·0–100）。 */
 export function nitrogenCeiling(depth: number): number {
@@ -45,17 +38,26 @@ export function stepNitrogen(current: number, depth: number, turns: number): num
   return Math.max(0, Math.min(100, next));
 }
 
+// ============================================================
+// 战斗氮气耦合（战斗系统 SPEC §2.1/§10「与主系统的耦合」）
+// ============================================================
+
+/** 战斗氮气累积倍率（剧烈呼吸加速吸收·战斗 SPEC §2.1/§10「系数建议 ×1.5」·占位·defer-number-tuning）。 */
+export const COMBAT_NITROGEN_MULT = 1.5;
+
 /**
- * 氮醉：高氮 × 深度 → 本段额外扣的理智（连续·≥0）。
- * 低氮几乎为 0（指数 P=2）；深度加权（兑现 SPEC「高浓度 + 深度」）。
- * 用进入本段前的氮浓度估算（与 oxygenDrain 同口径·确定性）。
+ * 战斗氮气累积增量（战斗 SPEC §2.1/§10）：战斗按当前深度累积氮气，与下潜同一饱和公式（stepNitrogen），
+ * 唯「等效停留时间」×COMBAT_NITROGEN_MULT（剧烈呼吸加速吸收）——**时间制**：仍走同一指数逼近、渐近同一
+ * 深度 ceiling、绝不越过（分压物理）。此前战斗完全不累积氮气（只扣氧气）是 gap，本函数补上、统一进饱和模型。
+ * **仅氮气→减压债（ascent.ts）**——氮气已与旧「头脑不正常」轴脱钩（2026-07-10 理智系统移除）：那条留待
+ * 地点缝 seam 接管，战斗此处不产生任何额外压力。
+ * 纯函数·返回 stat 增量（stepNitrogen 已 clamp [0,100]·delta＝目标−当前·±）。combat.ts::applyPlayerAction
+ * 单点调用并经 applyStatsDelta 落账（债数学不出本模块·守 check-boundaries 规则六 nitrogen 单写口）。
  */
-export function narcosisSanityDrain(nitrogen: number, depth: number, turns: number): number {
+export function combatNitrogenGain(nitrogen: number, depth: number, turns: number): number {
   if (turns <= 0) return 0;
-  const overPressure = ambientPressure(depth) - 1; // = max(0,d)/PRESSURE_SCALE
-  if (overPressure <= 0) return 0;
-  const n = Math.max(0, nitrogen) / 100;
-  return NITROGEN.NARCOSIS_K * Math.pow(n, NITROGEN.NARCOSIS_P) * overPressure * turns;
+  const target = stepNitrogen(nitrogen, depth, turns * COMBAT_NITROGEN_MULT);
+  return target - nitrogen;
 }
 
 /**

@@ -177,7 +177,6 @@ export function maybeMultiFeatureRoom(
     const pool = buildEventPool({
       zone: args.zone,
       depth: args.depth,
-      sanity: 100,
       profileFlags: args.profileFlags,
       triggeredEventIds: args.triggeredFakeIds,
       excludeIds: used,
@@ -272,7 +271,7 @@ export function caveShapeBucket(k: number): CaveShapeBucket {
 }
 
 // 不可信声呐失真 pass（曾给深 band 内部节点钉 spoof/evade 表象＝节点版 mimic）：**感知重做已删**——
-// 声呐诚实、欺骗移交低理智轴（SPEC §2.2/§2.3/§3）；海图 mimic（#69·ChartPoi.mimic）走 chart.ts 事件检定、不依赖本 pass。
+// 声呐诚实（SPEC §2.2/§2.3/§3）；海图 mimic（#69·ChartPoi.mimic）走 chart.ts 事件检定、不依赖本 pass。
 
 /** 多事件房间从远处（相邻节点）看到的预览——只暗示「开阔、有好几处」，不剧透各 feature（先过这层）。 */
 export function roomPreview(featureCount: number): string {

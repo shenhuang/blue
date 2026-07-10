@@ -3,14 +3,12 @@
   "eventId": "midwater.the_barrel",
   "depth": 130,
   "seed": 1,
-  "sanity": 80,
   "zoneId": "zone.open_midwater",
   "choices": ["hold_still"],
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
-    "statsDelta": { "oxygen": -2, "sanity": -3 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

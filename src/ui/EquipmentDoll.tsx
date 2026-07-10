@@ -65,8 +65,6 @@ function describeEffect(e: EquipmentEffect): string {
       return `体力上限 +${e.value}`;
     case 'physicalArmor':
       return `护甲 +${e.value}`;
-    case 'sanityResist':
-      return `理智抗性 +${e.value}`;
     case 'insulation':
       return `潜服保温 +${e.value}`;
     case 'lightRadius':

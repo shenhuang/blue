@@ -3,6 +3,7 @@
 > **状态：✅ 已彻底完成 / 关闭（2026-06-06·#90·见 §7 末「closeout」）。** 声呐从「逐选项预览」升成**探索性的洞穴声呐扫描**（一记 ping 读真实节点图、画出近似洞穴形状），节点从「一格一事」升成**房间可含多个事件点**——两半均已落地。**后续布局朝向/扇区基准已被 #92 取代**（见 §5 指针 + 深水区 SPEC §13「地图垂直性＝深度」），本档余下内容作只读参考。
 >
 > **⚠ 不可信扫描（S2）已被感知重做取代（tombstone·2026-07-04·#259）**：§1 把声呐当「核心欺骗面」（`evadesSonar`/`spoofsSonar`/低 san 幻觉声呐）、S2 段「不可信扫描」——**已撤除**，声呐现在**永远诚实**（欺骗全部移交低 san 轴·见 `深海回响_感知重做_SPEC.md` §2.2/§2.3）。**S0/S1 房间与洞穴扫描渲染（探图/SDF/深度/到上浮口距离）保留**·只是声呐图不再撒谎。
+> **⚠ « 2026-07-10 理智系统移除 »**：连"低 san 轴"本身也已随 `run.stats.sanity` 删除——本档一切「低 san 幻觉声呐 / 伪接触 / 乱码读数 / `run.stats.sanity` 抗欺骗档」全部作废（历史留档）；声呐诚实性不受影响（本就已改诚实）。« TODO(作者)：感知重做的"低 san 幻觉轴"失去理智载体后如何重挂，见感知重做 SPEC »
 
 ---
 
@@ -41,7 +42,7 @@
 - **`types/dive.ts::DiveNode`**：现有 `layer/depth/zoneTag/kind/connectsTo/eventId(单个)/preview/evadesSonar?/spoofsSonar?`。**节点没存 2D 坐标** → 扫描渲染需要一套**布局推导**（按 layer/depth + 图结构铺点，`ui/dev/MapDevPanel` 已经在做类似的事，可抽公共布局函数）。多事件＝给 DiveNode 加 `features?`（§6）。
 - **`engine/clarity.ts::sonarReturn` + `evadesSonar`/`spoofsSonar`（已就位、未填）**：声呐的**不可信**全住这里。扫描的每个读数过 `sonarReturn`；`spoofsSonar` 节点画成假的、`evadesSonar` 节点不出现/无 blip、低 san 注入假回波。**这是 §3.2 欺骗面 + #69 mimic 节点版的落点。**
 - **`run.power` / `sonarPingCost`（升级派生）**：每记 ping 的电耗。**`run.alert` / `alertDelta`**：ping 抬警觉（暴露双刃，深水区 Phase 0b）。
-- **`run.stats.sanity` / `run.sensorTuning`（抗欺骗档）**：可信度随 san + 升级变化（深 band 更不可信，地板：永不完全可信）。
+- ~~**`run.stats.sanity` / `run.sensorTuning`（抗欺骗档）**：可信度随 san + 升级变化（深 band 更不可信，地板：永不完全可信）。~~ « 2026-07-10 理智系统移除 »：`run.stats.sanity` 已删·此接点作废（`run.sensorTuning` 仍在·只是不再有 san 输入）。
 - **`engine/mapgen.ts`**：生成房间大小 + 给大房间布多 feature；布局坐标可在此一并产出（省掉运行时推导）。
 - **`ui/NodeSelectView.tsx`**：声呐图面板（ping 后显示）+ 房间内 feature 选项 + 出口。碰 UI 必补 `smoke-chart-ui`（#38）。
 - **`mapShape`（maze/layered）+ `canFreeAscend`**：扫描在两种拓扑都成立；maze（洞穴）最受益（迷路 + 找上浮口）。

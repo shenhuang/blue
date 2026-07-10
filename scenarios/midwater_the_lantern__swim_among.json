@@ -4,12 +4,11 @@
   "seed": 1,
   "zoneId": "zone.open_midwater",
   "depth": 65,
-  "stats": { "sanity": 80 },
   "choices": ["swim_among_them"],
   "expect": {
     "steps": 1,
     "errors": [],
     "finalPhase": "dive",
-    "statsDelta": { "oxygen": -2, "sanity": 5 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

@@ -1,7 +1,6 @@
 {
   "_comment": "中层深档 90-130m · 数着的（uncanny）· 停下来不数了 → sanity+2。loot-free。statsDelta 实跑抄（quirk #43）。",
   "eventId": "midwater.the_count",
-  "stats": { "sanity": 80 },
   "depth": 110,
   "seed": 1,
   "choices": ["stop_counting"],
@@ -9,6 +8,6 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "statsDelta": { "oxygen": -1, "sanity": 2 }
+    "statsDelta": { "oxygen": -1 }
   }
 }

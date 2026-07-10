@@ -3,12 +3,11 @@
   "eventId": "trench.no_ceiling",
   "depth": 140,
   "seed": 1,
-  "sanity": 60,
   "choices": ["ascend_to_find_it"],
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "statsDelta": { "oxygen": -3, "sanity": -3 }
+    "statsDelta": { "oxygen": -3 }
   }
 }

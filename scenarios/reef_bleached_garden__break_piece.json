@@ -7,7 +7,6 @@
   "expect": {
     "steps": 1,
     "finalPhase": "dive",
-    "errors": [],
-    "statsDelta": { "sanity": -2 }
+    "errors": []
   }
 }

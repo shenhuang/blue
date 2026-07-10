@@ -125,7 +125,7 @@ export function maybeChainEelEnrage(state: GameState): GameState {
 /**
  * applyEnvironmentalPressure：累计所有存活 boss 的战场压力并扣减资源。
  * 在每回合 tick 处调用（applyPlayerAction 步骤 0b·紧随 staminaTickPerTurn）。
- * 多 boss 并存时线性叠加（oxygenDrainBonus / staminaTickBonus / sanityDamagePerTurn）。
+ * 多 boss 并存时线性叠加（oxygenDrainBonus / staminaTickBonus）。
  */
 export function applyEnvironmentalPressure(state: GameState): GameState {
   if (state.phase.kind !== 'combat' || !state.run) return state;
@@ -133,7 +133,6 @@ export function applyEnvironmentalPressure(state: GameState): GameState {
 
   let oxygenDrain = 0;
   let staminaDrain = 0;
-  let sanityDmg = 0;
 
   for (const e of combat.enemies) {
     if (e.hp <= 0) continue;
@@ -142,10 +141,9 @@ export function applyEnvironmentalPressure(state: GameState): GameState {
     const ep = def.environmentalPressure;
     oxygenDrain += ep.oxygenDrainBonus ?? 0;
     staminaDrain += ep.staminaTickBonus ?? 0;
-    sanityDmg += ep.sanityDamagePerTurn ?? 0;
   }
 
-  if (oxygenDrain === 0 && staminaDrain === 0 && sanityDmg === 0) return state;
+  if (oxygenDrain === 0 && staminaDrain === 0) return state;
 
   let s = state;
   if (oxygenDrain > 0) {
@@ -155,10 +153,6 @@ export function applyEnvironmentalPressure(state: GameState): GameState {
   if (staminaDrain > 0) {
     s = applyStatsDelta(s, { stamina: -staminaDrain });
     s = pushCombatLog(s, { actor: 'system', text: `战场压力让你消耗更快（体力 -${staminaDrain}）。` });
-  }
-  if (sanityDmg > 0) {
-    s = applyStatsDelta(s, { sanity: -sanityDmg });
-    s = pushCombatLog(s, { actor: 'system', text: `它的存在本身就在消磨你（理智 -${sanityDmg}）。` });
   }
 
   return s;
@@ -654,7 +648,7 @@ export function pufferArmed(def: EnemyDef | undefined, e: EnemyInstance): boolea
 
 /**
  * detonateSelfDestruct（Puffer 自爆·引爆·SPEC §9.9）：引爆一枚 **armed** Puffer——对玩家施体力
- * （+可选理智）AoE 伤、把该单位 hp→0、推 detonateText。战斗无位置 ⇒ AoE 落点＝玩家（SPEC 只述对玩家）。
+ * AoE 伤、把该单位 hp→0、推 detonateText。战斗无位置 ⇒ AoE 落点＝玩家（SPEC 只述对玩家）。
  * 近战触发（combat.ts applyPlayerAttack 命中后）与到点触发（runEnemyTurn 该单位回合）共用本函数；
  * **远程豁免＝调用方不调本函数**（远程击破走普通死亡·不溅玩家）。
  * 幂等：目标不存在 / 已 hp≤0 / 无 selfDestruct / 未武装 ⇒ no-op。爆炸无视潜水服减伤（占位数值 defer）。
@@ -671,12 +665,7 @@ export function detonateSelfDestruct(state: GameState, instanceId: string): Game
   let s = state;
   const stam = randRange(sd.staminaDamage);
   s = applyStatsDelta(s, { stamina: -stam });
-  let msg = `${sd.detonateText}（体力 -${stam}）`;
-  if (sd.sanityDamage) {
-    const san = randRange(sd.sanityDamage);
-    s = applyStatsDelta(s, { sanity: -san });
-    msg += `（理智 -${san}）`;
-  }
+  const msg = `${sd.detonateText}（体力 -${stam}）`;
   s = pushCombatLog(s, { actor: 'system', text: msg });
   s = setCombat(s, (c) => ({
     ...c,

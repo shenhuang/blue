@@ -107,8 +107,7 @@
             "dc": 13,
             "onSuccess": {
               "text": "你贴着对面的墙，一寸一寸往出口挪，不去碰它的那圈空壳。它变着色看你过去，没有扑。",
-              "oxygenTurnCost": 2,
-              "deltas": { "sanity": -3 }
+              "oxygenTurnCost": 2
             },
             "onFailure": {
               "text": "你的脚蹼扫翻了一只空壳。那点脆响在室里炸开——它弹了过来。",
@@ -142,7 +141,7 @@
           "outcome": {
             "text": "你顶进那汪空气，摘了调节器吸了两口。气是陈的、带土腥，但是真的。镜面上的人影跟着你摘下面罩，你没去看它太久。",
             "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2, "oxygen": 6 }
+            "deltas": {"oxygen": 6 }
           }
         },
         {
@@ -159,7 +158,6 @@
       "id": "chamber.echo_turn",
       "depthRange": [40, 80],
       "zoneTags": ["chamber"],
-      "sanityRange": [0, 75],
       "weight": 5,
       "cooldown": 3,
       "title": "绕回了原处",
@@ -169,18 +167,9 @@
         {
           "id": "re_read",
           "label": "稳住，重新数一遍各个口",
-          "check": {
-            "stat": "sanity",
-            "dc": 13,
-            "onSuccess": {
-              "text": "你压下那股发慌，贴着墙一个口一个口重数。这回认出了哪个口的水流朝外——你之前漏看了它。",
-              "oxygenTurnCost": 2
-            },
-            "onFailure": {
-              "text": "你越数越乱，几个黑口在灯下长得一模一样。手开始不听话地抖，你只能先抓住一处岩棱，等自己缓过来。",
-              "oxygenTurnCost": 3,
-              "deltas": { "sanity": -5, "stamina": -3 }
-            }
+          "outcome": {
+            "text": "你压下那股发慌，贴着墙一个口一个口重数。这回认出了哪个口的水流朝外——你之前漏看了它。",
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -188,8 +177,7 @@
           "label": "只认渗水朝外的那个口走",
           "outcome": {
             "text": "你不再信自己的方向感，单认手背能觉出的那缕朝外的水流，顺它钻进对应的口。慢，但不再打转。",
-            "oxygenTurnCost": 2,
-            "deltas": { "sanity": -2 }
+            "oxygenTurnCost": 2
           }
         }
       ]
@@ -242,7 +230,6 @@
       "id": "chamber.deepest_cell",
       "depthRange": [66, 80],
       "zoneTags": ["chamber"],
-      "sanityRange": [0, 65],
       "weight": 4,
       "cooldown": 0,
       "title": "最里的那间",
@@ -254,8 +241,7 @@
           "label": "趴到那个朝下的口上，看一眼",
           "outcome": {
             "text": "你趴到口沿往下照。光垂直落进去，照不到底，也照不出壁——这间室不是尽头，底下还接着别的东西。你慢慢撑起身，退开。",
-            "oxygenTurnCost": 2,
-            "deltas": { "sanity": -5 }
+            "oxygenTurnCost": 2
           }
         },
         {
@@ -263,8 +249,7 @@
           "label": "到此为止，原路收兵",
           "outcome": {
             "text": "你不去碰那个朝下的口。蜂房到这间就够深了，再往下不是这趟该走的。你转身，认着一路的刻印往回。",
-            "oxygenTurnCost": 1,
-            "deltas": { "sanity": -2 }
+            "oxygenTurnCost": 1
           }
         }
       ]

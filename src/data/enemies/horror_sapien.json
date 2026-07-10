@@ -36,15 +36,13 @@
         {
           "id": "horror_sapien.wrong_face",
           "name": "戴着的脸",
-          "damageType": "sanity",
-          "damage": [0, 0],
-          "sanityDamage": [3, 6],
+          "damageType": "physical",
+          "damage": [3, 6],
           "description": "它把那张脸转向你，慢慢摆出一个像是认得你的角度。问题是，你也认得它。",
           "weight": 2
         }
       ],
       "physicalDamage": [5, 9],
-      "sanityDamage": [3, 6],
       "loot": {
         "guaranteed": [{ "itemId": "item.eel_skin", "qty": [1, 1], "weight": 1 }],
         "rolls": [],

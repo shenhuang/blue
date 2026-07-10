@@ -673,11 +673,6 @@ html, body, #root {
   /* 继承自 .btn */
 }
 
-.event-option.hallucination {
-  color: var(--danger);
-  font-style: italic;
-}
-
 /* check 徽章（①根治版·#109）：从 check.{stat,dc} 渲染的判定标记——窄边小胶囊·弱化、不抢 fiction。 */
 .check-badge {
   display: inline-block;
@@ -1534,7 +1529,7 @@ html, body, #root {
 /* ——— Status Bar ——— */
 
 /* 钉顶（quirk #112 同批·一条 sticky 让全部潜水视图受益）：内容再长，
-   氧气/电量/理智也不随滚动跑远。z-index 压过海图层(0/1)、让出弹窗(1000)。 */
+   氧气/电量也不随滚动跑远。z-index 压过海图层(0/1)、让出弹窗(1000)。 */
 .status-bar {
   position: sticky;
   top: 0;

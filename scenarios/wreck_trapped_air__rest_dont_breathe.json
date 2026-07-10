@@ -14,8 +14,7 @@
       "lore.deep_water.the_dome"
     ],
     "statsDelta": {
-      "oxygen": -1,
-      "sanity": -2
+      "oxygen": -1
     }
   }
 }

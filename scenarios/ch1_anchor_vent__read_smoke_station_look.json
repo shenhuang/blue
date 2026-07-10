@@ -12,7 +12,6 @@
     "steps": 2,
     "errors": [],
     "finalPhase": "ascent",
-    "checkPassed": true,
     "flagsAdded": [
       "story.ch1.anchor.vent",
       "story.ch1.ending.fulfilled",

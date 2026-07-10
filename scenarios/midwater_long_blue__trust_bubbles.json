@@ -4,18 +4,12 @@
   "seed": 1,
   "zoneId": "zone.open_midwater",
   "depth": 72,
-  "stats": {
-    "sanity": 80
-  },
   "choices": [
     "trust_the_bubbles"
   ],
   "expect": {
     "steps": 1,
     "errors": [],
-    "finalPhase": "dive",
-    "statsDelta": {
-      "sanity": 3
-    }
+    "finalPhase": "dive"
   }
 }

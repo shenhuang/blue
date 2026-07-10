@@ -217,7 +217,6 @@ export function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): 
         const pool = buildEventPool({
           zone,
           depth: depthI,
-          sanity: 100,
           profileFlags,
           triggeredEventIds: triggeredFakeIds,
           tagsOverride: opts.bandTags,

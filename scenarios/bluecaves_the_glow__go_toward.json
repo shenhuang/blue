@@ -9,6 +9,6 @@
     "finalPhase": "dive",
     "errors": [],
     "loreAdded": ["lore.bluecaves.the_glow"],
-    "statsDelta": { "oxygen": -2, "sanity": -5 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

@@ -4,9 +4,6 @@
   "seed": 1,
   "zoneId": "zone.trench",
   "depth": 70,
-  "stats": {
-    "sanity": 60
-  },
   "choices": [
     "trust_the_line"
   ],

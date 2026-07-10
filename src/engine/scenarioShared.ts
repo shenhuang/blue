@@ -35,7 +35,7 @@ export function withSeededRandom<T>(seed: number | undefined, fn: () => T): T {
 
 export function diffStats(before: Stats, after: Stats): Partial<Stats> {
   const out: Partial<Stats> = {};
-  const keys: Stat[] = ['stamina', 'oxygen', 'sanity', 'nitrogen'];
+  const keys: Stat[] = ['stamina', 'oxygen', 'nitrogen'];
   for (const k of keys) {
     const d = after[k] - before[k];
     if (Math.abs(d) > 1e-9) out[k] = Number(d.toFixed(4));

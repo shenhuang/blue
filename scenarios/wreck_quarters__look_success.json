@@ -8,8 +8,7 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "checkPassed": true,
     "loreAdded": ["lore.wreck_graveyard.the_kept_quarters"],
-    "statsDelta": { "oxygen": -2, "sanity": -5 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

@@ -3,6 +3,10 @@
 > 状态：**拟定 + 实装 2026-07-04**（作者本 session 定向 +「全部做完」授权）· **车道 2–6 已实装 · full regress 92/92 绿 · 未提交**（待作者 Mac 复核 + 跑 vite build + 提交）· 车道 7（本文档指针 / CHANGELOG #259 / QUIRKS #219–#225 / STATUS）**REPO-DOCS 侧已落**（记忆文件由作者/另一手更新）。B（mimic / apex）冻结未做。
 > 本 SPEC **替代**旧「越深越欺骗」感知愿景（见 §8 supersedes）。旧愿景机制成本高、实测不好玩，且声呐从不进决定、欺骗只是可忽略的预览文字。
 > 数值 / 阈值 / 手感一律留最后统一调（见 memory `defer-number-tuning`）·本 SPEC 只定**机制与边界**。
+>
+> **⚠⚠ 二次 supersede · 2026-07-10 理智系统移除**：本 SPEC 的新北极星把欺骗**收敛成单一「低理智」轴**（§1 第三条 / §2.3·低 san → 改选项 + 改怪物 + 幻觉遭遇）。**该低理智轴现已整体删除**——连续理智值 `run.stats.sanity`（0–100·无值 / 无条 / 无 drain）+ 事件理智检定（166 处 `check.stat:'sanity'` 全塌成 success 分支）+ `sanityRange` 事件门 + `EventOption.hallucination` + 幻觉系统（`HALLUCINATION_*` / `clarity.ts::hallucinationApproaches` / `dive-stalker.ts::maybeHallucinationEncounter` / StoryEditor 幻觉模式）+ 氮醉扣理智 全删。「发疯 / 头脑不正常」改为**二态节点门**：地点缝 seam 节点（`types/dive.ts` `DiveNode.seam.bypassCapability:'steady_mind'`〔定心坠〕·无它入缝即 `executeDeath`〔复用旧「理智崩溃·疯狂上浮」死因〕·当前 DORMANT〔0 seam 节点·作者晚放〕）。守门＝`scripts/check-no-sanity.mjs`（src 里 latin `sanity`/`hallucinat` 残留即红；叙事中文「理智 / 幻觉」不禁）。SAVE_VERSION 13→14。
+> - **本 SPEC 仍成立的那半（不受本次移除影响）**：三件诚实感知（灯＝诚实近场硬门 / 声呐＝诚实远场侦察 / 电 / signature / 射程 / 探图渲染·§2.1 / §2.1b / §2.2 / §4）+ §3 声呐欺骗引擎的整体拆除（`check-no-sonar-deception`）。
+> - **作废的那半**：§1 第三条「欺骗=只剩低 san」+ §2.3 整节 + §6「低 san 欺骗单轴测试」+ §7① 幻觉遭遇钩子 + §8 对剧情 §3.7 的「收敛为单轴」结论。下列段落保留作历史理据，读时按本 banner 折算——欺骗**再无任何机制承载**，感知全诚实。
 
 ## 1. 北极星 / 为什么改
 
@@ -45,7 +49,7 @@
 - **不碰节点选择**：相邻节点永远可选；声呐只让你**从图上多看几跳来计划**，不 gate、不改、不注入 per-choice 信号。
 - **永不撒谎**：声呐回波恒为真（欺骗全部移交低 san 轴）。
 
-### 2.3 欺骗 = 只剩低理智 → 选项 + 怪物
+### 2.3 欺骗 = 只剩低理智 → 选项 + 怪物  « 2026-07-10 整节作废·理智系统移除·见顶 banner：低理智轴删除后欺骗再无机制承载，灯 / 声呐全诚实 »
 
 - **单轴**：唯一欺骗源是 `sanity` 低。深度 / 声呐 / 灯**不再**独立撒谎。san 回满 → 欺骗消失（清楚是「你」，不是世界）。
 - **改选项**（基本现成）：低 san 门控 `visibleIf`（sanity 阈值条件·`bluecaves.silent_chamber` 那类「只在低 san 才现身」已是此路子）。可现身**假**选项 / 藏**真**选项 / 改写选项文案。
@@ -92,12 +96,12 @@
 
 - **check-no-sonar-deception**：src 扫到 `spoofsSonar` / `evadesSonar` / `sonarReturn` / `sonarDeception` / `sonarPhantoms` / `applySonarDeception` / `effectiveFalseEchoSanity` 任一残留 → 红（拆干净的守门）。
 - **声呐诚实不变量**：声呐渲染 / 选点不读欺骗字段；node preview 不再有 sonar 档（灯门二态）。
-- **低 san 欺骗单轴测试**：san 满 → 无假选项 / 无幻觉怪（控制组）；san 低 → 出现且确定性可复现。
+- ~~**低 san 欺骗单轴测试**：san 满 → 无假选项 / 无幻觉怪（控制组）；san 低 → 出现且确定性可复现。~~ « 2026-07-10 作废：低理智轴删除·改由 `check-no-sanity` 守「src 无 `sanity` / `hallucinat` 残留」。 »
 - **灯门**：dark 节点无灯 = 锁住不可选、开灯解锁的 playthrough 断言。
 
 ## 7. 悬而未决 / 留作者拍
 
-1. ✅ **「改怪物」钩子形态 = (a)**（2026-07-04 作者「全部做完」授权·我拍 a）：低 san 注入幻觉遭遇·看破 / 打赢即消。已实装（车道 5-1）：`clarity.ts::hallucinationApproaches`（san ≤ `HALLUCINATION_SANITY`(50) 且够深·高 san 控制组恒假）→ `dive-stalker.ts::maybeHallucinationEncounter`（复用 zone ambush 怪·标 `CombatState.hallucination`·moveToNode 里排在真伏击之后）→ `combat.ts` 软化结算（敌攻 0 体力伤·无 loot·暧昧收场「只有空水」）。**✅ 已决（作者 2026-07-05·#261）**：氧气**改为幻觉中仍当场致命**（`combat.ts` 氧气 ≤0 判死移出 `!inHallucination`·体力/san 仍软化不判）——全封＝「进幻觉无敌」泄张力；氧气自曝＝「你自己耗光的、不是鬼杀的」当场成立。无脚本死不破：应急上浮（step6·排在死亡判定 step8 前·无条件零成本零 roll）任何回合可离场。**并加 san 分层**（作者拍）：致命层 `HALLUCINATION_SANITY`(50→**20**·gate 幻觉战 + 氧气致命) / 可见层 `HALLUCINATION_VISIBLE_SANITY`(**50**·gate 改选项类幻觉·本身不致命)——「50 看得到、20 才致命」渐进恐怖曲线，20 高门槛天然是氧气致命的护栏；原散在 6 处的字面量 50 收口进可见层常量（events/eventSatisfy/eventScenario/StoryEditor·单一真相·quirk #227）。守门：`playthrough-sensors` 13（分层注入）/14b（富氧敌攻打不死）/14d（氧尽仍淹死）。数值仍占位·defer。
+1. ~~✅ **「改怪物」钩子形态 = (a)**~~ « 2026-07-10 理智系统移除·**整条作废**：幻觉遭遇系统（`hallucinationApproaches` / `maybeHallucinationEncounter` / `HALLUCINATION_SANITY` / `HALLUCINATION_VISIBLE_SANITY` / `CombatState.hallucination`）连同连续理智值一并删除·见顶 banner；下文保留作历史理据。 »（2026-07-04 作者「全部做完」授权·我拍 a）：低 san 注入幻觉遭遇·看破 / 打赢即消。已实装（车道 5-1）：`clarity.ts::hallucinationApproaches`（san ≤ `HALLUCINATION_SANITY`(50) 且够深·高 san 控制组恒假）→ `dive-stalker.ts::maybeHallucinationEncounter`（复用 zone ambush 怪·标 `CombatState.hallucination`·moveToNode 里排在真伏击之后）→ `combat.ts` 软化结算（敌攻 0 体力伤·无 loot·暧昧收场「只有空水」）。**✅ 已决（作者 2026-07-05·#261）**：氧气**改为幻觉中仍当场致命**（`combat.ts` 氧气 ≤0 判死移出 `!inHallucination`·体力/san 仍软化不判）——全封＝「进幻觉无敌」泄张力；氧气自曝＝「你自己耗光的、不是鬼杀的」当场成立。无脚本死不破：应急上浮（step6·排在死亡判定 step8 前·无条件零成本零 roll）任何回合可离场。**并加 san 分层**（作者拍）：致命层 `HALLUCINATION_SANITY`(50→**20**·gate 幻觉战 + 氧气致命) / 可见层 `HALLUCINATION_VISIBLE_SANITY`(**50**·gate 改选项类幻觉·本身不致命)——「50 看得到、20 才致命」渐进恐怖曲线，20 高门槛天然是氧气致命的护栏；原散在 6 处的字面量 50 收口进可见层常量（events/eventSatisfy/eventScenario/StoryEditor·单一真相·quirk #227）。守门：`playthrough-sensors` 13（分层注入）/14b（富氧敌攻打不死）/14d（氧尽仍淹死）。数值仍占位·defer。
 2. 低 san 各阈值、灯门覆盖哪些节点 / 选项密度：**数值留最后统一调**。
 3. 被降为「诚实氛围」的深水事件，值得保留还是精简：改写时逐条看。
 4. **B（mimic / apex）的「别的计划」**：不在本 SPEC；本 SPEC 只保证不拆其地基。
@@ -107,7 +111,7 @@
 - `深海回响_深水区_SPEC.md`：**声呐不可信 + 深度驱动欺骗 + 双传感器 clarity 的欺骗侧**（clarity 双层欺骗侧 / §3.2 感知双刃「返回不可信」/ Phase 2–3 声呐欺骗）→ 本 SPEC 取代欺骗侧；**诚实感知侧（灯 / 声呐 / 电 / signature / 射程 / 探图）保留**。
 - `深海回响_声呐与房间_SPEC.md`：**S2 不可信扫描**整节 → 撤（S0 / S1 房间与探图渲染保留）。
 - `深海回响_声呐渲染重做_SPEC.md`：**§4 声呐开 / 关窗口双态** → 改为「ping 才扫」单动作；渲染（§2 / §3 / §5）保留。
-- `深海回响_剧情_SPEC.md`：**§3.7「另一个世界」/ 两根轴（世界欺骗 + 理智）** → 收敛为单轴（只理智）；story canon 其余不动。
+- `深海回响_剧情_SPEC.md`：**§3.7「另一个世界」/ 两根轴（世界欺骗 + 理智）** → ~~收敛为单轴（只理智）~~ « 2026-07-10 理智系统移除：单轴也删·现为**零欺骗轴**（感知全诚实）；§3.7「另一个世界」原以「压低理智」为钥匙、现失去驱动＝设计缺口，见剧情 SPEC §4.4 + 深水区 SPEC §3.7 TODO(作者) »；story canon 其余不动。
 - memory：`deep_game_vision` / `sonar_render_redo` 的欺骗段 / `story_canon` 欺骗段 → 重写标新北极星（车道 7）。
 
 ## 9. 实装车道 + 模型 / 精力档（SPEC 批准后开工）

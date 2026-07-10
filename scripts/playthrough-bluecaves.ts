@@ -151,7 +151,6 @@ for (const depth of [15, 25, 38, 50]) {
   const pool = buildEventPool({
     zone: zone!,
     depth,
-    sanity: 100,
     profileFlags: state.profile.flags,
     triggeredEventIds: [],
   });
@@ -162,12 +161,7 @@ const combat = getEncounter('combat.blind_eel_solo');
 assert(combat, '盲鳗 encounter 必须注册');
 const eelDef = getEnemyDef('enemy.blind_eel');
 assert(eelDef, '盲鳗 EnemyDef 必须注册');
-const hasSanityAttack = eelDef!.attacks.some(
-  (a) => a.sanityDamage && a.sanityDamage[1] > 0,
-);
-assert(hasSanityAttack, '盲鳗应至少有一个攻击带 sanityDamage');
 L(`  combat.blind_eel_solo 已注册，盲鳗有 ${eelDef!.attacks.length} 个攻击`);
-L(`    sanityDamage 攻击：${eelDef!.attacks.filter((a) => a.sanityDamage).map((a) => a.name).join(', ')}`);
 
 // ============================================
 // Phase 4: emergency 上浮在洞里仍可走通（剧情上"凿穿洞顶"）
@@ -182,7 +176,7 @@ state = {
     map: sampleMap,
     currentNodeId: interiorNode!.id, // 内部非 ascent 节点（入口现在是 ascent_point，不会 block）
     currentDepth: 30,
-    stats: { stamina: 80, oxygen: 30, sanity: 70, nitrogen: 25, thermalStress: 0 },
+    stats: { stamina: 80, oxygen: 30, nitrogen: 25, thermalStress: 0 },
   },
 };
 assert(isAscentBlocked(state.run!), '前置：必须仍在 block 区');
@@ -257,7 +251,7 @@ function miniMap(): DiveMap {
   };
 }
 
-// 气穴：氧气 +6 / 理智 +4，第二次失效（用过即枯）
+// 气穴：氧气 +6，第二次失效（用过即枯）
 let cs: GameState = createInitialGameState();
 cs = {
   ...cs,
@@ -267,15 +261,13 @@ cs = {
     map: miniMap(),
     currentNodeId: 'air',
     currentDepth: 40,
-    stats: { stamina: 50, oxygen: 30, sanity: 60, nitrogen: 20, thermalStress: 0 },
+    stats: { stamina: 50, oxygen: 30, nitrogen: 20, thermalStress: 0 },
   },
 };
 const o0 = cs.run!.stats.oxygen;
-const sa0 = cs.run!.stats.sanity;
 cs = breatheAtAirPocket(cs);
-L(`  换气：氧气 ${o0}→${cs.run!.stats.oxygen}（期望 +6）, 理智 ${sa0}→${cs.run!.stats.sanity}（期望 +4）`);
+L(`  换气：氧气 ${o0}→${cs.run!.stats.oxygen}（期望 +6）`);
 assert(cs.run!.stats.oxygen === o0 + 6, '气穴应 +6 氧气');
-assert(cs.run!.stats.sanity === sa0 + 4, '气穴应 +4 理智');
 const oAfter = cs.run!.stats.oxygen;
 cs = breatheAtAirPocket(cs); // 第二次：应枯竭
 L(`  再次换气：氧气 ${cs.run!.stats.oxygen}（期望不变 ${oAfter}）`);
@@ -289,9 +281,9 @@ let csCap: GameState = {
 csCap = breatheAtAirPocket(csCap);
 assert(csCap.run!.stats.oxygen === csCap.run!.oxygenMax, '气穴不应让氧气超过上限');
 
-// 扎营 = 先 tick N 回合（耗氧/被动理智压力等）再叠加恢复。断言"叠加在 tick 之后"，
-// 用 tickTurns 算同一基线对比，避免把被动理智衰减误判成 bug。
-// 短档：3 回合 体力 +15 理智 +5
+// 扎营 = 先 tick N 回合（耗氧等）再叠加恢复。断言"叠加在 tick 之后"，
+// 用 tickTurns 算同一基线对比。
+// 短档：3 回合 体力 +15
 let cc: GameState = createInitialGameState();
 cc = {
   ...cc,
@@ -300,19 +292,18 @@ cc = {
     map: miniMap(),
     currentNodeId: 'camp',
     currentDepth: 42,
-    stats: { stamina: 40, oxygen: 40, sanity: 50, nitrogen: 30, thermalStress: 0 },
+    stats: { stamina: 40, oxygen: 40, nitrogen: 30, thermalStress: 0 },
   },
 };
 const runBeforeShort = cc.run!;
 const baseShort = tickTurns(runBeforeShort, 3);
 const ox0 = runBeforeShort.stats.oxygen;
 cc = campAtNode(cc, 'short');
-L(`  短扎营：体力 →${cc.run!.stats.stamina}, 理智 →${cc.run!.stats.sanity.toFixed(1)}, 氧气 →${cc.run!.stats.oxygen.toFixed(1)}`);
+L(`  短扎营：体力 →${cc.run!.stats.stamina}, 氧气 →${cc.run!.stats.oxygen.toFixed(1)}`);
 assert(cc.run!.stats.stamina === Math.min(runBeforeShort.staminaMax, baseShort.stats.stamina + 15), '短扎营体力 +15（叠加在 tick 后）');
-assert(cc.run!.stats.sanity === Math.min(100, baseShort.stats.sanity + 5), '短扎营理智 +5（叠加在 tick 后）');
 assert(cc.run!.stats.oxygen === baseShort.stats.oxygen && baseShort.stats.oxygen < ox0, '扎营消耗氧气（tick 回合 = 自带代价）');
 
-// 长档：体力 +30 理智 +10（氮气不再在原深手动排·改由 tick 按 ceiling 决定·氮气 SPEC §2）
+// 长档：体力 +30（氮气不再在原深手动排·改由 tick 按 ceiling 决定·氮气 SPEC §2）
 let cl: GameState = createInitialGameState();
 cl = {
   ...cl,
@@ -321,15 +312,14 @@ cl = {
     map: miniMap(),
     currentNodeId: 'camp',
     currentDepth: 42,
-    stats: { stamina: 40, oxygen: 50, sanity: 50, nitrogen: 30, thermalStress: 0 },
+    stats: { stamina: 40, oxygen: 50, nitrogen: 30, thermalStress: 0 },
   },
 };
 const runBeforeLong = cl.run!;
 const baseLong = tickTurns(runBeforeLong, 6);
 cl = campAtNode(cl, 'long');
-L(`  长扎营：氮气 →${cl.run!.stats.nitrogen.toFixed(1)}, 理智 →${cl.run!.stats.sanity.toFixed(1)}, 体力 →${cl.run!.stats.stamina}`);
+L(`  长扎营：氮气 →${cl.run!.stats.nitrogen.toFixed(1)}, 体力 →${cl.run!.stats.stamina}`);
 assert(cl.run!.stats.nitrogen === baseLong.stats.nitrogen, '长扎营不再手动排氮（氮气 = tick 后值·原深休息由饱和模型微涨）');
-assert(cl.run!.stats.sanity === Math.min(100, baseLong.stats.sanity + 10), '长扎营理智 +10（叠加在 tick 后）');
 assert(cl.run!.stats.stamina === Math.min(runBeforeLong.staminaMax, baseLong.stats.stamina + 30), '长扎营体力 +30（叠加在 tick 后）');
 L('  气穴/扎营节点效果 ✓');
 

@@ -4,12 +4,12 @@
 // ping 是一记瞬时动作，扫在你停留的那一站。
 
 import type { GameState, DiveNode, CurrentStrength } from '@/types';
-import { tickTurns } from './events';
+import { tickTurns, evalCondition } from './events';
 import { appendLog } from './state';
-import { executeDeath } from './death';
+import { executeDeath, MADNESS_ASCENT_CAUSE } from './death';
 import { computeModifiers } from './modifiers';
 import { enterNodeSelection } from './dive-select';
-import { stalkerStep, weakStalkerStep, maybeApproachEncounter, maybeHallucinationEncounter } from './dive-stalker';
+import { stalkerStep, weakStalkerStep, maybeApproachEncounter } from './dive-stalker';
 import { startCombat } from './combat';
 import { buildWarrenArrival } from './combat-warren';
 import {
@@ -37,7 +37,7 @@ export function currentMoveCost(
 
 /**
  * 过渡到目标节点：tick 过渡回合（1 + 深度差/5）+ 洋流额外消耗 + 叙事日志，并切换 depth/node。
- * 纯过渡，不做死亡判定（moveToNode 紧接着查氧气/理智死亡）。
+ * 纯过渡，不做死亡判定（moveToNode 紧接着查氧气死亡 + 地点缝 seam 门）。
  */
 function applyTransit(state: GameState, target: DiveNode): GameState {
   const run = state.run!;
@@ -103,12 +103,18 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
   let s = applyTransit(state, target);
   const ticked = s.run!;
 
-  // 检查氧气/理智死亡（洋流耗氧也算）
+  // 检查氧气死亡（洋流耗氧也算）
   if (ticked.stats.oxygen <= 0) {
     return executeDeath(s, '氧气耗尽，溺亡');
   }
-  if (ticked.stats.sanity <= 0) {
-    return executeDeath(s, '理智崩溃，疯狂上浮');
+  // 地点缝 seam（二态致命节点门·**DORMANT**·见 types/dive.ts DiveNode.seam）：进入声明了 seam 的节点时，
+  // 若玩家不具备 seam.bypassCapability 能力 → 视作「疯狂上浮」当场致死（复用 evalCondition 的 hasCapability
+  // 双源扫描：装备 + 背包·同 events.ts）。当前 0 节点声明 seam ⇒ 此检查永不触发 ⇒ 运行时逐字节不变。
+  if (
+    target.seam &&
+    !evalCondition(s, { kind: 'hasCapability', capability: target.seam.bypassCapability })
+  ) {
+    return executeDeath(s, MADNESS_ASCENT_CAUSE);
   }
 
   // 高警觉 + 该 zone 有潜伏捕食者 → 遭遇（先于节点 kind 分发；摸黑可避免）。三条路径：
@@ -130,15 +136,6 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
       const approached = maybeApproachEncounter(s, target);
       if (approached) return approached;
     }
-  }
-
-  // 低理智幻觉遭遇（感知重做 SPEC §2.3/§7① 形态 a·「改怪物」的怪物半边）：与上面的真伏击**平行**——
-  // 真伏击读警觉（你招来的真危险），幻觉读低 san（是你疯了·世界诚实）。放在真遭遇之后：走到这儿说明本步
-  // 没触发真伏击（真伏击 contact 会提前 return），此时才轮到低 san 幻觉，避免一步撞两场。高 san（控制组）→
-  // maybeHallucinationEncounter 恒返回 null → 照常进节点（无幻觉怪）。san 回上来即消（下潜里 san 恢复→不再触发）。
-  {
-    const hallucinated = maybeHallucinationEncounter(s, target);
-    if (hallucinated) return hallucinated;
   }
 
   // 根据节点 kind 决定下一步（声呐重做：到站不自动扫——想看新一站就再 ping 一记·感知重做 SPEC §2.2）

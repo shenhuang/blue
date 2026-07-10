@@ -39,7 +39,7 @@
 **结构化标签（驱动 `pickEnemy`）**
 - `bands?: string[]` —— 适配的深度 band / random-zone id。深度轴。
 - `biomes?: string[]` —— **环境/栖息地轴**（"红树林热带鱼不该出现在极地"）。开放词表：`reef_tropical` / `polar_under_ice` / `mangrove` / `hydrothermal_vent` / `cave_anchialine` …。与 `bands` 正交：同样 50m，热带礁的鱼和极地冰下的鱼是两套池子。
-- `role?: EnemyRole` —— 战斗生态位：草案 `'predator'|'gatekeeper'|'sanity'|'swarm'|'ambusher'`（与 `aiPattern` 正交）。
+- `role?: EnemyRole` —— 战斗生态位：草案 `'predator'|'gatekeeper'|'swarm'|'ambusher'`（« 2026-07-10 理智系统移除 »：`'sanity'` role 已删·drowned_lantern 原 role sanity→**ambusher**；与 `aiPattern` 正交）。
 - `threatTier?` —— 粗档威胁 `'low'|'mid'|'high'`，可由现有 `threat` 派生（§8）。
 
 **背景文本（喂图鉴 + 辅助判断契合度）**
@@ -95,8 +95,8 @@ pickEnemy(
 目标：让**一个独立、无记忆的 session** 能把敌人安全地加进库。两条流共享同一套地基，差别只在"敌人设定从哪来"。
 
 ### 工作流 A · 描述 → 实装（交互一次性）
-作者用自然语言描述一只敌人（如"蓝洞深处、嗅觉型伏击者、中威胁、低频共振掉理智"），一个新 session 接手代码库，产出完整合规的敌人入库。映射步骤：
-1. NL 描述 → 解析成 schema 字段（tier/hp/attacks〔含 sanityDamage〕/hostility/aiPattern/`bands`/`biomes`/`role`/`threatTier`/weakness/loot/victoryConditions/`codex`）。
+作者用自然语言描述一只敌人（如"蓝洞深处、嗅觉型伏击者、中威胁、低频共振冲击"〔« 2026-07-10 理智系统移除 »：原示例"掉理智"改物理·如 blind_eel eel.hum→physical〕），一个新 session 接手代码库，产出完整合规的敌人入库。映射步骤：
+1. NL 描述 → 解析成 schema 字段（tier/hp/attacks〔~~含 sanityDamage~~·已删·« 2026-07-10 »〕/hostility/aiPattern/`bands`/`biomes`/`role`/`threatTier`/weakness/loot/victoryConditions/`codex`）。
 2. **数值锚定**：不是凭空编——`pickEnemy`/`--list-enemies` 找同 band×biome 的近邻，贴着它们的量级给数。
 3. **`combat-runner` 实跑出 baseline**（quirk #43「实跑抄」），不手写期望值。
 4. **绿门**：跑 §6 的 checks + 相关 regress 子集，全绿才算完成。

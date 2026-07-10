@@ -43,14 +43,12 @@
           "id": "octopus.ink",
           "name": "喷墨",
           "damageType": "physical",
-          "damage": [0, 0],
-          "sanityDamage": [2, 4],
+          "damage": [1, 3],
           "description": "墨在水里炸开。你的灯成了一团棕黑，洞顶、洞底、出口——全没了。你听见自己的呼吸快起来。",
           "weight": 1
         }
       ],
       "physicalDamage": [3, 8],
-      "sanityDamage": [2, 4],
       "loot": {
         "guaranteed": [{ "itemId": "item.cave_octopus_beak", "qty": [1, 1], "weight": 1 }],
         "rolls": [],

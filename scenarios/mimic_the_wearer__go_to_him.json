@@ -9,6 +9,6 @@
     "steps": 1,
     "finalPhase": "dive",
     "errors": [],
-    "statsDelta": { "oxygen": -6, "sanity": -22, "stamina": -18 }
+    "statsDelta": { "oxygen": -6, "stamina": -18 }
   }
 }

@@ -115,7 +115,6 @@ function printHelp() {
 支持的 flag：
   --stamina <n>       起始 stamina（默认满状态）
   --oxygen <n>        起始 oxygen
-  --sanity <n>        起始 sanity
   --nitrogen <n>      起始 nitrogen
   --depth <n>         起始 depth（默认事件 depthRange[0]）
   --zone <id>         起始 zoneId（默认从事件 zoneTags 推断）
@@ -154,7 +153,6 @@ function renderStep(step: ScenarioStep): string[] {
         const pct = Math.round(c.estimatedSuccessRate * 100);
         line += `  ・ check: ${c.stat} vs ${c.dc} (≈${pct}%)`;
       }
-      if (opt.hallucination) line += '  ・ [hallucination]';
       lines.push(line);
     }
   } else {
@@ -319,16 +317,13 @@ function buildInput(args: CliArgs): ScenarioInput {
   const stats: Partial<{
     stamina: number;
     oxygen: number;
-    sanity: number;
     nitrogen: number;
   }> = {};
   const stamina = flagNumber(args, '--stamina');
   const oxygen = flagNumber(args, '--oxygen');
-  const sanity = flagNumber(args, '--sanity');
   const nitrogen = flagNumber(args, '--nitrogen');
   if (stamina !== undefined) stats.stamina = stamina;
   if (oxygen !== undefined) stats.oxygen = oxygen;
-  if (sanity !== undefined) stats.sanity = sanity;
   if (nitrogen !== undefined) stats.nitrogen = nitrogen;
 
   const input: ScenarioInput = {
@@ -389,7 +384,6 @@ function handleShow(args: CliArgs) {
   console.log(`depth: ${e.depthRange[0]}-${e.depthRange[1]}m`);
   console.log(`zoneTags: ${(e.zoneTags ?? []).join(', ')}`);
   console.log(`weight: ${e.weight}`);
-  if (e.sanityRange) console.log(`sanityRange: ${e.sanityRange[0]}-${e.sanityRange[1]}`);
   if (e.cooldown !== undefined) console.log(`cooldown: ${e.cooldown}`);
   if (e.oncePerRun) console.log(`oncePerRun: true`);
   if (e.oncePerSave) console.log(`oncePerSave: true`);

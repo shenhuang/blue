@@ -15,8 +15,7 @@
       "lore.midwater.the_beak"
     ],
     "statsDelta": {
-      "oxygen": -1,
-      "sanity": -2
+      "oxygen": -1
     }
   }
 }

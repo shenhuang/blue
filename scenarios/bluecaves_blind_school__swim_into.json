@@ -9,6 +9,6 @@
     "finalPhase": "dive",
     "errors": [],
     "loreAdded": ["lore.bluecaves.blind_school"],
-    "statsDelta": { "oxygen": -2, "sanity": -6 }
+    "statsDelta": { "oxygen": -2 }
   }
 }

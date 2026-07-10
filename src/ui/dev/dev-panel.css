@@ -495,11 +495,6 @@
   background: rgba(78, 209, 193, 0.10);
 }
 
-.dev-option-row.hallucination {
-  color: var(--danger);
-  font-style: italic;
-}
-
 .dev-option-hidden {
   color: var(--text-faint);
 }
