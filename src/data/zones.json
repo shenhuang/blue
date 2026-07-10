@@ -147,6 +147,7 @@
       "requiresFlags": ["flag.warren_discovered"],
       "generation": "random",
       "mapShape": "warren",
+      "layoutStyle": "warren",
       "canFreeAscend": false,
       "_placeholder_doc": "占位 zone（蜂群 boss·The Warren·作者 2026-07-08 三卵室重设计·蜂群boss SPEC §8/§11）：mapShape=warren ⇒ mapgen.ts 分流到 generateWarrenMap（三卵室三角·女王随机起点·封口墙/密度/存卵全 run 态）。owner/门控/深度档/POI 归属 defer。requiresFlags 挂当前无事件设置的 flag.warren_discovered ⇒ 暂不可达（占位·待作者接发现门）。gates 省略（同 zone.horizontal_test·搜寻信号＝密度热度非声呐·quirk #239·不设感知门）。"
     },

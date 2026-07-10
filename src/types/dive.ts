@@ -51,7 +51,7 @@ export interface ZoneGates {
  * （radial / spiral 已废——它们把深度塞进半径/角度、违反「位置即深度」。）
  * 「宽」布局（非 vertical）POI 普遍更多——见 mapgen `nodeCountMultiplier`。
  */
-export type LayoutStyle = 'vertical' | 'horizontal' | 'serpentine';
+export type LayoutStyle = 'vertical' | 'horizontal' | 'serpentine' | 'warren';
 
 /** Zone 定义 —— 一个海域 */
 export interface ZoneDef {

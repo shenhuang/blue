@@ -211,7 +211,11 @@ const SONAR_BOX_PAD = 26;
  * 你看到的最小那挡房间＝大型猎手钻不进的窄缝）。
  */
 function roomRadius(id: string): number {
-  return ROOM_BASE + ROOM_VAR * roomScale01(id);
+  const base = ROOM_BASE + ROOM_VAR * roomScale01(id);
+  // 三卵室（蜂群 boss·SPEC §8）＝统一的大房间：三间同为主战场，别随 id hash 大小不一（否则中间那间可能偏小）。
+  // 纯渲染放大·不碰 roomScale01（那是猎手可通行的游戏语义单一来源）。
+  if (id.startsWith('w.chamber.')) return (ROOM_BASE + ROOM_VAR) * 1.7;
+  return base;
 }
 
 /**

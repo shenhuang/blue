@@ -62,7 +62,11 @@ export function getZone(id: string): ZoneDef | undefined {
  * UI 据此在层状 zone 给「只能往下、回不去」的预告，避免玩家在过了上浮口后才被「回不了头」打个措手不及。
  */
 export function zoneAllowsBacktrack(zoneId: string): boolean {
-  return getZone(zoneId)?.mapShape === 'maze';
+  // maze（迷路图·双向连通）与 warren（蜂群巢·三卵室三角·有环）都能节点级回头；
+  // 层状开阔水域（缺省·connectsTo 只向下）＝单向下潜。warren 是 2026-07-08 新增的 mapShape，
+  // 此前漏纳这里 ⇒ 巢窟被当开阔水域（无声呐图 + NodeSelectView 误标单向）·本次补正。
+  const shape = getZone(zoneId)?.mapShape;
+  return shape === 'maze' || shape === 'warren';
 }
 
 export function getEventById(id: string): DiveEvent | undefined {

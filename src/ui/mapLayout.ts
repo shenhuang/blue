@@ -137,6 +137,9 @@ export function deriveMapLayout(map: DiveMap, opts?: MapLayoutOpts): MapLayout {
     case 'serpentine':
       built = layoutSerpentine(byLayer, g);
       break;
+    case 'warren':
+      built = layoutWarren(byLayer, g);
+      break;
     case 'vertical':
     default:
       built = layoutVertical(byLayer, g);
@@ -147,7 +150,7 @@ export function deriveMapLayout(map: DiveMap, opts?: MapLayoutOpts): MapLayout {
   // 左右手性（#100 确定性·按图内容派生·约一半朝左一半朝右·**只镜像 X·Y=真实深度不动**）——
   // 别让所有洞都朝一个方向（作者 2026-06-27「都往右」）。同一张图永远同一手性（同地同图不变）。
   const handKey = nodes.reduce((s, n) => s + n.depth * 7 + n.layer * 3 + n.id.length, 0);
-  if (h01('hand:' + handKey) < 0.5) {
+  if (style !== 'warren' && h01('hand:' + handKey) < 0.5) {
     for (const id in pos) pos[id] = { x: width - pos[id].x, y: pos[id].y };
   }
 
@@ -233,4 +236,81 @@ function layoutSerpentine(byLayer: Map<number, DiveNode[]>, g: Geom): Built {
     });
   }
   return normalize(pos, g.padX, g.padY);
+}
+
+/**
+ * warren（蜂群巢·SPEC §8·三卵室三角）——**横版·刻意破 #92**（作者 2026-07-09·仅 zone.warren·QUIRKS #240）：
+ * y 不再＝深度（其它 zone 仍守 #92）。核心 13 点（洞口/两段接近/三甬道/三气穴/三卵室）按**固定角色锚位**摆成作者 mock
+ * 「洞口左·下切·三卵室错落摊右」；卵室间距拉大＝声呐里三卵室分明不熔（配 roomRadius 卵室统一放大）。
+ * **侧死路（`w.b*`·degree-1·挂 app1/app2/卵室·数量随 seed 变）**：逐个放到「离宿主最近的**空位**」——连得上宿主（画隧道），
+ * 但与**任何非相邻房间**保持 ≥ 分离阈值（`minSep`＝两房半径 + 熔并余量），**保证不出现「无墙却不连通」的假通路**（作者要求·守玩法诚实）。
+ * 单位＝colW（随声呐/节点图各自比例缩放）。
+ */
+function layoutWarren(byLayer: Map<number, DiveNode[]>, g: Geom): Built {
+  const u = g.colW;
+  const ROLE: Record<string, [number, number]> = {
+    'w.entrance': [1, -4], 'w.app1': [1.5, 0], 'w.app2': [4, 0.5],
+    'w.mid.ab': [7.5, -2.5], 'w.mid.ca': [7.5, 3], 'w.mid.bc': [16.5, 0],
+    'w.air.ab': [8.5, -5], 'w.air.ca': [8.5, 5.5], 'w.air.bc': [18, 0],
+    'w.chamber.a': [11, 0], 'w.chamber.b': [14, -4.5], 'w.chamber.c': [14, 4.5],
+  };
+  const all = [...byLayer.values()].flat();
+  const adj: Record<string, Set<string>> = {};
+  for (const n of all) adj[n.id] = new Set(n.connectsTo);
+  const linked = (a: string, b: string) => !!(adj[a]?.has(b) || adj[b]?.has(a));
+  // 分离阈值（colW 单位·保守 ≥ 真实 smin 合并距离≈两房半径+WARP*2+SMIN）：非相邻房间间距须 ≥ 此值＝不熔。
+  const rrU = (id: string) => (id.startsWith('w.chamber.') ? 1.9 : 1.15);
+  const MARGIN = 1.5;
+  const minSep = (a: string, b: string) => rrU(a) + rrU(b) + MARGIN;
+  const pos: Record<string, { x: number; y: number }> = {};
+  for (const n of all) if (ROLE[n.id]) pos[n.id] = { x: ROLE[n.id][0], y: ROLE[n.id][1] };
+  let cx0 = 0, cy0 = 0, nc = 0;
+  for (const id in pos) { cx0 += pos[id].x; cy0 += pos[id].y; nc++; }
+  cx0 /= nc || 1; cy0 /= nc || 1;
+  // 点到线段距离（查叶子→宿主的隧道是否会穿过非相邻房间）。
+  const segDist = (px: number, py: number, ax: number, ay: number, bx: number, by: number) => {
+    const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy;
+    let t = L2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / L2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+  };
+  const TUN = 0.2; // 隧道半宽(u)+余
+  const leaves = all.filter((n) => !ROLE[n.id]).sort((a, b) => a.id.localeCompare(b.id));
+  const RADII = [2.4, 3.0, 3.7, 4.5, 5.4, 6.5, 7.8, 9.2];
+  for (const leaf of leaves) {
+    const host = [...(adj[leaf.id] ?? [])].find((h) => pos[h]) ?? 'w.app2';
+    const hp = pos[host] ?? { x: 4, y: 0.5 };
+    const baseAng = Math.atan2(hp.y - cy0, hp.x - cx0); // 质心→宿主＝往外甩
+    const nonAdj = Object.keys(pos).filter((id) => id !== host && !linked(leaf.id, id));
+    const pEdges: Array<[string, string]> = []; // 已放节点间的边（核心隧道·别让叶子房间压上去）
+    for (const u in pos) for (const v of adj[u] ?? []) if (pos[v] && u < v) pEdges.push([u, v]);
+    let placed: { x: number; y: number } | null = null;
+    let fb: { x: number; y: number } | null = null, fbScore = -Infinity;
+    outer: for (const R of RADII) {
+      for (let s = 0; s < 24; s++) {
+        const ang = baseAng + (s % 2 === 0 ? 1 : -1) * Math.ceil(s / 2) * (Math.PI / 12);
+        const c = { x: hp.x + Math.cos(ang) * R, y: hp.y + Math.sin(ang) * R };
+        let score = Infinity;
+        for (const id2 of nonAdj) {
+          const p2 = pos[id2];
+          const roomClr = Math.hypot(c.x - p2.x, c.y - p2.y) - minSep(leaf.id, id2);
+          const tunClr = segDist(p2.x, p2.y, hp.x, hp.y, c.x, c.y) - (rrU(id2) + TUN + MARGIN);
+          score = Math.min(score, roomClr, tunClr);
+        }
+        for (const [eu, ev] of pEdges) {
+          if (linked(leaf.id, eu) || linked(leaf.id, ev)) continue;
+          const ed = segDist(c.x, c.y, pos[eu].x, pos[eu].y, pos[ev].x, pos[ev].y);
+          score = Math.min(score, ed - (rrU(leaf.id) + TUN + MARGIN));
+        }
+        if (score >= 0) { placed = c; break outer; } // 最近的「房间+隧道都不撞」空位
+        if (score > fbScore) { fbScore = score; fb = c; }
+      }
+    }
+    pos[leaf.id] = placed ?? fb ?? { x: hp.x, y: hp.y + 5.4 };
+  }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const id in pos) { minX = Math.min(minX, pos[id].x); maxX = Math.max(maxX, pos[id].x); minY = Math.min(minY, pos[id].y); maxY = Math.max(maxY, pos[id].y); }
+  const out: Record<string, { x: number; y: number }> = {};
+  for (const id in pos) out[id] = { x: g.padX + (pos[id].x - minX) * u, y: g.padY + (pos[id].y - minY) * u };
+  return { pos: out, width: g.padX * 2 + (maxX - minX) * u, height: g.padY * 2 + (maxY - minY) * u };
 }

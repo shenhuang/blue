@@ -27,6 +27,9 @@ import {
 } from '../src/engine/warren-hunt';
 import { isWarrenLastStand, warrenArrivalEncounterId, WARREN_ENC } from '../src/engine/warren-hunt';
 import { makeHarness, type PtAssert } from './lib/pt';
+import { deriveMapLayout } from '../src/ui/mapLayout';
+import { ROOM_BASE, ROOM_VAR, CH_BASE, CH_VAR, SMIN_K, WARP_AMP, SONAR_PX_PER_M, SONAR_COL_W } from '../src/engine/sonarGeometry';
+import { roomScale01 } from '../src/engine/sonar';
 
 const pt = makeHarness('The Warren 三角洞型 + 追猎态（蜂群 boss SPEC §4/§8）');
 const { L } = pt;
@@ -227,6 +230,50 @@ L('\n========== E. 到达路由决策（封口墙 / 女王阶段 · 空卵室↔
   const plainMap = { nodes: { 'node.0': { id: 'node.0', kind: 'rest', connectsTo: [] } }, startNodeId: 'node.0' } as unknown as DiveMap;
   assert(warrenArrivalEncounterId({ map: plainMap, warrenHunt: { roomsCleared: 0, queenNodeId: 'node.0' } } as unknown as RunState, 'node.0') === null, '非 warren 图（无 boss 卵室节点）→ null');
   L('  ✓ 墙↔女王阶段路由 · 空卵室↔安静水域(存卵) · rc 递进 wall_spawn→wall_guards→hatchery · 无档/非warren图 → null');
+}
+
+// ============================================================
+// F. 声呐洞穴「诚实」不变量（横版 warren layout·刻意破 #92·QUIRKS #240）：
+//    「没有可见墙的地方」＝真的连通（有边）。非相邻房间不得熔并、隧道不得穿过非相邻房间——
+//    保证作者要求的「无墙 ⟹ 玩家真能从一间移到另一间」。侧死路数量随 seed 变（0–7 叶），跨 seed 守门。
+//    判据：声呐口径 layout 下，非相邻两房中心距 ≥ 两房半径+熔并余量；每条隧道离非端点房间 ≥ 该房半径+隧道半宽+余量。
+// ============================================================
+L('\n========== F. 声呐洞穴诚实（非相邻不熔·隧道不穿房·守「无墙⟹可移动」） ==========');
+{
+  const rr = (id: string) => (id.startsWith('w.chamber.') ? (ROOM_BASE + ROOM_VAR) * 1.7 : ROOM_BASE + ROOM_VAR * roomScale01(id));
+  const MERGE = 2 * WARP_AMP + SMIN_K + 4;
+  const TUNR = CH_BASE + CH_VAR;
+  const segD = (px: number, py: number, ax: number, ay: number, bx: number, by: number) => {
+    const dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy;
+    let t = len2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+  };
+  let roomV = 0, tunV = 0;
+  const N = 120;
+  for (let i = 0; i < N; i++) {
+    const map = genMap('honest' + i);
+    const ids = Object.keys(map.nodes);
+    const layout = deriveMapLayout(map, { pxPerMeter: SONAR_PX_PER_M, colW: SONAR_COL_W, layoutStyle: 'warren' });
+    const adj: Record<string, Set<string>> = {};
+    for (const id of ids) adj[id] = new Set(map.nodes[id].connectsTo);
+    const linked = (a: string, b: string) => adj[a].has(b) || adj[b].has(a);
+    for (let a = 0; a < ids.length; a++)
+      for (let b = a + 1; b < ids.length; b++) {
+        if (linked(ids[a], ids[b])) continue;
+        const pa = layout.pos[ids[a]], pb = layout.pos[ids[b]];
+        if (Math.hypot(pa.x - pb.x, pa.y - pb.y) < rr(ids[a]) + rr(ids[b]) + MERGE) roomV++;
+      }
+    for (const e of layout.edges)
+      for (const c of ids) {
+        if (c === e.a || c === e.b || linked(c, e.a) || linked(c, e.b)) continue;
+        const pc = layout.pos[c], pa = layout.pos[e.a], pb = layout.pos[e.b];
+        if (segD(pc.x, pc.y, pa.x, pa.y, pb.x, pb.y) < rr(c) + TUNR + MERGE) tunV++;
+      }
+  }
+  assert(roomV === 0, `F: ${N} seed·非相邻房间零假熔（无墙却不连通的假通路）——实测 ${roomV}`);
+  assert(tunV === 0, `F: ${N} seed·隧道不穿非相邻房间——实测 ${tunV}`);
+  L(`  \u2713 ${N} seed：房间不假熔(${roomV}) · 隧道不穿房(${tunV}) ＝ 无墙处必有边·声呐诚实`);
 }
 
 pt.done();

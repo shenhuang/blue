@@ -91,10 +91,10 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
   );
   // 按渲染类型分两类（作者 2026-06-27「洞穴和开阔水域就行」）：洞穴=maze→声呐图 / 开阔水域=layered→节点图。
   // 判据同 zoneAllowsBacktrack；左侧 tab 据此切，zone 列表只列当前类（替代旧下拉·按类型区分）。
-  const caveZones = useMemo(() => randomZones.filter((z) => z.mapShape === 'maze'), [randomZones]);
-  const openZones = useMemo(() => randomZones.filter((z) => z.mapShape !== 'maze'), [randomZones]);
+  const caveZones = useMemo(() => randomZones.filter((z) => zoneAllowsBacktrack(z.id)), [randomZones]);
+  const openZones = useMemo(() => randomZones.filter((z) => !zoneAllowsBacktrack(z.id)), [randomZones]);
   const [zoneId, setZoneId] = useState<string>(
-    randomZones.find((z) => z.mapShape === 'maze')?.id ?? randomZones[0]?.id ?? '',
+    randomZones.find((z) => zoneAllowsBacktrack(z.id))?.id ?? randomZones[0]?.id ?? '',
   );
   // seed / ΔDEPTH / 剖面k 调试旋钮全撤（作者 2026-06-27「都没用了·seed 也多余」）：布局按固定 LCG(1)
   // 确定性生成——每座 zone 只看其确定性布局 + 结构读数；以后要看不同随机图，加回一个 reseed 即可。
@@ -110,7 +110,7 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
     { id: 'cave', label: '洞穴', hint: '声呐图', zones: caveZones },
     { id: 'open', label: '开阔水域', hint: '节点图', zones: openZones },
   ];
-  const activeCat: 'open' | 'cave' = zone?.mapShape === 'maze' ? 'cave' : 'open';
+  const activeCat: 'open' | 'cave' = zone && zoneAllowsBacktrack(zone.id) ? 'cave' : 'open';
   const toggleCat = (cat: 'open' | 'cave') => setCollapsed((c) => ({ ...c, [cat]: !c[cat] }));
   const renderZoneItem = (z: ZoneDef) => (
     <li
