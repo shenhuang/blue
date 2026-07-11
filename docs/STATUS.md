@@ -1,9 +1,9 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。**活数字（事件 / 敌人 / 脚本 / scenario 计数）以 `npm run handoff` 的 git 真值为准·本档不再硬抄**（防 STATUS 随内容 churn 漂移）。近期 session（新→旧）：
+> **2026-07-11 #290 战斗系统简化改版·HP 数值化伤害·负伤系统整套下线（Cowork 交互·Opus·代码+数据+UI·cloud regress 94/94 全绿〔tsx 强跑·vite build/3 git 门留 Mac/nightly〕·新 quirk #243·rebase 上 #289）**：作者五点简化战斗——①每武器单一攻击式+删闪避 ②道具折进「使用道具」抽屉（可展开可关）③体力经调息/战后恢复 ④新增全局持久 HP（`stats.hp`/`run.hpMax`·伤害=max(0,攻击-防御)·归零死·体力≤0 非致死须调息）⑤异常状态留 `stunned`+DoT·删 ambush/负伤/空壳。命中判定整套删（必中·`evasion`/`hitBonus` 成惰性数据轴·quirk #243）；负伤系统删 `injuries.ts`/`modifiers.ts`/`injuries.json`+6 场景·medkit 改走 `effectOnUse.deltas` 回 HP；迎战改「首回合免费行动」`preemptive`；`SAVE_VERSION 14→15`（旧档弃）。rebase 上 #289 负重氧耗（`combat`/`events` 乘 `weightO2Mult`·洋流免税）。落地撞作者 #289 工作区注释级 polish（`equipment` 三文件）→显式路径 add 只提 84 文件、作者改动原样留工作区。树：main·commit `cb227c9`+docs·ahead·未 push 待 nightly。
 > **2026-07-11 #289 装备负重→用力动作额外耗氧/耗体力·exertion 标记（Cowork 交互·Opus·代码+数据·沙箱静态门 43/43 绿〔54 tsx 行为测须 Mac/nightly 补跑〕·新 quirk #242）**：负重档位现同时放大「用力动作」的氧+体力（曲线对齐体力 1/1.5/2/2·light×1 逐字节不变）——战斗 `actionCosts` 氧耗 ×`weightO2Mult`；挖矿/凿洞 25 个 capability 门事件 31 outcome 标 `exertion:true`（`oxygenTurnCost`×wO2 ＋ 补基础体力 `EXERTION_BASE_STAMINA`=3×wSt）。**普通移动/每回合呼吸/上浮/洋流全免税**（惯性免税·延续 quirk #240a 上浮解耦；洋流开发中途接过·作者收尾反悔回退）。`exertion` 是显式 `Outcome` 字段（作者选显式标记非能力门派生）。门：`playthrough-equipment §11a` 补 weightO2Mult 三档断言。树：main·commit `dd5c1ae`·ahead·未 push 待 nightly。
 > **2026-07-10 #287/#288 文档 flag 收口 + 三设计缺口作者定向（Cowork 交互·Opus→Sonnet→Opus·纯 docs·零代码·静态门子集绿〔全量沙箱跑不了·docs-only 风险 nil·Mac/nightly 覆盖〕·无新 quirk）**：#287＝#286 遗留三档 flag 作者审阅后收口（主 SPEC §3/§5 标题去理智化·蜂群boss #271 记账句/§13-14 isHatchery 过期引用·剧情 SPEC 决策 #15 残句·commit `762bd63`）。#288＝#284 理智删除后三玩法缺口作者 Cowork 定向落 SPEC（基因路解锁动词=**强敌 boss 链**+穿越回过去饰品作前置·禁岛雾区=**诚实声呐受限迷宫**+穿越饰品〔非感知欺骗〕·教学关感知母题=**灯非默认**+开灯触发战斗）·剧情/禁岛/教学关三 SPEC 改·具体 boss/饰品获取/台词标 [待过稿]·§1驾驭+§3.7 仍冻结·穿越饰品=回影坠（已确认）。树：main·SPEC 未提交待本次收尾 commit·未 push 待 nightly。
-> **2026-07-10 #284 理智删除文档侧深清——23 个 SPEC/STATUS/工程文件清理旧 sanity 散文与死引用 + 2 份 SPEC 归档删除（Cowork 交互·Opus→Sonnet 收尾·纯 docs·零代码·regress 43/43〔沙箱子集·全量留 Mac/nightly〕·无新 quirk·CHANGELOG #286）**：作者三轮拍板「能删都删·深清到教学关台词」，5 路并行 subagent 清理主 SPEC/战斗/感知重做/声呐与房间/剧情/深水区/教学关剧本等，`深海回响_主线柱迁移_提案.md`／`深海回响_声呐渲染重做_SPEC.md` 移入 `_to_delete/`。保留活设计缺口（禁岛幻觉雾/猎手双轴）不动。净 −225 行·树：main·未提交待作者审阅。
 
 
 ## 1. 一句话状态
@@ -59,13 +59,13 @@ port → dive → combat → dive → ascent → resolution → port
 
 barrel + 兄弟文件拆分的子系统（`dive.ts` = barrel·住 `dive-start/-select/-sensors/-move/-stalker/-actions`·公共 API/路径零改·quirk #105）。主要单点：
 
-- `state.ts` — GameState 构造 + 不可变操作 + inventory 工具 + **存档层**（`SAVE_VERSION = 13`；版本不符 / 损坏一律弃旧档从头开始——`migrateSave` 迁移链已删·quirk #99/#173；纯加字段不必 bump·`createNewRun` 种默认 + 反序列化 `?? 兜底`）。
+- `state.ts` — GameState 构造 + 不可变操作 + inventory 工具 + **存档层**（`SAVE_VERSION = 15`；版本不符 / 损坏一律弃旧档从头开始——`migrateSave` 迁移链已删·quirk #99/#173；纯加字段不必 bump·`createNewRun` 种默认 + 反序列化 `?? 兜底`）。
 - `chart.ts` / `columns.ts` / `bands.ts` / `regions.ts` — 海图 POI + 数据驱动深度柱派生（band/probe/POI）+ 区域揭示配置化。
 - `clarity.ts` / `sonar.ts` — 双传感器感知（灯＝诚实近场硬门 / 声呐＝诚实远场侦察）+ 探测暴露（深水区 Phase 0a/0b）。
 - `dive-*.ts` — startDive / 海图出海 / 前哨蛙跳 / 节点选择与移动 / 传感器 / 猎手接近 / 气穴换气 / 扎营。
 - `mapgen.ts` — 层状 DAG + 迷路图双生成器（`analyzeMap` 结构分析器·dev 面板与回归共用）。
 - `combat.ts` / `enemyLibrary.ts` — 战斗状态机 + 敌人库（目录自动加载·`pickEnemy`/`matchEnemies`·`enemyRef` 解析）。
-- `ascent.ts` / `nitrogen.ts` / `injuries.ts` / `modifiers.ts` — 上浮减压 + 氮气债单写口（quirk #128）+ 负伤双单点（写 `injuries.ts` / 读 `modifiers.ts`·quirk #116·均 check-boundaries 强制）。
+- `ascent.ts` / `nitrogen.ts` — 上浮减压 + 氮气债单写口（quirk #128）。（负伤系统 `injuries.ts`/`modifiers.ts` 整套下线·#290·命中/负伤/闪避改数值化 HP。）
 - `upgrades.ts` / `lighthouses.ts` / `port.ts` / `outposts.ts` — 双资源升级（材料+金币）+ 每灯塔设施升级 + Mira 收购/回购 + 前哨。
 - `lunar.ts` / `temperature.ts` — 月相潮汐（水面）+ 温度系统。
 - `story.ts` / `lore.ts` / `events.ts` / `dialog.ts` — 剧情 flag / lore 账本 / 事件解析与 Outcome / NPC 对话树。
@@ -123,7 +123,7 @@ barrel + 兄弟文件拆分的子系统（`dive.ts` = barrel·住 `dive-start/-s
 
 ## 6. 已知 quirk 和约定
 
-迁出至 [docs/QUIRKS.md](QUIRKS.md)（编号只增不重排·别处引用「quirk #N」）。基建机制（边界门 / handoff / 并发隔离 / 深度柱 / 负伤单点 等）见 QUIRKS + CLAUDE.md 顶部约定。
+迁出至 [docs/QUIRKS.md](QUIRKS.md)（编号只增不重排·别处引用「quirk #N」）。基建机制（边界门 / handoff / 并发隔离 / 深度柱 等）见 QUIRKS + CLAUDE.md 顶部约定。
 
 ## 7. 仓库结构
 
