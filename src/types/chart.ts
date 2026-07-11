@@ -226,20 +226,9 @@ export interface ChartPoi {
    * prereqEventIds（单一真相·POI 不重复写 flag 逻辑）**。用于「重返同一地点·随进度换节拍」的剧情点
    * （如教学后重返东礁老沉船＝tutorial.captain_revisit〔没见过怪相·可下去看〕→ captain_revisit_empty〔见过了·空了〕）。
    * 这些事件必须 `weight: 0`（不进随机池·只经本机制钉放·否则会被内容库淹没＝命中率个位数%·见 quirk #174）。
-   * 仅 layered 图（reef/wreck）实现放置。与 openEventId / openEventPool 互斥（check-story-open-events 守门）。置位归事件 setProfileFlags（dive-start 只读不写）。
+   * 仅 layered 图（reef/wreck）实现放置。与 openEventId 互斥（check-story-open-events 守门）。置位归事件 setProfileFlags（dive-start 只读不写）。
    */
   storyOpenEvents?: string[];
-  /**
-   * 「材料刷点」范式（P1-2·playtest-findings「每区图谱」）：设了 openEventPool ⇒ 本 POI 是一个**专门刷点**——
-   * 入潜从池里**轮替**取一个开场事件（rotation by profile.runsCompleted·每潜递进 ⇒ 每次来不同 beat），
-   * 让玩家「能刷某素材，但别反复同一段剧情」。与 openEventId 互斥（单一强制开场源·check-farm-pois 守门）。
-   * 不带 flag 门控（刷点恒可刷·不一次性）。约束（机制化·scripts/check-farm-pois.mjs）：
-   *   ① 只能挂在 anchor（persistent）上——roaming 运行时 POI 逐字段构造、不透传本字段（chart.ts generateChart）；
-   *   ② ≥3 个不同 beat（"别反复同一段"的下限）；③ 每个 id 必解析到真实事件；
-   *   ④ 池内 beat 必须是**专属事件**（zoneTags 空 ⇒ 不漏进普通下潜池·只经本 POI 强制开场触发）。
-   * 派生「每区可再加一个刷点」＝新增一个带 openEventPool 的 anchor + 一组专属 beat 事件，无需改引擎。
-   */
-  openEventPool?: string[];
   /**
    * 月相潮窗（SPEC §2.3·additive·缺省＝不受月相限制·现有 POI 零改动）：本 POI 仅在这些相位「窗内」可达。
    * 豁免 story/persistent/mimic（同 climateOcclusion·SPEC §2.3）——Ch.1 关键路径恒无窗（check-lunar-reach 守门）。

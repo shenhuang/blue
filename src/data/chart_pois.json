@@ -96,7 +96,7 @@
         "id": "poi.anchor.reef_shark_shoals",
         "zoneId": "zone.old_lighthouse_reef",
         "name": "礁口·鲨多的那道缺",
-        "blurb": "礁脊朝外海开的一道缺口，灰影几乎总在。Mira 说想攒鲨鱼牙就来这儿——能刷，但每趟碰上的不一样。",
+        "blurb": "礁脊朝外海开的一道缺口，灰影时常出没。Mira 说这儿鲨鱼见得多——运气好能碰上。",
         "distance": 1,
         "owner": "lighthouse.home",
         "mapX": 0.15,
@@ -111,12 +111,7 @@
             28,
             44
           ]
-        },
-        "openEventPool": [
-          "reef.shark_run_circling",
-          "reef.shark_run_pair",
-          "reef.shark_run_feeding"
-        ]
+        }
       },
       {
         "id": "poi.anchor.blue_caves",

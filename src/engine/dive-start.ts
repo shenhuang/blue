@@ -585,18 +585,6 @@ export function startDiveFromPoi(
   // 注：「故事重访变体」storyOpenEvents 不在此强制开场——改由上方 pinnedStoryEventId 透传 mapgen，
   // 钉放到事件 depthRange 的**途中**节点（下潜到该深度才撞见·quirk #174）。
 
-  // 「材料刷点」范式（P1-2·types/chart.ts ChartPoi.openEventPool）：POI 带 openEventPool ⇒ 入潜从池里
-  // **轮替**取一个开场事件——rotation by runsCompleted（每潜递进 ⇒ 反复来刷时每次不同 beat·"能刷但别
-  // 反复同一段剧情"），确定性 ⇒ 可被 playthrough-farm-poi 钉死。纯读 profile·不写 flag（同上方强制开场）。
-  // 与 openEventId 互斥（check-farm-pois 守门）；这里加 `!poi.openEventId` 兜底＝剧情强制开场优先于刷点轮替。
-  if (!poi.openEventId && poi.openEventPool && poi.openEventPool.length > 0) {
-    const pool = poi.openEventPool;
-    const idx = ((state.profile.runsCompleted % pool.length) + pool.length) % pool.length;
-    s = {
-      ...s,
-      phase: { kind: 'dive', subPhase: { kind: 'event', eventId: pool[idx] } },
-    };
-  }
   return s;
 }
 

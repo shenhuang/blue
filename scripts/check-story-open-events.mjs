@@ -12,7 +12,7 @@
 //   (a) 只能挂 persistent anchor（roaming 运行时 POI 逐字段构造·不透传此字段·会被静默丢弃）。
 //   (b) 引用可解析——每个 id 都在 src/data/events/*.json 注册（防 typo 静默成「永不触发」＝软锁）。
 //   (c) 被引用事件 weight === 0（只经强制开场·不进随机池·防再被淹没）。
-//   (d) 与 openEventId / openEventPool 互斥（单一强制开场源·dive-start 让 storyOpenEvents 与 openEventPool 互不进入）。
+//   (d) 与 openEventId 互斥（单一强制开场源）。
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -74,7 +74,6 @@ for (const p of anchors) {
   }
   // (d) 与其它强制开场源互斥
   if (p.openEventId !== undefined) errors.push(`[exclusive] POI ${pid} 同时设 storyOpenEvents 与 openEventId（单一强制开场源）`);
-  if (p.openEventPool !== undefined) errors.push(`[exclusive] POI ${pid} 同时设 storyOpenEvents 与 openEventPool（单一强制开场源）`);
 
   for (const id of p.storyOpenEvents) {
     const ev = eventById.get(id);

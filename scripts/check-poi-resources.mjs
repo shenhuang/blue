@@ -14,7 +14,7 @@
 //   一个 POI（anchor 的 `id` / roaming 的 `templateId`）下潜时，run.poiId 落该 id；其图里的事件来自两条 lane——
 //   ① 事件级 `poiId`（buildEventPool 按 poiId / poiTemplateId 精确匹配·engine/zones.ts·anchor 走 id、roaming 走 templateId）；
 //   ② 该 POI 的「强制开场」字段引用的事件（dive-start.ts）：`story.eventId` / `story.revisitEventId` /
-//      `revisitEventId` / `openEventId` / `openEventPool[]` / `storyOpenEvents[]`——这些事件也在该 POI 的 run.poiId 下跑。
+//      `revisitEventId` / `openEventId` / `storyOpenEvents[]`——这些事件也在该 POI 的 run.poiId 下跑。
 //   两条 lane 命中的事件都记到这个 POI 容器；容器内任两条产同一个 save 物品 = 别名塌缩 = 红。
 //
 // 注意（有意 narrow·避免 spurious 红）：
@@ -70,7 +70,6 @@ export function forcedOpenEventRefs(poi) {
   if (poi?.story && typeof poi.story.revisitEventId === 'string') refs.push(poi.story.revisitEventId);
   if (typeof poi?.revisitEventId === 'string') refs.push(poi.revisitEventId);
   if (typeof poi?.openEventId === 'string') refs.push(poi.openEventId);
-  if (Array.isArray(poi?.openEventPool)) for (const r of poi.openEventPool) if (typeof r === 'string') refs.push(r);
   if (Array.isArray(poi?.storyOpenEvents)) for (const r of poi.storyOpenEvents) if (typeof r === 'string') refs.push(r);
   return refs;
 }

@@ -1,5 +1,5 @@
 // POI 事件集守门：剧情编辑器「POI 走查」依赖的 listPoiEventSets 必须自洽——
-//   ① 每个 POI 的 open(openEventId+openEventPool) / story(storyOpenEvents) 引用都解析到真实事件；
+//   ① 每个 POI 的 open(openEventId) / story(storyOpenEvents) 引用都解析到真实事件；
 //   ② 每个带 poiId 的事件都能归到某 POI 的 scoped（poiId 拼错 = 永不进池 = 软锁·从 POI 侧反向兜 check-event-poi）。
 //   ③ 真·POI 下潜派生（Q2）：每个 POI 都能定位下潜路由（zoneId/bandId/caveEntry 解析到真 zone·悬空＝红）；
 //   ④ 随机池自洽：randomIds ⊆ EVENT_DB、与钩子（open/story/scoped）不重叠、有效深度区间 d0<d1。
