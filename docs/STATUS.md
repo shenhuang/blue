@@ -1,16 +1,16 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。**活数字（事件 / 敌人 / 脚本 / scenario 计数）以 `npm run handoff` 的 git 真值为准·本档不再硬抄**（防 STATUS 随内容 churn 漂移）。近期 session（新→旧）：
+> **2026-07-12 #294 随机内容层整体拆除（纯删除·不设替代方案·Opus·代码+数据+脚本+文档·`npm run regress` 90/90 全绿〔含 prod build〕·新 quirk #244·commit `e5aad79`）**：把「随机事件池」内容分发机制及下游绑定整套拿掉——① 随机池靠删数据清空（EVENT_DB 371→24·删 12 事件文件·`buildEventPool` 留作 poiId 路由）；② 深度柱/band 系统整删（columns/bands/depth_columns/depth_bands + probe 材料 sink + 2 capstone + lootFactor + 解锁经济）；③ mimic 删；④ `columnStory→story` 改名 + 4 主线 beat re-home 成 `chart_pois` **静态 anchor**（`poi.dive.*.story`·reveal＝mentor_logbook.marksPois·深度门经济待重做）；⑤ openEventId 机制 + treasure/Corin/Mira-salvage/Sela 特殊商人/whalefall Phase-2 竖切 full unravel（保 Mira 核心 + 通用 trust 机制·TODO rebuild）；⑥ 持久洞可进但内容空（入口机制留·洞内随机池删）。脚本大批重写/删·场景 378→13·mapgen baseline --bless。开工前 7 路 recon 纠正任务 4 处事实假设（openEventId 非唯一鲸落 / caveEntry POI 认错 / CH1_ANCHORS load-bearing / whalefall 14 事件）·经 AskUserQuestion 拍板。遗留（QUIRKS #244）：重做 treasure/whalefall + 重修经济（深度 sink/deep_token/brass_fitting/lootFactor）+ rewire positioned-hunter + dormant orphans。树：main·commit `e5aad79`（feat）+ docs·ahead·未 push 待 nightly。
 > **2026-07-11 #293 拿掉「材料刷点」openEventPool 机制——唯一实例（鲨鱼牙刷点）连带删除（Cowork 交互·Sonnet·代码+数据+脚本+文档·静态门 42/42 绿〔typecheck 含·54 tsx 行为测/build 留 Mac/nightly〕）**：起于剧情编辑器讨论追问出「入潜第一个事件是否固定」，确认 `openEventPool`（quirk #150）是仓内唯一「专门刷点」实现，作者判定换别的办法解决、先整拿掉。删类型字段+引擎轮替分支+编辑器支持代码+专属五条门脚本+专属行为回归脚本+3 combat scenario+`reef_shark_shoals` 的字段与 3 个孤立 beat 事件（详见 CHANGELOG #293）；QUIRKS #150 标 REMOVED（编号不重排）。`reef_shark_shoals` 落回普通 zone 随机池（常规 `reef.reef_shark` 遭遇不受影响）。**沙箱坑**：普通工作树文件（非仅 `.git/` 内部）也禁 unlink，用 `mv` 进 `.git/.sandbox-junk/` 手法删 5 个文件（沿用 [[sandbox_git_commit]] 手法·本次确认对普通文件同样适用）。树：main·未提交待作者/nightly。
 > **2026-07-11 #292 战斗场景 `_comment` 命中率/`armor` 残留文案清理（quirk #243 续·Cowork 交互·Opus·纯文档字符串·静态门 43/43 绿）**：#291 记账未动的「9 个战斗场景 `_comment`」收尾——全量核实后实为 17 个文件/25 处，`armor`→`defense` 跟名、`evasion`/`hitChance` 数值真删、「不锁 turnsElapsed 因玩家会 miss」类旧因果改写为真实原因（必中后已无 miss，回合数浮动实因伤害区间/分裂时序）。`armorWhileProtected`/武器 mod 自身触发几率等核实为独立活字段，未误删；猎手 SPEC 隐身规避系统仍未触碰（同词不同义）。树：main·commit `8934448`·ahead·未 push 待 nightly。
-> **2026-07-11 #291 过载死代码清理 + evasion/hitBonus/weightHitMod 惰性数据轴真清（推翻 quirk #243 原「留惰性」决定·Cowork 交互·Opus·代码+类型+数据+SPEC·静态门 43/43 绿〔54 tsx 行为测须 Mac/nightly 补跑〕）**：`combat.ts` 里不可达的过载战斗封锁死分支删（出发门已拦过载下潜 + `run.equipment` 一潜冻结）——过程两次撞上作者 Mac 端并发实时改版（共享 FUSE 挂载写竞争），确认 `cb227c9`+`8db3f56`（#290）落定后重做才稳住。作者追问后明确推翻 quirk #243「留惰性」的原决定，命中判定死数据轴（`weightHitMod`/`WEIGHT_HIT_MOD` 表/`evasion`/`hitBonus`）连数据一起真删：类型字段 + 16 敌人 JSON 31 处键值 + `combat-runner.ts` 新敌人脚手架残留 + `深海回响_战斗系统_SPEC.md` 数据模型快照（`armor→defense` 补跟上 #290）。新增 check-boundaries **规则八**（敌人 JSON 禁 evasion/hitBonus 键名·机制化守住·quirk #243 自建议路径）；顺手对齐规则四头/体脱节的过期描述。**明确未动**：9 个战斗场景 `_comment` 里过期命中率措辞（CHANGELOG #290 已记的已知遗留·非机械删键）、猎手 SPEC 的隐身规避系统（同词不同义·未触碰）。树：main·commit `05026b0`·ahead·未 push 待 nightly。
 
 
 ## 1. 一句话状态
 
 完整 meta-loop 跑通：**港口对话 → 海图选点 → 教学线性下潜 / 节点图随机下潜 → 事件 → 战斗 → 上浮 → 减压 → 死亡 → 葬礼 → 尸体回收 → 衰减 → 回港变卖/回购 → 材料 ＋ 金币 修缮升级**。元进度是「材料经济」（基建地图 Phase A·升级走材料＋金币双资源账单·无建设值点数）。**多灯塔基地数据模型 + reveal/reach 已接入海图**（基建地图 Phase B/C）。
 
-内容层多个 random zone（旧灯塔礁 reef · 蓝洞群 cave/maze · 沉船墓园 wreck · 中层/热液/海沟/鲸落 等深度柱 zone）。洞穴 zone 走**迷路图**（双向连通图·环/死路/多最深点·`ZoneDef.mapShape='maze'`），开阔海域走层状 DAG。纵向深度由**数据驱动「深度柱」**（`depth_columns.json` → `engine/columns.ts` 派生 band/probe/POI；新灯塔只加一条 column·见 `docs/spec/深海回响_探深深度柱_SPEC.md` + quirk #130/#131）。出海走**港口海图 POI 选点**（anchor 持久 + roaming 刷新·两级门控〔发现 flag / 抵达 upgrade〕·深度偏移/洋流/能见度修正）。月相潮汐影响海况与海图情报（§见 月相潮汐 SPEC）。
+**⚠ 内容层现处「随机内容层已拆、待重做」态（2026-07-12 #294·quirk #244）**：随机事件池 + 深度柱/band + mimic + treasure/Sela/whalefall 竖切整套删除。当前活内容＝**教学线性下潜（tutorial）+ ch1 主线脊柱**——4 主线 beat 从深度柱 re-home 成 `chart_pois` 静态 anchor（`poi.dive.*.story`·mentor_logbook.marksPois 揭示·入潜强制开场 → 圆满/留白结局）+ 稀疏 poiId 内容（blue_caves 2 + wreck_graveyard 2 lore 读 + 4 story beat poiId）。持久洞（迷路图·`mapShape='maze'`）**可进但内容空**（入口机制留·洞内随机池删·待重做 POI-scoped 内容）。开阔海域仍层状 DAG，但随机事件池空 ⇒ 多为 rest 节点。**纵向深度门经济删**（原深度柱 probe 逐级解锁 + 材料 sink 已删·深度门待经济重做）。出海走**港口海图 POI 选点**（anchor 持久 + roaming 刷新·两级门控〔发现 flag / 抵达 upgrade〕·深度偏移/洋流/能见度修正）。月相潮汐影响海况与海图情报（§见 月相潮汐 SPEC）。
 
 类型干净，全套回归门（`npm run regress`）绿。**滚动内容计数 / 最薄档以 `npm run handoff` + `src/data/events|enemies/` 目录为权威。**
 
@@ -60,7 +60,7 @@ port → dive → combat → dive → ascent → resolution → port
 barrel + 兄弟文件拆分的子系统（`dive.ts` = barrel·住 `dive-start/-select/-sensors/-move/-stalker/-actions`·公共 API/路径零改·quirk #105）。主要单点：
 
 - `state.ts` — GameState 构造 + 不可变操作 + inventory 工具 + **存档层**（`SAVE_VERSION = 15`；版本不符 / 损坏一律弃旧档从头开始——`migrateSave` 迁移链已删·quirk #99/#173；纯加字段不必 bump·`createNewRun` 种默认 + 反序列化 `?? 兜底`）。
-- `chart.ts` / `columns.ts` / `bands.ts` / `regions.ts` — 海图 POI + 数据驱动深度柱派生（band/probe/POI）+ 区域揭示配置化。
+- `chart.ts` / `regions.ts` — 海图 POI 生成/揭示（`poiRevealState`·主线 beat re-home 成静态 anchor·marksPois 揭示）+ 区域揭示配置化。（`columns.ts`/`bands.ts`/深度柱派生已删·#294。）
 - `clarity.ts` / `sonar.ts` — 双传感器感知（灯＝诚实近场硬门 / 声呐＝诚实远场侦察）+ 探测暴露（深水区 Phase 0a/0b）。
 - `dive-*.ts` — startDive / 海图出海 / 前哨蛙跳 / 节点选择与移动 / 传感器 / 猎手接近 / 气穴换气 / 扎营。
 - `mapgen.ts` — 层状 DAG + 迷路图双生成器（`analyzeMap` 结构分析器·dev 面板与回归共用）。
@@ -74,8 +74,8 @@ barrel + 兄弟文件拆分的子系统（`dive.ts` = barrel·住 `dive-start/-s
 
 ### 数据（`src/data/`）
 
-- 配表：`items.json` / `actions.json` / `zones.json` / `upgrades.json` + `lighthouse_upgrades.json` / `chart_pois.json` + `chart_regions.json` / `depth_columns.json`（深度柱单一源·派生深度分层）+ `depth_bands.json`（派生）/ `injuries.json` / `cave_temperature.json` / `lore.json` / `npcs/<id>.json`。
-- 事件 `events/*.json`（tutorial / reef / blue_caves / wreck_graveyard / ch1 + 中层·热液·海沟·鲸落·洞穴等深度柱内容 + mimic / horror_sapien 伏笔）。
+- 配表：`items.json` / `actions.json` / `zones.json` / `upgrades.json` + `lighthouse_upgrades.json` / `chart_pois.json` + `chart_regions.json` / `caves.json` / `cave_temperature.json` / `lore.json` / `npcs/<id>.json`。（`depth_columns.json`/`depth_bands.json` 已删·#294。）
+- 事件 `events/*.json`——**随机内容层拆除后剩 7 文件 24 事件**（#294）：`tutorial`（教学线）/ `ch1`（主线 beat + 结局）/ `reef` / `blue_caves` / `midwater` / `vent` / `wreck_graveyard`（各留 1–3 条 poiId/lore 内容）。随机池 + 深度带 + 鲸落 + mimic 等 12 文件已删·内容待重做。
 - 敌人 `enemies/*.json` — **目录自动加载**：改 JSON 后 `npm run gen:enemies` 重生 `registry.generated.ts`（`check-enemy-refs` 四门守 registry 不过期 / 引用完整 / 无孤儿 / 有 baseline）。
 - **逐事件 / 逐敌人的内容清单已移出本档**（旧版每条一段·是 STATUS 膨胀主因）——以数据文件本身 + `npm run handoff` 为权威。
 
@@ -108,7 +108,7 @@ barrel + 兄弟文件拆分的子系统（`dive.ts` = barrel·住 `dive-start/-s
 | 战斗经济 | 双资源直读（体力 + 氧气回合）·无位置维度（武器性格代替） |
 | 伤害类型 | 物理单轨 |
 | 重生叙事 | **D 设定**：早期不同潜水员 → 中期故障 → 终局揭示一直是同一人（`flag.d_reveal` 冻结·归 St7 capstone） |
-| 深度纵轴 | 数据驱动深度柱（越深越欺骗·灯塔=信息基建·见 deep_game_vision / 探深深度柱 SPEC） |
+| 深度纵轴 | ⚠ 数据驱动深度柱**已删**（#294·随机内容层拆除）——深度门 + probe 解锁经济待随内容/经济重做（原方向：越深越欺骗·灯塔=信息基建·见 deep_game_vision） |
 
 ---
 
