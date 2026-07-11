@@ -1,5 +1,5 @@
 {
-  "_comment": "清道夫与盲鳗双人遭遇：先杀盲鳗 → 触发 corpseEating（清道夫回血 +8·吸收盲鳗攻击）→ 再杀清道夫。seed 1。blind_eel HP≈? armor=0 evasion=3 → 需若干刀；scavenger HP=24+8（吃尸后）。提供充足行动。logIncludes 钉住「恢复了」（尸食 log）和「消化了」（吸收 log）。不锁回合/状态（party 顺序 RNG 影响）。",
+  "_comment": "清道夫与盲鳗双人遭遇：先杀盲鳗 → 触发 corpseEating（清道夫回血 +8·吸收盲鳗攻击）→ 再杀清道夫。seed 1。blind_eel HP≈? defense=0 → 需若干刀；scavenger HP=24+8（吃尸后）。提供充足行动。logIncludes 钉住「恢复了」（尸食 log）和「消化了」（吸收 log）。不锁回合/状态（party 顺序 RNG 影响）。",
   "combatId": "combat.scavenger_with_eel",
   "seed": 1,
   "actions": [

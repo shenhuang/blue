@@ -1,5 +1,5 @@
 {
-  "_comment": "裂球分裂触发测试：前 3 回合故意不用攻击（仅 breathe·无伤害），触发 intervalTurns=3 分裂检查（累计伤害 0 < minDamageToDeny=6）→ 分裂出 2 只新个体（maxPartySize=8 未满）→ 场上 3 只 → 鱼叉步枪逐只点杀（18-26+6 伤·11 HP 分裂体命中必一枪死）。注意：新分裂体的检查周期从出生回合起算（与 spawnSeq 撞号修复同批·旧基线是靠撞号 instanceId「一击打多只」才能用刀清场——撞号修掉后刀压不住增殖，改鱼叉在分裂体自己的检查点（出生+3 回合）之前全灭）。seed 扫描钉命中路径。logIncludes 钉住「裂成」子串（分裂 log 文案）。不锁 turnsElapsed（miss 容差·多带 4 发弹与追击动作）。",
+  "_comment": "裂球分裂触发测试：前 3 回合故意不用攻击（仅 breathe·无伤害），触发 intervalTurns=3 分裂检查（累计伤害 0 < minDamageToDeny=6）→ 分裂出 2 只新个体（maxPartySize=8 未满）→ 场上 3 只 → 鱼叉步枪逐只点杀（18-26+6 伤·11 HP 分裂体命中必一枪死）。注意：新分裂体的检查周期从出生回合起算（与 spawnSeq 撞号修复同批·旧基线是靠撞号 instanceId「一击打多只」才能用刀清场——撞号修掉后刀压不住增殖，改鱼叉在分裂体自己的检查点（出生+3 回合）之前全灭）。seed 扫描钉命中路径。logIncludes 钉住「裂成」子串（分裂 log 文案）。不锁 turnsElapsed（必中·多带 4 发弹与追击动作是为应对分裂体只数/出生时序的不确定性，非 miss 容差）。",
   "combatId": "combat.fissure_sphere_solo",
   "seed": 3,
   "equipment": { "ranged": { "itemId": "item.weapon.harpoon_rifle", "slot": "ranged", "level": 1 } },

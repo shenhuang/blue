@@ -1,5 +1,5 @@
 {
-  "_comment": "茧化居民：幼体快速击杀（在氧气降到 ≤20 前消灭幼体，阻止茧化）· seed 1。默认氧气 60·knife_slash 零氧气消耗·每回合无 applyEnvironmentalPressure（无 boss）→ 氧气始终 60 > cocoonTriggerOxygen(20)·不触发茧化。larva passive（不攻击）→ 纯单向战。cocooned_resident HP=14·armor=0·evasion=0·knife[5,9]·平均 7·约 2 刀。提供 5 刀余量。",
+  "_comment": "茧化居民：幼体快速击杀（在氧气降到 ≤20 前消灭幼体，阻止茧化）· seed 1。默认氧气 60·knife_slash 零氧气消耗·每回合无 applyEnvironmentalPressure（无 boss）→ 氧气始终 60 > cocoonTriggerOxygen(20)·不触发茧化。larva passive（不攻击）→ 纯单向战。cocooned_resident HP=14·defense=0·knife[5,9]·平均 7·约 2 刀。提供 5 刀余量。",
   "combatId": "combat.cocooned_resident_solo",
   "seed": 1,
   "actions": [

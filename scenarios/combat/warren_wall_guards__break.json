@@ -1,5 +1,5 @@
 {
-  "_comment": "The Warren 封口墙②（Guards 墙）baseline（SPEC §5）：凿穿结硬壳的活盾（armor 5）→victory。covers guard+spawn 墙。数值占位·EXPECT 实跑抄(quirk #43·bless)。",
+  "_comment": "The Warren 封口墙②（Guards 墙）baseline（SPEC §5）：凿穿结硬壳的活盾（defense 5）→victory。covers guard+spawn 墙。数值占位·EXPECT 实跑抄(quirk #43·bless)。",
   "combatId": "combat.warren_wall_guards",
   "seed": 1,
   "bonuses": {

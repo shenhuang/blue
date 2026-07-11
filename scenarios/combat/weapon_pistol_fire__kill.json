@@ -1,5 +1,5 @@
 {
-  "_comment": "武器系统·AP-12 气动短枪（作者 2026-06-20）：副手装枪 + 一匣气动弹·fire_pneumatic 连射击杀。验证 ranged 武器解锁射击 / 弹药消耗 / 中装(11 负重)命中补正+体力倍率端到端。seed=3 确定性。",
+  "_comment": "武器系统·AP-12 气动短枪（作者 2026-06-20）：副手装枪 + 一匣气动弹·fire_pneumatic 连射击杀。验证 ranged 武器解锁射击 / 弹药消耗 / 中装(11 负重)体力倍率端到端。seed=3 确定性。",
   "combatId": "combat.reef_grouper_solo",
   "seed": 3,
   "equipment": { "ranged": { "itemId": "item.weapon.pneumatic_pistol", "slot": "ranged", "level": 1 } },

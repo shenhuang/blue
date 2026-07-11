@@ -1,5 +1,5 @@
 {
-  "_comment": "清道夫单体击杀 baseline · seed 1。scavenger HP=24·armor=1·evasion=2。knife_slash [5,9]-1 armor = [4,8]·hitChance ≈ 0.87（evasion 2）。10 刀余量（24/4≈6 刀，最差 miss 几次）。单体无其他敌人可吃→corpseEating 不触发（无尸体）→ 普通击杀流程。不锁 turnsElapsed。",
+  "_comment": "清道夫单体击杀 baseline · seed 1。scavenger HP=24·defense=1。knife_slash [5,9]-1 defense = [4,8]（必中）。10 刀余量（24/4≈6 刀，最差 miss 几次）。单体无其他敌人可吃→corpseEating 不触发（无尸体）→ 普通击杀流程。不锁 turnsElapsed。",
   "combatId": "combat.scavenger_solo",
   "seed": 1,
   "actions": [

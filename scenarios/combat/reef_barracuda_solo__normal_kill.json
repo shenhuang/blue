@@ -1,5 +1,5 @@
 {
-  "_comment": "礁区梭鱼单体 baseline · knife_slash × 3 击杀（3rd 行动在 turn 2 胜利后未用）。玻璃大炮原型：hp 16（全场最低）/ evasion 4（最高，命中 0.95-4×0.04=0.79）/ damage [5,9]（单击最高）/ hostility predatory（不撤退）。knife_slash(8-14) 2 刀即杀，但首回合梭鱼多半先咬一口（seed 1 实测 dart 7 点）——所以 stamina -19 = 2×knife(12) + 一次突咬(7)。注意：stamina Δ 随 seed 在 -17~-19 浮动（咬不咬/咬多少由 RNG 定），故 baseline 只锁 seed 1。对照盲鳗(hp18 sanity 双轨)/蛛蟹(hp22 armor2 territorial 撤退，3 turns)。",
+  "_comment": "礁区梭鱼单体 baseline · knife_slash × 3 击杀（3rd 行动在 turn 2 胜利后未用）。玻璃大炮原型：hp 16（全场最低）/ damage [5,9]（单击最高）/ hostility predatory（不撤退）。knife_slash(8-14) 2 刀即杀，但首回合梭鱼多半先咬一口（seed 1 实测 dart 7 点）——所以 stamina -19 = 2×knife(12) + 一次突咬(7)。注意：stamina Δ 随 seed 在 -17~-19 浮动（咬不咬/咬多少由 RNG 定），故 baseline 只锁 seed 1。对照盲鳗(hp18 sanity 双轨)/蛛蟹(hp22 defense2 territorial 撤退，3 turns)。",
   "combatId": "combat.reef_barracuda_solo",
   "seed": 1,
   "actions": [

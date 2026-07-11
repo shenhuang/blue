@@ -1,5 +1,5 @@
 {
-  "_comment": "洞口巨石斑 miniboss baseline · knife_slash × 15（seed 1）。HP=62 / armor=3 / evasion=1。进入激怒阶段（HP≤40%=≤24）：猛撞 9-14 / 死咬 5-9 + stanceForce='enraged' + attacksOverride。environmentalPressure oxygenDrainBonus=1 每回合多吃 1 氧。bonuses.staminaMaxBonus=200 → staminaMax=300；stats.stamina=300 匹配上限，确保 clampStats 不压回默认 100。oxygen=120 富余。注意 lootGained 断言 grouper_maw×1（guaranteed 掉落）；无 statsDelta / turnsElapsed 约束（阶段 RNG 路径多·不锁精确回合）。",
+  "_comment": "洞口巨石斑 miniboss baseline · knife_slash × 15（seed 1）。HP=62 / defense=3。进入激怒阶段（HP≤40%=≤24）：猛撞 9-14 / 死咬 5-9 + stanceForce='enraged' + attacksOverride。environmentalPressure oxygenDrainBonus=1 每回合多吃 1 氧。bonuses.staminaMaxBonus=200 → staminaMax=300；stats.stamina=300 匹配上限，确保 clampStats 不压回默认 100。oxygen=120 富余。注意 lootGained 断言 grouper_maw×1（guaranteed 掉落）；无 statsDelta / turnsElapsed 约束（阶段 RNG 路径多·不锁精确回合）。",
   "combatId": "combat.cave_grouper_boss_solo",
   "seed": 1,
   "bonuses": { "staminaMaxBonus": 200 },

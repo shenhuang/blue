@@ -1,5 +1,5 @@
 {
-  "_comment": "裂球单体·快速击杀（在 3 回合 intervalTurns 到期前消灭）· seed 1。fissure_sphere HP=18·armor=0·evasion=1。knife_slash 伤害 [5,9] 无 armor 减免（evasion 1·hitChance ≈ 0.91）。seed 1 连中：round 1 slash，round 2 slash → 累计伤害 10–18·通常 2 刀致死。提供 4 刀余量以防 miss·5 刀内必杀（18/5≈3.6，最差 5 刀）。splitBehavior.intervalTurns=3：5 刀内完成，不会触发裂变。不锁 turnsElapsed（evasion 1·seed 影响是否 miss），只锁 outcome/survived/enemiesAlive。",
+  "_comment": "裂球单体·快速击杀（在 3 回合 intervalTurns 到期前消灭）· seed 1。fissure_sphere HP=18·defense=0。knife_slash 伤害 [5,9] 无 defense 减免（必中）。seed 1 连中：round 1 slash，round 2 slash → 累计伤害 10–18·通常 2 刀致死。提供 4 刀余量以防 miss·5 刀内必杀（18/5≈3.6，最差 5 刀）。splitBehavior.intervalTurns=3：5 刀内完成，不会触发裂变。不锁 turnsElapsed（必中·但 knife_slash 伤害区间 [5,9] 随 seed 浮动，致死刀数随伤害roll波动），只锁 outcome/survived/enemiesAlive。",
   "combatId": "combat.fissure_sphere_solo",
   "seed": 1,
   "actions": [
