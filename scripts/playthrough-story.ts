@@ -26,18 +26,12 @@ import {
   CH1_ANCHORS,
   CH1_HOOK_FLAG,
   TUTORIAL_COMPLETE_FLAG,
-  SIGHTINGS_FOR_SEARCH,
-  WHALE_SEARCH_READY_FLAG,
-  WHALE_SIGHTING_WRECK_FLAG,
-  WHALEFALL_FOUND_FLAG,
   ch1AnchorFlag,
   ch1EndingFlag,
   ch1RecordingFlag,
   CH1_CHARM_FOUND_FLAG,
   ch1Story,
-  ch1WhaleStory,
   chapterUnlocked,
-  whaleSightingFlag,
   allStoryFlags,
 } from '../src/engine/story';
 import { resolveOption, evalCondition } from '../src/engine/events';
@@ -53,7 +47,7 @@ import { makeHarness, type PtAssert } from './lib/pt';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
-const pt = makeHarness('playthrough 完成：剧情脊柱 §1 派生 / §2 港口路径 / §3 round-trip / §4 守门 / §5 St1 锚点链 / §6 鲸落支线 / §4c Mira 对话 / §4d Otto 对话 全部');
+const pt = makeHarness('playthrough 完成：剧情脊柱 §1 派生 / §2 港口路径 / §3 round-trip / §4 守门 / §5 St1 锚点链 / §4c Mira 对话 / §4d Otto 对话 全部');
 const { L } = pt;
 const assert: PtAssert = pt.assert;
 
@@ -517,68 +511,61 @@ L('§4b Aldo 进度对话门控');
 }
 
 // ═══════════════════════════════════════════════════════════════
-// §5 一章主线链（主线柱迁移·D-2）：四主线 beat 改由 depth_columns.json 各柱 storyTier 派生（不再 chart_pois 锚点）——
-//     日志早揭示（导师日志 marksPois 文献坐标·dim/lit·2026-06-28 内容自洽回归：reveal 从裸 coords_known flag 改回
-//     「文献坐标」机制·#117 续）+ 链式 build-gate（reef→wreck→midwater→vent）+ columnStory 入潜强制开场 +
-//     vent 链尾→结局 + 留白重访 + 字面量守门。退役 4 个 ch1_* chart_pois 锚点。
+// §5 一章主线链（re-home 2026-07-12）：四主线 beat = chart_pois.json 静态 story 锚点（原由 depth_columns.json
+//     各柱 storyTier 派生·深度柱系统删除后落成静态 anchor）——日志早揭示（导师日志 marksPois 文献坐标·
+//     2026-06-28 内容自洽回归·#117 续）+ dive-start applyStoryOpen 入潜强制开场 + vent 链尾→结局 + 留白重访 +
+//     字面量守门。深度门经济（原 host-built 逐环揭示）已删·reveal 单一来源＝导师日志 marksPois（持有即四坐标 lit）。
 // ═══════════════════════════════════════════════════════════════
-L('§5 一章主线链（柱 storyTier·日志早揭示·链式 build-gate·columnStory 强制开场·守门）');
+L('§5 一章主线链（chart_pois story 锚点·日志揭示·applyStoryOpen 强制开场·守门）');
 
 {
-  // —— (a) 数据面守门：4 主线 beat 改挂 depth_columns.json 各柱 storyTier（不再 chart_pois.json story 锚点）——
-  // (a1) chart_pois 里**不再有任何 story 锚点**（退役 4 个 ch1_* 锚点·主线柱迁移）。
+  // —— (a) 数据面守门：4 主线 beat = chart_pois.json 静态 story 锚点（poi.dive.{home,wreck,midwater,vent}.story）——
+  // (a1) chart_pois 恰有 4 个带 `story` 字段的锚点（re-home·主线 beat 从 depth_columns storyTier 落成静态 anchor）。
   const poisJson = JSON.parse(readFileSync(resolve(ROOT, 'src/data/chart_pois.json'), 'utf-8')) as Record<string, unknown>;
-  type StoryAnchor = { id: string; story?: { anchor: string; eventId: string } };
-  const allAnchors = Object.values(poisJson)
-    .filter((s) => !!s && typeof s === 'object' && !Array.isArray(s))
-    .flatMap((s) => ((s as { anchors?: StoryAnchor[] }).anchors ?? []));
+  type StoryAnchor = { id: string; story?: { eventId: string; beatFlag: string; chainTail?: boolean } };
+  const collectAnchors = (node: unknown): StoryAnchor[] => {
+    if (Array.isArray(node)) return node.flatMap(collectAnchors);
+    if (node && typeof node === 'object') {
+      const self = (node as StoryAnchor).id && (node as StoryAnchor).story ? [node as StoryAnchor] : [];
+      return [...self, ...Object.values(node as Record<string, unknown>).flatMap(collectAnchors)];
+    }
+    return [];
+  };
+  const storyAnchors = collectAnchors(poisJson).filter((a) => a.story && typeof a.story.eventId === 'string');
   assert(
-    allAnchors.every((p) => !p.story),
-    '§5 chart_pois 不应再有 story 锚点（4 个 ch1_* 已退役·主线 beat 迁至柱 storyTier）',
+    storyAnchors.length === 4,
+    `§5 chart_pois 应恰有 4 个 story 锚点（主线 beat re-home·深度柱删除），实际 ${storyAnchors.length}`,
   );
-  // (a2) depth_columns.json 恰 4 根柱带 storyTier（home/wreck/midwater/vent），一区一 beat，链尾唯一（vent·chainTail）。
-  // storyTier **不再带 revealFlag**（2026-06-28 内容自洽回归）：reveal 单一来源＝导师日志 marksPois 文献坐标。
-  const colsJson = JSON.parse(readFileSync(resolve(ROOT, 'src/data/depth_columns.json'), 'utf-8')) as {
-    columns: Array<{ id: string; storyTier?: { eventId: string; beatFlag: string; chainTail?: boolean } }>;
-  };
-  const storyCols = colsJson.columns.filter((c) => c.storyTier);
-  assert(storyCols.length === 4, `§5 应恰 4 根柱带 storyTier（主线 beat），实际 ${storyCols.length}`);
-  const beatByCol = new Map(storyCols.map((c) => [c.id, c.storyTier!]));
+  const beatByPoi = new Map(storyAnchors.map((a) => [a.id, a.story!]));
   const expectBeat: Record<string, { eventId: string; beatFlag: string }> = {
-    'col.home': { eventId: 'ch1.anchor_reef', beatFlag: ch1AnchorFlag('reef') },
-    'col.wreck': { eventId: 'ch1.anchor_wreck', beatFlag: ch1AnchorFlag('wreck') },
-    'col.midwater': { eventId: 'ch1.anchor_midwater', beatFlag: ch1AnchorFlag('midwater') },
-    'col.vent': { eventId: 'ch1.anchor_vent', beatFlag: ch1AnchorFlag('vent') },
+    'poi.dive.home.story': { eventId: 'ch1.anchor_reef', beatFlag: ch1AnchorFlag('reef') },
+    'poi.dive.wreck.story': { eventId: 'ch1.anchor_wreck', beatFlag: ch1AnchorFlag('wreck') },
+    'poi.dive.midwater.story': { eventId: 'ch1.anchor_midwater', beatFlag: ch1AnchorFlag('midwater') },
+    'poi.dive.vent.story': { eventId: 'ch1.anchor_vent', beatFlag: ch1AnchorFlag('vent') },
   };
-  for (const [cid, exp] of Object.entries(expectBeat)) {
-    const s = beatByCol.get(cid);
-    assert(s, `§5 柱 ${cid} 应带 storyTier（主线 beat）`);
-    assert(s!.eventId === exp.eventId, `§5 ${cid} storyTier.eventId 应=${exp.eventId}`);
-    assert(s!.beatFlag === exp.beatFlag, `§5 ${cid} storyTier.beatFlag 应=${exp.beatFlag}（= ch1AnchorFlag·单一来源）`);
-    assert(getEventById(s!.eventId), `§5 ${cid} storyTier.eventId ${s!.eventId} 应已注册`);
-    assert(
-      !('revealFlag' in s!),
-      `§5 ${cid} storyTier 不应再带 revealFlag（reveal 单一来源＝导师日志 marksPois 文献坐标·内容自洽回归）`,
-    );
+  for (const [pid, exp] of Object.entries(expectBeat)) {
+    const s = beatByPoi.get(pid);
+    assert(s, `§5 chart_pois 应有 story 锚点 ${pid}（主线 beat）`);
+    assert(s!.eventId === exp.eventId, `§5 ${pid} story.eventId 应=${exp.eventId}`);
+    assert(s!.beatFlag === exp.beatFlag, `§5 ${pid} story.beatFlag 应=${exp.beatFlag}（= ch1AnchorFlag·单一来源）`);
+    assert(getEventById(s!.eventId), `§5 ${pid} story.eventId ${s!.eventId} 应已注册`);
   }
-  const tails = storyCols.filter((c) => c.storyTier!.chainTail);
-  assert(tails.length === 1 && tails[0].id === 'col.vent', '§5 链尾唯一＝vent（chainTail·结局判定读它）');
+  const tails = storyAnchors.filter((a) => a.story!.chainTail);
+  assert(tails.length === 1 && tails[0].id === 'poi.dive.vent.story', '§5 链尾唯一＝vent（chainTail·结局判定读它）');
 
   // (a3) reveal 单一来源守门（内容自洽回归·#117 续）：导师日志（item.mentor_logbook）story.marksPois 必恰好带
-  // 四条柱派生 story 潜点 id（poi.dive.<短名>.story）——「日志携带四坐标」＝教学「圈下四个坐标」的机制根据。
+  // 四条 story 锚点 id（poi.dive.<短名>.story）——「日志携带四坐标」＝教学「圈下四个坐标」的机制根据。
   const itemsJson = JSON.parse(readFileSync(resolve(ROOT, 'src/data/items.json'), 'utf-8')) as {
     items: Array<{ id: string; story?: { marksPois?: string[]; setsFlag?: string[] } }>;
   };
   const logbook = itemsJson.items.find((it) => it.id === MENTOR_LOGBOOK_ITEM_ID);
   assert(logbook, `§5 应存在导师日志道具 ${MENTOR_LOGBOOK_ITEM_ID}`);
   const logbookMarks = new Set(logbook!.story?.marksPois ?? []);
-  const expectStoryPois = ['col.home', 'col.wreck', 'col.midwater', 'col.vent'].map(
-    (cid) => `poi.dive.${cid.replace(/^col\./, '')}.story`,
-  );
+  const expectStoryPois = Object.keys(expectBeat);
   for (const pid of expectStoryPois) {
-    assert(logbookMarks.has(pid), `§5(a3) 导师日志 marksPois 应含派生 story 潜点 ${pid}（reveal 单一来源·日志携带四坐标）`);
+    assert(logbookMarks.has(pid), `§5(a3) 导师日志 marksPois 应含 story 锚点 ${pid}（reveal 单一来源·日志携带四坐标）`);
   }
-  assert(logbookMarks.size === 4, `§5(a3) 导师日志 marksPois 应恰 4 条（四柱 story 潜点），实际 ${logbookMarks.size}`);
+  assert(logbookMarks.size === 4, `§5(a3) 导师日志 marksPois 应恰 4 条（四 story 锚点），实际 ${logbookMarks.size}`);
   assert(
     !(logbook!.story?.setsFlag ?? []).includes('story.ch1.coords_known'),
     '§5(a3) 导师日志不应再 setsFlag story.ch1.coords_known（旧 reveal 机制已撤·改 marksPois 文献坐标）',
@@ -613,10 +600,10 @@ L('§5 一章主线链（柱 storyTier·日志早揭示·链式 build-gate·colu
     assert(!raw.includes('父亲'), `§5 ${file} 不应出现「父亲」（canon=导师·quirk #118）`);
   }
 
-  // —— (c) 接线面：columnStory 入潜强制开场 + 任意顺序 + 链式 build-gate（reach 门）+ 回流=普通下潜 ——
-  // 主线柱迁移：beat 潜点由柱 storyTier 派生（poi.dive.<短名>.story），reach=host 建成 + reveal=日志 marksPois 文献坐标。
-  // 测「强制开场」用「全 host 在册 + 持日志（inventory 有导师日志）」档（让四 beat 都 lit·可被 startDiveFromPoi 调用）；
-  // 「链式 build-gate」（reach 顺序）另由 (c2) 端到端走一遍。
+  // —— (c) 接线面：applyStoryOpen 入潜强制开场 + 任意顺序 + 回流=普通下潜 ——
+  // beat 潜点 = chart_pois 静态 story 锚点（poi.dive.<短名>.story）·reveal=日志 marksPois 文献坐标（持日志即 lit·
+  // host 灯塔不再门 reveal·深度门经济已删）。测「强制开场」用「持日志（inventory 有导师日志）」档（四 beat 都 lit·
+  // 可被 startDiveFromPoi 调用）；reveal 单一来源（持日志 lit / 无日志 hidden）另由 (c2) 走一遍。
   const base = createInitialGameState();
   // 全 host 在册（home + 三前哨）+ 持导师日志（marksPois 四坐标）→ 四 beat 潜点全 lit。
   const outpostLh = [
@@ -680,46 +667,28 @@ L('§5 一章主线链（柱 storyTier·日志早揭示·链式 build-gate·colu
   const dReefAgain = startDiveFromPoi(threeDone, poiOf('reef'));
   assert(subEvent(dReefAgain) !== 'ch1.anchor_reef', '§5 已做 beat 回流不应重播节拍');
 
-  // —— (c2) 链式 build-gate（reach 门·主线柱迁移核心）：reef→wreck→midwater→vent 逐环——
-  // 持导师日志（marksPois 四坐标）后四 beat 坐标早揭示；某区 host 前哨建好前该 beat=dim（看得到去不了）、建好后=lit。
-  // reach 单一来源 = storyTierRevealState（host 建成 + 日志 marksPois 文献坐标）。逐环走：每加一座 host 灯塔，对应 beat 转 lit。
-  // （host 建成 ⟺ 上一 beat 已做·由 lighthouses.ts::outpostUnlocked requiresFlag 链保证·见 §0/playthrough-outpost。）
-  const stateWithLh = (lhIds: string[]): GameState => {
-    const lhAll = [
-      { id: 'lighthouse.ch1_wreck_outpost', name: '残骸前哨', mapX: 0.3, mapY: 0.7, level: 1, builtUpgrades: new Set<string>() },
-      { id: 'lighthouse.ch1_midwater_outpost', name: '中层浮标', mapX: 0.56, mapY: 0.51, level: 1, builtUpgrades: new Set<string>() },
-      { id: 'lighthouse.ch1_vent_outpost', name: '热液井台', mapX: 0.87, mapY: 0.72, level: 1, builtUpgrades: new Set<string>() },
-    ].filter((l) => lhIds.includes(l.id));
-    return {
-      ...base,
-      profile: withLogbook({
-        ...base.profile,
-        flags: new Set([TUTORIAL_COMPLETE_FLAG]),
-        lighthouses: [...base.profile.lighthouses, ...lhAll],
-      }),
-    };
-  };
+  // —— (c2) reveal 单一来源（导师日志 marksPois 文献坐标）：持日志 → 四 beat 坐标 lit；无日志 → 全 hidden（不上图）——
+  // 深度门经济（原 host-built 逐环揭示·dim/lit）已删（2026-07-12 深度柱系统删除）：reveal 不再看 host 灯塔·
+  // 只看是否持导师日志（documentKnowsPoi→poiRevealState）。host 灯塔在册与否都不改 reveal（下面 noLog 也带全 host）。
   const revealOf = (s: GameState, anchor: string) =>
-    generateChart({ profile: s.profile }).pois.find((p) => p.id === beatPoiId[anchor])?.revealState;
-  // 只 home（无前哨）：reef lit（免费入口）；wreck/midwater/vent dim（host 前哨未建·早揭示）。
-  const sHome = stateWithLh([]);
-  assert(revealOf(sHome, 'reef') === 'lit', '§5(c2) 只 home → reef lit（免费入口·教学完即可下）');
-  assert(
-    revealOf(sHome, 'wreck') === 'dim' && revealOf(sHome, 'midwater') === 'dim' && revealOf(sHome, 'vent') === 'dim',
-    '§5(c2) 只 home → wreck/midwater/vent 全 dim（host 前哨未建·早揭示·看得到去不了）',
-  );
-  // +残骸前哨：wreck 转 lit；midwater/vent 仍 dim。
-  const sWreck = stateWithLh(['lighthouse.ch1_wreck_outpost']);
-  assert(revealOf(sWreck, 'wreck') === 'lit', '§5(c2) 建残骸前哨 → wreck 转 lit（下得去）');
-  assert(revealOf(sWreck, 'midwater') === 'dim' && revealOf(sWreck, 'vent') === 'dim', '§5(c2) midwater/vent 仍 dim');
-  // +中层浮标：midwater 转 lit；vent 仍 dim。
-  const sMid = stateWithLh(['lighthouse.ch1_wreck_outpost', 'lighthouse.ch1_midwater_outpost']);
-  assert(revealOf(sMid, 'midwater') === 'lit', '§5(c2) 建中层浮标 → midwater 转 lit');
-  assert(revealOf(sMid, 'vent') === 'dim', '§5(c2) vent 仍 dim（热液井台未建）');
-  // +热液井台：vent 转 lit（链尾 beat 可达·潜它→结局）。
-  const sVent = stateWithLh(['lighthouse.ch1_wreck_outpost', 'lighthouse.ch1_midwater_outpost', 'lighthouse.ch1_vent_outpost']);
-  assert(revealOf(sVent, 'vent') === 'lit', '§5(c2) 建热液井台 → vent（链尾 beat）转 lit（下得去→结局）');
-  L('  (c2) 链式 build-gate：reef 免费 → 建残骸→wreck lit → 建中层→midwater lit → 建热液→vent lit（reach 逐环）✓');
+    generateChart({ profile: s.profile }).pois.find((p) => p.id === beatPoiId[anchor])?.revealState ?? null;
+  // 持日志（ready 档·+全 host）：四 beat 全 lit。
+  for (const a of ['reef', 'wreck', 'midwater', 'vent'] as const) {
+    assert(revealOf(ready, a) === 'lit', `§5(c2) 持导师日志 → beat ${a} lit（marksPois 文献坐标揭示·host 不门 reveal）`);
+  }
+  // 无日志（同样带全 host）：四 beat 坐标未揭示 → 不上图（hidden·没抄坐标）。
+  const noLog: GameState = {
+    ...base,
+    profile: {
+      ...base.profile,
+      flags: new Set([TUTORIAL_COMPLETE_FLAG]),
+      lighthouses: [...base.profile.lighthouses, ...outpostLh],
+    },
+  };
+  for (const a of ['reef', 'wreck', 'midwater', 'vent'] as const) {
+    assert(revealOf(noLog, a) === null, `§5(c2) 无导师日志 → beat ${a} 不上图（坐标未揭示·hidden·host 在册也不揭示）`);
+  }
+  L('  (c2) reveal 单一来源：持导师日志 → 四 beat lit；无日志 → 全 hidden（不上图·深度门经济已删）✓');
 
   // —— (d) 节拍真实落账：resolveOption 走 setProfileFlags + lore（#69 套路·dive 中持久） ——
   const reefEvent = getEventById('ch1.anchor_reef')!;
@@ -814,68 +783,7 @@ L('§5 一章主线链（柱 storyTier·日志早揭示·链式 build-gate·colu
   L('  POI 强制开场/任意顺序/vent 门/回流/落账/守门 + 留白重访门/落账 ✓');
 }
 
-// ═══════════════════════════════════════════════════════════════
-// §6 鲸落支线派生（非主线·§10·ch1WhaleStory 计数/找寻/found/残骸独立目击·flag 单一来源）
-// ═══════════════════════════════════════════════════════════════
-L('§6 鲸落支线派生（ch1WhaleStory）');
-
-{
-  // 空档
-  const empty = ch1WhaleStory(profileWith([]));
-  assert(
-    empty.sightings === 0 && !empty.searchReady && !empty.found && !empty.wreckSeen,
-    '§6 空档：无目击/未就绪/未找到/无独立目击',
-  );
-
-  // 中层目击计数（离散 flag·按数量派生）
-  const two = ch1WhaleStory(profileWith([whaleSightingFlag(1), whaleSightingFlag(2)]));
-  assert(
-    two.sightings === 2 && !two.searchReady,
-    '§6 两次中层目击：sightings=2·searchReady 仍假（阈值由事件物化置位·不靠计数自动推·门=flag）',
-  );
-
-  // 找寻就绪＝阈值 flag 物化（满 SIGHTINGS_FOR_SEARCH 时由当次目击事件置 WHALE_SEARCH_READY_FLAG）
-  const ready = ch1WhaleStory(
-    profileWith([whaleSightingFlag(1), whaleSightingFlag(2), whaleSightingFlag(3), WHALE_SEARCH_READY_FLAG]),
-  );
-  assert(
-    ready.sightings === SIGHTINGS_FOR_SEARCH && ready.searchReady,
-    '§6 满 3 次 + 物化 ready flag → searchReady（探索潜点发现门）',
-  );
-
-  // 残骸独立目击：不计入中层计数（独立剧情·§10）
-  const wreck = ch1WhaleStory(profileWith([WHALE_SIGHTING_WRECK_FLAG]));
-  assert(wreck.wreckSeen && wreck.sightings === 0, '§6 残骸独立目击：wreckSeen 真·不计入中层 sightings');
-
-  // found（= chart_regions 鲸落区 revealFlag）
-  assert(ch1WhaleStory(profileWith([WHALEFALL_FOUND_FLAG])).found, '§6 WHALEFALL_FOUND_FLAG → found');
-
-  // 命名口径 + 单一来源登记（防 refactor 漂移）
-  assert(whaleSightingFlag(2) === 'story.ch1.whale_sighting.2', '§6 目击计数 flag 口径 story.ch1.whale_sighting.N');
-  assert(
-    WHALEFALL_FOUND_FLAG === 'story.ch1.whalefall_found',
-    '§6 found flag 口径 story.ch1.whalefall_found（= chart_regions 鲸落区 revealFlag·同一字符串）',
-  );
-  assert(
-    allStoryFlags().includes(WHALEFALL_FOUND_FLAG) && allStoryFlags().includes('story.ch1.trench_found'),
-    '§6 allStoryFlags 应含鲸落 found + 海沟占位 flag（单一来源登记·§5 守门据此）',
-  );
-
-  // 存档 round-trip：whale flags 随 profile.flags(Set) 往返后派生逐字节一致
-  let state: GameState = createInitialGameState();
-  const wflags = [
-    whaleSightingFlag(1), whaleSightingFlag(2), whaleSightingFlag(3),
-    WHALE_SEARCH_READY_FLAG, WHALEFALL_FOUND_FLAG, WHALE_SIGHTING_WRECK_FLAG,
-  ];
-  state = { ...state, profile: { ...state.profile, flags: new Set(wflags) } };
-  const back = deserializeGameState(serializeGameState(state));
-  assert(back, '§6 deserialize 不应为 null');
-  assert(
-    JSON.stringify(ch1WhaleStory(back!.profile)) === JSON.stringify(ch1WhaleStory(state.profile)),
-    '§6 round-trip 后鲸落派生逐字节一致',
-  );
-  L('  计数/找寻/独立目击/found/口径/round-trip ✓');
-}
+// （§6 鲸落支线派生随鲸落 vertical 于 2026-07-12 删除·ch1WhaleStory / whale flags 已从 engine/story.ts 移除。）
 
 // ═══════════════════════════════════════════════════════════════
 // §4c Mira 进度对话门控（卖灯退场 + 材料提示一次性 + 退场 flag 自洽）
@@ -1049,8 +957,10 @@ L('§4d Otto 进度对话门控');
 
 // ═══════════════════════════════════════════════════════════════
 // §4e Voss 头足目问询链（录音 → Aldo → Otto·gate 链 + 一次性退场自洽·#280）
-//   录音置 recording_heard（单一来源·任一 Ch1 录音开门）→ Aldo 认人（点出「打听章鱼的人」）
-//   Otto 追问独立 gate 在 recording_heard（作者 #280：任一顺序·不强制先过 Aldo）。两 NPC 各 onEnter 置己方 seen 退场。
+//   录音置 recording_heard → Aldo 认人（点出「打听章鱼的人」）；Otto 追问独立 gate 在 recording_heard
+//   （作者 #280：任一顺序·不强制先过 Aldo）。两 NPC 各 onEnter 置己方 seen 退场。
+//   （原 (a) 三条 Ch1 录音 read→recording_heard 的**生产者**校验随录音事件〔soaked_notebook/jarred_page/
+//    nest_recorder〕于 2026-07-12 删除而移除·本 §只守 Aldo/Otto 侧的 gate 结构与端到端行为·flag 直接注入。）
 // ═══════════════════════════════════════════════════════════════
 L('§4e Voss 问询链门控');
 
@@ -1058,25 +968,6 @@ L('§4e Voss 问询链门控');
   const RECORDING_FLAG = 'flag.voss.recording_heard';
   const ALDO_VOSS_SEEN = 'flag.aldo.voss_seen';
   const OTTO_VOSS_SEEN = 'flag.otto.voss_seen';
-
-  // (a) 三条 Ch1 录音 read outcome 都置 recording_heard（gate 单一来源·任一开门）
-  for (const [file, evId] of [
-    ['src/data/events/blue_caves.json', 'bluecaves.soaked_notebook'],
-    ['src/data/events/wreck_graveyard.json', 'wreck_graveyard.jarred_page'],
-    ['src/data/events/whalefall.json', 'whalefall.nest_recorder'],
-  ] as const) {
-    const raw = JSON.parse(readFileSync(resolve(ROOT, file), 'utf-8')) as {
-      events: { id: string; options: { id: string; outcome: { setProfileFlags?: string[] } }[] }[];
-    };
-    const ev = raw.events.find((e) => e.id === evId);
-    assert(ev, `§4e ${file} 应含事件 ${evId}`);
-    const read = ev!.options.find((o) => o.id === 'read');
-    assert(read, `§4e ${evId} 应有 read 选项`);
-    assert(
-      (read!.outcome.setProfileFlags ?? []).includes(RECORDING_FLAG),
-      `§4e ${evId} read outcome 应 setProfileFlags 含 ${RECORDING_FLAG}（听录音=开问询链单一来源）`,
-    );
-  }
 
   type Cond = { kind: string; flag?: string; of?: Cond[] };
   const flat = (c: Cond | undefined): { kind: string; flag?: string }[] =>

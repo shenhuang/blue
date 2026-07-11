@@ -219,7 +219,6 @@ export function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): 
           depth: depthI,
           profileFlags,
           triggeredEventIds: triggeredFakeIds,
-          tagsOverride: opts.bandTags,
           poiId: opts.poiId,
           poiTemplateId: opts.poiTemplateId,
         });

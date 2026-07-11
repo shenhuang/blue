@@ -33,7 +33,6 @@ import { EVENT_DB } from './zones';
 import { ENEMY_FILE_MODULES } from '@/data/enemies/registry.generated';
 import upgradesData from '@/data/upgrades.json';
 import lighthouseData from '@/data/lighthouse_upgrades.json';
-import depthColumnsData from '@/data/depth_columns.json';
 
 // ---------------------------------------------------------------------------
 // 公共类型
@@ -154,20 +153,6 @@ interface RawEnemy {
   bands?: string[];
   loot?: RawLoot;
 }
-interface RawGrant {
-  itemId?: string;
-  qty?: number;
-}
-interface RawTier {
-  tier: number;
-  capstone?: boolean;
-  grantsItem?: RawGrant;
-}
-interface RawColumn {
-  id: string;
-  zoneId?: string;
-  tiers?: RawTier[];
-}
 
 const avgQty = (q: RawLootEntry['qty']): number =>
   Array.isArray(q) ? (q[0] + q[1]) / 2 : (q ?? 1);
@@ -282,22 +267,7 @@ export function computeMaterialStats(): MaterialStats {
   for (const ev of EVENT_DB.values())
     walkLoot(ev, ev.id, ev.zoneTags as string[] | undefined, false);
 
-  // (3) 深度柱 capstone 产出
-  for (const c of ((depthColumnsData as { columns?: RawColumn[] }).columns ?? [])) {
-    const region = cleanRegion(c.zoneId);
-    const regions = region ? [region] : [];
-    for (const t of c.tiers ?? [])
-      if (t.grantsItem?.itemId)
-        addSrc(t.grantsItem.itemId, {
-          from: `${c.id} t${t.tier}${t.capstone ? '·capstone' : ''}`,
-          type: '柱',
-          method: '深度柱',
-          zone: (c.zoneId ?? '').replace('zone.', ''),
-          regions,
-          ev: t.grantsItem.qty ?? 1,
-          chance: 1,
-        });
-  }
+  // (3) 深度柱 capstone 产出——深度柱系统已删（2026-07-12 随机内容层拆除·经济待重做 TODO）。
 
   // ─────────────── 需求（context-aware exhaustive 递归·保证与旧 generic walk 同 totalDemand） ───────────────
   const demands: Record<string, MaterialDemand[]> = {};
@@ -335,7 +305,7 @@ export function computeMaterialStats(): MaterialStats {
   };
   walkDemand(upgradesData, { from: '装备/Otto', region: '港口', scenario: '装备' });
   walkDemand(lighthouseData, { from: '前哨/灯塔', region: 'old_lighthouse_reef', scenario: '灯塔' });
-  walkDemand(depthColumnsData, { from: '深度柱', region: '?', scenario: '深度柱' });
+  // 深度柱材料需求（walkDemand depthColumnsData）已删——深度柱系统下线（2026-07-12·经济待重做 TODO）。
 
   // ─────────────── 汇总（行） ───────────────
   const itemById = new Map<string, ItemDef>(allItems().map((i) => [i.id, i]));

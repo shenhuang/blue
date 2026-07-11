@@ -13,7 +13,6 @@ import { allItems, getItemDef } from './items';
 import { ageAndDecayDeaths, getPreservationBonus } from './death';
 import { daysToNextPhase, lunarPhase, lunarPhaseLabel } from './lunar';
 import { knownLunarPoints } from './chart';
-import { trustTier, gainTrust } from './trust';
 import shopData from '@/data/shop.json';
 
 export interface ReturnToPortResult {
@@ -260,10 +259,6 @@ interface ShopDataFile {
     mods: Record<string, number>;
     charts: Record<string, { price: number; maxStock: number; oneTimeFlag?: string }>;
   };
-  specialMerchant: {
-    activePhases: readonly LunarPhase[];
-    stock: Record<string, { tokens: number; minTrustTier: number; maxStock: number }>;
-  };
 }
 const SHOP_DATA = shopData as unknown as ShopDataFile;
 
@@ -412,116 +407,4 @@ export function devGrantItem(state: GameState, itemId: string, qty = 1): GameSta
   if (qty <= 0 || !getItemDef(itemId)) return state;
   // 走物品入袋统一入口 ⇒ 作弊发物也兑现 story.setsFlag（鲸落手记 → 解锁鲸落区·作者 2026-06-19）。
   return { ...state, profile: acquireIntoProfile(state.profile, [{ itemId, qty }]) };
-}
-
-// ============================================================
-// 特殊商人 Sela（藏宝贸易与信任系统 SPEC §6·Phase 2 MVP）——
-// 探险家镜像·货架双门控（红喉鹈币 `item.deep_token` + 信任档 `npcTrustTier`）。
-// 与 Mira 侧（金币·材料 tier）平行的第二套货架表，故意不共享函数：
-//   - 花的是 token（物品·从背包扣）而非金币；
-//   - 每条目再叠一道信任门（`minTrustTier`·派生自 engine/trust.ts::trustTier）；
-//   - 交易额涨信任（本批「交易涨信任」来源·SPEC §3.5①）：唯一写口经 gainTrust（check-boundaries 规则七）。
-// ============================================================
-
-export const SPECIAL_MERCHANT_NPC_ID = 'npc.sela';
-export const SPECIAL_MERCHANT_SHOP_ID = 'shop.sela';
-
-/**
- * Sela「在港」的月相窗（数据在 shop.json::specialMerchant.activePhases·与 chart_pois.json 各
- * roam.sela_meet* 模板的 lunarWindow 保持一致——已由 check-npc-trust 机制强连·改窗两边一起改否则 regress 红）。
- * `waning` 故意不在其中＝他真的「不常驻」，有一相不露面。
- */
-export const SPECIAL_MERCHANT_ACTIVE_PHASES: readonly LunarPhase[] =
-  SHOP_DATA.specialMerchant.activePhases;
-
-/**
- * Sela 是否「在港」可对话/交易（PortView 据此显/藏他的 NPC 卡片）：见过一次（flag.sela.met·
- * 由中层交头点 dive 事件 setProfileFlags 置）+ 当前相位在他的窗内。不常驻——窗外他就不在。
- */
-export function isSpecialMerchantInPort(profile: PlayerProfile): boolean {
-  // day 缺省回退 runsCompleted（同 chart.ts::chartSeed 口径·dev 裸 profile 兜底）。
-  const day = profile.day ?? profile.runsCompleted;
-  return (
-    profile.flags.has('flag.sela.met') && SPECIAL_MERCHANT_ACTIVE_PHASES.includes(lunarPhase(day))
-  );
-}
-
-/** 红喉鹈币 item id（唯一花费货币·§4）。 */
-const TOKEN_ITEM_ID = 'item.deep_token';
-
-/**
- * Sela 货架（§6.3·数值 defer-number-tuning）：itemId → 花费 token 数 / 所需信任档 / 每次回港补货上限。
- * 不锁通关必需（§8 红线·全是「多一条路买深料」，非唯一来源·check-npc-trust ③ 实查 shop.json）。
- * 内容/出处见 shop.json::specialMerchant._doc。
- */
-const SPECIAL_MERCHANT_STOCK = SHOP_DATA.specialMerchant.stock;
-
-/** 该 itemId 是否在 Sela 货架上（不判信任档——UI/校验分开问，见 listSpecialMerchantShelf）。 */
-export function isOnSpecialMerchantShelf(itemId: string): boolean {
-  return SPECIAL_MERCHANT_STOCK[itemId] !== undefined;
-}
-
-/** 每种货每次回港的备货上限（不在货架上 → 0）。 */
-export function maxSpecialMerchantStockFor(itemId: string): number {
-  return SPECIAL_MERCHANT_STOCK[itemId]?.maxStock ?? 0;
-}
-
-/** 当前剩余备货：profile.shopStock 缺该项 = 视作满货（同 Mira 侧懒默认）。 */
-export function getSpecialMerchantStock(profile: PlayerProfile, itemId: string): number {
-  const recorded = profile.shopStock[itemId];
-  return recorded ?? maxSpecialMerchantStockFor(itemId);
-}
-
-/** 列出 Sela 全货架（含未达信任档的条目——UI 据 `locked` 显示"未达 X 信任"，同金币不足提示口径）。 */
-export function listSpecialMerchantShelf(profile: PlayerProfile): {
-  itemId: string;
-  tokens: number;
-  minTrustTier: number;
-  stock: number;
-  maxStock: number;
-  locked: boolean;
-}[] {
-  const currentTier = trustTier(profile, SPECIAL_MERCHANT_NPC_ID);
-  const out: ReturnType<typeof listSpecialMerchantShelf> = [];
-  for (const [itemId, entry] of Object.entries(SPECIAL_MERCHANT_STOCK)) {
-    out.push({
-      itemId,
-      tokens: entry.tokens,
-      minTrustTier: entry.minTrustTier,
-      stock: getSpecialMerchantStock(profile, itemId),
-      maxStock: entry.maxStock,
-      locked: currentTier < entry.minTrustTier,
-    });
-  }
-  return out;
-}
-
-/**
- * 从 Sela 买 `itemId` `qty` 件：token 够 + 信任档够 + 备货够就买多少（min 三者）；否则原样返回（no-op）。
- * 交易额涨信任（§3.5①）：净花费 token 数直接进 gainTrust（Sela 自带 thresholds [10,30,60]·npcs/sela.json）。
- */
-export function buyFromSpecialMerchant(state: GameState, itemId: string, qty: number): GameState {
-  if (qty <= 0) return state;
-  const entry = SPECIAL_MERCHANT_STOCK[itemId];
-  if (!entry) return state;
-  if (trustTier(state.profile, SPECIAL_MERCHANT_NPC_ID) < entry.minTrustTier) return state;
-
-  const stock = getSpecialMerchantStock(state.profile, itemId);
-  const ownedTokens = state.profile.inventory.find((i) => i.itemId === TOKEN_ITEM_ID)?.qty ?? 0;
-  const affordable = Math.floor(ownedTokens / entry.tokens);
-  const buyQty = Math.min(qty, stock, affordable);
-  if (buyQty <= 0) return state;
-
-  const tokensSpent = entry.tokens * buyQty;
-  const newStock: Record<string, number> = {
-    ...state.profile.shopStock,
-    [itemId]: stock - buyQty,
-  };
-  const afterSpend = removeFromInventory(state.profile.inventory, TOKEN_ITEM_ID, tokensSpent);
-  const profileAfterBuy = {
-    ...acquireIntoProfile({ ...state.profile, inventory: afterSpend }, [{ itemId, qty: buyQty }]),
-    shopStock: newStock,
-  };
-  const trustChange = gainTrust(profileAfterBuy, SPECIAL_MERCHANT_NPC_ID, tokensSpent);
-  return { ...state, profile: trustChange.profile };
 }

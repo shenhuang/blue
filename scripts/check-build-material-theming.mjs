@@ -11,7 +11,7 @@
 //       ——深矿需岩凿（rock_drill·中期产物）；早期只 T1/T2 ＋ salvage ＋ bio-light，没岩凿也能花金币向 Mira 买齐。
 //
 // role/tier 单一来源＝items.json（src/types/items.ts::MaterialRole / MaterialTier）。
-// sink 形状镜像 check-economy-reachability.mjs（depth_columns tiers + lighthouse outposts/ruins/tracks）。
+// sink 形状镜像 check-economy-reachability.mjs（lighthouse outposts/ruins/tracks·深度柱已删）。
 // 退出码：全过=0，任一违规=1。
 
 import { readFileSync } from 'node:fs';
@@ -33,21 +33,10 @@ for (const it of items) {
 const STRUCTURAL = new Set(['structural', 'special']);
 
 const lh = readJson('lighthouse_upgrades.json');
-const cols = readJson('depth_columns.json');
 
-/** 收集全部建造阶段：{where, label, mats, early, light}。 */
+/** 收集全部建造阶段：{where, label, mats, early, light}。
+ *  （2026-07-12：深度柱系统已删除——柱建造阶段随之移除；剩前哨/废墟/设施轨道。） */
 const stages = [];
-for (const c of cols.columns ?? []) {
-  for (const t of c.tiers ?? []) {
-    stages.push({
-      where: `depth_columns ${c.id} t${t.tier}`,
-      label: t.label ?? '',
-      mats: t.cost?.materials ?? [],
-      early: t.tier === 1, // 柱第一档＝起手深度
-      light: false, // 柱档无「点亮」语义（深档的 optic 件仍须配 ≥1 structural）
-    });
-  }
-}
 for (const o of lh.outposts ?? []) {
   (o.stages ?? []).forEach((s, i) => {
     const label = s.label ?? '';

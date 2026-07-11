@@ -25,17 +25,34 @@ import type {
   PlayerProfile,
 } from '@/types';
 import lighthouseData from '@/data/lighthouse_upgrades.json';
+import chartPoisData from '@/data/chart_pois.json';
 import { appendLog, removeFromInventory, addToInventory, enqueuePickup, HOME_LIGHTHOUSE_ID, HOME_LIGHTHOUSE_POS } from './state';
 import { materialShortfall, describeUpgradeCost, getUpgradeBonuses } from './upgrades';
 import { ch1AnchorFlag, TUTORIAL_COMPLETE_FLAG, type Ch1Anchor } from './story';
 import { regionRadius } from './regions';
-import { columnProbeTracks, columnBeatFlagForLighthouse } from './columns';
 
 const file = lighthouseData as unknown as LighthouseUpgradesFile;
-// 设施轨两来源（#131）：lighthouse_upgrades.json 手写轨（船坞/能源…）+ 各深度柱派生的「低频声呐」轨
-// （columnProbeTracks·onlyLighthouse=宿主灯塔·各级 cost=该 tier 账单·effects 空＝纯门控）。合并后
-// INDEX/canBuildAt/buildAtLighthouse/getBuiltLevelInTrack/设施面板全部零改即认派生 probe 升级。
-const TRACKS: LighthouseTrack[] = [...file.tracks, ...columnProbeTracks()];
+// 设施轨：lighthouse_upgrades.json 手写轨（船坞/能源…）。深度柱派生的「低频声呐」probe 轨已删
+// （2026-07-12 随机内容层拆除·深度门经济待重做·见 TODO）。
+const TRACKS: LighthouseTrack[] = [...file.tracks];
+
+/**
+ * 某座灯塔所属主线 beat 的 flag（dev 一键解锁本区用）——re-home 后从 chart_pois story anchor 的 owner 派生
+ * （替代旧 columnBeatFlagForLighthouse·单一来源 depth_columns.storyTier·2026-07-12 深度柱删后改此）。
+ * 无对应 story anchor → undefined。纯读 JSON leaf·无依赖环。
+ */
+function storyBeatFlagForLighthouse(lighthouseId: string): string | undefined {
+  const poisFile = chartPoisData as Record<string, unknown>;
+  for (const k of Object.keys(poisFile)) {
+    const seg = poisFile[k];
+    if (typeof seg === 'string' || k.startsWith('_')) continue;
+    const anchors = (seg as { anchors?: Array<{ owner?: string; story?: { beatFlag?: string } }> }).anchors ?? [];
+    for (const a of anchors) {
+      if (a.owner === lighthouseId && a.story?.beatFlag) return a.story.beatFlag;
+    }
+  }
+  return undefined;
+}
 const INDEX = new Map<string, { track: LighthouseTrack; def: LighthouseUpgradeDef }>();
 for (const track of TRACKS) {
   for (const def of track.upgrades) INDEX.set(def.id, { track, def });
@@ -624,7 +641,7 @@ export function devAdvanceOutpost(state: GameState, outpostId: string): GameStat
  *      或旧式 requiresAnchor 本区锚点）；
  *   ② 置**本区自身 beat** flag（从深度柱 beatFlag 单一源·columnBeatFlagForLighthouse）——让本区 beat-gated 的
  *      潜点/内容记为已达可测。**尤其 chainTail 柱（vent）的 anchor.vent 不是任何前哨的 requiresFlag**（没有下游区
- *      借它当门），漏了这步「dev 解锁全部」也补不上它、热液深层 Sela 点永不现（#217·守门 playthrough-outpost §7d′）；
+ *      借它当门），漏了这步「dev 解锁全部」也补不上它、该柱 beat-gated 的深层内容永不现（#217·守门 playthrough-outpost §7d′）；
  *   ③ 把前哨直接点亮（建满 = devAdvanceOutpost 连推到 OUTPOST_MAX_STAGE）。
  * 非章节前哨（无 requiresAnchor/requiresFlag）→ 只点亮、不动 flag。引擎仍无门（门在 UI 的 ?dev 后）；真路径零触碰。
  */
@@ -640,7 +657,7 @@ export function devUnlockChapterRegion(state: GameState, outpostId: string): Gam
     if (def.requiresFlag !== undefined) flags.add(def.requiresFlag);
     // ② 本区**自身** beat（深度柱 beatFlag 单一源）——requiresFlag 是上游门、不是本区 beat，故须单独补；
     //    chainTail 柱（vent）的 beat 不是任何前哨的 requiresFlag，只能从这里置（#217）。
-    const ownBeat = columnBeatFlagForLighthouse(def.result.id);
+    const ownBeat = storyBeatFlagForLighthouse(def.result.id);
     if (ownBeat !== undefined) flags.add(ownBeat);
     s = { ...s, profile: { ...s.profile, flags } };
   }

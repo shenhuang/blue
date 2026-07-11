@@ -122,8 +122,8 @@ stats.zones.forEach((zone, zi) => {
 
   const maxZoneShare = Math.max(...stats.zoneTotals.map((c) => c / stats.total));
   assert(
-    maxZoneShare <= 0.25,
-    `最大单 zone 占比(${(maxZoneShare * 100).toFixed(1)}%) 应 <= 25%（当前实测 17.0%·wreck·margin +8pp）`,
+    maxZoneShare <= 0.42,
+    `最大单 zone 占比(${(maxZoneShare * 100).toFixed(1)}%) 应 <= 42%（2026-07-12 随机内容层删除后重基线·当前实测 33.3%·tutorial〔固定教学 8 事件·总量缩到 24 后占比自然抬高〕·margin +9pp·占位待 number pass）`,
   );
 
   const gapCount = stats.suggestions.filter((s) => s.kind === 'gap').length;

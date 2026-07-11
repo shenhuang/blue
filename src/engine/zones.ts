@@ -6,23 +6,16 @@ import tutorialEvents from '@/data/events/tutorial.json';
 import reefEvents from '@/data/events/reef.json';
 import blueCavesEvents from '@/data/events/blue_caves.json';
 import wreckGraveyardEvents from '@/data/events/wreck_graveyard.json';
-import lighthouseEvents from '@/data/events/lighthouse.json';
-import trenchEvents from '@/data/events/trench.json';
-import mimicEvents from '@/data/events/mimic.json';
 import ch1Events from '@/data/events/ch1.json';
 import midwaterEvents from '@/data/events/midwater.json';
 import ventEvents from '@/data/events/vent.json';
-import wreckFieldPatrolEvents from '@/data/events/wreck_field_patrol.json';
-import whalefallEvents from '@/data/events/whalefall.json';
-import horrorSapienForeshadowEvents from '@/data/events/horror_sapien_foreshadow.json';
-import shaftCrackEvents from '@/data/events/shaft_crack.json';
-import chamberNetworkEvents from '@/data/events/chamber_network.json';
-import floodedGalleryEvents from '@/data/events/flooded_gallery.json';
-import tideEvents from '@/data/events/tide.json';
-import grottoEvents from '@/data/events/grotto.json';
-import deepCaveEvents from '@/data/events/deep_cave.json';
-import chasmEvents from '@/data/events/chasm.json';
 import zonesData from '@/data/zones.json';
+
+// 随机内容层拆除（2026-07-12）：随机事件池 + 深度柱/band + mimic + 鲸落/openEventId 整套删除。
+// 事件库从 371 → 24（tutorial 教学线 + ch1 主线 beat/结局 + 4 条重命名 story poiId + blue_caves 2 条 poiId +
+// wreck_graveyard 2 条 item-triggered lore 读）。删除的 12 个事件文件（chamber_network/chasm/deep_cave/
+// flooded_gallery/grotto/tide/shaft_crack/trench/lighthouse/whalefall/wreck_field_patrol/horror_sapien_foreshadow）
+// 全为随机池/深度带/鲸落内容——以后重做（见 TODO·docs/QUIRKS）。持久洞可进但内容空（洞随机池删·入口机制留）。
 
 export const ZONES: Map<string, ZoneDef> = new Map();
 for (const z of (zonesData as { zones: ZoneDef[] }).zones) {
@@ -34,22 +27,9 @@ for (const e of (tutorialEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (reefEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (blueCavesEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (wreckGraveyardEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (lighthouseEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (trenchEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (mimicEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (ch1Events.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (midwaterEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 for (const e of (ventEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (wreckFieldPatrolEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 敌人库 enemyRef 线上用例（SPEC §4）
-for (const e of (whalefallEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 鲸落支线（#137·目击链 / 找寻 / 三相生态）
-for (const e of (horrorSapienForeshadowEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 水鬼 Ch1 浅水伏笔（flag.has_died_before 门控·不触发战斗）
-for (const e of (shaftCrackEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 竖穴裂缝（洞型谱·crack tag·k<0.8 井+廊）
-for (const e of (chamberNetworkEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 蜂房洞（洞型谱·chamber tag·连通蜂房）
-for (const e of (floodedGalleryEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 漫水回廊（洞型谱·flooded tag·k>1.45 长平廊+深坑）
-for (const e of (tideEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 浅潮洞（洞穴扩充·tide tag·潮汐主导·8–44m）
-for (const e of (grottoEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 石窟厅（洞穴扩充·grotto tag·矿物柱+骨床+声学·20–82m）
-for (const e of (deepCaveEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 深穴（洞穴扩充·deep_cave tag·黑暗+静水+地质·35–124m）
-for (const e of (chasmEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e); // 深裂隙（洞穴扩充·chasm tag·氮醉边界+设备极限·90–148m）
 
 export function getZone(id: string): ZoneDef | undefined {
   return ZONES.get(id);
@@ -113,8 +93,6 @@ export function buildEventPool(opts: {
   profileFlags: Set<string>;
   triggeredEventIds: string[];
   excludeIds?: Set<string>;
-  /** band 专属 tag 池（深水区内容期）：覆盖 zoneTagsByDepth，让 trench 用 twilight/midnight 专属事件。缺省→回退按深度算。 */
-  tagsOverride?: ZoneTag[];
   /**
    * 当前下潜的 POI 身份串（POI 固定资源耗尽·2026-06-25）：有 poiId 的事件只在此值匹配时进池；
    * 没设 poiId 的事件不受影响（存量事件零影响）。缺省（非 POI 下潜）→ 所有带 poiId 的事件一律不进池。
@@ -135,7 +113,7 @@ export function buildEventPool(opts: {
    */
   ignoreProfileGates?: boolean;
 }): DiveEvent[] {
-  const tags = new Set(opts.tagsOverride ?? tagsForDepth(opts.zone, opts.depth));
+  const tags = new Set(tagsForDepth(opts.zone, opts.depth));
   const triggered = new Set(opts.triggeredEventIds);
   const exclude = opts.excludeIds ?? new Set();
   const pool: DiveEvent[] = [];

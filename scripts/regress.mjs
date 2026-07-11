@@ -121,8 +121,7 @@ tasks.push({ name: 'check-harness-resolveoption', cmd: ['node', join('scripts', 
 // 敌人库四条门（纯 node·registry 不过期 + 引用完整 + 无孤儿 + 有 baseline，见 scripts/check-enemy-refs.mjs）
 tasks.push({ name: 'check-enemy-refs', cmd: ['node', join('scripts', 'check-enemy-refs.mjs')] });
 
-// 深入潜点四条门（纯 node·bandId 完整 + 探深↔POI 配对 + 无孤儿 + onlyLighthouse 合法，见 scripts/check-dive-refs.mjs）
-tasks.push({ name: 'check-dive-refs', cmd: ['node', join('scripts', 'check-dive-refs.mjs')] });
+// check-dive-refs（深度柱/band 引用门）已随深度柱系统删除（2026-07-12 随机内容层拆除）。
 
 // 感知门·地标永不带门 门（感知门 SPEC §7·静态 zone.gates schema + 高密度撒门 post 断言地标零门·见 scripts/check-gate-skeleton.mjs）
 // 走 tsx（import engine 生成图）⇒ 沙箱无 esbuild 时自动剔出、留 Mac/nightly（同其它 tsx 行为测）。

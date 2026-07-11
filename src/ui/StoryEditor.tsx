@@ -524,7 +524,6 @@ function PoiEvents({ p, selectedId, onPick }: { p: PoiEventSet; selectedId: stri
           <div>
             <span style={S.routeVia}>{VIA_LABEL[r.via] ?? r.via}</span>{' '}
             {r.zoneName ?? r.zoneId}
-            {r.bandId ? ` · band ${r.bandId}` : ''}
             {r.caveId ? ` · 洞 ${r.caveId}` : ''}
           </div>
           <div style={S.routeMeta}>

@@ -3,7 +3,6 @@ import type { GameState, DialogNode, NpcDef } from '@/types';
 import { getDialogNode, getNpc, selectChoice, selectDisplayChoices } from '@/engine/dialog';
 import { evalCondition } from '@/engine/events';
 import { toShop, toChart } from '@/engine/transitions';
-import { isSpecialMerchantInPort, SPECIAL_MERCHANT_SHOP_ID } from '@/engine/port';
 import type { PortServiceMode } from './portFocus';
 import { DEV_TOOLS } from './devMode';
 
@@ -45,11 +44,6 @@ export function PortView({ state, onStateChange, onOpenService, dialog, onDialog
   function openMiraShop() {
     onDialogChange(null);
     onStateChange(toShop(state, 'mira.bench'));
-  }
-
-  function openSelaShop() {
-    onDialogChange(null);
-    onStateChange(toShop(state, SPECIAL_MERCHANT_SHOP_ID));
   }
 
   function openChart() {
@@ -107,18 +101,6 @@ export function PortView({ state, onStateChange, onOpenService, dialog, onDialog
               />
             ) : (
               <NpcCard name="Otto" role="气瓶师" description="仓库门口没人。" disabled />
-            )}
-            {/* 特殊商人 Sela（藏宝贸易与信任系统 SPEC §6·Phase 2 MVP）：只在见过她（中层交头点 dive 事件
-                置 flag.sela.met）+ 当前月相在她窗内（isSpecialMerchantInPort）才露卡片——不常驻，见不着
-                时干脆不显示（不放"???"占位，守"神秘·偶遇"调性，别提前剧透她的存在）。 */}
-            {getNpc('npc.sela') && isSpecialMerchantInPort(state.profile) && (
-              <NpcCard
-                name={getNpc('npc.sela')!.name}
-                role="拾遗人"
-                description={getNpc('npc.sela')!.shortDescription}
-                onTalk={() => startDialogWith(getNpc('npc.sela'))}
-                extraAction={{ label: '直接看她的货', onClick: openSelaShop }}
-              />
             )}
           </div>
           {/* 常驻底部出口（作者 2026-06-19「物品栏/海图固定显示·海图置底」）：sticky 钉视区底·NPC 区随页滚。 */}

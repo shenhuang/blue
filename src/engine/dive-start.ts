@@ -1,7 +1,7 @@
 // 开潜入口（#106 拆分自 dive.ts）：港口 zone（startDive）/ 海图 POI（startDiveFromPoi），及出海叙事。
-// 旧「前哨蛙跳」startDiveFromOutpost + deepestOutpostLaunch 已删（#131 探深深度柱重构·老蛙跳废弃）——
-// 深入下潜统一走 startDiveFromPoi：深度柱深入 POI 带 bandId 走 band 绝对 depthRange 路径（diveIntoBand），
-// 宿主灯塔补给设施（充电/充氧）在此并入随身加成。
+// 下潜路径：caveEntry 持久洞 → 普通 zone（+modifier.depthOffset/depthRange）。深度柱/band 路径已删
+// （2026-07-12 随机内容层拆除·深度门经济待重做·见 TODO）——主线 beat 走 chart_pois 静态 anchor 的 story 块
+// （applyStoryOpen 入潜强制开场）。
 
 import type {
   GameState,
@@ -11,7 +11,6 @@ import type {
   PlayerProfile,
   ZoneTag,
   InventoryItem,
-  DepthBand,
   DiveMap,
   PersistentCave,
 } from '@/types';
@@ -31,12 +30,7 @@ import {
 import { getItemDef, weightForItem } from './items';
 import { isOverloaded, loadoutInsulation } from './equipment';
 import { getCaveTemperature, thermalAccess } from './temperature';
-import { getRunBonuses, getLighthouseBonuses } from './lighthouses';
-import type { RunStartBonuses } from './lighthouses';
-import { getColumn } from './columns';
-import { getBand, bandDiveModifier } from './bands';
-import { MIMIC_DIVE_EVENT_ID } from './chart';
-import { ch1Story, CH1_ANCHORS, type Ch1Anchor } from './story';
+import { getRunBonuses } from './lighthouses';
 import { enterNodeSelection } from './dive-select';
 import { tideLevel, moonPhasesElapsed } from './lunar';
 import type { PoiModifier, CurrentStrength } from '@/types';
@@ -374,26 +368,25 @@ export function applyCarryItems(
 }
 
 /**
- * 主线柱 beat 的入潜强制开场（「主线柱迁移」·D-2·A 案·单一来源·band 路径与 zone 路径共用）。
- * POI 带 columnStory（= DepthColumn.storyTier 派生·见 columns.ts::storyTierPoi）⇒ 入潜强制其 eventId 作开场，
+ * 主线 beat 的入潜强制开场（「主线柱迁移」→ 深度柱删除后 re-home 成 chart_pois 静态 anchor·2026-07-12）。
+ * POI 带 story（= chart_pois.json 静态 anchor 的 story 块）⇒ 入潜强制其 eventId 作开场，
  * 直到 beatFlag 置位（节拍事件 setProfileFlags 一次性置·这里只读 flag 不写·quirk #118）；已置＝回流重访＝普通下潜。
- * 触发只看 beatFlag——「能不能下到这一档」已由 reach 门（storyTierRevealState·host 建成 + 日志 marksPois 文献坐标·
- * poiRevealState 的 columnStory 分支）在海图层挡住（dim/hidden 不可 departable·startDiveFromPoi 只对 lit 被调用），
- * 故这里无需再查 reach。beatFlag 已置 + 带 revisit* ⇒ 留白结局重访（St2·迁自旧 chart_pois 锚点 story.revisit*）。
- * 缺 columnStory ⇒ 原样返回（普通柱档/非主线 POI·零影响）。
+ * 触发只看 beatFlag——「能不能下到这一档」已由 reveal 门（poiRevealState：日志 marksPois 文献坐标 → lit·
+ * 没抄坐标则 hidden）在海图层挡住（startDiveFromPoi 只对 departable=lit 被调用），故这里无需再查 reach。
+ * beatFlag 已置 + 带 revisit* ⇒ 留白结局重访（St2·剧情 SPEC §4.1）。缺 story ⇒ 原样返回（非主线 POI·零影响）。
  */
-function applyColumnStoryOpen(s: GameState, poi: ChartPoi): GameState {
-  if (!poi.columnStory) return s;
-  if (!s.profile.flags.has(poi.columnStory.beatFlag)) {
-    return { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: poi.columnStory.eventId } } };
+function applyStoryOpen(s: GameState, poi: ChartPoi): GameState {
+  if (!poi.story) return s;
+  if (!s.profile.flags.has(poi.story.beatFlag)) {
+    return { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: poi.story.eventId } } };
   }
   // 留白结局重访（beat 已完成·beatFlag 已置）：持 revisitRequiresFlag（charm_found·⟺ fulfilled-first·保证圆满在前、
   // 第一次绝不跳过）+ 未置 revisitDoneFlag（ending.blank 未达）⇒ 强制留白结局事件。只读 flag 派生、不写。
-  if (poi.columnStory.revisitEventId) {
-    const reqOk = !poi.columnStory.revisitRequiresFlag || s.profile.flags.has(poi.columnStory.revisitRequiresFlag);
-    const notDone = !poi.columnStory.revisitDoneFlag || !s.profile.flags.has(poi.columnStory.revisitDoneFlag);
+  if (poi.story.revisitEventId) {
+    const reqOk = !poi.story.revisitRequiresFlag || s.profile.flags.has(poi.story.revisitRequiresFlag);
+    const notDone = !poi.story.revisitDoneFlag || !s.profile.flags.has(poi.story.revisitDoneFlag);
     if (reqOk && notDone) {
-      return { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: poi.columnStory.revisitEventId } } };
+      return { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: poi.story.revisitEventId } } };
     }
   }
   return s;
@@ -423,43 +416,6 @@ export function startDiveFromPoi(
   // 起手 = 绑定入口节点），先于 bandId/zone 判（互斥）。caveId 未登记 → 落回下方旧路径防白屏（check-cave-bindings 守门）。
   if (poi.caveEntry && getCave(poi.caveEntry.caveId)) {
     return startDiveIntoCave(state, poi);
-  }
-
-  // 深入潜点（灯塔/蛙跳重构 step ②·#125）：POI 带 bandId ⇒ 走 band 绝对 depthRange 路径（与旧前哨蛙跳
-  // 同源 diveIntoBand），预耗氧从 POI 起潜深度（band 顶）纯推·launchDepth=0·不查 deepestOutpostLaunch
-  // 的前哨态。mimic / story 锚点不带 bandId、仍走下方 zone 路径；坏数据（bandId 悬空）→ 落回 zone
-  // 路径防白屏（check-dive-refs step ④ 把悬空引用焊成 regress 红）。
-  if (poi.bandId) {
-    const band = getBand(poi.bandId);
-    if (band) {
-      // 随身加成 = 全局升级 + 家灯塔船坞（getRunBonuses）。深度柱深入潜点（#131·columnId 设）额外并入
-      // **宿主灯塔的补给设施**（充电/充氧）——你是从那座前哨下去的，它的补给设施管用（老蛙跳删了·
-      // 这层补给改由柱潜点承接·守「能源保留」#128。能源容量门控已删·2026-06-21：设施建成即全额生效）。
-      let bonuses = getRunBonuses(state.profile);
-      if (poi.columnId) {
-        const col = getColumn(poi.columnId);
-        const host = col ? state.profile.lighthouses.find((l) => l.id === col.lighthouseId) : undefined;
-        if (host) {
-          const ob = getLighthouseBonuses(host);
-          bonuses = {
-            ...bonuses,
-            powerMaxBonus: bonuses.powerMaxBonus + ob.rechargeBonus,
-            oxygenMaxBonus: bonuses.oxygenMaxBonus + ob.oxygenSupply,
-          };
-        }
-      }
-      const dived = diveIntoBand(state, band, {
-        bonuses,
-        carryItems: opts?.carryItems,
-        seedKey: poi.id,
-        poiId: poi.id,
-        // roaming 专属内容（2026-06-25）：band 路径同样透传稳定模板身份（roaming 才有·anchor/柱缺省 undefined）。
-        poiTemplateId: poi.templateId,
-      });
-      // 主线柱 beat（主线柱迁移）：story 潜点带 columnStory + bandId（走 story band 路径）⇒ band 路径**也要**
-      // 应用入潜强制开场（否则下方 zone 路径的 columnStory 块够不着·band 分支提前 return）。单一来源 applyColumnStoryOpen。
-      return applyColumnStoryOpen(dived, poi);
-    }
   }
 
   // 随身加成 = 全局升级 ＋ 家灯塔「船坞」设施（dockyard 迁灯塔后由 getRunBonuses 并回，见 lighthouses.ts）
@@ -525,62 +481,9 @@ export function startDiveFromPoi(
   }
   s = appendVisibilityLog(s, m?.gate, run.sensors.sonarUnlocked);
 
-  // 深水区 Phase 3：横渡到「无灯之光」→ 入潜兑现（§3.5）。强制把这次下潜的开场设成 mimic 兑现事件
-  // （run/map 已就位，事件自身以 forceAscend 收尾＝一次性 capstone 遭遇，不靠节点池抽取、不可错过）。
-  if (poi.mimic) {
-    s = appendLog(s, {
-      tone: 'uncanny',
-      text: '你贴近那盏光。它不躲，不灭——越近越不像一座灯塔。',
-    });
-    s = { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: MIMIC_DIVE_EVENT_ID } } };
-  }
-
-  // St1 一章锚点（剧情 SPEC §4.1·#117·沿上方 mimic「强制开场」模板）：锚点 flag 未置位
-  // （vent=结局分歧·额外要求其余三锚点齐）→ 开场设成锚点节拍事件；否则普通下潜＝回流
-  // 重访自然成立（任意顺序·作者拍 2026-06-12）。置位归事件 setProfileFlags（quirk #118·
-  // 这里只读 ch1Story 派生，不写任何 flag）。
-  if (poi.story && (CH1_ANCHORS as readonly string[]).includes(poi.story.anchor)) {
-    const anchor = poi.story.anchor as Ch1Anchor;
-    const st = ch1Story(s.profile);
-    const anchorDone = st.anchorsDone.includes(anchor);
-    const ventReady =
-      anchor !== 'vent' ||
-      CH1_ANCHORS.filter((a) => a !== 'vent').every((a) => st.anchorsDone.includes(a));
-    if (!anchorDone && ventReady) {
-      s = appendLog(s, { tone: 'system', text: '日志上的坐标，就在这片水下面。' });
-      s = {
-        ...s,
-        phase: { kind: 'dive', subPhase: { kind: 'event', eventId: poi.story.eventId } },
-      };
-    } else if (anchorDone && poi.story.revisitEventId) {
-      // 留白结局重访（St2·剧情 SPEC §4.1·镜像上方锚点强制块）：锚点**已完成**（圆满已达）+ 持有
-      // revisitRequiresFlag（破损饰品 charm_found·⟺ fulfilled-first·保证圆满在前、第一次绝不跳过留白）+
-      // 未置 revisitDoneFlag（ending.blank 未达）⇒ 入潜强制留白结局事件。破损饰品「稳住幻象一拍」的真·
-      // 抵消能力 + 二章宝石材料修复留二章（机制按需长出·剧情 SPEC §4.4）；这里同上只读 flag 派生、不写。
-      const reqOk = !poi.story.revisitRequiresFlag || s.profile.flags.has(poi.story.revisitRequiresFlag);
-      const notDone = !poi.story.revisitDoneFlag || !s.profile.flags.has(poi.story.revisitDoneFlag);
-      if (reqOk && notDone) {
-        s = {
-          ...s,
-          phase: { kind: 'dive', subPhase: { kind: 'event', eventId: poi.story.revisitEventId } },
-        };
-      }
-    }
-  }
-
-  // 主线柱 beat 的「强制开场」（「主线柱迁移」·D-2·A 案）：band 路径（story 潜点带 bandId·上方 return 处）
-  // 与本 zone 路径共用单一来源 applyColumnStoryOpen——band 分支提前 return·必须在那边也调（见上）。
-  s = applyColumnStoryOpen(s, poi);
-
-  // 通用脚本剧情潜点的「强制开场」（#137 鲸落找寻潜点·镜像上方 mimic/story 锚点模板，但不占 4 锚点名额）：
-  // POI 带 openEventId ⇒ 入潜强制此事件作为开场，直到 openEventFlag 置位（一次性·置位归事件 setProfileFlags·
-  // 这里只读 flag 不写）。owner-less / 非锚点剧情潜点用它（找寻＝openEventFlag: whalefall_found·找到即不再强制）。
-  if (poi.openEventId && (!poi.openEventFlag || !s.profile.flags.has(poi.openEventFlag))) {
-    s = {
-      ...s,
-      phase: { kind: 'dive', subPhase: { kind: 'event', eventId: poi.openEventId } },
-    };
-  }
+  // 主线 beat 的「强制开场」（「主线柱迁移」→ re-home 成 chart_pois 静态 anchor·2026-07-12）：
+  // POI 带 story 块 ⇒ beatFlag 未置位强制其 eventId 开场（已置＝回流重访/留白结局·单一来源 applyStoryOpen）。
+  s = applyStoryOpen(s, poi);
 
   // 注：「故事重访变体」storyOpenEvents 不在此强制开场——改由上方 pinnedStoryEventId 透传 mapgen，
   // 钉放到事件 depthRange 的**途中**节点（下潜到该深度才撞见·quirk #174）。
@@ -627,65 +530,3 @@ function appendVisibilityLog(
   return s;
 }
 
-/**
- * band 下潜核心（#131 后唯一调用方＝startDiveFromPoi 的 bandId/深度柱分支）：给定一个 band + 预算
- * （bonuses / carryItems / seedKey），用 band 的**绝对 depthRange** 覆盖 zone、落 band 的探测压力 /
- * 声呐失真 / 猎手 run 字段、透传 band.tags / maxRoomFeatures 进 mapgen，并发出下潜叙事。
- * 每潜从第一回合起算损耗（#128 删距离预耗氧·run.turn=0 满氧起手）——无 launchDepth/出潜点概念了。
- */
-function diveIntoBand(
-  state: GameState,
-  band: DepthBand,
-  opts: {
-    bonuses: RunStartBonuses;
-    carryItems?: InventoryItem[];
-    seedKey: string;
-    /** POI 固定资源耗尽（2026-06-25）：本次深入潜点的 POI id（=seedKey）→ 落 run.poiId 供耗尽记账。 */
-    poiId?: string;
-    /** roaming 专属内容（2026-06-25）：稳定模板身份（roaming 才有）→ buildEventPool 匹配；anchor/柱缺省 undefined＝零影响。 */
-    poiTemplateId?: string;
-  },
-): GameState {
-  let run = createNewRun({ zoneId: band.zoneId, bonuses: opts.bonuses, equipment: state.profile.equipment, poiId: opts.poiId });
-
-  // 出发前选带（#108·与 startDiveFromPoi 同一套）：勾选的消耗品仓库 → run 背包。
-  const carry = applyCarryItems(state.profile, run, opts.carryItems ?? []);
-  run = carry.run;
-
-  // 作者 2026-06-14：删掉距离预耗氧——从第一回合起算损耗（无 turn 偏移 / 路上耗气；与 startDiveFromPoi 同口径）。
-  // 月相洋流**不接**深潜 band 路径（作者 2026-06-26：潮汐是水面现象·深度柱深潜不吃·只水面 POI 下潜吃 lunarDiveModifier·见 startDiveFromPoi）。
-  const m = bandDiveModifier(band);
-  run = {
-    ...run,
-    diveModifier: m,
-    // 深水区 C：band 探测压力倍率落 run（band 数据缺省 → 1＝无加压·run 字段必填 #107）。
-    // 越深 band 越凶，在深度因子饱和（ALERT_DEPTH_FULL）之上继续加压；摸黑/浅水消退不受倍率影响（逃生阀门不被买断）。
-    bandAlertFactor: band.alertFactor ?? 1,
-    // 猎手 SPEC Phase 1：本 band 是否启用「有位置的逼近猎手」（band 数据缺省 → false → moveToNode 走旧 alert→伏击瞬时路径）。
-    huntEnabled: band.hunts ?? false,
-  };
-
-  let s: GameState = { ...state, profile: carry.profile, run };
-  // band 用绝对 depthRange 覆盖 zone.depthRange（透传 mapgen GenOpts.depthRange）。
-  // band.tags（如有）覆盖 zoneTagsByDepth＝专属事件池（twilight/midnight），与借来的 zone 内容隔离。
-  // band.maxRoomFeatures（如有）开多事件「大房间」（声呐与房间 S1）——深段内容（C）铺在这些大房间里。
-  s = startDive(s, band.zoneId, {
-    depthRange: band.depthRange,
-    bandTags: band.tags,
-    maxRoomFeatures: band.maxRoomFeatures,
-    // 洞穴一致性（SPEC §6①·#98）：调用方给定身份串（蛙跳＝bandId / 深入 POI＝poi.id）⇒ 同地点同图。
-    seedKey: opts.seedKey,
-    // roaming 专属内容（2026-06-25）：透传稳定模板身份（roaming 才有·anchor/柱缺省 undefined＝零影响）。
-    poiTemplateId: opts.poiTemplateId,
-  });
-
-  s = appendLog(s, {
-    tone: 'system',
-    text: `下潜至「${band.name}」（${band.depthRange[0]}–${band.depthRange[1]}m）。`,
-  });
-  s = appendVisibilityLog(s, m.gate, run.sensors.sonarUnlocked);
-  if (band.danger) {
-    s = appendLog(s, { tone: 'uncanny', text: band.danger });
-  }
-  return s;
-}

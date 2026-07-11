@@ -175,8 +175,8 @@ export interface ItemDef {
      * 获得此道具（进 profile.inventory）时一并置位的 story flag（物品即里程碑·作者 2026-06-19）：
      * 「持有那张纸＝你做过那件事」。在 engine/state.ts::acquireIntoProfile 单点兑现 ⇒ 不论从哪条路拿到
      * （回港 loot 并入 / Mira 回购 / devGrantItem 作弊发物）都解锁。sticky·幂等（扣道具不撤 flag）。
-     * 用于「带坐标的文献顺带解锁其区域基建」：如鲸落手记 setsFlag `story.ch1.whalefall_found` ⇒
-     * 同时揭示坐标（documentKnowsPoi·marksPois）+ 开鲸落区圈/营地可建/找寻点握手（flag 侧）。
+     * 例：手提探照灯 setsFlag `flag.owns_light`（持灯＝会用灯）。「带坐标的文献顺带解锁其区域基建」
+     * 一类（setsFlag + marksPois 组合·揭示坐标同时开区域基建）原实例随藏宝/鲸落线移除、待重做。
      * flag 必须 ⊆ allStoryFlags()（playthrough-story §5b 扫全 src/data·已自动守门·quirk #118）。
      */
     setsFlag?: string[];

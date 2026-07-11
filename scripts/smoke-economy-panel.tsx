@@ -44,13 +44,14 @@ assert(beak && beak.srcCount === 1 && beak.totalDemand === 6 && !beak.bottleneck
 const lantern = by.get('item.lantern_gland');
 assert(lantern && lantern.srcCount === 1 && lantern.bottleneck, '冷光腺 srcCount===1 且 bottleneck');
 const brass = by.get('item.brass_fitting');
-// srcCount 随内容增减（#175 加 shaft_crack/flooded_gallery 两处旧装具掉落 → 21→23；weekend merge 加 wreck_graveyard 一处 → 24；叙事审查移除 reef.keepers_footlocker brass → wreck_graveyard 同批 +2 源净抵消仍 24；Batch2 grotto.old_anchor（同事件去重=1源）→ 25·#237 中层 suspended_drum/hanging_plate 两处漂浮残骸打捞 brass → 27·#247 salvage.generic_cache〔Mira 通用图开箱〕+1 源 → 28）；totalDemand 42→39（删水力发电设施·brass×3·2026-06-21）·#235 热液前哨 s1 鳗皮→黄铜 +2 → 41。
-assert(brass && brass.srcCount === 28 && brass.totalDemand === 41, '黄铜配件 srcCount===28 且 totalDemand===41（#247 Mira 通用图开箱 salvage.generic_cache 掉 brass +1：27→28）');
-const station = by.get('item.station_module');
-assert(station && !station.deadstock && station.srcCount === 1, '科考站升级模块非 deadstock 且单源（capstone 算源）');
+// 2026-07-12 随机内容层删除：黄铜配件的全部掉落源（中层漂浮残骸 suspended_drum/hanging_plate、grotto.old_anchor、
+// Mira 通用图开箱 salvage.generic_cache 等·均在已删事件文件里）随之消失 → srcCount 28→0（现仅 Mira 可买·不计入 srcCount）·
+// 建造仍需之（totalDemand 25·装备/前哨账单）→ 转为 drop-deadstock（掉落零源·靠 Mira 兜底·economy 待重做 TODO）。
+assert(brass && brass.srcCount === 0 && brass.totalDemand === 25 && brass.deadstock, '黄铜配件 掉落零源(srcCount===0)·仍有建造需求(25)→ drop-deadstock（源全在已删事件里·Mira 兜底·economy 待重做）');
+// （原「科考站升级模块」parity 断言随 item.station_module 删除·2026-07-12 移除。）
 const idle = new Set(s.materials.filter((m) => m.idle).map((m) => m.name));
-// 材料主题 2026-06-28：锰结核（中层柱）/热液硫化矿（多柱）进建造账单 → 不再 idle；铁锰结壳仍未入任何账单（idle）。
-for (const n of ['铁锰结壳']) assert(idle.has(n), `idle 应含「${n}」`);
+// idle = 有源但零建造需求的材料。随机内容层删除后，蓝洞晶簇（bluecave_geode）等仍无建造账单 → idle。
+for (const n of ['蓝洞晶簇']) assert(idle.has(n), `idle 应含「${n}」`);
 
 // 新矩阵自洽：消耗矩阵行和 === 总消耗（消耗按设施所在区归位·无遗漏）
 s.materials.forEach((m, mi) => {
@@ -69,7 +70,8 @@ s.materials.forEach((_m, mi) =>
 // 大区列含「港口」（装备消耗）·来源方式含「挖矿」（mine 能力门可检测）
 assert(s.regions.includes('港口'), '大区列应含「港口」（装备消耗归位）');
 const methods = new Set(s.materials.flatMap((m) => m.sources.map((x) => x.method)));
-for (const mm of ['敌人', '事件', '深度柱', '挖矿'] as const) assert(methods.has(mm), `来源方式应含「${mm}」`);
+// 「深度柱」来源方式随深度柱系统删除·2026-07-12（柱 grantsItem 产出已删）→ 现存来源方式 = 敌人/事件/挖矿。
+for (const mm of ['敌人', '事件', '挖矿'] as const) assert(methods.has(mm), `来源方式应含「${mm}」`);
 // 概率合法
 for (const m of s.materials) for (const x of m.sources) assert(x.chance >= 0 && x.chance <= 1, `${m.name} 概率 ∈[0,1]`);
 

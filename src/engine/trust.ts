@@ -27,9 +27,9 @@ export const TRUST_MIN = -100;
 export const TRUST_MAX = 400;
 
 // per-NPC 档阈值（数据驱动·npc.trust.thresholds·SPEC §3.6）：扫 npcRegistry.NPC_FILES（单一登记表·
-// #244 提炼——曾经这里各自硬编码一份 [aldoData,miraData,ottoData]，加 Sela 时漏改过、thresholds 表
-// 没扫到他，「攒够信任但档不涨」才在 playthrough-trust.ts 里现形）。无 npc.trust.thresholds 的 NPC ⇒
-// 不进本表 ⇒ 全用默认梯（Phase 1 起 Aldo/Mira/Otto 皆无声明·Phase 2 Sela 首个声明）。
+// #244 提炼——曾经这里各自硬编码一份 [aldoData,miraData,ottoData]，加新 NPC 时漏改过、thresholds 表
+// 没扫到它，「攒够信任但档不涨」才在 playthrough-trust.ts 里现形）。无 npc.trust.thresholds 的 NPC ⇒
+// 不进本表 ⇒ 全用默认梯（当前 Aldo/Mira/Otto 皆无声明）。
 const NPC_TRUST_THRESHOLDS: Record<string, readonly number[]> = {};
 for (const f of NPC_FILES) {
   const id = f.npc?.id;

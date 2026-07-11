@@ -12,8 +12,8 @@
 //   · 事件 loot 区域 = **事件文件名**（reef.json→reef…）；深度 = 事件 depthRange[0]
 //     （zoneTags 是 biome/深带标如 twilight·**不是**区域名·别拿来当区域）。
 //   · 敌人 loot 区域 = enemy.bands[0]（zone.X→X）；深度未知→0（保守＝当作浅可得·不造假违规）。
-//   · 深度柱 grantsItem：区域 = 柱短名·深度 = 该 tier depthRange[0]·带 columnTier/capstone。
 //   · Mira 可买（material 且 tier∈{1,2}·镜像 port.ts::isBuyableFromMira）：深度 0（恒在浅档兜底）。
+//   （2026-07-12：深度柱系统已删除——柱 grantsItem / 柱建造 sink / 柱区域序均已随之移除。）
 //   未知深度的源一律记 0＝「浅可得」：保守方向（只会少报违规·不会误红绿 main）。
 
 import { readFileSync, readdirSync } from 'node:fs';
@@ -26,30 +26,13 @@ const DATA = join(ROOT, 'src', 'data');
 const readJson = (p) => JSON.parse(readFileSync(join(DATA, p), 'utf8'));
 
 // ── 区域归一（单一来源）────────────────────────────────────────────
-// 柱 id → 区域（柱短名；home 柱物理上就是礁区，归 reef 与 reef.json loot 对齐）。
-const REGION_BY_COLUMN = {
-  'col.home': 'reef',
-  'col.wreck': 'wreck',
-  'col.midwater': 'midwater',
-  'col.vent': 'vent',
-  'col.trench': 'trench',
-};
-// 事件文件名 stem → 区域（只列「区域清晰」的；ch1/tutorial/tide/lighthouse/mimic 等跨切横贯件归 null＝区域无关）。
+// 事件文件名 stem → 区域（只列「区域清晰」的现存事件文件；ch1/tutorial 等跨切横贯件归 null＝区域无关）。
 const REGION_BY_EVENTFILE = {
   reef: 'reef',
   wreck_graveyard: 'wreck',
-  wreck_field_patrol: 'wreck',
   midwater: 'midwater',
   vent: 'vent',
-  trench: 'trench',
-  chasm: 'trench',
-  whalefall: 'whalefall',
   blue_caves: 'cave',
-  deep_cave: 'cave',
-  chamber_network: 'cave',
-  grotto: 'cave',
-  flooded_gallery: 'cave',
-  shaft_crack: 'cave',
 };
 /** zone./band. 字符串（敌人 bands / 前哨 result.region）→ 规范区域名。 */
 export function cleanRegion(raw) {
@@ -67,13 +50,10 @@ export function cleanRegion(raw) {
     vent: 'vent',
     blue_caves: 'cave',
     deep_cave: 'cave',
-    whalefall: 'whalefall',
     trench: 'trench',
   };
   return map[r] ?? r;
 }
-
-const columnRegion = (colId) => REGION_BY_COLUMN[colId] ?? colId.replace(/^col\./, '');
 
 /** 递归收集任意 itemId 字符串（宽收·镜像 v1 check-economy-reachability：少误报优先）。 */
 function collectItemIds(node, out) {
@@ -106,7 +86,6 @@ export function buildEconomyDag() {
   const itemsFile = readJson('items.json');
   const upgradesFile = readJson('upgrades.json');
   const lhFile = readJson('lighthouse_upgrades.json');
-  const columnsFile = readJson('depth_columns.json');
 
   const items = itemsFile.items ?? [];
   const itemsById = new Map(items.map((it) => [it.id, it]));
@@ -183,24 +162,6 @@ export function buildEconomyDag() {
     }
   }
 
-  // 深度柱 grantsItem（柱产出·非 cost）。
-  for (const c of columnsFile.columns ?? []) {
-    const region = columnRegion(c.id);
-    for (const t of c.tiers ?? []) {
-      if (t.grantsItem && typeof t.grantsItem.itemId === 'string') {
-        const depth = Array.isArray(t.depthRange) ? t.depthRange[0] : 0;
-        addSource(t.grantsItem.itemId, {
-          kind: 'grant',
-          region,
-          depth,
-          columnTier: t.tier,
-          capstone: !!t.capstone,
-          from: `${c.id} t${t.tier}`,
-        });
-      }
-    }
-  }
-
   // Mira 可买（material 且 tier∈{1,2}）：深度 0 恒在。
   const miraBuyable = new Set();
   for (const it of items) {
@@ -217,24 +178,6 @@ export function buildEconomyDag() {
   };
   const lightLabel = (s) => /点亮|通电|感知/.test(s || '');
 
-  // 深度柱 tiers（有深度·F1 主战场）。
-  for (const c of columnsFile.columns ?? []) {
-    const region = columnRegion(c.id);
-    for (const t of c.tiers ?? []) {
-      pushBuild({
-        where: `depth_columns ${c.id} t${t.tier}`,
-        label: t.label ?? '',
-        region,
-        depth: Array.isArray(t.depthRange) ? t.depthRange[0] : null,
-        tier: t.tier,
-        early: t.tier === 1,
-        light: false,
-        capstone: !!t.capstone,
-        kind: 'column',
-        mats: t.cost?.materials ?? [],
-      });
-    }
-  }
   // 前哨阶（地表·无深度·F1 不适用）。
   for (const o of lhFile.outposts ?? []) {
     (o.stages ?? []).forEach((s, i) => {
@@ -316,12 +259,8 @@ export function buildEconomyDag() {
     const cur = regionMinDepth.get(region);
     if (cur == null || depth < cur) regionMinDepth.set(region, depth);
   };
-  for (const c of columnsFile.columns ?? []) {
-    const region = columnRegion(c.id);
-    for (const t of c.tiers ?? []) noteDepth(region, Array.isArray(t.depthRange) ? t.depthRange[0] : null);
-  }
-  // 只用 事件/产出 源定区域序（敌人/Mira 深度 0·会把所有区域压成 0·污染排序）。
-  for (const [, srcs] of sourcesByItem) for (const s of srcs) if (s.kind === 'event' || s.kind === 'grant') noteDepth(s.region, s.depth);
+  // 只用 事件 源定区域序（敌人/Mira 深度 0·会把所有区域压成 0·污染排序）。
+  for (const [, srcs] of sourcesByItem) for (const s of srcs) if (s.kind === 'event') noteDepth(s.region, s.depth);
   const regions = [...regionMinDepth.keys()].sort();
   const regionOrder = [...regions].sort(
     (a, b) => (regionMinDepth.get(a) ?? 1e9) - (regionMinDepth.get(b) ?? 1e9) || a.localeCompare(b),

@@ -180,7 +180,6 @@ export function maybeMultiFeatureRoom(
       profileFlags: args.profileFlags,
       triggeredEventIds: args.triggeredFakeIds,
       excludeIds: used,
-      tagsOverride: args.bandTags,
       poiId: args.poiId,
       poiTemplateId: args.poiTemplateId,
     });

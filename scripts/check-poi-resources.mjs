@@ -69,7 +69,6 @@ export function forcedOpenEventRefs(poi) {
   if (poi?.story && typeof poi.story.eventId === 'string') refs.push(poi.story.eventId);
   if (poi?.story && typeof poi.story.revisitEventId === 'string') refs.push(poi.story.revisitEventId);
   if (typeof poi?.revisitEventId === 'string') refs.push(poi.revisitEventId);
-  if (typeof poi?.openEventId === 'string') refs.push(poi.openEventId);
   if (Array.isArray(poi?.storyOpenEvents)) for (const r of poi.storyOpenEvents) if (typeof r === 'string') refs.push(r);
   return refs;
 }

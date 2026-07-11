@@ -14,12 +14,11 @@ export const POST_TUTORIAL_HOME_ANCHORS: ReadonlyArray<{ id: string; name: strin
 ];
 
 /**
- * 教学后「日志早揭示」的四条主线 beat 坐标（主线柱迁移·2026-06-28；内容自洽回归后 reveal 走文献坐标）——
- * **改由 depth_columns.json 各柱 storyTier 派生**（id=poi.dive.<短名>.story·非 chart_pois 锚点），且只在
- * **持有导师日志（item.mentor_logbook·其 story.marksPois 带这四条坐标）**后才现（早揭示·#117 续）。
- * `reef` host=home 恒在 → lit；`wreck/midwater/vent` host 前哨未建 → dim（看得到去不了）。教学后**未拿日志**
- * （裸 tutorial_complete·inventory 无导师日志）时四条全 hidden——故 playthrough-chart §1（只 flag.tutorial_complete）
- * 不再断言它们恒显（旧 ch1_* chart_pois 锚点已退役）。列在此供「持导师日志后」的揭示测引用（playthrough-chart 新增段）。
+ * 教学后「日志揭示」的四条主线 beat 坐标（re-home 2026-07-12：深度柱系统删除后落成 chart_pois.json 静态
+ * story 锚点·id=poi.dive.<短名>.story），只在 **持有导师日志（item.mentor_logbook·其 story.marksPois 带这四条
+ * 坐标）**后才现（reveal 单一来源＝文献坐标·#117 续）。深度门经济（原 host-built 逐环 dim/lit）已删——持日志后
+ * 四条全 lit（host 灯塔不再门 reveal/reach）；教学后**未拿日志**（裸 tutorial_complete·inventory 无导师日志）时
+ * 四条全 hidden——故 playthrough-chart §1（只 flag.tutorial_complete）不断言它们恒显。
  */
 export const POST_LOGBOOK_STORY_BEAT_POI_IDS: readonly string[] = [
   'poi.dive.home.story',

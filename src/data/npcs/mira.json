@@ -52,42 +52,6 @@
           }
         },
         {
-          "id": "mira_salvage_offer",
-          "label": "你这儿有要人手的活吗？",
-          "next": "mira.salvage_brief",
-          "visibleIf": {
-            "kind": "all",
-            "of": [
-              { "kind": "hasFlag", "flag": "story.ch1.anchor.midwater" },
-              { "kind": "notHasFlag", "flag": "story.ch1.mira_salvage_offered" }
-            ]
-          }
-        },
-        {
-          "id": "sela_tip",
-          "label": "有人说这附近还有旁的买家？",
-          "next": "mira.tip_sela",
-          "visibleIf": {
-            "kind": "all",
-            "of": [
-              { "kind": "hasFlag", "flag": "story.ch1.mira_salvage_done" },
-              { "kind": "notHasFlag", "flag": "flag.mira.tip_sela_seen" }
-            ]
-          }
-        },
-        {
-          "id": "buy_chart",
-          "label": "你这儿有旧图卖吗？",
-          "next": "mira.sell_chart",
-          "visibleIf": {
-            "kind": "all",
-            "of": [
-              { "kind": "hasFlag", "flag": "story.ch1.anchor.reef" },
-              { "kind": "notHasFlag", "flag": "flag.salvage_chart_bought" }
-            ]
-          }
-        },
-        {
           "id": "chat",
           "label": "今天行情怎么样？",
           "next": "mira.banter"
@@ -101,53 +65,6 @@
     }
   },
   "dialogs": {
-    "mira.sell_chart": {
-      "id": "mira.sell_chart",
-      "text": "「旧图？」Mira 从柜台底下拖出一个鞋盒，里头塞满卷边的纸。\n\n「这种一抓一把——下去没回来的人，东西最后总归流到我这儿。大多是空的，偶尔有个把没人捡过的角落。」\n\n她抽出一张推到你面前。「二十金，拿去。别指望它能标出什么金山。」",
-      "choices": [
-        {
-          "id": "buy_chart_shop",
-          "label": "（看看她的货）",
-          "next": "end",
-          "effects": [{ "kind": "openShop", "shopId": "mira.bench" }],
-          "filler": true
-        },
-        {
-          "id": "pass_chart",
-          "label": "下次再说。",
-          "next": "end"
-        }
-      ]
-    },
-    "mira.salvage_brief": {
-      "id": "mira.salvage_brief",
-      "text": "Mira 放下秤砣，从柜台底下抽出一张对折的旧海图，指节在上头一个炭笔记号上敲了敲。\n\n「中层，塌了半边的那条船。侧舱卡着个铅封的匣子——别的不用你管，把匣子拽出来就行。」\n\n她顿了一下，像在心里过一笔账。\n\n「里头的东西你留着，算工钱。能把这趟干利索，我才知道你是不是个能托事的人。」",
-      "onEnter": [
-        { "kind": "setFlag", "flag": "story.ch1.mira_salvage_offered" }
-      ],
-      "choices": [
-        {
-          "id": "accept_salvage",
-          "label": "（记下坐标）",
-          "next": "end"
-        }
-      ]
-    },
-    "mira.tip_sela": {
-      "id": "mira.tip_sela",
-      "text": "Mira 没马上答话，先把秤砣压好。\n\n「有一个。不常在，跟着潮走——这个月相来，下个月相说不定又换了地方。她只认红喉鹈币，别的一概不收。」\n\n她顿了顿：「我这儿偶尔进一点红喉鹈币，价不便宜。她货架上摆的东西，我这儿没有。」\n\n她没再多说，转头继续记账——好像已经说得比平时多了。",
-      "onEnter": [
-        { "kind": "setFlag", "flag": "flag.mira.tip_sela_seen" },
-        { "kind": "setFlag", "flag": "intel.mira.sela" }
-      ],
-      "choices": [
-        {
-          "id": "back_sela_tip",
-          "label": "（记下了）",
-          "next": "end"
-        }
-      ]
-    },
     "mira.sell_light": {
       "id": "mira.sell_light",
       "text": "「那你是下去没开灯？」\n\nMira 没等你回答，从货架底层抽出一盏黄铜外壳的探照灯，往柜台上一放。\n\n「老式的，但水下没有这东西摸不了路。四十金，随你。」\n\n她又去记账，没再看你。「当然你乐意摸黑，那是你的事。」",

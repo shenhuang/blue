@@ -53,7 +53,6 @@ const GLYPH: Record<string, ReactNode> = {
   'item.old_chart': (<><path d="M4 6 9 4l6 2 5-2v14l-5 2-6-2-5 2z"/><path d="M9 4v14M15 6v14"/></>),
   'item.captain_log': (<><path d="M6 4h11v16H8a2 2 0 0 1-2-2z"/><path d="M9 4v14"/></>),
   'item.mentor_logbook': (<><path d="M6 5h6v14H8a2 2 0 0 1-2-2z"/><path d="M12 5v14"/><path d="M14 8l3 1-3 1M14 12l3 1-3 1"/></>),
-  'item.whalefall_log': (<><path d="M6 4h11v16H8a2 2 0 0 1-2-2z"/><path d="M9 4v14"/><path d="M11 15c1-1 3-1 4 0"/></>),
   'item.ch1.steadying_charm_broken': (<><path d="M9 4h6M12 4v4"/><circle cx="12" cy="13" r="5"/><path d="M12 9l-2 4 3 1-1 3"/></>),
   'item.rusty_compass': (<><circle cx="12" cy="12" r="8"/><path d="M12 12 15 9l-2 6-4 1z"/></>),
   'item.brass_pocket_watch': (<><circle cx="12" cy="13" r="6"/><path d="M12 13V9.5M12 13l3 1.5"/><path d="M12 4v3M10 4h4"/></>),
@@ -74,7 +73,6 @@ const GLYPH: Record<string, ReactNode> = {
   'item.cave_octopus_beak': (<><path d="M8 4c1 5 2 9 4 13 2-4 3-8 4-13"/><path d="M8 4c4-1 4-1 8 0"/></>),
   'item.lantern_gland': (<><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/></>),
   'item.grouper_maw': (<><path d="M3 12c3-4 9-4 13 0-4 4-10 4-13 0z"/><circle cx="13" cy="11" r="1"/><path d="M16 12l5-3v6z"/></>),
-  'item.station_module': (<><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 5v14M5 9h14"/><circle cx="14" cy="14" r="1.5"/></>),
   'item.quartz_crystal': (<><path d="M12 3 16 9l-4 12-4-12z"/><path d="M8 9h8"/></>),
   'item.flint_nodule': (<path d="M7 8l5-3 5 4-1 7-6 1-4-4z"/>),
   'item.manganese_nodule': (<><circle cx="12" cy="12" r="7"/><path d="M9 9a4 4 0 0 1 5 1M9 14a4 4 0 0 0 6 0"/></>),
@@ -86,8 +84,6 @@ const GLYPH: Record<string, ReactNode> = {
   'item.wreck_bronze': (<><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/><path d="M12 5v2M12 17v2M5 12h2M17 12h2"/></>),
   'item.collapse_fitting': (<><path d="M4 18l5-7 4 2 4-7"/><path d="M4 18h14"/><path d="M14 6h4v4"/></>),
   'item.oyster_shell': (<><path d="M12 18C7 18 4 14 4 10c4 0 8 1 8 8z"/><path d="M12 18c5 0 8-4 8-8-4 0-8 1-8 8z"/></>),
-  'item.whalefall_polychaete': (<><path d="M4 12c2-3 4 2 6 0s4 2 6 0 4 2 2 5"/><path d="M5 11l-1 2"/></>),
-  'item.whale_bone': (<><path d="M7.5 16.5 16.5 7.5"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="6.5" r="1.8"/><circle cx="6" cy="15" r="1.4"/><circle cx="19" cy="9" r="1.4"/></>),
 };
 
 // ── 兜底 glyph（新道具没专属图时按槽/类目/role 出图）─────────────────────────

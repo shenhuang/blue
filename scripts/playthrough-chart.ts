@@ -24,9 +24,8 @@ import {
   describeCaveShape,
   roamingInLunarPool,
 } from '../src/engine/chart';
-import { regionForOwner, regionConfigErrors, flagGatedRegions, regionRadius } from '../src/engine/regions';
+import { regionForOwner, regionConfigErrors, regionRadius } from '../src/engine/regions';
 import { ownerAnchorPos } from '../src/engine/lighthouses';
-import { getColumns } from '../src/engine/columns';
 import { generateDiveMap, analyzeMap, caveShapeBucket } from '../src/engine/mapgen';
 import { startDiveFromPoi, currentMoveCost } from '../src/engine/dive';
 import { getZone } from '../src/engine/zones';
@@ -90,9 +89,8 @@ function withHomeDockyard(profile: PlayerProfile): PlayerProfile {
  * 用于测 roaming 多样性 / 区域内 anchor 的下潜机制（不被「教学后只家区」门控挡住）。
  */
 function fullyRevealedProfile(runsCompleted = 0): PlayerProfile {
-  // 鲸落区是 flag-gated（owner-less·§10）：由 story.ch1.whalefall_found 揭示·不靠灯塔——
-  // 「全区揭示」档把它一并种上（其余区靠下面 owner 前哨灯塔揭示）。
-  const base = profileWith(['flag.tutorial_complete', 'story.ch1.whalefall_found'], [], runsCompleted);
+  // 各区靠下面 owner 前哨灯塔揭示（鲸落区 flag-gated vertical 已于 2026-07-12 删除）。
+  const base = profileWith(['flag.tutorial_complete'], [], runsCompleted);
   // v4 横向布局坐标（与 data/lighthouse_upgrades.json result + chart_regions owner 一致）。
   const outpostLighthouses: Lighthouse[] = [
     { id: 'lighthouse.ch1_wreck_outpost', name: '残骸前哨', mapX: 0.3, mapY: 0.69, level: 1, builtUpgrades: new Set() },
@@ -105,31 +103,14 @@ function fullyRevealedProfile(runsCompleted = 0): PlayerProfile {
 }
 
 // ============================================
-// 0. flag-gated 揭示区（owner-less·§10 鲸落区·「按条件揭示隐藏区」通用原语）
+// 0. 区域配置不变量（regions.ts 加载分类·焊成 regress 门）
+//   （原鲸落 flag-gated 揭示区 + mimic 谎点测试随鲸落/mimic vertical 于 2026-07-12 删除。）
 // ============================================
-L('========== 0. flag-gated 揭示区（鲸落·owner-less·found 门控） ==========');
+L('========== 0. 区域配置不变量 ==========');
 {
-  // 不变量：每区恰好 owner 或 revealFlag 其一·flag-gated 必带 center（regions.ts 加载分类·此处焊成 regress 门）
+  // 不变量：每区恰好 owner 或 revealFlag 其一·flag-gated 必带 center（regions.ts 加载分类）。
   assert(regionConfigErrors().length === 0, `区域配置不变量违例：${regionConfigErrors().join('; ')}`);
-  // 鲸落区＝flag-gated（无 owner 灯塔·占位前哨已移除）
-  const wf = flagGatedRegions().find((r) => r.id === 'whalefall');
-  assert(wf, 'whalefall 应是 flag-gated 区（flagGatedRegions 应含它）');
-  assert(
-    wf!.revealFlag === 'story.ch1.whalefall_found' && !!wf!.center,
-    'whalefall flag-gated 区应带 revealFlag(story.ch1.whalefall_found) + center',
-  );
-  assert(!regionForOwner('lighthouse.ch1_whalefall_outpost'), 'whalefall 不再 owner-anchored（占位前哨灯塔已移除）');
-  // 圈内一点：found flag 前后的点亮态（owner-less flag-gated 揭示·诚实轴：found 后才可见）
-  const probe: ChartPoi = {
-    id: 'probe.whalefall', zoneId: 'zone.open_midwater', name: '探针', blurb: '',
-    distance: 0, mapX: wf!.center!.x, mapY: wf!.center!.y, persistent: false,
-  };
-  assert(!isPoiLit(profileWith(['flag.tutorial_complete']), probe), '鲸落区未 found 时·圈内点不亮（flag-gated 门未开）');
-  assert(
-    isPoiLit(profileWith(['flag.tutorial_complete', 'story.ch1.whalefall_found']), probe),
-    'found 后·鲸落区圈内点亮（flag-gated 揭示·isLit 纳入·北极星：mimic 仍唯一谎点）',
-  );
-  L('  不变量 + flag-gated 揭示 + found 门控 ✓');
+  L('  区域配置不变量 ✓');
 }
 
 // ============================================
@@ -223,37 +204,15 @@ L('\n========== 0b. owner 归属守门 + owner POI 落在 owner radius 内 =====
 
 // ============================================
 // 0c. POI 不落陆（陆海分界守门·机制门·CLAUDE.md「约定落成机制」·2026-06-28）
-//   病：漆号珊瑚丛(col.home.storyTier) mapX=0.04 < 家港口 0.06 → 渲染落到海岸/陆地侧（作者「跑到岸上了」）。
-//   根因 1：depth_columns 的 storyTier/tier 是**绝对坐标**、不经 owner resolve，0b（只 validate chart_pois
-//           相对偏移 + owner 圈）整条覆盖不到；根因 2：home 是 coast 半圆·圈含左半（陆地侧）→ 即便查「落在
-//           owner 圈内」也挡不住向陆偏（0.04 距 home 0.122 < 半径 0.26·照样过 0b·c）。
 //   不变量：任何潜点（绝对坐标）必须在**家港口以东**（mapX > 港口 mapX）。家港口＝海图最左的人造点 / on-shore
 //           基地（state.ts：POI 在港口之东），故「> 港口 mapX」≡「在水里、不在岸上」。
-//   两路覆盖：(A) depth_columns 显式绝对坐标（病灶 lane·手写绝对数·含不可见档 / 脱簇远摆的 capstone）；
-//            (B) generateChart resolve 后玩家**实际所见**的每个点（chart_pois 相对偏移 resolve + 主线 beat）。
-//   只查离岸、不查 owner 圈：capstone 故意脱簇摆远（见 columns.ts::tierPoi 注释）→ 在圈外是合法的；owner 圈
-//   归属由 0b 管 chart_pois，column 一侧豁免圈、只守「不落陆」。
+//   （原 (A) depth_columns 显式绝对坐标一路随深度柱系统删除·2026-07-12；现只查 generateChart resolve 后
+//    玩家**实际所见**的每个点〔chart_pois 相对偏移 resolve + 4 条主线 beat 静态 anchor〕。）
 // ============================================
 L('\n========== 0c. POI 不落陆（mapX > 家港口·陆海分界）==========');
 {
   const coastEdge = ownerAnchorPos(HOME_LIGHTHOUSE_ID)!.mapX; // 家港口＝on-shore 基地＝陆海分界（海图最左人造点）
-  // (A) depth_columns 显式绝对坐标（storyTier + 带显式 mapX 的 tier）——病灶 lane（手写绝对数·不经 resolve）。
-  let columnChecked = 0;
-  for (const c of getColumns()) {
-    const probes: { label: string; mapX: number | undefined }[] = [
-      ...(c.storyTier ? [{ label: `${c.id}.storyTier「${c.storyTier.label}」`, mapX: c.storyTier.mapX }] : []),
-      ...c.tiers.map((t) => ({ label: `${c.id}.t${t.tier}「${t.label}」`, mapX: t.mapX })),
-    ];
-    for (const p of probes) {
-      if (typeof p.mapX !== 'number') continue; // 缺省＝host 旁自动布点（恒离岸·trusted·见 columns.ts）
-      columnChecked++;
-      assert(
-        p.mapX > coastEdge,
-        `0c: 深度柱潜点「${p.label}」mapX=${p.mapX} ≤ 家港口 ${coastEdge}（落到海岸/陆地侧·应摆港口以东的水里）`,
-      );
-    }
-  }
-  // (B) generateChart resolve 后玩家实际所见的每个点（chart_pois 相对偏移已 resolve 成绝对 + 4 条主线 beat）。
+  // generateChart resolve 后玩家实际所见的每个点（chart_pois 相对偏移已 resolve 成绝对 + 4 条主线 beat）。
   const seen = generateChart({ profile: withLogbook(fullyRevealedProfile()) }).pois;
   for (const p of seen) {
     if (typeof p.mapX !== 'number') continue;
@@ -262,7 +221,7 @@ L('\n========== 0c. POI 不落陆（mapX > 家港口·陆海分界）=========='
       `0c: 海图点「${p.id}」resolve 后 mapX=${p.mapX.toFixed(3)} ≤ 家港口 ${coastEdge}（玩家会看到它落在岸上）`,
     );
   }
-  L(`  ${columnChecked} 个深度柱显式坐标 + ${seen.length} 个 resolve 后海图点：均在家港口以东（不落陆）✓`);
+  L(`  ${seen.length} 个 resolve 后海图点：均在家港口以东（不落陆）✓`);
 }
 
 // ============================================
@@ -292,33 +251,29 @@ for (const { id } of POST_TUTORIAL_HOME_ANCHORS) {
 }
 for (const z of POST_TUTORIAL_GATED_ZONES) {
   assert(
-    !c1.pois.some((p) => p.zoneId === z && p.persistent && !p.story && p.columnId === undefined),
+    !c1.pois.some((p) => p.zoneId === z && p.persistent && !p.story),
     `教学后 ${z} 区未解锁 → 其非剧情 anchor 应不揭示`,
   );
 }
 L(`  教学后家区 anchor + 主线 beat 坐标早揭示门（未拿日志 hidden）；残骸区门控 ✓`);
 
-// 主线柱迁移·日志早揭示（点 4·2026-06-28 内容自洽回归后）：持导师日志（inventory 有 item.mentor_logbook·其
-// marksPois 带四坐标）后，四条主线 beat 坐标在海图上**早早**显示——reef host=home 恒在 → lit（免费入口·教学完即可下）；
-// wreck/midwater/vent host 前哨未建 → dim（看得到去不了）。
+// 日志揭示（2026-07-12 深度柱删除后·reveal 单一来源＝导师日志 marksPois）：持导师日志（inventory 有
+// item.mentor_logbook·其 marksPois 带四坐标）后，四条主线 beat 坐标全部揭示为 lit——深度门经济（原 host-built
+// 逐环 dim/lit）已删·reveal 不再看 host 灯塔·只看是否持日志（documentKnowsPoi）。beat 潜点带 `story` 字段（dive-start
+// applyStoryOpen 据此强制开场）。
 {
   const withLog = withLogbook(profileWith(['flag.tutorial_complete']));
   const cLog = generateChart({ profile: withLog });
   const beatPoi = (id: string) => cLog.pois.find((p) => p.id === id);
   const reef = beatPoi('poi.dive.home.story');
-  assert(reef && reef.revealState === 'lit', '主线①reef（host=home 恒在）→ 持日志即 lit（免费入口）');
-  assert(reef!.columnStory?.eventId === 'ch1.anchor_reef', '主线①reef 潜点带 columnStory（dive-start 强制开场 ch1.anchor_reef）');
-  const hostName: Record<string, string> = {
-    'poi.dive.wreck.story': '残骸前哨', 'poi.dive.midwater.story': '中层浮标', 'poi.dive.vent.story': '热液井台',
-  };
+  assert(reef && reef.revealState === 'lit', '主线①reef → 持日志即 lit');
+  assert(reef!.story?.eventId === 'ch1.anchor_reef', '主线①reef 潜点带 story（dive-start 强制开场 ch1.anchor_reef）');
   for (const id of ['poi.dive.wreck.story', 'poi.dive.midwater.story', 'poi.dive.vent.story']) {
     const p = beatPoi(id);
-    assert(p && p.revealState === 'dim', `主线 beat ${id}（host 前哨未建）→ 持日志早揭示为 dim（看得到去不了）`);
-    const reason = poiBlockReason(withLog, p!);
-    // 暗点一句话指明「先建该区 host 前哨」——含该前哨名（残骸前哨/中层浮标/热液井台·lighthouse_upgrades.json 单一来源）。
-    assert(reason !== null && reason.includes(hostName[id]), `主线 beat ${id} dim 的 blockReason 应指明先建「${hostName[id]}」，实 ${reason}`);
+    assert(p && p.revealState === 'lit', `主线 beat ${id} → 持日志揭示为 lit（host 灯塔不再门 reveal·深度门经济已删）`);
+    assert(p!.story?.beatFlag?.startsWith('story.ch1.anchor.'), `主线 beat ${id} 应带 story.beatFlag（story.ch1.anchor.*）`);
   }
-  L('  持日志早揭示：reef lit（免费入口）/ wreck·midwater·vent dim（需先建该区 host 前哨）✓');
+  L('  持日志揭示：四条主线 beat 坐标全 lit（reveal 单一来源＝日志 marksPois·host 不门 reveal）✓');
 }
 
 // ============================================
@@ -346,16 +301,16 @@ L('  建家灯塔船坞后旧灯塔礁：解锁 ✓');
 // 2b. 灯塔 reveal（点亮）+ reach（最近灯塔算距离）
 // ============================================
 L('\n========== 2b. 灯塔 reveal + reach ==========');
-// (a) 无灯塔 + 持日志 → 灯塔 reveal 全灭，海图只剩日志抄来的四条主线 beat 坐标（主线柱迁移·承 #117 精神：
-//     日志坐标=已知点·灯全灭了，抄在纸上的坐标不会消失）。但**全 dim**——host 灯塔（含 home）都没了 → 哪条都下不去。
+// (a) 无灯塔 + 持日志 → 灯塔 reveal 全灭，海图只剩日志抄来的四条主线 beat 坐标（story anchor 恒显·不被 owner 门控·
+//     日志坐标=已知点·灯全灭了抄在纸上的坐标不会消失）。story 锚点恒可达 → 全 lit（深度门经济已删·owner 不门 reveal/reach）。
 const noLh: PlayerProfile = { ...withLogbook(profileWith(['flag.tutorial_complete'])), lighthouses: [] };
 const noLhPois = generateChart({ profile: noLh }).pois;
 assert(
-  noLhPois.length === 4 && noLhPois.every((p) => p.columnStory !== undefined),
-  `无灯塔+持日志时海图应只剩 4 个主线 beat 坐标（columnStory POI），实际 ${noLhPois.length}`,
+  noLhPois.length === 4 && noLhPois.every((p) => p.story !== undefined),
+  `无灯塔+持日志时海图应只剩 4 个主线 beat 坐标（story POI），实际 ${noLhPois.length}`,
 );
-assert(noLhPois.every((p) => p.revealState === 'dim'), '无灯塔时四条主线坐标全 dim（host 灯塔含 home 都没了·哪条都下不去）');
-L('  无灯塔+持日志 → 只剩 4 个日志坐标·全 dim（纸上坐标不灭·但无 host 下不去）✓');
+assert(noLhPois.every((p) => p.revealState === 'lit'), '无灯塔时四条主线坐标全 lit（story 锚点恒可达·不被 owner 门控）');
+L('  无灯塔+持日志 → 只剩 4 个日志坐标·全 lit（纸上坐标不灭·story 恒可达）✓');
 
 // (b) home 点亮近端、不点亮远端（北缘 ≈0.80）
 const homeOnly = profileWith(['flag.tutorial_complete']);
@@ -575,19 +530,17 @@ assert(fogRun >= 0 && calmRun >= 0, '7: 40 run 内浓雾与非浓雾都出现');
 const fogChart = generateChart({ profile: fullyRevealedProfile(fogRun) });
 const calmChart = generateChart({ profile: fullyRevealedProfile(calmRun) });
 // 排除潮窗点（lunarWindow·#219 起恒显·非随机机会点）；本断言只数随机机会点。
-const fogRoam = fogChart.pois.filter((p) => !p.persistent && !p.mimic && !(p.lunarWindow && p.lunarWindow.length > 0)).length;
-const calmRoam = calmChart.pois.filter((p) => !p.persistent && !p.mimic && !(p.lunarWindow && p.lunarWindow.length > 0)).length;
+const fogRoam = fogChart.pois.filter((p) => !p.persistent && !(p.lunarWindow && p.lunarWindow.length > 0)).length;
+const calmRoam = calmChart.pois.filter((p) => !p.persistent && !(p.lunarWindow && p.lunarWindow.length > 0)).length;
 // 非浓雾＝两个机会点全显；浓雾按 per-poi 概率遮一部分（≤2·不强求恰好遮 1·见 §3 robust 同理）。
 assert(calmRoam === 2, `7: 非浓雾应满 2 个机会点（实际 ${calmRoam}）`);
 assert(fogRoam <= 2, `7: 浓雾机会点 ≤2（实际 ${fogRoam}）`);
-// 只数真·zone 锚点（排除 #131 派生的深度柱深入 POI——它们也 persistent·但属档位制/主线柱·不是天气轴）。
-const anchorCount = (c: { pois: { persistent: boolean; columnId?: string }[] }) =>
-  c.pois.filter((p) => p.persistent && p.columnId === undefined).length;
-// 19 = 旧 23 − 4 退役的 ch1_* story 锚点（主线柱迁移：四主线 beat 改由柱 storyTier 派生·带 columnId·**本就被 anchorCount 排除**·
-// 与是否揭示无关——reveal 现走导师日志 marksPois·此处只数 columnId===undefined 的真 zone 锚点）。其余不变（home 6 + wreck 3 + vent 1 直接可见洞 + 鲸落 3 生态点 + …）。
+// zone 锚点计数（fullyRevealed·无导师日志 → 四条 story 潜点未揭示·不计入）。
+const anchorCount = (c: { pois: { persistent: boolean }[] }) => c.pois.filter((p) => p.persistent).length;
+// 16 = 旧 19（含鲸落 3 生态点）− 3 鲸落生态点（鲸落 vertical 于 2026-07-12 删除）。story 潜点因无日志未揭示·亦不计。
 assert(
-  anchorCount(fogChart) === 19 && anchorCount(calmChart) === 19,
-  `7: 锚点不受天气遮蔽（期望 19·实际 fog ${anchorCount(fogChart)}/calm ${anchorCount(calmChart)}·含鲸落 found 后 3 生态点·#137·主线柱迁移退役 4 个 ch1_* 锚点）`,
+  anchorCount(fogChart) === 16 && anchorCount(calmChart) === 16,
+  `7: 锚点不受天气遮蔽（期望 16·实际 fog ${anchorCount(fogChart)}/calm ${anchorCount(calmChart)}·鲸落 vertical 已删）`,
 );
 assert(fogChart.conditions.weather === 'fog' && calmChart.conditions.weather !== 'fog', '7: SeaChart.conditions 落返回结构');
 L(`  海况确定性 + 随回合变 + 浓雾遮一处（run ${fogRun} 雾→${fogRoam} / run ${calmRun} ${calmChart.conditions.weather}→${calmRoam}）+ 锚点不受影响 ✓`);
@@ -618,7 +571,7 @@ const homeOutpost: PlayerProfile = {
 assert(isPoiLit(homeOutpost, farRoam), '8a: 加前哨后远端 roaming 坐标被点亮＝新 POI 即时进图（同 run）');
 // (b) roaming id 为模板键（poi.roam.<run>.<templateId>）+ 同 profile 重算确定一致
 const roamIds = (p: PlayerProfile) =>
-  generateChart({ profile: p }).pois.filter((x) => !x.persistent && !x.mimic).map((x) => x.id);
+  generateChart({ profile: p }).pois.filter((x) => !x.persistent).map((x) => x.id);
 const ids1 = roamIds(homeOutpost);
 const ids2 = roamIds(homeOutpost);
 assert(ids1.join('|') === ids2.join('|'), '8b: 同 profile 重算 roaming 一致（确定性·pool-independent）');
@@ -628,91 +581,47 @@ assert(
 );
 L(`  远端 roaming 即时点亮(run ${clearRun}) + roaming 模板键 id 确定性(${ids1.length} 个) ✓`);
 
-// ============================================
-// 9. 探深「深度柱」→ 深入潜点（档位制·#131·取代旧 flag.probe.* 模型）：home 柱宿主=home 灯塔（恒在）；
-//    建到第 K 级 → 1…K 档 lit / K+1 档 dim / 更深 hidden（一级露一档）；带 bandId 的档走 band 绝对 depthRange 路径。
-// ============================================
-L('\n========== 9. 探深深度柱 → 深入 POI（档位制·#131）==========');
-// 9a 档位门：未建探深(0 级) → home 柱 t1 以暗点(dim)现身、t2 hidden；建 home 探深 lv1 → t1 转 lit。
-const preProbe = profileWith(['flag.tutorial_complete'], []);
-const preChartP = generateChart({ profile: preProbe });
-const preT1 = preChartP.pois.find((p) => p.id === 'poi.dive.home.t1');
-assert(preT1?.revealState === 'dim', '9a: 未建探深 → home 柱 t1 暗点(dim·看得到去不了)');
-assert(!preChartP.pois.some((p) => p.id === 'poi.dive.home.t2'), '9a: 第 2 档未露(hidden·更深不可见)');
-// 建 home 探深 lv1（直接置宿主 builtUpgrades·验档位揭示）。
-const probeProfile = (() => {
-  const base = createInitialGameState();
-  const lighthouses = base.profile.lighthouses.map((l) =>
-    l.id === 'lighthouse.home' ? { ...l, builtUpgrades: new Set(['lighthouse.probe.home.lv1']) } : l,
-  );
-  return { ...base.profile, flags: new Set(['flag.tutorial_complete']), lighthouses };
-})();
-const litT1 = generateChart({ profile: probeProfile }).pois.find((p) => p.id === 'poi.dive.home.t1');
-assert(litT1?.revealState === 'lit', '9a: 建 home 探深 lv1 → t1 转 lit');
-assert(litT1?.bandId === 'band.home.t1', '9a: 深入 POI 携带派生 bandId（band.home.t1）');
-assert(litT1?.columnId === 'col.home' && litT1?.depthTier === 1, '9a: 携带 columnId/depthTier（档位制门）');
-// 9b bandId 档下潜走 band 路径：落 band 的 zone + alertFactor/hunts（band.trench.t3：dark·alertFactor 1.4·hunts）。
-const deepTier: ChartPoi = {
-  id: 'poi.dive.trench.t3',
-  zoneId: 'zone.vent_trench',
-  bandId: 'band.trench.t3',
-  columnId: 'col.trench',
-  depthTier: 3,
-  name: '竖井·喉',
-  blurb: '',
-  distance: 3,
-  persistent: true,
-};
-const sDeep = startDiveFromPoi(createInitialGameState(), deepTier);
-assert(sDeep.run?.zoneId === 'zone.vent_trench', '9b: bandId 档 → 进 band 的 zone（vent_trench）');
-assert(
-  sDeep.run?.bandAlertFactor === 1.4,
-  `9b: bandId 档 → 落 band.trench.t3 alertFactor(1.4)，实 ${sDeep.run?.bandAlertFactor}`,
-);
-assert(sDeep.run?.huntEnabled === true, '9b: bandId 档 → 落 band.trench.t3 hunts(true)');
-// 每潜从第一回合起算（turn 0·满氧起手·#128）。
-assert(sDeep.run?.turn === 0, `9b: bandId 档从第一回合起算→turn=0，实 ${sDeep.run?.turn}`);
-L('  档位制(未建→t1 dim/t2 hidden·建 lv1→t1 lit) + bandId 走 band 路径(zone/alertFactor/hunts·turn0) ✓');
+// （§9 探深「深度柱」→ 深入潜点〔档位制/bandId 路径〕随深度柱系统删除·2026-07-12 移除。）
 
 // ============================================
 // 10. poiBlockReason（暗点「怎样才能去」一句话·作者 2026-06-14）：可去→null；能力门→「需要『X』」。
 //     合约见 chart.ts::poiBlockReason（深度柱档「升一级」/ 能力门「需要」/ 天气「潮一变又不同」）。
 // ============================================
 L('\n========== 10. poiBlockReason（暗点一句话）==========');
-// (a) 能力门暗点（capability-dim）：story POI 恒「亮」（绕过揭示圈门）+ requiresLighthouseUpgrade 未建船坞
-//     → 落在「可去圈内、已发现、但缺设施」一类 → revealState=dim、poiBlockReason 含「需要」。
+// (a) 能力门暗点（capability-dim）：近家 owner-less 几何点（home 圈内·reveal 通过 → 已发现），叠
+//     requiresLighthouseUpgrade 未建船坞 → 落在「可去圈内、已发现、但缺设施」一类 → revealState=dim、
+//     poiBlockReason 含「需要」。（原用 story POI 恒亮的写法已失效：story reveal 现须 documentKnowsPoi/marksPois·
+//     未被任何文献标记的 story 点是 hidden·不再恒亮·2026-07-12。）
 const capDimPoi: ChartPoi = {
   id: 'probe.cap_dim',
-  zoneId: 'zone.wreck_graveyard',
-  name: '需船坞的剧情点',
+  zoneId: 'zone.old_lighthouse_reef',
+  name: '需船坞的近家点',
   blurb: '',
-  distance: 2,
-  mapX: 0.85,
-  mapY: 0.64, // 远端·home 点亮不到——但 story=true 恒亮（不走揭示圈门），故能验「能力门」而非「圈外」
+  distance: 1,
+  mapX: 0.18,
+  mapY: 0.5, // 近家·home 圈内点亮（reveal 通过）→ 只差设施 → 能验「能力门」而非「圈外」
   persistent: true,
-  story: { anchor: 'wreck', eventId: 'test.cap_dim' },
   requiresLighthouseUpgrade: 'lighthouse.dockyard.lv1',
 };
 const noDock = profileWith(['flag.tutorial_complete']); // 教学已过·未建船坞
-assert(poiRevealState(noDock, capDimPoi) === 'dim', '10a: 能力门未解（未建船坞）的剧情点应为 dim（story 恒亮·只差设施）');
+assert(poiRevealState(noDock, capDimPoi) === 'dim', '10a: 能力门未解（未建船坞）的近家点应为 dim（reveal 通过·只差设施）');
 const capReason = poiBlockReason(noDock, capDimPoi);
 assert(capReason !== null && capReason.includes('需要'), `10a: 能力门暗点 poiBlockReason 应含「需要」，实际 ${capReason}`);
 assert(capReason === poiLockReason(noDock, capDimPoi), '10a: 能力门暗点 blockReason 应与 poiLockReason 同源（一句话一致）');
 L(`  能力门暗点：dim + 「${capReason}」✓`);
 
-// (b) 可去点（departable）：story POI 恒亮 + 无任何能力门 → revealState=lit → poiBlockReason 返回 null。
+// (b) 可去点（departable）：近家几何点 + 无任何能力门 → revealState=lit → poiBlockReason 返回 null。
 const litPoi: ChartPoi = {
   id: 'probe.lit',
-  zoneId: 'zone.wreck_graveyard',
-  name: '无门剧情点',
+  zoneId: 'zone.old_lighthouse_reef',
+  name: '无门近家点',
   blurb: '',
-  distance: 2,
-  mapX: 0.85,
-  mapY: 0.64,
+  distance: 1,
+  mapX: 0.18,
+  mapY: 0.5, // 近家·home 圈内·无 requiresUpgrade/requiresLighthouseUpgrade → 可去
   persistent: true,
-  story: { anchor: 'wreck', eventId: 'test.lit' }, // 恒亮·无 requiresUpgrade/requiresLighthouseUpgrade → 可去
 };
-assert(poiRevealState(noDock, litPoi) === 'lit', '10b: 无能力门的剧情点应为 lit（可去）');
+assert(poiRevealState(noDock, litPoi) === 'lit', '10b: 无能力门的近家点应为 lit（可去）');
 assert(poiBlockReason(noDock, litPoi) === null, '10b: 可去点 poiBlockReason 应返回 null（没什么挡着）');
 L('  可去点：lit + blockReason=null ✓');
 
@@ -766,7 +675,7 @@ L('  海况(phase/moonAge/tide)由 day 派生·与 lunar.ts 一致 ✓');
   const lrOn = poiBlockReason(onProf, lunarPoi);
   assert(lrOn === null || !lrOn.includes('潮窗未到'), `11c: 窗内 → 月相不再拦（blockReason 无「潮窗未到」），实 ${lrOn}`);
   // 豁免：同样的窗挂在 story 锚点上 → 月相不拦（守「默认不锁主线」§2.3/§7）。
-  const storyPoi: ChartPoi = { ...lunarPoi, id: 'probe.lunar_story', story: { anchor: 'wreck', eventId: 'test.x' } };
+  const storyPoi: ChartPoi = { ...lunarPoi, id: 'probe.lunar_story', story: { eventId: 'test.x', beatFlag: 'story.ch1.anchor.wreck' } };
   const lrStory = poiBlockReason(offProf, storyPoi);
   assert(lrStory === null || !lrStory.includes('潮窗未到'), '11c: story 豁免——月相窗不拦剧情锚点');
   L('  月相窗门：已知窗外 dim+「潮窗未到·满月」/ 窗内放行 / story 豁免 ✓');

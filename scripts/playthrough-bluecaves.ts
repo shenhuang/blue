@@ -144,19 +144,20 @@ state = {
 assert(!isAscentBlocked(state.run!), '旧灯塔礁（canFreeAscend 默认 true）不应被 block');
 
 // ============================================
-// Phase 3: 事件池有内容 + combat hook 在
+// Phase 3: POI 专属事件门控（随机盲池已空）+ combat hook 在
 // ============================================
-L('\n========== 蓝洞群事件池 ==========');
+// 随机内容层删除后（2026-07-12）：蓝洞群随机盲池为空；surviving 内容 = 2 个 poiId 门控事件
+//   geode_vein（poiId=poi.anchor.blue_caves·[12,55]）/ gallery_crust_seam（poiId=poi.anchor.flat_gallery·[14,32]）。
+// 本 Phase 守「poiId 门控」：非 POI 下潜 ⇒ 盲池空；传对应 poiId ⇒ 专属事件进池。
+L('\n========== 蓝洞群 POI 专属事件门控（随机盲池已空）==========');
+const poolAt = (depth: number, poiId?: string) =>
+  buildEventPool({ zone: zone!, depth, profileFlags: state.profile.flags, triggeredEventIds: [], poiId }).map((e) => e.id);
 for (const depth of [15, 25, 38, 50]) {
-  const pool = buildEventPool({
-    zone: zone!,
-    depth,
-    profileFlags: state.profile.flags,
-    triggeredEventIds: [],
-  });
-  L(`  ${depth}m 事件池：${pool.length} 个`);
-  assert(pool.length >= 1, `深度 ${depth}m 在蓝洞群应至少 1 个事件`);
+  assert(poolAt(depth).length === 0, `深度 ${depth}m 非 POI 下潜 ⇒ 蓝洞群随机盲池为空（内容全 poiId 门控）`);
 }
+assert(poolAt(25, 'poi.anchor.blue_caves').includes('blue_caves.geode_vein'), '下潜 poi.anchor.blue_caves ⇒ geode_vein 进池');
+assert(poolAt(20, 'poi.anchor.flat_gallery').includes('blue_caves.gallery_crust_seam'), '下潜 poi.anchor.flat_gallery ⇒ gallery_crust_seam 进池');
+L('  POI 门控：geode_vein / gallery_crust_seam 各自 poiId 进池 · 非 POI 盲池空 ✓');
 const combat = getEncounter('combat.blind_eel_solo');
 assert(combat, '盲鳗 encounter 必须注册');
 const eelDef = getEnemyDef('enemy.blind_eel');

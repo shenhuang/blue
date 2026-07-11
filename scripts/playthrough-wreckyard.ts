@@ -1,13 +1,16 @@
-// 沉船墓园（wreck 风格 · 第 3 个 random zone）验证脚本：
+// 沉船墓园（wreck 风格 zone）验证脚本（2026-07-12 随机内容层拆除后 reduce·见正文注）：
 //   1. zone.wreck_graveyard 注册存在，canFreeAscend=true（与蓝洞群的封闭水域对照）
-//   2. mapgen 生成 6 层节点图，中间层可以出现 ascent_point（开阔水域）
-//   3. 事件池在 wreck 层有内容（含原生 wreck_graveyard.* + reef.json 里 wreck zoneTag 的复用事件）
-//   4. 沉船蛛蟹敌人 + solo / pair 两个 encounter 都已注册
-//   5. wreck_graveyard.engine_room_hum 的 investigate_with_knife 能触发 combat.wreck_spider_crabs_pair
-//   6. 蛛蟹战斗能跑通，掉落 crab_chitin
-//   7. 完整流程：take_logbook → ascend → handleReturnToPort → portEvent 链
-//      （waterlogged_logbook → wreck_graveyard.logbook_read），lore.wreck_graveyard.last_page 入账
+//   2. mapgen 生成 6 层节点图 + POI 专属事件门控（surviving 内容＝poiId 钉在 poi.dive.wreck.story 的
+//      wreck_graveyard.temperate_revisit·随机盲池已空）
+//   3. 沉船蛛蟹敌人 + solo / pair 两个 encounter 都已注册
+//   5. 蛛蟹 solo/pair 战斗能跑通，掉落 crab_chitin
+//   7. portEvent 链：waterlogged_logbook → wreck_graveyard.logbook_read，lore.wreck_graveyard.last_page 入账
 //   8. crab_chitin 走 Mira 收购入账 bankedGold
+//
+// 拆除说明（2026-07-12 随机内容层删除）：原「随机盲池组成」（Phase 2 native + reef.json 复用 wreck.*）、
+//   engine_room_hum 触发双战（Phase 4）、lost_diver 拾 logbook（Phase 7 头）、roam.wreck_north_collapse 相位隔离
+//   （Phase 10）所依赖的事件均已删——wreck_graveyard.json 现仅 3 事件（pocket_watch_log/logbook_read 港口事件 +
+//   temperate_revisit poiId 门控）；本脚本 reduce 到「仍成立」的：zone/mapgen + poiId 门控 + 蛛蟹战斗 + 港口事件 + Mira。
 //
 // 跑法： npx tsx scripts/playthrough-wreckyard.ts
 
@@ -23,7 +26,6 @@ import {
   handleReturnToPort,
 } from '../src/engine/port';
 import { eventDoneFlag, pickFromInventory } from '../src/engine/portEvents';
-import { runEventScenario } from '../src/engine/eventScenario';
 import { runCombatScenario } from '../src/engine/combatScenario';
 import { generateChart, poiLockReason } from '../src/engine/chart';
 import aldoData from '../src/data/npcs/aldo.json';
@@ -91,32 +93,27 @@ assert(
 );
 
 // ============================================
-// Phase 2: 事件池：wreck 层在每个深度段都有内容
+// Phase 2: POI 专属事件门控（随机盲池已空·surviving 内容 = temperate_revisit 钉在 poi.dive.wreck.story）
 // ============================================
-L('\n========== 沉船墓园事件池 ==========');
+// 随机内容层删除后（2026-07-12）：wreck_graveyard 随机盲池为空（pocket_watch_log/logbook_read 是港口事件·weight 0·
+// 不进下潜池）；唯一的下潜内容是 wreck_graveyard.temperate_revisit（poiId=poi.dive.wreck.story·主线 beat 潜点专属）。
+// 本 Phase 守「poiId 门控」：传对应 poiId ⇒ 进池；非 POI 下潜（无 poiId）⇒ 盲池空、专属事件不漏。
+L('\n========== 沉船墓园 POI 专属事件门控（随机盲池已空）==========');
 const flags = new Set(['flag.tutorial_complete']);
+const WRECK_STORY_POI = 'poi.dive.wreck.story';
+const TEMPERATE_EV = 'wreck_graveyard.temperate_revisit';
+assert(getEventById(TEMPERATE_EV)?.poiId === WRECK_STORY_POI, `${TEMPERATE_EV} 应 poiId 钉在 ${WRECK_STORY_POI}`);
 for (const depth of [20, 30, 40, 50]) {
-  const pool = buildEventPool({
-    zone: zone!,
-    depth,
-    profileFlags: flags,
-    triggeredEventIds: [],
-  });
-  L(`  ${depth}m 事件池：${pool.length} 个（含 ${pool.filter(e => e.id.startsWith('wreck_graveyard.')).length} 原生 + ${pool.filter(e => !e.id.startsWith('wreck_graveyard.')).length} 复用）`);
-  assert(pool.length >= 1, `深度 ${depth}m 应至少 1 个事件可抽`);
-  // 至少深度 30m 段能抽到原生 wreck_graveyard.* 事件
-  if (depth === 30) {
-    const native = pool.filter((e) => e.id.startsWith('wreck_graveyard.'));
-    assert(native.length >= 1, `30m 段应有 ≥ 1 原生 wreck_graveyard.* 事件`);
-  }
+  const blindPool = buildEventPool({ zone: zone!, depth, profileFlags: flags, triggeredEventIds: [] });
+  assert(
+    !blindPool.some((e) => e.id === TEMPERATE_EV),
+    `${depth}m 非 POI 下潜（无 poiId）⇒ POI 专属 ${TEMPERATE_EV} 不漏进盲池`,
+  );
 }
-// reef.json::wreck.* 应跨 zone 共享给沉船墓园
-const pool30 = buildEventPool({
-  zone: zone!, depth: 30, profileFlags: flags, triggeredEventIds: [],
-});
-const reefShared = pool30.filter((e) => e.id === 'wreck.fishing_boat' || e.id === 'wreck.compass');
-assert(reefShared.length >= 1, 'reef.json::wreck.* 应至少有一个能在沉船墓园抽到（跨 zone 复用）');
-L(`  reef.json 复用到沉船墓园的 wreck.* 事件：${reefShared.map(e => e.id).join(', ')}`);
+// 传对应 poiId ⇒ temperate_revisit 进池（在其 depthRange 内的深度）。
+const poiPool = buildEventPool({ zone: zone!, depth: 40, profileFlags: flags, triggeredEventIds: [], poiId: WRECK_STORY_POI });
+assert(poiPool.some((e) => e.id === TEMPERATE_EV), `下潜 ${WRECK_STORY_POI} ⇒ 专属事件 ${TEMPERATE_EV} 进池`);
+L(`  POI 门控：下潜 ${WRECK_STORY_POI} ⇒ ${TEMPERATE_EV} 进池 / 非 POI 盲池不漏 ✓`);
 
 // ============================================
 // Phase 3: 蛛蟹敌人 + encounter 注册
@@ -137,22 +134,7 @@ assert(pairEnc, 'pair encounter 必须注册');
 assert(pairEnc!.party.members.length === 2, 'pair encounter 应有 2 个 member');
 L(`  encounters: ${soloEnc!.id}(${soloEnc!.party.members.length}), ${pairEnc!.id}(${pairEnc!.party.members.length})`);
 
-// ============================================
-// Phase 4: engine_room_hum 触发蛛蟹双战
-// ============================================
-L('\n========== 引擎室共鸣 → 双蛛蟹战斗 ==========');
-const erResult = runEventScenario({
-  eventId: 'wreck_graveyard.engine_room_hum',
-  depth: 40,
-  seed: 7,
-  choices: ['investigate_with_knife'],
-});
-assert(erResult.errors.length === 0, `engine_room_hum 事件不应报错：${erResult.errors.join('|')}`);
-assert(
-  erResult.summary.combatTriggered === 'combat.wreck_spider_crabs_pair',
-  `应触发 pair 战斗，实际 ${erResult.summary.combatTriggered}`,
-);
-L(`  triggerCombatId = ${erResult.summary.combatTriggered}`);
+// （Phase 4「engine_room_hum → 双蛛蟹战斗」随该事件删除·2026-07-12 移除·pair 战斗仍由 Phase 6 直接跑 encounter 覆盖。）
 
 // ============================================
 // Phase 5: solo 战斗 playthrough（端到端：从 startCombat 一路打到 victory）
@@ -200,9 +182,11 @@ assert(pairResult.summary.enemiesAlive.length === 0, 'pair 应全部清场');
 L(`  outcome=${pairResult.summary.outcome} turns=${pairResult.summary.turnsElapsed} HP残=${pairResult.summary.finalHp} loot=${pairChitin!.qty}×chitin`);
 
 // ============================================
-// Phase 7: 端到端 —— 把 portEvent 链完整跑一遍（lost_diver → logbook → 回港 → cutscene）
+// Phase 7: 端到端 —— portEvent 链（waterlogged_logbook → 回港 → logbook_read）
 // ============================================
-L('\n========== 端到端：lost_diver → 上浮 → 回港 → portEvent ==========');
+// 随机内容层删除后 lost_diver（曾用来拾 waterlogged_logbook）已删：直接把 waterlogged_logbook（logbook_read 港口
+// 事件触发物）+ crab_chitin（战斗后带回·此处简化不实跑战斗）塞进 run.inventory，走上浮→回港→portEvent 链。
+L('\n========== 端到端：上浮 → 回港 → portEvent（logbook_read）==========');
 let state: GameState = createInitialGameState();
 state = {
   ...state,
@@ -211,29 +195,14 @@ state = {
     ...createNewRun({ zoneId: 'zone.wreck_graveyard' }),
     currentDepth: 30,
     visitedNodeIds: ['n0', 'n1'],
+    inventory: [
+      { itemId: 'item.waterlogged_logbook', qty: 1 },
+      { itemId: 'item.crab_chitin', qty: 1 },
+    ],
   },
 };
-
-// 跑 lost_diver 的 take_logbook
-const logEvent = getEventById('wreck_graveyard.lost_diver')!;
-const takeLog = logEvent.options.find((o) => o.id === 'take_logbook')!;
-{
-  const result = resolveOption(state, takeLog);
-  state = result.state;
-  L(`  lost_diver:take_logbook → ${result.narrative[0].slice(0, 30)}…`);
-}
 const haveLog = state.run!.inventory.find((i) => i.itemId === 'item.waterlogged_logbook');
-assert(haveLog && haveLog.qty === 1, '应拾取 1 × waterlogged_logbook');
-assert(state.profile.loreEntries.has('lore.wreck_graveyard.lost_diver'), '应解锁 lore.wreck_graveyard.lost_diver');
-
-// 顺便往 inventory 塞 1 个蛛蟹甲壳，模拟战斗后带回（不实际跑战斗简化）
-state = {
-  ...state,
-  run: {
-    ...state.run!,
-    inventory: [...state.run!.inventory, { itemId: 'item.crab_chitin', qty: 1 }],
-  },
-};
+assert(haveLog && haveLog.qty === 1, 'run.inventory 应含 1 × waterlogged_logbook（logbook_read 触发物）');
 
 // 上浮（开阔水域 → 任意位置可 normal）
 assert(!isAscentBlocked(state.run!), '开阔水域应可自由上浮');
@@ -355,7 +324,7 @@ const postProfile = {
 };
 const postChart = generateChart({ profile: postProfile });
 const wreckPoi = postChart.pois.find(
-  (p) => p.zoneId === 'zone.wreck_graveyard' && p.persistent && p.columnId === undefined,
+  (p) => p.zoneId === 'zone.wreck_graveyard' && p.persistent && !p.story,
 );
 assert(wreckPoi, '建残骸前哨后海图应有沉船墓园 anchor POI（残骸区揭示）');
 assert(
@@ -365,55 +334,8 @@ assert(
 L(`  海图：建残骸前哨后出现「${wreckPoi!.name}」→ zone.wreck_graveyard，无升级门 ✓`);
 L(`  发现门控 = flag.tutorial_complete + 残骸区揭示（残骸前哨 owner）`);
 
-// ============================================
-// Phase 10: roaming 专属内容相位隔离（roaming POI 内容·2026-06-25）
-// ============================================
-// 镜像 playthrough-whalefall §6 的 anchor 相位隔离，但守 roaming 的「按 templateId 匹配」这条新机制：
-// roaming 实例 id（poi.roam.<runs>.<tpl>）每次出现都变 → 静态事件 poiId 配不上；故事件 poiId 钉**模板身份**
-// （roam.wreck_north_collapse），dive-start 透传 poiTemplateId 给 buildEventPool 匹配。这里直接喂 buildEventPool 证：
-//   ① 传稳定 poiTemplateId ⇒ roaming 专属事件进池；
-//   ② 只传**实例 id 当 poiId**（模拟 run.poiId·每次变）而不给 poiTemplateId ⇒ 配不上、不进池（＝机制缺口的本体）；
-//   ③ 非 POI 下潜（都不传）⇒ roaming 专属事件不漏进普通池（钉相生效·anchor 池零影响的同款保证）。
-L('\n========== roaming 专属内容相位隔离（templateId 匹配）==========');
-const ROAM_TPL = 'roam.wreck_north_collapse';
-const ROAM_EV = 'wreck_graveyard.collapse_drift';
-const ROAM_INSTANCE = 'poi.roam.7.roam.wreck_north_collapse'; // 实例 id 形状（含 runsCompleted·每次变）
-const roamEv = getEventById(ROAM_EV);
-assert(roamEv && roamEv.poiId === ROAM_TPL, `${ROAM_EV} 存在且 poiId 钉模板身份 ${ROAM_TPL}`);
-// 该事件 depthRange=[24,60]；取 40 居中（塌口 depthOffset +8 后的典型节点深度）。
-const roamDepth = 40;
-const poolIdsAt = (poiId?: string, poiTemplateId?: string) =>
-  new Set(
-    buildEventPool({
-      zone: zone!,
-      depth: roamDepth,
-      profileFlags: flags,
-      triggeredEventIds: [],
-      poiId,
-      poiTemplateId,
-    }).map((e) => e.id),
-  );
-// ① 稳定 templateId 透传 ⇒ 进池
-assert(
-  poolIdsAt(ROAM_INSTANCE, ROAM_TPL).has(ROAM_EV),
-  `① 传 poiTemplateId=${ROAM_TPL} ⇒ roaming 专属事件 ${ROAM_EV} 进池`,
-);
-// ② 只有变动的实例 id 当 poiId、不给 templateId ⇒ 配不上（这正是机制缺口：实例 id 每次变）
-assert(
-  !poolIdsAt(ROAM_INSTANCE, undefined).has(ROAM_EV),
-  `② 只传变动实例 id 当 poiId（无 poiTemplateId）⇒ ${ROAM_EV} 配不上、不进池`,
-);
-// ③ 非 POI 下潜（poiId / poiTemplateId 都缺省）⇒ roaming 专属事件不漏进普通池
-assert(
-  !poolIdsAt(undefined, undefined).has(ROAM_EV),
-  `③ 非 POI 下潜 ⇒ roaming 专属事件 ${ROAM_EV} 不漏进普通池（钉相生效）`,
-);
-// ④ anchor 池零影响：给 anchor 的精确 poiId（无 template）仍按老路匹配 anchor 专属事件、不串入 roaming 事件
-assert(
-  !poolIdsAt('poi.anchor.wreck_graveyard', undefined).has(ROAM_EV),
-  `④ 下潜 anchor（poiId 精确匹配·无 template）⇒ 不串入 roaming 事件 ${ROAM_EV}`,
-);
-L(`  roaming 相位隔离：templateId 命中进池 / 实例 id 配不上 / 非 POI 不漏 / anchor 不串 ✓`);
+// （Phase 10「roaming 专属内容相位隔离」随 roaming 事件 wreck_graveyard.collapse_drift 删除·2026-07-12 移除；
+//  poiId 门控机制仍由上方 Phase 2 用 surviving 的 temperate_revisit 覆盖。）
 
 // ============================================
 // 收尾

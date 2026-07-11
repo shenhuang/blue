@@ -174,7 +174,7 @@ export function generatePersistentCaveMap(opts: GenOpts, params: CaveGenParams):
       } else {
         const pool = buildEventPool({
           zone, depth: depthI, profileFlags, triggeredEventIds: triggeredFakeIds,
-          tagsOverride: opts.bandTags, poiId: opts.poiId, poiTemplateId: opts.poiTemplateId,
+          poiId: opts.poiId, poiTemplateId: opts.poiTemplateId,
         });
         if (pool.length === 0) {
           kind = 'rest';

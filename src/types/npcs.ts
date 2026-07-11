@@ -7,7 +7,7 @@ export type NpcRole =
   | 'priest' // 教堂线（后期）
   | 'guildmaster' // 公会
   | 'librarian' // 图书室（后期）
-  | 'trader'; // 特殊商人 Sela（藏宝贸易与信任系统 SPEC §6·探险家镜像·token+信任门控货架）
+  | 'trader'; // 交易者（原特殊商人角色·该 NPC 已随藏宝线移除·角色保留供将来用）
 
 export interface NpcDef {
   id: string;

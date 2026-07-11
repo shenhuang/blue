@@ -4,9 +4,8 @@
 // 背景：dev 可视化面板（src/ui/dev/*）若手抄清单 / 绕过引擎单一源，近期重构后会静默展示错乱——
 //       近期审计实锤三处（事件 zone 过滤手抄漏 17 个 tag〔已改数据派生·typecheck 守〕、海图漏深度柱 POI、
 //       战场压力把已死敌人算进去、tone 第三档无样式）。typecheck 抓字段级重命名，但抓不到「运行期字符串/
-//       语义/绕过派生」这层。本门补四条**纯静态**断言（沙箱也跑·与 check-* 同类·廉价护栏）：
-//   ① ChartViewDevPanel 必须引用 buildColumnPois —— 守「海图调试器展示深度柱 POI」
-//      （之前只读 chart_pois.json·漏掉 generateChart 注入的柱 POI）。
+//       语义/绕过派生」这层。本门补三条**纯静态**断言（沙箱也跑·与 check-* 同类·廉价护栏·
+//       原 ① ChartViewDevPanel 引用 buildColumnPois 随深度柱系统删除·2026-07-12 移除）：
 //   ② CombatDevPanel 战场压力按 enemiesAlive 聚合（非 enemiesFinal）——
 //      守与引擎 applyEnvironmentalPressure「只累计 hp>0 的 boss」一致、别虚报。
 //   ③ dev-panel.css 为 Tone 每个值（src/types/events.ts 单一源）都备 .dev-step-tone-<t> ——
@@ -29,14 +28,8 @@ const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 const errors = [];
 const fail = (m) => errors.push(m);
 
-// ① 海图调试器接入深度柱 POI -------------------------------------------------------------------
-const chartDev = read('src/ui/dev/ChartViewDevPanel.tsx');
-if (!/\bbuildColumnPois\s*\(/.test(chartDev)) {
-  fail(
-    'ChartViewDevPanel.tsx 未调用 buildColumnPois() —— 深度柱 POI 会从海图调试器漏掉（回退「只读 chart_pois.json」漂移·#206）。\n' +
-      '      修：rows 构建里追加 `for (const poi of buildColumnPois(profile)) { ...push column row... }`。',
-  );
-}
+// （原 ① 海图调试器接入深度柱 POI 断言随深度柱系统删除·2026-07-12 移除。ChartViewDevPanel 的
+//   POI 渲染仍由 smoke-chart-editor 守·本门盯下面三条纯静态漂移。）
 
 // ② 战斗面板战场压力按存活敌人聚合 -------------------------------------------------------------
 const combatDev = read('src/ui/dev/CombatDevPanel.tsx');
@@ -104,5 +97,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  '✓ check-dev-panels: 四条 dev 面板门通过（柱 POI 接入 / 战场压力存活聚合 / tone 档位样式齐 / 游戏入口 App+main 不挂 dev 面板）',
+  '✓ check-dev-panels: 三条 dev 面板门通过（战场压力存活聚合 / tone 档位样式齐 / 游戏入口 App+main 不挂 dev 面板）',
 );

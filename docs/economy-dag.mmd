@@ -4,92 +4,32 @@ flowchart LR
   classDef bad fill:#fdd,stroke:#c00,stroke-width:2px,color:#900;
   classDef warn fill:#fff3d6,stroke:#c90,stroke-width:1px,color:#850;
   classDef mat fill:#eef,stroke:#88a,color:#225;
-  subgraph midwater["midwater"]
-    item_scrap_alloy(["scrap_alloy T1"]):::mat
-    depth_columns_col_midwater_t1["midwater t1"]
-    depth_columns_col_midwater_t2["midwater t2"]
-    depth_columns_col_midwater_t3["midwater t3"]
-    depth_columns_col_midwater_t4["midwater t4"]
-    depth_columns_col_midwater_t5["midwater t5"]
-    depth_columns_col_midwater_t6["midwater t6"]
-  end
   subgraph reef["reef"]
     item_barracuda_jaw(["barracuda_jaw T2"]):::mat
-    item_canned_food(["canned_food T1"]):::mat
-    item_oyster_shell(["oyster_shell T1"]):::mat
     item_shark_tooth(["shark_tooth T1"]):::mat
-    depth_columns_col_home_t1["reef t1"]
-    depth_columns_col_home_t2["reef t2"]
-  end
-  subgraph whalefall["whalefall"]
-    item_whale_bone(["whale_bone T3"]):::mat
-    item_whalefall_polychaete(["whalefall_polychaete T1"]):::mat
   end
   subgraph cave["cave"]
     item_bluecave_geode(["bluecave_geode T3"]):::warn
-    item_brass_fitting(["brass_fitting T2"]):::mat
     item_cave_octopus_beak(["cave_octopus_beak T3"]):::mat
     item_coral_shard(["coral_shard T1"]):::mat
     item_crab_chitin(["crab_chitin T2"]):::mat
     item_eel_skin(["eel_skin T3"]):::mat
-    item_flint_nodule(["flint_nodule T1"]):::mat
     item_gallery_crust(["gallery_crust T2"]):::mat
     item_grouper_maw(["grouper_maw T2"]):::mat
+  end
+  subgraph __["其他"]
+    item_brass_fitting(["brass_fitting T2"]):::mat
+    item_canned_food(["canned_food T1"]):::mat
+    item_collapse_fitting(["collapse_fitting T1"]):::mat
+    item_flint_nodule(["flint_nodule T1"]):::mat
     item_iron_concretion(["iron_concretion T2"]):::mat
     item_lobster(["lobster T1"]):::mat
     item_manganese_nodule(["manganese_nodule T2"]):::mat
     item_old_fishing_net(["old_fishing_net T1"]):::mat
+    item_oyster_shell(["oyster_shell T1"]):::mat
     item_quartz_crystal(["quartz_crystal T1"]):::mat
-    item_vent_sulfide(["vent_sulfide T3"]):::mat
+    item_scrap_alloy(["scrap_alloy T1"]):::mat
   end
   subgraph wreck["wreck"]
-    item_collapse_fitting(["collapse_fitting T1"]):::mat
     item_lantern_gland(["lantern_gland T4"]):::mat
-    item_wreck_bronze(["wreck_bronze T3"]):::warn
-    depth_columns_col_wreck_t1["wreck t1"]
-    depth_columns_col_wreck_t2["wreck t2"]
-    depth_columns_col_wreck_t3["wreck t3"]
   end
-  subgraph vent["vent"]
-    item_station_module(["station_module T5"]):::mat
-    depth_columns_col_vent_t1["vent t1"]
-    depth_columns_col_vent_t2["vent t2"]
-    depth_columns_col_vent_t3["vent t3"]
-    depth_columns_col_vent_t4["vent t4"]
-  end
-  subgraph trench["trench"]
-    item_abyssal_crust(["abyssal_crust T4"]):::mat
-    depth_columns_col_trench_t1["trench t1"]
-    depth_columns_col_trench_t2["trench t2"]
-    depth_columns_col_trench_t3["trench t3"]
-    depth_columns_col_trench_t4["trench t4"]
-  end
-  depth_columns_col_home_t1 --> item_brass_fitting
-  depth_columns_col_home_t2 --> item_brass_fitting
-  depth_columns_col_home_t2 --> item_crab_chitin
-  depth_columns_col_wreck_t1 --> item_scrap_alloy
-  depth_columns_col_wreck_t2 --> item_brass_fitting
-  depth_columns_col_wreck_t2 --> item_crab_chitin
-  depth_columns_col_wreck_t3 --> item_crab_chitin
-  depth_columns_col_wreck_t3 --> item_wreck_bronze
-  depth_columns_col_midwater_t1 --> item_scrap_alloy
-  depth_columns_col_midwater_t2 --> item_brass_fitting
-  depth_columns_col_midwater_t3 --> item_crab_chitin
-  depth_columns_col_midwater_t4 --> item_vent_sulfide
-  depth_columns_col_midwater_t5 --> item_manganese_nodule
-  depth_columns_col_midwater_t5 --> item_lantern_gland
-  depth_columns_col_midwater_t6 --> item_manganese_nodule
-  depth_columns_col_midwater_t6 --> item_vent_sulfide
-  depth_columns_col_vent_t1 --> item_brass_fitting
-  depth_columns_col_vent_t2 --> item_vent_sulfide
-  depth_columns_col_vent_t3 --> item_lantern_gland
-  depth_columns_col_vent_t3 --> item_vent_sulfide
-  depth_columns_col_vent_t4 --> item_vent_sulfide
-  depth_columns_col_vent_t4 --> item_iron_concretion
-  depth_columns_col_trench_t1 --> item_brass_fitting
-  depth_columns_col_trench_t2 --> item_brass_fitting
-  depth_columns_col_trench_t3 --> item_wreck_bronze
-  depth_columns_col_trench_t3 --> item_vent_sulfide
-  depth_columns_col_trench_t4 --> item_station_module
-  depth_columns_col_trench_t4 --> item_vent_sulfide
-  depth_columns_col_trench_t4 --> item_lantern_gland

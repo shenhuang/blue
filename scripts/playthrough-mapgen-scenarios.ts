@@ -376,17 +376,18 @@ function main() {
     const map2 = generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(seed), maxRoomFeatures: 3 });
     if (featFp(map) !== featFp(map2)) featProblems.push(`seed=${seed}: feature 非确定性`);
   }
-  if (featProblems.length === 0 && roomsTotal >= 5) {
-    console.log(`  ✓ 60 seed 共 ${roomsTotal} 个大房间 / ${featuresTotal} feature / 最大 ${maxFeatSeen}·全 2–3·同图不重复·确定性`);
-  } else {
-    if (roomsTotal < 5) {
-      console.log(`  ✗ 大房间太少（${roomsTotal}），机制疑似没触发`);
-      fails.push(`多事件房间机制 60 seed 只生成 ${roomsTotal} 个大房间`);
-    }
+  if (featProblems.length > 0) {
     for (const p of featProblems.slice(0, 10)) {
       console.log(`      ${p}`);
       fails.push(p);
     }
+  } else if (roomsTotal === 0) {
+    // 多事件房间机制 dormant（随机内容层拆除·2026-07-12）：blue_caves 随机池已删空（只留 2 条 poiId 事件），
+    // 无内容填「大房间」⇒ 机制代码留但无对象可查。结构不变量（features 只挂 event / 2–3 个 / 不重复 / 确定性）
+    // 若有房间成形仍强制（featProblems），0 房间＝合法 dormant 态。多事件房间待随洞内容重做（见 TODO）。
+    console.log(`  ⊘ 大房间机制 dormant：blue_caves 随机池已空·无内容填多事件房（结构不变量无对象·机制留·内容待重做 TODO）。`);
+  } else {
+    console.log(`  ✓ 60 seed 共 ${roomsTotal} 个大房间 / ${featuresTotal} feature / 最大 ${maxFeatSeen}·全 2–3·同图不重复·确定性`);
   }
 
   // —— 房间 feature 出现率升级（声呐与房间 §6/§8.3 续·roomFeatureChanceBonus）不变量 ——
@@ -408,14 +409,16 @@ function main() {
     };
     // (a) bonus=0（显式）＝缺省（不传）＝逐字节（阈值不变·rng 流不变·向后兼容护栏）
     if (fpAll(0) !== fpAll(undefined)) fails.push('房间升级：bonus=0 与缺省不一致（应逐字节相同）');
-    // (b) bonus>0 抬大房间率
+    // (b) bonus>0 抬大房间率——随机内容层拆除后 blue_caves 池空·无大房间可抬（0→0·dormant·内容待重做 TODO）；
+    //     池空态跳过本断言（有内容时仍强制 up>base）。
     const base = countRooms(0);
     const up = countRooms(0.3);
-    if (!(up > base)) fails.push(`房间升级：bonus 未抬大房间率（${base}→${up}）`);
+    const dormant = base === 0 && up === 0;
+    if (!dormant && !(up > base)) fails.push(`房间升级：bonus 未抬大房间率（${base}→${up}）`);
     // (c) 确定性（同 seed + bonus 两次一致）
     const one = (b: number) => featFp(generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(7), maxRoomFeatures: 3, roomFeatureChanceBonus: b }));
     if (one(0.3) !== one(0.3)) fails.push('房间升级：bonus>0 非确定性');
-    console.log(`  ✓ bonus=0 逐字节 · bonus0.3 抬大房间率(${base}→${up}) · 确定性`);
+    console.log(`  ${dormant ? '⊘' : '✓'} bonus=0 逐字节 · bonus0.3 抬大房间率(${base}→${up})${dormant ? '·dormant 池空·内容待重做' : ''} · 确定性`);
   }
 
   // —— 不可信声呐失真（声呐与房间 S2）不变量：**整节随感知重做删除**（声呐诚实·SPEC §2.2/§3）。 ——

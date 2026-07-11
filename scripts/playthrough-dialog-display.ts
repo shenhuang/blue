@@ -129,9 +129,10 @@ function profileWithSeen(ids: string[]): PlayerProfile {
   const visible = miraRoot.choices.filter((c) => !c.visibleIf || evalCondition(state, c.visibleIf));
   const visibleIds = visible.map((c) => c.id).sort();
   L(`§6 mira.root 在 reef 解锁·灯/图未买 状态下 visible=${visibleIds.join(',')}`);
+  // buy_chart（Mira 卖通用藏宝图）随藏宝贸易 vertical 于 2026-07-12 删除 → 候选由 6 降为 5。
   assert(
-    visibleIds.join(',') === 'buy_chart,cant_see,chat,deeper_haul,leave,open_shop',
-    `§6 该状态下 mira.root 候选应为 6 条固定集合，现 ${visibleIds.join(',')}（mira.json 结构是否变了？）`
+    visibleIds.join(',') === 'cant_see,chat,deeper_haul,leave,open_shop',
+    `§6 该状态下 mira.root 候选应为 5 条固定集合，现 ${visibleIds.join(',')}（mira.json 结构是否变了？）`
   );
   const leaveChoice = visible.find((c) => c.id === 'leave');
   assert(!leaveChoice?.filler, '§6 leave 不应标 filler（没有常驻关闭键，标了会关不掉对话）');
@@ -139,7 +140,7 @@ function profileWithSeen(ids: string[]): PlayerProfile {
   assert(!!openShopChoice?.filler, '§6 open_shop 仍应标 filler（跟 NPC 卡片"直接找她卖东西"重复）');
   const { shown, needsRotate } = selectDisplayChoices(state.profile, miraRoot, visible, false);
   const shownIds = shown.map((c) => c.id);
-  assert(needsRotate, '§6 候选 6 条 > 上限，应出现"换话题"');
+  assert(needsRotate, '§6 候选 5 条 > 上限(3)，应出现"换话题"');
   assert(!shownIds.includes('open_shop'), `§6 open_shop 应被整档挤出，现 shown=${shownIds.join(',')}`);
   assert(shown.length === DIALOG_DISPLAY_CAP, `§6 应只显示 ${DIALOG_DISPLAY_CAP} 条，现 ${shown.length}`);
 }
@@ -156,7 +157,7 @@ function profileWithSeen(ids: string[]): PlayerProfile {
       // 把其余"新"选项都标成已聊，只留 leave 是候选里唯一没聊过的非 filler 选项——
       // 逼它必须占到显示位，证明它没被结构性排除（跟 open_shop 那种 filler 不同）。
       seenChoices: new Set(
-        ['cant_see', 'deeper_haul', 'buy_chart', 'chat'].map((id) => `${miraRoot.id}::${id}`)
+        ['cant_see', 'deeper_haul', 'chat'].map((id) => `${miraRoot.id}::${id}`)
       ),
     },
   };

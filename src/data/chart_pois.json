@@ -1,5 +1,5 @@
 {
-  "_doc": "港口海图 POI 数据。anchors = 持久点（永远在；通常每 zone 一个，但同 zone 可挂多个出潜口——如横岩廊=蓝洞群的平廊侧口·#114 续）；roamingTemplates = 机会点模板，generateChart 按 runsCompleted 种子抽取若干并生成运行时 id。两级门控：requiresFlags=发现（不满足则不出现），requiresUpgrade=抵达能力（不满足则灰显可见但不能出海）。modifier.depthOffset/depthRange/layerCount/depthCurve 已实装（后三者=GenOpts 薄投影·平廊三件套：窄 span+长图+剖面 k），current/visibility 暂为叙事+接口。**#131 探深深度柱重构**：旧 poi.deep.*（深脊柱 + 章节蛙跳深入潜点）已删——深入潜点改由 depth_columns.json 各柱**派生**（engine/columns.ts::buildColumnPois·id=poi.dive.<短名>.t<tier>·摆宿主灯塔揭示圈内·可见性走档位制·不在本文件手写）。本文件只留 zone 锚点（含 St1 一章 story 锚点）+ roaming 机会点。**owner 归属 + 相对坐标（owner-anchored 重构）**：每个 anchor/roamingTemplate 带 owner（所属灯塔 id）；mapX/mapY 是**相对 owner 声明坐标的偏移**（generateChart 用 engine/lighthouses.ts::ownerAnchorPos resolve 成绝对坐标·声明坐标静态可查→剧情点 beacon 建成前也能定位）。点亮判定＝owner 灯塔在 profile.lighthouses 里即出现（不走几何·见 chart.ts isLit）。story 锚点也带 owner（坐标基准 + 区域标签），但恒显恒可达、不被 owner 门控（避免「建 beacon 要先潜、潜要先有 beacon」死锁）。owner-less + 绝对坐标的特例须显式 absolute:true（守门：authored POI 无 owner 必须 absolute·防自动内容生成漏进这条 lane）。新增节点：归某座灯塔就填 owner + 相对偏移；要无主绝对点就 absolute:true + 绝对 mapX/mapY。owner 声明坐标：home 见 engine/state.ts(HOME_LIGHTHOUSE_POS)，前哨见 lighthouse_upgrades.json result。",
+  "_doc": "港口海图 POI 数据。anchors = 持久点（永远在；通常每 zone 一个，但同 zone 可挂多个出潜口——如横岩廊=蓝洞群的平廊侧口·#114 续）；roamingTemplates = 机会点模板，generateChart 按 runsCompleted 种子抽取若干并生成运行时 id。两级门控：requiresFlags=发现（不满足则不出现），requiresUpgrade=抵达能力（不满足则灰显可见但不能出海）。modifier.depthOffset/depthRange/layerCount/depthCurve 已实装（后三者=GenOpts 薄投影·平廊三件套：窄 span+长图+剖面 k），current/visibility 暂为叙事+接口。**随机内容层拆除（2026-07-12）**：深度柱/band 系统（depth_columns.json/columns.ts）整套删除——原派生的深入潜点 poi.dive.*.t<tier> 一并删；4 条主线 story beat re-home 成本文件的**静态 anchor**（id=poi.dive.{home,wreck,midwater,vent}.story·带 story 块入潜强制开场·reveal＝mentor_logbook.marksPois·深度门经济待重做 TODO）。本文件现＝zone 锚点（含 4 主线 story 锚点 + 持久洞 caveEntry）+ roaming 机会点。**owner 归属 + 相对坐标（owner-anchored 重构）**：每个 anchor/roamingTemplate 带 owner（所属灯塔 id）；mapX/mapY 是**相对 owner 声明坐标的偏移**（generateChart 用 engine/lighthouses.ts::ownerAnchorPos resolve 成绝对坐标·声明坐标静态可查→剧情点 beacon 建成前也能定位）。点亮判定＝owner 灯塔在 profile.lighthouses 里即出现（不走几何·见 chart.ts isLit）。story 锚点也带 owner（坐标基准 + 区域标签），但恒显恒可达、不被 owner 门控（避免「建 beacon 要先潜、潜要先有 beacon」死锁）。owner-less + 绝对坐标的特例须显式 absolute:true（守门：authored POI 无 owner 必须 absolute·防自动内容生成漏进这条 lane）。新增节点：归某座灯塔就填 owner + 相对偏移；要无主绝对点就 absolute:true + 绝对 mapX/mapY。owner 声明坐标：home 见 engine/state.ts(HOME_LIGHTHOUSE_POS)，前哨见 lighthouse_upgrades.json result。",
   "ch1": {
     "anchors": [
       {
@@ -17,50 +17,64 @@
         "modifier": { "depthRange": [120, 160] }
       },
       {
-        "id": "poi.anchor.corin_cache",
-        "zoneId": "zone.open_midwater",
-        "name": "Corin 的坐标",
-        "blurb": "图上炭笔圈死的一点。塌了半边的岩架，缝里像是塞着什么——有人来过，把东西留下，再没回来取。",
-        "distance": 3,
-        "owner": "lighthouse.ch1_midwater_outpost",
-        "mapX": 0.13,
-        "mapY": 0.09,
-        "persistent": true,
-        "requiresFlags": ["flag.tutorial_complete", "story.ch1.corin_map"],
-        "openEventId": "corin.cache",
-        "openEventFlag": "story.ch1.corin_found",
-        "modifier": { "depthRange": [65, 80] }
-      },
-      {
-        "id": "poi.anchor.mira_salvage",
-        "zoneId": "zone.open_midwater",
-        "name": "Mira 标的那条船",
-        "blurb": "Mira 在图上敲了记号的一处——塌了半边的沉船，侧舱里卡着个铅封的匣子。她要你把它拽出来。",
-        "distance": 3,
-        "owner": "lighthouse.ch1_midwater_outpost",
-        "mapX": -0.12,
-        "mapY": 0.13,
-        "persistent": true,
-        "requiresFlags": ["flag.tutorial_complete", "story.ch1.mira_salvage_offered"],
-        "openEventId": "mira.salvage",
-        "openEventFlag": "story.ch1.mira_salvage_done",
-        "modifier": { "depthRange": [65, 80] }
-      },
-      {
-        "_doc": "Mira 便宜通用图（藏宝贸易与信任系统 SPEC §12.4·来源分层低层）揭示的固定浅礁打捞点：买『打捞旧图』(item.treasure_map.salvage_generic) → story.setsFlag flag.salvage_chart_bought（sticky·满足本 requiresFlags）+ marksPois 揭示本点。owner lighthouse.home（恒在）+ 浅（30-45·对照 crew 好图更深）。openEventId salvage.generic_cache 一次性开箱（openEventFlag flag.salvage_generic_opened）给 modest 常见打捞料（gold 源）。",
-        "id": "poi.anchor.salvage_generic",
+        "_doc": "主线 beat 潜点（re-home·2026-07-12）：原由 depth_columns.json storyTier 派生（columnStory）·深度柱系统删除后落成 chart_pois 静态 anchor。reveal 单一来源＝导师日志 mentor_logbook.marksPois 标记本 id（documentKnowsPoi→poiRevealState 揭示·没抄坐标 hidden）；深度门经济（原 host-built/probe 解锁）已删·待重做（TODO）。story.beatFlag 未置位时 dive-start applyStoryOpen 强制其 eventId 开场。坐标＝owner 相对偏移（保留原绝对位）。",
+        "id": "poi.dive.home.story",
         "zoneId": "zone.old_lighthouse_reef",
-        "name": "旧图上的记号",
-        "blurb": "打捞旧图上晕开的那个墨点，落在近岸浅礁一带。多半是空的——但也可能不是。",
+        "name": "漆号珊瑚丛",
+        "blurb": "日志第一条坐标。礁盘背流的一侧——导师队标记样地的漆号，褪了十年，应该还认得出来。",
         "distance": 1,
         "owner": "lighthouse.home",
-        "mapX": 0.11,
-        "mapY": -0.14,
+        "mapX": 0.05,
+        "mapY": -0.13,
         "persistent": true,
-        "requiresFlags": ["flag.tutorial_complete", "flag.salvage_chart_bought"],
-        "openEventId": "salvage.generic_cache",
-        "openEventFlag": "flag.salvage_generic_opened",
-        "modifier": { "depthRange": [30, 45] }
+        "modifier": { "depthRange": [10, 30] },
+        "story": { "eventId": "ch1.anchor_reef", "beatFlag": "story.ch1.anchor.reef" }
+      },
+      {
+        "id": "poi.dive.wreck.story",
+        "zoneId": "zone.wreck_graveyard",
+        "name": "温带商船残骸",
+        "blurb": "日志第二条坐标。一艘侧躺在大陆架上的温带商船——导师队进去过，日志在那里断了一页。",
+        "distance": 1,
+        "owner": "lighthouse.ch1_wreck_outpost",
+        "mapX": 0.04,
+        "mapY": 0.03,
+        "persistent": true,
+        "modifier": { "depthRange": [18, 50] },
+        "story": { "eventId": "ch1.anchor_wreck", "beatFlag": "story.ch1.anchor.wreck" }
+      },
+      {
+        "id": "poi.dive.midwater.story",
+        "zoneId": "zone.open_midwater",
+        "name": "远洋中层",
+        "blurb": "日志第三条坐标落在没有底的地方。中层水，上蓝下黑，没有参照物。日志说他们在这里追过一种「会折光的薄膜」。",
+        "distance": 1,
+        "owner": "lighthouse.ch1_midwater_outpost",
+        "mapX": 0.0,
+        "mapY": 0.0,
+        "persistent": true,
+        "modifier": { "depthRange": [40, 80] },
+        "story": { "eventId": "ch1.anchor_midwater", "beatFlag": "story.ch1.anchor.midwater" }
+      },
+      {
+        "id": "poi.dive.vent.story",
+        "zoneId": "zone.vent_trench",
+        "name": "海沟热液场",
+        "blurb": "日志最后一条坐标。海沟底的热液口，黑烟成柱。剩下的页都粘着——能读的最后一行写：往烟柱后面看。",
+        "distance": 1,
+        "owner": "lighthouse.ch1_vent_outpost",
+        "mapX": 0.0,
+        "mapY": 0.0,
+        "persistent": true,
+        "modifier": { "depthRange": [80, 120], "current": "mild" },
+        "story": {
+          "eventId": "ch1.anchor_vent",
+          "beatFlag": "story.ch1.anchor.vent",
+          "chainTail": true,
+          "revisitEventId": "ch1.ending_blank",
+          "revisitRequiresFlag": "story.ch1.charm_found",
+          "revisitDoneFlag": "story.ch1.ending.blank"
+        }
       },
       {
         "id": "poi.anchor.east_reef",
@@ -162,89 +176,6 @@
         "requiresFlags": [
           "flag.tutorial_complete"
         ]
-      },
-      {
-        "id": "poi.anchor.whale_search",
-        "zoneId": "zone.open_midwater",
-        "name": "它沉下去的地方",
-        "blurb": "三次目击之后，你大概知道那头巨兽最后去了哪儿——中层往下的某处，你记下了那条线。值得下去找一趟。",
-        "distance": 2,
-        "owner": "lighthouse.ch1_midwater_outpost",
-        "mapX": 0.024,
-        "mapY": -0.15,
-        "persistent": true,
-        "requiresFlags": [
-          "flag.tutorial_complete",
-          "story.ch1.whale_search_ready"
-        ],
-        "openEventId": "whalefall.search",
-        "openEventFlag": "story.ch1.whalefall_found"
-      },
-      {
-        "id": "poi.anchor.whalefall_scavengers",
-        "zoneId": "zone.whalefall",
-        "name": "鲸落·先到的",
-        "blurb": "尸体软的部分还在，先到的那批正干得起劲——盲鳗、睡鲨、成团的端足类。在这儿，光不是警告。",
-        "distance": 2,
-        "absolute": true,
-        "mapX": 0.56,
-        "mapY": 0.255,
-        "persistent": true,
-        "requiresFlags": [
-          "flag.tutorial_complete",
-          "story.ch1.whalefall_found"
-        ],
-        "modifier": {
-          "depthRange": [
-            80,
-            100
-          ],
-          "current": "mild"
-        }
-      },
-      {
-        "id": "poi.anchor.whalefall_enrichment",
-        "zoneId": "zone.whalefall",
-        "name": "鲸落·富了的泥",
-        "blurb": "软肉吃得差不多了。尸体周围一圈被养肥的沉积，多毛类把泥面织成会动的毯，谁都想来落户。",
-        "distance": 2,
-        "absolute": true,
-        "mapX": 0.618,
-        "mapY": 0.258,
-        "persistent": true,
-        "requiresFlags": [
-          "flag.tutorial_complete",
-          "story.ch1.whalefall_found"
-        ],
-        "modifier": {
-          "depthRange": [
-            85,
-            105
-          ],
-          "gate": { "sense": "lamp", "mode": "locked" }
-        }
-      },
-      {
-        "id": "poi.anchor.whalefall_bones",
-        "zoneId": "zone.whalefall",
-        "name": "鲸落·剩下的骨头",
-        "blurb": "肉早没了，剩一架骨头。骨缝里冒出吃骨头的红须，白菌毯靠化学发亮——和热液口一个把戏：生命不一定要光。",
-        "distance": 2,
-        "absolute": true,
-        "mapX": 0.595,
-        "mapY": 0.205,
-        "persistent": true,
-        "requiresFlags": [
-          "flag.tutorial_complete",
-          "story.ch1.whalefall_found"
-        ],
-        "modifier": {
-          "depthRange": [
-            95,
-            110
-          ],
-          "gate": { "sense": "lamp", "mode": "locked" }
-        }
       },
       {
         "id": "poi.anchor.reef_pocket",
@@ -509,8 +440,7 @@
         "persistent": true,
         "requiresFlags": [
           "flag.tutorial_complete",
-          "story.ch1.anchor.midwater",
-          "intel.mira.sela"
+          "story.ch1.anchor.midwater"
         ],
         "modifier": {
           "gate": { "sense": "lamp", "mode": "locked" }
@@ -528,8 +458,7 @@
         "persistent": true,
         "requiresFlags": [
           "flag.tutorial_complete",
-          "story.ch1.anchor.midwater",
-          "intel.mira.sela"
+          "story.ch1.anchor.midwater"
         ],
         "caveEntry": {
           "caveId": "cave.mirror_maze",
@@ -549,8 +478,7 @@
         "persistent": true,
         "requiresFlags": [
           "flag.tutorial_complete",
-          "story.ch1.anchor.midwater",
-          "intel.mira.sela"
+          "story.ch1.anchor.midwater"
         ],
         "caveEntry": {
           "caveId": "cave.serpentine_deep",
@@ -570,8 +498,7 @@
         "persistent": true,
         "requiresFlags": [
           "flag.tutorial_complete",
-          "story.ch1.anchor.midwater",
-          "intel.mira.sela"
+          "story.ch1.anchor.midwater"
         ],
         "modifier": {
           "current": "mild"
@@ -955,143 +882,6 @@
             118
           ],
           "current": "strong"
-        }
-      },
-      {
-        "_doc": "特殊商人 Sela 交头点（藏宝贸易与信任系统 SPEC §6.2·Phase 2 MVP）：3 个候选浮标，各钉一个不同相位（new/waxing/full·waning 故意留空——他真不常驻）——同一时间至多一个可去（check-lunar-reach 只许 roamingTemplates 带 lunarWindow，anchor 不许，故走这里非 anchors）。**情报是入场券**：`intel.mira.sela` 进 requiresFlags——没给情报前三点一律 hidden（即便相位对得上，见 poiRevealState：known=false 时 lunarWindowState 不拦、会误穿成 lit，故门必须收在 requiresFlags，光挂 intelFlag 不够）。给了情报后（Mira 一次性对话·见 mira.json）：三点全部转「已知」——当前相位命中的那个 lit（可去），另两个 dim（同 roam.east_ebb_shallows 先例：已知点窗外＝『知道在哪、去不了、可规划』，非彻底消失）。**这三个 lunarWindow 值与 src/data/shop.json::specialMerchant.activePhases 保持一致——已由 check-npc-trust ⑤ 机制强连（改窗两边一起改·否则 regress 红）**（PortView 经 port.ts::SPECIAL_MERCHANT_ACTIVE_PHASES 读同一数据判断 Sela 是否「在港」可交易）。",
-        "templateId": "roam.sela_meet_new",
-        "zoneId": "zone.open_midwater",
-        "owner": "lighthouse.ch1_midwater_outpost",
-        "name": "系着浮标的绳",
-        "blurb": "一段不属于任何灯塔网的绳，往下系着什么。绳结是外面打的，不是本地的手法。",
-        "distance": 2,
-        "mapX": 0.16,
-        "mapY": -0.03,
-        "weight": 1,
-        "requiresFlags": [
-          "flag.tutorial_complete",
-          "story.ch1.anchor.midwater",
-          "intel.mira.sela"
-        ],
-        "lunarWindow": ["new"],
-        "lunarOffWindow": "hidden",
-        "intelFlag": "intel.mira.sela",
-        "modifier": {
-          "depthRange": [58, 64]
-        }
-      },
-      {
-        "templateId": "roam.sela_meet_waxing",
-        "zoneId": "zone.open_midwater",
-        "owner": "lighthouse.ch1_midwater_outpost",
-        "name": "系着浮标的绳",
-        "blurb": "一段不属于任何灯塔网的绳，往下系着什么。绳结是外面打的，不是本地的手法。",
-        "distance": 2,
-        "mapX": -0.17,
-        "mapY": 0.02,
-        "weight": 1,
-        "requiresFlags": [
-          "flag.tutorial_complete",
-          "story.ch1.anchor.midwater",
-          "intel.mira.sela"
-        ],
-        "lunarWindow": ["waxing"],
-        "lunarOffWindow": "hidden",
-        "intelFlag": "intel.mira.sela",
-        "modifier": {
-          "depthRange": [58, 64]
-        }
-      },
-      {
-        "templateId": "roam.sela_meet_full",
-        "zoneId": "zone.open_midwater",
-        "owner": "lighthouse.ch1_midwater_outpost",
-        "name": "系着浮标的绳",
-        "blurb": "一段不属于任何灯塔网的绳，往下系着什么。绳结是外面打的，不是本地的手法。",
-        "distance": 2,
-        "mapX": 0.02,
-        "mapY": 0.16,
-        "weight": 1,
-        "requiresFlags": [
-          "flag.tutorial_complete",
-          "story.ch1.anchor.midwater",
-          "intel.mira.sela"
-        ],
-        "lunarWindow": ["full"],
-        "lunarOffWindow": "hidden",
-        "intelFlag": "intel.mira.sela",
-        "modifier": {
-          "depthRange": [58, 64]
-        }
-      },
-      {
-        "_doc": "渐深遭遇（藏宝贸易与信任系统 SPEC §12.4·Slice 2）：Sela 只会更深——见过她中层浅处（flag.sela.met）后，解锁热液柱（story.ch1.anchor.vent）就在更深的热液区再遇她一组浮标（3 相位候选·同浅层三窗 new/waxing/full）。门比浅层更严：除 tutorial+intel+浅层 met 外还要 story.ch1.anchor.vent。深度 ~90-110（明显深过中层 58-64）。出口置 flag.sela.met_deep（供二章 Nerea offer 消费·flag.* 非 story.* 不进 allStoryFlags）。check-lunar-reach 只许 roaming 带窗故走这里非 anchors。三 lunarWindow 值与浅层一致；此深层点不改港口在港逻辑（isSpecialMerchantInPort 只看 flag.sela.met），仅作叙事里程碑 + 埋 flag.sela.met_deep。",
-        "templateId": "roam.sela_meet_deep_new",
-        "zoneId": "zone.thermal_pocket",
-        "owner": "lighthouse.ch1_vent_outpost",
-        "name": "系着浮标的绳",
-        "blurb": "又是那种外面打的绳结，这一段系得更深，绳上结着热液区的矿垢。往下望不到头。",
-        "distance": 3,
-        "mapX": 0.14,
-        "mapY": -0.02,
-        "weight": 1,
-        "requiresFlags": [
-          "flag.tutorial_complete",
-          "story.ch1.anchor.vent",
-          "flag.sela.met",
-          "intel.mira.sela"
-        ],
-        "lunarWindow": ["new"],
-        "lunarOffWindow": "hidden",
-        "intelFlag": "intel.mira.sela",
-        "modifier": {
-          "depthRange": [90, 110]
-        }
-      },
-      {
-        "templateId": "roam.sela_meet_deep_waxing",
-        "zoneId": "zone.thermal_pocket",
-        "owner": "lighthouse.ch1_vent_outpost",
-        "name": "系着浮标的绳",
-        "blurb": "又是那种外面打的绳结，这一段系得更深，绳上结着热液区的矿垢。往下望不到头。",
-        "distance": 3,
-        "mapX": -0.15,
-        "mapY": 0.03,
-        "weight": 1,
-        "requiresFlags": [
-          "flag.tutorial_complete",
-          "story.ch1.anchor.vent",
-          "flag.sela.met",
-          "intel.mira.sela"
-        ],
-        "lunarWindow": ["waxing"],
-        "lunarOffWindow": "hidden",
-        "intelFlag": "intel.mira.sela",
-        "modifier": {
-          "depthRange": [90, 110]
-        }
-      },
-      {
-        "templateId": "roam.sela_meet_deep_full",
-        "zoneId": "zone.thermal_pocket",
-        "owner": "lighthouse.ch1_vent_outpost",
-        "name": "系着浮标的绳",
-        "blurb": "又是那种外面打的绳结，这一段系得更深，绳上结着热液区的矿垢。往下望不到头。",
-        "distance": 3,
-        "mapX": 0.03,
-        "mapY": 0.15,
-        "weight": 1,
-        "requiresFlags": [
-          "flag.tutorial_complete",
-          "story.ch1.anchor.vent",
-          "flag.sela.met",
-          "intel.mira.sela"
-        ],
-        "lunarWindow": ["full"],
-        "lunarOffWindow": "hidden",
-        "intelFlag": "intel.mira.sela",
-        "modifier": {
-          "depthRange": [90, 110]
         }
       }
     ]

@@ -152,26 +152,6 @@
       "_placeholder_doc": "占位 zone（蜂群 boss·The Warren·作者 2026-07-08 三卵室重设计·蜂群boss SPEC §8/§11）：mapShape=warren ⇒ mapgen.ts 分流到 generateWarrenMap（三卵室三角·女王随机起点·封口墙/密度/存卵全 run 态）。owner/门控/深度档/POI 归属 defer。requiresFlags 挂当前无事件设置的 flag.warren_discovered ⇒ 暂不可达（占位·待作者接发现门）。gates 省略（同 zone.horizontal_test·搜寻信号＝密度热度非声呐·quirk #239·不设感知门）。"
     },
     {
-      "id": "zone.whalefall",
-      "name": "鲸落",
-      "description": "中层那头巨兽沉下去的地方。一架越来越小的骨头半埋在海床里，周围一圈被一具尸体喂肥的生命，按各自的节奏拆解它、住进它、从它身上活下去。死的是一个，靠它活的是一整片。",
-      "depthRange": [80, 110],
-      "layerCount": 6,
-      "nodesPerLayer": [2, 3],
-      "zoneTagsByDepth": [
-        { "minDepth": 0, "tags": ["whalefall"] }
-      ],
-      "requiresFlags": ["flag.tutorial_complete"],
-      "generation": "random",
-      "canFreeAscend": true,
-      "ambushEncounters": [],
-      "_gates_doc": "感知门激活（深区·灯为主·草案 §2.4）：巨兽尸骸阴影里看不清·灯为主·声呐留很稀一撮（尸肉挡视线）。可达档 deep(90-110)/mid(80-89 一小段)。密度占位保守·defer-number-tuning。hiddenRatio deep 最高≈0.30。守 quirk #230 铁律：尸体 kind 永不带门（骨架焊在 check-gate-skeleton·撒点候选只 event/rest）＝鲸落尸体豁免天然成立。",
-      "gates": {
-        "lamp": { "deep": 0.3, "mid": 0.2, "hiddenRatio": 0.3 },
-        "sonar": { "deep": 0.1, "hiddenRatio": 0.3 }
-      }
-    },
-    {
       "id": "zone.shaft_crack",
       "name": "竖穴裂缝",
       "description": "礁盘上一道竖着的裂口，窄得只容一个人侧身进去。当地人管这种缝叫「井」——进得去，不一定上得来。光只够照到头几米，再往下是直的、黑的。",

@@ -598,11 +598,12 @@ L('  气穴 / 扎营点 标签渲染 ✓');
 // ============================================
 L('\n========== H. EventView 解析非教学事件 ==========');
 const evState = diveState(); // 带 run
+// 随机内容层删除后 bluecaves.color_shift 已删——改用 surviving 的 blue_caves.geode_vein（poiId 门控事件·EVENT_DB 在册）。
 const htmlEv = renderToStaticMarkup(
-  <EventView state={evState} eventId="bluecaves.color_shift" onStateChange={noop} />,
+  <EventView state={evState} eventId="blue_caves.geode_vein" onStateChange={noop} />,
 );
 assert(!htmlEv.includes('事件未找到'), 'H: 非教学事件应能解析（不应出现"事件未找到"）');
-assert(htmlEv.includes('水开始变蓝'), 'H: 应渲染 bluecaves.color_shift 的标题');
+assert(htmlEv.includes('壁里的一窝晶'), 'H: 应渲染 blue_caves.geode_vein 的标题');
 L('  非教学事件（蓝洞）正常渲染 ✓');
 
 // ============================================
@@ -789,28 +790,7 @@ assert(!htmlN2.includes('能源') && !htmlN2.includes('部分设施停转'), 'N2
 assert(!htmlN2.includes('衰减') && !htmlN2.includes('荒废'), 'N2: 衰减已删 → 无衰减级/荒废 UI');
 L('  章节前哨标记（暗·待解锁·未发现不在图）+ 前哨 popup（能源层已删·无能源/掉线/衰减 UI）✓');
 
-// ============================================
-// O. SeaChartView · mimic「无灯之光」引诱 + 宏观 tell（深水区 Phase 3）
-// ============================================
-L('\n========== O. SeaChartView mimic 引诱 ==========');
-// 任一**水下**前哨达半亮（≥ OUTPOST_USABLE_STAGE=2）→ 触发引诱（shouldLureMimic·chart.ts）。章节前哨皆 submerged。
-const deepFlags = ['flag.outpost.ch1_wreck.s1', 'flag.outpost.ch1_wreck.s2']; // 残骸前哨半亮 → 触发引诱
-// O1：有深处立足 → 海图远海一角多出「无名的光」标记
-const htmlO1 = renderToStaticMarkup(
-  <SeaChartView state={stateWith(['flag.tutorial_complete', ...deepFlags], [])} onStateChange={noop} />,
-);
-assert(htmlO1.includes('无名的光'), 'O1: 深处立足 → 海图注入 mimic POI「无名的光」标记');
-// O2：没有半亮水下前哨 → 不引诱
-const htmlO2 = renderToStaticMarkup(
-  <SeaChartView state={stateWith(['flag.tutorial_complete'], [])} onStateChange={noop} />,
-);
-assert(!htmlO2.includes('无名的光'), 'O2: 无半亮水下前哨 → 海图无 mimic 引诱（软门控）');
-// O3：mimic 为唯一可出海点（无 tutorial 发现 flag → 普通锚点不可见）→ 默认选中 → 渲染宏观 tell
-const htmlO3 = renderToStaticMarkup(
-  <SeaChartView state={stateWith(deepFlags, [])} onStateChange={noop} />,
-);
-assert(htmlO3.includes('不是你点的光'), 'O3: 选中 mimic → 渲染宏观 tell（交叉比对：不是你点的光）');
-L('  无灯之光 注入 / 软门控 / 选中显宏观 tell ✓');
+// （Section O「SeaChartView mimic 无灯之光引诱 + 宏观 tell」随 mimic vertical 于 2026-07-12 删除·整段移除。）
 
 // ============================================
 // P. 行前装包 + 投放诱饵（猎手 SPEC §4·#108；#140 就地分步向导·2026-06-18）：

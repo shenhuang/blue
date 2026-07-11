@@ -98,32 +98,13 @@ export interface ChartPoi {
   /** 环境修正（可选） */
   modifier?: PoiModifier;
   /**
-   * 深入潜点（灯塔/蛙跳重构 step ②·#125）：设了 ⇒ 本 POI 走**深度 band 路径**（band 的绝对 depthRange
-   * 覆盖 zone·并落 band 的 alertFactor/hunts/tags/maxRoomFeatures）——等价于旧「前哨蛙跳」入口，
-   * 但表达成海图上的一个潜点（由灯塔升级派生·扫描即浮现）。预耗氧从 POI 起潜深度（band 顶）纯函数推、
-   * 不查前哨态（startDiveFromPoi·launchDepth=0）。缺省 ⇒ 走 zone + modifier.depthOffset 的普通下潜路径。
-   * band 引用悬空由 check-dive-refs 焊成 regress 红（step ④ 接）。
+   * 主线剧情 beat 的入潜强制开场（「主线柱迁移」→ 2026-07-12 深度柱删除后 re-home 成 chart_pois 静态 anchor）：
+   * 本 POI 是某条主线 beat 时，dive-start.ts::applyStoryOpen 据此把 eventId 作入潜强制开场——beatFlag 未置位时
+   * 强制开场；已置位＝回流重访＝普通下潜（只读 flag 不写·quirk #118）。reveal 单一来源＝日志文献坐标
+   * （mentor_logbook marksPois 本 POI id ⇒ documentKnowsPoi ⇒ poiRevealState 揭示·没抄到坐标则 hidden）；
+   * reach 无额外门（深度柱 host-built/probe 解锁经济已删·深度门待经济重做·见 TODO）。缺省 ⇒ 普通 POI（零影响）。
    */
-  bandId?: string;
-  /**
-   * 探深「深度柱」深入潜点（#131）：columnId+depthTier 一起设 ⇒ 本 POI 是某根深度柱的第 depthTier 档。
-   * 可见性走**档位制**（不走发现/揭示圈/天气）：poiRevealState 直接由 columnBuiltLevel(columnId) vs depthTier
-   * 派生（≥→lit / ==+1→dim / else hidden）；dim 的 poiBlockReason＝「再升一级低频声呐」。这类 POI 由
-   * engine/columns.ts::buildColumnPois 从 depth_columns.json 派生注入（非手写）·摆宿主灯塔揭示圈内。
-   * bandId 同时设（=该档派生 band）⇒ 走 band 绝对 depthRange 下潜路径。
-   */
-  columnId?: string;
-  depthTier?: number;
-  /**
-   * 主线剧情 beat 的入潜强制开场（「主线柱迁移」·D-2·A 案·作者 2026-06-28）：当本 POI 是某柱的主线 beat
-   * （DepthColumn.storyTier·engine/columns.ts::storyTierPoi 透传）时，dive-start.ts 据此把 eventId 作入潜强制
-   * 开场——**与 4 canon 锚点的 `story` 块分离**：那块由 CH1_ANCHORS 短路、占 4 名额、走 chart_pois 锚点；这块身份
-   * ＝columnId（无 depthTier）、触发门读 beatFlag、不挪用 canon anchor 名额。
-   * 触发规则（dive-start.ts·镜像锚点块·只读 flag 不写）：beatFlag 未置位时强制开场；已置位＝回流重访＝普通下潜。
-   * reveal/reach 走 storyTierRevealState（host 建成 + 日志 marksPois 文献坐标·见 chart.ts·**不被本字段改**）；能下到这档
-   * （lit）才会被 startDiveFromPoi 调用，故无需再查 reach。缺省 ⇒ 普通柱档（行为逐字节不变）。
-   */
-  columnStory?: {
+  story?: {
     /** 入潜强制开场的主线节拍事件 id。 */
     eventId: string;
     /** 本 beat「完成」flag（节拍事件 setProfileFlags 置位·主线链判定据此·∈ engine/story.ts allStoryFlags()）。 */
@@ -131,8 +112,8 @@ export interface ChartPoi {
     /** 主线链尾（章尾 beat）：结局判定读它的 beatFlag 已置而非硬编码锚点齐（数据驱动·D-2 改动③）。 */
     chainTail?: boolean;
     /**
-     * 留白结局重访（St2·迁自旧 chart_pois 锚点 story.revisit*·剧情 SPEC §4.1）：beat **已完成**后再次入潜——
-     * 若已置 revisitRequiresFlag 且未置 revisitDoneFlag——强制开场 revisitEventId（dive-start 镜像旧锚点重访块·读 flag 不写）。
+     * 留白结局重访（St2·剧情 SPEC §4.1）：beat **已完成**后再次入潜——若已置 revisitRequiresFlag 且未置
+     * revisitDoneFlag——强制开场 revisitEventId（dive-start applyStoryOpen 读 flag 不写）。
      * 一章仅 vent beat 用：圆满后持破损饰品（charm_found·⟺ fulfilled-first）重访 → 留白结局（ending_blank）。缺省 ⇒ 无重访。
      */
     revisitEventId?: string;
@@ -183,42 +164,7 @@ export interface ChartPoi {
   /** 发现门控：这些 flag 都满足才出现在海图上（镜像 ZoneDef.requiresFlags）。 */
   requiresFlags?: string[];
   /**
-   * 「无灯之光」假 POI（深水区 Phase 3 mimic capstone，§3.5）。true = 这个点在海图上**点亮**（引诱），
-   * 却**没有任何自家灯塔能解释**它为什么亮（宏观 tell：交叉比对灯塔网就看出「我的网点不亮那儿」）。
-   * 远距分辨不出它和真信标；绝望/盲目的玩家照样横渡过去 → startDiveFromPoi 路由进 mimic 兑现事件。
-   * isPoiLit 对 mimic 恒真（这是诱饵），isPoiExplainedByLighthouse 恒假（这是 tell）。
-   */
-  mimic?: boolean;
-  /**
-   * 一章剧情锚点（St1·剧情 SPEC §4.1·#117·沿 mimic「入潜强制开场事件」模板）：
-   * anchor ∈ engine/story.ts::CH1_ANCHORS（'reef'|'wreck'|'midwater'|'vent'·quirk #118
-   * 字面量守门归 playthrough-story）；eventId = 入潜强制开场的锚点节拍事件。
-   * 触发规则（作者拍 2026-06-12·任意顺序）：该锚点 flag 未置位才强制开场；其中 vent
-   * （结局分歧）额外要求其余三锚点全置位——否则都是普通下潜（回流重访自然成立）。
-   *
-   * **留白结局重访**（St2·剧情 SPEC §4.1·通用三字段·别硬编码 id 进引擎）：锚点**已完成**后再次入潜
-   * 该 POI——若已置 revisitRequiresFlag 且未置 revisitDoneFlag——强制开场 revisitEventId（dive-start.ts
-   * 镜像上方锚点强制块·读 flag 不写）。一章仅 vent 用：圆满后持破损饰品（charm_found）重访 → 留白结局
-   * （ending_blank）；门=持饰品（⟺ 已达圆满＝fulfilled-first·保证圆满在前、第一次绝不跳过留白）。
-   */
-  story?: {
-    anchor: string;
-    eventId: string;
-    revisitEventId?: string;
-    revisitRequiresFlag?: string;
-    revisitDoneFlag?: string;
-  };
-  /**
-   * 通用脚本剧情潜点的「强制开场事件」（#137 鲸落找寻潜点·沿 mimic/story 锚点「入潜强制开场」模板）：
-   * 设了 openEventId ⇒ 本 POI 入潜强制此事件作为开场，直到 openEventFlag 置位（一次性·dive-start.ts）。
-   * 区别于 `story`：**不占** engine/story.ts 的 4 个 canon anchor 名额（playthrough-story 守「恰好 4 锚点」），
-   * 用于 owner-less / 非锚点的剧情潜点（如鲸落找寻＝openEventFlag: whalefall_found·找到即不再强制）。
-   * 置位归事件 setProfileFlags（quirk #118·dive-start 只读 flag 不写）。
-   */
-  openEventId?: string;
-  openEventFlag?: string;
-  /**
-   * 「故事重访变体」按深度途中触发（非锚点·不占 4 canon anchor 名额·也不像 openEventId 只能单事件·quirk #174）：
+   * 「故事重访变体」按深度途中触发（非锚点·不占 4 canon anchor 名额·quirk #174）：
    * 设了 storyOpenEvents ⇒ 入潜时 dive-start 按**顺序**选第一个「门控通过且未见过」的事件，透传 mapgen
    * **钉放到该事件 `depthRange` 的途中节点**（保证出现·不进随机池）——玩家下潜到那个深度才撞见（不是开场瞬移）；
    * 没下到该深度就上浮＝不进该节点＝事件 oncePerSave 不写 event_seen＝下次再钉·不可错过地等着。
@@ -226,7 +172,7 @@ export interface ChartPoi {
    * prereqEventIds（单一真相·POI 不重复写 flag 逻辑）**。用于「重返同一地点·随进度换节拍」的剧情点
    * （如教学后重返东礁老沉船＝tutorial.captain_revisit〔没见过怪相·可下去看〕→ captain_revisit_empty〔见过了·空了〕）。
    * 这些事件必须 `weight: 0`（不进随机池·只经本机制钉放·否则会被内容库淹没＝命中率个位数%·见 quirk #174）。
-   * 仅 layered 图（reef/wreck）实现放置。与 openEventId 互斥（check-story-open-events 守门）。置位归事件 setProfileFlags（dive-start 只读不写）。
+   * 仅 layered 图（reef/wreck）实现放置。置位归事件 setProfileFlags（dive-start 只读不写）。
    */
   storyOpenEvents?: string[];
   /**
@@ -299,7 +245,7 @@ export type RegionShape = 'circle' | 'coast';
  *     计数…见 2026-06-14 架构讨论）。诚实轴不破：圈内 POI 走 isLit 正常揭示·mimic 仍唯一谎点。
  */
 export interface ChartRegionDef {
-  /** 区 id（'reef'|'trench'|'wreck'|'midwater'|'vent'|'whalefall'…）。 */
+  /** 区 id（'reef'|'trench'|'wreck'|'midwater'|'vent'…）。 */
   id: string;
   /** UI 标签（'珊瑚区' 等）。 */
   label: string;

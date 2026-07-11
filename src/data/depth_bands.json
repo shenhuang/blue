@@ -1,4 +1,0 @@
-{
-  "_doc": "深度 band 注册表。#131 探深深度柱重构后**全部深度 band 改由 depth_columns.json 各柱每级派生**（engine/columns.ts::columnBands·id=band.<短名>.t<tier>·并进 bands.ts 注册表）。SPEC §10 收尾定案（2026-06-14 作者拍板·已实现）后，原『另一个世界』预留 band（abyssal/hadal/subhadal/nameless）已删（旧测试内容·不再需要·连带删 events/{abyssal,hadal,subhadal,nameless}.json）——『另一个世界』下行入口留 Phase 3 专门 session 在科考站电梯（海沟柱 t4 capstone·flag-gated 科考站区·setsFlag=story.ch1.station_found）之下重新长出（d_reveal 别擅自动·见 deep_game_vision / 深水区 SPEC）。本文件现为空表（所有 band 来自柱派生·getBands()=columnBands()）；将来若要手写不挂任何灯塔的特殊 band，加进 bands[] 即可（bands.ts 合并 columnBands + 本表·check-dive-refs 守派生 band id 不与本表撞）。",
-  "bands": []
-}

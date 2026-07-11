@@ -18,7 +18,6 @@ import {
   getBuiltLevelInTrack,
 } from '@/engine/lighthouses';
 import { getOutpostForLighthouse } from '@/engine/outposts';
-import { getColumnForLighthouse } from '@/engine/columns';
 import { HOME_LIGHTHOUSE_ID } from '@/engine/state';
 import { PanelShell } from './PanelShell';
 import { UpgradeCostView } from './UpgradeCost';
@@ -26,7 +25,6 @@ import { UpgradeEffectDelta, emptyEffectSet, mergeEffectSets, type EffectSet, ty
 import { DEV_TOOLS } from './devMode';
 
 // LighthouseEffect → EffectSet（全数值·作者 2026-06-20·#5·喂统一 UpgradeEffectDelta）。
-// 探深轨 effects 空→空集→不渲染（见 UpgradeEffectDelta 注：stats 统一「越大越好」）。
 function lighthouseEffectSet(effects: LighthouseEffect[]): EffectSet {
   const stats: StatLine[] = [];
   for (const e of effects) {
@@ -137,21 +135,10 @@ function LighthouseTrackCard({
 }) {
   const haveLevel = getBuiltLevelInTrack(lighthouse, track);
   // 每级 before＝低级累计·after＝含本级累计（前缀和）→ 喂统一 UpgradeEffectDelta（数值前后对比·作者 2026-06-20·#5/#6）。
-  // 低频声呐（探深轨·effects 空）：合成「探深至 {本档底深}m」数值——存**增量**（本档底深 − 上档底深）·前缀和后即绝对深度·
-  //   故对比显「探深至 90m → 探深至 120m↑」（每级开深一档·守探深＝信息基建北极星）。
-  const probeCol = track.id.startsWith('lhtrack.probe.') ? getColumnForLighthouse(lighthouse.id) : undefined;
   const rowSets: { before: EffectSet; after: EffectSet }[] = [];
   let cum = emptyEffectSet();
-  let prevDepth = 0;
-  track.upgrades.forEach((u, i) => {
-    let thisSet: EffectSet;
-    if (probeCol) {
-      const depth = probeCol.tiers[i]?.depthRange[1] ?? prevDepth;
-      thisSet = { stats: [{ label: 'probeDepth', value: depth - prevDepth, render: (v) => `探深至 ${v}m` }], unlocks: [] };
-      prevDepth = depth;
-    } else {
-      thisSet = lighthouseEffectSet(u.effects);
-    }
+  track.upgrades.forEach((u) => {
+    const thisSet = lighthouseEffectSet(u.effects);
     const before = cum;
     const after = mergeEffectSets(cum, thisSet);
     rowSets.push({ before, after });

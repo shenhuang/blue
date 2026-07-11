@@ -49,7 +49,12 @@ type Expect = {
   combatTriggered?: string | null;
 };
 const files = readdirSync(SCN_DIR).filter((f) => f.endsWith('.json'));
-assert(files.length >= 2, 'scenarios/lighthouse 应至少有 2 个场景');
+// 废弃灯塔修复（Phase C·restoreLighthouse/ruins[]）的**入口事件** lighthouse.ruin_north 是 random-pool 事件，
+// 随随机内容层拆除删除（2026-07-12）——机制 + ruins[] 数据留，但入口 dormant·无场景可跑。内容重做后此门自动恢复（TODO）。
+if (files.length === 0) {
+  console.log('⊘ scenarios/lighthouse 空：ruin 入口事件已随随机内容层删·废弃灯塔修复机制 dormant（内容待重做 TODO）。');
+  process.exit(0);
+}
 for (const f of files) {
   const raw = JSON.parse(readFileSync(resolve(SCN_DIR, f), 'utf-8')) as ScenarioInput & {
     expect?: Expect;

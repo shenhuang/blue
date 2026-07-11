@@ -16,14 +16,10 @@ import {
   nearestLighthouse,
   getHomeLighthouse,
   getLighthouseUpgradeDef,
-  getOutposts,
-  outpostStage,
   revealRadius,
   ownerAnchorPos,
-  OUTPOST_USABLE_STAGE,
 } from './lighthouses';
 import { flagGatedRegions } from './regions';
-import { buildColumnPois, columnBuiltLevel, depthTierRevealState, storyPoiRevealState, columnHostBuilt, getColumn } from './columns';
 import { poisKnownFromItems } from './items';
 import { lunarPhase, moonAge, tideLevel, lunarPhaseLabel, daysUntilAnyPhase } from './lunar';
 
@@ -158,9 +154,9 @@ function documentKnowsPoi(profile: PlayerProfile, poi: ChartPoi): boolean {
   return poisKnownFromItems(profile).has(poi.id);
 }
 
-/** 月相窗门豁免谓词（SPEC §2.3·同 climateOcclusion）：剧情锚点 / 持久 anchor / mimic 不受月相限制。 */
+/** 月相窗门豁免谓词（SPEC §2.3·同 climateOcclusion）：剧情锚点 / 持久 anchor 不受月相限制。 */
 function lunarExempt(poi: ChartPoi): boolean {
-  return !!poi.persistent || !!poi.story || !!poi.mimic;
+  return !!poi.persistent || !!poi.story;
 }
 
 /**
@@ -189,38 +185,6 @@ function lunarWindowState(
   if (!win || win.length === 0) return null;
   if (win.includes(lunarPhase(chartSeed(profile)))) return null;
   return known ? 'dim' : (poi.lunarOffWindow ?? 'dim');
-}
-
-/** 深水区 Phase 3 mimic 假 POI 的运行时 id + 它引向的兑现事件。 */
-export const MIMIC_POI_ID = 'poi.mimic.false_beacon';
-export const MIMIC_DIVE_EVENT_ID = 'mimic.false_beacon';
-
-/**
- * 「无灯之光」是否该出现在海图上（深水区 Phase 3，§3.5）。**软门控**：你在深处立稳脚
- * （任一**水下**前哨达半亮 ≥ OUTPOST_USABLE_STAGE）后才被引诱——绝望/盲目地往深里去的人，才看得见那盏不属于谁的光。
- * 不带硬故事 flag（守软门控）；它一直引诱、不因「读穿过一次」消失（保持暧昧、可复诱）。
- */
-function shouldLureMimic(profile: PlayerProfile): boolean {
-  return getOutposts().some(
-    (o) => o.submerged && outpostStage(profile, o.id) >= OUTPOST_USABLE_STAGE,
-  );
-}
-
-/** 海图上的 mimic 假 POI（§3.5）：恒亮、网外、引向最深处的兑现。坐标摆在远海一角（仅显示；tell 不靠几何）。 */
-function makeMimicPoi(): ChartPoi {
-  return {
-    id: MIMIC_POI_ID,
-    zoneId: 'zone.blue_caves',
-    name: '无名的光',
-    blurb:
-      '海图最远的角上，一点光稳稳亮着——暖，匀，像一座灯塔。可你数过自己点亮的每一盏灯，没有一盏在那儿。它不在你的网里，却亮着，等你过去。',
-    distance: 4,
-    mapX: 0.93,
-    mapY: 0.9,
-    modifier: { depthOffset: 100, gate: { sense: 'lamp', mode: 'locked' }, current: 'strong' },
-    persistent: false,
-    mimic: true,
-  };
 }
 
 /**
@@ -252,13 +216,9 @@ function isLit(profile: PlayerProfile, poi: { owner?: string; mapX?: number; map
 
 /** POI 是否被灯塔点亮（reveal，基建地图 Phase C）。mimic「无灯之光」恒亮（这是诱饵，§3.5）。 */
 export function isPoiLit(profile: PlayerProfile, poi: ChartPoi): boolean {
-  if (poi.mimic) return true; // 无灯之光：海图上点亮，引诱你横渡
-  // St1 一章锚点（#117）：日志抄来的坐标＝**已知点**，不走灯塔「发现」轴——教学尾
-  // 「四个坐标圈上海图」与海图解锁是同一个动作，你不需要网照到它才知道它在哪。
+  // 主线 story beat（re-home 静态 anchor·2026-07-12）：日志抄来的坐标＝**已知点**，不走灯塔「发现」轴。
+  // 揭示门（marksPois 才现·没抄坐标 hidden）由 poiRevealState 前置；这里恒「已知」⇒ 过了门即点亮。
   if (poi.story) return true;
-  // 主线 story beat（主线柱迁移）：日志早揭示的坐标＝已知点（同 story 短路），可见性由 storyTierRevealState
-  // 在 poiRevealState 决（host 建成 + 日志 marksPois 文献坐标）；这里恒「已知」⇒ 不被误判 mimic「亮而无主」（守诚实轴）。
-  if (poi.columnStory) return true;
   // 文献坐标（物品即解锁·marksPois ⇒ reveal·作者 2026-06-19）：持有标记此点的道具＝已知点，同 story 短路
   // 绕灯塔「发现」轴（导师日志 / 鲸落手记…）。承接 #117 到任意 marksPois 道具。
   if (documentKnowsPoi(profile, poi)) return true;
@@ -271,14 +231,9 @@ export function isPoiLit(profile: PlayerProfile, poi: ChartPoi): boolean {
  * 普通 POI ＝ 是否落在自家灯塔点亮半径内（你的网照得到它）。UI 据此给「交叉比对」的那条 tell。
  */
 export function isPoiExplainedByLighthouse(profile: PlayerProfile, poi: ChartPoi): boolean {
-  if (poi.mimic) return false; // 无灯之光：不是你网里的任何一盏
-  // St1 一章锚点（#117）：亮的来源是「你自己抄的坐标」——有解释，别让剧情锚点误穿
-  // mimic 的「亮而无主」宏观 tell（海图诚实轴）。
+  // 主线 story beat（re-home 静态 anchor）：亮的来源是「日志抄来的坐标」——有合法解释。
   if (poi.story) return true;
-  // 主线 story beat（主线柱迁移）：亮的来源是「日志抄来的坐标」——有合法解释，别误穿 mimic「亮而无主」tell。
-  if (poi.columnStory) return true;
-  // 文献坐标（物品即解锁·#2026-06-19）：亮的来源是「你带着的那张纸」——有合法解释，别让文献揭示的点
-  // （如鲸落手记标的生态点）误穿 mimic「亮而无主」tell。
+  // 文献坐标（物品即解锁·#2026-06-19）：亮的来源是「你带着的那张纸」——有合法解释（导师日志 / 鲸落手记…）。
   if (documentKnowsPoi(profile, poi)) return true;
   return isLit(profile, poi);
 }
@@ -286,10 +241,10 @@ export function isPoiExplainedByLighthouse(profile: PlayerProfile, poi: ChartPoi
 /**
  * 天气对单个机会点的遮蔽（区域揭示三态·§10·C③「多数彻底不显示(无)、少数显示但过不去(暗)」）。
  * 确定性 per-(poi.id, runsCompleted)；roaming 的 id 含 runsCompleted ⇒ 被遮的点随回合「来去」。
- * 锚点 / story / mimic 永不被遮（进度安全 + mimic 是唯一谎点·守诚实轴）。
+ * 锚点 / story 永不被遮（进度安全·守诚实轴）。
  */
 function climateOcclusion(profile: PlayerProfile, poi: ChartPoi): 'none' | 'dim' | 'hidden' {
-  if (poi.persistent || poi.story || poi.mimic) return 'none';
+  if (poi.persistent || poi.story) return 'none';
   const { weather } = chartConditions(profile);
   if (weather === 'clear') return 'none';
   const h = condHash(chartSeed(profile), `occlude:${poi.id}`) % 100;
@@ -305,18 +260,10 @@ function climateOcclusion(profile: PlayerProfile, poi: ChartPoi): 'none' | 'dim'
  * 诚实轴：mimic 恒 lit（唯一谎点）；anchor 永不被天气藏（climateOcclusion 对 persistent 恒 none）。
  */
 export function poiRevealState(profile: PlayerProfile, poi: ChartPoi): PoiRevealState {
-  if (poi.mimic) return 'lit'; // 无灯之光：海图上「亮且可去」的诱饵
-  // 探深「深度柱」深入潜点（#131）：可见性走**档位制**——该柱已建低频声呐级数 vs 本档 depthTier
-  // （≥→lit / ==+1→dim / else hidden·一级露一档）。不走发现/揭示圈/天气（柱潜点摆宿主灯塔圈内、
-  // 灯塔在即随柱浮现；它该不该亮只看探深建到第几级）。
-  if (poi.columnId !== undefined && poi.depthTier !== undefined) {
-    return depthTierRevealState(columnBuiltLevel(profile, poi.columnId), poi.depthTier);
-  }
-  // 主线 story beat 潜点（主线柱迁移）：带 columnStory + columnId（无 depthTier）⇒ 走 host 建成 + 日志早揭示
-  // （storyTierRevealState·**不走**探深档位制、也不走发现/揭示圈/天气）。reveal=日志 marksPois 文献坐标·reach=host 建成。
-  if (poi.columnStory && poi.columnId !== undefined) {
-    return storyPoiRevealState(profile, poi.columnId);
-  }
+  // 主线 story beat（re-home 静态 anchor·2026-07-12·替代原深度柱 storyPoiRevealState 分支）：
+  // reveal 单一来源＝日志文献坐标（mentor_logbook marksPois 本 POI id → documentKnowsPoi）——没抄到坐标 → hidden
+  // （章节前/没拿日志不现）；抄到 → 落下方常规门（story 短路 isPoiLit → lit）。深度柱 host-built/probe 深度门经济已删·待重做（TODO）。
+  if (poi.story && !documentKnowsPoi(profile, poi)) return 'hidden';
   // 发现门（位置是否已知）：持有标记此点的文献（物品即解锁·marksPois ⇒ reveal）⇒ 已知·绕发现门；
   // 否则走常规发现（requiresFlags 发现 flag + isPoiLit 灯塔网/揭示圈/story 已知点）。文献短路只绕「发现」，
   // 不绕下面的能力门/天气（知道 ≠ 去得了）——缺设施/装备的已知点照样落 dim（resolveMarkedPois 据此给「去不了」原因）。
@@ -427,19 +374,6 @@ export function isPoiDepartable(profile: PlayerProfile, poi: ChartPoi): boolean 
  */
 export function poiBlockReason(profile: PlayerProfile, poi: ChartPoi): string | null {
   if (isPoiDepartable(profile, poi)) return null;
-  // 主线 story beat 暗点（主线柱迁移·点 4）：dim ＝日志已早揭示（知道坐标）但该区 host 前哨还没建好。
-  // 给一句可执行的话——指明「先建哪座前哨」（host 灯塔对应前哨名·单一来源 lighthouse_upgrades.json）。
-  if (poi.columnStory && poi.columnId !== undefined && !columnHostBuilt(profile, poi.columnId)) {
-    const col = getColumn(poi.columnId);
-    const hostName = col
-      ? getOutposts().find((o) => o.result.id === col.lighthouseId)?.name
-      : undefined;
-    return hostName ? `得先建起「${hostName}」。` : '得先把这片海里的前哨建起来。';
-  }
-  // 低频声呐「深度柱」暗档（#131）：dim 只因「低频声呐还没建到这一级」——给一句可执行的话。
-  if (poi.columnId !== undefined && poi.depthTier !== undefined) {
-    return '声呐探得到，但还没有路。低频声呐升一级，这里才能落脚。';
-  }
   // 月相窗门暗点（SPEC §4·§8·排在能力/天气前）：本相位不在 POI 潮窗内 → 「等到 X 相·还 N 天」。
   if (!lunarExempt(poi) && poi.lunarWindow && poi.lunarWindow.length > 0) {
     const day = chartSeed(profile);
@@ -555,14 +489,6 @@ export function generateChart(opts: { profile: PlayerProfile }): SeaChart {
     if (st !== 'hidden') pois.push({ ...poi, revealState: st });
   }
 
-  // 探深「深度柱」深入潜点（#131）：每座已建灯塔的柱按探深级数派生 lit/dim 档（hidden 不入）。
-  // buildColumnPois 已带 revealState（档位制·见 columns.ts/poiRevealState）；宿主灯塔未建的柱不出潜点。
-  for (const p of buildColumnPois(profile)) pois.push(p);
-
-  // 深水区 Phase 3：mimic「无灯之光」假 POI（§3.5）。软门控——你在深处立了脚后才被引诱。
-  // 恒 lit（诱饵）：isPoiLit 恒真 · isPoiExplainedByLighthouse 恒假 → UI 给「不在你网里」的宏观 tell。
-  if (shouldLureMimic(profile)) pois.push({ ...makeMimicPoi(), revealState: 'lit' });
-
   return { generatedForRun: seed, pois, conditions };
 }
 
@@ -587,7 +513,7 @@ export interface MarkedPoiInfo {
    */
   displayCoord: string | null;
   /**
-   * 已勘——该坐标的主线 beat 已完成（columnStory.beatFlag 置位·去过且拿到关键结果）。
+   * 已勘——该坐标的主线 beat 已完成（story.beatFlag 置位·去过且拿到关键结果）。
    * UI 在日志坐标列表给删除线「划掉」·但**仍可点重访**（回流 / St2 vent 留白）；非主线坐标恒 false。
    */
   surveyed: boolean;
@@ -616,8 +542,8 @@ export function resolveMarkedPois(profile: PlayerProfile, poiIds: string[]): Mar
     // poi.mapX/mapY 已是 generateChart resolve 后的绝对坐标（owner-anchored·见 resolveOwnerCoords）。
     const displayCoord =
       poi.mapX != null && poi.mapY != null ? formatChartCoord(poi.mapX, poi.mapY) : null;
-    // 已勘＝该坐标的主线 beat 已完成（columnStory.beatFlag 置位·去过且拿到关键结果）；UI 给「划掉」删除线·仍可点重访。
-    const surveyed = !!poi.columnStory?.beatFlag && profile.flags.has(poi.columnStory.beatFlag);
+    // 已勘＝该坐标的主线 beat 已完成（story.beatFlag 置位·去过且拿到关键结果）；UI 给「划掉」删除线·仍可点重访。
+    const surveyed = !!poi.story?.beatFlag && profile.flags.has(poi.story.beatFlag);
     return {
       id,
       name: poi.name,

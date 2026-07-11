@@ -122,8 +122,8 @@ export function mergeIntoInventory(
  * 把若干物品并入 profile.inventory 的**统一入口**（物品入袋单点·作者 2026-06-19）。除合并库存外，
  * 还兑现被获得物品的 `story.setsFlag`——把它携带的 story flag 并入 profile.flags（sticky·幂等）。
  * 语义＝「持有那张纸＝你做过那件事」：不论从哪条路拿到带 setsFlag 的道具（回港 loot 并入 / Mira 回购 /
- * devGrantItem 作弊发物·见 engine/port.ts 三处调用）解锁逻辑都生效（如鲸落手记 → story.ch1.whalefall_found
- * → 鲸落区圈 + 营地可建 + 找寻点握手）。纯函数·只「加」语义（扣减走 removeFromInventory·flag sticky 不撤）。
+ * devGrantItem 作弊发物·见 engine/port.ts 三处调用）解锁逻辑都生效（如手提探照灯 → flag.owns_light）。
+ * 纯函数·只「加」语义（扣减走 removeFromInventory·flag sticky 不撤）。
  */
 export function acquireIntoProfile(
   profile: PlayerProfile,

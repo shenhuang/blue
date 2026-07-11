@@ -954,12 +954,6 @@ export function ChartInfo({
         </div>
       )}
 
-      {poi.mimic && (
-        <p className="chart-info-tell uncanny">
-          ⚠ 你数过自己点亮的每一盏灯——没有一盏在这儿。它亮着，却不在你的网里。交叉比对的结果只有一个：这不是你点的光。
-        </p>
-      )}
-
       <div className="chart-info-actions">
         {departable ? (
           <button className="btn small" onClick={beginDepart}>出海</button>

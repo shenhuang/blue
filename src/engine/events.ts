@@ -20,25 +20,7 @@ import { restoreLighthouse, advanceOutpost } from './lighthouses';
 import { lampPowerDrain, alertDelta, ALERT_MAX } from './clarity';
 import { stepNitrogen } from './nitrogen';
 import { getCaveTemperature, stepThermalStress, thermalStaminaDrain } from './temperature';
-import { getBands } from './bands';
 import { trustTier } from './trust';
-
-/**
- * 深度加权战利品因子（经济·2026-06-28·单一来源＝depth_columns.json 各 tier 的 lootFactor·镜像 alertFactor）。
- * 按 currentDepth 找**包含它的最深** band（depthRange 含 depth·取 lootFactor 最高的命中＝最贴近实际所在档），
- * 返回其 lootFactor；无 band 命中（浅水 / 开阔水 / 无柱 POI）→ 1（行为逐字节不变·守浅水 loot）。
- * 纯函数·无副作用·便于回归断言。
- */
-export function lootFactorForDepth(depth: number): number {
-  let factor = 1;
-  for (const band of getBands()) {
-    if (depth >= band.depthRange[0] && depth <= band.depthRange[1]) {
-      const f = band.lootFactor ?? 1;
-      if (f > factor) factor = f;
-    }
-  }
-  return factor;
-}
 
 // —— 数据装载 ——
 // 单一事件库是 zones.ts::EVENT_DB（含全部 zone 的事件）。getEvent 直接委托给它，
@@ -332,12 +314,9 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
       if (Math.random() <= chance) {
         const min = roll.qty[0];
         const max = roll.qty[1];
-        const rolled = min + Math.floor(Math.random() * (max - min + 1));
-        // 深度加权战利品（经济·2026-06-28）：越深的档 loot 越多（lootFactorForDepth 按 currentDepth 查 band·
-        // 缺省 1＝浅水/无柱区逐字节不变）。乘后 round 收回整数。dive 期 run 在场才乘（港口事件无深度·走 1）。
-        const qty = s.run
-          ? Math.round(rolled * lootFactorForDepth(s.run.currentDepth))
-          : rolled;
+        // 深度加权战利品（lootFactorForDepth）已随深度柱/band 系统删除（2026-07-12）——loot 现为平量 roll·
+        // 深度加权待经济重做（TODO）。
+        const qty = min + Math.floor(Math.random() * (max - min + 1));
         if (qty > 0) {
           // 背包承载（重量制·#资源重量制 2026-06-21）：dive 期间 run 背包加这件后超 carryWeightLimit → 跳过该件并日志提示
           // （不阻断整个事件·其余 loot 继续 roll）。inv 是本事件累计的工作副本——含本轮已拾的其它件，焊死「一个事件塞爆」。

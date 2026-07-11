@@ -730,27 +730,6 @@
       }
     },
     {
-      "id": "item.whalefall_log",
-      "name": "鲸落手记",
-      "category": "story",
-      "rarity": "uncommon",
-      "description": "你从那片海床回来后趁记忆还热写下的一页：落点的水深、绕着尸体打转的洋流、那股甜里带腥的味道。页脚是你亲手钉死的坐标，旁边是你给那地方起的名字。带着它，你随时回得去。",
-      "weight": 0.3,
-      "sellPrice": 0,
-      "decay": "eternal",
-      "story": {
-        "unlocksLoreEntry": "lore.whalefall.found",
-        "setsFlag": [
-          "story.ch1.whalefall_found"
-        ],
-        "marksPois": [
-          "poi.anchor.whalefall_scavengers",
-          "poi.anchor.whalefall_enrichment",
-          "poi.anchor.whalefall_bones"
-        ]
-      }
-    },
-    {
       "id": "item.ch1.steadying_charm_broken",
       "name": "定心坠（损坏）",
       "category": "story",
@@ -1098,18 +1077,6 @@
       "tier": 2
     },
     {
-      "id": "item.station_module",
-      "role": "special",
-      "name": "科考站升级模块",
-      "category": "material",
-      "rarity": "rare",
-      "description": "从热液场最深的喷口里撬下来的精密模块，还带着地热的温度，接口规格不像这个时代的东西。装上它，海沟最深处那部停了很久的电梯，也许还能再往下走一次。",
-      "weight": 1,
-      "sellPrice": 0,
-      "decay": "eternal",
-      "tier": 5
-    },
-    {
       "id": "item.quartz_crystal",
       "role": "structural",
       "name": "石英晶柱",
@@ -1246,31 +1213,6 @@
       "tier": 1
     },
     {
-      "id": "item.whalefall_polychaete",
-      "role": "organic",
-      "name": "鲸落多毛虫",
-      "category": "material",
-      "rarity": "common",
-      "description": "从富了的泥里取的一份样本——离尸体最近那圈黑得发亮的泥上，多毛类把泥面织成会动的毯，挑一簇最肥的连泥收进采样管。不是值钱货，是带回去给手记续页的实证：一具尸体怎么把贫瘠的海床养成谁都想落户的地皮。富集相年年自己织回来，取一份不伤这片地皮的根。Mira 说做记录的肯收，论份不论斤。",
-      "weight": 0.2,
-      "sellPrice": 4,
-      "decay": "organic",
-      "tier": 1
-    },
-    {
-      "id": "item.whale_bone",
-      "role": "organic",
-      "name": "鲸骨",
-      "category": "material",
-      "rarity": "uncommon",
-      "description": "从那架半埋在沉积里的骨头上撬下来的一段，骨缝里还嵌着干掉的红须，断面渗着一点甜里带硫的味道。这是它最后、也最长久的形状——肉是别人的几个月，骨头本该是别人的几十年。你撬走的这一段，不会再长回来，这片海床往后就少了这一截。沉甸甸的，压手，也压心。Mira 说识货的肯收，可你收钱的时候大概不会很痛快。",
-      "weight": 1.6,
-      "sellPrice": 34,
-      "decay": "durable",
-      "tier": 3,
-      "harvestPersist": "save"
-    },
-    {
       "id": "item.deep_token",
       "name": "红喉鹈币",
       "category": "currency",
@@ -1279,44 +1221,6 @@
       "weight": 0.05,
       "sellPrice": 20,
       "decay": "durable"
-    },
-    {
-      "id": "item.treasure_map.corin_survey",
-      "name": "Corin 的测绘图",
-      "category": "story",
-      "rarity": "uncommon",
-      "description": "黑背鸥小队测绘手 Corin 生前钉下的一处坐标，图纸边角被水泡得发脆。页脚盖着一只红喉鹈，底下一行小字：『机器不会骗人。』照着它，你能找到他最后标记的地方。",
-      "weight": 0.3,
-      "sellPrice": 0,
-      "decay": "eternal",
-      "story": {
-        "setsFlag": ["story.ch1.corin_map"],
-        "marksPois": ["poi.anchor.corin_cache"]
-      }
-    },
-    {
-      "id": "item.keepsake.corin_badge",
-      "name": "红喉鹈徽章",
-      "category": "other",
-      "rarity": "common",
-      "description": "一枚锈死的金属徽章，压着一只展翅、喉囊鼓成一团的鸟——和红喉鹈币上是同一只。别针早断了，背面用刀尖刻着一道旁人认不出的记号。这种徽章是别在一支队伍装具上的东西；戴过它的人，从前大概不只是下海捞宝那么简单。对旁人是块废铁，对某个还记得那支队伍的人，也许不是。",
-      "weight": 0.02,
-      "sellPrice": 0,
-      "decay": "eternal"
-    },
-    {
-      "id": "item.treasure_map.salvage_generic",
-      "name": "打捞旧图",
-      "category": "story",
-      "rarity": "common",
-      "description": "Mira 柜台底下那堆旧图里翻出来的一张，不知是哪个再没回来的人留下的。墨迹晕开，只勉强认得出近岸浅礁上的一处记号。她说这种图一抓一把、值不了几个钱——去不去，看你。",
-      "weight": 0.2,
-      "sellPrice": 0,
-      "decay": "eternal",
-      "story": {
-        "setsFlag": ["flag.salvage_chart_bought"],
-        "marksPois": ["poi.anchor.salvage_generic"]
-      }
     }
   ]
 }

@@ -38,11 +38,8 @@ const assert: PtAssert = pt.assert;
 const HOME = 'lighthouse.home';
 // 主建造 fixture：船坞（lhtrack.dockyard·homeOnly·单级·requiresLighthouseLevel 1）。
 const DOCK = 'lighthouse.dockyard.lv1'; // scrap_alloy×3 + old_fishing_net×3 + 20g → 纯 POI 门·无 stat 效果（旧 extraConsumableSlot「+1格」已删 2026-07-10）
-// 两级链门控（needsPrev / 续级 lv2）借**派生探深轨**（lhtrack.probe.trench·#131 由 depth_columns.json 派生·lv1…lv6）——
-// 引擎 canBuildAt/buildAtLighthouse 不查 onlyLighthouse 放置（那是 UI 侧过滤·见 LighthouseBuildPanel），
-// 故在 home 上跑它只为验「同轨须先建低一级 + 续级」的纯逻辑（与原 beacon / probe_hadal 链等价）。
-const PROBE1 = 'lighthouse.probe.trench.lv1'; // 派生·brass×2 + 60g（effects 空＝纯门控·无 setsFlag）
-const PROBE2 = 'lighthouse.probe.trench.lv2'; // 派生·brass×3 + 90g, requiresLighthouseLevel 1
+// （原两级链门控 needsPrev/续级 lv2 借派生探深轨 lhtrack.probe.trench〔depth_columns 派生〕验——深度柱系统
+//  删除后现存轨全为单级〔dockyard/recharge/oxygen_supply〕·两级链门控暂无 fixture·相关子用例已随之移除·2026-07-12。）
 
 function stateWith(inv: InventoryItem[], gold: number): GameState {
   const base = createInitialGameState();
@@ -89,10 +86,8 @@ assert(
 s = stateWith([{ itemId: 'item.scrap_alloy', qty: 3 }, { itemId: 'item.old_fishing_net', qty: 3 }], 5);
 const aNoGold = canBuildAt(s.profile, homeOf(s), DOCK);
 assert(!aNoGold.ok && aNoGold.reason === 'notEnoughGold' && aNoGold.goldShort === 15, '材料够金币 5<20 → notEnoughGold 差 15');
-// (c) 跳级（没 lv1 先建 lv2）→ needsPrev（即便材料金币都够·借探深两级轨）
-s = stateWith([{ itemId: 'item.brass_fitting', qty: 9 }, { itemId: 'item.eel_skin', qty: 9 }], 9999);
-const aPrev = canBuildAt(s.profile, homeOf(s), PROBE2);
-assert(!aPrev.ok && aPrev.reason === 'needsPrev', 'lv2 在没建 lv1 前应被前置阻挡');
+s = stateWith([], 9999); // 复位（原 (c) needsPrev 用例已删）
+// （原 (c) 跳级 needsPrev 测试随两级探深轨删除·2026-07-12 移除·现存轨全单级·needsPrev 暂无 fixture。）
 // (d) 灯塔 level 不够 → needsLighthouseLevel（构造 level 0 的灯塔试船坞，requiresLighthouseLevel 1）
 const lowLh: Lighthouse = { ...createHomeLighthouse(), level: 0 };
 const aLvl = canBuildAt(stateWith([{ itemId: 'item.scrap_alloy', qty: 9 }, { itemId: 'item.old_fishing_net', qty: 9 }], 9999).profile, lowLh, DOCK);
@@ -103,7 +98,7 @@ assert(!aUnk.ok && aUnk.reason === 'unknown', '未注册升级 → unknown');
 // (f) 材料金币都够 → ok
 s = stateWith([{ itemId: 'item.scrap_alloy', qty: 3 }, { itemId: 'item.old_fishing_net', qty: 3 }], 100);
 assert(canBuildAt(s.profile, homeOf(s), DOCK).ok, '材料+金币都够 → ok');
-L('  alreadyBuilt/needsPrev/needsLighthouseLevel/材料/金币/unknown/ok 七态 ✓');
+L('  alreadyBuilt/needsLighthouseLevel/材料/金币/unknown/ok 六态（needsPrev 暂无两级轨 fixture·已删）✓');
 
 // ============================================
 // 3. buildAtLighthouse 扣材料+金币 + 只写目标灯塔
@@ -139,30 +134,9 @@ assert(noOp.profile.lighthouses.find((l) => l.id === HOME)!.builtUpgrades.size =
 // alreadyBuilt（船坞单级·已建即满）
 assert(!canBuildAt(s3.profile, h, DOCK).ok && (canBuildAt(s3.profile, h, DOCK) as any).reason === 'alreadyBuilt', '已建应返回 alreadyBuilt');
 
-// 续级 lv2（船坞单级没有 lv2·借探深两级轨验「建 lv1 后 lv2 可建 + 扣料」）：
-// 引擎不查放置门，故在 home 上建探深只为走 lv1→lv2 的级链逻辑（与原 beacon lv1/lv2 等价）。
-let sChain = stateWith(
-  [
-    { itemId: 'item.brass_fitting', qty: 5 },
-    { itemId: 'item.eel_skin', qty: 2 },
-  ],
-  200,
-);
-sChain = buildAtLighthouse(sChain, HOME, PROBE1);
-const hc1 = sChain.profile.lighthouses.find((l) => l.id === HOME)!;
-assert(hc1.builtUpgrades.has(PROBE1), '探深 lv1 应建上');
-assert(canBuildAt(sChain.profile, hc1, PROBE2).ok, '建 lv1 后 lv2 应可建（home level 1 满足 requiresLighthouseLevel 1）');
-sChain = buildAtLighthouse(sChain, HOME, PROBE2);
-const hc2 = sChain.profile.lighthouses.find((l) => l.id === HOME)!;
-// 派生 trench 探深 lv1 扣 brass×2、lv2 扣 brass×3 → 共 brass 5（剩 0）；eel 是账单外料（探深不吃·应不动·仍剩 2）。
-assert(
-  hc2.builtUpgrades.has(PROBE2) &&
-    countInInventory(sChain.profile.inventory, 'item.brass_fitting') === 0 &&
-    countInInventory(sChain.profile.inventory, 'item.eel_skin') === 2,
-  'lv2 应建上、brass 扣净清空（lv1+lv2 共 brass 5）、账单外 eel 不动（仍 2）',
-);
-assert(getBuiltLevelInTrack(hc2, getLighthouseTracks().find((t) => t.id === 'lhtrack.probe.trench')!) === 2, '派生探深轨进度应为 2');
-L('  扣材料+金币正确 / 账单外料不动 / 只写目标灯塔 / 续级 / no-op / alreadyBuilt ✓');
+// （原「续级 lv2」子用例借派生探深两级轨〔lhtrack.probe.trench〕验级链——深度柱系统删除后现存轨全单级·
+//  两级续建暂无 fixture·已随之移除·2026-07-12。`h`〔上面建了 dockyard 的 home〕供 §6「带升级的 home 半径」复用。）
+L('  扣材料+金币正确 / 账单外料不动 / 只写目标灯塔 / no-op / alreadyBuilt ✓');
 
 // ============================================
 // 4. getLighthouseBonuses 聚合
@@ -198,12 +172,12 @@ L('\n========== 6. revealRadius + 船坞桥接 ==========');
 const homeBare = createHomeLighthouse();
 assert(Math.abs(revealRadius(homeBare) - regionRadius(homeBare.id)) < 1e-9, `空 home 半径应=区域配置(${regionRadius(homeBare.id)})`);
 // 作者 2026-06-14：reveal 半径固定为区域配置·升级**不再**扩大它（信标轨 lightRadiusBonus 已删）。
-// hc2＝建了探深 lv1+lv2 的 home（有升级）；半径仍恒为 home 区域配置（与空 home 一致）。
-assert(Math.abs(revealRadius(hc2) - regionRadius(homeBare.id)) < 1e-9, `带升级的 home → 半径仍=区域配置(${regionRadius(homeBare.id)})·升级不扩，实际 ${revealRadius(hc2)}`);
+// h＝建了船坞 dockyard 的 home（有升级）；半径仍恒为 home 区域配置（与空 home 一致·升级不扩扫描）。
+assert(Math.abs(revealRadius(h) - regionRadius(homeBare.id)) < 1e-9, `带升级的 home → 半径仍=区域配置(${regionRadius(homeBare.id)})·升级不扩，实际 ${revealRadius(h)}`);
 // 提一级灯塔 level 也不该扩半径（半径只认区域配置·与 level 解耦）。
 const homeLvUp: Lighthouse = { ...createHomeLighthouse(), level: 3 };
 assert(Math.abs(revealRadius(homeLvUp) - regionRadius(homeBare.id)) < 1e-9, `level 3 的 home → 半径仍=区域配置·level 不扩，实际 ${revealRadius(homeLvUp)}`);
-L(`  半径：空 home ${revealRadius(homeBare)} / +探深升级 ${revealRadius(hc2).toFixed(2)} / level3 ${revealRadius(homeLvUp).toFixed(2)}（恒定·升级/level 均不扩扫描）✓`);
+L(`  半径：空 home ${revealRadius(homeBare)} / +船坞升级 ${revealRadius(h).toFixed(2)} / level3 ${revealRadius(homeLvUp).toFixed(2)}（恒定·升级/level 均不扩扫描）✓`);
 // 船坞（dockyard）现为纯 POI 门·无随身加成（旧 extraConsumableSlot「+1格」桥已删 2026-07-10）。
 // 其 POI 门控（requiresLighthouseUpgrade）覆盖在 playthrough-upgrades §6「旧灯塔礁门控」。
 
@@ -212,21 +186,20 @@ L(`  半径：空 home ${revealRadius(homeBare)} / +探深升级 ${revealRadius(
 // ============================================
 L('\n========== 7. dev 测试建造（0 成本·#110 口径）==========');
 {
-  // 空账户（无材料无金币）也能直建——跳过材料/金币/前置/灯塔等级。
-  // 借派生探深两级轨直跳 lv2（前置也不查）＝验「dev 跳过 needsPrev」（信标轨已删·改用派生 probe.trench·#131）。
+  // 空账户（无材料无金币）也能直建——跳过材料/金币/灯塔等级（船坞 DOCK 正常须 scrap×3+net×3+20g+level1）。
   let sDev = stateWith([], 0);
-  sDev = devBuildAtLighthouse(sDev, HOME, PROBE2); // 直跳 lv2=前置也不查
+  sDev = devBuildAtLighthouse(sDev, HOME, DOCK); // 空账户直建（材料/金币门全跳）
   const homeDev = sDev.profile.lighthouses.find((l) => l.id === HOME)!;
-  assert(homeDev.builtUpgrades.has(PROBE2), '7: dev 建造应落 builtUpgrades（跳过前置）');
+  assert(homeDev.builtUpgrades.has(DOCK), '7: dev 建造应落 builtUpgrades（跳过材料/金币门）');
   assert(sDev.profile.bankedGold === 0, '7: dev 建造不动金币');
   assert(sDev.profile.inventory.length === 0, '7: dev 建造不动材料');
   // 已建 no-op + 未知 no-op（引用相等＝零写入）
-  assert(devBuildAtLighthouse(sDev, HOME, PROBE2) === sDev, '7: 已建应 no-op');
+  assert(devBuildAtLighthouse(sDev, HOME, DOCK) === sDev, '7: 已建应 no-op');
   assert(devBuildAtLighthouse(sDev, HOME, 'lighthouse.nope.lv9') === sDev, '7: 未知 upgrade 应 no-op');
-  assert(devBuildAtLighthouse(sDev, 'lighthouse.nope', PROBE1) === sDev, '7: 未知灯塔应 no-op');
+  assert(devBuildAtLighthouse(sDev, 'lighthouse.nope', DOCK) === sDev, '7: 未知灯塔应 no-op');
   // 产物与真建造同形：派生加成照常生效（reveal 半径恒为区域配置·升级不扩）
   assert(Math.abs(revealRadius(homeDev) - regionRadius(homeDev.id)) < 1e-9, '7: dev 建升级·reveal 半径固定不扩（作者 2026-06-14·升级不扩扫描）');
-  L('  空账户直建（跳前置）/不扣账/已建·未知 no-op/派生同真建 ✓');
+  L('  空账户直建（跳材料/金币门）/不扣账/已建·未知 no-op/派生同真建 ✓');
 }
 
 pt.done();
