@@ -1628,6 +1628,7 @@
             "stat": "stamina",
             "dc": 12,
             "onSuccess": {
+              "exertion": true,
               "text": "凿头顺着矿脉斜面凿进去，岩层裂开一道整齐的缺口，一捧晶柱滚出来，落在手心里还在颤。",
               "oxygenTurnCost": 2,
               "loot": [
@@ -1641,6 +1642,7 @@
               ]
             },
             "onFailure": {
+              "exertion": true,
               "text": "凿头凿偏了，岩粉扑出来，晶柱碎成了沙——拢在掌心，只剩玻璃渣。",
               "oxygenTurnCost": 2
             }
@@ -1679,6 +1681,7 @@
             "capability": "mine"
           },
           "outcome": {
+            "exertion": true,
             "text": "你把凿尖卡进晶壳和石的接缝，一点点撬。壳裂开，整窝晶连着底座落进你手里，断面还是新的。\n你回头看那面壁——嵌晶的地方留了个浅坑，灰白的石，再没有第二窝。这条脉，到此为止。",
             "oxygenTurnCost": 2,
             "loot": [
@@ -1725,6 +1728,7 @@
             "capability": "mine"
           },
           "outcome": {
+            "exertion": true,
             "text": "凿尖卡进壳和石的缝里，顺着层理一撬，整片硬壳连着剥落，断面还是新的土黄。\n你回头看那段顶——剥过的地方留下一条素石的浅痕。这条脉，到此为止。",
             "oxygenTurnCost": 2,
             "loot": [

@@ -115,6 +115,17 @@ export interface Outcome {
   deltas?: Partial<Record<Stat, number>>;
   /** 额外消耗 N 个"标准下潜回合"的氧气（除常规 -1 之外） */
   oxygenTurnCost?: number;
+  /**
+   * 额外体力消耗（用力动作·挖矿/凿洞等·作者 2026-07-11）。与 oxygenTurnCost 对称：applyOutcome 直接扣。
+   * exertion 为真时再乘负重体力倍率（weightStaminaMult）；不填而 exertion 为真则走引擎默认基础体力。
+   */
+  staminaCost?: number;
+  /**
+   * 该结果是否为「用力动作」（战斗以外的用力·挖矿/凿洞/撬开等·作者 2026-07-11）。
+   * 为真 ⇒ applyOutcome 把 oxygenTurnCost×weightO2Mult、（默认/显式）staminaCost×weightStaminaMult（负重档位放大·轻＝×1 逐字节不变）。
+   * 缺省/假 ⇒ 逐字节不变（普通「花时间看一眼」的事件不吃负重税·符合「用力才加税」约定）。
+   */
+  exertion?: boolean;
   loot?: LootRoll[];
   applyFlags?: string[];
   removeFlags?: string[];

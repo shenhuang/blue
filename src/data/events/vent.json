@@ -40,6 +40,7 @@
             "stat": "stamina",
             "dc": 18,
             "onSuccess": {
+              "exertion": true,
               "text": "你绕到喷口的下风一侧，热流被柱体挡掉大半，才敢贴上去。岩凿沿着根部那圈最厚的矿壳啃，硫化物结得密，崩下来的块还带着地底的温。\n你收了几块就退，没贪——这东西脚下就是几百度的水。",
               "oxygenTurnCost": 3,
               "loot": [
@@ -47,6 +48,7 @@
               ]
             },
             "onFailure": {
+              "exertion": true,
               "text": "你凿到一半，一股横流绕过柱体扫过来，热得你整条手臂缩回。岩凿脱手，沉进喷口边的黑里。\n你蹬开，退到温水带外面，空手，喘。这种地方，矿是矿，命是命。",
               "oxygenTurnCost": 3,
               "deltas": { "stamina": -8 }
@@ -654,6 +656,7 @@
             "stat": "stamina",
             "dc": 14,
             "onSuccess": {
+              "exertion": true,
               "text": "凿头进去，带着地热的残温从手套透进来——不烫，但你知道这东西比你早几千年就在这里了。\n矿石块崩下来，黑色，重，硫磺气从断口透出来，散进水里。",
               "oxygenTurnCost": 3,
               "loot": [
@@ -667,6 +670,7 @@
               ]
             },
             "onFailure": {
+              "exertion": true,
               "text": "凿头凿进去，烟囱侧壁整块松动——你赶紧退开。\n矿石碎成粉末落下来，什么都没捞到，只是惊扰了它。",
               "oxygenTurnCost": 3,
               "deltas": {
@@ -1295,6 +1299,7 @@
             "stat": "stamina",
             "dc": 15,
             "onSuccess": {
+              "exertion": true,
               "text": "死的烟囱不烫了，你贴着矿壁凿。岩凿啃进去，硫化物的层一块块崩下来，断口是干的，没有热，没有渗水——这根柱子早把自己结成了石头。\n你收起几块，沉，带着硫磺的涩味。它长成用了几十年，你取走用了两分钟。",
               "oxygenTurnCost": 3,
               "loot": [
@@ -1302,6 +1307,7 @@
               ]
             },
             "onFailure": {
+              "exertion": true,
               "text": "你凿的位置不对，整段矿壁酥了，碎成粉落进黑水里，没接住几块。\n死了的东西也有死了的脾气，你多费一口气才认了。",
               "oxygenTurnCost": 3,
               "deltas": { "stamina": -5 }

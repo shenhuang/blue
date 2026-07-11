@@ -688,6 +688,7 @@
             "capability": "mine"
           },
           "outcome": {
+            "exertion": true,
             "text": "凿头顶进泥地，把几颗结核撬出来——泥浆扑上来，什么都看不见了。你靠着手感把它们摸进袋里。\n表面粗糙，比看起来重。",
             "oxygenTurnCost": 2,
             "loot": [
@@ -737,6 +738,7 @@
             "stat": "stamina",
             "dc": 16,
             "onSuccess": {
+              "exertion": true,
               "text": "凿头凿进去，结壳裂开一道白线——正面深黑，背面是原来的岩石灰，泾渭分明。\n你手里这片花了几百万年才厚成这样。",
               "oxygenTurnCost": 3,
               "loot": [
@@ -750,6 +752,7 @@
               ]
             },
             "onFailure": {
+              "exertion": true,
               "text": "凿头顶进去，结壳碎成粉了——太脆，整片都裂开了。\n你抓了抓碎渣，什么值钱的都没捞到。",
               "oxygenTurnCost": 3,
               "deltas": {

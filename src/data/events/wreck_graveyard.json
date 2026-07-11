@@ -1979,6 +1979,7 @@
             "capability": "mine"
           },
           "outcome": {
+            "exertion": true,
             "text": "凿头凿下去，锈铁瘤崩开，露出里头致密的金属灰。你凿了三颗，两颗完整，一颗碎了。",
             "oxygenTurnCost": 2,
             "loot": [
@@ -2000,6 +2001,7 @@
             "capability": "cut"
           },
           "outcome": {
+            "exertion": true,
             "text": "刀刃进缝，侧刃使劲——结核有松动，但比你想的硬得多，最后只磕下来几块碎渣。\n没有岩凿，只能这样了。",
             "oxygenTurnCost": 2,
             "loot": [
@@ -2396,6 +2398,7 @@
             "stat": "stamina",
             "dc": 14,
             "onSuccess": {
+              "exertion": true,
               "text": "你把凿头别进衬套和轴的接缝，一点点撬。绿锈簌簌往下落，整圈青铜松脱，沉甸甸坠进你怀里。\n你回头看那根空了的尾轴——这艘船的大件，到此为止。",
               "oxygenTurnCost": 2,
               "loot": [
@@ -2409,6 +2412,7 @@
               ]
             },
             "onFailure": {
+              "exertion": true,
               "text": "衬套咬得比看着紧。凿头打滑，刮下一片绿锈，青铜纹丝没动。你换了个角度，先记下它的位置。",
               "oxygenTurnCost": 2,
               "deltas": {

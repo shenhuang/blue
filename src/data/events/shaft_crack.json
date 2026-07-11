@@ -54,6 +54,7 @@
           "label": "割开缠网，取里面的金属件",
           "visibleIf": { "kind": "hasCapability", "capability": "cut" },
           "outcome": {
+            "exertion": true,
             "text": "你顺着缠死的结口割下去。网一松，那截铜件连同半张还能用的网一起脱出来，落进你手里。",
             "oxygenTurnCost": 1,
             "loot": [
@@ -192,6 +193,7 @@
           "label": "用岩凿撬下结瘤",
           "visibleIf": { "kind": "hasCapability", "capability": "mine" },
           "outcome": {
+            "exertion": true,
             "text": "你把岩凿抵进瘤根，一下一下撬。深色的硬瘤接连脱落，沉甸甸坠进网兜。",
             "oxygenTurnCost": 2,
             "loot": [

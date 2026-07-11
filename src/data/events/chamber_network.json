@@ -197,6 +197,7 @@
           "label": "用岩凿撬大块的结核",
           "visibleIf": { "kind": "hasCapability", "capability": "mine" },
           "outcome": {
+            "exertion": true,
             "text": "你跪在软泥上，拿岩凿一颗颗撬大的。黑瘤接连松土脱出，没多久网兜就沉了。",
             "oxygenTurnCost": 2,
             "loot": [

@@ -25,6 +25,7 @@ import {
   getEquipmentStats,
   weaponDamageForSlot,
   weightStaminaMult,
+  weightO2Mult,
   weightHitMod,
   isOverloaded,
   equipmentUnlocksAction,
@@ -256,11 +257,13 @@ function actionCosts(
   const mods = computeModifiers(run);
   // 负重档位体力倍率（武器系统·作者 2026-06-20）：与负伤 staminaCostMult 相乘。轻档 ×1 ⇒ ceil(整数×1×1) 逐字节不变。
   const wMult = weightStaminaMult(run.equipment);
+  // 负重档位氧耗倍率（作者 2026-07-11）：战斗＝全用力动作 ⇒ 氧耗同体力一起吃负重税·与负伤 o2CostMult 相乘·轻档 ×1 逐字节不变。
+  const wO2 = weightO2Mult(run.equipment);
   // 屏息潜逃纠缠代价（机制·见 fleeEngagedSurcharge）：与基础 costStamina 相加后同过负伤/负重乘子。
   const fleeSurcharge = action.effect.kind === 'flee' ? fleeEngagedSurcharge(enemies) : 0;
   return {
     stamina: Math.ceil((action.costStamina + fleeSurcharge) * mods.staminaCostMult * wMult),
-    oxygen: Math.ceil(action.costOxygenTurns * mods.o2CostMult),
+    oxygen: Math.ceil(action.costOxygenTurns * mods.o2CostMult * wO2),
   };
 }
 

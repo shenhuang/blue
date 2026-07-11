@@ -15,6 +15,7 @@
           "label": "用岩凿从棱缝里取一段样本",
           "visibleIf": { "kind": "hasCapability", "capability": "mine" },
           "outcome": {
+            "exertion": true,
             "text": "你把岩凿对准两棱之间的缝，轻轻锤了两下。矿物裂开的声音在洞里转了一圈——柱子没倒，你手里多了一块白色的、截面很正的矿料。",
             "oxygenTurnCost": 2,
             "loot": [
@@ -232,6 +233,7 @@
           "label": "用岩凿撬松锚爪附近的泥，取底下的料",
           "visibleIf": { "kind": "hasCapability", "capability": "mine" },
           "outcome": {
+            "exertion": true,
             "text": "你贴着锚爪下去，把周围的泥撬松了一圈。锚爪下面结着一层沉积，比泥要硬，颜色也不同——是锈渗进泥里这么多年压出来的。你取了一块，底下还有更多。",
             "oxygenTurnCost": 2,
             "loot": [

@@ -103,6 +103,7 @@
           "label": "割开绑带，取下能用的件",
           "visibleIf": { "kind": "hasCapability", "capability": "cut" },
           "outcome": {
+            "exertion": true,
             "text": "你贴着泥面下刀，割开锈死的绑带，把还成形的金属件一件件抽出来，尽量不搅起泥。",
             "oxygenTurnCost": 2,
             "loot": [
@@ -230,6 +231,7 @@
           "label": "用岩凿取下整排晶簇",
           "visibleIf": { "kind": "hasCapability", "capability": "mine" },
           "outcome": {
+            "exertion": true,
             "text": "你把岩凿探进裂缝，沿着矿脉一路撬。晶簇成排脱落，亮得在灯下晃眼。值这一趟远路。",
             "oxygenTurnCost": 2,
             "loot": [

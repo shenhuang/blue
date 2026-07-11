@@ -23,6 +23,7 @@
           "label": "从断面边沿取一块料",
           "visibleIf": { "kind": "hasCapability", "capability": "mine" },
           "outcome": {
+            "exertion": true,
             "text": "你拿岩凿沿断面边沿撬，柱芯里夹着的晶簇成片脱落。料是好料——只是凿子下去的每一块，断口都参差扎手，和那个齐平的截面一点也不像。",
             "oxygenTurnCost": 2,
             "loot": [
@@ -123,6 +124,7 @@
           "label": "用岩凿凿下烟囱壁的硫化物",
           "visibleIf": { "kind": "hasCapability", "capability": "mine" },
           "outcome": {
+            "exertion": true,
             "text": "你把岩凿抵进烟囱壁，沿着结晶的纹路一路撬。沉甸甸的硫化物成块脱落，断口里还透着金属的光。这一堆够换不少钱。",
             "oxygenTurnCost": 2,
             "loot": [

@@ -29,6 +29,7 @@ import {
   weightTier,
   loadoutWeightTier,
   weightStaminaMult,
+  weightO2Mult,
   weightHitMod,
   isOverloaded,
   equipmentUnlocksAction,
@@ -236,6 +237,7 @@ assert(
 );
 assert(loadoutWeightTier(createStarterLoadout()) === 'light', 'starter ＝ 轻装');
 assert(weightStaminaMult(createStarterLoadout()) === 1, '轻装体力倍率 ×1（既有战斗 baseline 不变）');
+assert(weightO2Mult(createStarterLoadout()) === 1, '轻装氧耗倍率 ×1（既有耗氧 baseline 不变）');
 assert(weightHitMod(createStarterLoadout()) === 0, '轻装命中补正 0（既有命中不变）');
 const heavyLo: EquipmentLoadout = {
   ...createStarterLoadout(),
@@ -251,6 +253,8 @@ assert(
   loadoutWeightTier(midLo) === 'medium' && weightStaminaMult(midLo) === 1.5 && weightHitMod(midLo) < 0,
   '持斧（12）＝中装·体力 ×1.5·命中补正<0',
 );
+assert(weightO2Mult(midLo) === 1.5, '持斧（12）中装氧耗 ×1.5（曲线对齐体力）');
+assert(weightO2Mult(heavyLo) === 2, '重载（21·过载）氧耗 ×2（曲线对齐体力）');
 L('§11a 负重档位：起手轻/换斧中/重载过载 + 倍率/命中补正 ✓');
 
 // §11b 背包承载＝重量制（weightForItem·按 qty 线性·2026-06-21·取代旧「弹匣占格」）

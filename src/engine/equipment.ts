@@ -428,6 +428,17 @@ export function weightStaminaMult(loadout: EquipmentLoadout): number {
   return WEIGHT_STAMINA_MULT[loadoutWeightTier(loadout)];
 }
 
+const WEIGHT_O2_MULT: Record<WeightTier, number> = {
+  light: 1, medium: 1.5, heavy: 2, overloaded: 2,
+};
+/**
+ * 用力动作的氧耗倍率（战斗 costOxygenTurns / 洋流逆游 / exertion 事件乘进·与负伤 o2CostMult 相乘·轻＝×1 基线不变）。
+ * 曲线对齐 weightStaminaMult（作者 2026-07-11：负重同时加体力与氧耗·仅用力动作·普通游动/每回合呼吸不吃税）。
+ */
+export function weightO2Mult(loadout: EquipmentLoadout): number {
+  return WEIGHT_O2_MULT[loadoutWeightTier(loadout)];
+}
+
 const WEIGHT_HIT_MOD: Record<WeightTier, number> = {
   light: 0, medium: -0.07, heavy: -0.15, overloaded: -0.25,
 };

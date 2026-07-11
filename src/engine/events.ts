@@ -14,7 +14,7 @@ import type {
 import { addToInventory, addToPoiSetMap, appendLog, clampStats, enqueuePickup, totalRunInventoryWeight } from './state';
 import { getItemDef, harvestPersistOf, weightForItem } from './items';
 import { getUpgradeDef } from './upgrades';
-import { equipmentUnlocksAction, loadoutInsulation } from './equipment';
+import { equipmentUnlocksAction, loadoutInsulation, weightO2Mult, weightStaminaMult } from './equipment';
 import { EQUIPMENT_SLOTS } from '@/types/items';
 import { restoreLighthouse, advanceOutpost } from './lighthouses';
 import { lampPowerDrain, alertDelta, ALERT_MAX } from './clarity';
@@ -271,6 +271,13 @@ export interface OutcomeResult {
     | { kind: 'remainOnEvent' };
 }
 
+/**
+ * 用力动作（exertion）的默认基础体力消耗（作者 2026-07-11·占位·defer-number-tuning）。
+ * 挖矿/凿洞等 exertion 结果若没显式 staminaCost，就按此值扣（再乘负重体力倍率）——
+ * 让「负重同时放大体力与氧耗」对挖矿也成立（挖矿旧数据只有 oxygenTurnCost、无体力字段）。
+ */
+const EXERTION_BASE_STAMINA = 3;
+
 export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult {
   let s = state;
   const narrative: string[] = [];
@@ -288,9 +295,20 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
         stats[stat] = stats[stat] + delta;
       }
     }
-    // 额外氧气消耗（按"标准回合数"）
+    // 额外氧气消耗（按"标准回合数"）。exertion（用力动作·挖矿/凿洞等·作者 2026-07-11）⇒ ×负重氧耗倍率（轻＝×1 逐字节不变）。
     if (outcome.oxygenTurnCost) {
-      stats.oxygen -= outcome.oxygenTurnCost;
+      const cost = outcome.exertion
+        ? Math.ceil(outcome.oxygenTurnCost * weightO2Mult(s.run.equipment))
+        : outcome.oxygenTurnCost;
+      stats.oxygen -= cost;
+    }
+    // 用力动作的体力消耗（作者 2026-07-11「负重同时加体力和氧」）：exertion ⇒ 默认基础体力（staminaCost 覆盖）×负重体力倍率；
+    // 非 exertion 仅按显式 staminaCost 扣、不乘负重（旧数据无此字段＝0＝逐字节不变）。
+    if (outcome.exertion) {
+      const base = outcome.staminaCost ?? EXERTION_BASE_STAMINA;
+      stats.stamina -= Math.ceil(base * weightStaminaMult(s.run.equipment));
+    } else if (outcome.staminaCost) {
+      stats.stamina -= outcome.staminaCost;
     }
     stats = clampStats(stats, {
       stamina: effectiveStaminaMax(s.run),
