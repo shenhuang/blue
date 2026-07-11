@@ -30,7 +30,6 @@ import {
   loadoutWeightTier,
   weightStaminaMult,
   weightO2Mult,
-  weightHitMod,
   isOverloaded,
   equipmentUnlocksAction,
   canInstallMod,
@@ -228,7 +227,7 @@ for (const def of allItems()) {
 L('§10 不变量：可买备件 ⊆ 无 upgradeSteps ✓');
 
 // ── §11 武器系统：负重档位 / 弹匣占格 / 改装组件 / 武器解锁行动（作者 2026-06-20）──
-// §11a 负重档位（轻＝中性基线·越重越钝·过载拦行动/出发）
+// §11a 负重档位（轻＝中性基线·越重越钝·过载拦出发·战斗内过载封锁已删——出发门保证 run.equipment 一潜期间恒非过载）
 const starterW = totalLoadoutWeight(createStarterLoadout());
 assert(starterW === 8, `starter 总负重 = 8（刀1+服2+瓶4+灯1·实得 ${starterW}）`);
 assert(
@@ -238,7 +237,6 @@ assert(
 assert(loadoutWeightTier(createStarterLoadout()) === 'light', 'starter ＝ 轻装');
 assert(weightStaminaMult(createStarterLoadout()) === 1, '轻装体力倍率 ×1（既有战斗 baseline 不变）');
 assert(weightO2Mult(createStarterLoadout()) === 1, '轻装氧耗倍率 ×1（既有耗氧 baseline 不变）');
-assert(weightHitMod(createStarterLoadout()) === 0, '轻装命中补正 0（既有命中不变）');
 const heavyLo: EquipmentLoadout = {
   ...createStarterLoadout(),
   suit: { itemId: 'item.suit.reinforced', slot: 'suit', level: 1 },
@@ -250,8 +248,8 @@ assert(totalLoadoutWeight(heavyLo) === 21, `重载总重 21（瓶4+服3+灯1+呐
 assert(isOverloaded(heavyLo) && !isOverloaded(createStarterLoadout()), '21 过载·starter 非过载');
 const midLo: EquipmentLoadout = { ...createStarterLoadout(), tool: { itemId: 'item.weapon.rescue_axe', slot: 'tool', level: 1 } };
 assert(
-  loadoutWeightTier(midLo) === 'medium' && weightStaminaMult(midLo) === 1.5 && weightHitMod(midLo) < 0,
-  '持斧（12）＝中装·体力 ×1.5·命中补正<0',
+  loadoutWeightTier(midLo) === 'medium' && weightStaminaMult(midLo) === 1.5,
+  '持斧（12）＝中装·体力 ×1.5（weightHitMod 已随 #291 删，命中判定不存在）',
 );
 assert(weightO2Mult(midLo) === 1.5, '持斧（12）中装氧耗 ×1.5（曲线对齐体力）');
 assert(weightO2Mult(heavyLo) === 2, '重载（21·过载）氧耗 ×2（曲线对齐体力）');

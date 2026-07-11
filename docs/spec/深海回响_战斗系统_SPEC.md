@@ -106,9 +106,9 @@ type Enemy = {
   
   // —— 基础属性 ——
   hp: number;               // 体力 / 物理生命值
-  armor: number;            // 物理减伤
-  evasion: number;          // 玩家命中扣减
+  defense: number;          // 防御力（原 armor 改名 2026-07-10·战斗系统改版 #290）：resolveDamage 物理减伤基值
   speed: number;            // 与玩家"敏捷"对比，决定先手
+  // （evasion/hitBonus 已随命中率系统整套删·战斗改「必中」·#290/#291·别再往这个 schema 加命中相关字段）
   
   // —— 威胁与行为 ——
   threat: number;           // 初始威胁度，影响多敌时的攻击概率

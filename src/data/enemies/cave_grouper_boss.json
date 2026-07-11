@@ -16,13 +16,11 @@
       "tier": "uncanny",
       "hp": 62,
       "defense": 3,
-      "evasion": 1,
       "speed": 3,
       "threat": 8,
       "hostility": "territorial",
       "initialStance": "alerted",
       "aiPattern": "aggressor",
-      "hitBonus": 0.05,
       "attacks": [
         {
           "id": "cave_grouper_boss.charge",

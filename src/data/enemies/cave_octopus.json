@@ -15,13 +15,11 @@
       "tier": "realistic",
       "hp": 26,
       "defense": 1,
-      "evasion": 3,
       "speed": 7,
       "threat": 6,
       "hostility": "territorial",
       "initialStance": "alerted",
       "aiPattern": "aggressor",
-      "hitBonus": 0.1,
       "attacks": [
         {
           "id": "octopus.coil",

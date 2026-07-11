@@ -204,7 +204,7 @@ export function EquipmentDoll({
     <div className="equip-doll-wrap">
       <div
         className={`equip-weight wt-${wTier}`}
-        title="负重越重，行动越费力、命中越钝；过载则无法出发与行动。"
+        title="负重越重，行动越费力、命中越钝；过载则无法出发。"
       >
         <span className="equip-weight-label">负重</span>
         <span className="equip-weight-val">{totalWeight}</span>

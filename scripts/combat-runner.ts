@@ -407,7 +407,6 @@ function handleNewEnemy(args: CliArgs) {
         codex: { habitat: 'TODO 栖息地', behavior: 'TODO 行为/习性', appearance: 'TODO 外观' },
         hp: 20,
         defense: 0,
-        evasion: 2,
         speed: 6,
         threat: 5,
         hostility: 'territorial',
@@ -512,7 +511,7 @@ function handleShowEnemy(args: CliArgs) {
   const d = info.def;
   console.log(`━━━ ${d.id} ${d.name} ━━━`);
   console.log(
-    `tier=${d.tier} hp=${d.hp} defense=${d.defense} evasion=${d.evasion} threat=${d.threat} hostility=${d.hostility} stance=${d.initialStance} ai=${d.aiPattern}`,
+    `tier=${d.tier} hp=${d.hp} defense=${d.defense} threat=${d.threat} hostility=${d.hostility} stance=${d.initialStance} ai=${d.aiPattern}`,
   );
   console.log(`flee: ${info.fleeThresholdDescription}`);
   console.log(`attacks:`);

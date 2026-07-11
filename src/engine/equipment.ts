@@ -386,11 +386,14 @@ function describeCraftCost(cost: { materials: { itemId: string; qty: number }[];
 // ════════════════════════════════════════════════════════════════════════════
 // 负重档位（武器系统·作者 2026-06-20）
 // ════════════════════════════════════════════════════════════════════════════
-// 整套穿戴件总负重 → 档位 → 战斗修正（体力消耗倍率·命中率补正）+ 出发过载门。阈值/数值＝提案可调。
-// **轻装＝中性基线**（命中最高·体力 ×1·作者 2026-06-20 拍板）：起手装＝8＝轻 ⇒ 全部既有战斗 baseline
-// 逐字节不变（新机制只在更重负载下生效）；越重越钝（双方命中都降、行动更费力）；过载＝无法行动 + 拦出发
-// （逃生阀门＝卸装即走）。作者答疑：「light 会增加自己和敌人的命中率」——轻档双方都最准、越重越钝（命中补正
-// 同一加数同时作用玩家与敌人·见 engine/combat.ts），叠加各敌种自己的 hitBonus（有些更善于黑暗中偷袭）。
+// 整套穿戴件总负重 → 档位 → 战斗修正（体力消耗倍率·#289 起再加氧耗倍率）+ 出发过载门。阈值/数值＝提案可调。
+// **轻装＝中性基线**（体力/氧耗 ×1·作者 2026-06-20 拍板）：起手装＝8＝轻 ⇒ 全部既有战斗 baseline 逐字节不变
+// （新机制只在更重负载下生效）；越重越钝（行动更费力）；过载＝拦出发（逃生阀门＝卸装即走·唯一真正生效的
+// 过载判据·见 dive-start.ts）。**overloaded 档在下潜期间不可达**（出发门拦截 + run.equipment 一潜冻结）：
+// 下方两张负重乘数表仍须给它填值（TS `Record<WeightTier,…>` 四档穷尽），但该格从不会被战斗/事件消费点实际
+// 读到——纯类型占位，不是调过的数值，别当平衡数据改（作者 2026-07-11：别放读不到的数值，会误导）。
+// **历史**：曾有第三张表 `weightHitMod`（负重命中补正·配敌种 `hitBonus`），随命中率系统整套删（战斗系统
+// 改版「必中」·#290 起惰性、#291 连数据一并真删）——负重现只管体力/氧耗，不再影响命中（命中判定已不存在）。
 
 export type WeightTier = 'light' | 'medium' | 'heavy' | 'overloaded';
 
@@ -432,19 +435,12 @@ const WEIGHT_O2_MULT: Record<WeightTier, number> = {
   light: 1, medium: 1.5, heavy: 2, overloaded: 2,
 };
 /**
- * 用力动作的氧耗倍率（战斗 costOxygenTurns / 洋流逆游 / exertion 事件乘进·与负伤 o2CostMult 相乘·轻＝×1 基线不变）。
- * 曲线对齐 weightStaminaMult（作者 2026-07-11：负重同时加体力与氧耗·仅用力动作·普通游动/每回合呼吸不吃税）。
+ * 用力动作的氧耗倍率（战斗 costOxygenTurns / exertion 事件乘进·与负伤 o2CostMult 相乘·轻＝×1 基线不变）。
+ * 曲线对齐 weightStaminaMult（作者 2026-07-11：负重同时加体力与氧耗·仅用力动作·普通游动/每回合呼吸/洋流不吃税
+ * ——洋流＝移动·归惯性免税·作者收尾时明确排除·别再接回来）。
  */
 export function weightO2Mult(loadout: EquipmentLoadout): number {
   return WEIGHT_O2_MULT[loadoutWeightTier(loadout)];
-}
-
-const WEIGHT_HIT_MOD: Record<WeightTier, number> = {
-  light: 0, medium: -0.07, heavy: -0.15, overloaded: -0.25,
-};
-/** 命中率补正（玩家与敌人同此加数·轻＝0 基线·越重双方越钝·combat 命中判定读）。 */
-export function weightHitMod(loadout: EquipmentLoadout): number {
-  return WEIGHT_HIT_MOD[loadoutWeightTier(loadout)];
 }
 
 /** 是否过载（出发门控 + 战斗全行动封锁的单一判据）。 */

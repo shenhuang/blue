@@ -15,13 +15,11 @@
       "tier": "uncanny",
       "hp": 18,
       "defense": 0,
-      "evasion": 4,
       "speed": 10,
       "threat": 7,
       "hostility": "predatory",
       "initialStance": "alerted",
       "aiPattern": "flanker",
-      "hitBonus": 0.15,
       "scent": true,
       "attacks": [
         {
@@ -79,7 +77,6 @@
       "tier": "uncanny",
       "hp": 6,
       "defense": 0,
-      "evasion": 3,
       "speed": 8,
       "threat": 2,
       "hostility": "territorial",

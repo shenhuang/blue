@@ -17,13 +17,11 @@
       "tier": "uncanny",
       "hp": 38,
       "defense": 2,
-      "evasion": 2,
       "speed": 4,
       "threat": 8,
       "hostility": "predatory",
       "initialStance": "unaware",
       "aiPattern": "flanker",
-      "hitBonus": 0.1,
       "attacks": [
         {
           "id": "horror_sapien.lunge",

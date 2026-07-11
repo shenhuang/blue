@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 架构边界检查（七条规则，命中任一即打印 file:line 并退出 1）：
+// 架构边界检查（规则一至八·规则四已随负伤系统整套下线停用，命中任一活跃规则即打印 file:line 并退出 1）：
 //
 // 规则一：engine ↛ ui —— 引擎层不得依赖 UI 层 / React。
 //   扫 src/engine/**/*.ts(x) 的模块说明符：
@@ -16,13 +16,9 @@
 //   `overflow(-y): auto|scroll` 只许出现在 .panel-shell-body / .changelog-body；
 //   内容型视图要内部滚动＝用 ui/PanelShell 包，别自己开滚动容器。
 //
-// 规则四：run.injuries 触碰面收口（负伤 SPEC §5「机制化」）。
-//   src/engine 内 `run.injuries`（含 run!./run?. 变体）只许出现在：
-//   injuries.ts（add/worsen/heal 三入口 + fixture seedInjuries＝唯一写者）、
-//   modifiers.ts（computeModifiers 折算＝唯一数值读者）、state.ts（createNewRun 种子 +
-//   hydrateGameState 单点补默认）、combatScenario.ts（回归框架快照只读·写走 seedInjuries）。
-//   其余引擎文件要数值走 computeModifiers、要写走 injuries.ts——消耗修正散成一地 if 就是这条防的。
-//   （正则是 tripwire 不是沙箱：把 run 重命名再访问可以骗过它，但骗过 lint 的代码过不了评审。）
+// 规则四：已停用（战斗系统改版 2026-07-10·#290）——run.injuries / injuries.ts / modifiers.ts 随负伤
+//   系统整套下线一起删，字段不再存在，本规则无对象可查。编号保留占位（只增不重排），别复用给别的规则；
+//   函数体见下方「规则四已删除」桩注释，此处头部同步收窄，避免头/体各说各话误导读者。
 //
 // 规则五：game ↛ dev —— 游戏入口/UI（App.tsx + src/ui 下非 dev 文件）不得 import dev 工具
 //   （src/ui/dev/** + MapEditor/StoryEditor/EditorApp/EditorShell）。dev 工具只经 ?editor 工作台
@@ -38,6 +34,12 @@
 //   信任数值单源 profile.trust（npcId→数）的读写派生只许 engine/trust.ts（trustValue/trustTier/gainTrust/loseTrust）
 //   + state.ts（createInitialProfile 种 + hydrateGameState 补）。别处引擎文件散读散写 profile.trust 即违例——
 //   门控走 events.ts::evalCondition 的 npcTrustTier（内部调 trustTier·不碰 profile.trust）。当前 0 违例。
+//
+// 规则八：敌人 JSON 禁 evasion/hitBonus（惰性数据轴清理·quirk #243 续·#291）。
+//   命中率系统整套删后（战斗系统改版「必中」·#290），`evasion`/`hitBonus` 在代码里已零消费点，
+//   继续留在 `src/data/enemies/*.json` 里会让编数据的人误以为改它有效（调 evasion 4→9 静默无效）。
+//   扫全部敌人 JSON 文件，命中键名 `"evasion"` / `"hitBonus"` 即违例——机制化住「命中制若重开，
+//   得先在这里松绑」这条约定（CLAUDE.md「能进 regress 的门优先」）。
 //
 // 把此前靠散文（CLAUDE.md / 评审记忆）维持的解耦约定做成会在 `npm run regress`
 // 里失败的门。现状 0 违例 → 直接绿；以后谁越界，这个门会红——不再靠下一个
@@ -233,6 +235,22 @@ for (const file of engineFiles) {
   }
 }
 
+// ── 规则八：敌人 JSON 禁 evasion/hitBonus（惰性数据轴清理·quirk #243 续·#291）──
+// 命中率系统整套删后两个字段零消费点·继续留在数据里会让人误以为改它有效。扫键名，不看值。
+const ENEMIES_DIR = resolve(ROOT, 'src/data/enemies');
+const DEAD_KEY_RE = /"(evasion|hitBonus)"\s*:/g;
+const deadKeyViolations = [];
+for (const name of readdirSync(ENEMIES_DIR)) {
+  if (!name.endsWith('.json')) continue;
+  const file = join(ENEMIES_DIR, name);
+  const text = readFileSync(file, 'utf-8');
+  let m;
+  DEAD_KEY_RE.lastIndex = 0;
+  while ((m = DEAD_KEY_RE.exec(text))) {
+    deadKeyViolations.push({ file: relative(ROOT, file), line: lineOf(text, m.index), key: m[1] });
+  }
+}
+
 let failed = false;
 
 if (importViolations.length) {
@@ -311,6 +329,18 @@ if (trustViolations.length) {
   );
 }
 
+if (deadKeyViolations.length) {
+  failed = true;
+  console.error('✘ 敌人 JSON 惰性数据违例：evasion/hitBonus 已零消费点（命中率系统整套删·quirk #243）\n');
+  for (const v of deadKeyViolations) {
+    console.error(`  ${v.file}:${v.line}  "${v.key}" 键（读它的代码不存在）`);
+  }
+  console.error(
+    `\n共 ${deadKeyViolations.length} 处。命中判定已删（战斗系统改版「必中」·#290/#291），evasion/hitBonus 别再写回` +
+      `\n敌人 JSON——改它静默无效。真要重开命中制，先在这里松绑本规则，再决定数据形状。\n`,
+  );
+}
+
 if (failed) process.exit(1);
 
 console.log(
@@ -319,6 +349,7 @@ console.log(
     `；styles.css 滚动容器全在白名单（${SCROLL_WHITELIST.join(' / ')}）` +
     `；game ↛ dev（游戏侧 ${gameFiles.length} 文件不 import dev 工具）` +
     `；nitrogen 债务写口收窄（engine 内仅 nitrogen/ascent/events/state 写）` +
-    `；profile.trust 触碰面收口（engine 内仅 trust/state）`,
+    `；profile.trust 触碰面收口（engine 内仅 trust/state）` +
+    `；敌人 JSON 无 evasion/hitBonus 惰性键`,
 );
 process.exit(0);

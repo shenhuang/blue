@@ -15,13 +15,11 @@
       "tier": "realistic",
       "hp": 16,
       "defense": 0,
-      "evasion": 4,
       "speed": 12,
       "threat": 7,
       "hostility": "predatory",
       "initialStance": "alerted",
       "aiPattern": "flanker",
-      "hitBonus": 0.12,
       "scent": true,
       "attacks": [
         {
@@ -69,7 +67,6 @@
       "tier": "realistic",
       "hp": 7,
       "defense": 0,
-      "evasion": 4,
       "speed": 9,
       "threat": 2,
       "hostility": "territorial",

@@ -11,7 +11,6 @@
       "threatTier": "mid",
       "hp": 24,
       "defense": 1,
-      "evasion": 2,
       "speed": 5,
       "threat": 5,
       "hostility": "aggressive",

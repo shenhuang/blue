@@ -562,7 +562,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
               <h5>{enemyDescribed.def.name} · 详情</h5>
               <ul>
                 <li>tier={enemyDescribed.def.tier}, ai={enemyDescribed.def.aiPattern}, stance={enemyDescribed.def.initialStance}</li>
-                <li>hp={enemyDescribed.def.hp}, defense={enemyDescribed.def.defense}, evasion={enemyDescribed.def.evasion}, threat={enemyDescribed.def.threat}</li>
+                <li>hp={enemyDescribed.def.hp}, defense={enemyDescribed.def.defense}, threat={enemyDescribed.def.threat}</li>
                 <li>flee: {enemyDescribed.fleeThresholdDescription}</li>
                 <li>victory: [{enemyDescribed.victoryConditions.join(', ')}]</li>
               </ul>

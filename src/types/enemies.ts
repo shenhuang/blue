@@ -137,7 +137,6 @@ export interface EnemyDef {
   // —— 基础属性（攻击力=各 EnemyAttack.damage / 防御力=defense / 生命=hp·战斗系统改版 2026-07-10）——
   hp: number;
   defense: number; // 防御力（原 armor 改名 2026-07-10）：resolveDamage 物理减伤基值。阶段/母鱼截击的临时覆盖仍叫 phaseArmorOverride / armorWhileProtected（派生自此）。
-  evasion: number; // ⚠ 战斗系统改版 2026-07-10「必中」后不再参与命中结算·仅 dev 面板展示（死数据·可后续清理）。
   speed: number;
 
   // —— 行为 ——
@@ -145,13 +144,6 @@ export interface EnemyDef {
   hostility: Hostility;
   initialStance: EnemyStance;
   aiPattern: AiPattern;
-
-  /**
-   * 命中率补正（负重战斗·作者 2026-06-20）：加到该敌种的基础命中率上（见 engine/combat.ts::enemyHitChance）。
-   * 「每个敌人补正不同·有些更善于在黑暗中偷袭」——暗伏/突袭型给正值（更准）、笨重/被动型给负值或 0。
-   * 缺省 0＝按基础命中（仅受负重档位 weightHitMod 影响）。范围建议 −0.15..+0.20·数值=提案可调。
-   */
-  hitBonus?: number;
 
   /**
    * 嗅觉系敌种（负伤 SPEC §6.1 scent 第三感官·鲨/梭鱼类天然候选 true·管水母类 false/缺省）。

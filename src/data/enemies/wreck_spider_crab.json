@@ -15,7 +15,6 @@
       "tier": "realistic",
       "hp": 22,
       "defense": 2,
-      "evasion": 3,
       "speed": 5,
       "threat": 5,
       "hostility": "territorial",

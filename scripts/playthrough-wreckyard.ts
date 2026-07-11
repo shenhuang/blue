@@ -128,7 +128,7 @@ assert(crabDef!.hp === 22, `HP 应为 22，实际 ${crabDef!.hp}`);
 assert(crabDef!.defense === 2, `defense 应为 2`);
 assert(crabDef!.hostility === 'territorial', `hostility 应为 territorial（确保走主动撤退路径）`);
 assert(crabDef!.victoryConditions.includes('flee'), 'victoryConditions 应含 flee');
-L(`  ${crabDef!.name}: HP=${crabDef!.hp}/defense=${crabDef!.defense}/evasion=${crabDef!.evasion}/threat=${crabDef!.threat}`);
+L(`  ${crabDef!.name}: HP=${crabDef!.hp}/defense=${crabDef!.defense}/threat=${crabDef!.threat}`);
 L(`  attacks: ${crabDef!.attacks.map(a => `${a.name}[${a.damage.join('-')}]w=${a.weight}`).join(', ')}`);
 const soloEnc = getEncounter('combat.wreck_spider_crab_solo');
 const pairEnc = getEncounter('combat.wreck_spider_crabs_pair');

@@ -25,7 +25,6 @@ import {
   weaponDamageForSlot,
   weightStaminaMult,
   weightO2Mult,
-  isOverloaded,
   equipmentUnlocksAction,
   installedModMeta,
 } from './equipment';
@@ -62,8 +61,9 @@ import { isWarrenLastStand } from './warren-hunt';
 const ACTIONS: Map<string, CombatAction> = new Map();
 for (const a of (actionData as { actions: CombatAction[] }).actions) ACTIONS.set(a.id, a);
 
-// 命中率系统已删（战斗系统改版 2026-07-10·必中）：不再有 ENEMY_BASE_HIT / 负重命中折算 / def.evasion——
+// 命中率系统已删（战斗系统改版 2026-07-10·必中）：不再有 ENEMY_BASE_HIT / 负重命中折算——
 // 每击必然连上，伤害由 resolveDamage(攻击力 − 防御力·下限0) 单点结算。负重仍影响体力消耗（weightStaminaMult·未删）。
+// def.evasion/hitBonus/weightHitMod 三个数据字段已随 #291 全删（惰性数据轴清理·别再指望这里读它们）。
 
 // 敌人库 SPEC 支柱三：从生成的注册表（src/data/enemies/registry.generated.ts·目录自动加载）灌入。
 // 新增纯数据敌人＝丢一个 JSON + `npm run gen:enemies`，本文件零改动（registry 过期由 regress 门拦）。
@@ -307,11 +307,9 @@ export function checkActionAvailability(
   const run = state.run;
   if (!run) return { available: false, reason: '无 run state' };
 
-  // 负重过载（武器系统·作者 2026-06-20）：过载档全行动封锁（「负重过载，无法行动」）。出发门已拦过载下潜，
-  // 故实战几乎触不到（run.equipment 一潜固定）；此为防御性双保险。轻档不触发。
-  if (isOverloaded(run.equipment)) {
-    return { available: false, reason: '负重过载，无法行动' };
-  }
+  // 负重过载：无战斗内检查——出发门（dive-start.ts::isOverloaded）已拦过载下潜，且 run.equipment 在
+  // 整个下潜期冻结（无游戏内路径改写），故战斗中 isOverloaded(run.equipment) 恒假、不可能为真。
+  // 曾有一份「防御性双保险」分支覆盖这条恒假路径，删（作者 2026-07-11：别放不可达代码，会误导）。
 
   const costs = actionCosts(run, action, state.phase.kind === 'combat' ? state.phase.combat.enemies : undefined);
   if (run.stats.stamina < costs.stamina) {
@@ -541,8 +539,9 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
   const def = ENEMY_DEFS.get(target.defId);
   if (!def) return state;
 
-  // 命中判定已删（战斗系统改版 2026-07-10·必中）：不再摇命中骰、不读 def.evasion——每击必然连上，
+  // 命中判定已删（战斗系统改版 2026-07-10·必中）：不再摇命中骰——每击必然连上，
   // 伤害由 resolveDamage(攻击力 − 防御力·下限0) 单点结算（重甲敌人对弱武器可为 0 伤＝逼换武器/找弱点）。
+  // def.evasion 字段本身已随 #291 删（不只是不读，是不存在了）。
 
   // 伤害（含武器件伤害加成·按 action.requiresEquipment 槽读·避免跨武器串伤·C 2026-06-20）
   const weaponSlot = action.requiresEquipment;
@@ -914,8 +913,9 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
   }
   chosen ??= attacks[0];
 
-  // 敌人命中判定已删（战斗系统改版 2026-07-10·必中）：不再摇命中骰、不读 hitBonus/weightHitMod——每击必然连上，
+  // 敌人命中判定已删（战斗系统改版 2026-07-10·必中）：不再摇命中骰——每击必然连上，
   // 伤害由 resolveDamage(攻击力 − 玩家防御·下限0) 单点结算。
+  // hitBonus 字段 + weightHitMod 函数本身已随 #291 删（不只是不读，是不存在了）。
 
   // 计算伤害
   let dmg = randRange(chosen.damage);
