@@ -156,27 +156,7 @@ const scrollViolations = [];
   }
 }
 
-// ── 规则四：run.injuries 触碰面收口（负伤 SPEC §5·quirk #95 风格）──
-// 匹配 run.injuries / run!.injuries / run?.injuries（任何前缀对象的 .run 也命中，
-// 因为 \b 在点号后照样断词：s.run.injuries / state.run!.injuries 都抓）。
-const INJURY_RE = /\brun!?\??\.injuries\b/g;
-const INJURY_WHITELIST = new Set([
-  'src/engine/injuries.ts',
-  'src/engine/modifiers.ts',
-  'src/engine/state.ts',
-  'src/engine/combatScenario.ts',
-]);
-const injuryViolations = [];
-for (const file of engineFiles) {
-  const rel = relative(ROOT, file).split('\\').join('/');
-  if (INJURY_WHITELIST.has(rel)) continue;
-  const text = readFileSync(file, 'utf-8');
-  let m;
-  INJURY_RE.lastIndex = 0;
-  while ((m = INJURY_RE.exec(text))) {
-    injuryViolations.push({ file: rel, line: lineOf(text, m.index) });
-  }
-}
+// 规则四（run.injuries 触碰面收口）已随负伤系统整套下线删除（战斗系统改版 2026-07-10）：run.injuries 字段不再存在。
 
 // ── 规则五：game ↛ dev —— 游戏入口/UI 不得 import dev 工具（dev 工作台解耦·dev工作台 SPEC §6）──
 // dev 工具＝src/ui/dev/** + MapEditor/StoryEditor/EditorApp/EditorShell；只有 main.tsx（不扫）与
@@ -293,18 +273,6 @@ if (scrollViolations.length) {
   );
 }
 
-if (injuryViolations.length) {
-  failed = true;
-  console.error('✘ run.injuries 触碰面违例：负伤数值折算单点在 engine/modifiers.ts\n');
-  for (const v of injuryViolations) {
-    console.error(`  ${v.file}:${v.line}  直接触碰 run.injuries`);
-  }
-  console.error(
-    `\n共 ${injuryViolations.length} 处。引擎内读负伤效果一律走 computeModifiers(run)，` +
-      `\n写一律走 engine/injuries.ts 的 addInjury / worsenInjury / healInjury；` +
-      `\n回归 fixture 用 seedInjuries。别让消耗修正散成一地 if（负伤 SPEC §5）。\n`,
-  );
-}
 
 if (devImportViolations.length) {
   failed = true;
@@ -349,7 +317,6 @@ console.log(
   `✓ 边界干净：engine ↛ ui（src/engine ${engineFiles.length} 文件·0 违例）` +
     `；src/ui 无 phase 字面量（src/ui+App ${uiFiles.length} 文件·0 违例）` +
     `；styles.css 滚动容器全在白名单（${SCROLL_WHITELIST.join(' / ')}）` +
-    `；run.injuries 触碰面收口（engine 内仅 injuries/modifiers/state/combatScenario）` +
     `；game ↛ dev（游戏侧 ${gameFiles.length} 文件不 import dev 工具）` +
     `；nitrogen 债务写口收窄（engine 内仅 nitrogen/ascent/events/state 写）` +
     `；profile.trust 触碰面收口（engine 内仅 trust/state）`,

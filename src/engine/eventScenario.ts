@@ -258,6 +258,7 @@ function buildInitialState(input: ScenarioInput, ev: DiveEvent): GameState {
 
   // stats：默认满状态，再按 input 覆写
   const defaultStats: Stats = {
+    hp: run.hpMax,
     stamina: run.staminaMax,
     oxygen: run.oxygenMax,
     nitrogen: 0,

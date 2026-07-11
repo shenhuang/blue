@@ -30,7 +30,6 @@ import {
   type EnemySnapshot,
 } from '@/engine/combatScenario';
 import { createInitialGameState } from '@/engine/state';
-import { listInjuryDefs } from '@/engine/injuries';
 import { frontmostLivingSegment } from '@/engine/chain-eel';
 import type { Stat, GameState, CombatState, InventoryItem } from '@/types';
 import { EQUIPMENT_SLOTS, type EquipmentSlot } from '@/types/items';
@@ -51,7 +50,6 @@ import {
   type CombatScenarioFormState,
   type SavedCombatScenarioEntry,
   type ActionRowForm,
-  type InjuryRowForm,
 } from './CombatScenarioSerializer';
 
 // ---------------------------------------------------------------------------
@@ -107,7 +105,6 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
           lootGained: [],
           enemiesAlive: [],
           enemiesFinal: [],
-          injuriesFinal: [],
           finalPhase: 'error',
           survived: true,
         },
@@ -121,8 +118,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
     [inspectedEnemyId],
   );
 
-  // —— 新字段派生（injuries 下拉 / 当前遭遇皮囊选项 / 是否按序遭遇）——
-  const allInjuries = useMemo(() => listInjuryDefs(), []);
+  // —— 新字段派生（当前遭遇皮囊选项 / 是否按序遭遇）——负伤系统整套下线（战斗系统改版 2026-07-10）：injuries 下拉已删。
 
   const selectedCombat = useMemo(
     () => allCombats.find((c) => c.id === form.combatId) ?? null,
@@ -297,25 +293,9 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
     }));
   }
 
-  // —— bonuses / wornSkin / injuries（今日新字段·#162/#164·负伤 §10）——
+  // —— bonuses / wornSkin（负伤系统整套下线·战斗系统改版 2026-07-10：injuries 起始伤势表单已删）——
   function setBonus(key: 'staminaMaxBonus' | 'oxygenMaxBonus', v: number | '') {
     setForm((prev) => ({ ...prev, bonuses: { ...prev.bonuses, [key]: v } }));
-  }
-  function addInjuryRow() {
-    setForm((prev) => ({
-      ...prev,
-      injuries: [...prev.injuries, { defId: allInjuries[0]?.id ?? '', tier: 1 }],
-    }));
-  }
-  function updateInjuryRow(idx: number, patch: Partial<InjuryRowForm>) {
-    setForm((prev) => {
-      const next = [...prev.injuries];
-      next[idx] = { ...next[idx], ...patch };
-      return { ...prev, injuries: next };
-    });
-  }
-  function removeInjuryRow(idx: number) {
-    setForm((prev) => ({ ...prev, injuries: prev.injuries.filter((_, i) => i !== idx) }));
   }
 
   // —— IO（导入/导出/LS）
@@ -570,7 +550,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
                 <div className="dev-combat-meta">
                   <span>{e.name}</span>
                   <span className="dev-faint">
-                    hp={e.hp} armor={e.armor} threat={e.threat} ({e.tier}/{e.hostility})
+                    hp={e.hp} defense={e.defense} threat={e.threat} ({e.tier}/{e.hostility})
                   </span>
                 </div>
               </li>
@@ -582,7 +562,7 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
               <h5>{enemyDescribed.def.name} · 详情</h5>
               <ul>
                 <li>tier={enemyDescribed.def.tier}, ai={enemyDescribed.def.aiPattern}, stance={enemyDescribed.def.initialStance}</li>
-                <li>hp={enemyDescribed.def.hp}, armor={enemyDescribed.def.armor}, evasion={enemyDescribed.def.evasion}, threat={enemyDescribed.def.threat}</li>
+                <li>hp={enemyDescribed.def.hp}, defense={enemyDescribed.def.defense}, evasion={enemyDescribed.def.evasion}, threat={enemyDescribed.def.threat}</li>
                 <li>flee: {enemyDescribed.fleeThresholdDescription}</li>
                 <li>victory: [{enemyDescribed.victoryConditions.join(', ')}]</li>
               </ul>
@@ -755,42 +735,6 @@ export function CombatDevPanel({ onClose }: CombatDevPanelProps) {
             ) : (
               <p className="dev-faint">（当前遭遇无带 skinLoot 的水鬼；此项忽略）</p>
             )}
-          </div>
-
-          <div className="dev-section">
-            <h4 className="dev-sub-title">
-              起始伤势（负伤 §10 baseline）
-              <button className="dev-btn dev-btn-tiny" onClick={addInjuryRow}>+ 加一行</button>
-            </h4>
-            {form.injuries.length === 0 && <p className="dev-faint">（无伤）</p>}
-            {form.injuries.map((row, i) => (
-              <div className="dev-inv-row" key={i}>
-                <select
-                  className="dev-input"
-                  value={row.defId}
-                  onChange={(e) => updateInjuryRow(i, { defId: e.target.value })}
-                >
-                  <option value="">（选伤种）</option>
-                  {allInjuries.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.id}（{d.name}）
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="dev-input dev-input-num"
-                  value={row.tier}
-                  onChange={(e) => updateInjuryRow(i, { tier: Number(e.target.value) === 2 ? 2 : 1 })}
-                  style={{ width: 90 }}
-                >
-                  <option value={1}>轻(1)</option>
-                  <option value={2}>重(2)</option>
-                </select>
-                <button className="dev-btn dev-btn-tiny" onClick={() => removeInjuryRow(i)}>
-                  ✕
-                </button>
-              </div>
-            ))}
           </div>
 
           <div className="dev-section">
@@ -1204,14 +1148,6 @@ function CombatSummaryBlock({ result }: { result: CombatScenarioResult }) {
             <td>loot</td>
             <td>
               {s.lootGained.length === 0 ? '—' : s.lootGained.map((l) => `${l.itemId}×${l.qty}`).join(', ')}
-            </td>
-          </tr>
-          <tr>
-            <td>injuries</td>
-            <td>
-              {s.injuriesFinal.length === 0
-                ? '—'
-                : s.injuriesFinal.map((i) => `${i.defId}(t${i.tier})`).join(', ')}
             </td>
           </tr>
           <tr>

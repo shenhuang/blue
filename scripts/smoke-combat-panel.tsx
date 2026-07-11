@@ -20,7 +20,6 @@ import {
   runCombatScenario,
   buildCombatEntryState,
 } from '../src/engine/combatScenario';
-import { listInjuryDefs } from '../src/engine/injuries';
 import {
   emptyCombatFormState,
   formToCombatScenarioInput,
@@ -48,17 +47,13 @@ assert(html.includes('进入实战'), '应渲染「进入实战」模式按钮')
 assert(html.includes('staminaMaxBonus'), '应渲染 bonuses.staminaMaxBonus 控件（#164）');
 assert(html.includes('oxygenMaxBonus'), '应渲染 bonuses.oxygenMaxBonus 控件（#164）');
 assert(html.includes('wornSkin'), '应渲染 wornSkin（水鬼皮囊）区块（#162）');
-assert(html.includes('起始伤势'), '应渲染「起始伤势」（负伤 §10 baseline）区块');
+// 负伤系统整套下线（战斗系统改版 2026-07-10）：「起始伤势」区块 + injuries 序列化 round-trip 已删。
 
 // ── ② serializer round-trip（form ↔ input·新字段不丢 + 装备槽派生）──────────
-const injDef = listInjuryDefs()[0];
-assert(injDef, '至少应有一种负伤 def（injuries.json）');
-
 const f = emptyCombatFormState('combat.horror_sapien_solo');
 f.bonuses.staminaMaxBonus = 200;
 f.bonuses.oxygenMaxBonus = 30;
 f.wornSkin = 'enemy.cave_octopus';
-f.injuries = [{ defId: injDef.id, tier: 2 }];
 // 装备 override：勾一个曾被 5 槽子集漏掉的槽（ranged）
 f.equipmentOverride.ranged = true;
 f.equipment.ranged = { itemId: 'item.test_speargun', level: 3 };
@@ -68,10 +63,6 @@ assert(input.bonuses?.staminaMaxBonus === 200, 'bonuses.staminaMaxBonus 进 inpu
 assert(input.bonuses?.oxygenMaxBonus === 30, 'bonuses.oxygenMaxBonus 进 input');
 assert(input.wornSkin === 'enemy.cave_octopus', 'wornSkin 进 input');
 assert(
-  input.injuries?.length === 1 && input.injuries[0].defId === injDef.id && input.injuries[0].tier === 2,
-  'injuries 进 input（defId + tier）',
-);
-assert(
   input.equipment?.ranged?.itemId === 'item.test_speargun' && input.equipment.ranged.level === 3,
   'ranged 槽 override 生效（装备槽由 EQUIPMENT_SLOTS 派生·防 5 槽子集静默漂）',
 );
@@ -79,10 +70,6 @@ assert(
 const back = combatScenarioInputToForm(input);
 assert(back.bonuses.staminaMaxBonus === 200 && back.bonuses.oxygenMaxBonus === 30, 'bonuses 回写 form');
 assert(back.wornSkin === 'enemy.cave_octopus', 'wornSkin 回写 form');
-assert(
-  back.injuries.length === 1 && back.injuries[0].defId === injDef.id && back.injuries[0].tier === 2,
-  'injuries 回写 form（精确档位）',
-);
 assert(
   back.equipmentOverride.ranged && back.equipment.ranged.itemId === 'item.test_speargun',
   'ranged override 回写 form',

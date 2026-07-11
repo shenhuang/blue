@@ -32,14 +32,12 @@ import type {
   LootEntry,
   InventoryItem,
   EquipmentLoadout,
-  ActiveInjury,
 } from '../types';
 
 import {
   createInitialGameState,
   createNewRun,
 } from './state';
-import { seedInjuries } from './injuries';
 import {
   applyPlayerAction,
   checkActionAvailability,
@@ -82,12 +80,6 @@ export interface CombatScenarioInput {
   equipment?: Partial<EquipmentLoadout>;
   /** 起始 inventory（默认空） */
   inventory?: InventoryItem[];
-  /**
-   * 起始伤势铺设（负伤 SPEC §10 baseline 用·经 injuries.ts::seedInjuries 单点落库）。
-   * 缺省＝无伤。quirk #106 注意：fixture 要么写全这个 key 要么别写——显式 undefined 与缺省同义
-   * （这里用 if 守护不用展开，不会盖种子），但别依赖这一点养成习惯。
-   */
-  injuries?: ActiveInjury[];
   /** profile.unlockedUpgrades 起始集合 */
   unlockedUpgrades?: string[];
   /** 起始 zoneId（影响 run.zoneId，对战斗本身无副作用） */
@@ -114,13 +106,15 @@ export interface CombatScenarioInput {
    */
   warrenLastStand?: boolean;
   /**
-   * createNewRun bonuses 透传（staminaMaxBonus / oxygenMaxBonus 等）。
-   * 主要用途：boss 战 baseline 需要超过默认 staminaMax=100 的体力上限（否则 stats.stamina 被 clampStats 压回 100）。
-   * 缺省 → 无加成（staminaMax=100 / oxygenMax 默认值）。
+   * createNewRun bonuses 透传（staminaMaxBonus / oxygenMaxBonus / hpMaxBonus 等）。
+   * 主要用途：boss 战 baseline 需要超过默认上限的生存力——hpMaxBonus 抬 HP 上限（战斗系统改版 2026-07-10：
+   * 伤害落 HP·boss 长战靠它撑住），staminaMaxBonus 抬体力上限（行动预算·长脚本别中途没力气行动）。
+   * 缺省 → 无加成（hpMax=100 / staminaMax=100 / oxygenMax 默认值）。
    */
   bonuses?: {
     staminaMaxBonus?: number;
     oxygenMaxBonus?: number;
+    hpMaxBonus?: number;
   };
 }
 
@@ -203,8 +197,6 @@ export interface CombatScenarioSummary {
   enemiesAlive: EnemySnapshot[];
   /** 战斗结束时所有 enemies（含死的）的最终切片 */
   enemiesFinal: EnemySnapshot[];
-  /** 战斗结束时身上的伤（负伤 SPEC §10 baseline 断言用：受伤/升档走到哪一档） */
-  injuriesFinal: ActiveInjury[];
   /** 引擎吐回的最终 phase.kind */
   finalPhase: string;
   survived: boolean;
@@ -238,10 +230,9 @@ function buildInitialState(input: CombatScenarioInput): GameState {
   if (input.depth !== undefined) run.currentDepth = input.depth;
   run.equipment = buildEquipment(input.equipment);
   run.inventory = (input.inventory ?? []).map((i) => ({ ...i }));
-  // 起始伤势（负伤 baseline 用）：走 injuries.ts 的 fixture 单点，不直写 run.injuries
-  if (input.injuries) run = seedInjuries(run, input.injuries);
 
   const defaultStats: Stats = {
+    hp: run.hpMax,
     stamina: run.staminaMax,
     oxygen: run.oxygenMax,
     nitrogen: 0,
@@ -289,7 +280,6 @@ function startAdHocCombat(state: GameState, enemyDefIds: string[], wornSkin?: st
         encounterId: 'adhoc',
         enemies,
         reinforcementPool: undefined,
-        playerStatuses: [],
         turn: 0,
         log: [],
         victoryEventId: undefined,
@@ -366,7 +356,7 @@ function deriveTerminalEnemiesSnapshot(
 // ---------------------------------------------------------------------------
 
 function emptyStats(): Stats {
-  return { stamina: 0, oxygen: 0, nitrogen: 0, thermalStress: 0 };
+  return { hp: 0, stamina: 0, oxygen: 0, nitrogen: 0, thermalStress: 0 };
 }
 
 function makeEmptySummary(reason: CombatScenarioOutcome, state: GameState): CombatScenarioSummary {
@@ -374,22 +364,16 @@ function makeEmptySummary(reason: CombatScenarioOutcome, state: GameState): Comb
   return {
     outcome: reason,
     turnsElapsed: 0,
-    finalHp: stats.stamina,
+    finalHp: stats.hp,
     finalOxygen: stats.oxygen,
     finalNitrogen: stats.nitrogen,
     statsDelta: {},
     lootGained: [],
     enemiesAlive: [],
     enemiesFinal: [],
-    injuriesFinal: snapshotInjuries(state),
     finalPhase: state.phase.kind,
     survived: true,
   };
-}
-
-/** 终局伤势快照（深拷贝防外部改动；写路径全在 injuries.ts，此处只读） */
-function snapshotInjuries(state: GameState): ActiveInjury[] {
-  return (state.run?.injuries ?? []).map((i) => ({ ...i }));
 }
 
 /**
@@ -443,7 +427,7 @@ function enterCombat(input: CombatScenarioInput): EnterCombatResult {
           }
         : undefined;
     withSeededRandom(input.seed, () => {
-      state = startCombat(state, input.combatId!, undefined, startOpts);
+      state = startCombat(state, input.combatId!, startOpts);
     });
   } else if (input.enemyDefIds) {
     for (const id of input.enemyDefIds) {
@@ -649,14 +633,13 @@ export function runCombatScenario(input: CombatScenarioInput): CombatScenarioRes
   const summary: CombatScenarioSummary = {
     outcome: finalOutcome,
     turnsElapsed: turns.length,
-    finalHp: finalStats.stamina,
+    finalHp: finalStats.hp,
     finalOxygen: finalStats.oxygen,
     finalNitrogen: finalStats.nitrogen,
     statsDelta: diffStats(startStats, finalStats),
     lootGained,
     enemiesAlive,
     enemiesFinal,
-    injuriesFinal: snapshotInjuries(state),
     finalPhase: state.phase.kind,
     survived: finalOutcome !== 'defeat',
   };
@@ -679,7 +662,7 @@ export interface EnemyListEntry {
   name: string;
   tier: EnemyTier;
   hp: number;
-  armor: number;
+  defense: number;
   threat: number;
   hostility: Hostility;
   attackCount: number;
@@ -743,7 +726,7 @@ export function listAllEnemies(): EnemyListEntry[] {
       name: def.name,
       tier: def.tier,
       hp: def.hp,
-      armor: def.armor,
+      defense: def.defense,
       threat: def.threat,
       hostility: def.hostility,
       attackCount: def.attacks.length,
@@ -800,8 +783,6 @@ function summarizeEffect(a: CombatAction): string {
   switch (eff.kind) {
     case 'attack':
       return `attack[${eff.damageType}] dmg=${eff.damage[0]}-${eff.damage[1]} noise=${eff.noise ?? 0}`;
-    case 'defend':
-      return `defend reduce=${(eff.damageReduction * 100).toFixed(0)}% turns=${eff.turns}`;
     case 'recover':
       return `recover ${Object.entries(eff.deltas ?? {})
         .map(([k, v]) => `${k}${(v as number) >= 0 ? '+' : ''}${v}`)

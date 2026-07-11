@@ -14,7 +14,7 @@
       "name": "石斑鱼",
       "tier": "realistic",
       "hp": 30,
-      "armor": 2,
+      "defense": 2,
       "evasion": 1,
       "speed": 6,
       "threat": 4,
@@ -36,11 +36,9 @@
           "damageType": "physical",
           "damage": [3, 6],
           "description": "它把那身板似的肉横过来，闷闷地撞你一下，撞得你胸口发空。",
-          "weight": 3,
-          "injuryOnHit": { "chance": 0.4, "injuryId": "injury.rib" }
+          "weight": 3
         }
       ],
-      "physicalDamage": [3, 10],
       "loot": {
         "guaranteed": [{ "itemId": "item.grouper_maw", "qty": [1, 1], "weight": 1 }],
         "rolls": [],

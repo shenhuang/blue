@@ -5,16 +5,19 @@
   "actions": [
     { "actionId": "action.knife_slash", "targetIndex": 0 },
     { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
     { "actionId": "action.knife_slash", "targetIndex": 0 }
   ],
   "expect": {
     "outcome": "victory",
-    "turnsElapsed": 3,
+    "turnsElapsed": 4,
     "survived": true,
     "finalPhase": "dive",
     "lootGained": { "item.crab_chitin": 1 },
     "enemiesAlive": 0,
-    "statsDelta": { "stamina": -20, "oxygen": -3 },
+    "statsDelta": { "stamina": -24, "oxygen": -4 },
     "notes": "stamina -20 < -24（normal_kill 对照）—— turn 3 蛛蟹处于 fleeing stance，不攻击玩家而是脱离战斗（hp 被置 0），所以玩家少挨一次钳/撞。这是与 __normal_kill.json 唯一可机器断言的区分点。"
   }
 }

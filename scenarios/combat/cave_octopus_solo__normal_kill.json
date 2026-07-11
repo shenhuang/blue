@@ -15,6 +15,6 @@
     "finalPhase": "dive",
     "lootGained": { "item.cave_octopus_beak": 1 },
     "enemiesAlive": 0,
-    "statsDelta": { "stamina": -28, "oxygen": -3 }
+    "statsDelta": { "stamina": -18, "oxygen": -3 }
   }
 }

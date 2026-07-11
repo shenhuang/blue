@@ -725,6 +725,18 @@ html, body, #root {
   padding: 16px 20px;
 }
 
+/* 道具抽屉（战斗系统改版 2026-07-10）：折叠的可用道具·展开的子列表缩进 + 左边线分组。 */
+.combat-item-toggle .action-cost { color: var(--text-muted); }
+.combat-item-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0 0 0 10px;
+  border-left: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .combat-enemies h3, .combat-actions h3 {
   margin: 0 0 12px;
   font-size: 13px;
@@ -1584,6 +1596,7 @@ html, body, #root {
 .tint-yellow .stat-fill { background: var(--yellow); }
 .tint-violet .stat-fill { background: var(--violet); }
 .tint-amber .stat-fill { background: var(--warn); }
+.tint-red .stat-fill { background: var(--danger); }
 
 .stat-fill.invert { background: var(--warn); }
 

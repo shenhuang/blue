@@ -380,7 +380,7 @@ function handleListEnemies(args: CliArgs) {
       ? `  bands=[${(def.bands ?? []).join(',')}] biomes=[${(def.biomes ?? []).join(',')}] role=${def.role ?? '-'}`
       : '';
     console.log(
-      `  ${e.id.padEnd(32)} ${e.name.padEnd(14)} tier=${e.tier.padEnd(9)} hp=${String(e.hp).padEnd(3)} armor=${e.armor} threat=${e.threat} hostility=${e.hostility} attacks=${e.attackCount}${meta}`,
+      `  ${e.id.padEnd(32)} ${e.name.padEnd(14)} tier=${e.tier.padEnd(9)} hp=${String(e.hp).padEnd(3)} defense=${e.defense} threat=${e.threat} hostility=${e.hostility} attacks=${e.attackCount}${meta}`,
     );
   }
 }
@@ -406,7 +406,7 @@ function handleNewEnemy(args: CliArgs) {
         role,
         codex: { habitat: 'TODO 栖息地', behavior: 'TODO 行为/习性', appearance: 'TODO 外观' },
         hp: 20,
-        armor: 0,
+        defense: 0,
         evasion: 2,
         speed: 6,
         threat: 5,
@@ -423,7 +423,6 @@ function handleNewEnemy(args: CliArgs) {
             weight: 1,
           },
         ],
-        physicalDamage: [3, 6],
         loot: { guaranteed: [], rolls: [], rollCount: 0, victoryModifier: { kill: 1.0, flee: 0.5 } },
         victoryConditions: ['kill', 'flee'],
       },
@@ -488,7 +487,7 @@ function handleShow(args: CliArgs) {
     const def = m.defId ? getEnemyDef(m.defId) : undefined;
     console.log(
       `  - ${m.defId ?? `enemyRef(${JSON.stringify(m.enemyRef)})`}${
-        def ? `  ${def.name} (hp=${def.hp}, armor=${def.armor}, threat=${def.threat}, ${def.hostility})` : ''
+        def ? `  ${def.name} (hp=${def.hp}, defense=${def.defense}, threat=${def.threat}, ${def.hostility})` : ''
       }`,
     );
   }
@@ -513,7 +512,7 @@ function handleShowEnemy(args: CliArgs) {
   const d = info.def;
   console.log(`━━━ ${d.id} ${d.name} ━━━`);
   console.log(
-    `tier=${d.tier} hp=${d.hp} armor=${d.armor} evasion=${d.evasion} threat=${d.threat} hostility=${d.hostility} stance=${d.initialStance} ai=${d.aiPattern}`,
+    `tier=${d.tier} hp=${d.hp} defense=${d.defense} evasion=${d.evasion} threat=${d.threat} hostility=${d.hostility} stance=${d.initialStance} ai=${d.aiPattern}`,
   );
   console.log(`flee: ${info.fleeThresholdDescription}`);
   console.log(`attacks:`);

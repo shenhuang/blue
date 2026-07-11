@@ -12,9 +12,8 @@
 
 import type { RunState, DiveMap, Stalker, SenseModality, StalkerLostBehavior, DiveDecoy, DecoyKind } from '@/types';
 import { buildUndirectedAdjacency, revealSonarScan, sonarScanRange, nodeIsNarrow } from './sonar';
-import { ALERT_WARN, ALERT_THRESHOLD, ALERT_MIN_DEPTH } from './clarity';
+import { ALERT_WARN } from './clarity';
 import { getEncounter, getEnemyDef } from './combat';
-import { computeModifiers } from './modifiers';
 
 // ============================================================
 // 可调参数（tunables，SPEC §8）
@@ -87,8 +86,10 @@ export const STALKER_SCENT_SPAWN_ALERT_MULT = 0.5;
  * 仅有的两个解：decoy 照常全效（advanceStalker 的诱饵分支在信号判定**之前**·北极星「decoy 永远是出路」）、
  * medkit 止血（bleed: cure → scentTrail 消失＝本函数当场回 false·读点折算不烤死）。
  */
-export function stalkerScentLocked(run: RunState, stalker: Stalker): boolean {
-  return stalker.scent === true && computeModifiers(run).scentTrail;
+export function stalkerScentLocked(_run: RunState, _stalker: Stalker): boolean {
+  // 负伤系统整套下线（战斗系统改版 2026-07-10）：玩家不再流血→scentTrail 恒 false→嗅觉锁定永不触发。
+  // enemy.scent / stalker.scent 数据轴暂留惰性（待后续 scent 第三通道清理）。
+  return false;
 }
 
 /** 遭遇池里有没有嗅觉系敌种（spawn 门用：场上有闻得到血的东西，这片水才对血敏感）。 */
@@ -111,11 +112,9 @@ export function poolHasScent(pool: string[]): boolean {
  * （ALERT_THRESHOLD × STALKER_SCENT_SPAWN_ALERT_MULT）。无伤/池子不嗅 → false＝旧门逐字节不变。
  * dive-stalker.ts::stalkerStep 在 predatorApproaches 之外多查这一条。
  */
-export function scentSpawnReady(run: RunState, pool: string[]): boolean {
-  if (run.currentDepth < ALERT_MIN_DEPTH) return false;
-  if (run.alert < ALERT_THRESHOLD * STALKER_SCENT_SPAWN_ALERT_MULT) return false;
-  if (!computeModifiers(run).scentTrail) return false;
-  return poolHasScent(pool);
+export function scentSpawnReady(_run: RunState, _pool: string[]): boolean {
+  // 负伤系统整套下线（战斗系统改版 2026-07-10）：玩家不流血→scent 提前现身门永不触发（数据轴暂留惰性）。
+  return false;
 }
 
 /** 确定性哈希（FNV-1a），不消耗 RNG（保 mapgen/场景确定性）。 */

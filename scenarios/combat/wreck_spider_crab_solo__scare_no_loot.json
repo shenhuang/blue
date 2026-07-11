@@ -5,9 +5,9 @@
   "actions": [
     { "actionId": "action.knife_slash", "targetIndex": 0 },
     { "actionId": "action.knife_slash", "targetIndex": 0 },
-    { "actionId": "action.evade" },
-    { "actionId": "action.evade" },
-    { "actionId": "action.evade" }
+    { "actionId": "action.breathe" },
+    { "actionId": "action.breathe" },
+    { "actionId": "action.breathe" }
   ],
   "expect": {
     "outcome": "victory",
@@ -15,7 +15,7 @@
     "survived": true,
     "finalPhase": "dive",
     "enemiesAlive": 0,
-    "statsDelta": { "stamina": -24, "oxygen": -2 },
+    "statsDelta": { "oxygen": -4 },
     "logIncludes": ["向远处游开"]
   }
 }

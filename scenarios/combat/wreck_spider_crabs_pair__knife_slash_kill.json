@@ -13,7 +13,7 @@
   ],
   "expect": {
     "outcome": "victory",
-    "turnsElapsed": 7,
+    "turnsElapsed": 6,
     "survived": true,
     "finalPhase": "dive",
     "lootGained": { "item.crab_chitin": 2 },

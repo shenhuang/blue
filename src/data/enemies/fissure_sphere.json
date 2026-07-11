@@ -10,7 +10,7 @@
       "role": "swarm",
       "threatTier": "mid",
       "hp": 18,
-      "armor": 0,
+      "defense": 0,
       "evasion": 1,
       "speed": 4,
       "threat": 3,
@@ -42,7 +42,6 @@
           "weight": 1
         }
       ],
-      "physicalDamage": [2, 6],
       "loot": {
         "rolls": [{ "itemId": "item.coral_shard", "qty": [1, 1], "weight": 1 }],
         "rollCount": 1,

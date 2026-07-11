@@ -40,7 +40,6 @@ export interface CombatAction {
 
 export type ActionEffect =
   | AttackEffect
-  | DefendEffect
   | RecoverEffect
   | FleeEffect
   | CrowdControlEffect
@@ -50,19 +49,13 @@ export interface AttackEffect {
   kind: 'attack';
   damage: [number, number]; // 物理伤害区间
   damageType: DamageType;
-  /** 命中后给敌人附加状态 */
-  applyStatusOnHit?: { kind: 'stunned' | 'bleeding' | 'frightened' | 'distracted'; turns: number };
+  /** 命中后给敌人附加状态（战斗系统改版 2026-07-10：空壳 frightened/distracted 已删，只留生效的 stunned/bleeding） */
+  applyStatusOnHit?: { kind: 'stunned' | 'bleeding'; turns: number };
   /** 攻击声响等级（影响增援触发） */
   noise?: number;
 }
 
-export interface DefendEffect {
-  kind: 'defend';
-  /** 减伤百分比（0–1） */
-  damageReduction: number;
-  /** 持续回合数 */
-  turns: number;
-}
+// DefendEffect（闪避减伤）已删（战斗系统改版 2026-07-10）：闪避动作下线·防御靠防御力常驻减伤。
 
 export interface RecoverEffect {
   kind: 'recover';
@@ -90,8 +83,8 @@ export interface CrowdControlEffect {
   kind: 'crowd_control';
   /** 对所有敌人威胁度的修改 */
   threatDelta?: number;
-  /** 对所有敌人附加的状态 */
-  applyStatusToAll?: { kind: 'stunned' | 'frightened' | 'distracted'; turns: number };
+  /** 对所有敌人附加的状态（战斗系统改版 2026-07-10：空壳 frightened/distracted 已删，只留 stunned） */
+  applyStatusToAll?: { kind: 'stunned'; turns: number };
   /** 高于此威胁度的敌人会逃跑 */
   scareThreatThreshold?: number;
 }
@@ -101,14 +94,8 @@ export interface UseItemEffect {
   /** 引用 items.json 的 consumable.effectOnUse */
 }
 
-/** 玩家在战斗中的临时状态 */
-export interface PlayerStatus {
-  kind: 'evading' | 'ambushing' | 'panicked';
-  /** 剩余回合数；evading/ambushing 通常 1 */
-  remaining: number;
-  /** 效果参数（如减伤系数） */
-  param?: number;
-}
+// PlayerStatus（evading/ambushing/panicked）已删（战斗系统改版 2026-07-10）：闪避/突袭暴击下线、其余为空壳。
+// 迎战「先发制人」改由 CombatState.preemptive 承载（首回合免费行动·见下）。
 
 /** 一次战斗的运行时状态 */
 export interface CombatState {
@@ -120,8 +107,12 @@ export interface CombatState {
   /** 待加入战斗的潜在敌人池（噪声阈值触发增援） */
   reinforcementPool: EnemyParty['joinRules'];
 
-  /** 玩家状态 */
-  playerStatuses: PlayerStatus[];
+  /**
+   * 首回合免费行动（战斗系统改版 2026-07-10·取代 ambushing 突袭暴击）：迎战/先发制人开战时置 true，
+   * applyPlayerAction 在第一手玩家行动后**跳过一次敌人回合**并清此标（即你抢先出手、它这一下没能还击）。
+   * 缺省 undefined＝普通开战（敌人照常响应）。CombatState 不入存档（战斗态不序列化）⇒ 零存档影响。
+   */
+  preemptive?: boolean;
 
   /** 战斗已进行回合 */
   turn: number;

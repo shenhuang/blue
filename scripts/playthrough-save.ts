@@ -238,7 +238,7 @@ L('  非浏览器环境 loadGame() → null ✓');
   // (c) 合法当前版本存档 → 正常读取、不删
   store[SAVE_KEY] = raw;
   const ok = loadGame();
-  assert(ok && ok.version === 14, '当前版本存档应正常读取');
+  assert(ok && ok.version === 15, '当前版本存档应正常读取');
   assert(SAVE_KEY in store, '合法存档不应被删除');
   delete (globalThis as { localStorage?: unknown }).localStorage;
 }
@@ -261,7 +261,6 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
     'huntEnabled',
     'stalker',
     'decoy',
-    'injuries',
   ]) {
     delete old.run[k];
   }
@@ -284,10 +283,6 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
   assert(
     Object.keys(h.run.scanMemory).length === 0 && h.run.bandAlertFactor === 1 && h.run.huntEnabled === false,
     '6: scanMemory {} / bandAlertFactor 1 / huntEnabled false',
-  );
-  assert(
-    Array.isArray(h.run.injuries) && h.run.injuries.length === 0,
-    '6: injuries 补 []（负伤 SPEC §10·quirk #99/#106）',
   );
   // 真条件字段不补（缺席即语义：无猎手 / 无诱饵）
   assert(h.run.stalker === undefined, '6: stalker 缺席不补（真条件字段）');

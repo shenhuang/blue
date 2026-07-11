@@ -10,7 +10,7 @@
       "role": "predator",
       "threatTier": "mid",
       "hp": 8,
-      "armor": 0,
+      "defense": 0,
       "evasion": 0,
       "speed": 4,
       "threat": 4,
@@ -26,7 +26,6 @@
           "description": "[待过稿] 一节躯体绕过来，勒住你的小腿——力气不大，但你知道后面还连着更多节。"
         }
       ],
-      "physicalDamage": [2, 3],
       "loot": {
         "rolls": [{ "itemId": "item.coral_shard", "qty": [1, 1], "weight": 1 }],
         "rollCount": 1,
@@ -48,7 +47,7 @@
       "role": "miniboss",
       "threatTier": "high",
       "hp": 14,
-      "armor": 1,
+      "defense": 1,
       "evasion": 1,
       "speed": 6,
       "threat": 8,
@@ -65,7 +64,6 @@
           "description": "[待过稿] 终于够到头了——它回过头来，第一次正面对着你。"
         }
       ],
-      "physicalDamage": [3, 5],
       "headEnrage": {
         "transitionText": "[待过稿] 拖累它的节段全断了。它一下子轻了，快了——再没有什么挡在你和它的牙之间。只剩这一节，而它现在全是头。",
         "stanceForce": "enraged",

@@ -16,7 +16,7 @@
       "name": "水鬼",
       "tier": "uncanny",
       "hp": 38,
-      "armor": 2,
+      "defense": 2,
       "evasion": 2,
       "speed": 4,
       "threat": 8,
@@ -42,7 +42,6 @@
           "weight": 2
         }
       ],
-      "physicalDamage": [5, 9],
       "loot": {
         "guaranteed": [{ "itemId": "item.eel_skin", "qty": [1, 1], "weight": 1 }],
         "rolls": [],

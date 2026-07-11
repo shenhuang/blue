@@ -9,7 +9,6 @@ import type {
   CombatAction,
   CombatLogEntry,
   CombatEncounterDef,
-  PlayerStatus,
   EnemyInstance,
   EnemyStatus,
   EnemyDef,
@@ -26,15 +25,12 @@ import {
   weaponDamageForSlot,
   weightStaminaMult,
   weightO2Mult,
-  weightHitMod,
   isOverloaded,
   equipmentUnlocksAction,
   installedModMeta,
 } from './equipment';
 import { executeDeath } from './death';
 import { getItemDef } from './items';
-import { computeModifiers, effectiveStaminaMax } from './modifiers';
-import { addInjury, injuryIdForDamageType, applyMedkitHeal } from './injuries';
 import { resolveEncounterMember, enemySeenFlag } from './enemyLibrary';
 import { combatNitrogenGain } from './nitrogen';
 import { frontmostLivingSegment, isSegmentReachable, chainSegmentDamageBonus } from './chain-eel';
@@ -66,10 +62,8 @@ import { isWarrenLastStand } from './warren-hunt';
 const ACTIONS: Map<string, CombatAction> = new Map();
 for (const a of (actionData as { actions: CombatAction[] }).actions) ACTIONS.set(a.id, a);
 
-// 敌人基础命中率（负重战斗·作者 2026-06-20）：轻档（weightHitMod=0）下 enemyHitChance = 1.0 + hitBonus ≥ 1.0
-// ⇒ 必中、且 enemyHitChance≥1 时**不掷骰**（见 enemyAttackPlayer）——与旧「敌攻必中」逐字节一致，既有 combat
-// baseline 不动；负重越重双方命中越降（weightHitMod<0 才让命中 <1 触发掷骰），叠加各敌种自己的 hitBonus。
-const ENEMY_BASE_HIT = 1.0;
+// 命中率系统已删（战斗系统改版 2026-07-10·必中）：不再有 ENEMY_BASE_HIT / 负重命中折算 / def.evasion——
+// 每击必然连上，伤害由 resolveDamage(攻击力 − 防御力·下限0) 单点结算。负重仍影响体力消耗（weightStaminaMult·未删）。
 
 // 敌人库 SPEC 支柱三：从生成的注册表（src/data/enemies/registry.generated.ts·目录自动加载）灌入。
 // 新增纯数据敌人＝丢一个 JSON + `npm run gen:enemies`，本文件零改动（registry 过期由 regress 门拦）。
@@ -114,21 +108,24 @@ export interface StartCombatOptions {
    * （`isWarrenLastStand(run)`）。只给 scenario/adhoc 用：构造背水一战而不必拨动 roomsCleared（那会连带改产卵上限）。
    */
   warrenLastStand?: boolean;
+  /**
+   * 首回合免费行动（战斗系统改版 2026-07-10·取代 ambushing 突袭暴击）：迎战/先发制人开战传 true → 你抢先出手、
+   * 第一手行动后敌人这一轮不还击（applyPlayerAction 跳过一次敌人回合并清标）。缺省 → 普通开战。
+   */
+  preemptive?: boolean;
 }
 
 export function startCombat(
   state: GameState,
   encOrId: string | CombatEncounterDef,
-  initialPlayerStatuses?: PlayerStatus[],
   options?: StartCombatOptions,
 ): GameState {
   const enc = typeof encOrId === 'string' ? COMBAT_ENCOUNTERS.get(encOrId) : encOrId;
   if (!enc || !state.run) return state;
   const combatId = enc.id;
 
-  // scent（负伤 SPEC §6.1）：玩家流血·重时嗅觉系敌种开局就闻到你——unaware 直接 alerted
-  // （潜行/突袭红利对它失效·骗局在你身上）。无伤/非嗅觉系 → initialStance 逐字节不变。
-  const scentTrail = computeModifiers(state.run).scentTrail;
+  // 负伤系统整套下线（战斗系统改版 2026-07-10）：原「玩家流血·重→嗅觉系敌开局 alerted」的 scent 门已删
+  // （驱动它的 run.injuries scentTrail 没了）→ 初始姿态恒 def.initialStance。
   const enemies: EnemyInstance[] = enc.party.members.map((m, idx) => {
     // 敌人库 SPEC §4/支柱二：defId 直查 · enemyRef 经 pickEnemy 取一只合适的（route B 加法·非破坏）。
     const def = resolveEncounterMember(m);
@@ -137,7 +134,7 @@ export function startCombat(
       instanceId: `${combatId}.${idx}`,
       defId: def.id,
       hp: def.hp,
-      stance: scentTrail && def.scent && def.initialStance === 'unaware' ? 'alerted' : def.initialStance,
+      stance: def.initialStance,
       aggro: def.threat,
       statuses: [],
     };
@@ -168,8 +165,8 @@ export function startCombat(
     encounterId: enc.id,
     enemies,
     reinforcementPool: enc.reinforcementPool,
-    // 迎战先手（猎手 SPEC §5）：standAndFight 传入 ambushing → 你先发制人；缺省 []＝旧调用逐字节不变。
-    playerStatuses: initialPlayerStatuses ? [...initialPlayerStatuses] : [],
+    // 迎战先手（猎手 SPEC §5·战斗系统改版 2026-07-10）：standAndFight 传 preemptive → 首回合免费行动（敌人这一轮不还击）。缺省 → 普通开战逐字节不变。
+    ...(options?.preemptive ? { preemptive: true as const } : {}),
     turn: 0,
     log: [],
     victoryEventId: enc.victoryEventId,
@@ -254,16 +251,16 @@ function actionCosts(
   action: CombatAction,
   enemies?: readonly EnemyInstance[],
 ): { stamina: number; oxygen: number } {
-  const mods = computeModifiers(run);
-  // 负重档位体力倍率（武器系统·作者 2026-06-20）：与负伤 staminaCostMult 相乘。轻档 ×1 ⇒ ceil(整数×1×1) 逐字节不变。
+  // 负重档位体力倍率（武器系统·作者 2026-06-20）。负伤系统下线后不再有 staminaCostMult/o2CostMult 折算（恒 1）。
   const wMult = weightStaminaMult(run.equipment);
-  // 负重档位氧耗倍率（作者 2026-07-11）：战斗＝全用力动作 ⇒ 氧耗同体力一起吃负重税·与负伤 o2CostMult 相乘·轻档 ×1 逐字节不变。
+  // 负重档位氧耗倍率（#289·作者 2026-07-11）：战斗＝全用力动作 ⇒ 氧耗同体力一起吃负重税·轻档 ×1 逐字节不变。
+  // （负伤 o2CostMult 已随负伤系统下线移除，此处只余负重税。）
   const wO2 = weightO2Mult(run.equipment);
-  // 屏息潜逃纠缠代价（机制·见 fleeEngagedSurcharge）：与基础 costStamina 相加后同过负伤/负重乘子。
+  // 屏息潜逃纠缠代价（机制·见 fleeEngagedSurcharge）：与基础 costStamina 相加后过负重乘子。
   const fleeSurcharge = action.effect.kind === 'flee' ? fleeEngagedSurcharge(enemies) : 0;
   return {
-    stamina: Math.ceil((action.costStamina + fleeSurcharge) * mods.staminaCostMult * wMult),
-    oxygen: Math.ceil(action.costOxygenTurns * mods.o2CostMult * wO2),
+    stamina: Math.ceil((action.costStamina + fleeSurcharge) * wMult),
+    oxygen: Math.ceil(action.costOxygenTurns * wO2),
   };
 }
 
@@ -276,7 +273,6 @@ function actionCosts(
 export function enterCombat(
   state: GameState,
   encOrId: string | CombatEncounterDef,
-  initialPlayerStatuses?: PlayerStatus[],
   options?: StartCombatOptions,
 ): GameState {
   const enc = typeof encOrId === 'string' ? COMBAT_ENCOUNTERS.get(encOrId) : encOrId;
@@ -290,7 +286,7 @@ export function enterCombat(
       },
     };
   }
-  return startCombat(state, enc, initialPlayerStatuses, options);
+  return startCombat(state, enc, options);
 }
 
 /**
@@ -416,18 +412,9 @@ export function applyPlayerAction(
   if (!avail.available) return { state, outcome: 'continue' };
 
   let s = state;
-  // —— 0. 回合开始 tick（负伤 SPEC §5：流血·重等持续身体债·modifiers 单点折算）——
-  // 在付行动费前结算；availability 是按 tick 前体力校验的——带着重流血硬挥这一下，
-  // 力气可能在半途漏光（死亡螺旋是意图·SPEC §1）。文案 [待过稿]。
-  const tick = computeModifiers(state.run).staminaTickPerTurn;
-  if (tick !== 0) {
-    s = applyStatsDelta(s, { stamina: tick });
-    s = pushCombatLog(s, {
-      actor: 'system',
-      text: `伤口没合上，力气跟着血走（体力 ${tick}）。`,
-    });
-  }
-  // —— 0b. boss 战场压力 tick（boss 存活即施加·叠加基础 tick·每回合触发一次）——
+  // —— 0. 回合开始 tick：负伤系统整套下线（战斗系统改版 2026-07-10）——原「流血·重持续掉体力」的
+  // staminaTickPerTurn 折算已随 run.injuries 删除，此处不再有玩家侧回合债。
+  // —— 0b. boss 战场压力 tick（boss 存活即施加·每回合触发一次）——
   s = applyEnvironmentalPressure(s);
   // —— 0c. 茧化居民变态发育检查（氧气阈值触发·仅带 metamorphosis 的敌人进分支·其余逐字节不变）——
   s = maybeMetamorphosis(s);
@@ -468,13 +455,7 @@ export function applyPlayerAction(
   // 非链鳗遭遇逐字节不变（不触 maybeBossPhaseShift 的 HP 路径）。
   s = maybeChainEelEnrage(s);
 
-  // —— 3. 移除一次性玩家状态（ambushing 消耗后清除） ——
-  s = setCombat(s, (c) => ({
-    ...c,
-    playerStatuses: c.playerStatuses
-      .map((st) => ({ ...st, remaining: st.remaining - 1 }))
-      .filter((st) => st.remaining > 0),
-  }));
+  // —— 3. 一次性玩家状态清理已删（战斗系统改版 2026-07-10）：PlayerStatus（evading/ambushing）下线，无一次性状态需消耗。
 
   // —— The Warren：女王死（仅死角 the Hatchery）→ 残余崩解（取胜＝女王死·§9.6 演出·令 allEnemiesDefeated 成立）——
   s = maybeSwarmCollapse(s);
@@ -496,19 +477,26 @@ export function applyPlayerAction(
     return finalizeFlee(s);
   }
 
-  // —— 6. 敌人回合 ——
-  s = runEnemyTurn(s);
+  // —— 6. 敌人回合（首回合免费行动·战斗系统改版 2026-07-10）：迎战/先发制人（preemptive）时你抢先出手，
+  // 敌人这一轮不还击——跳过一次敌人回合并清标；其余回合照常。取代旧 ambushing 突袭暴击。
+  if (s.phase.kind === 'combat' && s.phase.combat.preemptive) {
+    s = setCombat(s, (c) => ({ ...c, preemptive: false }));
+    s = pushCombatLog(s, { actor: 'system', text: '你抢先出手——它们这一轮没能还击。' });
+  } else {
+    s = runEnemyTurn(s);
+  }
 
   // —— 7. 玩家死亡判定 ——
   if (!s.run) return { state: s, outcome: 'defeat' };
-  // 战斗中两条即死窗：氧气耗尽（窒息）/ 体力耗尽（被撕碎）。
+  // 战斗中两条即死窗（战斗系统改版 2026-07-10）：氧气耗尽（窒息）/ 生命耗尽（重伤不治）。
+  // **体力≤0 不再致死**（体力＝行动预算·只是无法行动·须调息回复）；伤害归 HP，HP≤0 才死。
   // 出口是 flee / beginAscent（都不经本函数）：开阔水或站在上浮口 → CombatView 弃战上浮（beginAscent·零成本·任意回合）；
   // 其余水域靠 action.flee（需氧≥3）。**封闭水域低氧确实无出路＝有意 attrition**（蓝洞头顶岩顶·作者 2026-07-05 拍·非 bug）。
   if (s.run.stats.oxygen <= 0) {
     return { state: executeDeath(s, '战斗中窒息'), outcome: 'defeat' };
   }
-  if (s.run.stats.stamina <= 0) {
-    return { state: executeDeath(s, '被敌人撕碎'), outcome: 'defeat' };
+  if (s.run.stats.hp <= 0) {
+    return { state: executeDeath(s, '重伤不治'), outcome: 'defeat' };
   }
 
   // —— 8. 回合 +1 ——
@@ -524,17 +512,7 @@ function applyActionEffect(state: GameState, action: CombatAction, targetId?: st
   switch (action.effect.kind) {
     case 'attack':
       return applyAttack(s, action, targetId);
-    case 'defend':
-      s = setCombat(s, (c) => ({
-        ...c,
-        playerStatuses: addOrReplace(c.playerStatuses, {
-          kind: 'evading',
-          remaining: action.effect.kind === 'defend' ? action.effect.turns + 1 : 1, // +1 因为本回合末会 -1
-          param: action.effect.kind === 'defend' ? action.effect.damageReduction : 0.5,
-        }),
-      }));
-      s = pushCombatLog(s, { actor: 'player', text: `${action.name}：你下蹲身体，准备闪避下一次冲击。` });
-      return s;
+    // 'defend'（闪避）分支已删（战斗系统改版 2026-07-10）：闪避动作下线。
     case 'recover':
       return applyRecover(s, action);
     case 'flee':
@@ -545,11 +523,6 @@ function applyActionEffect(state: GameState, action: CombatAction, targetId?: st
       return applyUseItem(s, action);
   }
   return s;
-}
-
-function addOrReplace(list: PlayerStatus[], st: PlayerStatus): PlayerStatus[] {
-  const filtered = list.filter((s) => s.kind !== st.kind);
-  return [...filtered, st];
 }
 
 function applyAttack(state: GameState, action: CombatAction, targetId?: string): GameState {
@@ -568,11 +541,8 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
   const def = ENEMY_DEFS.get(target.defId);
   if (!def) return state;
 
-  // 命中判定（基础 85%，减去敌人 evasion；负重档位 weightHitMod 调·武器系统 2026-06-20·轻档 +0 ⇒ 逐字节不变）
-  const hitChance = Math.max(0.4, 0.95 - def.evasion * 0.04) + (state.run ? weightHitMod(state.run.equipment) : 0);
-  if (Math.random() > hitChance) {
-    return pushCombatLog(state, { actor: 'player', text: `${action.name}：${def.name} 闪开了。` });
-  }
+  // 命中判定已删（战斗系统改版 2026-07-10·必中）：不再摇命中骰、不读 def.evasion——每击必然连上，
+  // 伤害由 resolveDamage(攻击力 − 防御力·下限0) 单点结算（重甲敌人对弱武器可为 0 伤＝逼换武器/找弱点）。
 
   // 伤害（含武器件伤害加成·按 action.requiresEquipment 槽读·避免跨武器串伤·C 2026-06-20）
   const weaponSlot = action.requiresEquipment;
@@ -589,11 +559,7 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
       powerSpent = cost;
     }
   }
-  // ambush 暴击
-  const ambushing = combat.playerStatuses.find((s) => s.kind === 'ambushing');
-  if (ambushing) {
-    dmg = Math.floor(dmg * (ambushing.param ?? 1));
-  }
+  // 突袭暴击已删（战斗系统改版 2026-07-10）：ambushing 玩家状态下线（迎战先手改由「首回合免费行动」承载·task6）。
   // 口孵深鱼截击（maternalBehavior·interceptChance）：命中护巢仔时母鱼有概率截下这一击。
   // interceptChance≥1 时 rollChance 不消耗 RNG ⇒ 零额外 RNG 成本·既有 baseline 逐字节不变（守 #99）。
   // 在装甲计算**之前**截住 pre-armor rawDmg，母鱼用自己的 armorWhileProtected 减伤（非双重减伤）。
@@ -601,10 +567,11 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
     const intercepted = maybeInterceptJuvenile(state, target, dmg, eff.damageType, action.name);
     if (intercepted !== null) return intercepted;
   }
-  // 物理装甲（茧化居民：茧化期用 phaseArmorOverride 替代 def.armor·其余时段与普通敌人一致）
-  if (eff.damageType === 'physical') {
-    const effectiveArmor = target.phaseArmorOverride ?? def.armor;
-    dmg = Math.max(1, dmg - effectiveArmor);
+  // 防御力减伤（战斗系统改版 2026-07-10·resolveDamage 单点·下限0）：物理伤扣目标防御（茧化期用 phaseArmorOverride
+  // 替代 def.armor）；非物理伤（电/火）绕过防御（弱点/免疫轴另走）→ defense=0。原 max(1,…) 地板 1 改为下限 0。
+  {
+    const effectiveDefense = eff.damageType === 'physical' ? (target.phaseArmorOverride ?? def.defense) : 0;
+    dmg = resolveDamage(dmg, effectiveDefense);
   }
   // 免疫
   if (def.immunity?.includes(eff.damageType)) {
@@ -758,17 +725,8 @@ function applyUseItem(state: GameState, action: CombatAction): GameState {
     s = pushCombatLog(s, { actor: 'player', text: itemDef.consumable.effectOnUse.text });
   }
 
-  // 急救包治伤（负伤 SPEC §8·consumable.medkit 数据旗标·#117）：整包结算住 injuries.ts
-  // 唯一写者（applyMedkitHeal·「全部能治的一起处理」），这里只落库 + 推 onHeal 叙事
-  // （actor=system 与 onGain/onWorsen 同口径）。止血副效应零接线：scentTrail 住
-  // tierEffects，伤一消、下个读点折算自然失效（#116）。
-  if (itemDef.consumable.medkit && s.run) {
-    const healed = applyMedkitHeal(s.run);
-    s = { ...s, run: healed.run };
-    for (const text of healed.texts) {
-      s = pushCombatLog(s, { actor: 'system', text });
-    }
-  }
+  // 负伤系统整套下线（战斗系统改版 2026-07-10）：原急救包治伤（applyMedkitHeal·consumable.medkit 旗标）已删——
+  // 急救包现只经 effectOnUse.deltas 回 HP（上面已套用），不再有治伤副效应。
   return s;
 }
 
@@ -778,13 +736,23 @@ export function applyStatsDelta(state: GameState, deltas: Partial<Record<keyof S
   for (const [k, v] of Object.entries(deltas) as [keyof Stats, number][]) {
     stats[k] = stats[k] + v;
   }
-  // 体力上限走负伤折算（负伤 SPEC §5 体力上限消费点）；无伤＝run.staminaMax 逐字节不变。
-  stats = clampStats(stats, { stamina: effectiveStaminaMax(state.run), oxygen: state.run.oxygenMax });
+  // 上限 clamp（战斗系统改版 2026-07-10）：负伤下线后体力上限恒 run.staminaMax（无 staminaMaxDelta 折算）；生命上限＝run.hpMax。
+  stats = clampStats(stats, { stamina: state.run.staminaMax, oxygen: state.run.oxygenMax, hp: state.run.hpMax });
   return { ...state, run: { ...state.run, stats } };
 }
 
 export function randRange([min, max]: [number, number]): number {
   return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+/**
+ * 伤害结算单点（战斗系统改版 2026-07-10·作者「任何单位攻击任何单位都是这个逻辑」）：
+ * 落到目标的伤害 = max(0, 攻击力 − 防御力)。**下限 0**（重甲挡弱器＝真打不动·逼换武器/找弱点）、**必中**（无命中骰）。
+ * 玩家↔敌人↔敌人共用本函数（对称·可拓展）。防御力语义＝物理减伤：非物理伤（电/火）调用方传 defense=0（弱点/免疫轴另走）。
+ * 纯函数·零 RNG（伤害区间的随机在调用方 randRange 已摇好·此处只做减法）。
+ */
+export function resolveDamage(rawAttack: number, defense: number): number {
+  return Math.max(0, rawAttack - Math.max(0, defense));
 }
 
 /**
@@ -946,13 +914,8 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
   }
   chosen ??= attacks[0];
 
-  // 敌人命中判定（负重战斗·武器系统 2026-06-20）：ENEMY_BASE_HIT(1.0) + 该敌 hitBonus + 负重 weightHitMod。
-  // ≥1.0 ⇒ 必中且**不掷骰**（轻档 weightHitMod=0 + hitBonus≥0 ⇒ 既有敌攻逐字节不变·守 seeded baseline）；
-  // <1.0 才掷一次骰，失手＝0 伤、不触发负伤（守「仅命中才结算」）。hitBonus 让暗伏/突袭型在你笨重时仍咬得准。
-  const enemyHit = ENEMY_BASE_HIT + (def.hitBonus ?? 0) + weightHitMod(state.run.equipment);
-  if (enemyHit < 1 && Math.random() >= enemyHit) {
-    return pushCombatLog(state, { actor: 'enemy', text: `${def.name} 的${chosen.name}落空了。` });
-  }
+  // 敌人命中判定已删（战斗系统改版 2026-07-10·必中）：不再摇命中骰、不读 hitBonus/weightHitMod——每击必然连上，
+  // 伤害由 resolveDamage(攻击力 − 玩家防御·下限0) 单点结算。
 
   // 计算伤害
   let dmg = randRange(chosen.damage);
@@ -962,36 +925,20 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
     const seg = state.phase.combat.enemies;
     dmg += chainSegmentDamageBonus(seg.filter((e) => e.hp > 0).length, seg.length);
   }
-  // 闪避减伤
-  const evading = state.phase.combat.playerStatuses.find((s) => s.kind === 'evading');
-  if (evading) {
-    dmg = Math.ceil(dmg * (1 - (evading.param ?? 0.5)));
-  }
-  // 潜水服减伤：读穿戴件 physicalArmor 累计（A·2026-06-20·替旧 if(suit)-1·改读数值·防双计 quirk #142）
-  const armor = getEquipmentStats(state.run.equipment).physicalArmor;
-  if (armor > 0) {
-    dmg = Math.max(1, dmg - armor);
-  }
+  // 闪避已删（战斗系统改版 2026-07-10·evading 玩家状态下线）。
+  // 玩家防御力（战斗系统改版 2026-07-10·＝潜水衣 physicalArmor·resolveDamage 单点·下限0）：物理伤扣防御，
+  // 非物理伤（电/火）绕过防御（defense=0）。原 max(1,…) 地板 1 改为下限 0——重甲挡弱敌可为 0 伤。
+  const defense = chosen.damageType === 'physical' ? getEquipmentStats(state.run.equipment).physicalArmor : 0;
+  dmg = resolveDamage(dmg, defense);
 
-  let s = applyStatsDelta(state, { stamina: -dmg });
+  // 伤害落点＝生命值（战斗系统改版 2026-07-10）：敌攻改扣 HP（体力≤0 不再致死·体力＝行动预算）。
+  let s = applyStatsDelta(state, { hp: -dmg });
   s = pushCombatLog(s, {
     actor: 'enemy',
-    text: `${chosen.description}（体力 -${dmg}）`,
+    text: `${chosen.description}（生命 -${dmg}）`,
   });
 
-  // 负伤判定（负伤 SPEC §4.1）：**仅带 injuryOnHit 的攻击才掷骰**——不带的攻击零额外 RNG 消耗，
-  // 既有 seed 基线不被搅（只有配了数据的敌人的 baseline 需要重抄）。injuryId 缺省 → 按
-  // damageType 查 cause 默认派生（physical→流血）；同类升档/上限顶替封死在 addInjury。
-  if (chosen.injuryOnHit && s.run && Math.random() < chosen.injuryOnHit.chance) {
-    const injuryId = chosen.injuryOnHit.injuryId ?? injuryIdForDamageType(chosen.damageType);
-    if (injuryId) {
-      const change = addInjury(s.run, injuryId);
-      s = { ...s, run: change.run };
-      if (change.text) {
-        s = pushCombatLog(s, { actor: 'system', text: change.text });
-      }
-    }
-  }
+  // 负伤判定已删（战斗系统改版 2026-07-10·负伤系统整套下线）：敌攻不再掷骰给玩家负伤——伤害统一落 HP。
   return s;
 }
 

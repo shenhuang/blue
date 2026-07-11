@@ -18,7 +18,6 @@ import { equipmentUnlocksAction, loadoutInsulation, weightO2Mult, weightStaminaM
 import { EQUIPMENT_SLOTS } from '@/types/items';
 import { restoreLighthouse, advanceOutpost } from './lighthouses';
 import { lampPowerDrain, alertDelta, ALERT_MAX } from './clarity';
-import { effectiveStaminaMax } from './modifiers';
 import { stepNitrogen } from './nitrogen';
 import { getCaveTemperature, stepThermalStress, thermalStaminaDrain } from './temperature';
 import { getBands } from './bands';
@@ -272,7 +271,7 @@ export interface OutcomeResult {
 }
 
 /**
- * 用力动作（exertion）的默认基础体力消耗（作者 2026-07-11·占位·defer-number-tuning）。
+ * 用力动作（exertion）的默认基础体力消耗（#289·作者 2026-07-11·占位·defer-number-tuning）。
  * 挖矿/凿洞等 exertion 结果若没显式 staminaCost，就按此值扣（再乘负重体力倍率）——
  * 让「负重同时放大体力与氧耗」对挖矿也成立（挖矿旧数据只有 oxygenTurnCost、无体力字段）。
  */
@@ -295,14 +294,14 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
         stats[stat] = stats[stat] + delta;
       }
     }
-    // 额外氧气消耗（按"标准回合数"）。exertion（用力动作·挖矿/凿洞等·作者 2026-07-11）⇒ ×负重氧耗倍率（轻＝×1 逐字节不变）。
+    // 额外氧气消耗（按"标准回合数"）。exertion（用力动作·挖矿/凿洞等·#289·作者 2026-07-11）⇒ ×负重氧耗倍率（轻＝×1 逐字节不变）。
     if (outcome.oxygenTurnCost) {
       const cost = outcome.exertion
         ? Math.ceil(outcome.oxygenTurnCost * weightO2Mult(s.run.equipment))
         : outcome.oxygenTurnCost;
       stats.oxygen -= cost;
     }
-    // 用力动作的体力消耗（作者 2026-07-11「负重同时加体力和氧」）：exertion ⇒ 默认基础体力（staminaCost 覆盖）×负重体力倍率；
+    // 用力动作的体力消耗（#289·作者 2026-07-11「负重同时加体力和氧」）：exertion ⇒ 默认基础体力（staminaCost 覆盖）×负重体力倍率；
     // 非 exertion 仅按显式 staminaCost 扣、不乘负重（旧数据无此字段＝0＝逐字节不变）。
     if (outcome.exertion) {
       const base = outcome.staminaCost ?? EXERTION_BASE_STAMINA;
@@ -311,8 +310,9 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
       stats.stamina -= outcome.staminaCost;
     }
     stats = clampStats(stats, {
-      stamina: effectiveStaminaMax(s.run),
+      stamina: s.run.staminaMax,
       oxygen: s.run.oxygenMax,
+      hp: s.run.hpMax,
     });
     s = { ...s, run: { ...s.run, stats } };
   }

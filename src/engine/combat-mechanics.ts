@@ -663,9 +663,10 @@ export function detonateSelfDestruct(state: GameState, instanceId: string): Game
   if (!pufferArmed(def, e)) return state;
   const sd = def!.selfDestruct!;
   let s = state;
-  const stam = randRange(sd.staminaDamage);
-  s = applyStatsDelta(s, { stamina: -stam });
-  const msg = `${sd.detonateText}（体力 -${stam}）`;
+  // 爆炸伤（战斗系统改版 2026-07-10）：改扣 HP（原扣体力）。字段名 sd.staminaDamage 暂留、Lane B 随敌人 schema 统一改名。
+  const blastDmg = randRange(sd.damage);
+  s = applyStatsDelta(s, { hp: -blastDmg });
+  const msg = `${sd.detonateText}（生命 -${blastDmg}）`;
   s = pushCombatLog(s, { actor: 'system', text: msg });
   s = setCombat(s, (c) => ({
     ...c,

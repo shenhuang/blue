@@ -279,13 +279,8 @@ export interface ConsumableMeta {
   usableIn: ('port' | 'dive' | 'combat')[];
   /** 使用效果（直接套用 Outcome 子集） */
   effectOnUse: {
-    deltas?: Partial<Record<'stamina' | 'oxygen' | 'nitrogen', number>>;
+    deltas?: Partial<Record<'hp' | 'stamina' | 'oxygen' | 'nitrogen', number>>;
     text?: string;
   };
-  /**
-   * 急救包语义（负伤 SPEC §8·data-driven 同 decoy.kind 套路·非硬编码 id）：使用时对身上
-   * **每处**伤按其 `InjuryDef.heal.medkit` 字段生效（cure 移除/downgrade 降档/none 不动——
-   * 「全部能治的一起处理」·作者拍 2026-06-12）。治疗只走 injuries.ts::healInjury 唯一入口。
-   */
-  medkit?: boolean;
+  // 负伤系统整套下线（战斗系统改版 2026-07-10）：原 medkit 治伤旗标已删——急救包现只经 effectOnUse.deltas 回 HP。
 }

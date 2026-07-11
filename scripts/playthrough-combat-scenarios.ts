@@ -167,22 +167,6 @@ function assertScenario(name: string, result: CombatScenarioResult, expect: Scen
     }
   }
 
-  if (expect.injuriesFinal) {
-    const got = new Map(s.injuriesFinal.map((i) => [i.defId, i.tier]));
-    const want = Object.entries(expect.injuriesFinal);
-    if (got.size !== want.length) {
-      fail(
-        name,
-        `injuriesFinal 数量不符：期望 ${want.length} 处，实际 ${got.size} 处（${[...got.entries()].map(([d, t]) => `${d}@${t}`).join(', ') || '无伤'}）`,
-      );
-    }
-    for (const [defId, tier] of want) {
-      if (got.get(defId) !== tier) {
-        fail(name, `injuriesFinal.${defId} 不符：期望 tier ${tier}，实际 ${got.get(defId) ?? '(没有这处伤)'}`);
-      }
-    }
-  }
-
   if (expect.logIncludes) {
     const allText = result.turns
       .flatMap((t) => t.log)
@@ -209,7 +193,7 @@ function assertScenario(name: string, result: CombatScenarioResult, expect: Scen
 // 机械字段＝可从一次确定性跑派生。意图字段＝人写的阈值/叙事（*DeltaAtMost / logIncludes / notes / _comment）·bless 绝不动。
 // 只刷新 expect 里**已存在**的机械字段（不新增·不改断言粒度），取代「手抄 --out json」的易错（Agent 审计 #3）。
 const MECHANICAL_FIELDS = [
-  'outcome', 'turnsElapsed', 'survived', 'finalPhase', 'enemiesAlive', 'lootGained', 'statsDelta', 'injuriesFinal',
+  'outcome', 'turnsElapsed', 'survived', 'finalPhase', 'enemiesAlive', 'lootGained', 'statsDelta',
 ] as const;
 
 function mechanicalValue(field: (typeof MECHANICAL_FIELDS)[number], s: CombatScenarioResult['summary']): unknown {
@@ -221,7 +205,6 @@ function mechanicalValue(field: (typeof MECHANICAL_FIELDS)[number], s: CombatSce
     case 'enemiesAlive': return s.enemiesAlive.length;
     case 'lootGained': return Object.fromEntries(s.lootGained.map((l) => [l.itemId, l.qty]));
     case 'statsDelta': return s.statsDelta;
-    case 'injuriesFinal': return Object.fromEntries(s.injuriesFinal.map((i) => [i.defId, i.tier]));
   }
 }
 

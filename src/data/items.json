@@ -902,10 +902,9 @@
           "dive",
           "combat"
         ],
-        "medkit": true,
         "effectOnUse": {
           "deltas": {
-            "stamina": 30
+            "hp": 30
           },
           "text": "你撕开急救包，止血带勒紧，疼痛被推到一边。"
         }

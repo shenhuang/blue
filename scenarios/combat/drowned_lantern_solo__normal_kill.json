@@ -15,6 +15,6 @@
     "finalPhase": "dive",
     "lootGained": { "item.lantern_gland": 1 },
     "enemiesAlive": 0,
-    "statsDelta": { "stamina": -25, "oxygen": -3 }
+    "statsDelta": { "stamina": -18, "oxygen": -3 }
   }
 }

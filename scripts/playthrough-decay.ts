@@ -25,7 +25,7 @@ function makeCorpseWith(itemIds: string[]): GameState {
       ...createNewRun({ zoneId: 'zone.old_lighthouse_reef' }),
       runId: 'test-run',
       map: null,
-      stats: { stamina: 0, oxygen: 0, nitrogen: 30, thermalStress: 0 },
+      stats: { hp: 0, stamina: 0, oxygen: 0, nitrogen: 30, thermalStress: 0 },
       staminaMax: 100,
       oxygenMax: 60,
       equipment: { tank: null, suit: null, light: null, tool: null, sonar: null, ranged: null, charm: null, charm2: null, charm3: null },

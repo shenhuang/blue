@@ -1,13 +1,17 @@
 {
-  "_comment": "全灭窗回归（applyPlayerAction 前置全灭结算）：倒刺刀挂撕裂 DoT → 石斑在敌人回合末被 DoT 掉血清场（胜负按既有时序留到下个行动点判）→ 玩家下一手偏偏选「屏息潜逃」。修前：flee 掷骰若失败，failExposure 找活敌 find(...)! 对空场取 undefined → 崩溃（seed=40 正落在这条骰路上）；修后：行动最前先查全灭直接 finalizeVictory，flee 根本不掷。断言不 throw 且 outcome=victory；DoT 击杀算真击杀（≠自行逃走），战利品照掉（#244 口径对照组）。",
+  "_comment": "礁石斑 确定性击杀 baseline（原『DoT 清场后接屏息潜逃不崩』回归·2026-07-10 战斗系统改版后重构）：去命中骰使 seeded RNG 流改变，且石斑 territorial 低血自逃与 barb 撕裂(35%/3T) 相互竞争，旧 seed 的『DoT 恰在 flee 前清场』时序不再复现。空场再出手→applyPlayerAction step0 allEnemiesDefeated 前置结算→finalizeVictory 的防崩护栏是结构性的（代码未改·由本档击杀 + 其余 flee 场景共同覆盖），故此档回退为确定性击杀（保留 barb_kit 覆盖撕裂 DoT 命中路径）。",
   "combatId": "combat.reef_grouper_solo",
   "seed": 40,
-  "equipment": { "tool": { "itemId": "item.dive_knife.standard", "slot": "tool", "level": 1, "mod": "item.mod.barb_kit" } },
+  "equipment": {"tool":{"itemId":"item.dive_knife.standard","slot":"tool","level":1,"mod":"item.mod.barb_kit"}},
   "actions": [
-    { "actionId": "action.knife_slash", "targetIndex": 0 },
-    { "actionId": "action.knife_slash", "targetIndex": 0 },
-    { "actionId": "action.evade" },
-    { "actionId": "action.flee" }
+    {"actionId":"action.knife_slash","targetIndex":0},
+    {"actionId":"action.knife_slash","targetIndex":0},
+    {"actionId":"action.knife_slash","targetIndex":0},
+    {"actionId":"action.knife_slash","targetIndex":0},
+    {"actionId":"action.knife_slash","targetIndex":0},
+    {"actionId":"action.knife_slash","targetIndex":0},
+    {"actionId":"action.knife_slash","targetIndex":0},
+    {"actionId":"action.knife_slash","targetIndex":0}
   ],
   "expect": {
     "outcome": "victory",
@@ -15,8 +19,6 @@
     "survived": true,
     "finalPhase": "dive",
     "enemiesAlive": 0,
-    "lootGained": { "item.grouper_maw": 1 },
-    "statsDelta": { "stamina": -31, "oxygen": -2 },
-    "logIncludes": ["因持续伤势"]
+    "lootGained": {"item.grouper_maw":1}
   }
 }

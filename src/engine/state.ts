@@ -36,7 +36,15 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // run.diveModifier 形状变（'dark'→{sense:'lamp',mode:'locked'}）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始。
 // 13→14（理智系统移除·2026-07-10）：删连续「理智」stat（run.stats 少一字段·原 0–100）+ 全套理智机制（战斗/事件/幻觉/氮醉）——
 // run.stats 形状变（少一字段）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始（「疯掉」改由地点缝 seam 二元门·见 types/dive.ts）。
-const SAVE_VERSION = 14;
+// 14→15（战斗系统改版·2026-07-10）：Stats 加 hp（生命值·伤害落点·归零死）+ RunState 加 hpMax；负伤系统整套下线（run.injuries 删）——
+// run/stats 形状变（加 hp/hpMax·减 injuries）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始。体力不再致死（改行动预算）、伤害改打 HP。
+const SAVE_VERSION = 15;
+
+/**
+ * 生命值上限基线（战斗系统改版 2026-07-10）。createNewRun 种进 run.hpMax、stats.hp 起手＝hpMax。
+ * 占位数值·defer-number-tuning（作者统一调手感）。未来潜服/升级可在此之上加成（同 staminaMax/oxygenMax 模式）。
+ */
+export const HP_MAX = 100;
 
 /** 家灯塔 id（守灯人 Aldo 所在的港口基地）。createInitialProfile 用。 */
 export const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
@@ -218,6 +226,7 @@ export function createStarterLoadout(): EquipmentLoadout {
 
 export function createInitialStats(): Stats {
   return {
+    hp: HP_MAX, // 生命值起手满（战斗系统改版 2026-07-10·createNewRun 按 hpMax 覆写）
     stamina: 100,
     oxygen: 60, // 蓝鳍 Mk.I 基础值
     nitrogen: 0,
@@ -248,6 +257,8 @@ export function createNewRun(opts: {
   bonuses?: {
     oxygenMaxBonus?: number;
     staminaMaxBonus?: number;
+    /** 生命上限加成（战斗系统改版 2026-07-10）：run.hpMax = HP_MAX + 此值。未来潜服/升级 + boss 战 baseline 生存力都走它（同 staminaMaxBonus 模式）。 */
+    hpMaxBonus?: number;
     /** 声呐能力是否已解锁（深水区 Phase 0a；省略 = 未解锁 = 早期仅有灯）。 */
     sonarUnlocked?: boolean;
     // 深水区 Phase 0 升级轨（省略 = 未升级 = 基线，行为与 0a/0b 一致）。
@@ -278,9 +289,12 @@ export function createNewRun(opts: {
 
   const staminaMax = 100 + staminaBonus;
   const oxygenMax = 60 + oxygenBonus;
+  // 生命值上限（战斗系统改版 2026-07-10）：基线 HP_MAX + 加成（潜服/升级 + boss 战 baseline 生存力·同 stamina/oxygen 模式）。
+  const hpMax = HP_MAX + (opts.bonuses?.hpMaxBonus ?? 0);
   const stats = createInitialStats();
   stats.stamina = staminaMax;
   stats.oxygen = oxygenMax;
+  stats.hp = hpMax;
 
   return {
     runId: `run-${Date.now()}`,
@@ -293,6 +307,7 @@ export function createNewRun(opts: {
     stats,
     staminaMax,
     oxygenMax,
+    hpMax,
     equipment: opts.equipment ?? createStarterLoadout(),
     inventory: [],
     // 背包承载上限（kg·#资源重量制 2026-06-21）。base = RUN_CARRY_WEIGHT；未来升级可在此加成（同 powerMax 模式）。
@@ -319,8 +334,6 @@ export function createNewRun(opts: {
     // 必填化（CHANGELOG #107）：默认值即旧读点 `?? 1 / 缺省假` 的语义，行为不变。
     bandAlertFactor: 1,
     huntEnabled: false,
-    // 负伤（负伤 SPEC §3）：run 级身体债，出海无伤起步；回港随 run 销毁＝全愈。
-    injuries: [],
     // POI 固定资源 run 级耗尽（2026-06-25）：起手空 Map（本 run 还没采过任何点）。
     harvestedNodes: new Map(),
   };
@@ -383,8 +396,9 @@ export function addToInventory(
 }
 
 /** clamp stats 到合理范围 */
-export function clampStats(stats: Stats, max: { stamina: number; oxygen: number }): Stats {
+export function clampStats(stats: Stats, max: { stamina: number; oxygen: number; hp: number }): Stats {
   return {
+    hp: Math.max(0, Math.min(stats.hp, max.hp)),
     stamina: Math.max(0, Math.min(stats.stamina, max.stamina)),
     oxygen: Math.max(0, Math.min(stats.oxygen, max.oxygen)),
     nitrogen: Math.max(0, Math.min(stats.nitrogen, 100)),
@@ -479,7 +493,6 @@ export function hydrateGameState(state: GameState): GameState {
       scanMemory: run.scanMemory ?? {},
       bandAlertFactor: run.bandAlertFactor ?? 1,
       huntEnabled: run.huntEnabled ?? false,
-      injuries: run.injuries ?? [],
       // 固定资源 run 级耗尽容器（POI 固定资源耗尽·2026-06-25）：缺失单点补空 Map（poiId/harvestedSaveItems
       // 是真条件字段·缺席有语义·不补）。
       harvestedNodes: run.harvestedNodes ?? new Map(),

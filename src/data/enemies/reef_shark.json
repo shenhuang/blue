@@ -14,7 +14,7 @@
       "name": "暗礁鲨（幼体）",
       "tier": "realistic",
       "hp": 32,
-      "armor": 0,
+      "defense": 0,
       "evasion": 2,
       "speed": 8,
       "threat": 6,
@@ -29,8 +29,7 @@
           "damageType": "physical",
           "damage": [4, 7],
           "description": "它冲过来，齿列在水里划出一道白线。",
-          "weight": 3,
-          "injuryOnHit": { "chance": 0.35 }
+          "weight": 3
         },
         {
           "id": "shark.tail_swipe",
@@ -41,7 +40,6 @@
           "weight": 1
         }
       ],
-      "physicalDamage": [4, 7],
       "loot": {
         "guaranteed": [{ "itemId": "item.shark_tooth", "qty": [1, 1], "weight": 1 }],
         "rolls": [],

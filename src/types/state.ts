@@ -4,7 +4,6 @@
 import type { EquipmentSlot, DecoyKind } from './items';
 import type { DiveMap, NodeKind, PersistentCave, GateSense } from './dive';
 import type { CombatState } from './combat';
-import type { ActiveInjury } from './injuries';
 import type { PoiModifier } from './chart';
 import type { Lighthouse } from './lighthouse';
 
@@ -13,7 +12,14 @@ export type Stat = 'stamina' | 'oxygen' | 'nitrogen';
 
 /** 即时数值 */
 export interface Stats {
-  stamina: number; // 0–staminaMax
+  /**
+   * 生命值（战斗系统改版 2026-07-10）：一切「伤害」的落点（敌攻 / 爆炸 / 未来环境伤）——归零＝死亡。
+   * **潜内持久**（跨战斗/节点不自动回·区别于体力），靠急救包/休息节点/靠港（＝下次满血出海）恢复。
+   * 与 thermalStress 同类：是 keyof Stats 数值资源、**不进 `Stat` 事件轴**（不做技能检定/事件阈值）——
+   * 经 applyStatsDelta 按 key 投递（战斗直接 {hp:-dmg}）、急救包 effectOnUse.deltas 可回。上限＝run.hpMax。
+   */
+  hp: number; // 0–hpMax
+  stamina: number; // 0–staminaMax（行动预算·非致死·战斗系统改版 2026-07-10：体力≤0 只是无法行动·须调息/战后恢复）
   oxygen: number; // 0–oxygenMax（按"剩余回合数"计）
   nitrogen: number; // 0–100
   /**
@@ -357,6 +363,11 @@ export interface RunState {
   stats: Stats;
   staminaMax: number;
   oxygenMax: number; // 满气瓶可支撑的回合数
+  /**
+   * 生命值上限（战斗系统改版 2026-07-10）。createNewRun 种 HP_MAX（+未来潜服/升级加成）、stats.hp 起手＝hpMax；
+   * 潜内 HP 不自动回（区别于体力·靠急救/休息/靠港恢复）。存储值不被负伤改写（负伤系统已下线）。
+   */
+  hpMax: number;
   equipment: EquipmentLoadout;
   inventory: InventoryItem[];
   carryWeightLimit: number; // 背包承载上限（kg）：拾取/装载按重量截断；装备负重(equipment.ts)是另一套，互不相干
@@ -433,13 +444,6 @@ export interface RunState {
    * 真条件字段：缺席＝没有诱饵（quirk #106·不种不补·不 bump SAVE_VERSION）。
    */
   decoy?: DiveDecoy;
-  /**
-   * 身上的负伤（负伤 SPEC §3·run 级身体债·同时最多 3 处）。回港随 run 销毁＝全愈（SPEC §8）。
-   * 纯加字段不 bump SAVE_VERSION：createNewRun 种 []、旧档由 hydrateGameState 单点补 []（quirk #99/#106）。
-   * **写入只许 engine/injuries.ts 三入口（add/worsen/heal），读取只许 engine/modifiers.ts 折算**
-   * （UI 渲染徽章直读不限）——check-boundaries 规则四强制。
-   */
-  injuries: ActiveInjury[];
   /**
    * 固定资源**run 级耗尽**追踪（POI 固定资源耗尽 SPEC·2026-06-25）：poiId → 本 run 已采过的 nodeId 集。
    * applyOutcome 在 loot 落包成功时把 currentNodeId 写进来（任意 harvestPersist 的 loot 都算「采过这个点」）。

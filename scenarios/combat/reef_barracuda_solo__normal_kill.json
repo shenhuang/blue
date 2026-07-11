@@ -14,6 +14,6 @@
     "finalPhase": "dive",
     "lootGained": { "item.barracuda_jaw": 1 },
     "enemiesAlive": 0,
-    "statsDelta": { "stamina": -19, "oxygen": -2 }
+    "statsDelta": { "stamina": -12, "oxygen": -2 }
   }
 }

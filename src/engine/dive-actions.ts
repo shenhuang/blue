@@ -9,7 +9,6 @@ import { appendLog } from './state';
 import { executeDeath } from './death';
 import { featureDoneFlag } from './dive-select';
 import { passTurnsWithStalker } from './dive-stalker';
-import { effectiveStaminaMax } from './modifiers';
 
 /**
  * 多事件房间里「凑近探一处 feature」的回合开销（声呐与房间 SPEC §6/§8「连探付氧」）。
@@ -61,7 +60,7 @@ export function restAtNode(state: GameState, turns: number = 3): GameState {
   const run = s.run;
   const stats = {
     ...run.stats,
-    stamina: Math.min(effectiveStaminaMax(run), run.stats.stamina + 15),
+    stamina: Math.min(run.staminaMax, run.stats.stamina + 15),
   };
   s = { ...s, run: { ...run, stats } };
   s = appendLog(s, { tone: 'realistic', text: `你停在此处，调整呼吸。体力恢复 +15。` });
@@ -110,7 +109,7 @@ export function campAtNode(state: GameState, mode: 'short' | 'long'): GameState 
   const run = s.run;
   const stats = {
     ...run.stats,
-    stamina: Math.min(effectiveStaminaMax(run), run.stats.stamina + staGain),
+    stamina: Math.min(run.staminaMax, run.stats.stamina + staGain),
   };
   s = { ...s, run: { ...run, stats } };
   s = appendLog(s, {

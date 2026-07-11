@@ -15,7 +15,7 @@
       "name": "洞口巨石斑",
       "tier": "uncanny",
       "hp": 62,
-      "armor": 3,
+      "defense": 3,
       "evasion": 1,
       "speed": 3,
       "threat": 8,
@@ -41,7 +41,6 @@
           "weight": 2
         }
       ],
-      "physicalDamage": [4, 10],
       "phases": [
         {
           "hpThreshold": 0.4,
@@ -55,8 +54,7 @@
               "damageType": "physical",
               "damage": [9, 14],
               "description": "它用全身的重量砸过来，不是攻击，是在把你嵌进洞壁里。",
-              "weight": 3,
-              "injuryOnHit": { "chance": 0.35, "injuryId": "injury.rib" }
+              "weight": 3
             },
             {
               "id": "cave_grouper_boss.bite_enraged",

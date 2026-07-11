@@ -14,7 +14,7 @@
       "name": "沉船蛛蟹",
       "tier": "realistic",
       "hp": 22,
-      "armor": 2,
+      "defense": 2,
       "evasion": 3,
       "speed": 5,
       "threat": 5,
@@ -39,7 +39,6 @@
           "weight": 1
         }
       ],
-      "physicalDamage": [3, 7],
       "loot": {
         "guaranteed": [{ "itemId": "item.crab_chitin", "qty": [1, 1], "weight": 1 }],
         "rolls": [],

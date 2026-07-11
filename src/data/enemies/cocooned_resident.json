@@ -10,7 +10,7 @@
       "role": "ambusher",
       "threatTier": "high",
       "hp": 14,
-      "armor": 0,
+      "defense": 0,
       "evasion": 0,
       "speed": 1,
       "threat": 3,
@@ -37,8 +37,7 @@
             "damageType": "physical",
             "damage": [8, 14],
             "description": "[待过稿] 它找到了你的空隙，比幼体时准了太多。",
-            "weight": 1,
-            "injuryOnHit": { "chance": 0.5 }
+            "weight": 1
           }
         ],
         "cocoonBreakBonus": [
@@ -54,7 +53,6 @@
           "description": "[待过稿] 它什么都没做。"
         }
       ],
-      "physicalDamage": [6, 14],
       "loot": {
         "guaranteed": [],
         "rolls": [{ "itemId": "item.coral_shard", "qty": [1, 2], "weight": 1 }],

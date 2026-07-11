@@ -7,8 +7,8 @@
   "stats": { "oxygen": 140 },
   "equipment": { "tool": { "itemId": "item.dive_knife.standard", "slot": "tool", "level": 5 } },
   "actions": [
-    { "actionId": "action.evade" },
-    { "actionId": "action.evade" },
+    { "actionId": "action.breathe" },
+    { "actionId": "action.breathe" },
     { "actionId": "action.knife_slash", "targetIndex": 0 },
     { "actionId": "action.knife_slash", "targetIndex": 1 },
     { "actionId": "action.knife_slash", "targetIndex": 2 },

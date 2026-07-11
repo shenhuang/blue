@@ -10,12 +10,12 @@
   ],
   "expect": {
     "outcome": "victory",
-    "turnsElapsed": 4,
+    "turnsElapsed": 3,
     "survived": true,
     "finalPhase": "dive",
     "lootGained": { "item.crab_chitin": 1 },
     "enemiesAlive": 0,
-    "statsDelta": { "stamina": -28, "oxygen": -4 },
+    "statsDelta": { "stamina": -18, "oxygen": -3 },
     "notes": "enemyRef 取到 沉船蛛蟹（seed 100000·pickEnemy idx 1）；crab_chitin 掉落＝resolved 证据。"
   }
 }

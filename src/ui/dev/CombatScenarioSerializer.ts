@@ -20,7 +20,6 @@ import type {
   InventoryItem,
   Stats,
   Stat,
-  ActiveInjury,
 } from '@/types';
 import { EQUIPMENT_SLOTS, type EquipmentSlot } from '@/types/items';
 
@@ -42,14 +41,6 @@ export interface ActionRowForm {
   actionId: string;
   /** 空字符串 = 不指定（缺省 = 第一个活敌人） */
   targetIndex: string;
-}
-
-/** 起始伤势一行（负伤 SPEC §10 baseline·走 injuries.ts::seedInjuries 形状）。 */
-export interface InjuryRowForm {
-  /** injuries.json 的 InjuryDef.id（如 injury.bleeding / injury.rib）。 */
-  defId: string;
-  /** 档位：1=轻 2=重。 */
-  tier: 1 | 2;
 }
 
 export interface CombatScenarioFormState {
@@ -92,9 +83,6 @@ export interface CombatScenarioFormState {
    * 空字符串 = 不指定 → 该敌 def.defaultSkin；普通敌人忽略。
    */
   wornSkin: string;
-
-  /** 起始伤势（负伤 SPEC §10 baseline）：经 injuries.ts::seedInjuries 直落档位。空数组 = 无伤。 */
-  injuries: InjuryRowForm[];
 
   /** 每回合的玩家行动；行数动态增长 */
   actions: ActionRowForm[];
@@ -141,7 +129,6 @@ export function emptyCombatFormState(combatId = ''): CombatScenarioFormState {
     maxTurns: '',
     bonuses: { staminaMaxBonus: '', oxygenMaxBonus: '' },
     wornSkin: '',
-    injuries: [],
     actions: [],
   };
 }
@@ -216,15 +203,6 @@ function buildBonuses(form: CombatScenarioFormState): { staminaMaxBonus?: number
   return any ? out : undefined;
 }
 
-function buildInjuries(form: CombatScenarioFormState): ActiveInjury[] | undefined {
-  const out: ActiveInjury[] = [];
-  for (const row of form.injuries) {
-    const id = row.defId.trim();
-    if (!id) continue;
-    out.push({ defId: id, tier: row.tier === 2 ? 2 : 1 });
-  }
-  return out.length > 0 ? out : undefined;
-}
 
 function buildActions(form: CombatScenarioFormState): CombatActionInput[] | undefined {
   const out: CombatActionInput[] = [];
@@ -262,8 +240,6 @@ export function formToCombatScenarioInput(form: CombatScenarioFormState): Combat
   if (form.zoneId.trim()) input.zoneId = form.zoneId.trim();
   if (form.depth !== '') input.depth = Math.floor(Number(form.depth));
 
-  const injuries = buildInjuries(form);
-  if (injuries) input.injuries = injuries;
   const bonuses = buildBonuses(form);
   if (bonuses) input.bonuses = bonuses;
   if (form.wornSkin.trim()) input.wornSkin = form.wornSkin.trim();
@@ -321,9 +297,6 @@ export function combatScenarioInputToForm(input: CombatScenarioInput): CombatSce
     if (input.bonuses.oxygenMaxBonus !== undefined) base.bonuses.oxygenMaxBonus = input.bonuses.oxygenMaxBonus;
   }
   if (input.wornSkin !== undefined) base.wornSkin = input.wornSkin;
-  if (input.injuries) {
-    base.injuries = input.injuries.map((i) => ({ defId: i.defId, tier: i.tier === 2 ? 2 : 1 }));
-  }
   if (input.actions) {
     base.actions = input.actions.map((a) => ({
       actionId: a.actionId,
@@ -351,7 +324,6 @@ export function serializeCombatToJson(input: CombatScenarioInput, comment?: stri
   if (input.bonuses) ordered.bonuses = input.bonuses;
   if (input.equipment) ordered.equipment = input.equipment;
   if (input.inventory) ordered.inventory = input.inventory;
-  if (input.injuries) ordered.injuries = input.injuries;
   if (input.wornSkin !== undefined) ordered.wornSkin = input.wornSkin;
   if (input.unlockedUpgrades) ordered.unlockedUpgrades = input.unlockedUpgrades;
   if (input.actions) ordered.actions = input.actions;

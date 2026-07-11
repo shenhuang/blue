@@ -14,7 +14,7 @@
       "name": "梭鱼",
       "tier": "realistic",
       "hp": 16,
-      "armor": 0,
+      "defense": 0,
       "evasion": 4,
       "speed": 12,
       "threat": 7,
@@ -41,7 +41,6 @@
           "weight": 2
         }
       ],
-      "physicalDamage": [3, 9],
       "loot": {
         "guaranteed": [{ "itemId": "item.barracuda_jaw", "qty": [1, 1], "weight": 1 }],
         "rolls": [],
@@ -69,7 +68,7 @@
       "name": "梭鱼幼体",
       "tier": "realistic",
       "hp": 7,
-      "armor": 0,
+      "defense": 0,
       "evasion": 4,
       "speed": 9,
       "threat": 2,
@@ -95,7 +94,6 @@
           "weight": 1
         }
       ],
-      "physicalDamage": [1, 4],
       "loot": {
         "guaranteed": [],
         "rolls": [{ "itemId": "item.coral_shard", "qty": [1, 1], "weight": 1 }],

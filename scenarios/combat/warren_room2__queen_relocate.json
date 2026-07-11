@@ -4,6 +4,7 @@
   "seed": 1,
   "bonuses": {
     "staminaMaxBonus": 800,
+    "hpMaxBonus": 800,
     "oxygenMaxBonus": 400
   },
   "stats": {

@@ -6,10 +6,10 @@
   "bonuses": { "staminaMaxBonus": 600, "oxygenMaxBonus": 200 },
   "stats": { "oxygen": 40 },
   "actions": [
-    { "actionId": "action.evade" },
-    { "actionId": "action.evade" },
-    { "actionId": "action.evade" },
-    { "actionId": "action.evade" }
+    { "actionId": "action.breathe" },
+    { "actionId": "action.breathe" },
+    { "actionId": "action.breathe" },
+    { "actionId": "action.breathe" }
   ],
   "expect": {
     "outcome": "noActionProvided",

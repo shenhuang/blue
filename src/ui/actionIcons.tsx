@@ -17,7 +17,6 @@ const ACTION_GLYPH: Record<string, ReactNode> = {
   'action.fire_pneumatic': (<><path d="M4 8h10v3h-3l-3 4H6v-4H4z"/><path d="M7 11v4"/></>),
   'action.fire_harpoon': (<><path d="M3 10h13"/><path d="M16 10l5-3"/><path d="M16 10l5 3"/><path d="M6 10v3h2"/></>),
   'action.fist': (<><rect x="7" y="10" width="10" height="8" rx="3"/><path d="M9 10V7a1 1 0 0 1 2 0v3M12.3 10V6a1 1 0 0 1 2 0v4M15.6 10V7.5a1 1 0 0 1 2 0V10"/><path d="M7 13 4 11"/></>),
-  'action.evade': (<><path d="M4 17c4 2 8 2 10-2s2-8 6-8"/><path d="M17 5h3v3"/></>),
   'action.flee': (<><path d="M4 5v14"/><path d="M4 12h13"/><path d="M13 7l5 5-5 5"/></>),
   'action.breathe': (<><circle cx="12" cy="12" r="7"/><path d="M12 8v8M8.5 12h7"/></>),
 };
@@ -25,7 +24,6 @@ const ACTION_GLYPH: Record<string, ReactNode> = {
 // effect.kind 兜底（新行动没写进 ACTION_GLYPH 时用·同一套 kind 也决定色调）。
 const KIND_GLYPH: Record<EffectKind, ReactNode> = {
   attack: ACTION_GLYPH['action.knife_slash'],
-  defend: (<><path d="M12 3 19 6v5c0 5-4 8-7 10-3-2-7-5-7-10V6z"/><path d="M12 8v7"/></>),
   recover: ACTION_GLYPH['action.breathe'],
   flee: ACTION_GLYPH['action.flee'],
   crowd_control: (<><circle cx="12" cy="12" r="6"/><path d="M12 4v2M12 18v2M4 12h2M18 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4"/></>),
@@ -34,7 +32,6 @@ const KIND_GLYPH: Record<EffectKind, ReactNode> = {
 
 const KIND_TINT: Record<EffectKind, string> = {
   attack: 'var(--danger)',
-  defend: 'var(--accent)',
   recover: 'var(--green)',
   flee: 'var(--warn)',
   crowd_control: 'var(--yellow)',

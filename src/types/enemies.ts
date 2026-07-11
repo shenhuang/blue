@@ -134,10 +134,10 @@ export interface EnemyDef {
   name: string;
   tier: EnemyTier;
 
-  // —— 基础属性 ——
+  // —— 基础属性（攻击力=各 EnemyAttack.damage / 防御力=defense / 生命=hp·战斗系统改版 2026-07-10）——
   hp: number;
-  armor: number;
-  evasion: number;
+  defense: number; // 防御力（原 armor 改名 2026-07-10）：resolveDamage 物理减伤基值。阶段/母鱼截击的临时覆盖仍叫 phaseArmorOverride / armorWhileProtected（派生自此）。
+  evasion: number; // ⚠ 战斗系统改版 2026-07-10「必中」后不再参与命中结算·仅 dev 面板展示（死数据·可后续清理）。
   speed: number;
 
   // —— 行为 ——
@@ -164,8 +164,7 @@ export interface EnemyDef {
   // —— 攻击 ——
   attacks: EnemyAttack[];
 
-  // —— 伤害与抗性 ——
-  physicalDamage: [number, number];
+  // —— 抗性 ——（原 physicalDamage 顶层字段已删 2026-07-10：从未被引擎读取·伤害只来自各 EnemyAttack.damage）
   weakness?: Weakness[];
   immunity?: DamageType[];
 
@@ -317,8 +316,8 @@ export interface EnemyDef {
    * 数值 / 文案占位·defer（§10·待作者调）。
    */
   selfDestruct?: {
-    /** 自爆对玩家的体力伤（占位·defer-number-tuning）。 */
-    staminaDamage: [number, number];
+    /** 自爆对玩家的伤害（战斗系统改版 2026-07-10：原 staminaDamage·现落 HP·占位·defer-number-tuning）。 */
+    damage: [number, number];
     /** 近战击破 / 到点自爆时推入 log 的叙事（克制冷短句·守剧透红线 quirk #117·不点古文明关联·§2）。 */
     detonateText: string;
     /** 远程「隔水拆除」击破时推入 log 的叙事（可选·缺省＝静默死亡）。 */
@@ -450,12 +449,7 @@ export interface EnemyAttack {
   damage: [number, number];
   description: string; // 战斗叙事文本
   weight?: number; // AI 选用此攻击的权重
-  /**
-   * 命中后给玩家负伤（负伤 SPEC §4.1）。injuryId 缺省 → 按 attack.damageType 查 injuries.json
-   * 的 cause 默认派生（physical→流血）；「physical 但属挤压」的肋裂由攻击显式 injuryId 覆盖，
-   * 不加新 DamageType。**仅带本字段的攻击才掷骰**——不带的攻击零额外 RNG 消耗（守既有 seed 基线）。
-   */
-  injuryOnHit?: { chance: number; injuryId?: string };
+  // 负伤系统整套下线（战斗系统改版 2026-07-10）：原 injuryOnHit（命中给玩家负伤）已删——伤害统一落 HP。
 }
 
 export interface LootTable {
@@ -541,7 +535,8 @@ export interface EnemyInstance {
 }
 
 export interface EnemyStatus {
-  kind: 'stunned' | 'bleeding' | 'poisoned' | 'frightened' | 'distracted' | 'enthralled';
+  // 战斗系统改版 2026-07-10：空壳 frightened/distracted/enthralled（引擎从不消费）已删，只留生效的 stunned + DoT。
+  kind: 'stunned' | 'bleeding' | 'poisoned';
   remainingTurns: number;
   /**
    * 每回合持续伤害（DoT·武器改装组件 SPEC·作者 2026-06-20）：bleeding（倒刺套件·撕裂）/

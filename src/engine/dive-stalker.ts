@@ -339,11 +339,10 @@ export function weakStalkerStep(
   return { state: s, contact: false };
 }
 
-/** 迎战先手暴击倍率（猎手 SPEC §5「选择迎战给先手优势」·与 combat ambush 默认同档）。 */
-const STAND_FIGHT_MULT = 1.5;
+// 迎战先手暴击倍率 STAND_FIGHT_MULT 已删（战斗系统改版 2026-07-10）：突袭暴击下线，迎战改「首回合免费行动」（CombatState.preemptive）。
 
 /**
- * 停下·迎战（猎手 SPEC §5）：有猎手时玩家主动开打——在你的条件下接战，先手 ambushing 暴击（对比被追上时的被动伏击吃亏）。
+ * 停下·迎战（猎手 SPEC §5·战斗系统改版 2026-07-10）：有猎手时玩家主动开打——在你的条件下接战，首回合免费行动（preemptive·敌人这一轮不还击·对比被追上时的被动伏击吃亏）。
  * 复用该猎手的 encounterId（zone ambushEncounters·不加新敌）；清猎手 + 警觉落缓冲（同接触后处理·避免连环）。无猎手 → 原样。
  */
 export function standAndFight(state: GameState): GameState {
@@ -355,7 +354,7 @@ export function standAndFight(state: GameState): GameState {
     tone: 'realistic',
     text: '你不再退——稳住身体，把光对准黑暗里那东西，抢在它扑上来之前先发制人。',
   });
-  return startCombat(s, encounterId, [{ kind: 'ambushing', remaining: 2, param: STAND_FIGHT_MULT }]);
+  return startCombat(s, encounterId, { preemptive: true });
 }
 
 /**

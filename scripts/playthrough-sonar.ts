@@ -264,7 +264,7 @@ L('\n========== 9. scanMemory round-trip ==========');
   const s = pingSonar(mk({ depth: 50 }));
   const back = deserializeGameState(serializeGameState(s));
   assert(back !== null, '9: 反序列化成功');
-  assert(back!.version === 14, '9: SAVE_VERSION 14（理智系统移除 bump·scanMemory 本身不影响）');
+  assert(back!.version === 15, '9: SAVE_VERSION 15（战斗系统改版 bump·scanMemory 本身不影响）');
   assert(
     sameSet(sortedKeys(back!.run!.scanMemory ?? {}), sortedKeys(s.run!.scanMemory ?? {})),
     '9: scanMemory 原样 round-trip（普通对象、无需迁移）',
@@ -383,7 +383,7 @@ L('\n========== 14. 一记 ping 单动作（§2.2）==========');
 
   // (e) 存档 round-trip：sonar 普通枚举·保真·不 bump SAVE_VERSION
   const rt = deserializeGameState(serializeGameState(movedOff));
-  assert(rt!.version === 14, '14e: SAVE_VERSION 14（理智系统移除 bump·感知重做删 sonarOn 不影响）');
+  assert(rt!.version === 15, '14e: SAVE_VERSION 15（战斗系统改版 bump·感知重做删 sonarOn 不影响）');
   assert(rt!.run!.sensors.sonar === 'off', '14e: sensors.sonar round-trip 保真');
   L('  默认不扫 / ping 付暴露 / 移动归 off(不自动扫) / 暴露按状态 / 存档 round-trip ✓');
 }

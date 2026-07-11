@@ -80,19 +80,6 @@
       }
     },
     {
-      "id": "action.evade",
-      "name": "闪避",
-      "description": "下次受击减伤 50%。",
-      "costStamina": 8,
-      "costOxygenTurns": 0,
-      "targeting": "self",
-      "effect": {
-        "kind": "defend",
-        "damageReduction": 0.5,
-        "turns": 1
-      }
-    },
-    {
       "id": "action.flee",
       "name": "屏息潜逃",
       "description": "尝试脱战。对警戒度低的敌人成功率高、代价也低；已被警戒或缠住时，脱身要拼体力。",
@@ -108,19 +95,20 @@
     {
       "id": "action.breathe",
       "name": "调息",
-      "description": "稳住呼吸，重整姿态。被打中会失效。",
-      "costStamina": 2,
+      "description": "稳住呼吸，重整姿态，恢复一些体力（+25）。占一次行动、仍在耗氧。",
+      "costStamina": 0,
       "costOxygenTurns": 2,
       "targeting": "self",
       "effect": {
         "kind": "recover",
+        "deltas": { "stamina": 25 },
         "disruptable": true
       }
     },
     {
       "id": "action.use_medkit",
       "name": "使用急救包",
-      "description": "回 30 体力，处理当场治得了的伤。占一次行动。",
+      "description": "回 30 生命，处理当场治得了的伤。占一次行动。",
       "costStamina": 0,
       "costOxygenTurns": 1,
       "requiresItemId": "item.med_kit",

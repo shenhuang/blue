@@ -14,7 +14,7 @@
       "name": "洞穴章鱼",
       "tier": "realistic",
       "hp": 26,
-      "armor": 1,
+      "defense": 1,
       "evasion": 3,
       "speed": 7,
       "threat": 6,
@@ -48,7 +48,6 @@
           "weight": 1
         }
       ],
-      "physicalDamage": [3, 8],
       "loot": {
         "guaranteed": [{ "itemId": "item.cave_octopus_beak", "qty": [1, 1], "weight": 1 }],
         "rolls": [],

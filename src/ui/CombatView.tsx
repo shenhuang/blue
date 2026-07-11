@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { GameState, EnemyInstance, CombatAction } from '@/types';
-import { applyPlayerAction, listAvailableActions, getEnemyDef } from '@/engine/combat';
+import { applyPlayerAction, listAvailableActions, getEnemyDef, type ActionAvailability } from '@/engine/combat';
 import { frontmostLivingSegment } from '@/engine/chain-eel';
 import { beginAscent } from '@/engine/transitions';
 import { isAscentBlocked } from '@/engine/ascent';
@@ -15,6 +15,8 @@ interface Props {
 
 export function CombatView({ state, onStateChange }: Props) {
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
+  // 道具抽屉（战斗系统改版 2026-07-10）：可用消耗品折叠进「使用道具」，默认收起、可展开可关。
+  const [itemDrawerOpen, setItemDrawerOpen] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
   // 日志固定高度+内部滚动（见 styles.css .combat-log）：新行进来自动贴底，
   // 不再靠 slice(-5) 截断来防止撑开外层排版——这是真正修容器高度、不是砍内容。
@@ -29,6 +31,10 @@ export function CombatView({ state, onStateChange }: Props) {
   const combat = state.phase.combat;
   const aliveEnemies = combat.enemies.filter((e) => e.hp > 0);
   const actions = listAvailableActions(state);
+  // 道具行动（消耗背包里的消耗品·非攻击）折进抽屉：急救包/声诱/光诱等；耗弹的远程攻击（effect.kind==='attack'）仍留主行动区。
+  const isItemAction = (a: CombatAction) => a.consumesItem === true && a.effect.kind !== 'attack';
+  const itemActions = actions.filter(({ action }) => isItemAction(action));
+  const mainActions = actions.filter(({ action }) => !isItemAction(action));
   // 封闭水域离开上浮口（头上是岩顶）→ 战斗里不给紧急上浮：脱离只能靠 flee 再摸回上浮口。
   // 开阔水 / 在上浮口才保留紧急上浮（也是高氮的死亡出口）。见氮气 SPEC §4。
   const ascentBlocked = isAscentBlocked(state.run);
@@ -54,6 +60,33 @@ export function CombatView({ state, onStateChange }: Props) {
   function handleEmergencyAscent() {
     onStateChange(beginAscent(state, undefined, { duress: true }));
   }
+
+  // 单个行动按钮（主行动区与道具抽屉共用·战斗系统改版 2026-07-10）。
+  const actionButton = (action: CombatAction, availability: ActionAvailability) => (
+    <button
+      className={`btn event-option ${!availability.available ? 'disabled' : ''}`}
+      onClick={() => availability.available && handleAction(action)}
+      disabled={!availability.available}
+      title={action.description}
+    >
+      <div className="action-row">
+        <span className="action-name">
+          <ActionIcon action={action} />
+          {action.name}
+        </span>
+        <span className="action-cost">
+          {action.costStamina > 0 && `体力 -${action.costStamina} `}
+          {action.costOxygenTurns > 0 && `氧气 -${action.costOxygenTurns}`}
+        </span>
+      </div>
+      <div className="action-desc dim">
+        {action.description}
+        {!availability.available && availability.reason && (
+          <span className="warn"> · {availability.reason}</span>
+        )}
+      </div>
+    </button>
+  );
 
   return (
     <div className="dive combat">
@@ -98,33 +131,32 @@ export function CombatView({ state, onStateChange }: Props) {
       <div className="combat-actions">
         <h3>你的行动</h3>
         <ul className="event-options">
-          {actions.map(({ action, availability }) => (
-            <li key={action.id}>
+          {mainActions.map(({ action, availability }) => (
+            <li key={action.id}>{actionButton(action, availability)}</li>
+          ))}
+          {/* 道具抽屉（可展开可关·战斗系统改版 2026-07-10）：消耗品折进「使用道具」，不再一排铺开挤满行动区。 */}
+          {itemActions.length > 0 && (
+            <li className={`combat-item-drawer ${itemDrawerOpen ? 'open' : ''}`}>
               <button
-                className={`btn event-option ${!availability.available ? 'disabled' : ''}`}
-                onClick={() => availability.available && handleAction(action)}
-                disabled={!availability.available}
-                title={action.description}
+                className="btn event-option combat-item-toggle"
+                onClick={() => setItemDrawerOpen((o) => !o)}
+                aria-expanded={itemDrawerOpen}
+                title="展开 / 收起可用道具"
               >
                 <div className="action-row">
-                  <span className="action-name">
-                    <ActionIcon action={action} />
-                    {action.name}
-                  </span>
-                  <span className="action-cost">
-                    {action.costStamina > 0 && `体力 -${action.costStamina} `}
-                    {action.costOxygenTurns > 0 && `氧气 -${action.costOxygenTurns}`}
-                  </span>
-                </div>
-                <div className="action-desc dim">
-                  {action.description}
-                  {!availability.available && availability.reason && (
-                    <span className="warn"> · {availability.reason}</span>
-                  )}
+                  <span className="action-name">使用道具</span>
+                  <span className="action-cost">{itemActions.length} 件 · {itemDrawerOpen ? '收起 ▲' : '展开 ▼'}</span>
                 </div>
               </button>
+              {itemDrawerOpen && (
+                <ul className="event-options combat-item-list">
+                  {itemActions.map(({ action, availability }) => (
+                    <li key={action.id}>{actionButton(action, availability)}</li>
+                  ))}
+                </ul>
+              )}
             </li>
-          ))}
+          )}
           {!ascentBlocked && (
             <li>
               <button className="btn event-option danger" onClick={handleEmergencyAscent}>

@@ -10,7 +10,7 @@
       "role": "swarm",
       "threatTier": "low",
       "hp": 8,
-      "armor": 0,
+      "defense": 0,
       "evasion": 2,
       "speed": 6,
       "threat": 2,
@@ -26,7 +26,6 @@
           "description": "[待过稿] 它从母鱼口中被喷出来，直接咬住了你——小小的牙，但很用力。"
         }
       ],
-      "physicalDamage": [2, 4],
       "loot": {
         "rolls": [],
         "rollCount": 0,
@@ -48,7 +47,7 @@
       "role": "miniboss",
       "threatTier": "high",
       "hp": 40,
-      "armor": 2,
+      "defense": 2,
       "evasion": 0,
       "speed": 2,
       "threat": 8,
@@ -97,7 +96,6 @@
           "weight": 1
         }
       ],
-      "physicalDamage": [5, 9],
       "loot": {
         "guaranteed": [{ "itemId": "item.eel_skin", "qty": [1, 1], "weight": 1 }],
         "rolls": [{ "itemId": "item.coral_shard", "qty": [2, 4], "weight": 1 }],

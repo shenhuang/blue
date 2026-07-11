@@ -7,7 +7,6 @@ import type { GameState, DiveNode, CurrentStrength } from '@/types';
 import { tickTurns, evalCondition } from './events';
 import { appendLog } from './state';
 import { executeDeath, MADNESS_ASCENT_CAUSE } from './death';
-import { computeModifiers } from './modifiers';
 import { enterNodeSelection } from './dive-select';
 import { stalkerStep, weakStalkerStep, maybeApproachEncounter } from './dive-stalker';
 import { startCombat } from './combat';
@@ -43,10 +42,8 @@ function applyTransit(state: GameState, target: DiveNode): GameState {
   const run = state.run!;
   const transitionTurns = 1 + Math.floor(Math.abs(target.depth - run.currentDepth) / 5);
 
-  // 负伤修正（负伤 SPEC §5 dive-move 消费点）：移动 tick 氧耗 × o2CostMult、洋流消耗 × 对应 mult。
-  // 无伤＝恒等元 1，下方全部算式逐字节不变。
-  const mods = computeModifiers(run);
-  let ticked = tickTurns(run, transitionTurns, { o2CostMult: mods.o2CostMult });
+  // 负伤系统整套下线（战斗系统改版 2026-07-10）：原移动 tick 氧耗 × o2CostMult / 洋流 × staminaCostMult 折算已删（恒 1）。
+  let ticked = tickTurns(run, transitionTurns);
   // 声呐脉冲消散（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：移动＝新一回合＝上一站那记 ping 荡散归 off。
   // 想在新一站看＝到站后再 ping 一记（付电 + 暴露）。旧「持续开/关 + 到站自动扫」双态状态机已删。
   ticked = {
@@ -57,8 +54,7 @@ function applyTransit(state: GameState, target: DiveNode): GameState {
     sensors: { ...ticked.sensors, sonar: 'off' },
   };
 
-  // 洋流（海图 POI 修正）：每次移动额外耗体力 + 氧气（在死亡判定前应用，使洋流耗氧也能致死）。
-  // 负伤修正乘进实际扣减（currentMoveCost 仍是无修正基准·纯函数回归断言不动），向上取整。
+  // 洋流（海图 POI 修正）：每次移动额外耗体力 + 氧气（在死亡判定前应用，使洋流耗氧也能致死）。向上取整。
   const curCost = currentMoveCost(run.diveModifier?.current);
   const hasCurrentCost = curCost.stamina > 0 || curCost.oxygen > 0;
   if (hasCurrentCost) {
@@ -66,8 +62,8 @@ function applyTransit(state: GameState, target: DiveNode): GameState {
       ...ticked,
       stats: {
         ...ticked.stats,
-        stamina: Math.max(0, ticked.stats.stamina - Math.ceil(curCost.stamina * mods.staminaCostMult)),
-        oxygen: Math.max(0, ticked.stats.oxygen - Math.ceil(curCost.oxygen * mods.o2CostMult)),
+        stamina: Math.max(0, ticked.stats.stamina - Math.ceil(curCost.stamina)),
+        oxygen: Math.max(0, ticked.stats.oxygen - Math.ceil(curCost.oxygen)),
       },
     };
   }
@@ -172,7 +168,7 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
         if (record && tier > 0 && Math.random() < horrorSapienChance(tier)) {
           // 被占据：先打一场战斗；胜/逃后 finalizeVictory/finalizeFlee 自动路由回 corpse subPhase
           const encounter = buildInhabitedCorpseEncounter(record, tier as 1 | 2 | 3);
-          return startCombat(s, encounter, undefined, { sourceCorpseId: record.id });
+          return startCombat(s, encounter, { sourceCorpseId: record.id });
         }
         return { ...s, phase: { kind: 'dive', subPhase: { kind: 'corpse', deathRecordId: target.corpseRecordId } } };
       }

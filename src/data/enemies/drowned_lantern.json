@@ -14,7 +14,7 @@
       "name": "沉灯水母",
       "tier": "cosmic",
       "hp": 24,
-      "armor": 1,
+      "defense": 1,
       "evasion": 1,
       "speed": 4,
       "threat": 6,
@@ -40,7 +40,6 @@
           "weight": 2
         }
       ],
-      "physicalDamage": [2, 4],
       "loot": {
         "guaranteed": [{ "itemId": "item.lantern_gland", "qty": [1, 1], "weight": 1 }],
         "rolls": [],
