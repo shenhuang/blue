@@ -51,10 +51,35 @@
 - **守门**：`scripts/playthrough-story`（quirk #118 · §4「data story.* ⊆ allStoryFlags」）baseline 跟改；`scripts/check-mainline-reachable` 跟改。
 - **`poi.dive.*.story` 4 个 id 别改名**（mentor_logbook.marksPois + check-mainline-reachable + items.json 钉 · quirk #244）——新增 trench 那个是「加」不是「改」。
 
-## 6. 与四 boss 的接法（待作者定叙事骨架）
+## 6. Ch1 新剧情结构（作者 2026-07-12 定 · 「以前的该改改该删删」· 本 spec 从「观测站/地理」扩到整条 Ch1 弧）
 
-- 四 boss 分布 reef / wreck / midwater / vent（替原四鱼）· 观测站在最深海沟 = **四 boss 之后的收敛终点**（chainTail 天然「其余锚点齐才收敛」）。
-- 结局文案里「四种鱼四个群落」的引用（`ending_station.hand_over_the_log` ·「萤纹丛还活着 · 锈甲群换了条船……」/ `ending_blank`「墙上四种鱼图鉴」）= **随 boss 重构改写** · 标 `[待改 · 鱼→boss]`。
+> 幻觉＝**叙事层脚本事件**（导师团聚是假象），**不是**复活已删的理智值/幻觉机制（#284 · [[remove-sanity-system]]）。
+
+**主线弧（Ch1）**
+1. 开场＝手里只有**导师的部分笔记**（部分坐标 + 部分内容）。
+2. 跟坐标**打四个 boss**（＝ ch1-boss-branches 两派四分支 · The Warren 已成 · #2 在做）——每打一个拿到**剩余笔记的一块**。
+3. 集齐全部笔记 → **解谜** → **解锁海沟区（z5 · ~300 m）的观测站**（＝ §4 C 地理落点）。
+4. 进观测站 → **遇到幻觉 · 以为与导师团聚** → **结局一**（＝旧 `ending_station` 改写：不再「当时为真」含糊 · 明确是幻觉 · 但玩家此刻不自知）。
+
+**结局一之后（桥接 → Ch2）**
+5. 回港找 **Aldo** → 点破「那是幻觉」→ 解锁 **禁岛** + **极地火山** 两区（禁岛＝Ch2 · [[forbidden_island]]；极地火山＝冰火区 · 古文明 SPEC §8）。
+6. 在**禁岛制作出定心坠**。
+7. 持定心坠**重回观测站** → **第二个剧情 / 结局二**：与 **Théo 的水鬼**（`horror_sapien` · Théo＝科考队员 · 「作弊硬上→水鬼」古文明法则）战斗 → 揭示**之前遇到的全是你的幻觉**。
+
+**该改改该删删（现有实装）**
+- 旧 `ending_station`（圆满 · 当时为真 + 四条 tells）→ **结局一（明确幻觉团聚）**；四鱼验收文案 → 四 boss。
+- 旧 `ending_blank` + `recording_1`（持破损饰品重访空站 + 录音）→ **被结局二（Théo 水鬼）取代 / 重构**（揭穿从「空站+录音」改成「打 Théo 水鬼」）· 录音存废待定。
+- **定心坠来源改**：旧＝观测站 loot 破损饰品；新＝**禁岛制作**。
+- **观测站可达门扩容**：从「建海沟前哨」扩成「四 boss + 集齐笔记 + 解谜」（§10 前哨料经济仍是到海沟的物理门 · 与剧情门叠加）。
+
+**开放问题（fresh session 定 · 需作者）**
+- ① **Ch1/Ch2 边界**：结局二（Théo 水鬼）+ 禁岛 + 极地火山，算 Ch1 尾还是 Ch2 头？
+- ② **定心坠 vs 回影坠**：memory 里禁岛的穿越饰品叫「回影坠」（[[forbidden_island]]/古文明），这里禁岛做的是「定心坠」——两个饰品还是同一个？定心坠功能（稳幻觉）+ 旧「破损→二章群宝修复」链是否保留？
+- ③ **解谜**形式（笔记拼合 / 坐标 / 机关）？
+- ④ **四 boss 掉笔记**：每 boss 掉一块 · 集齐才解谜？
+- ⑤ recording_1（导师真声）存废。
+
+**牵动的其它 spec/系统**（fresh session 拉齐）：`深海回响_剧情_SPEC.md`（Ch1 弧 + 结局）、`深海回响_禁岛_设计讨论稿.md`（Ch2/定心坠/回影坠/Théo 水鬼）、ch1-boss-branches（四 boss）、Aldo 对话（解锁两区）、Théo 水鬼 boss（敌人库/boss SPEC）。**Ch1 主线大改 · 远超单个 obs-station 结构改 · 多 session 工程。**
 
 ## 7. Ch2 deferral（深度升级压缩 · 本 session 定案）
 
