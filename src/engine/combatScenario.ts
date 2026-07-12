@@ -24,7 +24,7 @@ import type {
   EnemyDef,
   EnemyInstance,
   EnemyStance,
-  EnemyStatus,
+  StatusInstance,
   EnemyAttack,
   EnemyTier,
   Hostility,
@@ -139,7 +139,7 @@ export interface EnemySnapshot {
   hpMax: number;
   stance: EnemyStance;
   aggro: number;
-  statuses: EnemyStatus[];
+  statuses: StatusInstance[];
   /**
    * boss 阶段：当前已触发的最高阶段索引（= CombatState.bossPhaseIndices[instanceId]）。
    * -1 = 尚未进入任何阶段 / 非 boss。配合 phaseCount 在预览里标「进入阶段 N / 共 M」。
@@ -280,6 +280,7 @@ function startAdHocCombat(state: GameState, enemyDefIds: string[], wornSkin?: st
         encounterId: 'adhoc',
         enemies,
         reinforcementPool: undefined,
+        playerStatuses: [],
         turn: 0,
         log: [],
         victoryEventId: undefined,

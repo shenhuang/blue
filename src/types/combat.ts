@@ -3,6 +3,7 @@
 import type { Stat } from './state';
 import type { EquipmentSlot } from './items';
 import type { EnemyInstance, EnemyParty, EnemyPartyMemberDef, DamageType } from './enemies';
+import type { StatusInstance, StatusKind } from './status';
 
 /** 玩家行动定义（数据驱动） */
 export interface CombatAction {
@@ -49,8 +50,11 @@ export interface AttackEffect {
   kind: 'attack';
   damage: [number, number]; // 物理伤害区间
   damageType: DamageType;
-  /** 命中后给敌人附加状态（战斗系统改版 2026-07-10：空壳 frightened/distracted 已删，只留生效的 stunned/bleeding） */
-  applyStatusOnHit?: { kind: 'stunned' | 'bleeding'; turns: number };
+  /**
+   * 命中后给敌人附加状态（战斗系统改版 2026-07-10：空壳 frightened/distracted 已删，只留生效状态；
+   * 战斗状态系统 SPEC §2.1/§2.6：kind 泛化到共享 StatusKind + 潜力值 dmgPerTurn 随实例带入）。
+   */
+  applyStatusOnHit?: { kind: StatusKind; turns: number; dmgPerTurn?: number };
   /** 攻击声响等级（影响增援触发） */
   noise?: number;
 }
@@ -106,6 +110,17 @@ export interface CombatState {
   enemies: EnemyInstance[];
   /** 待加入战斗的潜在敌人池（噪声阈值触发增援） */
   reinforcementPool: EnemyParty['joinRules'];
+
+  /**
+   * 玩家战斗状态（战斗状态系统 SPEC §2.1）：与 EnemyInstance.statuses 同一形状、同一结算函数
+   * （settleStatusesAtTurnStart），applyPlayerAction 顶部结算。**战斗内作用域**——设计意图上不该
+   * 跨战斗存在（战斗结束即随之消失·毒不出战·v1 简单默认），不 bump SAVE_VERSION。
+   * 注意：`saveGame` 是整个 GameState 落盘（App.tsx 每次 state 变化都存·不区分 phase），若恰好在
+   * 战斗中存档，这个字段确实会落进 localStorage——不是「真的从不序列化」，只是「不必特意迁移」。
+   * 同版本旧档缺此字段时按 quirk #99 老规矩 `?? []` 兜底（读点：applyPlayerAction/enemyAttackPlayer），
+   * 别为了这条 additive 字段单独 bump。
+   */
+  playerStatuses: StatusInstance[];
 
   /**
    * 首回合免费行动（战斗系统改版 2026-07-10·取代 ambushing 突袭暴击）：迎战/先发制人开战时置 true，

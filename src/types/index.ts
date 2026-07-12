@@ -2,6 +2,7 @@
 
 export * from './state';
 export * from './events';
+export * from './status';
 export * from './enemies';
 export * from './items';
 export * from './npcs';

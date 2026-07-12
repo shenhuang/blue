@@ -10,7 +10,7 @@ import type {
   CombatLogEntry,
   CombatEncounterDef,
   EnemyInstance,
-  EnemyStatus,
+  StatusKind,
   EnemyDef,
   EnemyAttack,
   Stats,
@@ -29,6 +29,7 @@ import {
   installedModMeta,
 } from './equipment';
 import { executeDeath } from './death';
+import { settleStatusesAtTurnStart, isStatusImmune } from './status';
 import { getItemDef } from './items';
 import { resolveEncounterMember, enemySeenFlag } from './enemyLibrary';
 import { combatNitrogenGain } from './nitrogen';
@@ -165,6 +166,7 @@ export function startCombat(
     encounterId: enc.id,
     enemies,
     reinforcementPool: enc.reinforcementPool,
+    playerStatuses: [],
     // 迎战先手（猎手 SPEC §5·战斗系统改版 2026-07-10）：standAndFight 传 preemptive → 首回合免费行动（敌人这一轮不还击）。缺省 → 普通开战逐字节不变。
     ...(options?.preemptive ? { preemptive: true as const } : {}),
     turn: 0,
@@ -419,41 +421,71 @@ export function applyPlayerAction(
   // —— 0d. 裂球分裂检查（回合开头·在玩家行动造伤之前检查·这样本回合的伤害不会逆向抑制「之前 N 回合」的分裂门）——
   // 仅带 splitBehavior 的敌人进分支；普通敌人逐字节不变。
   s = maybeEnemySplit(s);
-  // —— 1. 扣资源（负伤修正后的实际消耗·与 availability 同一函数） ——
-  const costs = actionCosts(s.run!, action, s.phase.kind === 'combat' ? s.phase.combat.enemies : undefined);
-  s = applyStatsDelta(s, {
-    stamina: -costs.stamina,
-    oxygen: -costs.oxygen,
-  });
 
-  // —— 1a. 战斗氮气累积（战斗 SPEC §2.1/§10 与主系统耦合）：按当前深度累积氮气，逼近速率 ×1.5（剧烈呼吸·
-  //   时间制·渐近深度 ceiling 不越过）。**仅喂减压债**（氮气已与旧「头脑不正常」轴脱钩·2026-07-10 理智系统移除·
-  //   那条留待地点缝 seam）。此前战斗不累积氮气是 gap。债数学单点在 nitrogen.ts::combatNitrogenGain·此处只经
-  //   applyStatsDelta 落增量（守规则六 nitrogen 单写口·无内联 ± 债务算术）。
-  const nitrogenGain = combatNitrogenGain(s.run!.stats.nitrogen, s.run!.currentDepth, action.costOxygenTurns);
-  if (nitrogenGain !== 0) {
-    s = applyStatsDelta(s, { nitrogen: nitrogenGain });
+  // —— 0e. 玩家状态结算（自己回合开头·战斗状态系统 SPEC §2.3）：DoT 求和落 HP + stun 判定 + 状态减 1 清零移除。
+  // 与 runEnemyTurn 里敌人的结算共用同一个 settleStatusesAtTurnStart（对称·单一结算函数）。
+  // `?? []` 兜底：CombatState 设计上是战斗内瞬态（不序列化的意图），但 saveGame 按整个 GameState
+  // 落盘（App.tsx 每次 state 变化都存）、旧同版本存档若恰好停在战斗中会缺这个新加字段——按 quirk #99
+  // 「纯加字段不 bump SAVE_VERSION、读点 `?? 默认` 兜底」同一口径处理，别为此专门 bump。
+  let playerStunned = false;
+  if (s.phase.kind === 'combat' && s.run) {
+    const settled = settleStatusesAtTurnStart(s.run.stats.hp, s.phase.combat.playerStatuses ?? []);
+    const dot = s.run.stats.hp - settled.hp;
+    if (dot > 0) {
+      s = applyStatsDelta(s, { hp: -dot });
+      s = pushCombatLog(s, { actor: 'system', text: `持续伤势带走你 ${dot} 点生命。` });
+    }
+    s = setCombat(s, (c) => ({ ...c, playerStatuses: settled.statuses }));
+    // DoT 致死：与敌人侧 settleStatusesAtTurnStart 后 `if (settled.hp <= 0) continue` 同一时点判定
+    // （SPEC §2.6 对称设计）——玩家这侧「回合到此为止」＝直接走死亡收束，不再应用本次选择的行动
+    // （否则一次 recover 治疗能在同一回合把「刚被毒死」的结果原地复活，或靠这一击顺手放倒最后一个
+    // 敌人躲过死亡判定：finalizeVictory/finalizeFlee/finalizeSwarmRelocate 都不读玩家 HP，必须在它们之前拦）。
+    if (settled.hp <= 0) {
+      return { state: executeDeath(s, '重伤不治'), outcome: 'defeat' };
+    }
+    playerStunned = settled.stunned;
   }
 
-  // —— 1b. 物品消耗统一在此（任何 requiresItemId + consumesItem 的行动·#108）——
-  // 此前只有 use_item 在 applyUseItem 里自扣；decoy 是 flee 效果也带道具，消耗就近收口到行动入口，
-  // 效果分发各分支不再各管各的（availability 已在上面校验过持有）。
-  if (action.consumesItem && action.requiresItemId && s.run) {
-    s = {
-      ...s,
-      run: { ...s.run, inventory: removeFromInventory(s.run.inventory, action.requiresItemId, 1) },
-    };
+  if (playerStunned) {
+    // 眩晕：本回合玩家行动被消耗为「挣扎·无效」（SPEC §2.3）——不扣资源、不应用效果，直接进入战后判定/敌人回合。
+    s = pushCombatLog(s, { actor: 'player', text: `${action.name}：你还在挣扎——这一下没能作数。` });
+  } else {
+    // —— 1. 扣资源（负伤修正后的实际消耗·与 availability 同一函数） ——
+    const costs = actionCosts(s.run!, action, s.phase.kind === 'combat' ? s.phase.combat.enemies : undefined);
+    s = applyStatsDelta(s, {
+      stamina: -costs.stamina,
+      oxygen: -costs.oxygen,
+    });
+
+    // —— 1a. 战斗氮气累积（战斗 SPEC §2.1/§10 与主系统耦合）：按当前深度累积氮气，逼近速率 ×1.5（剧烈呼吸·
+    //   时间制·渐近深度 ceiling 不越过）。**仅喂减压债**（氮气已与旧「头脑不正常」轴脱钩·2026-07-10 理智系统移除·
+    //   那条留待地点缝 seam）。此前战斗不累积氮气是 gap。债数学单点在 nitrogen.ts::combatNitrogenGain·此处只经
+    //   applyStatsDelta 落增量（守规则六 nitrogen 单写口·无内联 ± 债务算术）。
+    const nitrogenGain = combatNitrogenGain(s.run!.stats.nitrogen, s.run!.currentDepth, action.costOxygenTurns);
+    if (nitrogenGain !== 0) {
+      s = applyStatsDelta(s, { nitrogen: nitrogenGain });
+    }
+
+    // —— 1b. 物品消耗统一在此（任何 requiresItemId + consumesItem 的行动·#108）——
+    // 此前只有 use_item 在 applyUseItem 里自扣；decoy 是 flee 效果也带道具，消耗就近收口到行动入口，
+    // 效果分发各分支不再各管各的（availability 已在上面校验过持有）。
+    if (action.consumesItem && action.requiresItemId && s.run) {
+      s = {
+        ...s,
+        run: { ...s.run, inventory: removeFromInventory(s.run.inventory, action.requiresItemId, 1) },
+      };
+    }
+
+    // —— 2. 应用效果 ——
+    s = applyActionEffect(s, action, targetInstanceId);
+
+    // —— 2b. 链鳗（分节实体）头节 enrage：本次行动若杀掉最后一节体节，头节成为最前存活节 → 立即 enrage，
+    // 其 enraged 攻击表当回合即生效（紧接的敌人回合用上）。maybeChainEelEnrage 内首行守 attackInOrder ⇒
+    // 非链鳗遭遇逐字节不变（不触 maybeBossPhaseShift 的 HP 路径）。
+    s = maybeChainEelEnrage(s);
+
+    // —— 3. 一次性玩家状态清理已删（战斗系统改版 2026-07-10）：PlayerStatus（evading/ambushing）下线，无一次性状态需消耗。
   }
-
-  // —— 2. 应用效果 ——
-  s = applyActionEffect(s, action, targetInstanceId);
-
-  // —— 2b. 链鳗（分节实体）头节 enrage：本次行动若杀掉最后一节体节，头节成为最前存活节 → 立即 enrage，
-  // 其 enraged 攻击表当回合即生效（紧接的敌人回合用上）。maybeChainEelEnrage 内首行守 attackInOrder ⇒
-  // 非链鳗遭遇逐字节不变（不触 maybeBossPhaseShift 的 HP 路径）。
-  s = maybeChainEelEnrage(s);
-
-  // —— 3. 一次性玩家状态清理已删（战斗系统改版 2026-07-10）：PlayerStatus（evading/ambushing）下线，无一次性状态需消耗。
 
   // —— The Warren：女王死（仅死角 the Hatchery）→ 残余崩解（取胜＝女王死·§9.6 演出·令 allEnemiesDefeated 成立）——
   s = maybeSwarmCollapse(s);
@@ -580,23 +612,28 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
   // 应用
   let s = setCombat(state, (c) => ({
     ...c,
-    enemies: c.enemies.map((e) =>
-      e.instanceId === target.instanceId
-        ? {
-            ...e,
-            hp: Math.max(0, e.hp - dmg),
-            aggro: e.aggro + Math.ceil(dmg / 5),
-            stance: e.stance === 'unaware' ? 'alerted' : e.stance === 'alerted' ? 'attacking' : e.stance,
-            // 裂球：累计本周期内玩家造成的伤害（maybeEnemySplit 读取·仅带 splitBehavior 的敌人才写）
-            ...(ENEMY_DEFS.get(e.defId)?.splitBehavior
-              ? { splitDamageAccum: (e.splitDamageAccum ?? 0) + dmg }
-              : {}),
-            statuses: eff.applyStatusOnHit
-              ? [...e.statuses.filter((st) => st.kind !== eff.applyStatusOnHit!.kind), { kind: eff.applyStatusOnHit.kind, remainingTurns: eff.applyStatusOnHit.turns }]
-              : e.statuses,
-          }
-        : e,
-    ),
+    enemies: c.enemies.map((e) => {
+      if (e.instanceId !== target.instanceId) return e;
+      const newHp = Math.max(0, e.hp - dmg);
+      // 只堆叠·无刷新（战斗状态系统 SPEC §2.2）：每次 apply = push 独立实例，不去重/不按 kind 合并。
+      // 布尔免疫（§2.5）：声明了 statusImmunity 的目标，该 kind 完全无效（不是减时长/减潜力）。
+      // 击杀同一击不再上状态（newHp<=0）：别给这一下顺手打死的尸体挂新状态——与武器件 DoT 分支
+      // 的 `e.hp > 0` 门同口径（那边守的是「已死不再上」，这里守的是「这一下刚打死不再上」）。
+      const applyStatus = eff.applyStatusOnHit && newHp > 0 && !isStatusImmune(def.statusImmunity, eff.applyStatusOnHit.kind);
+      return {
+        ...e,
+        hp: newHp,
+        aggro: e.aggro + Math.ceil(dmg / 5),
+        stance: e.stance === 'unaware' ? 'alerted' : e.stance === 'alerted' ? 'attacking' : e.stance,
+        // 裂球：累计本周期内玩家造成的伤害（maybeEnemySplit 读取·仅带 splitBehavior 的敌人才写）
+        ...(ENEMY_DEFS.get(e.defId)?.splitBehavior
+          ? { splitDamageAccum: (e.splitDamageAccum ?? 0) + dmg }
+          : {}),
+        statuses: applyStatus
+          ? [...e.statuses, { kind: eff.applyStatusOnHit!.kind, remainingTurns: eff.applyStatusOnHit!.turns, dmgPerTurn: eff.applyStatusOnHit!.dmgPerTurn }]
+          : e.statuses,
+      };
+    }),
   }));
   s = pushCombatLog(s, {
     actor: 'player',
@@ -619,25 +656,29 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
     s = { ...s, run: { ...s.run, power: Math.max(0, s.run.power - powerSpent) } };
   }
 
-  // 毒囊 / 倒刺套件（武器系统·作者 2026-06-20）：命中且触发 → 给**该目标**挂 DoT 敌人状态
-  // （中毒 poisoned / 撕裂 bleeding·每回合 dmgPerTurn·敌人回合末结算·见 runEnemyTurn）。注意：敌人的
-  // 中毒/撕裂走 EnemyStatus DoT，与玩家专属的负伤系统（injuries.ts·check-boundaries 规则四守的那套）无关。仅装了 mod 才进此分支。
+  // 毒囊 / 倒刺套件（武器系统·作者 2026-06-20）：命中且触发 → 给**该目标**挂 DoT 状态
+  // （中毒 poisoned / 撕裂 bleeding·每回合 dmgPerTurn·回合开头结算·见 runEnemyTurn/settleStatusesAtTurnStart）。
+  // 注意：敌人的中毒/撕裂走 StatusInstance DoT，与玩家专属的负伤系统（injuries.ts·check-boundaries 规则四守的那套）无关。仅装了 mod 才进此分支。
   if (modMeta && (modMeta.effect === 'poison' || modMeta.effect === 'barb') && rollChance(modMeta.chance)) {
-    const kind: EnemyStatus['kind'] = modMeta.effect === 'poison' ? 'poisoned' : 'bleeding';
-    const dpt = modMeta.dmgPerTurn ?? 0;
-    const turns = modMeta.turns ?? 1;
-    s = setCombat(s, (c) => ({
-      ...c,
-      enemies: c.enemies.map((e) =>
-        e.instanceId === target.instanceId && e.hp > 0
-          ? { ...e, statuses: [...e.statuses.filter((st) => st.kind !== kind), { kind, remainingTurns: turns, dmgPerTurn: dpt }] }
-          : e,
-      ),
-    }));
-    s = pushCombatLog(s, {
-      actor: 'system',
-      text: modMeta.effect === 'poison' ? `毒液渗进伤口——${def.name} 开始溃烂。` : `倒刺撕开一道长口子——${def.name} 血流不止。`,
-    });
+    const kind: StatusKind = modMeta.effect === 'poison' ? 'poisoned' : 'bleeding';
+    // 布尔免疫（SPEC §2.5）：免疫 ⇒ 该 status 完全无效——不挂、不日志（伤害已在上面正常结算，只是这次没带毒/撕裂）。
+    if (!isStatusImmune(def.statusImmunity, kind)) {
+      const dpt = modMeta.dmgPerTurn ?? 0;
+      const turns = modMeta.turns ?? 1;
+      // 只堆叠·无刷新（§2.2）：去掉「先删同类再加」的 filter，纯 append。
+      s = setCombat(s, (c) => ({
+        ...c,
+        enemies: c.enemies.map((e) =>
+          e.instanceId === target.instanceId && e.hp > 0
+            ? { ...e, statuses: [...e.statuses, { kind, remainingTurns: turns, dmgPerTurn: dpt }] }
+            : e,
+        ),
+      }));
+      s = pushCombatLog(s, {
+        actor: 'system',
+        text: modMeta.effect === 'poison' ? `毒液渗进伤口——${def.name} 开始溃烂。` : `倒刺撕开一道长口子——${def.name} 血流不止。`,
+      });
+    }
   }
 
   // 噪声触发其他敌人警戒（静音套：近战不触发 signature 上升＝该击噪声归零·武器系统 2026-06-20）
@@ -700,15 +741,21 @@ function applyFlee(state: GameState, action: CombatAction): GameState {
 function applyCrowdControl(state: GameState, action: CombatAction): GameState {
   if (action.effect.kind !== 'crowd_control') return state;
   const eff = action.effect;
+  // 纯 append（既有写法·战斗状态系统 SPEC §2.2 作为「只堆叠」的对照参考，无需改动）；
+  // 新增布尔免疫门控（§2.5）：对所有敌人一视同仁施加，但各按自己的 statusImmunity 单独判。
+  // hp>0 门：已死的敌人不再挂新状态（同其余两处施加点口径），避免死尸状态数组随后续 crowd_control 无限堆。
   return setCombat(state, (c) => ({
     ...c,
-    enemies: c.enemies.map((e) => ({
-      ...e,
-      aggro: Math.max(0, e.aggro + (eff.threatDelta ?? 0)),
-      statuses: eff.applyStatusToAll
-        ? [...e.statuses, { kind: eff.applyStatusToAll.kind, remainingTurns: eff.applyStatusToAll.turns }]
-        : e.statuses,
-    })),
+    enemies: c.enemies.map((e) => {
+      const canApply = e.hp > 0 && eff.applyStatusToAll && !isStatusImmune(ENEMY_DEFS.get(e.defId)?.statusImmunity, eff.applyStatusToAll.kind);
+      return {
+        ...e,
+        aggro: Math.max(0, e.aggro + (eff.threatDelta ?? 0)),
+        statuses: canApply
+          ? [...e.statuses, { kind: eff.applyStatusToAll!.kind, remainingTurns: eff.applyStatusToAll!.turns }]
+          : e.statuses,
+      };
+    }),
   }));
 }
 
@@ -776,40 +823,74 @@ function runEnemyTurn(state: GameState): GameState {
   // 在 order 捕获**之前**执行：被消耗的护巢仔 HP→0 后不会出现在行动队列里（无幽灵行动）。
   s = maybeConsumeJuvenile(s);
 
-  // 按 aggro 降序，每个活着且未眩晕的敌人依次行动
+  // 按 aggro 降序，每个活着的敌人依次行动（战斗状态系统 SPEC §2.3：眩晕不再是「预先滤掉」——
+  // order 含本回合全部活敌，走到自己回合时才结算 settleStatusesAtTurnStart 知道是否眩晕，
+  // 语义与旧「statuses.some(kind==='stunned') 排除在外」一致，只是判定点从「回合前」挪到「自己回合开头」）。
   const order = [...(s.phase.kind === 'combat' ? s.phase.combat.enemies : [])]
-    .filter((e) => e.hp > 0 && !e.statuses.some((st) => st.kind === 'stunned'))
+    .filter((e) => e.hp > 0)
     .sort((a, b) => b.aggro - a.aggro);
 
   for (const e of order) {
     // 实时检查：order 快照后由前置钩子（maybeConsumeJuvenile 等）降至 0 的敌人跳过
-    {
-      const live = s.phase.kind === 'combat'
-        ? s.phase.combat.enemies.find((x) => x.instanceId === e.instanceId)
-        : null;
-      if (!live || live.hp <= 0) continue;
-    }
+    const live = s.phase.kind === 'combat'
+      ? s.phase.combat.enemies.find((x) => x.instanceId === e.instanceId)
+      : null;
+    if (!live || live.hp <= 0) continue;
     const def = ENEMY_DEFS.get(e.defId);
     if (!def) continue;
+
+    // —— 状态结算（自己回合开头·SPEC §2.3）：DoT 求和落 HP + stun 判定（减 1 之前读）+ 状态减 1 清零移除 ——
+    // 取代原「回合末」全局 DoT tick + 状态衰减两块：order 快照含本回合全部活敌，逐一结算 ⇒ 覆盖面不变，只挪时点。
+    const settled = settleStatusesAtTurnStart(live.hp, live.statuses);
+    const dot = live.hp - settled.hp;
+    s = setCombat(s, (c) => ({
+      ...c,
+      enemies: c.enemies.map((x) =>
+        x.instanceId === e.instanceId ? { ...x, hp: settled.hp, statuses: settled.statuses } : x,
+      ),
+    }));
+    if (dot > 0) {
+      s = pushCombatLog(s, { actor: 'system', text: `${def.name} 因持续伤势失去 ${dot} 点生命。` });
+      // boss 阶段检查（HP 因 DoT 下降）——可能改写该敌人的 stance/攻击表覆盖，下面重读 cur 拿最新值。
+      s = maybeBossPhaseShift(s, e.instanceId);
+      // The Warren 女王：DoT 也可能把她打进暴露窗（非死角）→ 巢撤走（§9.1·下一玩家行动 4a 收束）
+      s = maybeSwarmQueenRelocate(s, e.instanceId);
+      // 清道夫（corpseEating）：DoT 致死同样触发尸食钩子
+      s = maybeCorpseEat(s, e.instanceId);
+      // 口孵深鱼护巢仔全灭检查（DoT 致死护巢仔时·幂等）
+      s = applyMaternalEnrageIfAlone(s);
+    }
+    // DoT 致死＝hp→0，胜负在下个玩家行动结算点判定（与「最后一只逃跑 hp=0」同口径·不在敌人回合内提前 finalize·守既有时序）。
+    if (settled.hp <= 0) continue;
+    // 眩晕：这回合不行动（语义与旧 order 预过滤一致，只是判定点挪到这里·无日志——旧行为本就静默跳过）。
+    if (settled.stunned) continue;
+
+    // 结算期间的钩子（boss 阶段迁移等，见上）可能已经改写了这只敌人的 stance / 攻击表覆盖——
+    // 重读一次当前值，后续判断与出手都基于结算后的最新状态，不再用回合开头捕获的 order 快照 `e`
+    // （旧代码里 DoT 恒在全部行动之后才结算，天然不会有这个问题；挪到回合开头后，同一敌人自己的
+    // DoT 结算钩子现在可能先于它自己的行动决策生效，必须读新值，否则会打出「上阶段前」的旧攻击表/旧 stance）。
+    const cur = s.phase.kind === 'combat' ? s.phase.combat.enemies.find((x) => x.instanceId === e.instanceId) : undefined;
+    if (!cur || cur.hp <= 0) continue;
+
     // 茧化居民幼体（metamorphosisStage='larva'）：passive，不发起攻击——直接跳过。
-    if (def.metamorphosis && e.metamorphosisStage === 'larva') {
+    if (def.metamorphosis && cur.metamorphosisStage === 'larva') {
       s = pushCombatLog(s, { actor: 'enemy', text: `${def.name} 停在原地，像一颗等待爆发的蛋。` });
       continue;
     }
     // 茧化居民茧（metamorphosisStage='cocoon'）：同样 passive，不出手。
-    if (def.metamorphosis && e.metamorphosisStage === 'cocoon') continue;
+    if (def.metamorphosis && cur.metamorphosisStage === 'cocoon') continue;
     // The Warren·Puffer 到点自爆（§9.9）：羽化成 armed Puffer 的单位在它的回合自爆（AoE 溅玩家）·随即自毁。
     // **必须先于**下方「无攻击表 passive 守栏」——adult Puffer 的 phaseAttacksOverride=[] 否则会被当 passive 跳过（不炸）。
-    if (pufferArmed(def, e)) {
+    if (pufferArmed(def, cur)) {
       s = detonateSelfDestruct(s, e.instanceId);
       continue;
     }
     // 无攻击表的敌人（The Warren 女王·蜂群 boss SPEC §5/§9.3「别给女王塞攻击表」）：passive 存在体，不出手——
     // 直接跳过（威胁来自巢·非女王本体）。**同时是 enemyAttackPlayer 空 attacks 的护栏**（否则 chosen=undefined→.name 崩）。
     // 全库通用（守 SPEC §3「不给单只敌人写专属分支」）：任何 attacks 空且无覆盖/吸收的敌人皆 passive。
-    if ((e.phaseAttacksOverride ?? def.attacks).length === 0 && !e.absorbedAttacks?.length) continue;
+    if ((cur.phaseAttacksOverride ?? def.attacks).length === 0 && !cur.absorbedAttacks?.length) continue;
     // 逃跑的敌人不打人
-    if (e.stance === 'fleeing') {
+    if (cur.stance === 'fleeing') {
       s = pushCombatLog(s, { actor: 'enemy', text: `${def.name} 向远处游开。` });
       // 真正离场（HP=0 让结算认为已击退）；记入 fledInstanceIds——它没被打死，
       // finalizeVictory 不给它的战利品（#244「逃跑/吓退不给材料」）。
@@ -820,10 +901,11 @@ function runEnemyTurn(state: GameState): GameState {
       }));
       continue;
     }
-    // 低血主动撤退（territorial / passive 类敌人）
+    // 低血主动撤退（territorial / passive 类敌人）：用 cur.hp（本回合已结算 DoT + 结算钩子之后的当前值）——
+    // 状态结算挪到回合开头后，这一判定自然吃到「本回合刚落的 DoT」，无需特判（§2.3 时点变化的自然结果）。
     if (
-      e.hp <= def.hp * 0.3 &&
-      e.stance !== 'enraged' &&
+      cur.hp <= def.hp * 0.3 &&
+      cur.stance !== 'enraged' &&
       (def.hostility === 'territorial' || def.hostility === 'passive') &&
       def.victoryConditions.includes('flee') &&
       Math.random() < 0.5
@@ -836,7 +918,7 @@ function runEnemyTurn(state: GameState): GameState {
       continue;
     }
     // 警戒中：30% 进入攻击
-    if (e.stance === 'alerted' && Math.random() < 0.7) {
+    if (cur.stance === 'alerted' && Math.random() < 0.7) {
       s = pushCombatLog(s, { actor: 'enemy', text: `${def.name} 在你周围游动，没有出手。` });
       s = setCombat(s, (c) => ({
         ...c,
@@ -844,51 +926,18 @@ function runEnemyTurn(state: GameState): GameState {
       }));
       continue;
     }
-    s = enemyAttackPlayer(s, e);
+    s = enemyAttackPlayer(s, cur);
   }
 
-  // 持续伤害（DoT·撕裂/中毒·武器改装 2026-06-20）：敌人回合末按各状态 dmgPerTurn 掉血（先于衰减）。
-  // 仅 dmgPerTurn>0 的状态生效 ⇒ 既有 bleeding 标记（缺省 0）逐字节不变。DoT 致死＝hp→0，胜负在下个
-  // 玩家行动结算点判定（与「最后一只逃跑 hp=0」同口径·不在敌人回合内提前 finalize·守既有时序）。
-  {
-    const cur = s.phase.kind === 'combat' ? s.phase.combat.enemies : [];
-    for (const e of cur) {
-      if (e.hp <= 0) continue;
-      const dot = e.statuses.reduce((a, st) => a + (st.dmgPerTurn ?? 0), 0);
-      if (dot <= 0) continue;
-      const dname = ENEMY_DEFS.get(e.defId)?.name ?? '它';
-      s = setCombat(s, (c) => ({
-        ...c,
-        enemies: c.enemies.map((x) => (x.instanceId === e.instanceId ? { ...x, hp: Math.max(0, x.hp - dot) } : x)),
-      }));
-      s = pushCombatLog(s, { actor: 'system', text: `${dname} 因持续伤势失去 ${dot} 点生命。` });
-      // boss 阶段检查（HP 因 DoT 下降）
-      s = maybeBossPhaseShift(s, e.instanceId);
-      // The Warren 女王：DoT 也可能把她打进暴露窗（非死角）→ 巢撤走（§9.1·下一玩家行动 4a 收束）
-      s = maybeSwarmQueenRelocate(s, e.instanceId);
-      // 清道夫（corpseEating）：DoT 致死同样触发尸食钩子
-      s = maybeCorpseEat(s, e.instanceId);
-      // 口孵深鱼护巢仔全灭检查（DoT 致死护巢仔时·幂等）
-      s = applyMaternalEnrageIfAlone(s);
-    }
-  }
+  // 旧「回合末」全局 DoT tick + 状态衰减两块已删（战斗状态系统 SPEC §2.3）：改在循环内每个敌人
+  // 自己回合开头结算（settleStatusesAtTurnStart，见上）——order 快照覆盖本回合全部活敌，逐一结算，
+  // 覆盖面与旧全局块等价，只是判定点从「回合末」挪到「自己回合开头」。
 
   // 链鳗（分节实体）头节 enrage：DoT 可能杀掉最后一节体节 → 头节成为最前存活节（守 attackInOrder·非链鳗逐字节不变）。
   s = maybeChainEelEnrage(s);
 
   // 茧化居民茧化倒计时：每轮结束后递减（归零时下一个 maybeMetamorphosis 触发羽化成体）。
   s = maybeCocoonCountdown(s);
-
-  // 状态衰减
-  s = setCombat(s, (c) => ({
-    ...c,
-    enemies: c.enemies.map((e) => ({
-      ...e,
-      statuses: e.statuses
-        .map((st) => ({ ...st, remainingTurns: st.remainingTurns - 1 }))
-        .filter((st) => st.remainingTurns > 0),
-    })),
-  }));
 
   return s;
 }
@@ -939,6 +988,17 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
   });
 
   // 负伤判定已删（战斗系统改版 2026-07-10·负伤系统整套下线）：敌攻不再掷骰给玩家负伤——伤害统一落 HP。
+
+  // 敌→玩家施状态（战斗状态系统 SPEC §2.6）：镜像玩家攻击的 applyStatusOnHit 通道。确定命中
+  // （v1 玩家缺省无免疫·§2.5）·只堆叠无刷新（§2.2·纯 append，不 filter 去重）。
+  if (chosen.applyStatusOnHit && s.phase.kind === 'combat') {
+    const onHit = chosen.applyStatusOnHit;
+    s = setCombat(s, (c) => ({
+      ...c,
+      playerStatuses: [...(c.playerStatuses ?? []), { kind: onHit.kind, remainingTurns: onHit.turns, dmgPerTurn: onHit.dmgPerTurn }],
+    }));
+  }
+
   return s;
 }
 

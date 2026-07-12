@@ -1,6 +1,7 @@
 // 敌人 schema —— 与战斗系统 SPEC §4 对齐
 
 import type { EventOption } from './events';
+import type { StatusInstance, StatusKind } from './status';
 
 export type EnemyTier = 'realistic' | 'uncanny' | 'cosmic';
 
@@ -159,6 +160,12 @@ export interface EnemyDef {
   // —— 抗性 ——（原 physicalDamage 顶层字段已删 2026-07-10：从未被引擎读取·伤害只来自各 EnemyAttack.damage）
   weakness?: Weakness[];
   immunity?: DamageType[];
+  /**
+   * 战斗状态布尔免疫（战斗状态系统 SPEC §2.5）：声明的 StatusKind 对它完全无效（不是减时长/减潜力，
+   * 是压根不挂）。与上面 `immunity`（伤害类型免疫）正交——一个管「这种伤打不动它」，一个管
+   * 「这种状态挂不上它」，命名并列区分。缺省/未声明 ⇒ 无免疫，任何 status 都能挂上（既有敌人逐字节不变）。
+   */
+  statusImmunity?: StatusKind[];
 
   // —— 结算 ——
   loot: LootTable;
@@ -442,6 +449,11 @@ export interface EnemyAttack {
   description: string; // 战斗叙事文本
   weight?: number; // AI 选用此攻击的权重
   // 负伤系统整套下线（战斗系统改版 2026-07-10）：原 injuryOnHit（命中给玩家负伤）已删——伤害统一落 HP。
+  /**
+   * 命中后给玩家附加状态（战斗状态系统 SPEC §2.6）：镜像 AttackEffect.applyStatusOnHit——
+   * 这是「敌人能给玩家上状态」的入口。确定命中（除非未来玩家有免疫）·纯堆叠·无 filter 去重。
+   */
+  applyStatusOnHit?: { kind: StatusKind; turns: number; dmgPerTurn?: number };
 }
 
 export interface LootTable {
@@ -465,7 +477,7 @@ export interface EnemyInstance {
   hp: number;
   stance: EnemyStance;
   aggro: number; // 对玩家的仇恨度
-  statuses: EnemyStatus[];
+  statuses: StatusInstance[];
   /**
    * 当前阶段覆盖的攻击表（maybeBossPhaseShift 写入·BossPhase.attacksOverride）。
    * enemyAttackPlayer 优先读此字段；undefined = 用 def.attacks。
@@ -526,17 +538,9 @@ export interface EnemyInstance {
   lastLayTurn?: number;
 }
 
-export interface EnemyStatus {
-  // 战斗系统改版 2026-07-10：空壳 frightened/distracted/enthralled（引擎从不消费）已删，只留生效的 stunned + DoT。
-  kind: 'stunned' | 'bleeding' | 'poisoned';
-  remainingTurns: number;
-  /**
-   * 每回合持续伤害（DoT·武器改装组件 SPEC·作者 2026-06-20）：bleeding（倒刺套件·撕裂）/
-   * poisoned（毒囊·中毒）在敌人回合末按此值掉 hp。缺省/0＝纯状态无持续伤（旧 'bleeding' 标记
-   * 逐字节不变·不掉血）。注意：负伤系统（run.injuries）是玩家专属，敌人的「中毒/撕裂」走这条状态 DoT。
-   */
-  dmgPerTurn?: number;
-}
+// EnemyStatus 已提升为共享 StatusInstance（战斗状态系统 SPEC §2.1·types/status.ts 单一源）——
+// 玩家/敌人共用同一形状，DoT dmgPerTurn 现在改在**回合开头**（settleStatusesAtTurnStart）结算，
+// 不再是「敌人回合末」专属。
 
 /** 战场 EnemyParty */
 export interface EnemyParty {

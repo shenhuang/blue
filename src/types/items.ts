@@ -258,7 +258,7 @@ export type EquipmentEffect =
  *   - barb  ：概率给敌人挂「撕裂(流血)」DoT（更重·dmgPerTurn 更高）。
  *   - silent：近战攻击不触发 signature 上升（战斗内＝该击 noise 归零·不惊动其它敌人）。无数值。
  *   - shock ：命中时若电量够则扣 powerCost、该击附加 bonusDamage（电量不足＝不触发·无副作用）。
- * 注意：敌人的中毒/撕裂走 EnemyStatus DoT（敌人没有玩家那套 run.injuries·那是玩家专属·check-boundaries 规则四）。
+ * 注意：敌人的中毒/撕裂走 StatusInstance DoT（敌人没有玩家那套 run.injuries·那是玩家专属·check-boundaries 规则四）。
  */
 export interface WeaponModMeta {
   effect: 'poison' | 'barb' | 'silent' | 'shock';

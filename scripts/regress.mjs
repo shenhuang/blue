@@ -88,6 +88,10 @@ const canRunTsx = process.platform !== 'linux' || !!process.env.ESBUILD_BINARY_P
 // 端到端教学验证（纯 node，不走 tsx）
 tasks.push({ name: 'verify-tutorial', cmd: ['node', join('scripts', 'verify-tutorial.mjs')] });
 
+// 战斗状态结算纯函数单测（战斗状态系统 SPEC §2.3·off-by-one 正确性关键·见 scripts/verify-status-settle.mjs）
+// 走 tsx（import engine 用了 @/types 别名 + TS）⇒ 沙箱无 esbuild 时自动剔出、留 Mac/nightly（同其它 tsx 行为测）。
+tasks.push({ name: 'verify-status-settle', cmd: [tsx, join('scripts', 'verify-status-settle.mjs')] });
+
 // 写手↔分支一致性（纯 node·把并发隔离方案 A「谁在哪条分支提交」做成会红的门，见 scripts/check-branch.mjs·quirk #104）
 tasks.push({ name: 'check-branch', cmd: ['node', join('scripts', 'check-branch.mjs')] });
 
