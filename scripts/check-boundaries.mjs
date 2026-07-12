@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 架构边界检查（规则一至八·规则四已随负伤系统整套下线停用，命中任一活跃规则即打印 file:line 并退出 1）：
+// 架构边界检查（规则一至九·规则四已随负伤系统整套下线停用，命中任一活跃规则即打印 file:line 并退出 1）：
 //
 // 规则一：engine ↛ ui —— 引擎层不得依赖 UI 层 / React。
 //   扫 src/engine/**/*.ts(x) 的模块说明符：
@@ -40,6 +40,16 @@
 //   继续留在 `src/data/enemies/*.json` 里会让编数据的人误以为改它有效（调 evasion 4→9 静默无效）。
 //   扫全部敌人 JSON 文件，命中键名 `"evasion"` / `"hitBonus"` 即违例——机制化住「命中制若重开，
 //   得先在这里松绑」这条约定（CLAUDE.md「能进 regress 的门优先」）。
+//
+// 规则九：敌人 JSON 的词条字段须 ∈ src/data/affixes.json 登记的 id 集，且组内不重复
+//   （敌人词条系统试点·2026-07-12·单词条随机化修正续）。词条元数据单一源＝affixes.json；效果单一源＝
+//   engine/affixes.ts + engine/combat.ts 的接线点。扫全部敌人 JSON 文件的三处词条字段：
+//   - `.enemies[].affixes`（固定集，仍支持）
+//   - `.enemies[].randomAffixes.pool`（随机抽取池·缺省=全部词条）+ `.count`（须落在 1..池大小 之间）
+//   - `.combatEncounters[].party.members[].affixesOverride`（encounter 钉死集，测试用）
+//   命中非法 id（typo/未登记）、组内重复 id、或 count 越界即违例——防止数据侧写了个不存在的词条
+//   （静默无效：hasAffix 永远查不到）、同一敌人重复声明同一词条（无意义·堆叠语义未定义）、或
+//   count 越界（0 抽不出任何词条 / 越过池大小的部分抽不到，静默截断误导编数据的人）。
 //
 // 把此前靠散文（CLAUDE.md / 评审记忆）维持的解耦约定做成会在 `npm run regress`
 // 里失败的门。现状 0 违例 → 直接绿；以后谁越界，这个门会红——不再靠下一个
@@ -251,6 +261,57 @@ for (const name of readdirSync(ENEMIES_DIR)) {
   }
 }
 
+// ── 规则九：敌人 JSON 词条字段须 ∈ affixes.json 登记 id 集·组内不重复（敌人词条系统试点·2026-07-12·单词条随机化修正续）──
+const AFFIXES_FILE = resolve(ROOT, 'src/data/affixes.json');
+const VALID_AFFIX_IDS = new Set(
+  JSON.parse(readFileSync(AFFIXES_FILE, 'utf-8')).map((a) => a.id),
+);
+const affixViolations = [];
+/** 检查一个 id 数组（fixed affixes / randomAffixes.pool / affixesOverride 共用）：非法 id + 组内重复。 */
+function checkAffixIdArray(ids, file, enemyId, field, violations) {
+  const seen = new Set();
+  for (const id of ids) {
+    if (!VALID_AFFIX_IDS.has(id)) {
+      violations.push({ file, enemyId, kind: 'unknown', id, field });
+    } else if (seen.has(id)) {
+      violations.push({ file, enemyId, kind: 'dup', id, field });
+    }
+    seen.add(id);
+  }
+}
+for (const name of readdirSync(ENEMIES_DIR)) {
+  if (!name.endsWith('.json')) continue;
+  const file = join(ENEMIES_DIR, name);
+  const rel = relative(ROOT, file);
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(file, 'utf-8'));
+  } catch {
+    continue; // JSON 解析失败自有别的门（check-enemy-refs）拦，这里不重复报
+  }
+  for (const e of parsed.enemies ?? []) {
+    if (Array.isArray(e.affixes)) {
+      checkAffixIdArray(e.affixes, rel, e.id, 'affixes', affixViolations);
+    }
+    if (e.randomAffixes) {
+      const pool = Array.isArray(e.randomAffixes.pool) ? e.randomAffixes.pool : undefined;
+      if (pool) checkAffixIdArray(pool, rel, e.id, 'randomAffixes.pool', affixViolations);
+      const poolSize = pool ? pool.length : VALID_AFFIX_IDS.size;
+      const count = e.randomAffixes.count;
+      if (typeof count !== 'number' || count < 1 || count > poolSize) {
+        affixViolations.push({ file: rel, enemyId: e.id, kind: 'badCount', id: String(count), field: 'randomAffixes.count' });
+      }
+    }
+  }
+  for (const enc of parsed.combatEncounters ?? []) {
+    for (const m of enc.party?.members ?? []) {
+      if (Array.isArray(m.affixesOverride)) {
+        checkAffixIdArray(m.affixesOverride, rel, `${enc.id}:${m.defId ?? '<ref>'}`, 'affixesOverride', affixViolations);
+      }
+    }
+  }
+}
+
 let failed = false;
 
 if (importViolations.length) {
@@ -341,6 +402,25 @@ if (deadKeyViolations.length) {
   );
 }
 
+if (affixViolations.length) {
+  failed = true;
+  console.error('✘ 敌人 JSON 词条违例：affixes/randomAffixes/affixesOverride 须 ∈ src/data/affixes.json 登记 id 集·组内不重复·count 合法\n');
+  for (const v of affixViolations) {
+    if (v.kind === 'unknown') {
+      console.error(`  ${v.file}  ${v.enemyId}.${v.field} 含未登记的词条 id "${v.id}"`);
+    } else if (v.kind === 'dup') {
+      console.error(`  ${v.file}  ${v.enemyId}.${v.field} 重复声明词条 id "${v.id}"`);
+    } else {
+      console.error(`  ${v.file}  ${v.enemyId}.${v.field} 越界（须 1..池大小）：值 "${v.id}"`);
+    }
+  }
+  console.error(
+    `\n共 ${affixViolations.length} 处。词条 id 单一源 src/data/affixes.json（+ engine/affixes.ts 的` +
+      `\nHANDLED_AFFIX_IDS/AffixId 联合 + combat.ts 效果接线）；改 id 或补登记，别让敌人挂一个查不到的词条；` +
+      `\nrandomAffixes.count 须落在 1..(pool?.length ?? 全部词条数) 之间，别写 0 或超过池大小。\n`,
+  );
+}
+
 if (failed) process.exit(1);
 
 console.log(
@@ -350,6 +430,7 @@ console.log(
     `；game ↛ dev（游戏侧 ${gameFiles.length} 文件不 import dev 工具）` +
     `；nitrogen 债务写口收窄（engine 内仅 nitrogen/ascent/events/state 写）` +
     `；profile.trust 触碰面收口（engine 内仅 trust/state）` +
-    `；敌人 JSON 无 evasion/hitBonus 惰性键`,
+    `；敌人 JSON 无 evasion/hitBonus 惰性键` +
+    `；敌人 JSON 词条字段合法且不重复（affixes/randomAffixes/affixesOverride·登记 id ${VALID_AFFIX_IDS.size} 个）`,
 );
 process.exit(0);

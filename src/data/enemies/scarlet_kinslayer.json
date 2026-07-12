@@ -1,0 +1,70 @@
+{
+  "_comment": "敌人词条系统试点（2026-07-12·单词条随机化修正）：第一只带词条的敌人——每次开战从全部 5 个词条（狂暴/灵巧/硬壳/自愈/剧毒）里随机抽恰好 1 个（randomAffixes.count=1），呈现『它吞并了同类中随机一只的某项优势』——这是未来「击杀夺取词条」机制 + tier 系统（更高 tier ⇒ 更高 count）的天然落点。combatEncounters 里的 solo 遭遇用 affixesOverride 钉死一个已知词条（berserk）供 baseline 复现（真实随机遭遇不受此覆写影响——只有这个特定 encounter 定义被钉死，defId 直查另起遭遇仍随机）。数值占位·待作者调（defer-number-tuning）。",
+  "enemies": [
+    {
+      "id": "enemy.scarlet_kinslayer",
+      "bands": ["band.midwater.t4"],
+      "biomes": ["midwater"],
+      "role": "predator",
+      "codex": {
+        "habitat": "中层开阔水域，常成群游猎——但这个群体从不真正安全。",
+        "behavior": "除了群体捕食，也会猎食同类里最弱的：蜕壳的、负伤的、落单的。每吞下一只，便获得被吞噬者的生存优势。",
+        "appearance": "体表混杂着不属于自己的斑纹与伤疤，像一件缝了又缝的外套。幼体几乎透明、通体几乎无色。",
+        "firstSeenHint": "一群暗红的影子逼近——其中一只，斑纹明显比别的杂乱。"
+      },
+      "name": "猩红弑亲者",
+      "tier": "uncanny",
+      "hp": 30,
+      "defense": 1,
+      "speed": 9,
+      "threat": 8,
+      "hostility": "aggressive",
+      "initialStance": "alerted",
+      "aiPattern": "aggressor",
+      "randomAffixes": { "count": 1 },
+      "attacks": [
+        {
+          "id": "kinslayer.rake",
+          "name": "腕爪撕挠",
+          "damageType": "physical",
+          "damage": [5, 9],
+          "description": "一圈腕足同时收紧，吸盘边缘的硬齿刮开你的潜水服。",
+          "weight": 3
+        },
+        {
+          "id": "kinslayer.beak_bite",
+          "name": "喙咬",
+          "damageType": "physical",
+          "damage": [7, 12],
+          "description": "腕足中央那张藏起来的喙猛地咬下——它不是在试探，是在吃。",
+          "weight": 1
+        }
+      ],
+      "loot": {
+        "guaranteed": [{ "itemId": "item.coral_shard", "qty": [1, 2], "weight": 1 }],
+        "rolls": [],
+        "rollCount": 0,
+        "victoryModifier": {
+          "kill": 1.0,
+          "flee": 0.0,
+          "scare": 0.0
+        }
+      },
+      "victoryConditions": ["kill", "flee", "scare"]
+    }
+  ],
+  "combatEncounters": [
+    {
+      "id": "combat.scarlet_kinslayer_solo",
+      "party": {
+        "members": [
+          {
+            "defId": "enemy.scarlet_kinslayer",
+            "affixesOverride": ["berserk"]
+          }
+        ]
+      },
+      "introText": "斑纹杂乱的那一只脱离了队形，直冲向你——它已经决定你是今天最弱的一个。"
+    }
+  ]
+}

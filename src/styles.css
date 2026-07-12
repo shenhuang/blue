@@ -808,6 +808,26 @@ html, body, #root {
   font-weight: 500;
 }
 
+/* 敌人词条彩色 tag（敌人词条系统试点 2026-07-12）：颜色来自 src/data/affixes.json，
+   多条词条时换行堆叠、别硬挤成一行被父级 ellipsis 吃掉。 */
+.enemy-affix-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-left: 6px;
+  white-space: normal;
+  vertical-align: middle;
+}
+
+.enemy-affix-tag {
+  font-size: 9px;
+  line-height: 1.6;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--bg-elev);
+  white-space: nowrap;
+}
+
 .enemy-card-body {
   flex: 1;
   min-width: 0;

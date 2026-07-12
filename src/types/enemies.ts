@@ -127,6 +127,13 @@ export interface EnemyPartyMemberDef {
    * 仅带 metamorphosis 的 def 生效；缺省 startCombat 置 'larva'（既有遭遇逐字节不变）。
    */
   metamorphosisStage?: 'larva' | 'cocoon' | 'adult';
+  /**
+   * 运行时/encounter 级词条覆写（敌人词条系统试点单词条随机化修正·2026-07-12）：encounter 或 scenario
+   * 显式钉死这只成员开战时带的词条集，绕开 def.randomAffixes 的随机抽取，用于确定性测试（baseline 复现）。
+   * 优先级最高——见 combat.ts::startCombat：`m.affixesOverride ?? (randomAffixes 抽取 or def.affixes)`。
+   * 普通 JSON 遭遇不设此字段·不影响任何既有 combat baseline（镜像 attacksOverride/wornSkin 的覆盖写法）。
+   */
+  affixesOverride?: string[];
 }
 
 /** 敌人定义（数据模板） */
@@ -139,6 +146,23 @@ export interface EnemyDef {
   hp: number;
   defense: number; // 防御力（原 armor 改名 2026-07-10）：resolveDamage 物理减伤基值。阶段/母鱼截击的临时覆盖仍叫 phaseArmorOverride / armorWhileProtected（派生自此）。
   speed: number;
+
+  /**
+   * 词条（affix·敌人词条系统试点 2026-07-12）：id 数组，∈ src/data/affixes.json（check-boundaries
+   * 规则九守·非法/重复 id 直接拦）。效果单一源 engine/affixes.ts + engine/combat.ts 的接线点
+   * （berserk 二次攻击 / nimble 经 resolveDodge / hardshell 防御力乘数 / regen 回合开头回血 /
+   * venom 命中挂毒）。加法可选字段，缺省＝无词条 ⇒ 既有敌人逐字节不变（守 #99）。
+   */
+  affixes?: string[];
+
+  /**
+   * 随机词条（敌人词条系统试点单词条随机化修正·2026-07-12）：开战时从 `pool`（缺省 = 全部已注册词条 id）
+   * 不放回随机抽 `count` 个（engine/affixes.ts::rollAffixes），写入该敌人实例的 `EnemyInstance.affixes`——
+   * 与上面固定 `affixes[]` 二选一（`randomAffixes` 存在时优先·见 combat.ts::startCombat 的解析顺序）。
+   * 未来按 tier 提高 count 是这里的天然落点（tier 越高词条越多）：先占位 count 写死，以后从 tier 派生。
+   * 缺省（两个字段都不设）⇒ 无词条 ⇒ 既有敌人逐字节不变（守 #99）。占位·defer-number-tuning。
+   */
+  randomAffixes?: { count: number; pool?: string[] };
 
   // —— 行为 ——
   threat: number;
@@ -478,6 +502,12 @@ export interface EnemyInstance {
   stance: EnemyStance;
   aggro: number; // 对玩家的仇恨度
   statuses: StatusInstance[];
+  /**
+   * 词条运行时副本（startCombat 从 def.affixes 拷贝写入；未来「夺取」机制会 mutate 本字段——
+   * def.affixes 是模板、这份才是这只具体敌人当下真正带的）。仅带 def.affixes 的敌人写此字段
+   * ⇒ 普通敌人 EnemyInstance 形状逐字节不变（守 #99）。
+   */
+  affixes?: string[];
   /**
    * 当前阶段覆盖的攻击表（maybeBossPhaseShift 写入·BossPhase.attacksOverride）。
    * enemyAttackPlayer 优先读此字段；undefined = 用 def.attacks。

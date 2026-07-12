@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { GameState, EnemyInstance, CombatAction } from '@/types';
 import { applyPlayerAction, listAvailableActions, getEnemyDef, type ActionAvailability } from '@/engine/combat';
 import { frontmostLivingSegment } from '@/engine/chain-eel';
+import { getAffixMeta } from '@/engine/affixes';
 import { beginAscent } from '@/engine/transitions';
 import { isAscentBlocked } from '@/engine/ascent';
 import { StatusBar } from './StatusBar';
@@ -204,6 +205,19 @@ function EnemyCard({
         <div className="enemy-name">
           <span>
             {def.name}
+            {(enemy.affixes ?? []).length > 0 && (
+              <span className="enemy-affix-tags">
+                {(enemy.affixes ?? []).map((affixId) => {
+                  const meta = getAffixMeta(affixId);
+                  if (!meta) return null;
+                  return (
+                    <span key={affixId} className="enemy-affix-tag" style={{ color: meta.color }}>
+                      {meta.name}
+                    </span>
+                  );
+                })}
+              </span>
+            )}
             {blocked && <span className="enemy-blocked-hint"> · 被前节挡住</span>}
           </span>
           <span className={`stance stance-${enemy.stance}`}>

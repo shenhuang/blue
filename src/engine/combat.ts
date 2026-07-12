@@ -32,6 +32,10 @@ import { executeDeath } from './death';
 import { settleStatusesAtTurnStart, isStatusImmune } from './status';
 import { getItemDef } from './items';
 import { resolveEncounterMember, enemySeenFlag } from './enemyLibrary';
+// 敌人词条系统试点（2026-07-12·#298 拆分守 file-budget）：元数据在 src/data/affixes.json，效果常量 +
+// hasAffix 判定 + 纯函数（rollAffixes/resolveDodge）在 affixes.ts；状态可变钩子（berserk/regen/venom）
+// 外移进 combat-affixes.ts（见下方 import）；hardshell 防御力乘数因贴 applyAttack 伤害管线仍留在本文件内联。
+import { hasAffix, rollAffixes, resolveDodge, HARDSHELL_DEFENSE_MULT } from './affixes';
 import { combatNitrogenGain } from './nitrogen';
 import { frontmostLivingSegment, isSegmentReachable, chainSegmentDamageBonus } from './chain-eel';
 // 特殊敌人机制钩子（boss 阶段 / 链鳗 enrage / 环境压力 / 分裂 / 食尸 / 补蜂 / 茧化 / 口孵——
@@ -56,6 +60,9 @@ import {
 // The Warren 女王身体库存主线（§15·#271·从 combat-mechanics 外移·守 file-budget）：六分支树 + 动态 screen 门 + 起盾 + 伤害计数。
 import { maybeWarrenQueenAct, queenScreened, recordQueenDamage, warrenInitScreen, finalizeSwarmRelocate, applyWarrenVictory } from './combat-warren';
 import { isWarrenLastStand } from './warren-hunt';
+// 敌人词条系统试点·状态可变钩子（berserk 二次攻击 / regen 回合开头回血 / venom 命中挂毒·2026-07-12 #298
+// 从本文件外移·守 file-budget）：同 combat-mechanics.ts 的互为静态 import 约定，模块顶层互不调用。
+import { applyBerserkExtraAttacks, applyRegenAtTurnStart, applyVenomOnHit } from './combat-affixes';
 
 // ——— 数据索引 ———
 
@@ -145,6 +152,15 @@ export function startCombat(
       const worn = m.wornSkin ?? options?.wornSkin ?? def.defaultSkin;
       if (worn !== undefined) inst.wornSkin = worn;
     }
+    // 词条运行时副本（敌人词条系统试点·2026-07-12·单词条随机化修正）：优先级
+    // member.affixesOverride（encounter/scenario 钉死·确定性测试）> def.randomAffixes（开战随机抽取，
+    // 消耗 Math.random——只对带 randomAffixes 的敌人，非词条敌人恒零 RNG）> def.affixes（固定集，仍支持）。
+    // 只对最终抽到非空词条集的敌人写 inst.affixes ⇒ 普通敌人 EnemyInstance 逐字节不变（守 #99）；
+    // 带 randomAffixes 的敌人：本次 spawn 消耗 RNG，其 baseline 需 bless on Mac（affixesOverride 可绕开）。
+    const rolledAffixes =
+      m.affixesOverride ??
+      (def.randomAffixes ? rollAffixes(def.randomAffixes.pool, def.randomAffixes.count) : def.affixes);
+    if (rolledAffixes?.length) inst.affixes = rolledAffixes;
     // 运行时攻击覆盖（水鬼穿玩家武器时注入·静态 JSON 不设此字段 → 逐字节不变）。
     if (m.attacksOverride) {
       inst.phaseAttacksOverride = m.attacksOverride;
@@ -598,11 +614,18 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
     const intercepted = maybeInterceptJuvenile(state, target, dmg, eff.damageType, action.name);
     if (intercepted !== null) return intercepted;
   }
+  // 灵巧词条（nimble·敌人词条系统试点 2026-07-12）：伤害结算前掷一次闪避——命中则这一击归零，
+  // 且下面 setCombat 里不再施加 applyStatusOnHit（闪开的攻击算不上命中，见 dodged 门）。
+  const dodged = resolveDodge(target.affixes);
   // 防御力减伤（战斗系统改版 2026-07-10·resolveDamage 单点·下限0）：物理伤扣目标防御（茧化期用 phaseArmorOverride
   // 替代 def.armor）；非物理伤（电/火）绕过防御（弱点/免疫轴另走）→ defense=0。原 max(1,…) 地板 1 改为下限 0。
+  // 硬壳词条（hardshell）：仅物理伤——防御力乘 HARDSHELL_DEFENSE_MULT（与非物理绕过防御的既有语义正交）。
   {
-    const effectiveDefense = eff.damageType === 'physical' ? (target.phaseArmorOverride ?? def.defense) : 0;
-    dmg = resolveDamage(dmg, effectiveDefense);
+    let effectiveDefense = eff.damageType === 'physical' ? (target.phaseArmorOverride ?? def.defense) : 0;
+    if (eff.damageType === 'physical' && hasAffix(target.affixes, 'hardshell')) {
+      effectiveDefense = Math.round(effectiveDefense * HARDSHELL_DEFENSE_MULT);
+    }
+    dmg = dodged ? 0 : resolveDamage(dmg, effectiveDefense);
   }
   // 免疫
   if (def.immunity?.includes(eff.damageType)) {
@@ -619,7 +642,8 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
       // 布尔免疫（§2.5）：声明了 statusImmunity 的目标，该 kind 完全无效（不是减时长/减潜力）。
       // 击杀同一击不再上状态（newHp<=0）：别给这一下顺手打死的尸体挂新状态——与武器件 DoT 分支
       // 的 `e.hp > 0` 门同口径（那边守的是「已死不再上」，这里守的是「这一下刚打死不再上」）。
-      const applyStatus = eff.applyStatusOnHit && newHp > 0 && !isStatusImmune(def.statusImmunity, eff.applyStatusOnHit.kind);
+      // 闪避短路（nimble）：dodged=true 时这一击算没打中，不施加 applyStatusOnHit。
+      const applyStatus = !dodged && eff.applyStatusOnHit && newHp > 0 && !isStatusImmune(def.statusImmunity, eff.applyStatusOnHit.kind);
       return {
         ...e,
         hp: newHp,
@@ -637,7 +661,9 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
   }));
   s = pushCombatLog(s, {
     actor: 'player',
-    text: `${action.name}：你击中 ${def.name}，造成 ${dmg} 点伤害。${target.hp - dmg <= 0 ? `${def.name} 失去战斗力。` : ''}`,
+    text: dodged
+      ? `${action.name}：${def.name} 灵巧一闪，你的攻击落了空。`
+      : `${action.name}：你击中 ${def.name}，造成 ${dmg} 点伤害。${target.hp - dmg <= 0 ? `${def.name} 失去战斗力。` : ''}`,
   });
   // boss 阶段检查（HP 因玩家攻击下降·每次命中后触发）
   s = maybeBossPhaseShift(s, target.instanceId);
@@ -860,6 +886,9 @@ function runEnemyTurn(state: GameState): GameState {
       // 口孵深鱼护巢仔全灭检查（DoT 致死护巢仔时·幂等）
       s = applyMaternalEnrageIfAlone(s);
     }
+    // 自愈词条（regen·敌人词条系统试点 2026-07-12）：己方回合开头（DoT 结算之后）按最大 HP 比例回血，
+    // 封顶 def.hp——与眩晕/是否出手正交（活着就回，这是被动·不占行动）。外移进 combat-affixes.ts（#298）。
+    s = applyRegenAtTurnStart(s, e.instanceId, def, settled.hp, live.affixes);
     // DoT 致死＝hp→0，胜负在下个玩家行动结算点判定（与「最后一只逃跑 hp=0」同口径·不在敌人回合内提前 finalize·守既有时序）。
     if (settled.hp <= 0) continue;
     // 眩晕：这回合不行动（语义与旧 order 预过滤一致，只是判定点挪到这里·无日志——旧行为本就静默跳过）。
@@ -927,6 +956,9 @@ function runEnemyTurn(state: GameState): GameState {
       continue;
     }
     s = enemyAttackPlayer(s, cur);
+    // 狂暴词条（berserk·敌人词条系统试点 2026-07-12）：本回合再追加 BERSERK_EXTRA_ATTACKS 次攻击。
+    // 外移进 combat-affixes.ts（#298·守 file-budget）——细节注释见该文件。
+    s = applyBerserkExtraAttacks(s, cur);
   }
 
   // 旧「回合末」全局 DoT tick + 状态衰减两块已删（战斗状态系统 SPEC §2.3）：改在循环内每个敌人
@@ -942,7 +974,7 @@ function runEnemyTurn(state: GameState): GameState {
   return s;
 }
 
-function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
+export function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
   if (state.phase.kind !== 'combat' || !state.run) return state;
   const def = ENEMY_DEFS.get(enemy.defId);
   if (!def) return state;
@@ -998,6 +1030,11 @@ function enemyAttackPlayer(state: GameState, enemy: EnemyInstance): GameState {
       playerStatuses: [...(c.playerStatuses ?? []), { kind: onHit.kind, remainingTurns: onHit.turns, dmgPerTurn: onHit.dmgPerTurn }],
     }));
   }
+
+  // 剧毒词条（venom·敌人词条系统试点 2026-07-12）：带此词条的敌人每次攻击额外挂一层中毒——
+  // 与上面 chosen.applyStatusOnHit（若该攻击本身也带状态）叠加，不互斥、不去重（§2.2 纯堆叠约定）。
+  // 外移进 combat-affixes.ts（#298·守 file-budget）。
+  s = applyVenomOnHit(s, enemy);
 
   return s;
 }

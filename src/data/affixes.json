@@ -1,0 +1,7 @@
+[
+  { "id": "berserk", "name": "狂暴", "color": "#ff5c5c" },
+  { "id": "nimble", "name": "灵巧", "color": "#5fd3c4" },
+  { "id": "hardshell", "name": "硬壳", "color": "#b6a179" },
+  { "id": "regen", "name": "自愈", "color": "#79c96a" },
+  { "id": "venom", "name": "剧毒", "color": "#b57edc" }
+]
