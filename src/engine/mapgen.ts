@@ -2,7 +2,7 @@
 //
 // 两种拓扑（由 ZoneDef.mapShape 选择，与 canFreeAscend 正交）：
 //   - 'layered'（默认）：层状 DAG——layerCount 层，每层 2-3 节点，深度从
-//     zone.depthRange[0] 单调渐变到 [1]，只连下一层。开阔海域（旧灯塔礁 / 沉船墓园）用它。
+//     zone.depthRange[0] 单调渐变到 [1]，只连下一层。开阔海域（旧灯塔礁 / 塌架墓园）用它。
 //     → mapgen-layered.ts
 //   - 'maze'：洞穴"迷路"图——双向边的连通图，有环（绕回原点）、死路（dead-end）、
 //     多个"最深点"（局部深度极大）。入口与"洞另一头的出口"都是 ascent_point。蓝洞群用它。

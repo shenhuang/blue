@@ -315,7 +315,7 @@ err(lhAnchor && (lhAnchor.requiresFlags ?? []).includes('flag.tutorial_complete'
 err(lhAnchor && lhAnchor.requiresLighthouseUpgrade === 'lighthouse.dockyard.lv1',
   '旧灯塔礁 anchor 应由家灯塔船坞（lighthouse.dockyard.lv1）门控抵达能力');
 err(anchors.some((p) => p.zoneId === 'zone.blue_caves'), '海图应有蓝洞群 anchor');
-err(anchors.some((p) => p.zoneId === 'zone.wreck_graveyard'), '海图应有沉船墓园 anchor');
+err(anchors.some((p) => p.zoneId === 'zone.wreck_graveyard'), '海图应有塌架墓园 anchor');
 log.push(`  anchors: ${anchors.length} / roamingTemplates: ${templates.length} ✓`);
 
 // —— 6c. 旧灯塔礁的事件池在各深度都有可抽事件 ——

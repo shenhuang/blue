@@ -81,7 +81,7 @@ export interface ZoneDef {
   /**
    * 随机图（generation='random'）的拓扑形态。与 canFreeAscend 正交：
    *  - 'layered'（默认，缺省即此）：层状 DAG——每层 2–3 节点、深度单调递增、只连下一层。
-   *    旧灯塔礁 / 沉船墓园等开阔海域用这套。
+   *    旧灯塔礁 / 塌架墓园等开阔海域用这套。
    *  - 'maze'：洞穴"迷路"图——双向边的连通图，有环（绕一圈回到原点）、死路（dead-end）、
    *    多个"最深点"（局部深度极大）。入口与"洞另一头的出口"都是 ascent_point，其余内部节点
    *    在 canFreeAscend=false 时仍被 isAscentBlocked 锁住。蓝洞群用这套。

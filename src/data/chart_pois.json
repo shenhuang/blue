@@ -166,7 +166,7 @@
       {
         "id": "poi.anchor.wreck_graveyard",
         "zoneId": "zone.wreck_graveyard",
-        "name": "沉船墓园",
+        "name": "塌架墓园",
         "blurb": "开阔水域，想上就能上，氧气自己算。下面什么都有——商船、渔船，还有上一代没回来的那两具。",
         "distance": 2,
         "owner": "lighthouse.ch1_wreck_outpost",

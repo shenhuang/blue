@@ -1,5 +1,5 @@
 {
-  "_comment": "敌人库 SPEC §4 支柱二 enemyRef 的线上用例：内容侧不写死 defId，而是描述『沉船墓园·沉船区里盘踞的那一个』，由 enemyLibrary.pickEnemy 在运行期从库里取一只合适的（现匹配 沉船蛛蟹 / 沉灯水母 两只·池可随内容增长）。本文件不含 enemies[]，只放 combatEncounter；敌人本体仍在各自 JSON。引用方＝事件 wreck_graveyard.patrol_stir。",
+  "_comment": "敌人库 SPEC §4 支柱二 enemyRef 的线上用例：内容侧不写死 defId，而是描述『塌架墓园·沉船区里盘踞的那一个』，由 enemyLibrary.pickEnemy 在运行期从库里取一只合适的（现匹配 沉船蛛蟹 / 沉灯水母 两只·池可随内容增长）。本文件不含 enemies[]，只放 combatEncounter；敌人本体仍在各自 JSON。引用方＝事件 wreck_graveyard.patrol_stir。",
   "combatEncounters": [
     {
       "id": "combat.wreck_field_patrol",

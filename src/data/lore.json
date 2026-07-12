@@ -1,5 +1,5 @@
 {
-  "_doc": "见闻/生态志条目注册表（#137·图鉴 LoreView 的显示来源·单一来源）。事件 outcome 的 loreEntry 只写一个 id 进 profile.loreEntries（Set·持久）；本文件给每个 id 配显示文案（title/body/group）。引擎侧 engine/lore.ts 读本文件→getLoreEntry/allLoreEntries；UI LoreView 按 profile.loreEntries 过滤已记录的渲染（守发现感·不露未记录·不报总数）。条目覆盖生物志/各区域生态（蓝洞群·东礁各档·深水·远洋中层·旧灯塔礁·沉船墓园·海沟热液场）+ lore.ch1.* 一章剧情，随内容持续增补——数量以 entries 数组为准、勿在此硬抄计数（防漂移·同 STATUS「活数字」约定）。缺登记的 id＝LoreView 不显示·无害·不崩。文案剧透红线照 quirk #117 机制化守门（断片说/单程下行零泄漏·尸体脸不可见）。",
+  "_doc": "见闻/生态志条目注册表（#137·图鉴 LoreView 的显示来源·单一来源）。事件 outcome 的 loreEntry 只写一个 id 进 profile.loreEntries（Set·持久）；本文件给每个 id 配显示文案（title/body/group）。引擎侧 engine/lore.ts 读本文件→getLoreEntry/allLoreEntries；UI LoreView 按 profile.loreEntries 过滤已记录的渲染（守发现感·不露未记录·不报总数）。条目覆盖生物志/各区域生态（蓝洞群·东礁各档·深水·远洋中层·旧灯塔礁·塌架墓园·海沟热液场）+ lore.ch1.* 一章剧情，随内容持续增补——数量以 entries 数组为准、勿在此硬抄计数（防漂移·同 STATUS「活数字」约定）。缺登记的 id＝LoreView 不显示·无害·不崩。文案剧透红线照 quirk #117 机制化守门（断片说/单程下行零泄漏·尸体脸不可见）。",
   "entries": [
     {
       "id": "lore.ch1.captains_page",
@@ -536,127 +536,127 @@
     },
     {
       "id": "lore.wreck_graveyard.the_wearer",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "招手的人",
       "body": "黑里站着一个人，旧式铜盔、硬壳潜水服、配重靴，几十年前的装具。没有灯，没有一串气泡，可他朝你这边慢慢地招手——招手的节奏一下不差，像早就练熟了等你来。"
     },
     {
       "id": "lore.wreck_graveyard.lost_diver",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "他的日志",
       "body": "解开尸体胸前的扣带，日志比想象中沉——湿透的皮面，锈死的搭扣。带走它，等于替一个再没人记得的名字，多背一段路。"
     },
     {
       "id": "lore.wreck_graveyard.engine_room",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "引擎室的嗡鸣",
       "body": "锅炉早已锈烂，但里面有一种很低的、像是从骨头里来的嗡鸣，与气瓶的金属起了共鸣。贴着外壳听，那嗡鸣在颅骨里成形——不是一个调子，是七八个声音叠在一起，互相错开。"
     },
     {
       "id": "lore.wreck_graveyard.the_slate",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "写字板",
       "body": "一块潜水写字板拴在断掉的栏杆上，油性笔的字大半泡没了，剩三行：气够，水好，下到四十米。有人在敲船壳，是节奏，三下，停，三下。不要回敲——字迹一行比一行乱。"
     },
     {
       "id": "lore.wreck_graveyard.h_m",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "怀表上的字",
       "body": "一只停摆的怀表，表盖内侧刻着一个名字的缩写。合上表，秒针没动，可接下来几个晚上的梦里，都有那个名字。"
     },
     {
       "id": "lore.wreck_graveyard.last_page",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "潜水员日志的最后一页",
       "body": "一本泡胀的日志，最后一页字迹突然变了形，行距挤在一起，像写字的人来不及等墨干。合上日志，放回桌角，这一夜没关灯。"
     },
     {
       "id": "lore.wreck_graveyard.handprints",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "舷窗里的手印",
       "body": "一间灌满了水、进不去的黑舱房，舷窗玻璃内侧贴着几道印子——五指张开，往外推的姿势，指缝里嵌着锈。舱里再没有别的，没有这只手该连着的人。"
     },
     {
       "id": "lore.wreck_graveyard.the_knocking",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "焊死的舱门",
       "body": "过道尽头一扇焊死的舱门，正要掉头，门后响了三下，停，又三下，很轻，很匀，像有人怕吵醒别的什么。头盔贴上门板，三下之间还有更小的三下，一层套着一层，往里听不到底。"
     },
     {
       "id": "lore.wreck_graveyard.the_door",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "本不该开着的门",
       "body": "船的最底层，一扇内舱门开着，门里本该是另一间舱房——不是。门里是开阔的黑水，往下没有底，很远很深的地方有一点冷光，还有一股很慢的水流一呼一吸。"
     },
     {
       "id": "lore.wreck_graveyard.the_other",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "另一个潜水员",
       "body": "两排沉船之间的开阔水里，另一个潜水员不远不近地吊在那儿——你动，他也动；你停，他也停，始终隔着同样一段水。今天这片海，出海的只有你一个。"
     },
     {
       "id": "lore.wreck_graveyard.all_facing",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "都朝着一个方向",
       "body": "从两片残骸之间横过去，整座墓园在脚下铺开——各个年代的船，什么角度都有，可船首、敞开的舱口、沙面上看得见的人，全都朝着同一个方向，朝着大陆架塌进蓝里的那个口子。"
     },
     {
       "id": "lore.wreck_graveyard.full_nets",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "绷紧的渔网",
       "body": "一张渔网绷得死紧，顺着网往下望，网吃着力，一直绷过灯照得到的地方，再往下进了蓝。那底下还在动，还在拉，慢慢的，匀匀的，没有停的意思。"
     },
     {
       "id": "lore.wreck_graveyard.no_bubbles",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "没有气泡的背影",
       "body": "残骸间一个背对着你的潜水员，正在慢慢地动手做什么——头顶始终没有一串气泡升起来。拿刀柄敲两下气瓶叫他回头，他只是停了那么一拍，又接着动手。"
     },
     {
       "id": "lore.wreck_graveyard.rusticles",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "锈的冰锥",
       "body": "残骸钢壳上垂下一片片红褐色的锈锥，从铆钉、裂缝里淌出来，像铁在融化。它们不是死东西——是亿万张嘴在吃这艘船，把钢一口口嚼成锈，再吐成这副冰锥的样子。"
     },
     {
       "id": "lore.wreck_graveyard.the_older_ship",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "码放整齐的陶罐",
       "body": "沉积里露出一排陶罐，码得整齐，留着搬运的间隙——是个懂行的人的手法，几千年前的手法。海留下了罐子，弄丢了船，也弄丢了那双手。"
     },
     {
       "id": "lore.wreck_graveyard.the_kept_quarters",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "铺位",
       "body": "前舱住舱整个保住了，铺位还铺着，每张铺底下摆着一双靴子，一排搪瓷缸挂在钩上，把手朝着同一个方向——沉船里东西本该漂得到处都是，这屋里没有，每一样都在一只手放它的地方。"
     },
     {
       "id": "lore.wreck_graveyard.the_count",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "崩口里的齿轮",
       "body": "一处崩口里露出一圈老式计算装置的齿轮，几十年了，拨动它，居然还顺滑地咬着转，刻度盘跟着走了几格。松了手，那圈齿还在自己往下走，那个数还在往大里加。"
     },
     {
       "id": "lore.wreck_graveyard.the_waiting_fish",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "不躲的鱼",
       "body": "灯一扫进货舱，鱼就来了——不是惊散，是聚拢。一群鱼游到光圈边上停住，齐齐转过来对着你，悬在那儿不动，像是学会了：一束灯光、一个潜水的人，意味着什么。"
     },
     {
       "id": "lore.wreck_graveyard.the_same_minute",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "停摆的钟",
       "body": "舵房里一只钟停了，伙房里也有一只，停在同一个刻度。水是一下子灌进来的，把船上所有的钟，都停在她沉下去的那一分钟——整条船对『现在几点』这件事，意见一致了五十年。"
     },
     {
       "id": "lore.wreck_graveyard.the_swept_deck",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "扫过的甲板",
       "body": "甲板上有一截是干净的，不是碰巧干净——淤泥顺着一个方向抹开，栏杆上一段黄铜擦出暗暗的光，烂缆绳盘成整整齐齐的一圈。干净的那截只有一臂宽，过了那道线，又是五十年的烂泥。"
     },
     {
       "id": "lore.wreck_graveyard.the_bell",
-      "group": "沉船墓园",
+      "group": "塌架墓园",
       "title": "船钟上的名字",
       "body": "残骸架上挂着一口锈死的船钟，钟腰凸起一行字，刮掉一圈锈壳才能认全——这条船沉在这儿，此前没人知道它的名字。"
     },

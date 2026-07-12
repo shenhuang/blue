@@ -32,7 +32,7 @@ whalefall/wreck_graveyard 11 组 + 7 条独立敌人图鉴）全部在 `src/data
 
 ---
 
-### 沉船墓园 · wreck_graveyard
+### 塌架墓园 · wreck_graveyard
 **氛围基调**：废墟感，人类痕迹层叠，历史感重；shallow→twilight；异常可能是结构性的，不必然是超自然的。
 
 **已确立事实**：

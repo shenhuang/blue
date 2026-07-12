@@ -1,4 +1,4 @@
-// 层状 DAG 生成器（开阔海域：旧灯塔礁 / 沉船墓园）——generateLayeredMap
+// 层状 DAG 生成器（开阔海域：旧灯塔礁 / 塌架墓园）——generateLayeredMap
 // layerCount 层、每层 2-3 节点、深度单调渐变、只连下一层；含钉放剧情节拍（quirk #174）
 // 与教学关 node 化（#221+）两条覆盖 pass。公共工具见 mapgen-shared；对外经 mapgen.ts 门面。
 
