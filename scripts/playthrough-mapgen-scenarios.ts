@@ -195,13 +195,13 @@ function main() {
   }
 
   // —— 种子扫描：迷路不变量对每个 seed 都成立 ——
-  console.log(`\n========== 迷路不变量种子扫描 (zone.blue_caves, seeds 1–60) ==========`);
+  console.log(`\n========== 迷路不变量种子扫描 (zone.vertical_test, seeds 1–60) ==========`);
   const SWEEP = 60;
   const badSeeds: string[] = [];
   let airSeeds = 0;
   let campSeeds = 0;
   for (let seed = 1; seed <= SWEEP; seed++) {
-    const map = genMap('zone.blue_caves', seed);
+    const map = genMap('zone.vertical_test', seed);
     const a = analyzeMap(map);
     const problems: string[] = [];
     if (!a.allReachable) problems.push('不全可达');
@@ -240,7 +240,7 @@ function main() {
     const mean = (xs: number[]) => xs.reduce((s, x) => s + x, 0) / Math.max(1, xs.length);
     // (a) 迷路：blue_caves seeds 1–60
     for (let seed = 1; seed <= SWEEP; seed++) {
-      const map = genMap('zone.blue_caves', seed);
+      const map = genMap('zone.vertical_test', seed);
       const ns = Object.values(map.nodes);
       const depths = ns.map((n) => n.depth);
       const minD = Math.min(...depths);
@@ -255,26 +255,10 @@ function main() {
           vfails.push(`maze seed=${seed}: 深度未随树距上升(近半均值 ${mean(near).toFixed(1)} ≥ 远半 ${mean(far).toFixed(1)})`);
       }
     }
-    // (b) 层状(开阔水域)：wreck_graveyard seeds 1–30·逐层严格非减 + 同层相等 + 起点最浅
-    for (let seed = 1; seed <= 30; seed++) {
-      const map = genMap('zone.wreck_graveyard', seed);
-      const ns = Object.values(map.nodes);
-      if (entranceDepth(map) !== Math.min(...ns.map((n) => n.depth))) vfails.push(`layered seed=${seed}: 起点非全局最浅`);
-      const byLayer = new Map<number, number[]>();
-      for (const n of ns) {
-        if (!byLayer.has(n.layer)) byLayer.set(n.layer, []);
-        byLayer.get(n.layer)!.push(n.depth);
-      }
-      const layers = [...byLayer.keys()].sort((a, b) => a - b);
-      for (let i = 0; i < layers.length; i++) {
-        const ds = byLayer.get(layers[i])!;
-        if (Math.max(...ds) !== Math.min(...ds)) vfails.push(`layered seed=${seed}: layer${layers[i]} 同层 depth 不等(${Math.min(...ds)}–${Math.max(...ds)})`);
-        if (i > 0 && Math.min(...ds) < Math.max(...byLayer.get(layers[i - 1])!))
-          vfails.push(`layered seed=${seed}: layer${layers[i]} 比上层更浅(破坏 y∝depth 单调)`);
-      }
-    }
+    // (b) 层状(开阔水域)：随开放水域 zone〔wreck_graveyard 等〕删除移除·2026-07-12 白板收口——
+    //     现存 zone 全是迷路图(maze)·「层状逐层严格非减+同层相等」的层状垂直性不变量无存活 zone 可测。
     if (vfails.length === 0) {
-      console.log(`  ✓ 迷路 60 + 层状 30 seed：起点=图顶最浅 · 迷路深度随树距上升·最深点在下行 · 层状逐层严格非减+同层相等`);
+      console.log(`  ✓ 迷路 60 seed：起点=图顶最浅 · 迷路深度随树距上升·最深点在下行（层状分支随开放水域 zone 删除移除）`);
     } else {
       console.log(`  ✗ ${vfails.length} 处违反「位置即深度」：`);
       for (const v of vfails.slice(0, 12)) { console.log(`      ${v}`); fails.push(v); }
@@ -286,16 +270,16 @@ function main() {
   //        全扫描聚合差距严格）② 极端 k 不破迷路不变量与「位置即深度」#92（pow 单调）③ 缺省（无 seedKey）＝显式 k=1
   //        逐字节（zone 接线 depthCurveRange 不得影响既有回归路径——护栏）④ seedKey 派生：同 key 确定性、不同 POI
   //        的 k 拉开成不同洞型（性格分布）。
-  console.log(`\n========== 洞型谱·剖面曲线不变量 (zone.blue_caves, k=0.45/1/2.6, seeds 1–30) ==========`);
+  console.log(`\n========== 洞型谱·剖面曲线不变量 (zone.vertical_test, k=0.45/1/2.6, seeds 1–30) ==========`);
   {
     const cfails: string[] = [];
     const mean = (xs: number[]) => xs.reduce((s, x) => s + x, 0) / Math.max(1, xs.length);
     const K_SHAFT = 0.45, K_LINEAR = 1, K_GALLERY = 2.6;
     const aggr: Record<string, number[]> = { shaft: [], linear: [], gallery: [] };
     for (let seed = 1; seed <= 30; seed++) {
-      const mShaft = genMap('zone.blue_caves', seed, 0, K_SHAFT);
-      const mLin = genMap('zone.blue_caves', seed, 0, K_LINEAR);
-      const mGal = genMap('zone.blue_caves', seed, 0, K_GALLERY);
+      const mShaft = genMap('zone.vertical_test', seed, 0, K_SHAFT);
+      const mLin = genMap('zone.vertical_test', seed, 0, K_LINEAR);
+      const mGal = genMap('zone.vertical_test', seed, 0, K_GALLERY);
       const aS = analyzeMap(mShaft), aL = analyzeMap(mLin), aG = analyzeMap(mGal);
       aggr.shaft.push(aS.meanDepthFrac); aggr.linear.push(aL.meanDepthFrac); aggr.gallery.push(aG.meanDepthFrac);
       // ① 同 seed 同 jitter 流 ⇒ 逐点 frac^0.45 ≥ frac ≥ frac^2.6 ⇒ 非严格排序必须成立
@@ -316,7 +300,7 @@ function main() {
         }
       }
       // ③ 护栏：缺省（无 seedKey·无显式 k）＝显式 k=1 逐字节 —— zone 接线不得改变既有回归路径
-      if (fingerprint(genMap('zone.blue_caves', seed)) !== fingerprint(mLin))
+      if (fingerprint(genMap('zone.vertical_test', seed)) !== fingerprint(mLin))
         cfails.push(`seed=${seed}: 缺省 ≠ 显式 k=1（zone 接线泄漏进无 seedKey 路径）`);
     }
     // ① 聚合差距严格：三档平均 meanDepthFrac 拉开（井+廊 vs 线性 vs 廊+坑 各差 ≥0.05）
@@ -325,7 +309,7 @@ function main() {
       cfails.push(`聚合差距不足：shaft ${mS.toFixed(3)} / linear ${mL.toFixed(3)} / gallery ${mG.toFixed(3)}`);
     // ④ seedKey 派生：同 key 确定性 + 不同 POI 拉开洞型
     {
-      const zone = getZone('zone.blue_caves')!;
+      const zone = getZone('zone.vertical_test')!;
       const genByKey = (key: string) =>
         generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], seedKey: key });
       if (fingerprint(genByKey('poi.test.7')) !== fingerprint(genByKey('poi.test.7')))
@@ -346,7 +330,7 @@ function main() {
   // —— 多事件房间（声呐与房间 S1）不变量：maxRoomFeatures>1 时偶尔生成 2–3 feature「大房间」——
   // 守则：features 只挂 event 节点 / 每房 2–3 feature（≥2 才叫大房间、≤maxRoomFeatures）/ 大房间不再带单 eventId /
   //       同图事件不重复（features + 单事件共用 triggeredFakeIds 去重）/ 同 seed 确定性。
-  console.log(`\n========== 多事件房间不变量 (zone.blue_caves, maxRoomFeatures=3, seeds 1–60) ==========`);
+  console.log(`\n========== 多事件房间不变量 (zone.vertical_test, maxRoomFeatures=3, seeds 1–60) ==========`);
   let roomsTotal = 0;
   let featuresTotal = 0;
   let maxFeatSeen = 0;
@@ -357,7 +341,7 @@ function main() {
       .map((id) => `${id}:${(m.nodes[id].features ?? []).map((f) => f.id + '=' + f.eventId).join(',')}`)
       .join('|');
   for (let seed = 1; seed <= SWEEP; seed++) {
-    const zone = getZone('zone.blue_caves')!;
+    const zone = getZone('zone.vertical_test')!;
     const map = generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(seed), maxRoomFeatures: 3 });
     for (const n of Object.values(map.nodes)) {
       if (n.features && n.features.length > 0) {
@@ -392,9 +376,9 @@ function main() {
 
   // —— 房间 feature 出现率升级（声呐与房间 §6/§8.3 续·roomFeatureChanceBonus）不变量 ——
   // 守则：bonus=0（缺省）逐字节复现旧图（rollExtraFeatures 阈值/rng 消耗不变）；bonus>0 抬大房间率（更多 roll 越线成多事件房）。
-  console.log(`\n========== 房间出现率升级不变量 (zone.blue_caves, maxRoomFeatures=3, seeds 1–60) ==========`);
+  console.log(`\n========== 房间出现率升级不变量 (zone.vertical_test, maxRoomFeatures=3, seeds 1–60) ==========`);
   {
-    const zone = getZone('zone.blue_caves')!;
+    const zone = getZone('zone.vertical_test')!;
     const fpAll = (bonus: number | undefined) =>
       Array.from({ length: SWEEP }, (_, i) =>
         featFp(generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(i + 1), maxRoomFeatures: 3, roomFeatureChanceBonus: bonus })),

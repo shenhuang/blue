@@ -60,7 +60,10 @@ const HIGH_GATES = {
   sonar: { deep: 1, mid: 1, shallow: 1, hiddenRatio: 0.5 },
 };
 // 取几个代表性 zone（层状开阔 + 迷路洞·各含 ascent_point 地标）。
-const SAMPLE_ZONES = ['zone.old_lighthouse_reef', 'zone.blue_caves', 'zone.wreck_graveyard', 'zone.vent_trench'];
+// 白板收口（2026-07-12）：开放水域 zone〔old_lighthouse_reef/wreck_graveyard〕已删——样本 repoint 到存活 zone。
+// 洞穴内容整删（2026-07-12 续）：27 条真实洞穴 zone + zone.the_deep_gate 已删——样本再 repoint 到仅存的
+// zone.warren + 3 条 maze 朝向 QA 夹具（horizontal_test/vertical_test/serpentine_test）。
+const SAMPLE_ZONES = ['zone.warren', 'zone.horizontal_test', 'zone.vertical_test', 'zone.serpentine_test'];
 let mapsChecked = 0;
 let landmarksSeen = 0;
 for (const zoneId of SAMPLE_ZONES) {

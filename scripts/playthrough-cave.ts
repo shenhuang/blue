@@ -30,16 +30,16 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-const ZONE = getZone('zone.blue_caves') as ZoneDef;
-assert(ZONE, '前置：zone.blue_caves 应存在（caves.json 引用它）');
+const ZONE = getZone('zone.vertical_test') as ZoneDef;
+assert(ZONE, '前置：zone.vertical_test 应存在（caves.json 引用它）');
 const optsFor = (rng: () => number) => ({ zone: ZONE, profileFlags: new Set<string>(), deaths: [], rng });
 
 // —— 0. caves.json 登记表可加载 ——
-const registered = getCave('cave.blue_caves');
-assert(registered && registered.zoneId === 'zone.blue_caves', '0: getCave(cave.blue_caves) 应解析到登记参数');
+const registered = getCave('cave.vertical_test');
+assert(registered && registered.zoneId === 'zone.vertical_test', '0: getCave(cave.vertical_test) 应解析到登记参数');
 L('  0 caves.json 登记表加载 + getCave 解析 ✓');
 
-// —— 1–5. 用登记的 cave.blue_caves 生成 → 结构 + 深度不变量 ——
+// —— 1–5. 用登记的 cave.vertical_test 生成 → 结构 + 深度不变量 ——
 {
   const params = registered!;
   const [d0, d1] = params.depthRange;
@@ -70,7 +70,7 @@ L('  0 caves.json 登记表加载 + getCave 解析 ✓');
 // —— 6. 跨 beacon 钉口深（authored entranceDepths·reef 浅口 + vent 深口）——
 {
   const params: CaveGenParams = {
-    caveId: 'cave.test_crossbeacon', zoneId: 'zone.blue_caves',
+    caveId: 'cave.test_crossbeacon', zoneId: 'zone.vertical_test',
     depthRange: [20, 95], sizeScale: 14, entrancePortals: 2, exitPortals: 2,
     entranceDepths: [25, 90], depthCurveRange: [0.8, 1.6],
   };
@@ -90,7 +90,7 @@ L('  0 caves.json 登记表加载 + getCave 解析 ✓');
 // —— 7. 横向不污染深度（加大 sizeScale·门户/核心深度不随规模变）——
 {
   const base: CaveGenParams = {
-    caveId: 'cave.test_size', zoneId: 'zone.blue_caves',
+    caveId: 'cave.test_size', zoneId: 'zone.vertical_test',
     depthRange: [30, 80], sizeScale: 8, entrancePortals: 2, exitPortals: 1,
     entranceDepths: [35, 50], depthCurveRange: [1, 1],
   };
@@ -124,7 +124,7 @@ L('  0 caves.json 登记表加载 + getCave 解析 ✓');
 // —— 9. 单口退化（entrancePortals 1·exitPortals 1）仍合法 ——
 {
   const params: CaveGenParams = {
-    caveId: 'cave.test_single', zoneId: 'zone.blue_caves',
+    caveId: 'cave.test_single', zoneId: 'zone.vertical_test',
     depthRange: [15, 45], sizeScale: 4, entrancePortals: 1, exitPortals: 1,
   };
   const map = generatePersistentCaveMap(optsFor(mulberry32(99)), params);
@@ -139,15 +139,15 @@ L('  0 caves.json 登记表加载 + getCave 解析 ✓');
   let gs = createInitialGameState();
   gs = { ...gs, profile: { ...gs.profile, flags: new Set(['flag.tutorial_complete']) } };
   const poiA = {
-    id: 'poi.test.caveA', zoneId: 'zone.blue_caves', name: '口A', blurb: '', distance: 0,
-    persistent: true, caveEntry: { caveId: 'cave.blue_caves', regionBias: 'rim' as const },
+    id: 'poi.test.caveA', zoneId: 'zone.vertical_test', name: '口A', blurb: '', distance: 0,
+    persistent: true, caveEntry: { caveId: 'cave.vertical_test', regionBias: 'rim' as const },
   } as unknown as ChartPoi;
 
   // 首次进 → 生成并冻结进 caveMaps（入存档）
   const s = startDiveFromPoi(gs, poiA);
-  assert(s.run && s.run.caveId === 'cave.blue_caves', '10: run.caveId 应= cave.blue_caves');
+  assert(s.run && s.run.caveId === 'cave.vertical_test', '10: run.caveId 应= cave.vertical_test');
   assert(s.run!.map && s.run!.map.nodes[s.run!.currentNodeId!]?.portalKind === 'entrance', '10: 首次进起手应在入口门户');
-  const frozen = s.profile.caveMaps.get('cave.blue_caves');
+  const frozen = s.profile.caveMaps.get('cave.vertical_test');
   assert(frozen, '10: 首次进应把 cave 冻结进 caveMaps');
   const nodeCountFirst = Object.keys(frozen!.map.nodes).length;
 
@@ -155,16 +155,16 @@ L('  0 caves.json 登记表加载 + getCave 解析 ✓');
   const visited = Object.keys(s.run!.map!.nodes).slice(0, 3);
   const s1 = { ...s, run: { ...s.run!, visitedNodeIds: visited } };
   const r1 = handleReturnToPort(s1);
-  const exploredAfter = r1.state.profile.caveMaps.get('cave.blue_caves')!.explored;
+  const exploredAfter = r1.state.profile.caveMaps.get('cave.vertical_test')!.explored;
   assert(visited.every((id) => exploredAfter.has(id)), '10: 回港应把访问节点写回 caveMaps.explored');
 
   // 换口再进（同 caveId·不同 regionBias）→ 同一张冻结图（未重生·节点数不变）+ explored 保留
   const poiB = {
-    id: 'poi.test.caveB', zoneId: 'zone.blue_caves', name: '口B', blurb: '', distance: 0,
-    persistent: true, caveEntry: { caveId: 'cave.blue_caves', regionBias: 'deep' as const },
+    id: 'poi.test.caveB', zoneId: 'zone.vertical_test', name: '口B', blurb: '', distance: 0,
+    persistent: true, caveEntry: { caveId: 'cave.vertical_test', regionBias: 'deep' as const },
   } as unknown as ChartPoi;
   const s2 = startDiveFromPoi(r1.state, poiB);
-  const frozen2 = s2.profile.caveMaps.get('cave.blue_caves')!;
+  const frozen2 = s2.profile.caveMaps.get('cave.vertical_test')!;
   assert(Object.keys(frozen2.map.nodes).length === nodeCountFirst, '10: 换口再进应是同一张图（不重生·节点数不变）');
   assert(frozen2.explored.size >= visited.length, '10: 换口再进 explored 应保留（续上次）');
   assert(s2.run!.map!.nodes[s2.run!.currentNodeId!]?.portalKind === 'entrance', '10: 换口再进起手仍在入口门户');
@@ -176,15 +176,15 @@ L('  0 caves.json 登记表加载 + getCave 解析 ✓');
   let gs = createInitialGameState();
   gs = { ...gs, profile: { ...gs.profile, flags: new Set(['flag.tutorial_complete']) } };
   const poi = {
-    id: 'poi.test.caveH', zoneId: 'zone.blue_caves', name: '口', blurb: '', distance: 0,
-    persistent: true, caveEntry: { caveId: 'cave.blue_caves' },
+    id: 'poi.test.caveH', zoneId: 'zone.vertical_test', name: '口', blurb: '', distance: 0,
+    persistent: true, caveEntry: { caveId: 'cave.vertical_test' },
   } as unknown as ChartPoi;
   const s = startDiveFromPoi(gs, poi);
   // persistentExploredForRun：洞下潜 → Set（首次进为空）；无 run → undefined（非洞零影响）
   assert(persistentExploredForRun(s.profile, s.run ?? undefined) instanceof Set, '11: 洞下潜 persistentExploredForRun 应返回 Set');
   assert(persistentExploredForRun(s.profile, undefined) === undefined, '11: 无 run → undefined（非洞下潜预亮零影响）');
   // cavePortalsForChart：已进过 → 门户清单（入口+出口）；未进过 → undefined
-  const portals = cavePortalsForChart(s.profile, 'cave.blue_caves');
+  const portals = cavePortalsForChart(s.profile, 'cave.vertical_test');
   assert(portals && portals.length === registered!.entrancePortals + registered!.exitPortals, '11: cavePortalsForChart 应返回门户清单');
   assert(portals!.some((p) => p.kind === 'entrance') && portals!.some((p) => p.kind === 'exit'), '11: 门户清单含入口+出口');
   assert(cavePortalsForChart(s.profile, 'cave.never_entered') === undefined, '11: 未进过的洞 → undefined');

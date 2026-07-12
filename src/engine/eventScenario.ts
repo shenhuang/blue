@@ -67,7 +67,7 @@ export interface ScenarioInput {
   loreEntries?: string[];
   /** profile.bankedGold 起始值 */
   bankedGold?: number;
-  /** 起始 zoneId（默认根据 eventId zoneTags 推断，cave→zone.blue_caves，其它→zone.old_lighthouse_reef） */
+  /** 起始 zoneId（默认根据 eventId zoneTags 推断；白板后一律回退 zone.blue_caves——见 inferZoneId） */
   zoneId?: string;
   /** 起始 depth（默认事件 depthRange[0]） */
   depth?: number;
@@ -224,12 +224,14 @@ function estimateSuccessRate(stats: Stats, stat: Stat, dc: number): number {
 // 初始 state 构造
 // ---------------------------------------------------------------------------
 
-/** 从事件 zoneTags 推断一个 zoneId，没法推断时回退 'zone.old_lighthouse_reef' */
+/** 从事件 zoneTags 推断一个 zoneId，没法推断时回退 'zone.vertical_test'（洞穴内容整删后唯一带 'cave' tag 的存活 zone 之一） */
 function inferZoneId(ev: DiveEvent): string {
+  // 白板（2026-07-12·开阔海域 + tutorial zone 全删）+ 洞穴内容整删（同日续·zone.blue_caves 一并删除）：
+  // 事件只剩 qa.fixture_event（zoneTags=['cave']）⇒ 一律回退 zone.vertical_test（3 条 maze 朝向 QA 夹具之一）。
+  // cave 分支保留（语义清晰·作者重建开阔海域/洞穴内容后可在此补回其它 zone 的推断）。
   const tags = new Set(ev.zoneTags ?? []);
-  if (tags.has('cave')) return 'zone.blue_caves';
-  if (tags.has('tutorial')) return 'zone.east_reef';
-  return 'zone.old_lighthouse_reef';
+  if (tags.has('cave')) return 'zone.vertical_test';
+  return 'zone.vertical_test';
 }
 
 function buildInitialState(input: ScenarioInput, ev: DiveEvent): GameState {

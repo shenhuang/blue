@@ -99,42 +99,47 @@ assert(
 );
 console.log('  ① 引擎派生：hasEquipment/hasCapability/hasItem/hasUpgrade → 显示名·all/any 取持有子条件·数值/flag/notHas → null ✓');
 
-// ── ② SSR 渲染：自定位一个「起始装备即满足其持有门」的可见选项事件 ────────────────────
-// 起始装备满足的持有条件（hasEquipment:tool / hasCapability:cut）——找一个 options 里含这类门的事件。
-function isStarterPossessionGate(c: Condition | undefined): boolean {
+// ── ② SSR 渲染：给背包塞一把岩凿（grants mine）→ 自定位一个「该持有门可满足」的可见选项事件 ────────────────────
+// 白板收口（2026-07-12）+ 洞穴内容整删（同日续）：起始装备（潜水刀＝cut）满足不了任何存活事件的持有门；
+//   原 blue_caves geode/gallery 的 hasCapability:mine 门随 zone.blue_caves 一并删除——现存事件门＝
+//   events/qa_fixture.json 的 qa.fixture_event（qa_fixture_mine 选项，同款 hasCapability:mine）。
+//   给 run 背包塞一把岩凿（item.rock_drill·grantsCapability mine·evalCondition/revealAttribution
+//   双扫装备+背包）→ qa_fixture_mine 可见 → 渲染断言 reveal-tag「持有 岩凿」（归因到实际持有的授能件真名·数据驱动）。
+const mineState: GameState = { ...state, run: { ...state.run!, inventory: [{ itemId: 'item.rock_drill', qty: 1 }] } };
+function isPossessionGate(c: Condition | undefined): boolean {
   if (!c) return false;
   if (c.kind === 'hasEquipment' && c.slot === 'tool') return true;
-  if (c.kind === 'hasCapability' && c.capability === 'cut') return true;
+  if (c.kind === 'hasCapability' && (c.capability === 'cut' || c.capability === 'mine')) return true;
   return false;
 }
 let targetEventId: string | null = null;
 let plainOptLabel: string | null = null; // 同事件里一个**非**持有门的可见选项（负样本）
 for (const ev of EVENT_DB.values()) {
-  const gated = ev.options.find((o) => isStarterPossessionGate(o.visibleIf) && isOptionVisible(state, o));
+  const gated = ev.options.find((o) => isPossessionGate(o.visibleIf) && isOptionVisible(mineState, o));
   if (!gated) continue;
-  const plain = ev.options.find((o) => !o.visibleIf && isOptionVisible(state, o));
+  const plain = ev.options.find((o) => !o.visibleIf && isOptionVisible(mineState, o));
   targetEventId = ev.id;
   plainOptLabel = plain?.label ?? null;
   break;
 }
-assert(targetEventId, '应能在 EVENT_DB 自定位到一个「起始装备满足其持有门」的可见选项事件（内容侧已有 hasEquipment:tool/hasCapability:cut 门）');
+assert(targetEventId, '应能在 EVENT_DB 自定位到一个「持有门可满足」的可见选项事件（qa.fixture_event 的 hasCapability:mine 门·岩凿满足）');
 
 const markup = renderToStaticMarkup(
-  <EventView state={state} eventId={targetEventId!} onStateChange={() => {}} />,
+  <EventView state={mineState} eventId={targetEventId!} onStateChange={() => {}} />,
 );
 assert(markup.includes('reveal-tag'), 'EventView 应渲染 reveal-tag（持有门可见选项旁的归因标）');
-assert(markup.includes('持有 潜水刀'), 'reveal-tag 文案应含「持有 潜水刀」（起始潜水刀满足 tool/cut 门）');
-console.log(`  ② SSR：事件「${targetEventId}」持有门可见选项旁渲染「持有 潜水刀」✓`);
+assert(markup.includes('持有 岩凿'), 'reveal-tag 文案应含「持有 岩凿」（背包岩凿满足 mine 门·归因到实际持有授能件真名）');
+console.log(`  ② SSR：事件「${targetEventId}」持有门可见选项旁渲染「持有 岩凿」✓`);
 
 // 负样本：若该事件里存在非持有门的可见选项，其标签行不应挂 reveal-tag——
-// 用「reveal-tag 出现次数 == 起始可满足的持有门可见选项数」保证不误标（近似·同事件内）。
+// 用「reveal-tag 出现次数 == 可满足的持有门可见选项数」保证不误标（近似·同事件内）。
 {
   const ev = [...EVENT_DB.values()].find((e) => e.id === targetEventId)!;
-  const gatedVisible = ev.options.filter((o) => isStarterPossessionGate(o.visibleIf) && isOptionVisible(state, o)).length;
+  const gatedVisible = ev.options.filter((o) => isPossessionGate(o.visibleIf) && isOptionVisible(mineState, o)).length;
   const tagCount = (markup.match(/reveal-tag/g) ?? []).length;
   assert(
     tagCount === gatedVisible,
-    `reveal-tag 数(${tagCount}) 应等于起始可满足的持有门可见选项数(${gatedVisible})——非持有门选项不误标`,
+    `reveal-tag 数(${tagCount}) 应等于可满足的持有门可见选项数(${gatedVisible})——非持有门选项不误标`,
   );
   if (plainOptLabel) console.log(`     负样本：同事件非持有门选项「${plainOptLabel}」不带标（标数=持有门数=${gatedVisible}）✓`);
 }

@@ -50,8 +50,10 @@ const brass = by.get('item.brass_fitting');
 assert(brass && brass.srcCount === 0 && brass.totalDemand === 25 && brass.deadstock, '黄铜配件 掉落零源(srcCount===0)·仍有建造需求(25)→ drop-deadstock（源全在已删事件里·Mira 兜底·economy 待重做）');
 // （原「科考站升级模块」parity 断言随 item.station_module 删除·2026-07-12 移除。）
 const idle = new Set(s.materials.filter((m) => m.idle).map((m) => m.name));
-// idle = 有源但零建造需求的材料。随机内容层删除后，蓝洞晶簇（bluecave_geode）等仍无建造账单 → idle。
-for (const n of ['蓝洞晶簇']) assert(idle.has(n), `idle 应含「${n}」`);
+// idle = 有源但零建造需求的材料。洞穴内容整删（2026-07-12 续）：蓝洞晶簇（bluecave_geode）唯一掉落源
+// blue_caves.geode_vein 随 zone.blue_caves 删除 ⇒ 该材料连 srcCount 都归零、不再进 s.materials（既非
+// idle 也非 deadstock，直接不在册）——换用仍有真实掉落源（敌人 loot 表未动）且无建造账单的「珊瑚碎片」。
+for (const n of ['珊瑚碎片']) assert(idle.has(n), `idle 应含「${n}」`);
 
 // 新矩阵自洽：消耗矩阵行和 === 总消耗（消耗按设施所在区归位·无遗漏）
 s.materials.forEach((m, mi) => {
@@ -70,8 +72,9 @@ s.materials.forEach((_m, mi) =>
 // 大区列含「港口」（装备消耗）·来源方式含「挖矿」（mine 能力门可检测）
 assert(s.regions.includes('港口'), '大区列应含「港口」（装备消耗归位）');
 const methods = new Set(s.materials.flatMap((m) => m.sources.map((x) => x.method)));
-// 「深度柱」来源方式随深度柱系统删除·2026-07-12（柱 grantsItem 产出已删）→ 现存来源方式 = 敌人/事件/挖矿。
-for (const mm of ['敌人', '事件', '挖矿'] as const) assert(methods.has(mm), `来源方式应含「${mm}」`);
+// 「深度柱」来源方式随深度柱系统删除·2026-07-12；「事件」来源方式随开放水域/tutorial/ch1 事件清空消失
+//   （白板后仅存 blue_caves 两事件·其掉落全为 mine 能力门 exertion → 归「挖矿」·无纯「事件」掉落）→ 现存来源方式 = 敌人/挖矿。
+for (const mm of ['敌人', '挖矿'] as const) assert(methods.has(mm), `来源方式应含「${mm}」`);
 // 概率合法
 for (const m of s.materials) for (const x of m.sources) assert(x.chance >= 0 && x.chance <= 1, `${m.name} 概率 ∈[0,1]`);
 

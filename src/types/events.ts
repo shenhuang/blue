@@ -23,11 +23,13 @@ export type ZoneTag =
   // St1 一章锚点专属 zone 的事件池（剧情 SPEC §4.1·#117）：
   | 'midwater' // 远洋中层（开阔无底蓝水·锚点③）
   | 'vent' // 海沟热液场（黑烟柱·锚点④）
-  // 洞型谱三变体新区（mapShape='maze'·各带专属事件池·depthCurveRange 把同一迷路机制铺成三种洞型·见 mapgen.ts caveShapeBucket）：
-  | 'crack' // 竖穴裂缝 zone.shaft_crack（depthCurveRange 低·k<0.8 井+廊·先陡降后横走·窄）
-  | 'chamber' // 稀疏蜂巢 zone.chamber_network（depthCurveRange 中·匀速~廊道·连通蜂房·节点疏）
-  | 'flooded'  // 漫水回廊 zone.flooded_gallery（depthCurveRange 高·k>1.45 长平廊+尽头深坑·横向探索·窄 span）
-  // 洞穴扩充 Batch 0 新标签（cave_zones_spec.md）：
+  // 洞型谱三变体新区（mapShape='maze'·各带专属事件池·depthCurveRange 把同一迷路机制铺成三种洞型·见 mapgen.ts caveShapeBucket）
+  // ——2026-07-12 洞穴内容整删：本段原举例的三条 zone（shaft_crack/chamber_network/flooded_gallery）已随
+  // 27 条真实洞穴 zone 一并删除（见 QUIRKS）；tag 定义本身仍有效，留给作者未来重建洞穴内容时复用：
+  | 'crack' // 竖穴裂缝（depthCurveRange 低·k<0.8 井+廊·先陡降后横走·窄）
+  | 'chamber' // 稀疏蜂巢（depthCurveRange 中·匀速~廊道·连通蜂房·节点疏）
+  | 'flooded'  // 漫水回廊（depthCurveRange 高·k>1.45 长平廊+尽头深坑·横向探索·窄 span）
+  // 洞穴扩充 Batch 0 新标签（cave_zones_spec.md·现为历史参考·实际 zone 已随 2026-07-12 整删）：
   | 'tide'      // 浅潮洞（8–44m）：潮汐主导、涨退压力、藤壶顶、气腔
   | 'grotto'    // 石窟厅（20–82m）：矿物柱、骨床、声学异常、静态美与不安
   | 'deep_cave' // 深穴（35–124m）：黑暗+静水+地质+设备边缘

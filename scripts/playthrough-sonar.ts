@@ -52,7 +52,7 @@ const sameSet = (a: string[], b: string[]) =>
  */
 function makeMap(): DiveMap {
   return {
-    zoneId: 'zone.blue_caves',
+    zoneId: 'zone.vertical_test',
     generatedAt: 0,
     startNodeId: 'n0',
     nodes: {
@@ -75,7 +75,7 @@ function mk(opts?: {
   bandAlertFactor?: number;
 }): GameState {
   const base = createInitialGameState();
-  const r0 = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: opts?.sonarUnlocked ?? true } });
+  const r0 = createNewRun({ zoneId: 'zone.vertical_test', bonuses: { sonarUnlocked: opts?.sonarUnlocked ?? true } });
   const run: RunState = {
     ...r0,
     map: makeMap(),
@@ -94,7 +94,7 @@ function mk(opts?: {
  */
 function makeRoomMap(): DiveMap {
   return {
-    zoneId: 'zone.blue_caves',
+    zoneId: 'zone.vertical_test',
     generatedAt: 0,
     startNodeId: 'r0',
     nodes: {
@@ -155,10 +155,10 @@ L('\n========== 2. sonarScanRange 范围升级轴（§8.1）==========');
   // 缺省（未升级 / 部分 run）→ 基线
   assert(sonarScanRange(mk().run!) === SONAR_SCAN_RANGE, '2: 缺省 = 基线常量');
   // 升级 +1（经 deriveSensorTuning 烤进 run.sensorTuning）→ 范围 +1
-  const up1 = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true, sonarScanRangeBonus: 1 } });
+  const up1 = createNewRun({ zoneId: 'zone.vertical_test', bonuses: { sonarUnlocked: true, sonarScanRangeBonus: 1 } });
   assert(sonarScanRange(up1) === SONAR_SCAN_RANGE + 1, '2: +1 升级 → 扫描范围 +1');
   // 升满有上限——守北极星「扫不穿整洞、照不到最深」
-  const upMax = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true, sonarScanRangeBonus: 99 } });
+  const upMax = createNewRun({ zoneId: 'zone.vertical_test', bonuses: { sonarUnlocked: true, sonarScanRangeBonus: 99 } });
   assert(sonarScanRange(upMax) === SONAR_SCAN_RANGE_MAX, '2: 升满夹到上限 SONAR_SCAN_RANGE_MAX');
   // 范围 +1 → 一记 ping 揭示更多节点（makeMap：range2=5 → range3=7 全揭）
   const baseReveal = revealSonarScan(makeMap(), 'n0', SONAR_SCAN_RANGE);
@@ -264,7 +264,7 @@ L('\n========== 9. scanMemory round-trip ==========');
   const s = pingSonar(mk({ depth: 50 }));
   const back = deserializeGameState(serializeGameState(s));
   assert(back !== null, '9: 反序列化成功');
-  assert(back!.version === 15, '9: SAVE_VERSION 15（战斗系统改版 bump·scanMemory 本身不影响）');
+  assert(back!.version === 16, '9: SAVE_VERSION 16（白板收口 bump·scanMemory 本身不影响）');
   assert(
     sameSet(sortedKeys(back!.run!.scanMemory ?? {}), sortedKeys(s.run!.scanMemory ?? {})),
     '9: scanMemory 原样 round-trip（普通对象、无需迁移）',
@@ -383,7 +383,7 @@ L('\n========== 14. 一记 ping 单动作（§2.2）==========');
 
   // (e) 存档 round-trip：sonar 普通枚举·保真·不 bump SAVE_VERSION
   const rt = deserializeGameState(serializeGameState(movedOff));
-  assert(rt!.version === 15, '14e: SAVE_VERSION 15（战斗系统改版 bump·感知重做删 sonarOn 不影响）');
+  assert(rt!.version === 16, '14e: SAVE_VERSION 16（白板收口 bump·感知重做删 sonarOn 不影响）');
   assert(rt!.run!.sensors.sonar === 'off', '14e: sensors.sonar round-trip 保真');
   L('  默认不扫 / ping 付暴露 / 移动归 off(不自动扫) / 暴露按状态 / 存档 round-trip ✓');
 }
@@ -396,8 +396,8 @@ L('\n========== 15. 落地不自动扫（§2.2·ping 才扫）==========');
 {
   const base = createInitialGameState();
   // 已解锁声呐 → startDive 落地仍不自动扫（scanMemory 空·sonar off·全黑·隐蔽）。
-  const onState: GameState = { ...base, run: createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: true } }) };
-  const dived = startDive(onState, 'zone.blue_caves');
+  const onState: GameState = { ...base, run: createNewRun({ zoneId: 'zone.vertical_test', bonuses: { sonarUnlocked: true } }) };
+  const dived = startDive(onState, 'zone.vertical_test');
   assert(Object.keys(dived.run!.scanMemory).length === 0, '15: 落地不自动扫（scanMemory 空·全黑·感知重做 §2.2）');
   assert(dived.run!.sensors.sonar === 'off', '15: 落地 sonar=off（不发射·不暴露·想看再主动 ping）');
 
@@ -409,8 +409,8 @@ L('\n========== 15. 落地不自动扫（§2.2·ping 才扫）==========');
   assert(pinged.run!.power < dived.run!.power, '15: 主动 ping 付电');
 
   // 未解锁声呐 → 落地同样全黑，且 ping no-op（不扫·不扣电）。
-  const noSonar: GameState = { ...base, run: createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: false } }) };
-  const divedNo = startDive(noSonar, 'zone.blue_caves');
+  const noSonar: GameState = { ...base, run: createNewRun({ zoneId: 'zone.vertical_test', bonuses: { sonarUnlocked: false } }) };
+  const divedNo = startDive(noSonar, 'zone.vertical_test');
   assert(Object.keys(divedNo.run!.scanMemory).length === 0 && divedNo.run!.sensors.sonar === 'off', '15: 未解锁声呐 → 落地全黑');
   L('  落地不自动扫(全黑) / 落地后主动 ping 揭示付电 / 未解锁全黑 ✓');
 }

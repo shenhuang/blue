@@ -59,7 +59,7 @@ s = {
         runId: 'run-x',
         diverName: 'Marek',
         depthAtDeath: 40,
-        zoneId: 'zone.blue_caves',
+        zoneId: 'zone.vertical_test',
         zoneTag: 'cave',
         cause: '氧气耗尽',
         inventorySnapshot: [{ itemId: 'item.eel_skin', qty: 1 }],
@@ -77,7 +77,7 @@ s = {
         {
           caveId: 'cave.test',
           map: {
-            zoneId: 'zone.blue_caves',
+            zoneId: 'zone.vertical_test',
             generatedAt: 123,
             startNodeId: 'node.0',
             nodes: {
@@ -97,7 +97,7 @@ s = {
   run: {
     // 深水区 Phase 0 升级轨：给非默认 bonuses，让 powerMax/sensorTuning 带可辨识值，验证它们也 round-trip。
     ...createNewRun({
-      zoneId: 'zone.blue_caves',
+      zoneId: 'zone.vertical_test',
       bonuses: { powerMaxBonus: 20, sonarPingCostReduction: 2, lampEfficiency: 0.5, signatureReduction: 3, sonarScanRangeBonus: 1, roomFeatureChanceBonus: 0.18, soundAbsorbBonus: 0.5, camoBonus: 0.4 },
     }),
     currentDepth: 30,
@@ -238,7 +238,7 @@ L('  非浏览器环境 loadGame() → null ✓');
   // (c) 合法当前版本存档 → 正常读取、不删
   store[SAVE_KEY] = raw;
   const ok = loadGame();
-  assert(ok && ok.version === 15, '当前版本存档应正常读取');
+  assert(ok && ok.version === 16, '当前版本存档应正常读取');
   assert(SAVE_KEY in store, '合法存档不应被删除');
   delete (globalThis as { localStorage?: unknown }).localStorage;
 }

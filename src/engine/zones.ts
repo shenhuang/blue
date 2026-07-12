@@ -2,20 +2,16 @@
 // 所有事件 JSON 在此被合并成一个全局 EVENT_DB；mapgen 从中按 tag/depth 抽取
 
 import type { DiveEvent, Outcome, ZoneDef, ZoneTag } from '@/types';
-import tutorialEvents from '@/data/events/tutorial.json';
-import reefEvents from '@/data/events/reef.json';
-import blueCavesEvents from '@/data/events/blue_caves.json';
-import wreckGraveyardEvents from '@/data/events/wreck_graveyard.json';
-import ch1Events from '@/data/events/ch1.json';
-import midwaterEvents from '@/data/events/midwater.json';
-import ventEvents from '@/data/events/vent.json';
+import qaFixtureEvents from '@/data/events/qa_fixture.json';
 import zonesData from '@/data/zones.json';
 
-// 随机内容层拆除（2026-07-12）：随机事件池 + 深度柱/band + mimic + 鲸落/openEventId 整套删除。
-// 事件库从 371 → 24（tutorial 教学线 + ch1 主线 beat/结局 + 4 条重命名 story poiId + blue_caves 2 条 poiId +
-// wreck_graveyard 2 条 item-triggered lore 读）。删除的 12 个事件文件（chamber_network/chasm/deep_cave/
-// flooded_gallery/grotto/tide/shaft_crack/trench/lighthouse/whalefall/wreck_field_patrol/horror_sapien_foreshadow）
-// 全为随机池/深度带/鲸落内容——以后重做（见 TODO·docs/QUIRKS）。持久洞可进但内容空（洞随机池删·入口机制留）。
+// 白板（2026-07-12·开放水域 + tutorial/ch1 主线整删，续·洞穴内容整删）：tutorial/ch1 主线事件 + reef/
+// midwater/vent/wreck_graveyard 开阔海域事件 + 27 条真实洞穴 zone（含最后存活的 blue_caves 2 条
+// poiId 内容）+ zone.the_deep_gate 全部删除；zones.json 仅剩 zone.warren + 3 条 maze 朝向 QA 夹具
+// （horizontal_test/vertical_test/serpentine_test）。开放水域与主线内容由作者未来重写（见 docs/QUIRKS +
+// docs/NEXT_SESSION_PROMPT）。引擎（mapgen/事件池/EVENT_DB 装载）不变——机制留、只是暂无叙事数据可抽；
+// 洞穴/持久洞入口机制留、内容空。EVENT_DB 现只装 events/qa_fixture.json 一条非叙事 QA 夹具事件
+// （见该文件头注）——纯为不让 EventView/事件统计/揭示归因等既有 regress 覆盖随内容一起归零。
 
 export const ZONES: Map<string, ZoneDef> = new Map();
 for (const z of (zonesData as { zones: ZoneDef[] }).zones) {
@@ -23,13 +19,7 @@ for (const z of (zonesData as { zones: ZoneDef[] }).zones) {
 }
 
 export const EVENT_DB: Map<string, DiveEvent> = new Map();
-for (const e of (tutorialEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (reefEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (blueCavesEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (wreckGraveyardEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (ch1Events.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (midwaterEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
-for (const e of (ventEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
+for (const e of (qaFixtureEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 
 export function getZone(id: string): ZoneDef | undefined {
   return ZONES.get(id);

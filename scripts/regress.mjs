@@ -85,8 +85,7 @@ if (canBuild) {
 // canBuild 同范式（quirk #147）。typecheck（tsc）+ check-*（node）+ verify-tutorial（node）不靠 esbuild·照跑。
 const canRunTsx = process.platform !== 'linux' || !!process.env.ESBUILD_BINARY_PATH;
 
-// 端到端教学验证（纯 node，不走 tsx）
-tasks.push({ name: 'verify-tutorial', cmd: ['node', join('scripts', 'verify-tutorial.mjs')] });
+// （端到端教学验证 verify-tutorial 已随开放水域/tutorial/ch1 内容清空删除·2026-07-12 白板收口。）
 
 // 战斗状态结算纯函数单测（战斗状态系统 SPEC §2.3·off-by-one 正确性关键·见 scripts/verify-status-settle.mjs）
 // 走 tsx（import engine 用了 @/types 别名 + TS）⇒ 沙箱无 esbuild 时自动剔出、留 Mac/nightly（同其它 tsx 行为测）。

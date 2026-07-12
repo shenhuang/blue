@@ -116,7 +116,7 @@ L(`  ${caveTemperatureEntries().length} 条侧表 zoneId 全在 zones.json ✓`)
 // ── 8. 接线门：tickTurns 端到端 thermalStress 不变量 ──
 // 守「逐回合 step == 一次性 step(turns)」指数不变量（与 stepNitrogen 同款回归口径）· + 中性洞恒 0（不破坏现有行为）。
 L('========== 8. tickTurns 逐回合 == 一次性（thermalStress 不变量）==========');
-const HOT = 'zone.thermal_pocket'; // 侧表 hot·intensity 55·baseline insulation 30 → ceiling 25·持续累积
+const HOT = 'zone.vertical_test'; // 侧表 hot·intensity 55·baseline insulation 30 → ceiling 25·持续累积（2026-07-12 洞穴内容整删：repoint 自已删除的 zone.thermal_pocket）
 // 逐回合 ×6
 let runA = createNewRun({ zoneId: HOT });
 for (let i = 0; i < 6; i++) runA = tickTurns(runA, 1);

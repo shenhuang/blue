@@ -63,7 +63,7 @@ assert(
 );
 // 净氧：base 激活后氧 run-start 路径逐字节不变（floor 60 + eq 增量 0）。
 assert(
-  createNewRun({ zoneId: 'zone.east_reef' }).stats.oxygen === 60,
+  createNewRun({ zoneId: 'zone.vertical_test' }).stats.oxygen === 60,
   '净氧：starter 出海 oxygenMax 仍 60（防双计·floor 60 不变）',
 );
 L('§1 base 激活：护甲1/光照2 读 base · 氧体 base 跳过 · 净氧 60 ✓');

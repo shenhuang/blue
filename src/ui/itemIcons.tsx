@@ -51,12 +51,7 @@ const GLYPH: Record<string, ReactNode> = {
   'item.mod.shock_core': (<><circle cx="12" cy="12" r="7"/><path d="M13 7l-3 6h3l-1 4 3-6h-3z"/></>),
   // 剧情
   'item.old_chart': (<><path d="M4 6 9 4l6 2 5-2v14l-5 2-6-2-5 2z"/><path d="M9 4v14M15 6v14"/></>),
-  'item.captain_log': (<><path d="M6 4h11v16H8a2 2 0 0 1-2-2z"/><path d="M9 4v14"/></>),
-  'item.mentor_logbook': (<><path d="M6 5h6v14H8a2 2 0 0 1-2-2z"/><path d="M12 5v14"/><path d="M14 8l3 1-3 1M14 12l3 1-3 1"/></>),
-  'item.ch1.steadying_charm_broken': (<><path d="M9 4h6M12 4v4"/><circle cx="12" cy="13" r="5"/><path d="M12 9l-2 4 3 1-1 3"/></>),
   'item.rusty_compass': (<><circle cx="12" cy="12" r="8"/><path d="M12 12 15 9l-2 6-4 1z"/></>),
-  'item.brass_pocket_watch': (<><circle cx="12" cy="13" r="6"/><path d="M12 13V9.5M12 13l3 1.5"/><path d="M12 4v3M10 4h4"/></>),
-  'item.waterlogged_logbook': (<><path d="M6 4h11v16H8a2 2 0 0 1-2-2z"/><path d="M9 4v14"/><path d="M13 16c0-1.5 2-3 2-3s2 1.5 2 3a2 2 0 0 1-4 0z"/></>),
   // 其它
   'item.note.sonar_checklist': (<><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h7M9 12h7M9 16h4"/><path d="M6.4 8l.6.6 1-1"/></>),
   // 材料

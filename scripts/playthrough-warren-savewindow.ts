@@ -24,7 +24,7 @@ const pt = makeHarness('撤退/月相存档窗（The Warren·SPEC §9.11）');
 const { L } = pt;
 const assert: PtAssert = pt.assert;
 
-const ZONE = 'zone.blue_caves';
+const ZONE = 'zone.vertical_test';
 
 // ── A. moonPhasesElapsed 纯函数边界 ─────────────────────────────────────
 L('========== A. moonPhasesElapsed 边界 ==========');

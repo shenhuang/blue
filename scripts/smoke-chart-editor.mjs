@@ -38,8 +38,9 @@ assert(html.includes('揭示态'), '表头应含「揭示态」列');
 assert(html.includes('mapX'), '表头应含 mapX 列');
 assert(html.includes('Reach'), '表头应含 Reach 列');
 assert(html.includes('修正'), '表头应含「修正」列');
-// 真实 POI 行（东礁在初始档案下可见）
-assert(html.includes('东礁'), '应渲染真实 POI 行（东礁）');
+// 真实 POI 行（白板收口：东礁已删·换存活洞穴 POI 蓝洞群；洞穴内容整删续：蓝洞群/poi.anchor.blue_caves
+// 也已删——chart_pois.json 现仅剩 poi.anchor.warren，dev 面板全列 chart_pois 锚点·不受 requiresFlags 门控）
+assert(html.includes('巢窟'), '应渲染真实 POI 行（巢窟·poi.anchor.warren——现仅存的 chart_pois 锚点）');
 // 类型徽章
 assert(html.includes('dev-chart-badge-anchor'), '应渲染锚点类型徽章');
 // （原「深度柱 column 过滤项」断言随深度柱系统删除·2026-07-12 移除。）

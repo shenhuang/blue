@@ -330,6 +330,10 @@ export function auditRoles(dag) {
   }
 
   // #198 reveal：mentor_logbook 必须用 marksPois（日志文献坐标）·不得用 setsFlag·须覆盖各带 storyTier 柱的 story 潜点。
+  // 白板（2026-07-12·tutorial/ch1 主线整删）：mentor_logbook 是主线揭示道具·随主线删除 ⇒ story 潜点
+  // （poi.dive.*.story）也全删、无需「文献坐标」揭示 ⇒ 缺它不再判红（no-op·同 check-mainline-reachable
+  // 「无 story beat → no-op 绿」）。作者重写主线把揭示道具带回时下面的校验自然复活；届时「有 beat 却缺
+  // marksPois 产出源」仍由 check-mainline-reachable 的 [beat-reveal] 兜住·无覆盖缺口。
   const lb = dag.items.get('item.mentor_logbook');
   if (lb) {
     const marks = lb.story?.marksPois ?? [];
@@ -338,8 +342,6 @@ export function auditRoles(dag) {
       v.push({ code: 'reveal/logbook-setsflag', msg: `mentor_logbook.story.setsFlag 非空（${setsFlag.join(',')}）——reveal 必须走 marksPois 文献坐标·别回退裸 flag(#198)` });
     if (!Array.isArray(marks) || !marks.length)
       v.push({ code: 'reveal/logbook-nomarks', msg: `mentor_logbook.story.marksPois 缺失——四柱坐标须经日志 marksPois 揭示(#198)` });
-  } else {
-    v.push({ code: 'reveal/logbook-missing', msg: `items.json 缺 item.mentor_logbook(#198)` });
   }
 
   return { violations: v };

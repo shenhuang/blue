@@ -58,7 +58,8 @@ for (const [id, expected] of priceTable) {
   assert(got === expected, `${id} Mira 收购价对不上：${got} ≠ ${expected}`);
 }
 L('  剧情物 / 无价物不收：');
-const refused = ['item.captain_log', 'item.old_chart'];
+// captain_log 已随白板删——换两件存活的 eternal 剧情物（old_chart / sonar_checklist·均 sell 0·她不收）。
+const refused = ['item.old_chart', 'item.note.sonar_checklist'];
 for (const id of refused) {
   const ok = isSellableToMira(id);
   L(`    ${id.padEnd(24)} isSellable=${ok}`);
@@ -75,11 +76,11 @@ let state: GameState = createInitialGameState();
 state = {
   ...state,
   run: {
-    ...createNewRun({ zoneId: 'zone.east_reef' }),
+    ...createNewRun({ zoneId: 'zone.vertical_test' }),
     inventory: [
       { itemId: 'item.shark_tooth', qty: 2 },
       { itemId: 'item.lobster', qty: 1 },
-      { itemId: 'item.captain_log', qty: 1 }, // eternal，进仓库长存
+      { itemId: 'item.old_chart', qty: 1 }, // eternal，进仓库长存（captain_log 已删·old_chart 存活 eternal 剧情物）
       { itemId: 'item.med_kit', qty: 1 }, // #117 定价 25 → offer 20，计入 loot 价值
     ],
     currentDepth: 30,
@@ -94,9 +95,10 @@ assert(lv === expectedLootValue, `lootValue 不对：${lv} ≠ ${expectedLootVal
 const ret = handleReturnToPort(state);
 state = ret.state;
 L(`  cutsceneEventId = ${ret.cutsceneEventId}`);
+// 白板收口：captain_log→tutorial.ending_log 回港 cutscene 随内容删除；现无剧情物触发回港 cutscene → null。
 assert(
-  ret.cutsceneEventId === 'tutorial.ending_log',
-  'captain_log 该自动触发 tutorial.ending_log',
+  ret.cutsceneEventId === null,
+  '白板后回港不触发 cutscene（tutorial.ending_log 已删·old_chart 不挂回港事件）',
 );
 assert(state.run === null, 'handleReturnToPort 后 run 必须 null');
 assert(
@@ -108,8 +110,8 @@ assert(
   '龙虾没合并到仓库',
 );
 assert(
-  findQty(state.profile.inventory, 'item.captain_log') === 1,
-  'eternal captain_log 必须长存到 profile.inventory',
+  findQty(state.profile.inventory, 'item.old_chart') === 1,
+  'eternal old_chart 必须长存到 profile.inventory',
 );
 assert(
   findQty(state.profile.inventory, 'item.med_kit') === 1,
@@ -157,16 +159,16 @@ state = sellItemToMira(state, 'item.lobster', 1);
 L(`  卖 1 龙虾：银行 = ${state.profile.bankedGold}（应 44）`);
 assert(state.profile.bankedGold === 44, '龙虾收益对不上');
 
-// captain_log（eternal）不应被卖；med_kit #117 定价后可卖回（有价消耗品她收·同 decoy 口径）
+// old_chart（eternal 剧情物）不应被卖；med_kit #117 定价后可卖回（有价消耗品她收·同 decoy 口径）
 const beforeRefuse = state.profile.bankedGold;
-state = sellItemToMira(state, 'item.captain_log', 1);
+state = sellItemToMira(state, 'item.old_chart', 1);
 assert(
   state.profile.bankedGold === beforeRefuse,
   'eternal 不该让 bankedGold 变化',
 );
 assert(
-  findQty(state.profile.inventory, 'item.captain_log') === 1,
-  'captain_log 还该留在仓库',
+  findQty(state.profile.inventory, 'item.old_chart') === 1,
+  'old_chart 还该留在仓库',
 );
 state = sellItemToMira(state, 'item.med_kit', 1);
 L(`  卖回急救包：银行 = ${state.profile.bankedGold}（应 64）`);
@@ -175,7 +177,7 @@ assert(
   findQty(state.profile.inventory, 'item.med_kit') === 0,
   '卖回后急救包该被移出仓库',
 );
-L(`  拒收测试通过：captain_log 仍在仓库，银行 ${state.profile.bankedGold}`);
+L(`  拒收测试通过：old_chart 仍在仓库，银行 ${state.profile.bankedGold}`);
 
 // 卖空仓库后 listMiraSellables 应空
 sellables = listMiraSellables(state.profile.inventory);
@@ -190,7 +192,7 @@ state = createInitialGameState();
 state = {
   ...state,
   run: {
-    ...createNewRun({ zoneId: 'zone.east_reef' }),
+    ...createNewRun({ zoneId: 'zone.vertical_test' }),
     inventory: [
       { itemId: 'item.shark_tooth', qty: 1 },
       { itemId: 'item.coral_shard', qty: 3 },
@@ -223,7 +225,7 @@ const buyGate: [string, boolean][] = [
   ['item.cave_octopus_beak', false], // T3
   ['item.lantern_gland', false], // T4
   ['item.med_kit', true], // 消耗品货架（#117 上架）
-  ['item.captain_log', false], // 剧情物
+  ['item.old_chart', false], // 剧情物（captain_log 已删·old_chart 存活 story 物·同样不可回购）
 ];
 for (const [id, expected] of buyGate) {
   const got = isBuyableFromMira(id);
@@ -278,7 +280,7 @@ assert(coralEntry && coralEntry.stock === 0 && coralEntry.maxStock === coralMax,
 assert(!buyablesNow.some((b) => b.itemId === 'item.eel_skin'), '回购清单不应含 T3 eel_skin');
 
 // 回港补满：构造一次 run 走 handleReturnToPort，断言 shopStock 清空（= 满货）
-state = { ...state, run: { ...createNewRun({ zoneId: 'zone.east_reef' }), inventory: [] } };
+state = { ...state, run: { ...createNewRun({ zoneId: 'zone.vertical_test' }), inventory: [] } };
 state = handleReturnToPort(state).state;
 const coralStockAfterReturn = getShopStock(state.profile, 'item.coral_shard');
 L(`  回港后 coral 备货 = ${coralStockAfterReturn}（应补满到 ${coralMax}）`);
@@ -337,7 +339,7 @@ L('\n========== 出发前选带（applyCarryItems·作者拍板「不全带·死
       ],
     },
   };
-  const r0 = createNewRun({ zoneId: 'zone.east_reef' });
+  const r0 = createNewRun({ zoneId: 'zone.vertical_test' });
   // 勾 1 声诱标 + 1 急救包 + 妄图带材料/超量 → 只有消耗品进 run、qty 夹库存
   const c1 = applyCarryItems(s6.profile, r0, [
     { itemId: 'item.decoy_sound', qty: 1 },

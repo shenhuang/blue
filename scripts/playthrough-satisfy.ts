@@ -74,22 +74,17 @@ L('§2 eventArc 图重建 + 引用完整');
   }
   assert(missing === 0, `全库 triggerEventId 应都解析，发现 ${missing} 处断链（见上）`);
 
-  // (b) 已知弧头：tutorial.prologue → … → tutorial.descent（§story §4 接线）
-  const arc = eventArc('tutorial.prologue');
-  assert(arc, 'tutorial.prologue 应能重建弧');
-  assert(arc!.nodes.length >= 2, 'prologue 弧应不止 root 一个节点');
+  // (b) 弧重建 + 弧头识别（白板收口：tutorial.prologue 随开放水域内容删·现存 blue_caves 事件均为单节点、
+  //     无 triggerEventId 链）：任取一个存活事件——eventArc 能重建（≥1 节点·无断链）·且它不被任何事件触发 → 在 eventRoots()。
+  const someArcId = [...EVENT_DB.keys()][0];
+  const arc = eventArc(someArcId);
+  assert(arc, `${someArcId} 应能重建弧`);
+  assert(arc!.missingTargets.length === 0, '弧内不应有断链');
   assert(
-    arc!.nodes.some((nd) => nd.id === 'tutorial.descent'),
-    'prologue 弧应含 tutorial.descent（每个选项都接 descent）',
+    eventRoots().includes(someArcId),
+    `${someArcId} 应被识别为弧头（白板后事件均无人触发·全是弧头）`,
   );
-  assert(arc!.missingTargets.length === 0, 'prologue 弧内不应有断链');
-
-  // (c) 弧头识别：scriptedStart 的 prologue 不被任何事件触发 → 应在 eventRoots()
-  assert(
-    eventRoots().includes('tutorial.prologue'),
-    'tutorial.prologue 应被识别为弧头（无人触发它）',
-  );
-  L(`  全库引用完整·prologue 弧 ${arc!.nodes.length} 节点 ${arc!.edges.length} 边·弧头识别 ✓`);
+  L(`  全库引用完整·${someArcId} 弧 ${arc!.nodes.length} 节点 ${arc!.edges.length} 边·弧头识别 ✓`);
 }
 
 // ═══════════════════════════════════════════════════════════════

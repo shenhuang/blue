@@ -697,54 +697,6 @@
       "tier": 1
     },
     {
-      "id": "item.captain_log",
-      "name": "航海日志",
-      "category": "story",
-      "rarity": "uncommon",
-      "description": "皮面封皮已经被水泡软。大部分页面糊在一起，只有一页还能看清。",
-      "weight": 0.5,
-      "sellPrice": 0,
-      "decay": "eternal",
-      "story": {
-        "triggersEventId": "tutorial.ending_log",
-        "unlocksLoreEntry": "lore.ch1.captains_page"
-      }
-    },
-    {
-      "id": "item.mentor_logbook",
-      "name": "导师的半本日志",
-      "category": "story",
-      "rarity": "uncommon",
-      "description": "导师留下的半本日志。皮封皮裂开一道，只剩前半截，后面像是被谁撕走了。页脚一行铅笔写的坐标，旁边画着一条没见过的鱼，底下一句——『天黑了才找得见』。",
-      "weight": 0.4,
-      "sellPrice": 0,
-      "decay": "eternal",
-      "story": {
-        "unlocksLoreEntry": "lore.ch1.mentor_logbook",
-        "marksPois": [
-          "poi.dive.home.story",
-          "poi.dive.wreck.story",
-          "poi.dive.midwater.story",
-          "poi.dive.vent.story"
-        ]
-      }
-    },
-    {
-      "id": "item.ch1.steadying_charm_broken",
-      "name": "定心坠（损坏）",
-      "category": "story",
-      "rarity": "rare",
-      "description": "导师贴身戴的小坠子，你在观测站的记录架上找到它。金属托里本该嵌一粒石，那处裂了、空着。攥住它的时候，眼前晃动的影子会安静一拍——只一拍，像隔着一层很薄的东西把它按住了。托上的裂口，得用对的石头才补得回。",
-      "weight": 0.2,
-      "sellPrice": 0,
-      "decay": "eternal",
-      "story": {
-        "setsFlag": [
-          "story.ch1.charm_found"
-        ]
-      }
-    },
-    {
       "id": "item.lobster",
       "role": "organic",
       "name": "龙虾",
@@ -814,34 +766,6 @@
       "sellPrice": 22,
       "decay": "organic",
       "tier": 3
-    },
-    {
-      "id": "item.brass_pocket_watch",
-      "name": "黄铜怀表",
-      "category": "story",
-      "rarity": "uncommon",
-      "description": "罗盘室里的那只怀表，黄铜壳被海水蚀出一层薄薄的绿。底盖上有一行刻字。",
-      "weight": 0.2,
-      "sellPrice": 0,
-      "decay": "eternal",
-      "story": {
-        "triggersEventId": "wreck_graveyard.pocket_watch_log",
-        "unlocksLoreEntry": "lore.wreck_graveyard.h_m"
-      }
-    },
-    {
-      "id": "item.waterlogged_logbook",
-      "name": "泡水的日志",
-      "category": "story",
-      "rarity": "uncommon",
-      "description": "从那具旧潜水服的胸前取下来的——皮面浮肿，大多数页面糊在一起，但末尾的一两页是铅笔写的，撕得开。",
-      "weight": 0.5,
-      "sellPrice": 0,
-      "decay": "eternal",
-      "story": {
-        "triggersEventId": "wreck_graveyard.logbook_read",
-        "unlocksLoreEntry": "lore.wreck_graveyard.last_page"
-      }
     },
     {
       "id": "item.crab_chitin",

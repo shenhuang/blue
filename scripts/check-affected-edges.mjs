@@ -22,8 +22,10 @@ import { computeAffected, buildGraph } from './affected-tests.mjs';
 
 // 关键 fixture → 改它必须选出的行为测（健全性下限·只增不减）。
 const PINS = [
-  { fixture: 'src/data/chart_pois.json', mustSelect: ['playthrough-chart', 'smoke-chart-ui'] },
-  { fixture: 'src/data/chart_regions.json', mustSelect: ['playthrough-chart', 'smoke-chart-ui'] },
+  // 白板收口（2026-07-12）：playthrough-chart.ts 随开放水域/主线 chart 内容删除——chart 数据 fixture 的
+  //   关键覆盖改由存活的 smoke-chart-ui 承载（chart 渲染层 smoke·仍消费 chart_pois/chart_regions）。
+  { fixture: 'src/data/chart_pois.json', mustSelect: ['smoke-chart-ui'] },
+  { fixture: 'src/data/chart_regions.json', mustSelect: ['smoke-chart-ui'] },
   // scenario 基线目录 → 对应 *-scenarios runner（钉死 affected-tests.scenarioTaskFor·别再退化成「改 scenarios/** → ALL」）。
   // 选择按目录前缀（与文件是否存在无关）·用代表路径即可。
   { fixture: 'scenarios/combat/cave_octopus_solo__normal_kill.json', mustSelect: ['playthrough-combat-scenarios'] },

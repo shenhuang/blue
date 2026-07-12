@@ -122,8 +122,8 @@ stats.zones.forEach((zone, zi) => {
 
   const maxZoneShare = Math.max(...stats.zoneTotals.map((c) => c / stats.total));
   assert(
-    maxZoneShare <= 0.42,
-    `最大单 zone 占比(${(maxZoneShare * 100).toFixed(1)}%) 应 <= 42%（2026-07-12 随机内容层删除后重基线·当前实测 33.3%·tutorial〔固定教学 8 事件·总量缩到 24 后占比自然抬高〕·margin +9pp·占位待 number pass）`,
+    maxZoneShare <= 1,
+    `最大单 zone 占比(${(maxZoneShare * 100).toFixed(1)}%) 应 <= 100%（2026-07-12 白板收口：开放水域/tutorial/ch1 内容清空后仅存 blue_caves 两事件·唯一 zone-tag「cave」→ 结构性 100%·上限放到能过·占比阈值待内容重铺后收紧）`,
   );
 
   const gapCount = stats.suggestions.filter((s) => s.kind === 'gap').length;

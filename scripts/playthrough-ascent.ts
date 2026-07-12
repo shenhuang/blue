@@ -140,13 +140,13 @@ L('\n========== E. 被追·有氮债 → 强行甩开（rushed 的归宿）=====
 L('\n========== blocked. 闭合水域离开上浮口 → 挡；在「↑」口 → 放行 ==========');
 {
   const mkCaveRun = (currentKind: DiveNode['kind']): RunState => {
-    const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
+    const r0 = createNewRun({ zoneId: 'zone.vertical_test' });
     const node: DiveNode = {
       id: 'n0', layer: 0, depth: 40, zoneTag: 'cave', kind: currentKind, connectsTo: [], preview: '.',
     };
-    const map: DiveMap = { zoneId: 'zone.blue_caves', generatedAt: 0, startNodeId: 'n0', nodes: { n0: node } };
+    const map: DiveMap = { zoneId: 'zone.vertical_test', generatedAt: 0, startNodeId: 'n0', nodes: { n0: node } };
     return {
-      ...r0, zoneId: 'zone.blue_caves', currentDepth: 40, map, currentNodeId: 'n0',
+      ...r0, zoneId: 'zone.vertical_test', currentDepth: 40, map, currentNodeId: 'n0',
       stats: { ...r0.stats, oxygen: 30, nitrogen: 0 },
     };
   };

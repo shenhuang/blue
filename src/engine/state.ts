@@ -38,7 +38,7 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // run.stats 形状变（少一字段）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始（「疯掉」改由地点缝 seam 二元门·见 types/dive.ts）。
 // 14→15（战斗系统改版·2026-07-10）：Stats 加 hp（生命值·伤害落点·归零死）+ RunState 加 hpMax；负伤系统整套下线（run.injuries 删）——
 // run/stats 形状变（加 hp/hpMax·减 injuries）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始。体力不再致死（改行动预算）、伤害改打 HP。
-const SAVE_VERSION = 15;
+const SAVE_VERSION = 16;
 
 /**
  * 生命值上限基线（战斗系统改版 2026-07-10）。createNewRun 种进 run.hpMax、stats.hp 起手＝hpMax。
@@ -83,7 +83,10 @@ export function createInitialProfile(): PlayerProfile {
     name: '潜水员',
     bankedGold: 0,
     unlockedUpgrades: new Set(),
-    flags: new Set(),
+    // 白板（2026-07-12·tutorial+ch1 主线整删）：教学关已删 ⇒ 没有内容会置 flag.tutorial_complete。
+    // 全部洞穴 anchor/zone 的 requiresFlags 都挂它（海图解锁门·= chapterUnlocked('ch1')），故默认种下
+    // ⇒ 新局起手海图即开、洞穴可选可潜。作者重写教学后由教学关置位、去掉这颗种子即可（单点·可逆）。
+    flags: new Set(['flag.tutorial_complete']),
     loreEntries: new Set(),
     deaths: [],
     runsCompleted: 0,

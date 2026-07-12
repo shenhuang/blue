@@ -225,7 +225,7 @@ function buildInitialState(input: CombatScenarioInput): GameState {
   };
 
   // ----- run -----
-  const zoneId = input.zoneId ?? 'zone.old_lighthouse_reef';
+  const zoneId = input.zoneId ?? 'zone.vertical_test'; // 白板（2026-07-12）：旧默认 old_lighthouse_reef 已删；洞穴内容整删（同日续）zone.blue_caves 也已删·回退存活的 QA 夹具 zone
   let run: RunState = createNewRun({ zoneId, bonuses: input.bonuses });
   if (input.depth !== undefined) run.currentDepth = input.depth;
   run.equipment = buildEquipment(input.equipment);

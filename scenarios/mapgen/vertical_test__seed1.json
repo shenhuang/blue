@@ -1,0 +1,18 @@
+{
+  "_comment": "纵向测试廊（zone.vertical_test）迷路图 baseline（seed 1）：2026-07-12 洞穴内容整删后 repoint 自已删除的 zone.blue_caves__seed1——只锁结构性不变量（不锁 exact nodeCount/edgeCount/maxDepth/entranceDepth，避免绑死具体深度窗口）。入口=洞口(ascent)、另有远端出口、有环、有死路、多个最深点、全可达。",
+  "zoneId": "zone.vertical_test",
+  "seed": 1,
+  "depthOffset": 0,
+  "expect": {
+    "shape": "maze",
+    "allReachable": true,
+    "isUndirected": true,
+    "hasCycle": true,
+    "hasDeadEnd": true,
+    "minDeadEnds": 2,
+    "minDeepestPoints": 2,
+    "minAscentPoints": 2,
+    "allAscentReachable": true,
+    "entranceIsAscent": true
+  }
+}

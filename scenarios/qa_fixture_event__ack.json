@@ -1,0 +1,12 @@
+{
+  "_comment": "洞穴内容整删（2026-07-12 续）：blue_caves.geode_vein 随 zone.blue_caves 一并删除；EVENT_DB 现只剩 events/qa_fixture.json 的 qa.fixture_event（非叙事 QA 夹具）。改用它守事件回归框架仍对存活内容跑（playthrough-scenarios readdir 需 ≥1 top-level 场景）：单选项 qa_fixture_ack → 单步·无 error·留在 dive。",
+  "eventId": "qa.fixture_event",
+  "seed": 1,
+  "chain": "isolated",
+  "choices": ["qa_fixture_ack"],
+  "expect": {
+    "steps": 1,
+    "errors": [],
+    "finalPhase": "dive"
+  }
+}

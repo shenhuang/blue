@@ -22,7 +22,7 @@ function makeCorpseWith(itemIds: string[]): GameState {
     // 底座用 createNewRun 补齐 RunState 演进出的新字段（sensors/power/sensorTuning 等·与本测无关），
     // 再显式覆写本测试钉住的旧字段（runId 决定确定性尸体 id）。
     run: {
-      ...createNewRun({ zoneId: 'zone.old_lighthouse_reef' }),
+      ...createNewRun({ zoneId: 'zone.vertical_test' }),
       runId: 'test-run',
       map: null,
       stats: { hp: 0, stamina: 0, oxygen: 0, nitrogen: 30, thermalStress: 0 },
@@ -59,7 +59,7 @@ const sampleItems = [
   'item.canned_food', // consumable, threshold 5
   'item.coral_shard', // material, threshold 12
   'item.shark_tooth', // durable, threshold 25
-  'item.captain_log', // eternal, ∞
+  'item.old_chart', // eternal, ∞（captain_log 已随白板删·old_chart 是存活的 eternal 档样本）
 ];
 
 // ============ 1. 基础衰减表（无升级·关海流冲走） ============
@@ -86,7 +86,7 @@ L('========== 基础衰减（无升级·关海流冲走·按天） ==========');
     'item.canned_food': 5,
     'item.coral_shard': 12,
     'item.shark_tooth': 25,
-    'item.captain_log': null,
+    'item.old_chart': null,
   };
   for (const [id, exp] of Object.entries(expected)) {
     assert(stops[id] === exp, `衰减阈值不对：${id} 期望第 ${exp} 天，实际 ${stops[id]}`);
@@ -182,11 +182,11 @@ L('\n========== 确定性海流冲走 + jump≡step ==========');
 // ============ 4. 永恒物品永不消失 ============
 L('\n========== 永恒物品（开海流冲走也不动） ==========');
 {
-  const ce = makeCorpseWith(['item.captain_log']);
+  const ce = makeCorpseWith(['item.old_chart']);
   const de = ce.profile.deaths[0].diedOnDay;
   const jumped = ageAndDecayDeaths(ce.profile.deaths, de + 100, 0, false); // 一跳第 100 天
-  assert(idSet(jumped[0]).has('item.captain_log'), '航海日志（eternal）不该被冲走/衰减');
-  L('  100 天 + 开海流冲走 → 航海日志：仍在 ✓');
+  assert(idSet(jumped[0]).has('item.old_chart'), '旧海图（eternal）不该被冲走/衰减');
+  L('  100 天 + 开海流冲走 → 旧海图（eternal）：仍在 ✓');
 }
 
 pt.done();

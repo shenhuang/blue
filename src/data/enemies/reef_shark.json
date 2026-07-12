@@ -59,8 +59,7 @@
       "party": {
         "members": [{ "defId": "enemy.reef_shark.tutorial" }]
       },
-      "introText": "鲨鱼盯着你，鳃部张合。你握紧潜水刀。",
-      "victoryEventId": "tutorial.deeper"
+      "introText": "鲨鱼盯着你，鳃部张合。你握紧潜水刀。"
     },
     {
       "id": "combat.reef_shark_solo",

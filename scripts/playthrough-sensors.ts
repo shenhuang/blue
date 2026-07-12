@@ -45,7 +45,7 @@ const N2_TRUTH = '一处塌下来的石堆。';
 /** 起点 n0 连到两个事件节点 n1/n2（感知重做后节点无声呐欺骗钩子）。 */
 function makeMap(): DiveMap {
   return {
-    zoneId: 'zone.blue_caves',
+    zoneId: 'zone.vertical_test',
     generatedAt: 0,
     startNodeId: 'n0',
     nodes: {
@@ -63,7 +63,7 @@ function mk(opts?: {
   power?: number;
 }): GameState {
   const base = createInitialGameState();
-  const r0 = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { sonarUnlocked: opts?.sonarUnlocked } });
+  const r0 = createNewRun({ zoneId: 'zone.vertical_test', bonuses: { sonarUnlocked: opts?.sonarUnlocked } });
   const run: RunState = {
     ...r0,
     map: makeMap(),
@@ -130,7 +130,7 @@ L('\n========== 3. 地标豁免灯门 ==========');
   const mapLm = makeMap();
   mapLm.nodes.n2 = { ...mapLm.nodes.n2, kind: 'ascent_point', preview: '↑ 上浮口' };
   const base = createInitialGameState();
-  const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
+  const r0 = createNewRun({ zoneId: 'zone.vertical_test' });
   const run: RunState = {
     ...r0, map: mapLm, currentNodeId: 'n0', currentDepth: 20,
     sensors: { ...r0.sensors, light: false }, diveModifier: { gate: { sense: 'lamp', mode: 'locked' } },
@@ -151,7 +151,7 @@ L('\n========== 4. 深度不再降档（陡降灯下仍 full）==========');
 {
   // 深水（80m）+ 一个深得多的陡降节点（dd 60）：旧模型会降到 none，新模型灯下仍 full（清/黑水两测）。
   const deepMap: DiveMap = {
-    zoneId: 'zone.blue_caves', generatedAt: 0, startNodeId: 'd0',
+    zoneId: 'zone.vertical_test', generatedAt: 0, startNodeId: 'd0',
     nodes: {
       d0: { id: 'd0', layer: 0, depth: 80, zoneTag: 'cave', kind: 'event', connectsTo: ['dfar'], preview: '起点。' },
       dfar: { id: 'dfar', layer: 1, depth: 140, zoneTag: 'cave', kind: 'event', connectsTo: [], preview: '一道直坠下去的裂口。' },
@@ -159,7 +159,7 @@ L('\n========== 4. 深度不再降档（陡降灯下仍 full）==========');
   };
   const mkDeep = (vis?: 'dark'): GameState => {
     const base = createInitialGameState();
-    const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
+    const r0 = createNewRun({ zoneId: 'zone.vertical_test' });
     const run: RunState = { ...r0, map: deepMap, currentNodeId: 'd0', currentDepth: 80, diveModifier: vis ? { gate: { sense: 'lamp', mode: 'locked' } } : undefined };
     return { ...base, run, phase: { kind: 'dive', subPhase: { kind: 'nodeSelect', choices: [] } } };
   };
@@ -273,7 +273,7 @@ function mkUp(
   opts?: { visibility?: 'dark'; light?: boolean; power?: number },
 ): GameState {
   const base = createInitialGameState();
-  const r0 = createNewRun({ zoneId: 'zone.blue_caves', bonuses });
+  const r0 = createNewRun({ zoneId: 'zone.vertical_test', bonuses });
   const run: RunState = {
     ...r0,
     map: makeMap(),
@@ -289,7 +289,7 @@ function mkUp(
 L('\n========== 11. 升级轨：传感器随升级成长 ==========');
 {
   // 11.0 未升级 = 基线（守"defaults 复现 0a/0b 行为"）
-  const baseTuning = createNewRun({ zoneId: 'zone.blue_caves' }).sensorTuning!;
+  const baseTuning = createNewRun({ zoneId: 'zone.vertical_test' }).sensorTuning!;
   assert(
     baseTuning.pingCost === SONAR_PING_COST &&
       baseTuning.lampDrainMult === 1 &&
@@ -298,7 +298,7 @@ L('\n========== 11. 升级轨：传感器随升级成长 ==========');
   );
 
   // 11a powerMax（电池容量）
-  const upPow = createNewRun({ zoneId: 'zone.blue_caves', bonuses: { powerMaxBonus: 20 } });
+  const upPow = createNewRun({ zoneId: 'zone.vertical_test', bonuses: { powerMaxBonus: 20 } });
   assert(upPow.powerMax === POWER_MAX + 20, '11a: powerMaxBonus → powerMax +20');
   assert(upPow.power === upPow.powerMax, '11a: 电池起手＝满（powerMax）');
 
@@ -332,7 +332,7 @@ L('\n========== 11. 升级轨：传感器随升级成长 ==========');
 
   // 11g createNewRun 端到端把（存活的）bonus 烤进 sensorTuning
   const allUp = createNewRun({
-    zoneId: 'zone.blue_caves',
+    zoneId: 'zone.vertical_test',
     bonuses: { powerMaxBonus: 40, sonarPingCostReduction: 2, lampEfficiency: 0.5, signatureReduction: 3 },
   });
   assert(allUp.powerMax === POWER_MAX + 40, '11g: powerMax');
@@ -351,7 +351,7 @@ L('\n========== 11. 升级轨：传感器随升级成长 ==========');
 /** 深图 fixture（保留尸体豁免测试）：d0(80m) 连一个深陡降 dfar + 深处尸体 dcorpse。 */
 function makeDeepMap(): DiveMap {
   return {
-    zoneId: 'zone.blue_caves',
+    zoneId: 'zone.vertical_test',
     generatedAt: 0,
     startNodeId: 'd0',
     nodes: {
@@ -365,7 +365,7 @@ function makeDeepMap(): DiveMap {
 /** 深图版 mk()：currentDepth 默认 80（深水），可覆盖。 */
 function mkDeep(opts?: { visibility?: 'dark'; light?: boolean; power?: number }): GameState {
   const base = createInitialGameState();
-  const r0 = createNewRun({ zoneId: 'zone.blue_caves' });
+  const r0 = createNewRun({ zoneId: 'zone.vertical_test' });
   const run: RunState = {
     ...r0,
     map: makeDeepMap(),

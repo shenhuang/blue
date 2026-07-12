@@ -72,13 +72,13 @@ const shopMira: SceneDef = {
   },
 };
 
-// 潜水·事件：复用 buildScenarioState（造 run + dive/event·校验事件存在）；真实早期事件 ch1.anchor_reef。
+// 潜水·事件：复用 buildScenarioState（造 run + dive/event·校验事件存在）；白板后只剩 QA 夹具事件 qa.fixture_event。
 const diveEvent: SceneDef = {
   id: 'dive_event',
   label: '潜水·事件（珊瑚丛）',
   build: () => {
-    const s = buildScenarioState({ eventId: 'ch1.anchor_reef', seed: 1 });
-    if (!s) throw new Error('fixture dive_event: 事件 ch1.anchor_reef 缺失');
+    const s = buildScenarioState({ eventId: 'qa.fixture_event', seed: 1 });
+    if (!s) throw new Error('fixture dive_event: 事件 qa.fixture_event 缺失');
     return s;
   },
 };
@@ -88,9 +88,9 @@ const diveNodeSelect: SceneDef = {
   id: 'dive_node_select',
   label: '潜水·选下一处',
   build: () => {
-    let s: GameState = { ...createInitialGameState(), run: createNewRun({ zoneId: 'zone.old_lighthouse_reef' }) };
+    let s: GameState = { ...createInitialGameState(), run: createNewRun({ zoneId: 'zone.vertical_test' }) };
     withSeededRandom(12345, () => {
-      s = startDive(s, 'zone.old_lighthouse_reef');
+      s = startDive(s, 'zone.vertical_test');
       if (s.run) s = enterNodeSelection(s);
     });
     return s;
@@ -101,7 +101,7 @@ const diveNodeSelect: SceneDef = {
 const diveRest: SceneDef = {
   id: 'dive_rest',
   label: '潜水·休息',
-  build: () => enterNodeSelection({ ...createInitialGameState(), run: createNewRun({ zoneId: 'zone.old_lighthouse_reef' }) }),
+  build: () => enterNodeSelection({ ...createInitialGameState(), run: createNewRun({ zoneId: 'zone.vertical_test' }) }),
 };
 
 // 战斗·石斑鱼：复用 buildCombatEntryState（跑真实 startCombat 停在开局帧）；真实无 showIntro 遭遇·seed 定死。
@@ -120,8 +120,8 @@ const resolution: SceneDef = {
   id: 'resolution',
   label: '结算·出海归来',
   build: () => {
-    let s: GameState = { ...createInitialGameState(), run: createNewRun({ zoneId: 'zone.old_lighthouse_reef' }) };
-    withSeededRandom(7, () => { s = startDive(s, 'zone.old_lighthouse_reef'); });
+    let s: GameState = { ...createInitialGameState(), run: createNewRun({ zoneId: 'zone.vertical_test' }) };
+    withSeededRandom(7, () => { s = startDive(s, 'zone.vertical_test'); });
     if (s.run) s = { ...s, run: { ...s.run, currentDepth: 40, inventory: addToInventory(s.run.inventory, 'item.coral_shard', 3) } };
     const r = resolveAscent(s.run!);
     const mode = r.kind === 'blocked' ? 'emergency' : r.mode;
@@ -141,7 +141,7 @@ const funeral: SceneDef = {
   id: 'funeral',
   label: '葬礼·殒于深水',
   build: () => {
-    const run = { ...createNewRun({ zoneId: 'zone.old_lighthouse_reef' }), currentDepth: 48 };
+    const run = { ...createNewRun({ zoneId: 'zone.vertical_test' }), currentDepth: 48 };
     run.inventory = addToInventory(run.inventory, 'item.coral_shard', 2);
     let s: GameState = { ...createInitialGameState(), run };
     // 种子定死 executeDeath 生成的悼名（否则随机名 → 视觉基线每次不同）。

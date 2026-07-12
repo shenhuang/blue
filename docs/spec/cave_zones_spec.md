@@ -1,5 +1,7 @@
 # 洞穴扩充 SPEC：27 洞 · 4 beacon · 多口持久洞
 
+> ⚠ **历史/已被取代（2026-07-12）**：本文档描述的 27 条真实洞穴 zone（含 `blue_caves`/`shaft_crack`/`chamber_network`/`flooded_gallery` 等）已随 2026-07-12 洞穴内容整删全部从 `zones.json` 删除（作者明确要求·详见 QUIRKS）。当前 `zones.json` 仅剩 `zone.warren`（占位·不可达）+ 3 条 maze 朝向 QA 夹具（`horizontal_test`/`vertical_test`/`serpentine_test`）。本文档不再代表当前实装状态，仅作历史设计参考保留——不要据此文档假设这些洞穴仍存在。
+
 > 状态：**设计章 v2 定稿（最新一次改动 2026-06-26·补语调单一来源指针，设计本身未变；定稿本体 2026-06-23·交互 session〔Cowork〕）**——覆盖原 28 区方案（→27 洞）。
 > Batch 0（28 区 stub）已 land 进 zones.json；本章重定方案。**下方「全区 JSON」「事件池设计指引」是 Batch-0 原始参数·实装时按本设计章更新**（删 5 区·改 lc/depthRange·加 beacon/温度/多口标注）。事件池 Batch 1–4 见 cave_batch_prompts.md。
 

@@ -1,0 +1,40 @@
+{
+  "_doc": "开发测试用事件夹具（非叙事内容）。2026-07-12 洞穴内容整删后 EVENT_DB 一度完全清空——但多个 regress 门/smoke 测试（EventView 非教学事件解析回归守卫、事件统计聚合、揭示归因提示、事件回归 scenario）都需要 EVENT_DB 至少有一条真实可解析的事件才能有意义地跑。本文件只提供这一条中性、非叙事的 QA 夹具事件，绑定 zoneTag='cave'（3 条 maze 朝向 QA 夹具 zone 都有此 tag），不带 poiId（普通盲池事件）。不代表真实剧情内容，作者重写事件内容时可随时替换/删除。",
+  "events": [
+    {
+      "id": "qa.fixture_event",
+      "depthRange": [35, 50],
+      "zoneTags": ["cave"],
+      "weight": 5,
+      "title": "测试用事件",
+      "body": "（开发测试用·非正式内容）这是一条中性占位事件，供 EVENT_DB / EventView / 事件统计等机制回归覆盖使用。",
+      "tone": "realistic",
+      "options": [
+        {
+          "id": "qa_fixture_mine",
+          "label": "用工具处理一下",
+          "visibleIf": {
+            "kind": "hasCapability",
+            "capability": "mine"
+          },
+          "outcome": {
+            "exertion": true,
+            "text": "（开发测试用·非正式内容）你用带着的工具处理了一下，凿下一点东西。",
+            "oxygenTurnCost": 2,
+            "loot": [
+              { "itemId": "item.coral_shard", "qty": [1, 2] }
+            ]
+          }
+        },
+        {
+          "id": "qa_fixture_ack",
+          "label": "记下，继续走",
+          "outcome": {
+            "text": "（开发测试用·非正式内容）你记下这一点，继续往前走。",
+            "oxygenTurnCost": 1
+          }
+        }
+      ]
+    }
+  ]
+}

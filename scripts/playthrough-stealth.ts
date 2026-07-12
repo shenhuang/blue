@@ -30,7 +30,7 @@ const CAVE_POOL = ['combat.blind_eel_solo', 'combat.cave_octopus_solo'];
 /** n0 连到 n1（同深度、事件节点、无 eventId → 不触发遭遇时退化成安静水域）。 */
 function makeMap(depth: number): DiveMap {
   return {
-    zoneId: 'zone.blue_caves',
+    zoneId: 'zone.vertical_test',
     generatedAt: 0,
     startNodeId: 'n0',
     nodes: {
@@ -47,7 +47,7 @@ function mk(opts: {
   alert?: number;
 }): GameState {
   const base = createInitialGameState();
-  const zoneId = opts.zoneId ?? 'zone.blue_caves';
+  const zoneId = opts.zoneId ?? 'zone.vertical_test';
   const r0 = createNewRun({ zoneId });
   const depth = opts.depth ?? 50;
   const run: RunState = {
@@ -108,7 +108,7 @@ L('\n========== 3. 浅水免探测压力 ==========');
 // ============================================================
 L('\n========== 4. 高警觉 → 接近触发遭遇 ==========');
 {
-  const s = mk({ zoneId: 'zone.blue_caves', depth: 50, light: true, alert: ALERT_THRESHOLD });
+  const s = mk({ zoneId: 'zone.vertical_test', depth: 50, light: true, alert: ALERT_THRESHOLD });
   const after = moveToNode(s, 'n1');
   assert(after.phase.kind === 'combat', '4: 高警觉进事件节点应触发遭遇（phase=combat）');
   const combatId = after.phase.kind === 'combat' ? after.phase.combat.combatId : '';
@@ -123,7 +123,7 @@ L('\n========== 4. 高警觉 → 接近触发遭遇 ==========');
 // ============================================================
 L('\n========== 5. 摸黑低警觉 → 滑过 ==========');
 {
-  const s = mk({ zoneId: 'zone.blue_caves', depth: 50, light: false, alert: 0 });
+  const s = mk({ zoneId: 'zone.vertical_test', depth: 50, light: false, alert: 0 });
   const after = moveToNode(s, 'n1');
   assert(after.phase.kind === 'dive', '5: 摸黑低警觉应滑过、不触发遭遇（phase 仍 dive）');
   assert((after.run!.alert ?? 0) < ALERT_THRESHOLD, '5: 摸黑后警觉仍在阈值下');

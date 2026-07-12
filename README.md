@@ -13,7 +13,6 @@
 - [`docs/spec/深海回响_SPEC.md`](docs/spec/深海回响_SPEC.md) — 主设计文档
 - [`docs/spec/深海回响_战斗系统_SPEC.md`](docs/spec/深海回响_战斗系统_SPEC.md) — 战斗系统专题
 - [`docs/spec/深海回响_上浮系统_SPEC.md`](docs/spec/深海回响_上浮系统_SPEC.md) — 上浮单按钮（结果=f(氧/氮/深/被追)·删假选择）
-- [`docs/spec/深海回响_教学关剧本.md`](docs/spec/深海回响_教学关剧本.md) — 教学剧本
 - [`docs/STATUS.md`](docs/STATUS.md) — **当前实装状态**
 
 ## 技术栈
