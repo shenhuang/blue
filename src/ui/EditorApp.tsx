@@ -1,6 +1,6 @@
-// dev 工作台根（EditorApp·main.tsx 在 ?editor / ?storyeditor 下挂它·与游戏 App 平级）。
+// dev 工作台根（EditorApp·main.tsx 在 ?editor 下挂它·与游戏 App 平级）。
 //
-// 把 6 个 dev 工具收进一个带左导航的壳，按域分组（事件/剧情·战斗·地图）。各工具 lazy()——
+// 把 5 个 dev 工具收进一个带左导航的壳，按域分组（事件·战斗·地图）。各工具 lazy()——
 // 只有切到对应 tab 才下载其 chunk + css（工作台首屏轻）。tab 与 URL `?editor=<key>` 双向同步，
 // 深链可分享（手机无 Shift 键靠 URL 进，沿用旧 ?dev&panel= 的理由）。
 //
@@ -13,7 +13,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { EditorShell, type EditorNavGroup } from './EditorShell';
 
-const StoryEditor = lazy(() => import('./StoryEditor'));
 const MapEditor = lazy(() => import('./MapEditor'));
 const EventDevPanel = lazy(() =>
   import('./dev/EventDevPanel').then((m) => ({ default: m.EventDevPanel })),
@@ -35,16 +34,15 @@ const ChartViewDevPanel = lazy(() =>
 );
 
 // tab key 单一来源（导航 + URL 解析 + 渲染分支都读它）
-const TAB_KEYS = ['story', 'event', 'stats', 'economy', 'combat', 'chart', 'chartdev', 'map'] as const;
+const TAB_KEYS = ['event', 'stats', 'economy', 'combat', 'chart', 'chartdev', 'map'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 const isTabKey = (v: string | null): v is TabKey =>
   v != null && (TAB_KEYS as readonly string[]).includes(v);
 
 const NAV: EditorNavGroup[] = [
   {
-    group: '事件/剧情',
+    group: '事件',
     items: [
-      { key: 'story', label: '走查/编辑' },
       { key: 'event', label: '回归' },
       { key: 'stats', label: '统计' },
     ],
@@ -63,14 +61,12 @@ const NAV: EditorNavGroup[] = [
 
 /**
  * 进入工作台时按 URL 选初始 tab：
- *   ?storyeditor          → story（旧书签回退兼容）
  *   ?editor=<key>         → 对应 tab（未知 key 回退 chart）
  *   ?editor（裸·无值）     → chart（保住旧 ?editor＝海图书签）
  */
 export function initialTab(): TabKey {
   if (typeof window === 'undefined') return 'chart';
   const p = new URLSearchParams(window.location.search);
-  if (p.has('storyeditor')) return 'story';
   const v = p.get('editor');
   return isTabKey(v) ? v : 'chart';
 }
@@ -82,11 +78,10 @@ export default function EditorApp() {
     if (isTabKey(key)) setTab(key);
   }, []);
 
-  // 切 tab 同步 URL（深链可分享·replaceState 不进历史栈·清掉旧 ?storyeditor 别名）
+  // 切 tab 同步 URL（深链可分享·replaceState 不进历史栈）
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const url = new URL(window.location.href);
-    url.searchParams.delete('storyeditor');
     url.searchParams.set('editor', tab);
     window.history.replaceState(null, '', url);
   }, [tab]);
@@ -94,7 +89,6 @@ export default function EditorApp() {
   return (
     <EditorShell nav={NAV} active={tab} onSelect={select}>
       <Suspense fallback={null}>
-        {tab === 'story' && <StoryEditor />}
         {tab === 'event' && <EventDevPanel />}
         {tab === 'stats' && <StatsDevPanel />}
         {tab === 'economy' && <EconomyDevPanel />}

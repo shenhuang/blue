@@ -10,7 +10,6 @@
 
 | 工具 | key | 链接 | 备注 |
 |---|---|---|---|
-| 剧情走查/编辑 | story | `/?editor=story` | 测剧情库本身·不碰存档 |
 | 事件回归 | event | `/?editor=event` | |
 | 事件统计 | stats | `/?editor=stats` | 内容分布（最薄/最饱和池） |
 | 素材/经济 | economy | `/?editor=economy` | 素材×大区热力图 |
@@ -19,7 +18,7 @@
 | POI 调试 | chartdev | `/?editor=chartdev` | 海图深度柱 POI 概览 |
 | 地图调试器 | map | `/?editor=map` | 下潜图 mapgen（洞穴声呐图 / 开阔节点图）+ 结构读数 |
 
-回退别名：裸 `?editor` → 海图（chart）·旧 `?storyeditor` → 剧情（story）。
+回退别名：裸 `?editor` → 海图（chart）。
 
 ## `?dev` 运行时门（仅这两项仍用 `?dev`·非面板）
 

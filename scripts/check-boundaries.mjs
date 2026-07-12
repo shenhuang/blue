@@ -21,7 +21,7 @@
 //   函数体见下方「规则四已删除」桩注释，此处头部同步收窄，避免头/体各说各话误导读者。
 //
 // 规则五：game ↛ dev —— 游戏入口/UI（App.tsx + src/ui 下非 dev 文件）不得 import dev 工具
-//   （src/ui/dev/** + MapEditor/StoryEditor/EditorApp/EditorShell）。dev 工具只经 ?editor 工作台
+//   （src/ui/dev/** + MapEditor/EditorApp/EditorShell）。dev 工具只经 ?editor 工作台
 //   （EditorApp·main.tsx 不扫）入口；把「dev 不进游戏主包/不揭整张图」从散文升成机制（dev工作台 SPEC §6）。
 //
 // 规则六：nitrogen 债务写口收窄（氮气单写口·quirk #128·仿规则四 run.injuries）。
@@ -171,21 +171,20 @@ const scrollViolations = [];
 // 规则四（run.injuries 触碰面收口）已随负伤系统整套下线删除（战斗系统改版 2026-07-10）：run.injuries 字段不再存在。
 
 // ── 规则五：game ↛ dev —— 游戏入口/UI 不得 import dev 工具（dev 工作台解耦·dev工作台 SPEC §6）──
-// dev 工具＝src/ui/dev/** + MapEditor/StoryEditor/EditorApp/EditorShell；只有 main.tsx（不扫）与
+// dev 工具＝src/ui/dev/** + MapEditor/EditorApp/EditorShell；只有 main.tsx（不扫）与
 // dev 工具彼此可 import。扫 App.tsx + src/ui 下非 dev 文件，import 到 dev 工具即违例。
 // engine→dev 已被规则一（engine↛ui·dev 在 ui 下）覆盖，这里专扫 game UI + App。
 const DEV_DIR = resolve(ROOT, 'src/ui/dev');
 const DEV_ROOT_FILES = new Set([
   resolve(ROOT, 'src/ui/MapEditor.tsx'),
-  resolve(ROOT, 'src/ui/StoryEditor.tsx'),
   resolve(ROOT, 'src/ui/EditorApp.tsx'),
   resolve(ROOT, 'src/ui/EditorShell.tsx'),
 ]);
 const isDevFile = (abs) => abs === DEV_DIR || abs.startsWith(DEV_DIR + '/') || DEV_ROOT_FILES.has(abs);
 // 模块说明符指向 dev 工具：含 dev/ 段（ui/dev/x · ./dev/x · @/ui/dev/x；devMode 不含 dev/ 不命中），
-// 或 basename 是编辑器根（./MapEditor · @/ui/StoryEditor …）。
+// 或 basename 是编辑器根（./MapEditor · @/ui/EditorApp …）。
 const DEV_DIR_SPEC_RE = /(^|\/)dev\//;
-const DEV_ROOT_SPEC_RE = /(^|\/)(MapEditor|StoryEditor|EditorApp|EditorShell)$/;
+const DEV_ROOT_SPEC_RE = /(^|\/)(MapEditor|EditorApp|EditorShell)$/;
 const gameFiles = [...collectTs(UI_DIR), resolve(ROOT, 'src/App.tsx')]
   .filter((f) => !isDevFile(f))
   .sort();
@@ -361,7 +360,7 @@ if (devImportViolations.length) {
   }
   console.error(
     `\n共 ${devImportViolations.length} 处。dev 面板/编辑器只经 ?editor 工作台（EditorApp·main.tsx）入口；` +
-      `\n游戏侧别 import src/ui/dev/* 或 MapEditor/StoryEditor/EditorApp/EditorShell——` +
+      `\n游戏侧别 import src/ui/dev/* 或 MapEditor/EditorApp/EditorShell——` +
       `\n保 dev 代码不进游戏主包、地图调试器不揭整张图（dev工作台 SPEC §6）。\n`,
   );
 }
