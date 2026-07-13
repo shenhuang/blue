@@ -53,11 +53,25 @@ export interface ZoneGates {
  */
 export type LayoutStyle = 'vertical' | 'horizontal' | 'serpentine' | 'warren';
 
+/**
+ * 海图大区 id（单一来源 data/chart_regions.json 的 5 个 owner-anchored 区·engine/regions.ts::allRegions）。
+ * 同时用于 ChartRegionDef.id（海图揭示圈）与 ZoneDef.regionId（下潜 zone 归属·地图调试工具分组用）——
+ * 两处共用一个类型，防止拼写漂移。新增区先在 chart_regions.json 落数据，再在这里补一个字面量。
+ */
+export type ChartRegionId = 'reef' | 'wreck' | 'midwater' | 'vent' | 'trench';
+
 /** Zone 定义 —— 一个海域 */
 export interface ZoneDef {
   id: string;
   name: string;
   description: string;
+  /**
+   * 归属大区（地图调试工具分组用·2026-07-12 scoping）。可选：深渊无锚点 zone（如 vent_trench/warren/
+   * the_deep_gate）与开发测试 zone（horizontal_test）故意不填——落入调试工具的「未分区/开发测试」桶。
+   * 共享入口洞穴（如 mirror_maze）只填**主入口**所在区；副入口区不在此体现（见 chart_pois.json owner）。
+   * 纯 UI 分组标注，不影响 mapgen/存档/game logic。
+   */
+  regionId?: ChartRegionId;
   /** 节点图深度跨度 [浅, 深] */
   depthRange: [number, number];
   /** 节点图层数（每层 = 一次选择） */

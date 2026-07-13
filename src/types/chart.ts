@@ -9,7 +9,7 @@
 //
 // 详见 src/engine/chart.ts 与 docs/STATUS.md §5「港口海图选点 UI」。
 
-import type { CaveRegion, NodeGate } from './dive';
+import type { CaveRegion, ChartRegionId, NodeGate } from './dive';
 
 /** 洋流强度档位。MVP：仅叙事 + 落到 run.diveModifier 留接口；冲走/漂移效果待实装。 */
 export type CurrentStrength = 'none' | 'mild' | 'strong';
@@ -245,8 +245,8 @@ export type RegionShape = 'circle' | 'coast';
  *     计数…见 2026-06-14 架构讨论）。诚实轴不破：圈内 POI 走 isLit 正常揭示·mimic 仍唯一谎点。
  */
 export interface ChartRegionDef {
-  /** 区 id（'reef'|'trench'|'wreck'|'midwater'|'vent'…）。 */
-  id: string;
+  /** 区 id（单一来源见 types/dive.ts::ChartRegionId）。 */
+  id: ChartRegionId;
   /** UI 标签（'珊瑚区' 等）。 */
   label: string;
   /** owner 灯塔 id（全局唯一）。该灯塔存在＝本区揭示·圈心＝灯塔坐标。与 revealFlag 二选一。 */

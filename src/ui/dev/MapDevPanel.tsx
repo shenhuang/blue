@@ -1,8 +1,12 @@
 // MapDevPanel —— 地图调试器（`?editor` 工作台「地图调试」tab·EditorApp 承载·不再有游戏内浮层·2026-07-09）
 //
 // 目的：可视化迭代迷路 mapgen 的布局，不用反复编译跑 playthrough。
-//   左栏：ZONE 选择（洞穴/开阔水域两组·分类条可收起各自 zone 列表）
-//   中栏：节点图 SVG / 声呐洞穴图 —— 按 layer(到入口的树距) 分列连边、按 kind 配色，标注最深点/死路/回边
+//   左栏：ZONE 选择（按 ZoneDef.regionId 分大区分组·2026-07-12——取代旧洞穴/开阔水域两组：全部 zone
+//     早已是 maze/warren，那两个 tab 已名存实亡。5 个大区 tab〔reef/wreck/midwater/vent/trench，
+//     顺序/label 单一来源 engine/regions.ts::allRegions〕+ 1 个「未分区/开发测试」兜底 tab（深渊无
+//     锚点 zone + dev 测试 zone）；分类条可收起各自 zone 列表）
+//   中栏：节点图 SVG / 声呐洞穴图 —— 渲染形态仍按 zoneAllowsBacktrack（洞穴→声呐图/开阔水域→节点图）
+//     区分，这与大区归属正交（同一大区可能混着两种拓扑）
 //   右栏：zone 信息（depthRange/layerCount）+ 结构读数（analyzeMap 全部性质·按迷路不变量着色）·单开一栏
 //
 // 设计（沿用 quirk #23/#24 套路，与 Event/Combat 面板一致）：
@@ -17,11 +21,16 @@ import { useMemo, useState, useRef, useEffect } from 'react';
 import './map-panel.css';
 import { generateDiveMap, analyzeMap, resolveLayoutStyle } from '@/engine/mapgen';
 import { ZONES, zoneAllowsBacktrack } from '@/engine/zones';
+import { allRegions } from '@/engine/regions';
 import { makeLcg } from '@/engine/rng';
 import { deriveMapLayout } from '../mapLayout';
 import { buildCaveGeometry, bakeCaveRGBA } from '../SonarScanPanel';
 import { SONAR_PX_PER_M, SONAR_COL_W, CAVE_GEOM_MARGIN } from '@/engine/sonarGeometry';
 import type { DiveMap, DiveNode, ZoneDef } from '@/types';
+
+/** 左栏分组 tab key：5 个大区 id（单一来源 chart_regions.json）+ 1 个「未分区/开发测试」兜底桶。 */
+const UNCLASSIFIED = 'unclassified' as const;
+type ZoneTabKey = string | typeof UNCLASSIFIED;
 
 export interface MapDevPanelProps {
   onClose?: () => void;
@@ -89,29 +98,40 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
     () => [...ZONES.values()].filter((z) => z.generation === 'random'),
     [],
   );
-  // 按渲染类型分两类（作者 2026-06-27「洞穴和开阔水域就行」）：洞穴=maze→声呐图 / 开阔水域=layered→节点图。
-  // 判据同 zoneAllowsBacktrack；左侧 tab 据此切，zone 列表只列当前类（替代旧下拉·按类型区分）。
-  const caveZones = useMemo(() => randomZones.filter((z) => zoneAllowsBacktrack(z.id)), [randomZones]);
-  const openZones = useMemo(() => randomZones.filter((z) => !zoneAllowsBacktrack(z.id)), [randomZones]);
+
+  // 左侧分组：按 ZoneDef.regionId 分大区（2026-07-12·取代旧洞穴/开阔水域两组）。
+  // tab 顺序/label 单一来源 engine/regions.ts::allRegions（同海图揭示圈顺序）；regionId 未填的 zone
+  // （深渊无锚点 + dev 测试）落最后一个「未分区/开发测试」兜底 tab，不强塞进 5 个大区之一。
+  const TABS = useMemo(() => {
+    const regionTabs = allRegions().map((r) => ({
+      id: r.id as ZoneTabKey,
+      label: r.label,
+      zones: randomZones.filter((z) => z.regionId === r.id),
+    }));
+    const unclassified = randomZones.filter((z) => !z.regionId);
+    return [...regionTabs, { id: UNCLASSIFIED as ZoneTabKey, label: '未分区 / 开发测试', zones: unclassified }];
+  }, [randomZones]);
+
   const [zoneId, setZoneId] = useState<string>(
-    randomZones.find((z) => zoneAllowsBacktrack(z.id))?.id ?? randomZones[0]?.id ?? '',
+    () => TABS.find((t) => t.zones.length > 0)?.zones[0]?.id ?? randomZones[0]?.id ?? '',
   );
   // seed / ΔDEPTH / 剖面k 调试旋钮全撤（作者 2026-06-27「都没用了·seed 也多余」）：布局按固定 LCG(1)
   // 确定性生成——每座 zone 只看其确定性布局 + 结构读数；以后要看不同随机图，加回一个 reseed 即可。
-  // 左栏两组（洞穴/开阔水域）各自可收起列表（「tab 做成列表上方·可收起该列表」）；初始非当前类收起（初始 zone = 洞穴）。
-  const [collapsed, setCollapsed] = useState<Record<'open' | 'cave', boolean>>({ open: true, cave: false });
+  // 左栏每个大区分类条各自可收起列表（「tab 做成列表上方·可收起该列表」）；初始只展开当前 zone 所在的大区。
+  const [collapsed, setCollapsed] = useState<Record<ZoneTabKey, boolean>>(() => {
+    const initial: Record<ZoneTabKey, boolean> = {};
+    const initialCat = randomZones.find((z) => z.id === zoneId)?.regionId ?? UNCLASSIFIED;
+    for (const t of TABS) initial[t.id] = t.id !== initialCat;
+    return initial;
+  });
 
   const zone = ZONES.get(zoneId);
 
-  // 左侧两类 tab + 当前类 zone 列表（zoneId 单一真相·activeCat 由它派生·不另存 state）。
+  // 左侧大区 tab + 当前 tab zone 列表（zoneId 单一真相·activeCat 由它派生·不另存 state）。
   // 渲染风格游戏里按 zone 固定（resolveLayoutStyle）·不再给可选下拉（作者 2026-06-27：给「选择」纯属误导）；
   // 每座的实际风格在 zone 列表项 + 中栏图标题里只读展示。
-  const TABS: Array<{ id: 'open' | 'cave'; label: string; hint: string; zones: ZoneDef[] }> = [
-    { id: 'cave', label: '洞穴', hint: '声呐图', zones: caveZones },
-    { id: 'open', label: '开阔水域', hint: '节点图', zones: openZones },
-  ];
-  const activeCat: 'open' | 'cave' = zone && zoneAllowsBacktrack(zone.id) ? 'cave' : 'open';
-  const toggleCat = (cat: 'open' | 'cave') => setCollapsed((c) => ({ ...c, [cat]: !c[cat] }));
+  const activeCat: ZoneTabKey = zone?.regionId ?? UNCLASSIFIED;
+  const toggleCat = (cat: ZoneTabKey) => setCollapsed((c) => ({ ...c, [cat]: !c[cat] }));
   const renderZoneItem = (z: ZoneDef) => (
     <li
       key={z.id}
@@ -121,7 +141,8 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
       <div className="dev-event-id">{z.name}</div>
       <div className="dev-event-meta">
         <span className="dev-faint">
-          {z.depthRange[0]}–{z.depthRange[1]}m · {resolveLayoutStyle(z)}
+          {z.depthRange[0]}–{z.depthRange[1]}m · {resolveLayoutStyle(z)} ·{' '}
+          {zoneAllowsBacktrack(z.id) ? '洞穴/声呐图' : '开阔水域/节点图'}
           {z.canFreeAscend === false ? ' · 封闭' : ''}
         </span>
       </div>
@@ -250,7 +271,7 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
                   >
                     <span className="dev-map-acc-chevron">{isOpen ? '▾' : '▸'}</span>
                     <span className="dev-map-acc-label">{t.label}</span>
-                    <span className="dev-map-acc-hint">{t.hint} · {t.zones.length}</span>
+                    <span className="dev-map-acc-hint">{t.zones.length} 座</span>
                   </button>
                   {isOpen && (
                     <ul className="dev-event-list dev-map-zone-list">{t.zones.map(renderZoneItem)}</ul>

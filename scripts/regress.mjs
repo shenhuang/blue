@@ -214,6 +214,10 @@ tasks.push({ name: 'check-poi-resources', cmd: ['node', join('scripts', 'check-p
 // 其中一点必然摸不到·实测案例见 scripts/check-chart-poi-coords.mjs 头注）
 tasks.push({ name: 'check-chart-poi-coords', cmd: ['node', join('scripts', 'check-chart-poi-coords.mjs')] });
 
+// 大区归属门（纯 node·2026-07-12·zones.json 里已填的 ZoneDef.regionId 必须 ∈ chart_regions.json 声明的
+// 大区 id 集合——防手滑打错大区名·地图调试工具按 regionId 分组的配套机制·见 scripts/check-zone-region.mjs 头注）
+tasks.push({ name: 'check-zone-region', cmd: ['node', join('scripts', 'check-zone-region.mjs')] });
+
 // dev 工作台漂移门（纯 node·柱 POI 接入 / 战场压力存活聚合 / tone 档位样式·把 #206 dev 面板↔引擎漂移焊成会红的检查·见 scripts/check-dev-panels.mjs）
 tasks.push({ name: 'check-dev-panels', cmd: ['node', join('scripts', 'check-dev-panels.mjs')] });
 
