@@ -211,6 +211,20 @@ export function buildOpenWaterGeometry(layout: MapLayout, zone: ZoneDef | undefi
 }
 
 /**
+ * 开阔水域几何的世界「下沿」（海床最深谷 + 坐海床结构实际下探的最大值·再留像素余量）。
+ * 单一来源给「把整张开阔水域烤进固定画布」的全图渲染（MapDevPanel dev 概览）定取景框下边界——
+ * 海床基线在最深节点之下 OW_FLOOR_GAP，若只取节点包围盒会把海床/礁体裁掉（游戏内是移动取景窗·不暴露）。
+ * 扫真实结构 ⇒ OW_* 手感旋钮改了也不用手抄数字（跟 CAVE_GEOM_MARGIN 同理·随几何自适应）。纯函数。
+ */
+export function owFloorBottom(geom: OwGeom): number {
+  // floor 三谐波都在同相时的最深谷（保守下界）。
+  let lo = geom.floor.baseY + OW_FLOOR_AMP + OW_FLOOR_AMP2 + OW_SWELL_AMP;
+  for (const s of geom.structs.disks) lo = Math.max(lo, s.y + s.r);
+  for (const s of geom.structs.caps) lo = Math.max(lo, Math.max(s.ay, s.by) + s.r);
+  return lo + 6; // SDF 噪声 + 像素余量
+}
+
+/**
  * 把开阔水域几何烤成 RGBA（镜像 bakeCaveRGBA·喂同一段 shadeSonarSdf ⇒ 同调色板/观感·守 §0「继承声呐观感」）。
  * 结构可横跨整 zone → 先按取景窗 x 窗口剔除（bake 有界·与洞穴 per-pixel 全扫等价成本）。纯函数·不碰 DOM。
  */

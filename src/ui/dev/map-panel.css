@@ -194,6 +194,17 @@
   height: 100%;
   pointer-events: none;
 }
+/* 连边覆盖层（dev 专属·仅调试器·游戏内声呐**不画**）——叠在深色声呐底(洞穴/开阔水域)上，
+   故用亮白半透明描边（比节点图那套 --border 深色边亮得多才读得出）；回边(chord)走 accent 青虚线。 */
+.dev-cave-edge {
+  stroke: rgba(225, 255, 248, 0.5);
+  stroke-width: 1.2;
+}
+.dev-cave-edge.is-chord {
+  stroke: var(--accent, #4ed1c1);
+  stroke-opacity: 0.75;
+  stroke-dasharray: 4 3;
+}
 .dev-cave-node-depth {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 7px;

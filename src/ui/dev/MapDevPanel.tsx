@@ -5,8 +5,10 @@
 //     早已是 maze/warren，那两个 tab 已名存实亡。5 个大区 tab〔reef/wreck/midwater/vent/trench，
 //     顺序/label 单一来源 engine/regions.ts::allRegions〕+ 1 个「未分区/开发测试」兜底 tab（深渊无
 //     锚点 zone + dev 测试 zone）；分类条可收起各自 zone 列表）
-//   中栏：节点图 SVG / 声呐洞穴图 —— 渲染形态仍按 zoneAllowsBacktrack（洞穴→声呐图/开阔水域→节点图）
-//     区分，这与大区归属正交（同一大区可能混着两种拓扑）
+//   中栏：声呐图（洞穴 or 开阔水域）+ 节点/连边覆盖层 —— 两种拓扑都烤声呐底（2026-07-13 方案 A：
+//     开阔水域从「只黑底节点图」升级为与游戏内同一 bakeOpenWaterRGBA 海床∪结构图·按 zoneAllowsBacktrack
+//     选 bakeCaveRGBA/bakeOpenWaterRGBA）。连边覆盖层是 dev 专属（游戏内声呐不画·只调试器看拓扑）。
+//     渲染形态与大区归属正交（同一大区可能混着两种拓扑）。仅退化兜底（无 map/layout）才回落纯节点图 SVG。
 //   右栏：zone 信息（depthRange/layerCount）+ 结构读数（analyzeMap 全部性质·按迷路不变量着色）·单开一栏
 //
 // 设计（沿用 quirk #23/#24 套路，与 Event/Combat 面板一致）：
@@ -25,6 +27,7 @@ import { allRegions } from '@/engine/regions';
 import { makeLcg } from '@/engine/rng';
 import { deriveMapLayout } from '../mapLayout';
 import { buildCaveGeometry, bakeCaveRGBA } from '../SonarScanPanel';
+import { buildOpenWaterGeometry, bakeOpenWaterRGBA, owFloorBottom } from '../openWaterRender';
 import { SONAR_PX_PER_M, SONAR_COL_W, CAVE_GEOM_MARGIN } from '@/engine/sonarGeometry';
 import type { DiveMap, DiveNode, ZoneDef } from '@/types';
 
@@ -174,53 +177,62 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
     () => (map ? deriveMapLayout(map, { pxPerMeter: SONAR_PX_PER_M, colW: SONAR_COL_W }) : null),
     [map],
   );
-  // 烤洞穴的世界取景框＝节点包围盒四周再扩 CAVE_GEOM_MARGIN：有机洞穴的房间/散瓣/域扭曲会鼓出节点包围盒，
-  // 不留这圈则画布边缘把上下左右的洞壁裁掉（dev 把整图烤进固定画布才暴露·游戏内移动取景窗不会·margin 单一来源见 SonarScanPanel）。
-  const caveRect = useMemo(
-    () =>
-      caveLayout
-        ? {
-            x: -CAVE_GEOM_MARGIN,
-            y: -CAVE_GEOM_MARGIN,
-            w: caveLayout.width + 2 * CAVE_GEOM_MARGIN,
-            h: caveLayout.height + 2 * CAVE_GEOM_MARGIN,
-          }
-        : null,
-    [caveLayout],
-  );
+  // —— 声呐几何（二选一·互斥）：洞穴（可回头 zone）→ buildCaveGeometry；开阔水域 → buildOpenWaterGeometry ——
+  // 方案 A（2026-07-13）：开阔水域从「只黑底节点图」升级为与游戏内 SonarScanPanel 同一 bakeOpenWaterRGBA 海床∪结构图。
+  // 两者都全揭示整图（dev 概览·非玩家渐进揭示）；与游戏内同一渲染函数＝单一来源、观感一致。
   const caveGeom = useMemo(() => {
     if (!map || !caveLayout || isOpenWater) return null;
     const ids = Object.keys(map.nodes);
     const mem: Record<string, number> = {};
-    for (const id of ids) mem[id] = 0; // 全揭示＝看整张洞（dev 概览·非玩家渐进揭示）
+    for (const id of ids) mem[id] = 0; // 全揭示＝看整张洞
     return buildCaveGeometry(caveLayout, ids, mem);
   }, [map, caveLayout, isOpenWater]);
-  // 声呐洞穴**替换**节点图：有洞（maze / 可回头 zone）→ 画洞；开阔水域无洞 → 回退原节点图。
-  const showCave = !!caveGeom;
+  const owGeom = useMemo(
+    () => (map && caveLayout && isOpenWater ? buildOpenWaterGeometry(caveLayout, zone) : null),
+    [map, caveLayout, isOpenWater, zone],
+  );
 
-  const caveCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  // 声呐取景框（世界矩形·四周留 margin＝烤进固定画布时边缘不被裁；游戏内是移动取景窗·不暴露）：
+  //   洞穴：节点包围盒 ± CAVE_GEOM_MARGIN（有机洞穴房间/散瓣/域扭曲鼓出节点盒·margin 单一来源见 sonarGeometry）。
+  //   开阔水域：上/左右同 margin，**下沿扩到海床之下**（owFloorBottom·海床基线在最深节点之下 OW_FLOOR_GAP·
+  //     只取节点盒会把海床/礁体裁掉）。
+  const sonarRect = useMemo(() => {
+    if (!caveLayout) return null;
+    const x = -CAVE_GEOM_MARGIN;
+    const y = -CAVE_GEOM_MARGIN;
+    const w = caveLayout.width + 2 * CAVE_GEOM_MARGIN;
+    if (owGeom) return { x, y, w, h: owFloorBottom(owGeom) - y };
+    return { x, y, w, h: caveLayout.height + 2 * CAVE_GEOM_MARGIN };
+  }, [caveLayout, owGeom]);
+
+  // 声呐图**替换**节点图：有洞穴 or 开阔水域几何 → 烤声呐；仅退化兜底（无 map/layout）→ 回落纯节点图 SVG。
+  const showSonar = !!((caveGeom || owGeom) && sonarRect && caveLayout);
+
+  const sonarCanvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
-    const canvas = caveCanvasRef.current;
-    if (!canvas || !caveRect || !caveGeom) return;
+    const canvas = sonarCanvasRef.current;
+    if (!canvas || !sonarRect || !(caveGeom || owGeom)) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    // 内部分辨率（0.75×·长边封顶防深图卡顿）；CSS 再放大到 caveRect 尺寸＝与节点覆盖层对齐。
+    // 内部分辨率（0.75×·长边封顶防深图卡顿）；CSS 再放大到 sonarRect 尺寸＝与覆盖层对齐。
     const SCALE = 0.75;
     const CAP = 1200;
-    let ow = Math.max(1, Math.round(caveRect.w * SCALE));
-    let oh = Math.max(1, Math.round(caveRect.h * SCALE));
-    if (oh > CAP) {
-      ow = Math.max(1, Math.round((ow * CAP) / oh));
-      oh = CAP;
+    let outW = Math.max(1, Math.round(sonarRect.w * SCALE));
+    let outH = Math.max(1, Math.round(sonarRect.h * SCALE));
+    if (outH > CAP) {
+      outW = Math.max(1, Math.round((outW * CAP) / outH));
+      outH = CAP;
     }
-    canvas.width = ow;
-    canvas.height = oh;
-    // rect 含四周 margin（覆盖洞穴鼓出·见 caveRect 注）＝边缘洞壁不再被画布裁掉。
-    const rgba = bakeCaveRGBA(caveGeom, caveRect, ow, oh);
-    const img = ctx.createImageData(ow, oh);
+    canvas.width = outW;
+    canvas.height = outH;
+    // rect 含四周 margin（洞穴鼓出 / 开阔海床下探）＝边缘不被画布裁掉；洞穴烤 bakeCaveRGBA·开阔烤 bakeOpenWaterRGBA。
+    const rgba = caveGeom
+      ? bakeCaveRGBA(caveGeom, sonarRect, outW, outH)
+      : bakeOpenWaterRGBA(owGeom!, sonarRect, outW, outH);
+    const img = ctx.createImageData(outW, outH);
     img.data.set(rgba);
     ctx.putImageData(img, 0, 0);
-  }, [caveRect, caveGeom]);
+  }, [sonarRect, caveGeom, owGeom]);
 
   function check(label: string, ok: boolean, detail?: string) {
     return (
@@ -282,17 +294,20 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
           </div>
         </div>
 
-        {/* 中：图（节点图 / 声呐洞穴图） */}
+        {/* 中：声呐图（洞穴 / 开阔水域）+ 节点·连边覆盖层；退化才回落纯节点图 */}
         <div className="dev-col dev-map-canvas-col">
           <h3 className="dev-col-title">
-            {showCave ? '声呐洞穴图' : '节点图'} · {map?.zoneId} · 布局 {map?.layoutStyle || 'vertical'}{' '}
+            {showSonar ? (caveGeom ? '声呐洞穴图' : '开阔水域声呐图') : '节点图'} · {map?.zoneId} · 布局{' '}
+            {map?.layoutStyle || 'vertical'}{' '}
             <span className="dev-faint">
-              {showCave
+              {caveGeom
                 ? '（声呐有机洞穴·整图全揭·与游戏内同一渲染·确定性同图同洞）'
-                : '（开阔水域无洞壁·列 = 到入口的树距 layer）'}
+                : owGeom
+                  ? '（开阔水域海床∪结构·整图全揭·与游戏内同一 bakeOpenWaterRGBA·连边＝dev 专属拓扑覆盖）'
+                  : '（无声呐几何·回退节点图·列 = 到入口的树距 layer）'}
             </span>
           </h3>
-          {!showCave ? (
+          {!showSonar ? (
           <>
           <div className="dev-map-svg-wrap">
             {map && layout && (
@@ -357,19 +372,36 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
           <div className="dev-map-svg-wrap dev-map-cave-wrap">
             {map &&
               caveLayout &&
-              caveRect &&
-              caveGeom && (
+              sonarRect &&
+              (caveGeom || owGeom) && (
                 <div
                   className="dev-map-cave-stack"
-                  style={{ width: caveRect.w, height: caveRect.h }}
+                  style={{ width: sonarRect.w, height: sonarRect.h }}
                 >
-                  <canvas ref={caveCanvasRef} className="dev-map-cave-canvas" />
+                  <canvas ref={sonarCanvasRef} className="dev-map-cave-canvas" />
                   <svg
                     className="dev-map-cave-overlay"
-                    viewBox={`${caveRect.x} ${caveRect.y} ${caveRect.w} ${caveRect.h}`}
-                    width={caveRect.w}
-                    height={caveRect.h}
+                    viewBox={`${sonarRect.x} ${sonarRect.y} ${sonarRect.w} ${sonarRect.h}`}
+                    width={sonarRect.w}
+                    height={sonarRect.h}
                   >
+                    {/* 连边覆盖层（dev 专属·游戏内声呐不画）：叠在声呐底上看拓扑·实线=主干/青虚=回边(chord)。
+                        与节点字用同一 caveLayout（声呐比例 pos）＝连边端点落在各节点/房间中心。先画边、后画字＝字压边上可读。 */}
+                    {caveLayout.edges.map((e, i) => {
+                      const pa = caveLayout.pos[e.a];
+                      const pb = caveLayout.pos[e.b];
+                      if (!pa || !pb) return null;
+                      return (
+                        <line
+                          key={i}
+                          className={`dev-cave-edge ${e.chord ? 'is-chord' : ''}`}
+                          x1={pa.x}
+                          y1={pa.y}
+                          x2={pb.x}
+                          y2={pb.y}
+                        />
+                      );
+                    })}
                     {Object.values(map.nodes).map((n) => {
                       const p = caveLayout.pos[n.id];
                       if (!p) return null;
@@ -389,10 +421,21 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
             )}
           </div>
           <div className="dev-map-legend">
-            <span><i className="dev-map-swatch" style={{ background: '#1f8a8a' }} />水道(蓝绿)</span>
-            <span><i className="dev-map-swatch" style={{ background: '#6ee8d7' }} />岩壁(发光青)</span>
-            <span><i className="dev-map-swatch" style={{ background: '#0a0e12' }} />岩石(暗)</span>
-            <span className="dev-faint">越深越暗 · 字 = 节点深度/类型 · 确定性（同图同洞·revisit 不变）</span>
+            {caveGeom ? (
+              <>
+                <span><i className="dev-map-swatch" style={{ background: '#1f8a8a' }} />水道(蓝绿)</span>
+                <span><i className="dev-map-swatch" style={{ background: '#6ee8d7' }} />岩壁(发光青)</span>
+                <span><i className="dev-map-swatch" style={{ background: '#0a0e12' }} />岩石(暗)</span>
+              </>
+            ) : (
+              <>
+                <span><i className="dev-map-swatch" style={{ background: '#1f8a8a' }} />水域(蓝绿)</span>
+                <span><i className="dev-map-swatch" style={{ background: '#6ee8d7' }} />海床/结构(发光青)</span>
+                <span><i className="dev-map-swatch" style={{ background: '#0a0e12' }} />岩体(暗)</span>
+              </>
+            )}
+            <span>— 连边(dev 专属·游戏内不画) · <span style={{ color: 'var(--accent)' }}>┄ 回边(chord)</span></span>
+            <span className="dev-faint">越深越暗 · 字 = 节点深度/类型 · 确定性（同图·revisit 不变）</span>
           </div>
           </>
           )}
