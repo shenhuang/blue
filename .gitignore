@@ -57,6 +57,12 @@ docs/NEXT_SESSION_PROMPT.md
 # 沙箱 mount 不能 unlink（quirk #1）——调试残骸删不掉·别让宽 `git add` 扫进 commit（临时脚本放 session scratchpad·照 tools/playtest-llm/.gitignore 先例）
 scripts/_debug*
 
+# 沙箱删不了→留盘等 Mac rm 的暂存/传输堆（quirk #1: mount 不能 unlink）——别让 git status/handoff 被 ?? 刷屏
+/_to_delete/
+/_push_tmp/
+# FUSE mount 删除残留（打开着的被删文件占位·纯 artifact·可现于任意目录）
+.fuse_hidden*
+
 # UI 截图 harness 产物全不入库（含 baseline）——基线按环境本地生成：跨平台字体渲染微差，
 # 沙箱 headless-shell 与 Mac chromium 的基线互不通用，故用前 --bless、改后 --check（见 docs/infra/ui-shoot.md）。
 screenshots/
