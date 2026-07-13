@@ -150,6 +150,38 @@ const funeral: SceneDef = {
   },
 };
 
+// 开阔水域声呐 look-dev（开阔水域 SPEC §8 Phase 2·2026-07-13）：把整张图标为已扫 + 站到最深节点
+// ⇒ 声呐取景框住海床（否则起手只框住顶部一圈水·海床在 zone 底看不到）。scanMemory 全填＝合法揭示态
+// （同 MapDevPanel 全揭示概览 mem[id]=0）·非手搓 phase（守本文件「用真引擎构造器」约定）。
+const revealAllAtDeepest = (s: GameState): GameState => {
+  const run = s.run;
+  if (!run?.map) return s;
+  const ids = Object.keys(run.map.nodes);
+  if (ids.length === 0) return s;
+  const scanMemory: Record<string, number> = {};
+  for (const id of ids) scanMemory[id] = 0;
+  const deepest = ids.reduce((a, b) => (run.map!.nodes[b].depth > run.map!.nodes[a].depth ? b : a), ids[0]);
+  return { ...s, run: { ...run, scanMemory, currentNodeId: deepest } };
+};
+
+// 三档各一 scene（开阔水域声呐·SPEC §5 沙/珊瑚/岩）：真引擎 createNewRun+startDive+enterNodeSelection（种子定死＝布局稳定）
+// → revealAllAtDeepest 框住海床。同时是 SPEC §7.2 要的开阔水域截图 baseline（?dev&scene=openwater_*）。
+const owScene = (id: string, label: string, zoneId: string, seed: number): SceneDef => ({
+  id,
+  label,
+  build: () => {
+    let s: GameState = { ...createInitialGameState(), run: createNewRun({ zoneId }) };
+    withSeededRandom(seed, () => {
+      s = startDive(s, zoneId);
+      if (s.run) s = enterNodeSelection(s);
+    });
+    return revealAllAtDeepest(s);
+  },
+});
+const openwaterSand = owScene('openwater_sand', '开阔水域·沙原（声呐）', 'zone.openwater_sand_test', 4101);
+const openwaterCoral = owScene('openwater_coral', '开阔水域·珊瑚礁（声呐）', 'zone.openwater_coral_test', 4102);
+const openwaterRock = owScene('openwater_rock', '开阔水域·岩矿礁（声呐）', 'zone.openwater_rock_test', 4103);
+
 // ── 注册 ──────────────────────────────────────────────────────────────────────
 
 export const SCENES: SceneDef[] = [
@@ -163,6 +195,9 @@ export const SCENES: SceneDef[] = [
   resolution,
   gameOver,
   funeral,
+  openwaterSand,
+  openwaterCoral,
+  openwaterRock,
 ];
 
 /** id → SceneDef 查表（ScenePreview 用）。 */

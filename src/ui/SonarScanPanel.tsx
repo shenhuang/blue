@@ -21,7 +21,7 @@ import { deriveMapLayout, type MapLayout } from './mapLayout';
 import { moveToNode } from '@/engine/dive';
 import { threatContact } from '@/engine/clarity';
 import { stalkerSonarBlip } from '@/engine/stalker';
-import { hash01, roomScale01 } from '@/engine/sonar';
+import { hash01, roomScale01, distSeg, fbm } from '@/engine/sonar';
 import {
   clampViewToBox,
   SONAR_PX_PER_M,
@@ -35,9 +35,10 @@ import {
   SMIN_K,
   CTRL_OFF,
   WALL_LO,
-  WALL_HI,
+  shadeSonarSdf,
 } from '@/engine/sonarGeometry';
-import { zoneAllowsBacktrack } from '@/engine/zones';
+import { buildOpenWaterGeometry, bakeOpenWaterRGBA } from './openWaterRender';
+import { zoneAllowsBacktrack, getZone } from '@/engine/zones';
 import { persistentExploredForRun } from '@/engine/caves';
 
 /** 纵向取景窗（窄×高·#92 上浅下深）：只显当前节点周围一片（SPEC「默认放大、几乎看不到全貌」）。 */
@@ -134,43 +135,8 @@ function kindGlyph(kind: string | undefined): string | null {
 // 有机洞穴场（确定性纯函数·canvas 用·也便于单测）
 // ============================================================
 
-/** 确定性 hash → [0,1)（值噪声用·不碰 RNG）。 */
-function hash2(x: number, y: number): number {
-  let h = (Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263)) >>> 0;
-  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
-  return (h % 1000) / 1000;
-}
-/** 平滑值噪声（双线性 + smoothstep）。 */
-function vnoise(x: number, y: number): number {
-  const xi = Math.floor(x);
-  const yi = Math.floor(y);
-  const xf = x - xi;
-  const yf = y - yi;
-  const u = xf * xf * (3 - 2 * xf);
-  const v = yf * yf * (3 - 2 * yf);
-  const a = hash2(xi, yi);
-  const b = hash2(xi + 1, yi);
-  const c = hash2(xi, yi + 1);
-  const d = hash2(xi + 1, yi + 1);
-  return a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v;
-}
-/** 分形叠加（不规则岩壁的有机感）。 */
-function fbm(x: number, y: number): number {
-  return 0.6 * vnoise(x, y) + 0.3 * vnoise(x * 2.1 + 11, y * 2.1 + 7) + 0.1 * vnoise(x * 4.3 + 3, y * 4.7 + 19);
-}
-/** 点到线段距离。 */
-function distSeg(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
-  const dx = bx - ax;
-  const dy = by - ay;
-  const l2 = dx * dx + dy * dy;
-  let t = l2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0;
-  t = t < 0 ? 0 : t > 1 ? 1 : t;
-  const cx = ax + t * dx;
-  const cy = ay + t * dy;
-  return Math.hypot(px - cx, py - cy);
-}
 
-// hash01 迁居 engine/sonar.ts（猎手 §5「容得下多大」与渲染同源·顶部 import）——输出逐字相同。
+// hash01/hash2/vnoise/fbm/distSeg 迁居 engine/sonar.ts（渲染同源单一来源·洞穴 + 开阔水域 openWaterRender 共用·顶部 import）——输出逐字相同。
 /** 平滑最小值（多项式 smin）：把相邻形状熔成连续有机表面（相邻房间并成一间大洞·非硬交线）。 */
 function smin(a: number, b: number, k: number): number {
   const h = Math.max(0, Math.min(1, 0.5 + (0.5 * (b - a)) / k));
@@ -467,23 +433,8 @@ export function bakeCaveRGBA(
       const d = caveSdf(wx, wy, cave.tuns, cave.rooms);
       const i = (gy * outW + gx) * 4;
       const tex = fbm(wx * 0.12, wy * 0.12); // 表面纹理
-      if (d < WALL_LO) {
-        // 水道内：蓝绿·越深越暗（wy 越靠 rect 底越深）。
-        const deepK = Math.min(1, Math.max(0, (wy - rect.y) / rect.h));
-        out[i] = 14 + 16 * tex;
-        out[i + 1] = 120 - 50 * deepK + 40 * tex;
-        out[i + 2] = 140 - 30 * deepK + 30 * tex;
-        out[i + 3] = 235;
-      } else if (d < WALL_HI) {
-        // 岩壁：发光青交界（回波轮廓）。
-        out[i] = 110 + 40 * tex;
-        out[i + 1] = 230;
-        out[i + 2] = 215;
-        out[i + 3] = 255;
-      } else {
-        // 岩石：透明（露出面板暗底＝岩）。
-        out[i + 3] = 0;
-      }
+      const deepK = Math.min(1, Math.max(0, (wy - rect.y) / rect.h));
+      shadeSonarSdf(out, i, d, deepK, tex);
     }
   }
   return out;
@@ -684,6 +635,9 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   const fullMemory: Record<string, number> = {};
   for (const id of allIds) fullMemory[id] = 0;
   const cave = layout && !isOpenWater ? buildCaveGeometry(layout, allIds, fullMemory) : { tuns: [], rooms: [] };
+  // 开阔水域几何（Phase 2·SPEC §2/§8）：填此前的 isOpenWater 空占位（旧 = 无声呐图·只黑底节点）。
+  // 临时从 layout+zone 确定性派生（Phase 2/3 契约·Phase 3 改由 mapgen 从节点喂）；非开阔 / 无 run → null。
+  const owGeom = layout && isOpenWater && run ? buildOpenWaterGeometry(layout, getZone(run.zoneId)) : null;
 
   // canvas（06-11 六修·常驻渲染循环）：本 effect 只负责「重烤数据」（离屏洞穴位图 + 几何参数 → bakeRef）
   // 与「开新一班波」（sweepRef）；**真正的逐帧合成由下面常驻 rAF 循环做**——effect 重跑/cleanup 永远
@@ -709,6 +663,12 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
       // 取景窗与 MapDevPanel 全图概览共用同一像素外观（bakeCaveRGBA·单一来源·守洞穴一致性 #100）。
       const img = octx.createImageData(ow, oh);
       img.data.set(bakeCaveRGBA(cave, rect, ow, oh));
+      octx.putImageData(img, 0, 0);
+      haveCave = true;
+    } else if (octx && isOpenWater && owGeom) {
+      // 开阔水域声呐图（Phase 2·SPEC §2）：边缘型海床 ∪ 结构层·喂同一段 shadeSonarSdf（继承观感·§0）。
+      const img = octx.createImageData(ow, oh);
+      img.data.set(bakeOpenWaterRGBA(owGeom, rect, ow, oh));
       octx.putImageData(img, 0, 0);
       haveCave = true;
     }

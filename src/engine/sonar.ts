@@ -118,3 +118,46 @@ export function revealSonarScan(map: DiveMap, originId: string, range: number): 
   }
   return [...seen];
 }
+
+// ============================================================
+// 渲染用纯几何/噪声 helper（SDF 渲染同源·单一来源）
+// —— 与 hash01/roomScale01 同脉络（「渲染兼职库出 ui」·渲染模块反向 import·输出逐字相同）。
+// 消费方：ui/SonarScanPanel（有机洞穴 caveSdf/bakeCaveRGBA）、ui/openWaterRender（开阔水域 openWaterSdf/bake）。
+// 迁此单一来源＝洞穴与开阔水域共用同一份噪声/距离函数·别在两处各抄一份（会漂）。
+// ============================================================
+
+/** 确定性 hash → [0,1)（值噪声用·不碰 RNG）。 */
+export function hash2(x: number, y: number): number {
+  let h = (Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263)) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+  return (h % 1000) / 1000;
+}
+/** 平滑值噪声（双线性 + smoothstep）。 */
+export function vnoise(x: number, y: number): number {
+  const xi = Math.floor(x);
+  const yi = Math.floor(y);
+  const xf = x - xi;
+  const yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf);
+  const v = yf * yf * (3 - 2 * yf);
+  const a = hash2(xi, yi);
+  const b = hash2(xi + 1, yi);
+  const c = hash2(xi, yi + 1);
+  const d = hash2(xi + 1, yi + 1);
+  return a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v;
+}
+/** 分形叠加（不规则岩壁的有机感）。 */
+export function fbm(x: number, y: number): number {
+  return 0.6 * vnoise(x, y) + 0.3 * vnoise(x * 2.1 + 11, y * 2.1 + 7) + 0.1 * vnoise(x * 4.3 + 3, y * 4.7 + 19);
+}
+/** 点到线段距离。 */
+export function distSeg(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const l2 = dx * dx + dy * dy;
+  let t = l2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  const cx = ax + t * dx;
+  const cy = ay + t * dy;
+  return Math.hypot(px - cx, py - cy);
+}

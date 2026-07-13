@@ -66,6 +66,51 @@
       "layoutStyle": "warren",
       "canFreeAscend": false,
       "_placeholder_doc": "占位 zone（蜂群 boss·The Warren·作者 2026-07-08 三卵室重设计·蜂群boss SPEC §8/§11）：mapShape=warren ⇒ mapgen.ts 分流到 generateWarrenMap（三卵室三角·女王随机起点·封口墙/密度/存卵全 run 态）。owner/门控/深度档/POI 归属 defer。requiresFlags 挂当前无事件设置的 flag.warren_discovered ⇒ 暂不可达（占位·待作者接发现门）。gates 省略（同 zone.horizontal_test·搜寻信号＝密度热度非声呐·quirk #239·不设感知门）。**2026-07-12 内容清空**：27 条真实洞穴 zone + zone.the_deep_gate 已删（仅留本 zone + 3 条 maze 朝向 QA 夹具 horizontal_test/vertical_test/serpentine_test）；flag.warren_discovered 仍无事件置位——本 zone 与全部下潜内容一样当前不可达，此为已知/接受状态，非待修 bug（见 QUIRKS）。"
+    },
+    {
+      "id": "zone.openwater_sand_test",
+      "name": "开阔·沙原（测试）",
+      "description": "一片平缓沙原开阔水域——只有沙波海床、无结构。（开发测试用·开阔水域声呐 look-dev·非正式内容）",
+      "depthRange": [18, 40],
+      "layerCount": 4,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["sand"] }
+      ],
+      "generation": "random",
+      "mapShape": "layered",
+      "canFreeAscend": true,
+      "_qa_fixture_doc": "开阔水域声呐渲染 look-dev 夹具（开阔水域 SPEC §8 Phase 2·2026-07-13）：mapShape=layered ⇒ isOpenWater ⇒ SonarScanPanel 走 openWaterSdf 边缘型海床分支。沙档＝无结构、只沙波 floor。浅/小 depthRange 便于声呐取景框住海床（配 scenes registry openwater_sand：scanMemory 全揭示 + 站最深节点）。tag 'sand' 仅选声呐形态·当前无对应事件（同 vertical_test tag 'cave' 亦无事件·空池已由 mapgen 兜底）。regionId 故意不填（落调试器「未分区/开发测试」桶·同 horizontal_test）。"
+    },
+    {
+      "id": "zone.openwater_coral_test",
+      "name": "开阔·珊瑚礁（测试）",
+      "description": "一片低矮致密的软珊瑚礁开阔水域——沙波海床上密排软珊瑚扇与圆钝瘤。（开发测试用·开阔水域声呐 look-dev·非正式内容）",
+      "depthRange": [16, 38],
+      "layerCount": 4,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["coral"] }
+      ],
+      "generation": "random",
+      "mapShape": "layered",
+      "canFreeAscend": true,
+      "_qa_fixture_doc": "开阔水域声呐渲染 look-dev 夹具（开阔水域 SPEC §8 Phase 2·2026-07-13）：珊瑚档＝软珊瑚扇（短基+±55°宽扇细枝·实心青线）+ 圆钝瘤/圆顶。见 zone.openwater_sand_test 头注同款技术说明。"
+    },
+    {
+      "id": "zone.openwater_rock_test",
+      "name": "开阔·岩矿礁（测试）",
+      "description": "一片圆钝大礁石的岩矿开阔水域——沙波海床上疏落大礁石、块间留缝、偶带圆顶拱洞。（开发测试用·开阔水域声呐 look-dev·非正式内容）",
+      "depthRange": [30, 60],
+      "layerCount": 4,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["rock"] }
+      ],
+      "generation": "random",
+      "mapShape": "layered",
+      "canFreeAscend": true,
+      "_qa_fixture_doc": "开阔水域声呐渲染 look-dev 夹具（开阔水域 SPEC §8 Phase 2·2026-07-13）：岩矿档＝圆钝礁丘（大圆盘并成·暗芯青边）+ 每 N 座一个圆顶拱洞（双腿+顶横梁）。见 zone.openwater_sand_test 头注同款技术说明。"
     }
   ]
 }

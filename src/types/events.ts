@@ -23,6 +23,10 @@ export type ZoneTag =
   // St1 一章锚点专属 zone 的事件池（剧情 SPEC §4.1·#117）：
   | 'midwater' // 远洋中层（开阔无底蓝水·锚点③）
   | 'vent' // 海沟热液场（黑烟柱·锚点④）
+  // 开阔水域声呐渲染档（开阔水域 SPEC §4·节点 zoneTag 一物两用：选声呐海床形态 + 偏置事件/材质池）：
+  | 'sand' // 沙原（平滑沙波·无结构）
+  | 'coral' // 珊瑚礁（低矮致密软珊瑚扇 + 圆钝瘤/顶）
+  | 'rock' // 岩矿礁（圆钝大礁石 + 拱洞·岩矿档 mine-gated 矿物掉落）
   // 洞型谱三变体新区（mapShape='maze'·各带专属事件池·depthCurveRange 把同一迷路机制铺成三种洞型·见 mapgen.ts caveShapeBucket）
   // ——2026-07-12 洞穴内容整删：本段原举例的三条 zone（shaft_crack/chamber_network/flooded_gallery）已随
   // 27 条真实洞穴 zone 一并删除（见 QUIRKS）；tag 定义本身仍有效，留给作者未来重建洞穴内容时复用：
