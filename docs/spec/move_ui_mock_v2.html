@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>移动 UI mock v2</title>
+<style>
+  :root{
+    --bg0:#050a10; --panel:#0d1a26; --panel2:#0b1620;
+    --line:#1c2f3f; --line2:#26404f;
+    --ink:#d3e0e8; --mut:#6d8494; --mut2:#48606f;
+    --teal:#57e0cf; --teal-d:#1c3d3c;
+    --amber:#f0c674; --orange:#f5985a; --red:#ef5d5d;
+    --mono:'SFMono-Regular',ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(120% 90% at 50% -10%,#0c1b28 0%,var(--bg0) 60%);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    display:flex;align-items:center;justify-content:center;min-height:100vh;padding:22px 14px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{width:100%;max-width:404px}
+  .panel{
+    background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line);border-radius:16px;
+    box-shadow:0 24px 60px -20px #000, inset 0 1px 0 #ffffff0a;
+    padding:18px 16px 14px;
+  }
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:13px}
+  .title{font-size:19px;font-weight:600;letter-spacing:.16em}
+  .loc{font-size:11.5px;color:var(--mut)}
+  .stats{display:flex;gap:8px;margin-bottom:15px}
+  .stat{flex:1;background:#0a1420;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .stat .k{display:block;font-size:10px;color:var(--mut);letter-spacing:.08em;margin-bottom:3px}
+  .stat .v{font-family:var(--mono);font-size:19px;font-weight:600;line-height:1}
+  .stat .v em{font-style:normal;font-size:10.5px;color:var(--mut);margin-left:2px;font-weight:400}
+
+  .sect{font-size:10.5px;color:var(--mut2);letter-spacing:.16em;margin:2px 2px 9px}
+
+  .node{background:#0e1a26;border:1px solid var(--line2);border-radius:12px;margin-bottom:9px;overflow:hidden}
+  .node.feat{border-color:#2c4a5a}
+  .node-head{display:flex;align-items:center;gap:11px;padding:11px 13px;cursor:pointer}
+  .dir{width:26px;height:26px;flex:0 0 auto;border-radius:7px;display:flex;align-items:center;justify-content:center;
+       font-size:15px;background:#12222f;border:1px solid var(--line2);color:var(--teal)}
+  .dir.down{color:var(--amber)}
+  .node-name{flex:1;min-width:0}
+  .node-name .nn{font-size:14.5px;font-weight:600;letter-spacing:.03em}
+  .node-name .ns{font-size:11px;color:var(--mut);margin-top:2px;font-family:var(--mono)}
+  .depth{font-family:var(--mono);font-size:13px;color:var(--mut);white-space:nowrap}
+  .chev{width:16px;height:16px;color:var(--mut2);transition:transform .2s;flex:0 0 auto}
+  .node.open .chev{transform:rotate(180deg)}
+
+  .body{border-top:1px solid var(--line);padding:14px 13px 13px;animation:drop .18s ease}
+  @keyframes drop{from{opacity:0}to{opacity:1}}
+  .lab{display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:.05em;margin-bottom:7px}
+  .lab .a{color:var(--teal)} .lab .b{color:var(--amber)}
+
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:6px;
+    background:linear-gradient(90deg,var(--teal) 0%,var(--amber) 55%,var(--orange) 78%,var(--red) 100%);
+    outline:none;margin:2px 0 2px;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+    background:#eaf6f4;border:3px solid #0a141e;box-shadow:0 0 0 1px var(--line2),0 3px 8px #000a;cursor:grab}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#eaf6f4;border:3px solid #0a141e}
+
+  .spd{text-align:center;font-size:12px;color:var(--mut);margin:5px 0 12px;letter-spacing:.06em}
+  .spd b{color:var(--ink);font-weight:600}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:12px}
+  .cell{background:#0a1622;border:1px solid var(--line);border-radius:9px;padding:8px 6px;text-align:center}
+  .cell .ck{font-size:10px;color:var(--mut);letter-spacing:.05em;margin-bottom:4px}
+  .cell .cv{font-family:var(--mono);font-size:18px;font-weight:600}
+  .cell .cv em{font-style:normal;font-size:10px;color:var(--mut);margin-left:1px;font-weight:400}
+
+  .dcs{border-radius:10px;padding:10px 12px;margin-bottom:13px;display:flex;align-items:center;justify-content:space-between;
+       border:1px solid var(--teal-d);background:linear-gradient(180deg,#0e2523,#0a1a1c);transition:.16s}
+  .dcs .dk{font-size:11.5px;color:var(--mut);letter-spacing:.04em}
+  .dcs .dv{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--teal)}
+  .dcs.s-mild{border-color:#3a3320;background:linear-gradient(180deg,#241f10,#141007)} .dcs.s-mild .dv{color:var(--amber)}
+  .dcs.s-bad{border-color:#43301c;background:linear-gradient(180deg,#2a1d10,#160e06)} .dcs.s-bad .dv{color:var(--orange)}
+  .dcs.s-lethal{border-color:#3a1c20;background:linear-gradient(180deg,#2c1216,#170a0c)} .dcs.s-lethal .dv{color:var(--red)}
+
+  .confirm{width:100%;cursor:pointer;background:linear-gradient(180deg,#123a37,#0e2b29);
+    border:1px solid #1f5450;color:#c9fff6;border-radius:11px;padding:12px;font-size:15px;font-weight:600;
+    letter-spacing:.1em;transition:.15s}
+  .confirm:hover{filter:brightness(1.12)}
+  .confirm.danger{background:linear-gradient(180deg,#3a1418,#2a0f12);border-color:#6a2029;color:#ffd9d9}
+
+  .mocknote{text-align:center;font-size:10px;color:var(--mut2);margin-top:12px;letter-spacing:.08em}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <div class="topbar"><div class="title">移动</div><div class="loc">你在 · 竖井中段</div></div>
+
+      <div class="stats">
+        <div class="stat"><span class="k">深度</span><span class="v">108<em>m</em></span></div>
+        <div class="stat"><span class="k">氮</span><span class="v">92<em>N₂</em></span></div>
+        <div class="stat"><span class="k">氧气</span><span class="v">30</span></div>
+      </div>
+
+      <div class="sect">选择去向</div>
+
+      <!-- featured, upward, expanded -->
+      <div class="node feat open" id="feat">
+        <div class="node-head" data-toggle>
+          <div class="dir">↑</div>
+          <div class="node-name">
+            <div class="nn">上行至 · 竖井口</div>
+            <div class="ns" id="sum">常速 · 耗氧 7 · 到达 N₂ 82</div>
+          </div>
+          <div class="depth">92m</div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="body" id="body">
+          <div class="lab"><span class="a">◀ 慢 · 稳(多排氮)</span><span class="b">快 · 赶(攒氮) ▶</span></div>
+          <input type="range" id="sp" min="1" max="5" step="1" value="3" />
+          <div class="spd">移动速度 · <b id="spName">常速</b></div>
+
+          <div class="grid">
+            <div class="cell"><div class="ck">回合</div><div class="cv" id="cTurns">6</div></div>
+            <div class="cell"><div class="ck">耗氧</div><div class="cv" id="cO2">7</div></div>
+            <div class="cell"><div class="ck">到达后</div><div class="cv" id="cN2">82<em>N₂</em></div></div>
+          </div>
+
+          <div class="dcs" id="dcs">
+            <span class="dk">到达后从此带上浮 · 预计</span>
+            <span class="dv" id="dcsVal">II 型</span>
+          </div>
+
+          <button class="confirm" id="confirm">确认上浮</button>
+        </div>
+      </div>
+
+      <!-- other options, collapsed -->
+      <div class="node">
+        <div class="node-head">
+          <div class="dir">→</div>
+          <div class="node-name"><div class="nn">横向 · 侧廊</div><div class="ns">常速 · 耗氧 5</div></div>
+          <div class="depth">110m</div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="node">
+        <div class="node-head">
+          <div class="dir down">↓</div>
+          <div class="node-name"><div class="nn">下行 · 裂隙</div><div class="ns">可能有氧气舱 · 但更深攒氮更凶</div></div>
+          <div class="depth">128m</div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+
+      <div class="mocknote">占位数值与配色 · 交互演示 · 上行例(慢=排氮更多)</div>
+    </div>
+  </div>
+
+<script>
+  var START_O2 = 30;
+  var T = {
+    turns:[10,8,6,4,3],
+    o2:   [10,8,7,6,6],
+    n2:   [68,76,82,88,92],
+    name: ['极慢·稳','慢','常速','快','冲']
+  };
+  var BENDS=['无','I 型','II 型','III 型','IV 型 · 致命'];
+  var BCLS =['','s-mild','s-mild','s-bad','s-lethal'];
+  function bendsOf(n2){ if(n2<50)return 0; if(n2<70)return 1; if(n2<82)return 2; if(n2<92)return 3; return 4; }
+
+  var sp=document.getElementById('sp');
+  function render(){
+    var i=+sp.value-1;
+    var turns=T.turns[i], o2=T.o2[i], n2=T.n2[i], b=bendsOf(n2);
+    document.getElementById('spName').textContent=T.name[i];
+    document.getElementById('cTurns').textContent=turns;
+    document.getElementById('cO2').textContent=o2;
+    document.getElementById('cN2').innerHTML=n2+'<em>N₂</em>';
+    document.getElementById('sum').textContent=T.name[i]+' · 耗氧 '+o2+' · 到达 N₂ '+n2;
+    document.getElementById('dcsVal').textContent=BENDS[b];
+    document.getElementById('dcs').className='dcs '+BCLS[b];
+    var c=document.getElementById('confirm');
+    if(b>=4){ c.classList.add('danger'); c.textContent='确认上浮 · 九死一生'; }
+    else { c.classList.remove('danger'); c.textContent='确认上浮'; }
+  }
+  sp.addEventListener('input',render);
+
+  document.querySelectorAll('[data-toggle]').forEach(function(h){
+    h.addEventListener('click',function(e){
+      if(e.target===sp) return;
+      document.getElementById('feat').classList.toggle('open');
+    });
+  });
+  render();
+</script>
+</body>
+</html>
