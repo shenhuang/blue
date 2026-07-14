@@ -637,7 +637,10 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   const cave = layout && !isOpenWater ? buildCaveGeometry(layout, allIds, fullMemory) : { tuns: [], rooms: [] };
   // 开阔水域几何（Phase 2·SPEC §2/§8）：填此前的 isOpenWater 空占位（旧 = 无声呐图·只黑底节点）。
   // 临时从 layout+zone 确定性派生（Phase 2/3 契约·Phase 3 改由 mapgen 从节点喂）；非开阔 / 无 run → null。
-  const owGeom = layout && isOpenWater && run ? buildOpenWaterGeometry(layout, getZone(run.zoneId)) : null;
+  const owGeom =
+    layout && isOpenWater && run
+      ? buildOpenWaterGeometry(layout, getZone(run.zoneId), run.map ?? undefined)
+      : null;
 
   // canvas（06-11 六修·常驻渲染循环）：本 effect 只负责「重烤数据」（离屏洞穴位图 + 几何参数 → bakeRef）
   // 与「开新一班波」（sweepRef）；**真正的逐帧合成由下面常驻 rAF 循环做**——effect 重跑/cleanup 永远

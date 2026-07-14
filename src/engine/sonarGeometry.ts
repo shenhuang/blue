@@ -91,16 +91,19 @@ export const CAVE_GEOM_MARGIN = Math.ceil(
 //   喂进与洞穴同一段 shadeSonarSdf ⇒ 继承声呐观感（水/发光边/透明岩三档不变）。
 // 数值＝SPEC §5 起步值（照 edge4 形态脚注）；**手感一律 defer 到进引擎对着真渲染器一次性调**（[[defer-number-tuning]]·§9）。
 
-// floor contour（单值 heightfield·sin 谐波 + 极缓长起伏·SPEC §5「圆滑正弦沙波·低幅~10–14px + 更细谐波 + 极缓长起伏」）
-export const OW_FLOOR_AMP = 11; // 主沙波幅（世界）
-export const OW_FLOOR_WAVELEN = 88; // 主沙波长
-export const OW_FLOOR_AMP2 = 3.5; // 次谐波幅（更细）
-export const OW_FLOOR_WAVELEN2 = 31; // 次谐波长
-export const OW_SWELL_AMP = 7; // 极缓长起伏幅
-export const OW_SWELL_WAVELEN = 340; // 极缓长起伏波长
-export const OW_FLOOR_GAP = 30; // 海床基线在「最深节点」之下的世界偏移（落进最深节点揭示圆内·仍可见）
+// floor contour（2026-07-13 改·edge5 反馈·2026-07-14 五轮定稿「扁平·波长不规则」）：低频形状＝节点锚点
+// 插值（每节点贴海床面·终点节点不再飘空·见 openWaterRender::owFloorY／buildOpenWaterGeometry 的 anchors）；
+// 高频细节＝单一正弦，但相位走「保证不折叠」的调制（rate=k(1+m·sin(t·s))恒正⇒相位积分严格单调）让局部
+// 波长在 WAVELEN/(1±OW_RIPPLE_WARP_DEPTH) 间伸缩——量过 flips 不变（纯正弦基线）、波峰间距真的疏密不均。
+// 踩过的坑见 SPEC §5.2/§5.3：折叠幂出尖峰／双正弦干涉出尖角／fbm 相位扭曲在这个定义域内太接近线性、
+// 扭不出可见疏密。总幅上界 = OW_FLOOR_AMP 必须明显小于 OW_FLOOR_GAP，否则沙纹会在节点锚点处顶穿海床。
+export const OW_FLOOR_AMP = 3; // 波幅（世界·2026-07-14 六轮再压——上一版 6 作者反馈仍然「太高」）
+export const OW_FLOOR_WAVELEN = 95; // 基准波长（局部随 WARP_DEPTH/WARP_FREQ 在这个值附近伸缩）
+export const OW_RIPPLE_WARP_DEPTH = 0.55; // 局部波长伸缩深度（<1·越大疏密差越大·恒正保证相位不折叠）
+export const OW_RIPPLE_WARP_FREQ = 0.045; // 疏密调制的空间频率（多远切换一次疏/密）
+export const OW_FLOOR_GAP = 30; // 海床基线在节点之下的世界偏移（落进节点揭示圆内·仍可见）
 export const OW_FLOOR_NOISE = 0; // floor SDF 层噪声（SPEC §2.4「少加或不加」·默认 0 避免平边零星青点·留旋钮）
-export const OW_CULL_MARGIN = 40; // bake 时按取景窗 x 窗口剔除结构的余量（世界·结构可横跨整 zone·剔除令 bake 有界）
+export const OW_CULL_MARGIN = 40; // bake 时按取景窗 x 窗口现算/剔除结构的余量（世界·结构按需现算·不再靠预建列表）
 
 // 珊瑚（SPEC §5「低矮致密连片礁·软珊瑚扇＝短基+±55°宽扇细枝·枝端小绒球·宽≥高·别做树」·edge4 脚注）
 export const OW_CORAL_SPACING = 21; // 珊瑚簇沿海床的列间距（密排略叠）
@@ -114,14 +117,18 @@ export const OW_CORAL_TIP_R = 1.9; // 枝端绒球半径
 export const OW_CORAL_BUMP_R = 3.6; // 圆钝小瘤半径（> WALL_HI ⇒ 暗芯+青边＝「暗块」）
 export const OW_CORAL_DOME_R = 6.2; // 小圆顶半径（半沉入海床）
 
-// 岩矿（SPEC §5「中等圆滑大礁石·几枚大圆盘并成圆钝丘·块间留缝·一块带圆顶拱洞·非嶙峋非尖刺」·edge4 脚注）
-export const OW_ROCK_SPACING = 50; // 礁石沿海床的列间距（块间留缝）
+// 岩矿（SPEC §5「中等圆滑大礁石·几枚大圆盘并成圆钝丘·块间留缝·非嶙峋非尖刺」·edge4 脚注·
+// 2026-07-13 去掉「一块带圆顶拱洞」变体——双腿+抛物顶的悬空倒 U 视觉上像漂浮的拱门·作者反馈去掉·
+// 2026-07-14 七轮再压间距——作者反馈「平坦部分少点、多点岩石」，块间裸沙缝隙太宽了）
+export const OW_ROCK_SPACING = 34; // 礁石沿海床的列间距（原 50·压密后块间仍留缝但明显更挤）
 export const OW_ROCK_MOUND_R = 16; // 主圆盘半径
 export const OW_ROCK_MOUND_H = 0.78; // 主盘中心高度系数（edge4·中心露出海床 ≈ R×此值）
 export const OW_ROCK_SIDE_R = 10; // 侧盘半径（并成圆钝丘）
-export const OW_ROCK_ARCH_EVERY = 4; // 每第 N 座礁石改成拱洞（双腿+圆顶·内缝＝拱洞）
-export const OW_ROCK_ARCH_SPAN = 15; // 拱两腿间距（半跨·内缝＝拱洞）
-export const OW_ROCK_ARCH_H = 19; // 拱腿高（腿长·顶再由 RISE 起拱）
-export const OW_ROCK_ARCH_RISE = 9; // 圆顶起拱高（抛物顶·SPEC「圆顶拱洞」非平横梁）
-export const OW_ROCK_LEG_R = 3.6; // 拱腿半宽
-export const OW_ROCK_BEAM_R = 3.6; // 圆顶弧半宽
+// 结构最大下探（供 owFloorBottom 算画布下沿·跟随上面旋钮自动调整·别手抄数字·同 CAVE_GEOM_MARGIN 手法）
+export const OW_STRUCT_MAX_DROP = Math.ceil(
+  Math.max(
+    OW_ROCK_MOUND_R * (2 - OW_ROCK_MOUND_H), // 主盘沉入 (1−H)R 后·盘身仍下探到中心+R
+    OW_ROCK_SIDE_R * (2 - OW_ROCK_MOUND_H),
+    OW_CORAL_DOME_R * 1.4,
+  ) + 6,
+);

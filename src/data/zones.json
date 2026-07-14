@@ -100,7 +100,7 @@
     {
       "id": "zone.openwater_rock_test",
       "name": "开阔·岩矿礁（测试）",
-      "description": "一片圆钝大礁石的岩矿开阔水域——沙波海床上疏落大礁石、块间留缝、偶带圆顶拱洞。（开发测试用·开阔水域声呐 look-dev·非正式内容）",
+      "description": "一片圆钝大礁石的岩矿开阔水域——沙波海床上疏落大礁石、块间留缝。（开发测试用·开阔水域声呐 look-dev·非正式内容）",
       "depthRange": [30, 60],
       "layerCount": 4,
       "nodesPerLayer": [2, 3],
@@ -110,7 +110,22 @@
       "generation": "random",
       "mapShape": "layered",
       "canFreeAscend": true,
-      "_qa_fixture_doc": "开阔水域声呐渲染 look-dev 夹具（开阔水域 SPEC §8 Phase 2·2026-07-13）：岩矿档＝圆钝礁丘（大圆盘并成·暗芯青边）+ 每 N 座一个圆顶拱洞（双腿+顶横梁）。见 zone.openwater_sand_test 头注同款技术说明。"
+      "_qa_fixture_doc": "开阔水域声呐渲染 look-dev 夹具（开阔水域 SPEC §8 Phase 2·2026-07-13·二轮反馈去掉圆顶拱洞变体）：岩矿档＝圆钝礁丘（大圆盘并成·暗芯青边）。见 zone.openwater_sand_test 头注同款技术说明。"
+    },
+    {
+      "id": "zone.openwater_reef_test",
+      "name": "开阔·珊瑚礁（岩+珊瑚混合·测试）",
+      "description": "礁石打底、珊瑚密布其上的混合开阔水域——圆钝礁丘作骨架，软珊瑚扇沿礁面与沙面密排。（开发测试用·开阔水域声呐 look-dev·非正式内容）",
+      "depthRange": [20, 45],
+      "layerCount": 4,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["atoll"] }
+      ],
+      "generation": "random",
+      "mapShape": "layered",
+      "canFreeAscend": true,
+      "_qa_fixture_doc": "开阔水域声呐渲染 look-dev 夹具（开阔水域 SPEC §8 Phase 2·2026-07-14 六轮·作者提议「珊瑚长在岩矿上」）：tag 'atoll'（不用通用内容 tag 'reef'，避免语义打架）→ OwStyle 'reef' 混合档＝先按 OW_ROCK_SPACING 撒圆钝礁丘打底，再按 OW_CORAL_SPACING 密布软珊瑚扇——珊瑚生根点用 surfaceYAt 贴着礁面/裸沙面走（礁石区珊瑚长在礁顶、礁石间隙珊瑚长在沙面），不是统一贴平地。见 zone.openwater_sand_test 头注同款技术说明。"
     }
   ]
 }

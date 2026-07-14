@@ -164,8 +164,9 @@ const revealAllAtDeepest = (s: GameState): GameState => {
   return { ...s, run: { ...run, scanMemory, currentNodeId: deepest } };
 };
 
-// 三档各一 scene（开阔水域声呐·SPEC §5 沙/珊瑚/岩）：真引擎 createNewRun+startDive+enterNodeSelection（种子定死＝布局稳定）
-// → revealAllAtDeepest 框住海床。同时是 SPEC §7.2 要的开阔水域截图 baseline（?dev&scene=openwater_*）。
+// 四档各一 scene（开阔水域声呐·SPEC §5 沙/珊瑚/岩/珊瑚礁混合）：真引擎 createNewRun+startDive+enterNodeSelection
+// （种子定死＝布局稳定）→ revealAllAtDeepest 框住海床。同时是 SPEC §7.2 要的开阔水域截图 baseline
+// （?dev&scene=openwater_*·2026-07-14 六轮加 reef 档）。
 const owScene = (id: string, label: string, zoneId: string, seed: number): SceneDef => ({
   id,
   label,
@@ -181,6 +182,7 @@ const owScene = (id: string, label: string, zoneId: string, seed: number): Scene
 const openwaterSand = owScene('openwater_sand', '开阔水域·沙原（声呐）', 'zone.openwater_sand_test', 4101);
 const openwaterCoral = owScene('openwater_coral', '开阔水域·珊瑚礁（声呐）', 'zone.openwater_coral_test', 4102);
 const openwaterRock = owScene('openwater_rock', '开阔水域·岩矿礁（声呐）', 'zone.openwater_rock_test', 4103);
+const openwaterReef = owScene('openwater_reef', '开阔水域·珊瑚礁混合（声呐）', 'zone.openwater_reef_test', 4104);
 
 // ── 注册 ──────────────────────────────────────────────────────────────────────
 
@@ -198,6 +200,7 @@ export const SCENES: SceneDef[] = [
   openwaterSand,
   openwaterCoral,
   openwaterRock,
+  openwaterReef,
 ];
 
 /** id → SceneDef 查表（ScenePreview 用）。 */

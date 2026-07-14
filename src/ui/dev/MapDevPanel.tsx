@@ -188,7 +188,7 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
     return buildCaveGeometry(caveLayout, ids, mem);
   }, [map, caveLayout, isOpenWater]);
   const owGeom = useMemo(
-    () => (map && caveLayout && isOpenWater ? buildOpenWaterGeometry(caveLayout, zone) : null),
+    () => (map && caveLayout && isOpenWater ? buildOpenWaterGeometry(caveLayout, zone, map) : null),
     [map, caveLayout, isOpenWater, zone],
   );
 
