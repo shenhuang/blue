@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // 全绿回归 runner —— 一条命令跑完整套回归门，进程隔离 + 并行。
 //
-// 取代「每步手动分批跑 21 个 playthrough」的旧约定（见 docs/NEXT_SESSION_PROMPT.md §9）。
+// 取代「每步手动分批跑 21 个 playthrough」的旧约定（见 docs/HANDOFF.md §9）。
 // 把回归文化（quirk #22/#26）做成单命令：
 //   tsc 类型检查 + 全部 scripts/playthrough*.ts + verify-tutorial.mjs
 //   + smoke-chart-ui.tsx + 生产 vite build（落临时目录）。

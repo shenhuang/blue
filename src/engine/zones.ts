@@ -9,7 +9,7 @@ import zonesData from '@/data/zones.json';
 // midwater/vent/rocky_slope 开阔海域事件 + 27 条真实洞穴 zone（含最后存活的 blue_caves 2 条
 // poiId 内容）+ zone.the_deep_gate 全部删除；zones.json 仅剩 zone.warren + 3 条 maze 朝向 QA 夹具
 // （horizontal_test/vertical_test/serpentine_test）。开放水域与主线内容由作者未来重写（见 docs/QUIRKS +
-// docs/NEXT_SESSION_PROMPT）。引擎（mapgen/事件池/EVENT_DB 装载）不变——机制留、只是暂无叙事数据可抽；
+// docs/HANDOFF）。引擎（mapgen/事件池/EVENT_DB 装载）不变——机制留、只是暂无叙事数据可抽；
 // 洞穴/持久洞入口机制留、内容空。EVENT_DB 现只装 events/qa_fixture.json 一条非叙事 QA 夹具事件
 // （见该文件头注）——纯为不让 EventView/事件统计/揭示归因等既有 regress 覆盖随内容一起归零。
 

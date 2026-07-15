@@ -43,7 +43,7 @@ yarn-error.log*
 .deploy-token
 
 # local session-handoff prompt (regenerated each session — keep local, never publish)
-docs/NEXT_SESSION_PROMPT.md
+docs/HANDOFF.md
 
 # local project-instructions for Claude sessions (kept local by author decision — never publish)
 /CLAUDE.md

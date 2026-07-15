@@ -13,7 +13,7 @@
 //   ∪ ② QUIRKS.md 墓碑条目（#208）「裁撤号段：…」点名的号段（历史指针·合法）。
 //   不在并集 → 打印 file:line + 编号 → 退 1。
 //
-// 另跳过 docs/NEXT_SESSION_PROMPT.md：本地 session 交接文件·已 gitignore·每 session 重写
+// 另跳过 docs/HANDOFF.md：本地 session 交接文件（旧名 NEXT_SESSION_PROMPT.md）·已 gitignore·每 session 重写
 //   （CLAUDE.md 文档维护约定）——不是仓库内容，别让它把门在单机上弄红。
 //
 // 与既有门同族（纯 node·导出纯决策函数便于单测）。在 scripts/regress.mjs 注册为 check-quirk-refs 任务。
@@ -27,9 +27,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
 const QUIRKS_REL = 'docs/QUIRKS.md';
-// 扫描根（相对 ROOT）。docs/archive/ 与 NEXT_SESSION_PROMPT 见档头说明。
+// 扫描根（相对 ROOT）。docs/archive/ 与 HANDOFF.md 见档头说明。
 const SCAN_ROOTS = ['src', 'scripts', 'docs', 'CLAUDE.md'];
-const SKIP_REL = new Set(['docs/archive', 'docs/NEXT_SESSION_PROMPT.md']);
+const SKIP_REL = new Set(['docs/archive', 'docs/HANDOFF.md']);
 // 只读文本文件（防扫进二进制/图片）。
 const TEXT_EXT = /\.(ts|tsx|js|jsx|mjs|cjs|md|json|css|html|mmd|txt)$/i;
 

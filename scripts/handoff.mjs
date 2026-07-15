@@ -3,7 +3,7 @@
 //
 // 取代交接 prompt 里手抄的「做了什么 / 当前进度」——那是最易随 session churn 漂移的一层
 // （上一轮已亲眼见交接 prompt 写的 HEAD 落后于真实 HEAD）。起手只需 `npm run handoff`，
-// 把「当前状态 / 定位」交给脚本，人写的交接（NEXT_SESSION_PROMPT.md）只保留方向 / 下一步。
+// 把「当前状态 / 定位」交给脚本，人写的交接（docs/HANDOFF.md·旧名 NEXT_SESSION_PROMPT.md）只保留方向 / 下一步；本脚本末尾内联它。
 //
 // 纯只读 · 不改任何东西：
 //   - git 一律 --no-optional-locks（不产生 index.lock，守 [[sandbox-git-commit]] 约定）。
@@ -208,4 +208,18 @@ console.log(
   recentChangelogTitles(readOr('docs/archive/CHANGELOG.md', '(无 docs/archive/CHANGELOG.md)'), CHANGELOG_TITLES_N),
 );
 
-console.log('\n— 定位完毕。方向 / 下一步见 docs/NEXT_SESSION_PROMPT.md（人写·本地·不提交）。');
+// —— 5. 人写方向 / 下一步（docs/HANDOFF.md·gitignored·每 session 重写·quirk #96·末尾内联省得再开一个文件）——
+console.log(hr('HANDOFF.md 方向 / 下一步（人写·本地·不提交）'));
+{
+  const handoffPath = resolve(ROOT, 'docs/HANDOFF.md');
+  if (existsSync(handoffPath)) {
+    const hl = readFileSync(handoffPath, 'utf-8').trimEnd().split('\n');
+    const CAP = 120;
+    console.log(hl.slice(0, CAP).join('\n'));
+    if (hl.length > CAP) console.log(`\n…（截断·全文见 docs/HANDOFF.md·共 ${hl.length} 行）`);
+  } else {
+    console.log('(无 docs/HANDOFF.md —— 尚无人写方向·起手靠上方 git 定位即可)');
+  }
+}
+
+console.log('\n— 定位完毕。');
