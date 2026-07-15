@@ -200,5 +200,12 @@ export type Condition =
    * npcId 必须是真 NPC（check-npc-trust 守）。
    */
   | { kind: 'npcTrustTier'; npcId: string; minTier: number }
+  /**
+   * 开阔水域「贴底节点」门控（开阔水域 SPEC §4·zoneTag 一物两用）：当前节点是贴底节点
+   * （分支终点 ∧ zoneTag 是有海床档 sand/coral/rock/atoll·见 engine/seabed.ts::seabedNodeIds）即满足。
+   * 让珊瑚采集 / 矿床 / 海底爬行生物 / 尸体 / 巢穴等**贴底专属**内容只在真正到海床的节点出现，
+   * 不在悬空中层（midwater 无底蓝水）节点出现。派生·纯拓扑+tag·不入存档。
+   */
+  | { kind: 'atSeabed' }
   | { kind: 'all'; of: Condition[] }
   | { kind: 'any'; of: Condition[] };

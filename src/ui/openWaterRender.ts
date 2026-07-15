@@ -7,7 +7,7 @@
 // （与洞穴同源·不复制）。
 //   d = max( wy − floorY(wx),  结构 field union )  →  边缘型 floor（单值·不碎/不悬空）∪ 坐在海床上的离散结构。
 // 2026-07-13 look-dev 反馈三改（本文件这版·二轮：初版按「每个节点插值」实测会在列间距抖出尖峰·收窄成
-// 只用分支终点·见 terminalNodeIds）：
+// 只用贴底节点·见 @/engine/seabed::seabedNodeIds）：
 //   ① floor 低频形状改由**终点节点**锚点反距离加权插值（不再是单一 baseY 常数）——每条分支的终点自身 x 处
 //      海床贴着它的实际深度走·不再飘空；高频细节改「折叠 sin 出尖脊窄谷 + 域扭曲」的 ridge 沙纹，不是圆头正弦。
 //   ② rock 去掉「圆顶拱洞」变体（悬空倒 U）·统一走圆钝礁丘。
@@ -18,6 +18,7 @@
 // （同一套契约·换喂料源）。
 
 import { hash01, distSeg, fbm } from '@/engine/sonar';
+import { seabedNodeIds } from '@/engine/seabed';
 import type { ZoneDef, DiveMap } from '@/types';
 import type { MapLayout } from './mapLayout';
 import {
@@ -79,6 +80,8 @@ export interface OwGeom {
   floor: OwFloor;
   style: OwStyle;
   seed: string;
+  /** 本图有没有海床：false＝开阔无底蓝水（midwater·无贴底节点）⇒ bake 整窗全水·无 floor 无结构（SPEC §4）。 */
+  floored: boolean;
 }
 
 /**
@@ -263,27 +266,14 @@ function structsInRange(style: OwStyle, seed: string, floor: OwFloor, xLo: numbe
 }
 
 /**
- * 一节点「没有更深的邻居」⇒ 分支终点（下潜到此必须掉头/上浮的地方·涵盖真死路 + 全图最深层——
- * 后者彼此深度相同、天然共线，前者可能比全图最深浅得多）。分层图 connectsTo 对称（双向含来路），
- * 用「深度」而非「度」判终点——不用另跑 analyzeMap（那是 dev 面板可视化用的重分析，这里只要终点集合）。
- */
-function terminalNodeIds(map: DiveMap): Set<string> {
-  const terminals = new Set<string>();
-  for (const id of Object.keys(map.nodes)) {
-    const n = map.nodes[id];
-    const hasDeeper = n.connectsTo.some((nid) => (map.nodes[nid]?.depth ?? -Infinity) > n.depth);
-    if (!hasDeeper) terminals.add(id);
-  }
-  return terminals;
-}
-
-/**
  * 由布局派生开阔水域几何（Phase 2 临时派生·Phase 3 交给 mapgen·契约＝OwGeom）：
- * floor 锚点＝**分支终点节点**（自身 x）之下 OW_FLOOR_GAP（落进其揭示圆内·游戏内可见）——只挑终点、不是
- * 每个节点：分层图里同一层节点常常落在相近的 x（列位置按层各自居中分配·边之间交叉画），若给路过的每个
- * 中间节点都强行按精确深度插值，会在列与列之间炸出尖锐的尖峰（沙纹变成一排倒挂冰柱，不是海床——2026-07-13
- * look-dev 二轮反馈实测过）。终点数量少、间距天然更宽，IDW 插值出的海床形状更接近真实起伏而非逐点强拟合。
- * 没有 map（理论上不该发生·两个调用方都传了）时退化为用全部节点，不炸但也不精确贴终点。
+ * floor 锚点＝**贴底节点**（分支终点 ∧ 有海床档·engine/seabed.ts::seabedNodeIds 单源·与事件 atSeabed 同源）
+ * 自身 x 之下 OW_FLOOR_GAP（落进其揭示圆内·游戏内可见）——只挑贴底节点、不是每个节点：分层图里同一层
+ * 节点常落在相近的 x（列位置按层各自居中分配·边之间交叉画），若给路过的每个中间节点都强行按精确深度插值，
+ * 会在列与列之间炸出尖锐的尖峰（沙纹变成一排倒挂冰柱，不是海床——2026-07-13 look-dev 二轮反馈实测过）。
+ * 终点数量少、间距天然更宽，IDW 插值出的海床形状更接近真实起伏而非逐点强拟合。
+ * **无贴底节点（整图 midwater 无底蓝水）⇒ floored=false**：不建 floor·bake 整窗全水（见 bakeOpenWaterRGBA）。
+ * 没有 map（理论上不该发生·两个调用方都传了）时退化为「用全部节点、当有海床」，不炸但不精确贴终点。
  * 结构不在这里生成，留给 bake 时按实际取景窗现算（structsInRange）。
  * 确定性·纯函数（同 zone 同 layout 同海床·守感知诚实/可复现·SPEC §3）。
  */
@@ -294,7 +284,9 @@ export function buildOpenWaterGeometry(
 ): OwGeom {
   const style = openWaterStyleOf(zone);
   const seed = zone?.id ?? 'ow';
-  const anchorIds = map ? terminalNodeIds(map) : new Set(Object.keys(layout.pos));
+  const seabed = map ? seabedNodeIds(map) : null;
+  const floored = seabed ? seabed.size > 0 : true; // 无 map 的退化路径当作有海床（旧行为）
+  const anchorIds = seabed ?? new Set(Object.keys(layout.pos));
   let maxY = -Infinity;
   const anchors: Array<{ x: number; y: number }> = [];
   for (const id of anchorIds) {
@@ -303,9 +295,11 @@ export function buildOpenWaterGeometry(
     if (p.y > maxY) maxY = p.y;
     anchors.push({ x: p.x, y: p.y + OW_FLOOR_GAP });
   }
+  // floorless（无锚点）时 maxY 仍是 -Inf：拿全图最深节点当兜底基线（仅供 owFloorBottom 取景·不画 floor）。
+  if (!floored) for (const id of Object.keys(layout.pos)) { const p = layout.pos[id]; if (p && p.y > maxY) maxY = p.y; }
   const fallbackY = (isFinite(maxY) ? maxY : layout.height) + OW_FLOOR_GAP;
   const floor: OwFloor = { anchors, fallbackY, phase: hash01('owph' + seed) * 997 };
-  return { floor, style, seed };
+  return { floor, style, seed, floored };
 }
 
 /**
@@ -315,6 +309,8 @@ export function buildOpenWaterGeometry(
  * OW_STRUCT_MAX_DROP 由结构旋钮算·手感调了也不用手抄数字（跟 CAVE_GEOM_MARGIN 同理）。纯函数。
  */
 export function owFloorBottom(geom: OwGeom): number {
+  // floorless（无底蓝水）：没有海床/结构可裁·下沿就取兜底基线（全图最深节点之下一点），别加 floor/结构余量。
+  if (!geom.floored) return geom.floor.fallbackY;
   let maxAnchorY = geom.floor.fallbackY;
   for (const a of geom.floor.anchors) if (a.y > maxAnchorY) maxAnchorY = a.y;
   return maxAnchorY + OW_FLOOR_AMP + OW_STRUCT_MAX_DROP; // OW_FLOOR_AMP＝正弦幅值上界
@@ -333,12 +329,15 @@ export function bakeOpenWaterRGBA(
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(outW * outH * 4);
   const lo = rect.x - OW_CULL_MARGIN, hi = rect.x + rect.w + OW_CULL_MARGIN;
-  const structs = structsInRange(geom.style, geom.seed, geom.floor, lo, hi);
+  // floorless（开阔无底蓝水）：无海床无结构 ⇒ 每像素恒为水（d 远小于 WALL_LO），只保留 deepK 深度渐变。
+  // 别走 openWaterSdf——它对空锚点会退化成 fallbackY 处一条平海床（interpAnchorY 空集回 fallbackY），非无底。
+  const WATER = -1000; // 恒判为水的 SDF 哨兵（shadeSonarSdf 三档：d<WALL_LO 即水）
+  const structs = geom.floored ? structsInRange(geom.style, geom.seed, geom.floor, lo, hi) : { disks: [], caps: [] };
   for (let gy = 0; gy < outH; gy++) {
     for (let gx = 0; gx < outW; gx++) {
       const wx = rect.x + ((gx + 0.5) / outW) * rect.w;
       const wy = rect.y + ((gy + 0.5) / outH) * rect.h;
-      const d = openWaterSdf(wx, wy, geom.floor, structs);
+      const d = geom.floored ? openWaterSdf(wx, wy, geom.floor, structs) : WATER;
       const i = (gy * outW + gx) * 4;
       const tex = fbm(wx * 0.12, wy * 0.12); // 表面纹理（同洞穴）
       const deepK = Math.min(1, Math.max(0, (wy - rect.y) / rect.h));

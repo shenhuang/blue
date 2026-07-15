@@ -21,6 +21,7 @@ import { lampPowerDrain, alertDelta, ALERT_MAX } from './clarity';
 import { stepNitrogen } from './nitrogen';
 import { getCaveTemperature, stepThermalStress, thermalStaminaDrain } from './temperature';
 import { trustTier } from './trust';
+import { seabedNodeIds } from './seabed';
 
 // —— 数据装载 ——
 // 单一事件库是 zones.ts::EVENT_DB（含全部 zone 的事件）。getEvent 直接委托给它，
@@ -88,6 +89,9 @@ export function evalCondition(state: GameState, c: Condition): boolean {
     case 'npcTrustTier':
       // NPC 信任档门控（通用信任系统·SPEC §3.4）：派生档 ≥ minTier。信任读派生一律走 engine/trust.ts（单源）。
       return trustTier(profile, c.npcId) >= c.minTier;
+    case 'atSeabed':
+      // 开阔水域贴底门控（SPEC §4）：当前节点 ∈ 贴底节点集（engine/seabed.ts 单源·渲染层同源）。
+      return run !== null && run.map !== null && run.currentNodeId !== null && seabedNodeIds(run.map).has(run.currentNodeId);
     case 'all':
       return c.of.every((sub) => evalCondition(state, sub));
     case 'any':
@@ -217,6 +221,7 @@ function attributionOf(state: GameState, c: Condition): string | null {
     case 'notHasFlag':
     case 'depthAtLeast':
     case 'npcTrustTier':
+    case 'atSeabed':
       return null;
   }
 }
