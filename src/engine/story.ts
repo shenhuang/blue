@@ -1,21 +1,26 @@
-// 剧情脊柱（St0 · 剧情 SPEC §8 路线图第一步 · CHANGELOG #115）
+// 剧情脊柱（St0 骨架）——⚠ 旧「剧情 SPEC」已随 #300「彻底白板」删除（2026-07-12·tutorial+ch1 主线整删）。
+// 本模块现为**休眠脚手架**（allStoryFlags/ch1Story/chapterUnlocked 当前无调用点）；下方 §引用皆指向
+// 已删文档、仅存历史线索，口径待主线重建重定。终局方向见 docs/spec/深海回响_大深渊结局_SPEC.md。
+// （原 CHANGELOG #115）
 //
 // 章节/节拍状态**从 profile.flags 派生**——flags 是唯一事实来源，本模块零自有状态、
 // 零存档字段（沿 #66 outpostStageFlag / #69 setProfileFlags 的 additive 套路，不 bump
 // SAVE_VERSION；quirk #99：改坏形状才 bump 弃档，纯加 flag 永远安全）。
 //
-// 命名口径（剧情 SPEC §8 St0 行锁定）：`story.<章>.<节拍>`
+// 命名口径：`story.<章>.<节拍>`
 //   - story.ch1.hook              教学钩：半本日志开场已读（教学关 prologue 经
 //                                 setProfileFlags 写入——dive 中也持久，死在教学关不丢钩）
 //   - story.ch1.anchor.<id>       一章四锚点节拍位（St1 实装锚点链时由锚点事件置位）
-//   - story.ch1.ending.fulfilled  圆满结局位（St1 末实装；canon：主角以为的真结局·按当时为真）
-//   - story.ch1.ending.blank      留白结局位（St2 实装；持破损饰品的清醒重访·见下 charm_found）
-//   - story.ch1.recording.<n>     一章水下录音碎片位（St2 实装第 1 段；分段 canon §4.4·2+ 段留二章）
-//   - story.ch1.charm_found       破损饰品（导师遗物·缺宝石）已获得位（St2 实装；= 留白结局重访门）
-// flag 字符串**只在本模块生成**（单一来源）；data JSON 里出现的字面量必须与这里的
-// 生成器输出一致（playthrough-story §4 守这条——手拼漂移会红）。
+//   - story.ch1.ending.fulfilled  圆满结局位（canon：主角以为的真结局·按当时为真）
+//   - story.ch1.ending.blank      留白结局位（持破损饰品的清醒重访·见下 charm_found）
+//   - story.ch1.charm_found       破损饰品（导师遗物·缺宝石）已获得位（= 留白结局重访门）
+// flag 字符串**只在本模块生成**（单一来源）；data JSON 里出现的字面量必须与这里的生成器输出一致。
 //
-// 词汇隔离（剧情 SPEC §1）：叙事「章」(chapter) ≠ 机制「Phase」。本模块只管叙事章。
+// ⚠ #297 曾定「删 recording_1 + ending_blank」：`ch1.recording.*` 已删（自足·无消费者）；
+// `ending.blank` **保留**——它是「留白结局重访」子系统（CH1_CHARM_FOUND_FLAG + chart.ts revisit* +
+// dive-start 重访分支）的键石，单拆会留孤儿管线·整体退休需作者授权·别 drive-by。
+//
+// 词汇隔离：叙事「章」(chapter) ≠ 机制「Phase」。本模块只管叙事章。
 // 红线（quirk #117）：本模块只做状态派生，**不携带任何剧透文案**；一二章对
 // 「失联真相/断片说」零泄漏的纪律由内容侧遵守，这里不出现相关字符串。
 //
@@ -32,9 +37,9 @@ import type { PlayerProfile } from '@/types';
 export type ChapterId = 'ch1' | 'ch2';
 
 /**
- * 一章四锚点（剧情 SPEC §4.1 表序·锚点链推进顺序即数组顺序）：
+ * 一章四锚点（锚点链推进顺序即数组顺序）：
  * 近海珊瑚礁 → 礁后陆坡 → 远洋中层 → 海沟+热液。
- * St0 只立节拍位；锚点事件/POI 归 St1。
+ * St0 只立节拍位；锚点事件/POI 归 St1。（旧剧情 SPEC §4.1 已随 #300 删除。）
  */
 export const CH1_ANCHORS = ['reef', 'slope', 'midwater', 'vent'] as const;
 export type Ch1Anchor = (typeof CH1_ANCHORS)[number];
@@ -65,21 +70,14 @@ export function ch1EndingFlag(ending: Ch1Ending): string {
   return `story.ch1.ending.${ending}`;
 }
 
-/**
- * 一章水下录音碎片 flag（St2·剧情 SPEC §3.2「录音=真伪锚点」/§4.1 留白结局得第 1 段）。
- * 分段 canon（§4.4「录音分段化」）：留白给第 1 段；2+ 段藏于一章更强关底 + 二章回流——**机制留二章**
- * （Q4·机制按需长出），本模块现仅生成并登记第 1 段（离散 flag·随 profile.flags Set 往返·确定性）。
- */
-export function ch1RecordingFlag(segment: number): string {
-  return `story.ch1.recording.${segment}`;
-}
+// ch1RecordingFlag 已删（#297 定删 recording·自足无消费者；录音分段 canon 随旧剧情 SPEC §4.4 作废·待主线重建重立）。
 
 /**
- * 破损饰品（导师遗物·托里嵌宝石处裂空）已获得 flag —— **留白结局重访门**（St2·剧情 SPEC §4.1）。
+ * 破损饰品（导师遗物·托里嵌宝石处裂空）已获得 flag —— **留白结局重访门**（旧剧情 SPEC §4.1·已随 #300 删）。
  * 语义：持有破损饰品 ⟺ 已达圆满结局（饰品是圆满的拾取物）＝ fulfilled-first，**保证圆满在前、第一次绝不
- * 跳过留白**。dive-start.ts 读它决定是否在 vent POI 重访时强制 ending_blank。破损饰品的「稳住幻象一拍」
- * 真·抵消能力 + 二章宝石材料修复（一章只钻石/二章群宝·新材料类）都留二章——见剧情 SPEC §4.4。
+ * 跳过留白**。dive-start.ts 读它决定是否在 vent POI 重访时强制 ending_blank（generic revisit 字段·非硬引用）。
  * 由 ch1.ending（圆满）outcome.setProfileFlags + 破损饰品 item.story.setsFlag 双置（幂等·不软锁）。
+ * （ending.blank 子系统整体口径待主线重建重定·见文件头 #297 note。）
  */
 export const CH1_CHARM_FOUND_FLAG = 'story.ch1.charm_found';
 
@@ -97,10 +95,9 @@ export const TUTORIAL_COMPLETE_FLAG = 'flag.tutorial_complete';
 export const TRENCH_FOUND_FLAG = 'story.ch1.trench_found';
 
 /**
- * story.ts 生成的**全部** story.* flag 枚举（单一来源）。playthrough-story §4 据此守门
- * 「任何 data 文件里出现的 story.* 字面量都必须 ∈ 本集合」——新增任何 story flag 生成器
- * 务必在此登记，否则用到它的 data 会在 regress 红（这是把「门=flag·派生进 story.ts」
- * 焊成会失败的检查的关键·CLAUDE.md 顶部「约定落成机制」）。
+ * story.ts 生成的**全部** story.* flag 枚举（单一来源）。原「data story.* 字面量 ⊆ 本集合」的
+ * playthrough-story 守门脚本已随 #300 白板删除，本函数当前**无调用点**（休眠）；主线重建时恢复守门。
+ * 新增任何 story flag 生成器仍在此登记（把「门=flag·派生进 story.ts」焊成机制·CLAUDE.md「约定落成机制」）。
  */
 export function allStoryFlags(): string[] {
   return [
@@ -108,7 +105,6 @@ export function allStoryFlags(): string[] {
     ...CH1_ANCHORS.map((a) => ch1AnchorFlag(a)),
     ch1EndingFlag('fulfilled'),
     ch1EndingFlag('blank'),
-    ch1RecordingFlag(1),
     CH1_CHARM_FOUND_FLAG,
     TRENCH_FOUND_FLAG,
   ];
@@ -154,7 +150,7 @@ export function ch1Story(profile: PlayerProfile): Ch1Story {
 }
 
 /**
- * 章节解锁判定（占位·剧情 SPEC §1 解锁链）：
+ * 章节解锁判定（占位·解锁链·旧剧情 SPEC §1 已随 #300 删）：
  *   - ch1：教学关完成即开（与海图解锁同一道门——四锚点 POI 在 St1 都会走
  *     requiresFlags: [flag.tutorial_complete] 的既有门控通道）。
  *   - ch2：一章圆满（解锁链「一章圆满 → 二章」；St5 实装内容，这里先把判定立住）。

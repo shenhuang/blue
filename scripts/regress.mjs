@@ -115,6 +115,9 @@ tasks.push({ name: 'check-no-sonar-deception', cmd: ['node', join('scripts', 'ch
 // 理智系统拆干净门（纯 node·理智系统移除 2026-07-10·src 扫到 sanity/hallucination 任一残留即红·发疯改地点缝 seam 二态门·见 scripts/check-no-sanity.mjs）
 tasks.push({ name: 'check-no-sanity', cmd: ['node', join('scripts', 'check-no-sanity.mjs')] });
 
+// 叙述禁断言主角为人类 门（纯 node·大深渊结局 SPEC §5.2「假设≠断言」·扫事件叙述字段·护终局反转不穿帮·见 scripts/check-no-human-assertion.mjs）
+tasks.push({ name: 'check-no-human-assertion', cmd: ['node', join('scripts', 'check-no-human-assertion.mjs')] });
+
 // 文案草稿泄漏门（纯 node·src/data/events 玩家可见字段禁 [待过稿]·playtest 报告⑤ 根治·见 scripts/check-draft-leak.mjs）
 tasks.push({ name: 'check-draft-leak', cmd: ['node', join('scripts', 'check-draft-leak.mjs')] });
 
