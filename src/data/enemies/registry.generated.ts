@@ -18,9 +18,9 @@ import reef_grouper from './reef_grouper.json';
 import reef_shark from './reef_shark.json';
 import scarlet_kinslayer from './scarlet_kinslayer.json';
 import scavenger from './scavenger.json';
+import slope_patrol from './slope_patrol.json';
+import slope_spider_crab from './slope_spider_crab.json';
 import warren from './warren.json';
-import wreck_field_patrol from './wreck_field_patrol.json';
-import wreck_spider_crab from './wreck_spider_crab.json';
 
 /** 单个敌人 JSON 文件的形状：enemies[] + 可选 combatEncounters[]。具体类型在 combat.ts 收口断言。 */
 export type EnemyFileModule = { enemies?: unknown[]; combatEncounters?: unknown[] };
@@ -41,7 +41,7 @@ export const ENEMY_FILE_MODULES: EnemyFileModule[] = [
   reef_shark,
   scarlet_kinslayer,
   scavenger,
+  slope_patrol,
+  slope_spider_crab,
   warren,
-  wreck_field_patrol,
-  wreck_spider_crab,
 ] as unknown as EnemyFileModule[];

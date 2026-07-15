@@ -125,7 +125,7 @@ export interface OutpostDef {
   /**
    * 章节哨站解锁门（章节哨站批·#118 §10 2026-06-12）：设了 = 本哨站是**章节前哨**，
    * 在对应一章锚点节拍（ch1AnchorFlag(requiresAnchor)）置位前为「暗」（已知但不可建·见 outpostUnlocked），
-   * 锚点完成后才转「可建」。值为 Ch1Anchor 字符串（'wreck'|'midwater'|'vent'；reef 由 home 灯塔覆盖不设哨站）。
+   * 锚点完成后才转「可建」。值为 Ch1Anchor 字符串（'slope'|'midwater'|'vent'；reef 由 home 灯塔覆盖不设哨站）。
    * 缺省 → 非章节前哨（无门）。#131 后所有前哨都是章节前哨（深脊柱前哨已删）。
    */
   requiresAnchor?: string;

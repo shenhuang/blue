@@ -2,8 +2,8 @@
   "enemies": [
     {
       "id": "enemy.cave_grouper_boss",
-      "bands": ["zone.blue_caves", "zone.wreck_graveyard"],
-      "biomes": ["cave_anchialine", "wreck_field"],
+      "bands": ["zone.blue_caves", "zone.rocky_slope"],
+      "biomes": ["cave_anchialine", "slope_field"],
       "role": "miniboss",
       "threatTier": "high",
       "codex": {

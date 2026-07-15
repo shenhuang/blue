@@ -74,7 +74,7 @@ export function generateDiveMap(opts: GenOpts): DiveMap {
       startNodeId: startNode.id,
     };
   }
-  // 教学已完成（重访）→ 当普通 layered zone 处理（zoneTagsByDepth 已换成 shallow/reef/wreck）。
+  // 教学已完成（重访）→ 当普通 layered zone 处理（zoneTagsByDepth 已换成 shallow/reef/slope）。
 
   // 洞穴一致性（SPEC §6①·#98）：未显式传 rng 时，若有 seedKey 则用「地点派生」的确定性 rng（同地点同图）；
   // 否则回退 Math.random（旧行为·每潜不同）。把解析后的 rng 注回 opts ⇒ 两个子生成器 destructure 即取到、无需各自再判。

@@ -36,7 +36,7 @@ const THREAT_COLOR: Record<ThreatTier, string> = {
 const BIOME_LABEL: Record<string, string> = {
   reef_tropical: '热带礁',
   cave_anchialine: '蓝洞咸水',
-  wreck_field: '沉船区',
+  slope_field: '陆坡区',
   polar_under_ice: '极地冰下',
   mangrove: '红树林',
   hydrothermal_vent: '热液场',

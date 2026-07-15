@@ -16,7 +16,7 @@ function assert(cond: unknown, msg: string): asserts cond {
 
 const html = renderToStaticMarkup(<MapEditor />);
 assert(html.includes('海图编辑器'), 'editor 标题应渲染');
-for (const label of ['珊瑚区', '残骸区', '中层区', '热液区', '海沟区']) {
+for (const label of ['珊瑚区', '陆坡区', '中层区', '热液区', '海沟区']) {
   assert(html.includes(label), `应渲染 region/beacon 标签「${label}」（读 chart_regions + lighthouse_upgrades 声明坐标）`);
 }
 assert(html.includes('beacon'), '图例应渲染');

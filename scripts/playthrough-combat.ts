@@ -24,11 +24,11 @@ function fail(msg: string): never {
 // —— 「flee/scare 不掉料」硬门（#244）——
 // 直接跑黄金套件里两个结局场景（同一份 JSON·单一场景来源），断言战利品为空：
 //   flee＝finalizeFlee 从不结算 loot；scare＝敌人自行离场（fledInstanceIds）被 finalizeVictory 跳过。
-// 两遭遇本体（combat.tutorial_shark / combat.wreck_spider_crab_solo）在白板后仍存活（enemies/*.json）。
+// 两遭遇本体（combat.tutorial_shark / combat.slope_spider_crab_solo）在白板后仍存活（enemies/*.json）。
 const scenarioDir = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'scenarios', 'combat');
 for (const [file, wantOutcome] of [
   ['tutorial_shark__flee_no_loot.json', 'flee'],
-  ['wreck_spider_crab_solo__scare_no_loot.json', 'victory'],
+  ['slope_spider_crab_solo__scare_no_loot.json', 'victory'],
 ] as const) {
   const raw = JSON.parse(readFileSync(resolve(scenarioDir, file), 'utf8')) as Record<string, unknown>;
   const { _comment, expect, ...input } = raw;

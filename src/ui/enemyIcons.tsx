@@ -45,7 +45,7 @@ const ENEMY_SILHOUETTE: Record<string, EnemySilhouette> = {
   'enemy.chain_eel_node': 'eel',
   'enemy.chain_eel_head': 'eel',
   'enemy.cave_octopus': 'octopus',
-  'enemy.wreck_spider_crab': 'crab',
+  'enemy.slope_spider_crab': 'crab',
   'enemy.cocooned_resident': 'crab',
   'enemy.drowned_lantern': 'jellyfish',
   'enemy.fissure_sphere': 'orb',

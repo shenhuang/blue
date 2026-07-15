@@ -234,7 +234,7 @@ export interface CombatEncounterDef {
    * 链鳗（分节实体·boss 设计蓝图 2026-06-21）：标记本遭遇为「按序攻击」分节链——
    * party.members 即节序（**头在末端**·index 0 = 最前节·须先死），玩家每次只能命中**最前存活节**，
    * 前节死后才解锁下一节（combat.ts target 解析 + checkActionAvailability 双层门）。
-   * 缺省/false ⇒ 普通无序多成员 party（wreck_field_patrol / spider_crabs_pair）逐字节不变——
+   * 缺省/false ⇒ 普通无序多成员 party（slope_patrol / spider_crabs_pair）逐字节不变——
    * 新约束**仅**对显式标 true 的遭遇生效。check-enemy-refs (c4) 验证标了的遭遇节序合法（≥2 节 + 末节带 headEnrage）。
    */
   attackInOrder?: boolean;

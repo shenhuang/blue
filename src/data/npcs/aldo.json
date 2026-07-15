@@ -63,7 +63,7 @@
             "kind": "any",
             "of": [
               { "kind": "notHasFlag", "flag": "story.ch1.anchor.reef" },
-              { "kind": "notHasFlag", "flag": "story.ch1.anchor.wreck" },
+              { "kind": "notHasFlag", "flag": "story.ch1.anchor.slope" },
               { "kind": "notHasFlag", "flag": "story.ch1.anchor.midwater" },
               { "kind": "notHasFlag", "flag": "story.ch1.anchor.vent" }
             ]
@@ -133,7 +133,7 @@
                 "kind": "any",
                 "of": [
                   { "kind": "hasFlag", "flag": "story.ch1.anchor.reef" },
-                  { "kind": "hasFlag", "flag": "story.ch1.anchor.wreck" },
+                  { "kind": "hasFlag", "flag": "story.ch1.anchor.slope" },
                   { "kind": "hasFlag", "flag": "story.ch1.anchor.midwater" },
                   { "kind": "hasFlag", "flag": "story.ch1.anchor.vent" }
                 ]
@@ -150,7 +150,7 @@
             "kind": "all",
             "of": [
               { "kind": "hasFlag", "flag": "story.ch1.anchor.reef" },
-              { "kind": "hasFlag", "flag": "story.ch1.anchor.wreck" },
+              { "kind": "hasFlag", "flag": "story.ch1.anchor.slope" },
               { "kind": "hasFlag", "flag": "story.ch1.anchor.midwater" },
               { "kind": "notHasFlag", "flag": "flag.aldo.guilt_seen" }
             ]

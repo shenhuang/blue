@@ -29,7 +29,7 @@ const readJson = (p) => JSON.parse(readFileSync(join(DATA, p), 'utf8'));
 // 事件文件名 stem → 区域（只列「区域清晰」的现存事件文件；ch1/tutorial 等跨切横贯件归 null＝区域无关）。
 const REGION_BY_EVENTFILE = {
   reef: 'reef',
-  wreck_graveyard: 'wreck',
+  rocky_slope: 'slope',
   midwater: 'midwater',
   vent: 'vent',
   blue_caves: 'cave',
@@ -42,8 +42,8 @@ export function cleanRegion(raw) {
     old_lighthouse_reef: 'reef',
     reef: 'reef',
     reef_tropical: 'reef',
-    wreck_graveyard: 'wreck',
-    wreck_field: 'wreck',
+    rocky_slope: 'slope',
+    slope_field: 'slope',
     open_midwater: 'midwater',
     midwater: 'midwater',
     vent_trench: 'vent', // vent 与 trench 共用 zone；柱侧按柱短名区分（见 REGION_BY_COLUMN）

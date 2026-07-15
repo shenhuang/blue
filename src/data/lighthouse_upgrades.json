@@ -132,19 +132,19 @@
         "mapX": 0.8,
         "mapY": 0.6,
         "level": 1,
-        "region": "wreck_graveyard"
+        "region": "rocky_slope"
       }
     }
   ],
   "outposts": [
     {
-      "id": "outpost.ch1_wreck",
-      "name": "残骸前哨",
+      "id": "outpost.ch1_slope",
+      "name": "陆坡前哨",
       "requiresFlag": "story.ch1.anchor.reef",
       "submerged": true,
       "stages": [
         {
-          "label": "清出一截船体当塔基（废合金×2 ＋ 40 金）",
+          "label": "凿平一处崩落台当塔基（废合金×2 ＋ 40 金）",
           "cost": {
             "materials": [
               {
@@ -154,7 +154,7 @@
             ],
             "gold": 40
           },
-          "narrative": "你把一截还算完整的船舱清空，撑住，当作前哨的塔基。锈味很重，但它立得住。"
+          "narrative": "你把陆坡上一处新崩落的台面凿平、撑住，当作前哨的塔基。碎石还在往下掉，但这块立得住。"
         },
         {
           "label": "搭起落脚架与浮筒（蛛蟹甲壳×2·黄铜配件×2 ＋ 70 金）",
@@ -171,7 +171,7 @@
             ],
             "gold": 70
           },
-          "narrative": "架子搭起来了——能在墓园里落脚、换气、起跳。半个前哨，墓地里也算有了个家。"
+          "narrative": "架子搭起来了——能在陆坡上落脚、换气、起跳。半个前哨，碎石坡上也算有了个家。"
         },
         {
           "label": "通电点亮（冷光腺×2 ＋ 110 金）",
@@ -184,22 +184,22 @@
             ],
             "gold": 110
           },
-          "narrative": "井架的灯一亮，海图上残骸那点跟着从灰转成亮。日志第二条坐标——看得见，现在也下得去了。"
+          "narrative": "井架的灯一亮，海图上陆坡那点跟着从灰转成亮。日志第二条坐标——看得见，现在也下得去了。"
         }
       ],
       "result": {
-        "id": "lighthouse.ch1_wreck_outpost",
-        "name": "残骸前哨",
+        "id": "lighthouse.ch1_slope_outpost",
+        "name": "陆坡前哨",
         "mapX": 0.288,
         "mapY": 0.781,
         "level": 1,
-        "region": "wreck_graveyard"
+        "region": "rocky_slope"
       }
     },
     {
       "id": "outpost.ch1_midwater",
       "name": "中层浮标",
-      "requiresFlag": "story.ch1.anchor.wreck",
+      "requiresFlag": "story.ch1.anchor.slope",
       "submerged": true,
       "stages": [
         {

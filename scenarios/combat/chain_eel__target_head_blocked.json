@@ -1,5 +1,5 @@
 {
-  "_comment": "链鳗按序门 baseline：体节存活时把攻击显式指向头节（targetIndex 3 = party 末节·头节）→ checkActionAvailability 判『够不到』(isSegmentReachable=false·非最前存活节) → combatScenario runner 停步 outcome=actionUnavailable。证明『只能命中最前存活节·前节没死前打不到头』(任务硬断言)。与无序多成员 party（wreck_spider_crabs_pair 可打任意活敌·targetIndex 0/1 皆合法）形成对照——按序约束**仅**对显式标 attackInOrder 的遭遇生效。seed 任意（门在第 0 回合即触发·与 RNG 无关）。",
+  "_comment": "链鳗按序门 baseline：体节存活时把攻击显式指向头节（targetIndex 3 = party 末节·头节）→ checkActionAvailability 判『够不到』(isSegmentReachable=false·非最前存活节) → combatScenario runner 停步 outcome=actionUnavailable。证明『只能命中最前存活节·前节没死前打不到头』(任务硬断言)。与无序多成员 party（slope_spider_crabs_pair 可打任意活敌·targetIndex 0/1 皆合法）形成对照——按序约束**仅**对显式标 attackInOrder 的遭遇生效。seed 任意（门在第 0 回合即触发·与 RNG 无关）。",
   "combatId": "combat.chain_eel",
   "seed": 1,
   "actions": [

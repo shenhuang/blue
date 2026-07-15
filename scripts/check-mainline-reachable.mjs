@@ -6,7 +6,7 @@
 // 背景（2026-07-12 re-home）：主线 beat = chart_pois.json 里带 `story` 字段的静态 anchor（原由 depth_columns.json
 // storyTier 派生·深度柱系统删除后落成静态锚点）。每个 anchor：id（=运行时 poiId）、owner（host 灯塔）、
 // story:{eventId, beatFlag, chainTail?, revisit*?}。隶属灯塔（owner = home 或某前哨 result.id）建成才下得去。前哨
-// 「可建门」改成「上一步进度 flag」解死锁（wreck←reef…）。本门把这条链做静态可判：沿「灯塔解锁序」走一遍，确认
+// 「可建门」改成「上一步进度 flag」解死锁（slope←reef…）。本门把这条链做静态可判：沿「灯塔解锁序」走一遍，确认
 // 每个 beat 的 reach 门都能被**前面步骤**满足、整条链无环、起点（教学完成）能走到章尾（链尾 beat）。
 //
 // 检查的不变量（**纯结构·不查数值** → 兼容 defer-number-tuning）：
@@ -37,7 +37,7 @@ const HOME_LIGHTHOUSE_ID = 'lighthouse.home';
 const TUTORIAL_COMPLETE_FLAG = 'flag.tutorial_complete';
 // canon 一章四锚点 flag（chart_pois 锚点事件产出·恒在教学后·= engine/story.ts ch1AnchorFlag 输出）。
 // 这里写出来作「教学后即可得的种子 flag」集——前哨链/柱门指向它们时算「可达前置」。
-const CH1_ANCHORS = ['reef', 'wreck', 'midwater', 'vent'];
+const CH1_ANCHORS = ['reef', 'slope', 'midwater', 'vent'];
 const ANCHOR_FLAGS = new Set(CH1_ANCHORS.map((a) => `story.ch1.anchor.${a}`));
 
 const lhFile = readJson('lighthouse_upgrades.json');

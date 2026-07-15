@@ -2,8 +2,8 @@
   "enemies": [
     {
       "id": "enemy.drowned_lantern",
-      "bands": ["zone.wreck_graveyard"],
-      "biomes": ["wreck_field"],
+      "bands": ["zone.rocky_slope"],
+      "biomes": ["slope_field"],
       "role": "ambusher",
       "codex": {
         "habitat": "沉船之间不动的静水。哪儿最暗，它在哪儿亮着。",

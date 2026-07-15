@@ -2,8 +2,8 @@
   "enemies": [
     {
       "id": "enemy.horror_sapien",
-      "bands": ["zone.wreck_graveyard", "zone.blue_caves"],
-      "biomes": ["wreck_field", "cave_anchialine"],
+      "bands": ["zone.rocky_slope", "zone.blue_caves"],
+      "biomes": ["slope_field", "cave_anchialine"],
       "role": "ambusher",
       "threatTier": "high",
       "scent": true,

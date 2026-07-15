@@ -1099,12 +1099,12 @@
       "harvestPersist": "save"
     },
     {
-      "id": "item.wreck_bronze",
+      "id": "item.slope_copper_vein",
       "role": "structural",
-      "name": "船体青铜",
+      "name": "陆坡铜脉",
       "category": "material",
       "rarity": "uncommon",
-      "description": "从墓园那艘大商船尾轴上撬下来的整块青铜——舵轴的衬套，沉得压手，绿锈只在表面咬了一层。这种大件一艘船就那么一两处，撬走了便不再长回来。Mira 说铸器铺整块收，比零碎黄铜值钱。",
+      "description": "从崩塌陆坡裸露的岩层里凿出的一整块铜色矿脉——沉甸甸，表面只咬了一层浅绿锈斑。这种整块的脉一段陆坡也就那么一两处，凿走了便不再长回来。Mira 说铸器铺整块收，比零碎黄铜值钱。",
       "weight": 1.4,
       "sellPrice": 30,
       "decay": "durable",

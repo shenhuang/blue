@@ -87,7 +87,7 @@ function ruinState(profileInv: InventoryItem[], gold: number): GameState {
       inventory: profileInv.map((i) => ({ ...i })),
       bankedGold: gold,
     },
-    run: { ...createNewRun({ zoneId: 'zone.wreck_graveyard' }), currentDepth: 40, currentNodeId: 'n0' },
+    run: { ...createNewRun({ zoneId: 'zone.rocky_slope' }), currentDepth: 40, currentNodeId: 'n0' },
     phase: { kind: 'dive', subPhase: { kind: 'event', eventId: 'lighthouse.ruin_north' } },
   };
 }
@@ -137,7 +137,7 @@ L('  已修 → alreadyRestored，不重复 push ✓');
 // ============================================
 L('\n========== 4. 上线后 reveal + reach 变化 ==========');
 // 北缘远端 POI（≈0.80，home 点不到，前哨能点到）
-const farPoi: ChartPoi = { id: 't.far', zoneId: 'zone.wreck_graveyard', name: '', blurb: '', distance: 2, mapX: 0.85, mapY: 0.64, persistent: false };
+const farPoi: ChartPoi = { id: 't.far', zoneId: 'zone.rocky_slope', name: '', blurb: '', distance: 2, mapX: 0.85, mapY: 0.64, persistent: false };
 assert(!isPoiLit(before.profile, farPoi), '修复前：远端 POI 不被 home 点亮');
 assert(isPoiLit(after.profile, farPoi), '修复后：远端 POI 被前哨点亮');
 const reachBefore = effectiveDistance(before.profile, farPoi);

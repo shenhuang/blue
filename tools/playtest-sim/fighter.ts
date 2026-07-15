@@ -4,7 +4,7 @@ const N = 30, SEED = 70000;
 // the 3 farm zones, fighter style, stage-appropriate O2
 const CELLS: [string, string, [number, number] | null, number][] = [
   ['zone.old_lighthouse_reef', 'reef farm', null, 70],
-  ['zone.wreck_graveyard', 'wreck farm', null, 70],
+  ['zone.rocky_slope', 'slope farm', null, 70],
   ['zone.blue_caves', 'bluecaves farm', null, 80],
   ['zone.blue_caves', 'bluecaves farm', null, 100],
 ];

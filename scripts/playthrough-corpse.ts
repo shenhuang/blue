@@ -290,7 +290,7 @@ const hsNode: DiveNode = {
   id: hsNodeId,
   layer: 3,
   depth: 75,
-  zoneTag: 'wreck',
+  zoneTag: 'slope',
   kind: 'corpse',
   corpseRecordId: hsRecord.id,
   connectsTo: [],

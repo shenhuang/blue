@@ -8,7 +8,7 @@ const O2S = [60, 80, 100, 120];
 const TIERS: [string, string, [number, number] | null, boolean][] = [
   // base zones (new-player default dive, no band override)
   ['zone.old_lighthouse_reef', 'reef BASE', null, false],
-  ['zone.wreck_graveyard', 'wreck BASE', null, false],
+  ['zone.rocky_slope', 'slope BASE', null, false],
   ['zone.open_midwater', 'midwater BASE', null, false],
   ['zone.vent_trench', 'vent BASE', null, false],
   ['zone.blue_caves', 'bluecaves BASE', null, false],
@@ -16,10 +16,10 @@ const TIERS: [string, string, [number, number] | null, boolean][] = [
   // col.home (reef)
   ['zone.old_lighthouse_reef', 'home T1 30-40', [30, 40], false],
   ['zone.old_lighthouse_reef', 'home T2 40-60', [40, 60], false],
-  // col.wreck
-  ['zone.wreck_graveyard', 'wreck T1 18-50', [18, 50], false],
-  ['zone.wreck_graveyard', 'wreck T2 50-75', [50, 75], false],
-  ['zone.wreck_graveyard', 'wreck T3 75-100', [75, 100], false],
+  // col.slope
+  ['zone.rocky_slope', 'slope T1 18-50', [18, 50], false],
+  ['zone.rocky_slope', 'slope T2 50-75', [50, 75], false],
+  ['zone.rocky_slope', 'slope T3 75-100', [75, 100], false],
   // col.midwater
   ['zone.open_midwater', 'mid T1 30-60', [30, 60], false],
   ['zone.open_midwater', 'mid T2 60-90', [60, 90], false],

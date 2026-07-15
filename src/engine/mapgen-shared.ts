@@ -99,7 +99,7 @@ export interface GenOpts {
   /**
    * 钉放剧情节拍（quirk #174）：一个 `weight:0` 的故事事件 id，**保证放置**在其 `depthRange` 的途中节点
    * （不进随机池·只此一途出现·防被内容库淹没）。由 dive-start 从 `poi.storyOpenEvents` 选出合规变体后透传。
-   * 缺省 undefined → 不放置（所有非剧情下潜零影响·byte-identical）。仅 layered 图实现（reef/wreck·东礁重访）。
+   * 缺省 undefined → 不放置（所有非剧情下潜零影响·byte-identical）。仅 layered 图实现（reef/slope·东礁重访）。
    */
   pinnedEventId?: string;
   /**

@@ -58,7 +58,7 @@ export type LayoutStyle = 'vertical' | 'horizontal' | 'serpentine' | 'warren';
  * 同时用于 ChartRegionDef.id（海图揭示圈）与 ZoneDef.regionId（下潜 zone 归属·地图调试工具分组用）——
  * 两处共用一个类型，防止拼写漂移。新增区先在 chart_regions.json 落数据，再在这里补一个字面量。
  */
-export type ChartRegionId = 'reef' | 'wreck' | 'midwater' | 'vent' | 'trench';
+export type ChartRegionId = 'reef' | 'slope' | 'midwater' | 'vent' | 'trench';
 
 /** Zone 定义 —— 一个海域 */
 export interface ZoneDef {

@@ -3,7 +3,7 @@
 //
 // 背景：`MapDevPanel.tsx` 左侧现在按 `ZoneDef.regionId` 分组（取代旧 mapShape 洞穴/开阔水域 tab——
 // 全部 zone 早已是 maze/warren，那两个 tab 已名存实亡）。regionId 的合法取值单一来源是
-// `data/chart_regions.json`（5 个 owner-anchored 大区：reef/wreck/midwater/vent/trench），
+// `data/chart_regions.json`（5 个 owner-anchored 大区：reef/slope/midwater/vent/trench），
 // 类型层再收口一次（types/dive.ts::ChartRegionId）。zones.json 是手填的裸字符串，容易手滑打错
 // （比如敲成 'midwarter' 或抄错大区名）——错字不会让 TS 报错（JSON 字面量），只会让调试工具悄悄把
 // 该 zone 分进一个不存在的桶（既不在 5 个大区 tab 也不在"未分区"兜底），需要一道纯数据校验焊死。

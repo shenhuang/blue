@@ -717,8 +717,8 @@ L('\n========== 14. Q3 浅水弱变体（weakHunts·浅水小且弱）==========
   // (d) 接线 weakStalkerStep：深度门（≥ALERT_MIN_DEPTH → null）·zone 门（weakHunts 数据 opt-in）·现身叙事
   const deepGate = weakStalkerStep(shallowState(hitId, { currentDepth: 30 }), shallowState(hitId).run!.map!.nodes['n1']);
   assert(deepGate === null, '14d: ≥ 浅水线 → null（旧瞬时伏击路径让位·逐字节不变）');
-  const wreckGate = weakStalkerStep(shallowState(hitId, { zoneId: 'zone.wreck_graveyard' }), shallowState(hitId).run!.map!.nodes['n1']);
-  assert(wreckGate === null, '14d: zone 没 opt-in（wreck_graveyard 无 weakHunts）→ null');
+  const slopeGate = weakStalkerStep(shallowState(hitId, { zoneId: 'zone.rocky_slope' }), shallowState(hitId).run!.map!.nodes['n1']);
+  assert(slopeGate === null, '14d: zone 没 opt-in（rocky_slope 无 weakHunts）→ null');
   // 真接线（moveToNode）：找一个「移动到 n1 时中奖」的 runId（哈希按到站节点 n1 算）
   let spawnedVia = '';
   for (let i = 0; i < 300 && !spawnedVia; i++) {
@@ -736,22 +736,22 @@ L('\n========== 14. Q3 浅水弱变体（weakHunts·浅水小且弱）==========
 }
 
 // ============================================================
-// 15. wreck 双敌档案（#110·待办 2a「蜘蛛蟹/沉灯笼打 per-encounter 档案」）：
-//     沉船蛛蟹＝sound+慢爬 0.5+size:'large' 钉死（浅段 18-50m 也是大家伙＝窄缝避难首次在浅 zone 可学）+patience 8；
+// 15. slope 双敌档案（#110·待办 2a「蜘蛛蟹/沉灯笼打 per-encounter 档案」）：
+//     陆坡蛛蟹＝sound+慢爬 0.5+size:'large' 钉死（浅段 18-50m 也是大家伙＝窄缝避难首次在浅 zone 可学）+patience 8；
 //     沉灯水母＝light+active（searching 自己亮一记）+漂移 0.45——靠 #110 active 例外拿到 WAIT_TURNS（奇数槽不再掉头就走）。
 //     数据守门：zones.json 池序 + 档案字段别被改崩。
 // ============================================================
-L('\n========== 15. wreck 双敌档案（蛛蟹 large 守口·沉灯 light+active）==========');
+L('\n========== 15. slope 双敌档案（蛛蟹 large 守口·沉灯 light+active）==========');
 {
   // 白板收口：wreck_graveyard zone 随开放水域内容删·无存活 zone 池含蛛蟹+沉灯——用 inline 池
   //   （两遭遇本体 + 其 stalker 档案标签仍存活·下面断言校验的正是这些存活档案；「zones.json wreck 池序」
   //   属已删 zone 的配置断言·随 zone 一并移除）。
-  const WRECK_POOL = ['combat.wreck_spider_crab_solo', 'combat.drowned_lantern_solo'];
-  // wreck 浅段（30m << STALKER_LARGE_DEPTH）：深度派生会给 small——large/active 等差异即档案生效的证据。
+  const SLOPE_POOL = ['combat.slope_spider_crab_solo', 'combat.drowned_lantern_solo'];
+  // slope 浅段（30m << STALKER_LARGE_DEPTH）：深度派生会给 small——large/active 等差异即档案生效的证据。
   const run30 = () => huntState({ depth: 30 }).run!;
 
   // idx=1（visited ['n0']）→ 沉灯（奇数槽·光感·active）
-  const lantern = maybeSpawnStalker(run30(), WRECK_POOL);
+  const lantern = maybeSpawnStalker(run30(), SLOPE_POOL);
   assert(lantern?.encounterId === 'combat.drowned_lantern_solo', '15: idx=1 → 沉灯遭遇');
   assert(
     lantern!.sensesBy === 'light' && lantern!.active === true && lantern!.hspeed === 0.45,
@@ -764,15 +764,15 @@ L('\n========== 15. wreck 双敌档案（蛛蟹 large 守口·沉灯 light+activ
   );
 
   // 反转池序 → idx=1 → 蛛蟹
-  const crab = maybeSpawnStalker(run30(), [...WRECK_POOL].reverse());
-  assert(crab?.encounterId === 'combat.wreck_spider_crab_solo', '15: 反转池 → 蛛蟹遭遇');
+  const crab = maybeSpawnStalker(run30(), [...SLOPE_POOL].reverse());
+  assert(crab?.encounterId === 'combat.slope_spider_crab_solo', '15: 反转池 → 蛛蟹遭遇');
   assert(
     crab!.sensesBy === 'sound' && crab!.hspeed === 0.5 && crab!.patience === 8 && crab!.active === undefined,
     '15: 蛛蟹档案（sound·0.5 慢爬·patience 8·非 active）',
   );
   assert(
     crab!.large === true,
-    '15: 蛛蟹 size:"large" 钉死——浅段（30m < LARGE_DEPTH）也是大家伙（守口外/拖刮声在 wreck 浅段可学）',
+    '15: 蛛蟹 size:"large" 钉死——浅段（30m < LARGE_DEPTH）也是大家伙（守口外/拖刮声在 slope 浅段可学）',
   );
   assert(!nodeIsNarrow(crab!.nodeId), '15: 大型现身点非窄（容得下它）');
 

@@ -4,7 +4,7 @@ const N = 30, SEED = 60123;
 // [zoneId, label, depthRange|null, O2 (stage-appropriate)]
 const ZONES: [string, string, [number, number] | null, number][] = [
   ['zone.old_lighthouse_reef', 'reef (10-60·礁→残骸→洞)', null, 70],
-  ['zone.wreck_graveyard', 'wreck (18-50)', null, 70],
+  ['zone.rocky_slope', 'slope (18-50)', null, 70],
   ['zone.blue_caves', 'bluecaves (12-55·封闭)', null, 90],
   ['zone.open_midwater', 'midwater (55-85)', null, 90],
   ['zone.vent_trench', 'vent (85-118·封闭)', null, 100],

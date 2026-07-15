@@ -40,14 +40,14 @@
           }
         },
         {
-          "id": "wreck_haul",
+          "id": "slope_haul",
           "label": "（把战利品在柜台上推开）",
-          "next": "mira.materials_wreck",
+          "next": "mira.materials_slope",
           "visibleIf": {
             "kind": "all",
             "of": [
-              { "kind": "hasFlag", "flag": "story.ch1.anchor.wreck" },
-              { "kind": "notHasFlag", "flag": "flag.mira.tip_wreck_seen" }
+              { "kind": "hasFlag", "flag": "story.ch1.anchor.slope" },
+              { "kind": "notHasFlag", "flag": "flag.mira.tip_slope_seen" }
             ]
           }
         },
@@ -85,7 +85,7 @@
     },
     "mira.materials_reef": {
       "id": "mira.materials_reef",
-      "text": "Mira 用秤砣压住一张油纸，翻着你最近带回来的东西。速度很快，但没漏掉一件。\n\n「礁石那块你是跑熟了。」她从堆里挑出几块，「灯腺我收——最近行情不错。」\n\n她抬头看你一眼。「往残骸那边下了没？鳗鱼皮、章鱼喙，能弄到的，带来。」\n\n「Otto 用得着一部分，我用得着另一部分。」",
+      "text": "Mira 用秤砣压住一张油纸，翻着你最近带回来的东西。速度很快，但没漏掉一件。\n\n「礁石那块你是跑熟了。」她从堆里挑出几块，「灯腺我收——最近行情不错。」\n\n她抬头看你一眼。「往陆坡那边下了没？鳗鱼皮、章鱼喙，能弄到的，带来。」\n\n「Otto 用得着一部分，我用得着另一部分。」",
       "onEnter": [
         { "kind": "setFlag", "flag": "flag.mira.tip_reef_seen" }
       ],
@@ -104,22 +104,22 @@
         }
       ]
     },
-    "mira.materials_wreck": {
-      "id": "mira.materials_wreck",
+    "mira.materials_slope": {
+      "id": "mira.materials_slope",
       "text": "Mira 把你带回来的东西扫了一眼。\n\n「鳗鱼皮我要。」她顿了顿，「章鱼喙——留着，Otto 比我更需要这个。」\n\n停了一下，她才说：「你最近下得挺深。」\n\n她没说更多。又去记账了。",
       "onEnter": [
-        { "kind": "setFlag", "flag": "flag.mira.tip_wreck_seen" }
+        { "kind": "setFlag", "flag": "flag.mira.tip_slope_seen" }
       ],
       "choices": [
         {
-          "id": "open_shop_wreck",
+          "id": "open_shop_slope",
           "label": "（把东西摊在秤上）",
           "next": "end",
           "effects": [{ "kind": "openShop", "shopId": "mira.bench" }],
           "filler": true
         },
         {
-          "id": "back_wreck",
+          "id": "back_slope",
           "label": "（点头，先走）",
           "next": "end"
         }

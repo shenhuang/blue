@@ -33,10 +33,10 @@ export type ChapterId = 'ch1' | 'ch2';
 
 /**
  * 一章四锚点（剧情 SPEC §4.1 表序·锚点链推进顺序即数组顺序）：
- * 近海珊瑚礁 → 温带沉船 → 远洋中层 → 海沟+热液。
+ * 近海珊瑚礁 → 礁后陆坡 → 远洋中层 → 海沟+热液。
  * St0 只立节拍位；锚点事件/POI 归 St1。
  */
-export const CH1_ANCHORS = ['reef', 'wreck', 'midwater', 'vent'] as const;
+export const CH1_ANCHORS = ['reef', 'slope', 'midwater', 'vent'] as const;
 export type Ch1Anchor = (typeof CH1_ANCHORS)[number];
 
 /** 一章结局位。fulfilled=圆满（canon：当时为真）；blank=留白（更难解锁·清醒重访）。 */

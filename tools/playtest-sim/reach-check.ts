@@ -34,8 +34,8 @@ s = { ...s, profile: { ...s.profile, inventory: mergeIntoInventory(s.profile.inv
 s = buildAtLighthouse(s, HOME_LIGHTHOUSE_ID, 'lighthouse.dockyard.lv1');
 listAnchors(s, '+ dockyard lv1');
 
-// 3) + reef/wreck/midwater anchors done -> is vent anchor reachable?
-s = freshPostTutorial(['story.ch1.anchor.reef','story.ch1.anchor.wreck','story.ch1.anchor.midwater']);
+// 3) + reef/slope/midwater anchors done -> is vent anchor reachable?
+s = freshPostTutorial(['story.ch1.anchor.reef','story.ch1.anchor.slope','story.ch1.anchor.midwater']);
 s = { ...s, profile: { ...s.profile, inventory: mergeIntoInventory(s.profile.inventory, [
   { itemId: 'item.coral_shard', qty: 6 }, { itemId: 'item.old_fishing_net', qty: 3 }]) }};
 s = buildAtLighthouse(s, HOME_LIGHTHOUSE_ID, 'lighthouse.dockyard.lv1');

@@ -1,0 +1,14 @@
+{
+  "_comment": "敌人库 SPEC §4 支柱二 enemyRef 的线上用例：内容侧不写死 defId，而是描述『崩落陆坡上盘踞的那一个』，由 enemyLibrary.pickEnemy 在运行期从库里取一只合适的（现匹配 陆坡蛛蟹 / 沉灯水母 两只·池可随内容增长）。本文件不含 enemies[]，只放 combatEncounter；敌人本体仍在各自 JSON。引用方＝事件 rocky_slope.patrol_stir。",
+  "combatEncounters": [
+    {
+      "id": "combat.slope_patrol",
+      "party": {
+        "members": [
+          { "enemyRef": { "band": "zone.rocky_slope", "biome": "slope_field" } }
+        ]
+      },
+      "introText": "碎石影里那点动静终于出来了——这片陆坡盘踞的住客之一，认准了你。"
+    }
+  ]
+}

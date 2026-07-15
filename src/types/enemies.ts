@@ -204,7 +204,7 @@ export interface EnemyDef {
   bands?: string[];
   /**
    * 环境/栖息地轴（与 bands 正交·开放词表新值即用）：
-   * reef_tropical / cave_anchialine / wreck_field / polar_under_ice / mangrove / hydrothermal_vent …
+   * reef_tropical / cave_anchialine / slope_field / polar_under_ice / mangrove / hydrothermal_vent …
    * 同样 50m，热带礁的鱼与极地冰下的鱼是两套池子——"红树林热带鱼不进极地"靠这条。
    */
   biomes?: string[];

@@ -2,7 +2,7 @@
 //
 // 目的：可视化迭代迷路 mapgen 的布局，不用反复编译跑 playthrough。
 //   左栏：ZONE 选择（按 ZoneDef.regionId 分大区分组·2026-07-12——取代旧洞穴/开阔水域两组：全部 zone
-//     早已是 maze/warren，那两个 tab 已名存实亡。5 个大区 tab〔reef/wreck/midwater/vent/trench，
+//     早已是 maze/warren，那两个 tab 已名存实亡。5 个大区 tab〔reef/slope/midwater/vent/trench，
 //     顺序/label 单一来源 engine/regions.ts::allRegions〕+ 1 个「未分区/开发测试」兜底 tab（深渊无
 //     锚点 zone + dev 测试 zone）；分类条可收起各自 zone 列表）
 //   中栏：声呐图（洞穴 or 开阔水域）+ 节点/连边覆盖层 —— 两种拓扑都烤声呐底（2026-07-13 方案 A：

@@ -15,7 +15,7 @@
 // node 不吃 ts），两两算距离，低于 EPSILON（视为"同一个数字"）就报红。
 //
 // 有意窄化：只抓"精确撞车"（拷贝粘贴打错数字），不抓"离得近但不同"的密集聚簇——后者是设计内容
-// （vent/wreck/midwater 前哨群普遍 0.01–0.06 间距），已被最近距离分发兜住，硬做模糊阈值门容易误伤。
+// （vent/slope/midwater 前哨群普遍 0.01–0.06 间距），已被最近距离分发兜住，硬做模糊阈值门容易误伤。
 //
 // 跑法：node scripts/check-chart-poi-coords.mjs  或在 npm run regress 里作 check-chart-poi-coords 任务。
 // 退出码：全过=0，任一撞车=1。纯 node·无依赖·进程隔离友好。

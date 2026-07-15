@@ -1,6 +1,6 @@
 {
-  "_comment": "沉船蛛蟹双体 baseline · knife_slash × 7（target 0 × 4 击杀第一只·含 seed 3 下一次 miss，再 target 1 × 3 击杀第二只）。验证项目首个多体战斗 encounter：targetIndex 切换工作 + aggro/AI 同回合多敌响应 + 双份 crab_chitin 战利品。seed=3 下确定性 7 turns 收（潜水刀两攻击并为单攻击后·由 stab×4 改写为 slash×7·2026-06-25）。",
-  "combatId": "combat.wreck_spider_crabs_pair",
+  "_comment": "陆坡蛛蟹双体 baseline · knife_slash × 7（target 0 × 4 击杀第一只·含 seed 3 下一次 miss，再 target 1 × 3 击杀第二只）。验证项目首个多体战斗 encounter：targetIndex 切换工作 + aggro/AI 同回合多敌响应 + 双份 crab_chitin 战利品。seed=3 下确定性 7 turns 收（潜水刀两攻击并为单攻击后·由 stab×4 改写为 slash×7·2026-06-25）。",
+  "combatId": "combat.slope_spider_crabs_pair",
   "seed": 3,
   "actions": [
     { "actionId": "action.knife_slash", "targetIndex": 0 },

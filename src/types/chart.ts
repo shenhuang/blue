@@ -172,7 +172,7 @@ export interface ChartPoi {
    * prereqEventIds（单一真相·POI 不重复写 flag 逻辑）**。用于「重返同一地点·随进度换节拍」的剧情点
    * （如教学后重返东礁老沉船＝tutorial.captain_revisit〔没见过怪相·可下去看〕→ captain_revisit_empty〔见过了·空了〕）。
    * 这些事件必须 `weight: 0`（不进随机池·只经本机制钉放·否则会被内容库淹没＝命中率个位数%·见 quirk #174）。
-   * 仅 layered 图（reef/wreck）实现放置。置位归事件 setProfileFlags（dive-start 只读不写）。
+   * 仅 layered 图（reef/slope）实现放置。置位归事件 setProfileFlags（dive-start 只读不写）。
    */
   storyOpenEvents?: string[];
   /**
@@ -237,7 +237,7 @@ export type RegionShape = 'circle' | 'coast';
 /**
  * 一个揭示区的配置。揭示来源**两选一**（不变量·engine/regions.ts 加载时分类·
  * playthrough-chart 断言 regionConfigErrors() 为空＝焊成 regress 门）：
- *   - owner 灯塔锚定（reef/wreck/midwater/vent/trench）：owner 灯塔在 profile.lighthouses
+ *   - owner 灯塔锚定（reef/slope/midwater/vent/trench）：owner 灯塔在 profile.lighthouses
  *     中存在＝本区揭示，圈心＝该灯塔 mapX/mapY、半径随前哨衰减（effectiveRevealRadius）。
  *   - flag-gated（owner-less·鲸落区起）：profile.flags 含 revealFlag＝本区揭示，圈心＝显式
  *     center、半径＝radius（无灯塔→无衰减）。这是「按条件揭示的隐藏区」**通用原语**——条件

@@ -1,6 +1,6 @@
 {
-  "_comment": "沉船蛛蟹 territorial 撤退路径 · knife_slash × 3。seed=11 下 turn 2 把蛛蟹打到 hp 4（≤ 30% × 22）触发主动 fleeing；turn 3 玩家攻击，敌人 fleeing 阶段被结算为 hp=0 收。这是 Phase 3 战斗框架的第二个 territorial 撤退测试对象（与暗礁鲨同行）。",
-  "combatId": "combat.wreck_spider_crab_solo",
+  "_comment": "陆坡蛛蟹 territorial 撤退路径 · knife_slash × 3。seed=11 下 turn 2 把蛛蟹打到 hp 4（≤ 30% × 22）触发主动 fleeing；turn 3 玩家攻击，敌人 fleeing 阶段被结算为 hp=0 收。这是 Phase 3 战斗框架的第二个 territorial 撤退测试对象（与暗礁鲨同行）。",
+  "combatId": "combat.slope_spider_crab_solo",
   "seed": 11,
   "actions": [
     { "actionId": "action.knife_slash", "targetIndex": 0 },

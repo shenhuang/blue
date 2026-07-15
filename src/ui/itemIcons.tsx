@@ -76,7 +76,7 @@ const GLYPH: Record<string, ReactNode> = {
   'item.abyssal_crust': (<><path d="M4 12c3-2 6-2 8 0s5 2 8 0"/><path d="M4 16c3-2 6-2 8 0s5 2 8 0"/></>),
   'item.bluecave_geode': (<><path d="M6 10l6-5 6 5-6 9z"/><path d="M9 9l3 3 3-3M12 12v5"/></>),
   'item.gallery_crust': (<><path d="M4 14c2-3 5-1 8-2s5 1 8-1"/><path d="M5 17h14"/></>),
-  'item.wreck_bronze': (<><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/><path d="M12 5v2M12 17v2M5 12h2M17 12h2"/></>),
+  'item.slope_copper_vein': (<><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/><path d="M12 5v2M12 17v2M5 12h2M17 12h2"/></>),
   'item.collapse_fitting': (<><path d="M4 18l5-7 4 2 4-7"/><path d="M4 18h14"/><path d="M14 6h4v4"/></>),
   'item.oyster_shell': (<><path d="M12 18C7 18 4 14 4 10c4 0 8 1 8 8z"/><path d="M12 18c5 0 8-4 8-8-4 0-8 1-8 8z"/></>),
 };

@@ -1,6 +1,6 @@
 {
-  "_comment": "沉船蛛蟹单体 baseline · knife_slash × 3 击杀。验证 HP 22 / defense 2 的标准对线节奏（3 turns；预期玩家 stamina ≥ 60）。seed=1 下确定性 3 turns 收。",
-  "combatId": "combat.wreck_spider_crab_solo",
+  "_comment": "陆坡蛛蟹单体 baseline · knife_slash × 3 击杀。验证 HP 22 / defense 2 的标准对线节奏（3 turns；预期玩家 stamina ≥ 60）。seed=1 下确定性 3 turns 收。",
+  "combatId": "combat.slope_spider_crab_solo",
   "seed": 1,
   "actions": [
     { "actionId": "action.knife_slash", "targetIndex": 0 },

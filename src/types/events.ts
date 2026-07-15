@@ -9,7 +9,7 @@ export type Tone = 'realistic' | 'uncanny' | 'cosmic';
 export type ZoneTag =
   | 'shallow'
   | 'reef'
-  | 'wreck'
+  | 'slope'
   | 'cave'
   | 'coastal'
   | 'twilight'

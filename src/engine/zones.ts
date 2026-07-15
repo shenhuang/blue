@@ -6,7 +6,7 @@ import qaFixtureEvents from '@/data/events/qa_fixture.json';
 import zonesData from '@/data/zones.json';
 
 // 白板（2026-07-12·开放水域 + tutorial/ch1 主线整删，续·洞穴内容整删）：tutorial/ch1 主线事件 + reef/
-// midwater/vent/wreck_graveyard 开阔海域事件 + 27 条真实洞穴 zone（含最后存活的 blue_caves 2 条
+// midwater/vent/rocky_slope 开阔海域事件 + 27 条真实洞穴 zone（含最后存活的 blue_caves 2 条
 // poiId 内容）+ zone.the_deep_gate 全部删除；zones.json 仅剩 zone.warren + 3 条 maze 朝向 QA 夹具
 // （horizontal_test/vertical_test/serpentine_test）。开放水域与主线内容由作者未来重写（见 docs/QUIRKS +
 // docs/NEXT_SESSION_PROMPT）。引擎（mapgen/事件池/EVENT_DB 装载）不变——机制留、只是暂无叙事数据可抽；
@@ -28,7 +28,7 @@ export function getZone(id: string): ZoneDef | undefined {
 /**
  * 这个 zone 的下潜图能否「回头」（节点级 backtrack）。
  * 迷路图（mapShape='maze'，如蓝洞群 + 借它的 trench 柱 band）双向连通＝能原路返回；
- * 层状图（开阔水域 reef/wreck，缺省）connectsTo 只向下＝一旦往深处走，走过的节点不再是选项（单向下潜·设计如此）。
+ * 层状图（开阔水域 reef/slope，缺省）connectsTo 只向下＝一旦往深处走，走过的节点不再是选项（单向下潜·设计如此）。
  * UI 据此在层状 zone 给「只能往下、回不去」的预告，避免玩家在过了上浮口后才被「回不了头」打个措手不及。
  */
 export function zoneAllowsBacktrack(zoneId: string): boolean {
