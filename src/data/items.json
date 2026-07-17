@@ -1145,6 +1145,19 @@
       "weight": 0.05,
       "sellPrice": 20,
       "decay": "durable"
+    },
+    {
+      "_comment": "dev 发现令牌（猩红暴君 boss 落点车道·2026-07-17）：Mira ?dev 货架白拿即置 flag.scarlet_tyrant_discovered（devGrantItem → engine/state.ts::acquireIntoProfile 单点兑现 story.setsFlag）——供开发/测试直接解锁 zone.scarlet_tyrant_grounds + poi.anchor.scarlet_tyrant 可达，绕过尚未接线的主线发现门（#300 白板后主线重建前的占位通道）。category='other' ⇒ 自动落 Mira dev 货架「其它」tab（MiraShopView.tsx allItems().filter 按 category 分 tab，纯数据驱动·零 UI 改动）。",
+      "id": "item.dev.scarlet_marker",
+      "name": "[dev] 猩红落点坐标",
+      "category": "other",
+      "rarity": "common",
+      "description": "[dev] 白拿即置 flag.scarlet_tyrant_discovered。",
+      "weight": 0,
+      "sellPrice": 0,
+      "story": {
+        "setsFlag": ["flag.scarlet_tyrant_discovered"]
+      }
     }
   ]
 }

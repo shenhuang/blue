@@ -3,6 +3,7 @@
 
 import type { DiveEvent, Outcome, ZoneDef, ZoneTag } from '@/types';
 import qaFixtureEvents from '@/data/events/qa_fixture.json';
+import scarletEvents from '@/data/events/scarlet.json';
 import zonesData from '@/data/zones.json';
 
 // 白板（2026-07-12·开放水域 + tutorial/ch1 主线整删，续·洞穴内容整删）：tutorial/ch1 主线事件 + reef/
@@ -27,6 +28,9 @@ for (const z of (zonesData as { zones: ZoneDef[] }).zones) {
 
 export const EVENT_DB: Map<string, DiveEvent> = new Map();
 for (const e of (qaFixtureEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
+// 猩红暴君 boss 开场事件（story.scarlet_tyrant_encounter·weight=0 不进随机池·仅供 getEventById 直接解析——
+// dive-move.ts 到海床节点触发·见 events/scarlet.json + engine/scarlet-hunt.ts::SCARLET_INTRO_EVENT_ID）。
+for (const e of (scarletEvents.events as DiveEvent[])) EVENT_DB.set(e.id, e);
 
 export function getZone(id: string): ZoneDef | undefined {
   return ZONES.get(id);

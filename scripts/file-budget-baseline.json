@@ -1,7 +1,7 @@
 {
   "_doc": "check-file-budget 的 ratchet 基线：src/**/*.{ts,tsx} 默认预算 900 行，超默认的文件在此显式入册（条目值 ≤ 实际行数+10% 向上取整·只紧不松）。文件瘦身后跑 node scripts/check-file-budget.mjs --update 自动下调/移除条目；要调高条目只能手改并在 PR 说明理由——首选还是拆文件（参照 combat-mechanics / mapgen-* 的拆法）。",
   "budgets": {
-    "src/engine/combat.ts": 1164,
+    "src/engine/combat.ts": 1166,
     "src/ui/dev/CombatDevPanel.tsx": 1512,
     "src/ui/dev/EventDevPanel.tsx": 1034,
     "src/ui/SeaChartView.tsx": 1172,

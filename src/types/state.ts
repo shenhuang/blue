@@ -440,6 +440,16 @@ export interface RunState {
    */
   stalker?: Stalker;
   /**
+   * 猩红暴君（Scarlet Tyrant）逐波追猎进度（猩红暴君boss SPEC §4/§8·2026-07-17·engine/scarlet-hunt.ts）：
+   * `SCARLET_WAVE_SEQUENCE` 的索引——0＝尚未开场；N（1..4）＝已胜第 N 波、等下一波现身/推进；越出序列长度
+   * （`scarletCurrentEncounterId` 返 null）＝全部波次（含第五波剧情杀）已通关。**唯一写者**
+   * `engine/scarlet-hunt.ts::applyScarletVictory`（`finalizeVictory` 收束时、`applyWarrenVictory` 旁调用）；
+   * 读点 `?? 0` 兜底。真条件字段（quirk #106 同族·stalker?/decoy?/warrenHunt?）：createNewRun 不种、
+   * hydrateGameState 不补——`run: null` 时随 run 一并丢弃＝「逃脱不 bank 进度、下次从头」（SPEC §8）天然
+   * 免另写重置逻辑。additive·不 bump SAVE_VERSION（#99·纯对象 JSON 自动 round-trip）。
+   */
+  scarletWave?: number;
+  /**
    * 水里现存的诱饵（猎手 SPEC §4·deployDecoy 写、advanceStalker 读、过期由 stalkerStep 顺手清）。
    * 真条件字段：缺席＝没有诱饵（quirk #106·不种不补·不 bump SAVE_VERSION）。
    */

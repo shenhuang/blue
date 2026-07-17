@@ -60,6 +60,7 @@ import {
 // The Warren 女王身体库存主线（§15·#271·从 combat-mechanics 外移·守 file-budget）：六分支树 + 动态 screen 门 + 起盾 + 伤害计数。
 import { maybeWarrenQueenAct, queenScreened, recordQueenDamage, warrenInitScreen, finalizeSwarmRelocate, applyWarrenVictory } from './combat-warren';
 import { isWarrenLastStand } from './warren-hunt';
+import { applyScarletVictory } from './scarlet-hunt'; // 猩红暴君追猎波次编排（run 级·非机制层·见 scarlet-hunt.ts 头注）
 // 敌人词条系统试点·状态可变钩子（berserk 二次攻击 / regen 回合开头回血 / venom 命中挂毒·2026-07-12 #298
 // 从本文件外移·守 file-budget）：同 combat-mechanics.ts 的互为静态 import 约定，模块顶层互不调用。
 import { applyBerserkExtraAttacks, applyRegenAtTurnStart, applyVenomOnHit } from './combat-affixes';
@@ -1070,6 +1071,8 @@ function finalizeVictory(state: GameState): CombatTurnResult {
 
   // The Warren 胜利态回写（破封口墙→wallDown / 清空非女王卵室→存卵清零·§5/§8·外移守 file-budget·见 combat-warren.ts）。
   s = applyWarrenVictory(s);
+  // 猩红暴君追猎波次推进（run 级·非机制层·见 scarlet-hunt.ts 头注）：胜利的 encounterId 命中当前波次 → scarletWave+1。
+  s = applyScarletVictory(s);
 
   // 战利品（水鬼按 wornSkin 替换 loot·普通敌人 effectiveLoot 恒回 def.loot ⇒ 逐字节不变）
   const looted: InventoryItem[] = []; // 本次战斗所有掉落·收齐后批量一格弹「获得物品」（enqueuePickup·见 state.ts）

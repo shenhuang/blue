@@ -1,0 +1,31 @@
+{
+  "_doc": "猩红暴君 boss 落点车道（猩红暴君boss SPEC §1.2/§1.3·2026-07-17）：wave1 贴底主动攻击事件——玩家在 zone.scarlet_tyrant_grounds 撞见第一只弑亲者时的开场选择。weight=0（不进随机池·仅供未来强制开场机制引用，如 poi.story/storyOpenEvents/triggerEventId）——当前**尚未被任何 POI/事件引用**，是有意的孤儿占位内容，随 #300 主线重建一并接线（同 poi.anchor.scarlet_tyrant 的 _doc 说明：本 anchor 路线 P 阶段刻意不带 story 块，避免撞 check-mainline-reachable 的主线 beat 全套契约）。title/body 为占位文案，真实过稿文案留待作者后续 pass——本文件受 check-draft-leak 门约束（PLAYER_FIELDS 不得含字面 [待过稿] 标记），草稿状态改记在本 _doc，别学 enemies/ 那批直接写进玩家可见字段。两个 option：attack 触发 combat.scarlet_wave1（第一波遭遇）；hold 不触发战斗、只回正文，可重新面对同一选择（无 oncePerRun/无状态变更）。",
+  "events": [
+    {
+      "id": "story.scarlet_tyrant_encounter",
+      "depthRange": [70, 100],
+      "zoneTags": ["rock"],
+      "weight": 0,
+      "title": "礁缝间的红",
+      "body": "疏落的礁石间，水色比别处更浑。几团暗红的轮廓正贴着礁壁挪动，一点点欺近——其中一只的斑纹格外杂乱，像是缝了又缝的外套。",
+      "tone": "uncanny",
+      "options": [
+        {
+          "id": "attack",
+          "label": "迎上去",
+          "outcome": {
+            "text": "你没有等它先动手。",
+            "triggerCombatId": "combat.scarlet_wave1"
+          }
+        },
+        {
+          "id": "hold",
+          "label": "先按兵不动，再看看",
+          "outcome": {
+            "text": "你按住了动作。那几团影子仍在礁缝间游走，没有散开，也没有靠得更近。"
+          }
+        }
+      ]
+    }
+  ]
+}

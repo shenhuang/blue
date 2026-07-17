@@ -12,6 +12,13 @@ import { stalkerStep, weakStalkerStep, maybeApproachEncounter } from './dive-sta
 import { startCombat } from './combat';
 import { buildWarrenArrival } from './combat-warren';
 import {
+  isScarletGrounds,
+  scarletCurrentEncounterId,
+  scarletSeabedIntroDue,
+  spawnScarletPursuer,
+  SCARLET_INTRO_EVENT_ID,
+} from './scarlet-hunt';
+import {
   resolveHorrorSapienTier,
   horrorSapienChance,
   buildInhabitedCorpseEncounter,
@@ -113,12 +120,39 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
     return executeDeath(s, MADNESS_ASCENT_CAUSE);
   }
 
-  // 高警觉 + 该 zone 有潜伏捕食者 → 遭遇（先于节点 kind 分发；摸黑可避免）。三条路径：
+  // 高警觉 + 该 zone 有潜伏捕食者 → 遭遇（先于节点 kind 分发；摸黑可避免）。四条路径：
+  //   - 猩红暴君 boss（zone.scarlet_tyrant_grounds·engine/scarlet-hunt.ts·猩红暴君boss SPEC §4/§7/§8）→
+  //     独立编排的逐波追猎，**不读 huntEnabled**（§11.3⑤ 该字段当前无生产接通路径）：wave0 到海床节点触发
+  //     开场事件；wave>=1 时无追猎者→现身，有追猎者→推进（复用与 huntEnabled 分支相同的 stalkerStep 主体）。
   //   - 深 band（run.huntEnabled·猎手 SPEC Phase 1）→ 有位置的逼近猎手（出现→逼近→接触才伏击·非接触则照常进节点）；
   //   - 浅水弱变体（猎手 Q3·zone.weakHunts 数据 opt-in·浅水线下小概率）→ 同款逼近猎手的弱版（weakStalkerStep
   //     返回 null＝没 opt-in/没现身 → fall through 旧路径＝逐字节不变）；
   //   - 其它（POI 下潜 / 旧路径）→ 旧 alert→伏击瞬时遭遇（逐字节不变·守 playthrough-stealth §4-§6）。
-  if (s.run!.huntEnabled) {
+  if (isScarletGrounds(s.run!)) {
+    const encId = scarletCurrentEncounterId(s.run!);
+    if (encId !== null) {
+      if ((s.run!.scarletWave ?? 0) === 0) {
+        // wave0：还没打过第一波——到海床节点（seabedNodeIds）触发开场事件，outcome 引第一波战斗。
+        if (scarletSeabedIntroDue(s.run!, target.id)) {
+          return { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: SCARLET_INTRO_EVENT_ID } } };
+        }
+      } else if (!s.run!.stalker) {
+        // 上一波已胜、这一波的追猎者还没现身 → 在声呐量程外现身（同猎手 SPEC §2.4 惯例）。
+        const pursuer = spawnScarletPursuer(s.run!);
+        if (pursuer) {
+          s = appendLog(
+            { ...s, run: { ...s.run!, stalker: pursuer } },
+            { tone: 'uncanny', text: '[待过稿] 黑水更深处，又有一团暗红离开了礁影——朝你来了。' },
+          );
+        }
+      } else {
+        // 已有追猎者 → 推进一步（复用猎手主体：逼近 / 搜寻 / 接触判定全同 huntEnabled 路径）。
+        const hunted = stalkerStep(s, target, run.currentNodeId ?? undefined);
+        if (hunted.contact) return hunted.state;
+        s = hunted.state;
+      }
+    }
+  } else if (s.run!.huntEnabled) {
     // run.currentNodeId（applyTransit 前）＝你刚离开的节点 → 对穿接触判定（§5）。
     const hunted = stalkerStep(s, target, run.currentNodeId ?? undefined);
     if (hunted.contact) return hunted.state; // 接触→伏击 combat，提前返回
