@@ -1,0 +1,25 @@
+{
+  "_comment": "吃活同伴夺词条确定性（SPEC §2·combat-scarlet.ts::maybeScarletAct/pickScarletVictim/scarletDevour）——车道⑤新建，非仿现有文件。ad-hoc 双暴君（enemyDefIds 两个 enemy.scarlet_tyrant，非 combatId 注册遭遇）：全程只打 targetIndex 1（第二只，instanceId=adhoc.1），index0（adhoc.0）满血全程不受伤。**重要（已核对 combat-scarlet.ts::pickScarletVictim + startAdHocCombat）**：ad-hoc 路径完全不给 EnemyInstance 赋 affixes（startAdHocCombat 只造 instanceId/defId/hp/stance/aggro/statuses，不读 def.affixes/def.randomAffixes/member.affixesOverride），且暴君 def 本身也没有 affixes/randomAffixes 字段（『不自带初始词条·全靠吃』SPEC §3.4）——故本战两只暴君全程 affixes 恒为空集，**不可能**验证『夺到重复词条→去重』（§3.3 mergeAffixesDedup 的碰撞分支）；本文件只验吃同伴机制本体：被吃者 hp→0（走 fledInstanceIds 不掉料）+ 吃食者回『被吃者剩余血』（healByVictimHp）+ scarletDevour 的 feedText 落 log，**不验**词条转移（见下方 notes 与本 lane 的报告：dedup 碰撞在当前数据/harness 下无法只靠新建 scenario 构造，需要车道①追加一个『2 个已带同词条 affixesOverride 的成员喂给同一 scarletFeed 吃食者』的 combatEncounter 才能测，超出本车道『只碰 scenarios/combat/』的边界）。**目标死亡不会卡断后续动作**（与『单敌』baseline 不同的关键差异）：一旦 index1 被吞（hp→0）但 index0 仍活，combat 不结束——combat.ts::applyAttack 对『指定 targetId 已死』有 fallback：`combat.enemies.find(e=>e.instanceId===targetId&&hp>0) ?? combat.enemies.find(e=>hp>0)`，即自动改打『场上第一个还活着的』（=index0）。因此本文件后续动作即便名义上仍写 targetIndex:1，一旦 index1 被吃后会静默改打 index0，**不会**变成 actionUnavailable（已核对 checkActionAvailability 对普通遭遇没有『目标必须存活』的通用门，只有链鳗按序/女王 shieldedBy/screen 三条特化门，均不适用本战）。数值边界（knife_slash 净伤 [6,12]=[8,14]−defense2，两只暴君 hp 皆 90）：吃食阈值『被吃者 hp/maxhp ≤ 0.5』即 ≤45——worst-case（每击最低 6）ceil(45/6)=8 刀必跨阈值；且单击最高 12 远小于 45，不可能一刀之内从 >45 越过 0（跳过被吃窗口）。故 8 刀 targetIndex:1 保证：index1 在第 8 刀（至迟）被打进 ≤45 窗口后，当回合敌方回合（maybeScarletAct 先于 order 捕获执行）index0 必吃掉它——因为 index0 全程满血 90（从不够格被 index1 吃：90 ≤ 90*0.5=45 不成立），只有 index0 能当吃食者、index1 只能当猎物，方向不会反转。且『index0 最多被重定向吃到的刀数』= 8 − (跨阈值所需最少刀数≥4) ≤ 4 刀 × 单击最高 12 = 48 < 90，index0 数学上不可能在这 8 刀内被打死——故 enemiesAlive 恒为 1（index0 存活·index1 已被吞）。bonuses.hpMaxBonus=300：两只暴君全程无词条（无 berserk 加成攻击次数），worst-case 每回合最多 2 只同时出手（吞并发生前）合计 20+20=40，吞并那回合起被吃者不再进 order（『先于 order 捕获』语义），至多 7 回合『两只在场』+1 回合『吞并当回合只 index0 出手』= 7×40+20=300，起手 400 满血扣满仍余 100。**数值/文案占位；本 baseline 未实跑**（沙箱无 esbuild，按边界约定不跑 bless/regress/build）——outcome/enemiesAlive/finalPhase/survived/logIncludes 均按上述 worst/best-case 边界数学推导为确定性结论（见 expect.notes）。",
+  "enemyDefIds": ["enemy.scarlet_tyrant", "enemy.scarlet_tyrant"],
+  "seed": 1,
+  "bonuses": { "hpMaxBonus": 300 },
+  "stats": { "hp": 400 },
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 1 },
+    { "actionId": "action.knife_slash", "targetIndex": 1 },
+    { "actionId": "action.knife_slash", "targetIndex": 1 },
+    { "actionId": "action.knife_slash", "targetIndex": 1 },
+    { "actionId": "action.knife_slash", "targetIndex": 1 },
+    { "actionId": "action.knife_slash", "targetIndex": 1 },
+    { "actionId": "action.knife_slash", "targetIndex": 1 },
+    { "actionId": "action.knife_slash", "targetIndex": 1 }
+  ],
+  "expect": {
+    "outcome": "noActionProvided",
+    "survived": true,
+    "finalPhase": "combat",
+    "enemiesAlive": 1,
+    "logIncludes": ["它转向队伍里最弱的那只，腕足一卷送进口中"],
+    "notes": "手推边界（未实跑·整合阶段 bless 前请先复核一次真实输出）：① 8 个动作全部消费完（都在可用性/目标解析里成功结算——即便 index1 中途已死也会被 applyAttack 的死目标 fallback 重定向到 index0，不会 actionUnavailable），故 outcome='noActionProvided'、finalPhase 仍是 'combat'（两只暴君都没有把对方逼到 allEnemiesDefeated，本战从不触发胜利判定）。② enemiesAlive=1：index1 必被吞（worst-case 第 8 刀跨越阈值）、index0 数学上不可能在本文件给的动作预算内被打死（详见 _comment 边界推导）。③ logIncludes 摘 scarlet_tyrant.json::scarletFeed.feedText 去掉『[待过稿] 』前缀后的稳定子串——scarletDevour 默认 silent=false 会把这句原样推进 log，只要吞并发生（8 刀 worst-case 保证发生）就必出现。④ 本文件**不能**且**没有**断言：被吞者 hp 精确归零的数值细节、吃食者回血的精确数值（『回被吃者剩余血』在本例里由于吃食者恒在满血 90 起手，min(90, 90+X)-90=0——即本战『回血』这一支路数学上恒为 0，非零回血只有在吃食者自身先掉血的情况下才可见，超出本文件刻意保持的『安全/可推导』设计，见 _comment）、以及词条转移与去重（两只暴君全程无任何词条，dedup 碰撞在当前数据下不可构造，见 _comment 与本车道报告）。这三类如需覆盖，需要车道①追加数据（如给暴君加一个可指定初始词条的 fixture 口，或新增一个『2 个同词条 affixesOverride 成员喂同一吃食者』的 combatEncounter），当前超出本车道『只碰 scenarios/combat/scarlet_*.json』的边界。"
+  }
+}

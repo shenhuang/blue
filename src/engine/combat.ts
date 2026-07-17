@@ -63,6 +63,7 @@ import { isWarrenLastStand } from './warren-hunt';
 // 敌人词条系统试点·状态可变钩子（berserk 二次攻击 / regen 回合开头回血 / venom 命中挂毒·2026-07-12 #298
 // 从本文件外移·守 file-budget）：同 combat-mechanics.ts 的互为静态 import 约定，模块顶层互不调用。
 import { applyBerserkExtraAttacks, applyRegenAtTurnStart, applyVenomOnHit } from './combat-affixes';
+import { maybeScarletAct, distributeScarletWaveAffixes, maybeScarletFinaleInterception } from './combat-scarlet'; // 猩红暴君 boss（§2/§3/§5·外移守 file-budget·顶层互不调用不入环）
 
 // ——— 数据索引 ———
 
@@ -220,6 +221,7 @@ export function startCombat(
     s = pushCombatLog(s, { actor: 'system', text: enc.introText });
   }
   s = warrenInitScreen(s); // The Warren 女王·开战起手起初始肉盾（§15.2·否则第 1 回合玩家先手·女王裸露·丢「先破墙」手感）
+  s = distributeScarletWaveAffixes(s); // 猩红暴君波·一波内跨怪无放回词条分发（§3.2·非猩红波遭遇零成本早退）
   return s;
 }
 
@@ -575,6 +577,7 @@ function applyAttack(state: GameState, action: CombatAction, targetId?: string):
   if (state.phase.kind !== 'combat') return state;
   if (action.effect.kind !== 'attack') return state;
   const combat = state.phase.combat;
+  { const fin = maybeScarletFinaleInterception(state, targetId); if (fin) return fin; } // §5 第五波剧情杀·首攻触发暴君瞬吃3夺3·玩家这一击落空（暴君登场后 null·普通攻击照常）
   // 链鳗（分节实体）按序：攻击锁定**最前存活节**（防御纵深——可用性门已拒非法目标·此处保证即便被绕过
   // 也绝不伤到后节）。非按序遭遇 → 既有解析（指定目标活则打它·否则首个活敌）逐字节不变。
   const target = combat.attackInOrder
@@ -848,6 +851,7 @@ function runEnemyTurn(state: GameState): GameState {
   // 口孵深鱼（maternalBehavior）：母鱼回合开头检查 HP < 50%——有存活护巢仔时消耗一只回血。
   // 在 order 捕获**之前**执行：被消耗的护巢仔 HP→0 后不会出现在行动队列里（无幽灵行动）。
   s = maybeConsumeJuvenile(s);
+  s = maybeScarletAct(s); // 猩红暴君/弑亲者·吃活同伴夺词条（§2·非 scarletFeed def 零成本 no-op·先于 order 捕获·被吞不进行动队列）
 
   // 按 aggro 降序，每个活着的敌人依次行动（战斗状态系统 SPEC §2.3：眩晕不再是「预先滤掉」——
   // order 含本回合全部活敌，走到自己回合时才结算 settleStatusesAtTurnStart 知道是否眩晕，

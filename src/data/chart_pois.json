@@ -1,5 +1,5 @@
 {
-  "_doc": "港口海图 POI 数据。anchors = 持久点（永远在；通常每 zone 一个，但同 zone 可挂多个出潜口——如横岩廊=蓝洞群的平廊侧口·#114 续）；roamingTemplates = 机会点模板，generateChart 按 runsCompleted 种子抽取若干并生成运行时 id。两级门控：requiresFlags=发现（不满足则不出现），requiresUpgrade=抵达能力（不满足则灰显可见但不能出海）。modifier.depthOffset/depthRange/layerCount/depthCurve 已实装（后三者=GenOpts 薄投影·平廊三件套：窄 span+长图+剖面 k），current/visibility 暂为叙事+接口。**随机内容层拆除（2026-07-12）**：深度柱/band 系统（depth_columns.json/columns.ts）整套删除——原派生的深入潜点 poi.dive.*.t<tier> 一并删；4 条主线 story beat re-home 成本文件的**静态 anchor**（id=poi.dive.{home,slope,midwater,vent}.story·带 story 块入潜强制开场·reveal＝mentor_logbook.marksPois·深度门经济待重做 TODO）。**洞穴内容整删（2026-07-12 续）**：27 条真实洞穴 zone + zone.the_deep_gate 已从 zones.json 删除（仅留 zone.warren + 3 条 maze 朝向 QA 夹具 horizontal_test/vertical_test/serpentine_test，三者均无 chart POI、不可达）——本文件随之只剩 poi.anchor.warren 一条 anchor（同样因 flag.warren_discovered 无事件置位而不可达）+ 空 roamingTemplates；详见 docs/QUIRKS。**owner 归属 + 相对坐标（owner-anchored 重构）**：每个 anchor/roamingTemplate 带 owner（所属灯塔 id）；mapX/mapY 是**相对 owner 声明坐标的偏移**（generateChart 用 engine/lighthouses.ts::ownerAnchorPos resolve 成绝对坐标·声明坐标静态可查→剧情点 beacon 建成前也能定位）。点亮判定＝owner 灯塔在 profile.lighthouses 里即出现（不走几何·见 chart.ts isLit）。story 锚点也带 owner（坐标基准 + 区域标签），但恒显恒可达、不被 owner 门控（避免「建 beacon 要先潜、潜要先有 beacon」死锁）。owner-less + 绝对坐标的特例须显式 absolute:true（守门：authored POI 无 owner 必须 absolute·防自动内容生成漏进这条 lane）。新增节点：归某座灯塔就填 owner + 相对偏移；要无主绝对点就 absolute:true + 绝对 mapX/mapY。owner 声明坐标：home 见 engine/state.ts(HOME_LIGHTHOUSE_POS)，前哨见 lighthouse_upgrades.json result。",
+  "_doc": "港口海图 POI 数据。anchors = 持久点（永远在；通常每 zone 一个，但同 zone 可挂多个出潜口——如横岩廊=蓝洞群的平廊侧口·#114 续）；roamingTemplates = 机会点模板，generateChart 按 runsCompleted 种子抽取若干并生成运行时 id。两级门控：requiresFlags=发现（不满足则不出现），requiresUpgrade=抵达能力（不满足则灰显可见但不能出海）。modifier.depthOffset/depthRange/layerCount/depthCurve 已实装（后三者=GenOpts 薄投影·平廊三件套：窄 span+长图+剖面 k），current/visibility 暂为叙事+接口。**随机内容层拆除（2026-07-12）**：深度柱/band 系统（depth_columns.json/columns.ts）整套删除——原派生的深入潜点 poi.dive.*.t<tier> 一并删；4 条主线 story beat re-home 成本文件的**静态 anchor**（id=poi.dive.{home,slope,midwater,vent}.story·带 story 块入潜强制开场·reveal＝mentor_logbook.marksPois·深度门经济待重做 TODO）。**洞穴内容整删（2026-07-12 续）**：27 条真实洞穴 zone + zone.the_deep_gate 已从 zones.json 删除（仅留 zone.warren + 3 条 maze 朝向 QA 夹具 horizontal_test/vertical_test/serpentine_test，三者均无 chart POI、不可达）——本文件随之只剩 poi.anchor.warren 一条 anchor（同样因 flag.warren_discovered 无事件置位而不可达）+ 空 roamingTemplates；详见 docs/QUIRKS。**2026-07-17 新增 poi.anchor.scarlet_tyrant**（猩红暴君 boss 落点接线车道·猩红暴君boss SPEC §1.2/§1.3/§8）：仿 poi.anchor.warren 同款占位 anchor（新占位 flag.scarlet_tyrant_discovered 同样无事件置位 ⇒ 暂不可达），指向新 zone.scarlet_tyrant_grounds（rock 类型开阔水域·非 zone.openwater_rock_test 那条声呐 look-dev QA 夹具——理由见 zones.json 该条 _placeholder_doc）；带 story 块＝ SPEC §1.3 落点机制核心（story-pin 强制开场 + seedKey=poi.id 确定性重生）。**owner 归属 + 相对坐标（owner-anchored 重构）**：每个 anchor/roamingTemplate 带 owner（所属灯塔 id）；mapX/mapY 是**相对 owner 声明坐标的偏移**（generateChart 用 engine/lighthouses.ts::ownerAnchorPos resolve 成绝对坐标·声明坐标静态可查→剧情点 beacon 建成前也能定位）。点亮判定＝owner 灯塔在 profile.lighthouses 里即出现（不走几何·见 chart.ts isLit）。story 锚点也带 owner（坐标基准 + 区域标签），但恒显恒可达、不被 owner 门控（避免「建 beacon 要先潜、潜要先有 beacon」死锁）。owner-less + 绝对坐标的特例须显式 absolute:true（守门：authored POI 无 owner 必须 absolute·防自动内容生成漏进这条 lane）。新增节点：归某座灯塔就填 owner + 相对偏移；要无主绝对点就 absolute:true + 绝对 mapX/mapY。owner 声明坐标：home 见 engine/state.ts(HOME_LIGHTHOUSE_POS)，前哨见 lighthouse_upgrades.json result。",
   "ch1": {
     "anchors": [
       {
@@ -15,6 +15,20 @@
         "persistent": true,
         "requiresFlags": ["flag.warren_discovered"],
         "modifier": { "depthRange": [120, 160] }
+      },
+      {
+        "_doc": "占位 anchor（猩红暴君 boss·Scarlet Tyrant·Ch1 第二个 boss·2026-07-17 Cowork·猩红暴君boss SPEC §1.2/§1.3/§8）：仿 poi.anchor.warren 形状。owner 暂挂 home（恒在坐标基准，同 warren 套路，真实归属待作者定）；requiresFlags 挂新占位 flag.scarlet_tyrant_discovered（当前无事件设置 ⇒ 不出现·纯占位·待作者接发现门，同 warren）。**纯占位·同 warren（2026-07-17 路线 P·作者拍板）**：本 anchor 当前**不带 story 块**——车道③原加了 story 块（story-pin 落点 + beatFlag 主线 beat·SPEC §1.3/§8），但 #300 白板已删空主线框架，带 story 的 anchor 会被 check-mainline-reachable 当主线 beat、要求整套可达契约（beatFlag story.* 由 story.ts 登记 / 道具 marksPois 揭示坐标 / chainTail 章尾锚）——全依赖尚不存在的主线，故退回纯占位（warren 先例＝占位 boss anchor 本就不带 story 块）。boss 战斗机制层已完整（engine/combat-scarlet.ts 吃词条/运行时去重/波次/第五波剧情杀 + scenarios/combat baseline）。**以下随 #300 主线重建一并接入**：story-pin 强制开场（applyStoryOpen 读 poi.story 块）、beatFlag『story.scarlet_tyrant_slain』打赢标记（须 story.ts 登记 story.* + 战斗结算 setProfileFlags）、发现门 flag.scarlet_tyrant_discovered 置位源、道具 marksPois 揭示坐标、章尾归属、hunter 追逃生产接通。命名契约保留待接：boss id=enemy.scarlet_tyrant / zone=zone.scarlet_tyrant_grounds / 打赢 flag 名 story.scarlet_tyrant_slain（去 flag. 前缀以符门）。mapX/mapY/distance 占位（defer-number-tuning）。",
+        "id": "poi.anchor.scarlet_tyrant",
+        "zoneId": "zone.scarlet_tyrant_grounds",
+        "name": "[待过稿] 礁隙深处",
+        "blurb": "[待过稿] 海图上被人用红笔圈了又划掉的一角——像是想标危险，又像是不敢写清楚是什么。",
+        "distance": 4,
+        "owner": "lighthouse.home",
+        "mapX": 0.3,
+        "mapY": -0.05,
+        "persistent": true,
+        "requiresFlags": ["flag.scarlet_tyrant_discovered"],
+        "modifier": { "depthRange": [70, 100] }
       }
     ],
     "roamingTemplates": []

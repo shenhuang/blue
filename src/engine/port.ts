@@ -42,8 +42,8 @@ export function handleReturnToPort(state: GameState): ReturnToPortResult {
   let acquired = acquireIntoProfile(state.profile, state.run.inventory);
   // 固定资源**永久**耗尽入账（POI 固定资源耗尽·2026-06-25）：生还回港才把本 run 采到的 save 级件
   // 合并进 profile.harvestedResources[key]（死亡走 gameOver/funeral·不经此 ⇒ 资源留给下次·与物品入袋同走「生还才落袋」）。
-  // 持久洞（多口持久洞 §4.3/§4.4）：记账 key = caveId（资源空间是「洞」非「单口」·任一口进采都算同一洞采尽）；非洞 = poiId。
-  const harvestKey = state.run.caveId ?? state.run.poiId;
+  // 持久 dive-target（开阔水域持久化·泛化自多口持久洞 §4.3/§4.4）：记账 key = diveMapId（资源空间是「一张图」非「单口」·任一口进采都算同一图采尽）；非持久 = poiId。
+  const harvestKey = state.run.diveMapId ?? state.run.poiId;
   if (harvestKey && state.run.harvestedSaveItems && state.run.harvestedSaveItems.size > 0) {
     let harvested = acquired.harvestedResources;
     for (const itemId of state.run.harvestedSaveItems) {
@@ -51,15 +51,15 @@ export function handleReturnToPort(state: GameState): ReturnToPortResult {
     }
     acquired = { ...acquired, harvestedResources: harvested };
   }
-  // 持久洞已探写回（多口持久洞 §4.4）：本潜访问过的节点并进 caveMaps[caveId].explored（生还才落袋·驱动再进「已探片」预亮）。
-  if (state.run.caveId) {
-    const cave = acquired.caveMaps.get(state.run.caveId);
+  // 持久 dive-target 已探写回（开阔水域持久化·泛化自多口持久洞 §4.4）：本潜访问过的节点并进 diveMaps[diveMapId].explored（生还才落袋·驱动再进「已探片」预亮）。
+  if (state.run.diveMapId) {
+    const cave = acquired.diveMaps.get(state.run.diveMapId);
     if (cave) {
       const explored = new Set(cave.explored);
       for (const id of state.run.visitedNodeIds) explored.add(id);
-      const caveMaps = new Map(acquired.caveMaps);
-      caveMaps.set(state.run.caveId, { ...cave, explored });
-      acquired = { ...acquired, caveMaps };
+      const diveMaps = new Map(acquired.diveMaps);
+      diveMaps.set(state.run.diveMapId, { ...cave, explored });
+      acquired = { ...acquired, diveMaps };
     }
   }
   // 撤退/月相存档窗（蜂群 boss SPEC §9.11）：离港这一刻，若本 run 带着 Warren 追猎进度，把它整个搬到

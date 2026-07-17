@@ -513,7 +513,7 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   const map = run?.map ?? null;
   const memory = run?.scanMemory ?? {};
   // 持久洞「已探片」预亮（多口持久洞 §6.1）：当前洞跨 run 已探节点叠加进「known」——同一张图、不同已探片。
-  // 非洞下潜（run.caveId 缺）→ undefined ⇒ known 计算逐字节不变（旧行为）。
+  // 非持久下潜（run.diveMapId 缺）→ undefined ⇒ known 计算逐字节不变（旧行为）。
   const persistentExplored = persistentExploredForRun(state.profile, run);
   const scannedIds = map ? Object.keys(memory).filter((id) => map.nodes[id]) : [];
 

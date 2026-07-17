@@ -68,6 +68,22 @@
       "_placeholder_doc": "占位 zone（蜂群 boss·The Warren·作者 2026-07-08 三卵室重设计·蜂群boss SPEC §8/§11）：mapShape=warren ⇒ mapgen.ts 分流到 generateWarrenMap（三卵室三角·女王随机起点·封口墙/密度/存卵全 run 态）。owner/门控/深度档/POI 归属 defer。requiresFlags 挂当前无事件设置的 flag.warren_discovered ⇒ 暂不可达（占位·待作者接发现门）。gates 省略（同 zone.horizontal_test·搜寻信号＝密度热度非声呐·quirk #239·不设感知门）。**2026-07-12 内容清空**：27 条真实洞穴 zone + zone.the_deep_gate 已删（仅留本 zone + 3 条 maze 朝向 QA 夹具 horizontal_test/vertical_test/serpentine_test）；flag.warren_discovered 仍无事件置位——本 zone 与全部下潜内容一样当前不可达，此为已知/接受状态，非待修 bug（见 QUIRKS）。"
     },
     {
+      "id": "zone.scarlet_tyrant_grounds",
+      "name": "[待过稿] 猩红礁滩",
+      "description": "[待过稿] 疏落大礁石间的一片开阔水域——礁缝背光处，暗红的影子逐波逼近。",
+      "depthRange": [70, 100],
+      "layerCount": 6,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["rock"] }
+      ],
+      "requiresFlags": ["flag.scarlet_tyrant_discovered"],
+      "generation": "random",
+      "mapShape": "layered",
+      "canFreeAscend": true,
+      "_placeholder_doc": "占位 zone（猩红暴君 boss·Scarlet Tyrant·Ch1 第二个 boss·2026-07-17 Cowork·猩红暴君boss SPEC §1.2/§1.3/§8）：落点＝rock 类型开阔水域下部（zoneTag『rock』⇒ engine/seabed.ts::isFlooredOpenWaterTag 有海床档，供贴底专属内容 + atSeabed Condition）。mapShape 缺省『layered』（层状 DAG·单向下潜，同 openwater_*_test 系列开阔水域档）；canFreeAscend:true 供 combat-exit-semantics 的 beginAscent 零成本任意回合上浮逃生（SPEC §7）。**为何新建、未复用 zone.openwater_rock_test**：那条明确标注『开发测试用·非正式内容』，是声呐渲染 look-dev QA 夹具（ui/dev/scenes/registry.ts 消费）——复用会把生产 boss 内容耦合到渲染测试夹具的形状/生命周期上（look-dev 迭代改它的 depthRange/layerCount 会连带牵动 boss 落点）。本 zone 是真实内容、独立生命周期。requiresFlags 挂新占位 flag.scarlet_tyrant_discovered（当前无事件设置 ⇒ 不出现·纯占位·待作者/主线接发现门，同 zone.warren 先例）。depthRange/layerCount 全占位（defer-number-tuning）；波次编排（1→3→4→5→暴君·SPEC §4）由核心机制车道（combat-scarlet.ts）承载，本 zone 只供 seedKey 确定性重生 + atSeabed 终点判定落地，不预设波次必须对齐层数。"
+    },
+    {
       "id": "zone.openwater_sand_test",
       "name": "开阔·沙原（测试）",
       "description": "一片平缓沙原开阔水域——只有沙波海床、无结构。（开发测试用·开阔水域声呐 look-dev·非正式内容）",

@@ -12,7 +12,8 @@ import type {
   ZoneTag,
   InventoryItem,
   DiveMap,
-  PersistentCave,
+  PersistentDiveMap,
+  PersistentTarget,
 } from '@/types';
 import { generateDiveMap, generatePersistentCaveMap, applyCaveOverlays, cavePortalsOf, caveSeededRng, caveHash } from './mapgen';
 import { ensureQueenPlaced } from './warren-hunt';
@@ -122,9 +123,10 @@ export function startDive(
      */
     poiTemplateId?: string;
     /**
-     * 持久洞预建地图（多口持久洞 SPEC §4.1）：caveEntry 路径下潜时由 startDiveIntoCave 传入「已加载 + overlay」
-     * 的图副本（startNodeId 已设为绑定入口节点）。给了 ⇒ startDive 跳过 generateDiveMap、直接用它（不再读 poiId 的
-     * harvest——cave overlay 已在副本上叠加）。缺省（zone/band 路径）→ 走 generateDiveMap 每潜重生（旧行为不变）。
+     * 持久 dive-target 预建地图（开阔水域持久化 SPEC §2.3·泛化自多口持久洞 §4.1）：caveEntry/seaEntry 路径
+     * 下潜时由 startDiveIntoPersistent 传入「已加载 + overlay」的图副本（startNodeId 已设为解析出的起手节点）。
+     * 给了 ⇒ startDive 跳过 generateDiveMap、直接用它（不再读 poiId 的 harvest——overlay 已在副本上叠加·by
+     * dive-target id）。缺省（zone/band 路径）→ 走 generateDiveMap 每潜重生（旧行为不变）。
      */
     prebuiltMap?: DiveMap;
     /** 钉放剧情节拍（quirk #174）：weight0 故事事件 id·透传 mapgen 放到其 depthRange 途中节点。由 startDiveFromPoi 从 poi.storyOpenEvents 选合规变体填。 */
@@ -251,9 +253,12 @@ export function startDive(
   return enterNodeSelection({ ...state, run });
 }
 
-// ── 持久多口洞下潜（多口持久洞 SPEC §4·方案 B）─────────────────────────────
+// ── 持久 dive-target 下潜（开阔水域持久化 SPEC §2·泛化自多口持久洞 §4·方案 B）──────────────
+// 洞穴 + 开阔持久海域**共用一条 load-or-generate 轨**（注册表 diveMaps / 冻结 / overlay / 写回）：
+// getPersistentTarget 把 POI 解析成 PersistentTarget，startDiveIntoPersistent 按 kind 只在
+//「用哪个生成器 / 怎么解析起手节点」两处分派——洞穴多口门户，开阔 MVP 单入口＝图起点（多入口 defer·§5）。
 
-/** DiveMap 深拷贝（纯数据·JSON 安全）：本潜工作副本——别改 caveMaps 里的冻结原图（§4.1）。 */
+/** DiveMap 深拷贝（纯数据·JSON 安全）：本潜工作副本——别改 diveMaps 里的冻结原图（§3）。 */
 function cloneDiveMap(map: DiveMap): DiveMap {
   return JSON.parse(JSON.stringify(map)) as DiveMap;
 }
@@ -264,7 +269,7 @@ function cloneDiveMap(map: DiveMap): DiveMap {
  * 候选空（无 entrance 门户·坏数据）→ 回退 map.startNodeId 防白屏（check-cave-bindings 守门会先把这种焊成红）。
  */
 function resolveCaveEntryNode(
-  cave: PersistentCave,
+  cave: PersistentDiveMap,
   entry: NonNullable<ChartPoi['caveEntry']>,
   poiId: string,
 ): string {
@@ -283,46 +288,86 @@ function resolveCaveEntryNode(
 }
 
 /**
- * 从 caveEntry POI 进持久洞（§4.1）：load-or-generate caveMaps[caveId] → 解析入口节点 → 本潜工作副本 + 加载 overlay
- * （尸体 + save 级采尽·by caveId）→ createNewRun(caveId) → startDive(prebuiltMap) 走统一收尾。
- * 首次进生成并冻结进 profile.caveMaps（写存档·#98 家族确定性）；再进（含换口进）加载续上次（料/尸/已探）。
+ * 把 POI 解析成持久 dive-target（开阔水域持久化 SPEC §2.2·统一收口）：
+ *  - poi.caveEntry 且 getCave(id) **已登记** → { kind:'cave' }（多口门户/区域/深度·load-or-generate diveMaps）。
+ *  - poi.seaEntry（MVP 无 getSea 登记表·§2.4「一片海＝一个 zone + 单入口」）→ { kind:'openwater' }（复用
+ *    generateDiveMap 层状冻结·单入口）。
+ *  - 未登记 / 无绑定 → undefined（落回普通 zone 路径·seedKey=poi.id 确定性重生兜底）。
+ * 「未登记即兜底」＝把现有 `getCave(undefined) → undefined → 旧路径` 的健全回退推广到两类 target——保住 QA
+ * 夹具 / 教学关 linearScripted 的确定性重生（它们不进注册表；check-cave-bindings 类守门焊死悬空绑定为红，
+ * 运行时仍兜底防白屏）。互斥：caveEntry 先判（与既有「caveEntry 先于 zone 判」逐字节一致）。
  */
-function startDiveIntoCave(state: GameState, poi: ChartPoi): GameState {
-  const entry = poi.caveEntry!;
-  const params = getCave(entry.caveId)!; // 调用方已判存在
-  const zone = getZone(params.zoneId);
+export function getPersistentTarget(poi: ChartPoi): PersistentTarget | undefined {
+  if (poi.caveEntry && getCave(poi.caveEntry.caveId)) {
+    return { kind: 'cave', id: poi.caveEntry.caveId, entry: poi.caveEntry };
+  }
+  if (poi.seaEntry) {
+    return { kind: 'openwater', id: poi.seaEntry.seaId, entry: poi.seaEntry };
+  }
+  return undefined;
+}
+
+/**
+ * 进持久 dive-target（开阔水域持久化 SPEC §2.3·泛化自旧 startDiveIntoCave）：洞穴 + 开阔海域**同一条**
+ * load-or-generate 轨，只在「用哪个生成器 / 怎么解析起手节点」两处按 target.kind 分派。五步：
+ *   1. load-or-generate diveMaps[id]：缺则按 kind 生成并冻结（cave→generatePersistentCaveMap /
+ *      openwater→generateDiveMap 层状·seedKey=id·#98 家族确定性）→ 写存档。**冻结图保持干净**——尸体/采尽
+ *      不进生成（openwater 生成不透传 deaths，否则 placeCorpses 会把尸体烤进冻结图·违反 §3「冻结只含拓扑+已探+门户」）。
+ *   2. 解析起手节点：cave→resolveCaveEntryNode（多口确定性挑）/ openwater→map.startNodeId（MVP 单入口·多入口 defer §5）。
+ *   3. 本潜工作副本 cloneDiveMap + applyCaveOverlays（尸体 + save 级采尽·by dive-target id·加载时叠·不冻进图·§3）。
+ *   4-5. createNewRun(diveMapId=id) → startDive(prebuiltMap) 统一收尾（跳过每潜重生·thermal 门在 startDive 内统一过）。
+ * 首次进生成并冻结进 profile.diveMaps（写存档）；再进（含换口进）加载续上次（料/尸/已探）。
+ */
+function startDiveIntoPersistent(state: GameState, poi: ChartPoi, target: PersistentTarget): GameState {
+  // zone 来源（§2.3）：洞穴取登记参数的 zoneId；开阔海域用 poi.zoneId（复用其内容池·MVP 不建 seas.json）。
+  // caveParams 非空 ⟺ target.kind==='cave'（getPersistentTarget 已保证 getCave 登记存在·故 ! 安全）。
+  const caveParams = target.kind === 'cave' ? getCave(target.id)! : undefined;
+  const zoneId = caveParams ? caveParams.zoneId : poi.zoneId;
+  const zone = getZone(zoneId);
   if (!zone) {
-    console.warn(`Cave ${entry.caveId} 的 zone ${params.zoneId} 不存在`);
+    console.warn(`持久 dive-target ${target.id} 的 zone ${zoneId} 不存在`);
     return state;
   }
 
+  // 1. load-or-generate + 冻结（首次进生成一次·写存档·之后加载续上次）。
   let profile = state.profile;
-  let cave = profile.caveMaps.get(entry.caveId);
-  if (!cave) {
-    const genMap = generatePersistentCaveMap(
-      { zone, profileFlags: profile.flags, rng: caveSeededRng(entry.caveId) },
-      params,
-    );
-    cave = { caveId: entry.caveId, map: genMap, explored: new Set<string>(), portals: cavePortalsOf(genMap) };
-    const caveMaps = new Map(profile.caveMaps);
-    caveMaps.set(entry.caveId, cave);
-    profile = { ...profile, caveMaps };
+  let persistent = profile.diveMaps.get(target.id);
+  if (!persistent) {
+    const genMap = caveParams
+      ? generatePersistentCaveMap(
+          { zone, profileFlags: profile.flags, rng: caveSeededRng(target.id) },
+          caveParams,
+        )
+      : // 开阔海域＝复用现有层状生成器（原样冻结·单入口·不新增生成器·SPEC §0/§2.3）。
+        // **不传 deaths/harvested*** ⇒ 冻结图干净（尸体+采尽留给下方 applyCaveOverlays 加载时叠·§3/§9 风险#5）。
+        generateDiveMap({ zone, profileFlags: profile.flags, seedKey: target.id });
+    persistent = { id: target.id, map: genMap, explored: new Set<string>(), portals: cavePortalsOf(genMap) };
+    const diveMaps = new Map(profile.diveMaps);
+    diveMaps.set(target.id, persistent);
+    profile = { ...profile, diveMaps };
   }
 
-  const startNodeId = resolveCaveEntryNode(cave, entry, poi.id);
-  const workMap = cloneDiveMap(cave.map);
+  // 2. 解析起手节点（cave 多口确定性挑 / openwater 单入口＝图起点）。
+  const startNodeId =
+    target.kind === 'cave'
+      ? resolveCaveEntryNode(persistent, target.entry, poi.id)
+      : persistent.map.startNodeId;
+
+  // 3. 本潜工作副本 + 加载 overlay（尸体 + save 级采尽·by dive-target id·冻结原图保持干净·§3）。
+  const workMap = cloneDiveMap(persistent.map);
   workMap.startNodeId = startNodeId;
   applyCaveOverlays(workMap, {
     deaths: profile.deaths,
-    zoneId: params.zoneId,
-    rng: caveSeededRng(`${entry.caveId}::overlay`),
-    harvestedItemIds: profile.harvestedResources.get(entry.caveId),
+    zoneId,
+    rng: caveSeededRng(`${target.id}::overlay`),
+    harvestedItemIds: profile.harvestedResources.get(target.id),
   });
 
-  let run = createNewRun({ zoneId: params.zoneId, bonuses: getRunBonuses(profile), equipment: profile.equipment, poiId: poi.id, caveId: entry.caveId });
+  // 4-5. createNewRun(diveMapId) → startDive(prebuiltMap) 统一收尾（写回按 diveMapId 落回同一图·见 port.ts）。
+  let run = createNewRun({ zoneId, bonuses: getRunBonuses(profile), equipment: profile.equipment, poiId: poi.id, diveMapId: target.id });
   run = { ...run, diveModifier: poi.modifier };
   const s: GameState = { ...state, profile, run };
-  return startDive(s, params.zoneId, { prebuiltMap: workMap });
+  return startDive(s, zoneId, { prebuiltMap: workMap });
 }
 
 /**
@@ -412,10 +457,13 @@ export function startDiveFromPoi(
     return appendLog(state, { tone: 'system', text: '负重过载——你几乎浮不起来。卸下些装备再出发。' });
   }
 
-  // 持久多口洞（多口持久洞 SPEC §4.1·方案 B）：POI 带 caveEntry ⇒ 走持久洞路径（load-or-generate caveMaps[caveId]·
-  // 起手 = 绑定入口节点），先于 bandId/zone 判（互斥）。caveId 未登记 → 落回下方旧路径防白屏（check-cave-bindings 守门）。
-  if (poi.caveEntry && getCave(poi.caveEntry.caveId)) {
-    return startDiveIntoCave(state, poi);
+  // 持久 dive-target（开阔水域持久化 SPEC §2·泛化自多口持久洞·方案 B）：POI 带 caveEntry（已登记洞）或
+  // seaEntry（持久开阔海域）⇒ 走**统一**持久图路径（load-or-generate diveMaps[id]·冻结 / 已探跨潜续存 /
+  // save 采尽永久），先于 zone 判（互斥）。未登记 / 无绑定 → getPersistentTarget 返回 undefined → 落回下方
+  // 普通 zone 路径（seedKey=poi.id 确定性重生）防白屏（check-cave-bindings 守门焊死悬空绑定为红）。
+  const persistentTarget = getPersistentTarget(poi);
+  if (persistentTarget) {
+    return startDiveIntoPersistent(state, poi, persistentTarget);
   }
 
   // 随身加成 = 全局升级 ＋ 家灯塔「船坞」设施（dockyard 迁灯塔后由 getRunBonuses 并回，见 lighthouses.ts）

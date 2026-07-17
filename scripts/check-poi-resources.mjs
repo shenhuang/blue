@@ -3,7 +3,7 @@
 //
 // 背景（quirk #163·engine/mapgen.ts::applyHarvestDepletion + engine/port.ts + engine/zones.ts::eventLootItemIds）：
 //   固定资源的**永久**耗尽粒度＝按 `(poiId, itemId)`，不是按节点。回港时 port.ts 把本 run 采到的
-//   `harvestPersist:'save'` 件并进 `profile.harvestedResources[harvestKey]`（harvestKey = run.caveId ?? run.poiId）；
+//   `harvestPersist:'save'` 件并进 `profile.harvestedResources[harvestKey]`（harvestKey = run.diveMapId ?? run.poiId）；
 //   下次进同一 POI，mapgen 的 applyHarvestDepletion 把**所有「事件产出该 itemId」的节点**一并抹平
 //   （eventYieldsExhausted 只看 itemId、不分是哪个事件）。
 //   ⇒ **同一个 POI（同一 run.poiId 容器）里若有两条 save 级脉产同一个 itemId，采空其一 → 下次进图两条一起消失**

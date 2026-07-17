@@ -1,0 +1,38 @@
+{
+  "_comment": "猩红暴君（enemy.scarlet_tyrant）单体 baseline·车道⑤（猩红暴君boss SPEC docs/spec/深海回响_猩红暴君boss_SPEC.md §9 车道⑤）：满足 check-enemy-refs（d）『有 baseline』——整合前无任何 scenarios/combat/*.json 引用 combat.scarlet_tyrant_solo，enemy.scarlet_tyrant 因此报『无 combat baseline』（本文件即修复）。仿 cave_grouper_boss_solo__phase_kill.json 套路：knife_slash 连打验①暴君自身常规攻击（tyrant.arm_sweep[9,15]/tyrant.beak_crush[13,20]·hp=90/defense=2）②HP≤30%（≤27）enrage 阶段（phases[0]·stanceForce='enraged'·本阶段无 attacksOverride，故伤害表不变，只变 stance）③guaranteed 掉落 item.coral_shard。solo 遭遇场上只有暴君一只、无可吞活同伴（scarletFeed 吃活夺词条·SPEC §2）⇒ maybeScarletAct 对本战自然 no-op（暴君不吃自己，也不可能拿到任何词条——本 baseline 全程 affixes 恒空）；吃同伴/夺词条/去重留 scarlet_tyrant_adhoc__devour_feed.json 与 scarlet_wave5__finale_entrance.json 验，本文件只钉暴君自身战斗基线（含 boss 阶段过渡）。knife_slash 净伤区间 [6,12]（[8,14]−defense2）：worst-case（每击最低 6）ceil(90/6)=15 刀必死；30% 阈值（hp≤27·需累计伤害≥63）worst-case ceil(63/6)=11 刀必过——本文件给 20 刀（≥15 留冗余）。多给的刀数在单敌遭遇里绝对安全：一旦 allEnemiesDefeated → finalizeVictory，playthrough-combat-scenarios 的回合循环顶部 `if (state.phase.kind !== 'combat') break;` 直接跳出，不会因『目标已死』退化成 actionUnavailable（这与下面 devour 那份『多目标』scenario 不同，那边靠 applyAttack 的死目标 fallback ` combat.enemies.find(hp>0)` 兜底，见其 _comment）。bonuses.hpMaxBonus=300 覆盖 worst-case 单侧受伤上限：暴君全程无法获得任何词条（solo 无victim），只有两条固定攻击，15 回合内必被击杀 ⇒ 最多 15 次敌方回合 × 单击最高 20（beak_crush 上限）= 300，起手 400 满血扣满 300 仍余 100 缓冲。行动/资源消耗（stamina 6/次·oxygen 1 回合/次）不需要额外加成：即便 worst-case 打满 15 刀才死，累计 stamina=90≤默认 100、oxygen=15≤默认 60，且第 15 刀之后战斗已结束、后续 5 刀根本不会被处理，故不必为『20 刀』本身的资源开销加保险。**数值/文案占位（defer-number-tuning）；本 baseline 未实跑**（沙箱无 esbuild+按车道边界约定不跑 bless/regress/build）——outcome/enemiesAlive/finalPhase/lootGained/logIncludes 均按上面的 worst-case 边界推导为『在给定输入下无论 RNG 落点如何都成立』的结论（详见 expect.notes），仅 turnsElapsed 未断言（具体第几回合击杀由 RNG 决定）。",
+  "combatId": "combat.scarlet_tyrant_solo",
+  "seed": 1,
+  "bonuses": { "hpMaxBonus": 300 },
+  "stats": { "hp": 400 },
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 },
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "victory",
+    "survived": true,
+    "finalPhase": "dive",
+    "enemiesAlive": 0,
+    "lootGained": { "item.coral_shard": 2 },
+    "logIncludes": ["它身上缝着的每一层皮都在收紧"],
+    "notes": "手推边界（未实跑·整合阶段 bless 前请先复核一次真实输出再决定是否保留/收紧）：① outcome/enemiesAlive/finalPhase 因 20 刀 ≥ worst-case 15 刀必杀而恒成立。② lootGained 用 guaranteed qty[2,4] 的下界 2（effectiveLoot 在无 wornSkin 时恒回 def.loot·guaranteed 100% 触发只随机数量·rolls 表可能再加·『≥2』恒真，见 combat.ts::finalizeVictory/effectiveLoot）。③ logIncludes 摘 phases[0].transitionText 去掉『[待过稿] 』前缀后的稳定子串——30% 阈值 worst-case 第 11 刀前必过，早于第 15 刀击杀，故必定先出现在 log 里再触发胜利；若车道④文案改写了这句叙事，需同步改这里的子串（同 warren_queen__feed_sacrifice.json 的 logIncludes 惯例）。turnsElapsed 未断言（RNG 决定具体回合数·如需锁精确回合请在 Mac/云端 esbuild 环境跑 --bless 后按机械字段收紧）。若 bless 结果与此处任一断言不符，大概率是 hp/defense/attacks 数值或 resolveDamage/loot 逻辑已经变化，应回查而非直接把断言改成『现状』。"
+  }
+}

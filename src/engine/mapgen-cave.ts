@@ -47,7 +47,7 @@ function spreadPortalDepths(authored: number[] | undefined, count: number, lo: n
   return out;
 }
 
-/** 从一张持久洞地图派生门户清单（扫 portalKind 节点·区域按深度三分）。PersistentCave.portals 的单一来源。 */
+/** 从一张持久洞地图派生门户清单（扫 portalKind 节点·区域按深度三分）。PersistentDiveMap.portals 的单一来源。 */
 export function cavePortalsOf(map: DiveMap): CavePortal[] {
   const depths = Object.values(map.nodes).map((n) => n.depth);
   const d0 = Math.min(...depths);
@@ -230,8 +230,8 @@ export function generatePersistentCaveMap(opts: GenOpts, params: CaveGenParams):
 
 /**
  * 持久洞加载 overlay（多口持久洞 SPEC §4.3）：在**本潜的图副本**上叠加尸体 + 采尽抹平（确定性·读 live 状态）。
- * 冻结图保持干净（稳定真相）；每潜按 live profile.deaths（#36 定位不变·recovered 不再布）+ harvest（by caveId·
- * save 级 harvestedItemIds / run 级 harvestedNodeIds）叠加。原地改 map.nodes——**调用方传图副本**（别改 caveMaps 冻结原图）。
+ * 冻结图保持干净（稳定真相）；每潜按 live profile.deaths（#36 定位不变·recovered 不再布）+ harvest（by dive-target id·
+ * save 级 harvestedItemIds / run 级 harvestedNodeIds）叠加。原地改 map.nodes——**调用方传图副本**（别改 diveMaps 冻结原图）。
  * 候选 = 非门户、非地标节点（同迷路 corpse 候选）。rng 缺省 Math.random（per-dive·新尸体可随时间出现）。
  */
 export function applyCaveOverlays(

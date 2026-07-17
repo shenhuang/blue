@@ -12,6 +12,13 @@ import zonesData from '@/data/zones.json';
 // docs/HANDOFF）。引擎（mapgen/事件池/EVENT_DB 装载）不变——机制留、只是暂无叙事数据可抽；
 // 洞穴/持久洞入口机制留、内容空。EVENT_DB 现只装 events/qa_fixture.json 一条非叙事 QA 夹具事件
 // （见该文件头注）——纯为不让 EventView/事件统计/揭示归因等既有 regress 覆盖随内容一起归零。
+//
+// 追补（2026-07-17·猩红暴君 boss 落点接线车道）：上段「zones.json 仅剩 zone.warren + 3 条 maze QA 夹具」
+// 已随后续 session 增长而过期——2026-07-13/14 又加了 4 条开阔水域声呐 look-dev QA 夹具
+// （zone.openwater_{sand,coral,rock,reef}_test·非正式内容）；本次再加 zone.scarlet_tyrant_grounds
+// （猩红暴君 boss 落点·真实内容·非 QA 夹具·猩红暴君boss SPEC §1.2/§1.3）。历史段落原样保留，
+// 现状请以 zones.json 各条目自身 _doc/_qa_fixture_doc/_placeholder_doc 为准——本文件头注只是
+// 粗略沿革说明，不是当前 zone 清单的单一真相（数据本身才是）。
 
 export const ZONES: Map<string, ZoneDef> = new Map();
 for (const z of (zonesData as { zones: ZoneDef[] }).zones) {

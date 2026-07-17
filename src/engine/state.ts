@@ -38,7 +38,9 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // run.stats 形状变（少一字段）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始（「疯掉」改由地点缝 seam 二元门·见 types/dive.ts）。
 // 14→15（战斗系统改版·2026-07-10）：Stats 加 hp（生命值·伤害落点·归零死）+ RunState 加 hpMax；负伤系统整套下线（run.injuries 删）——
 // run/stats 形状变（加 hp/hpMax·减 injuries）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始。体力不再致死（改行动预算）、伤害改打 HP。
-const SAVE_VERSION = 16;
+// 16→17（开阔水域持久化·2026-07-17）：持久图注册表泛化更名 profile.caveMaps→diveMaps（Map<id, PersistentDiveMap>）、记录字段 caveId→id、
+// run.caveId→run.diveMapId——洞穴与开阔持久海域共用一张 kind-agnostic 注册表。形状变（字段更名·非纯加）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始。
+const SAVE_VERSION = 17;
 
 /**
  * 生命值上限基线（战斗系统改版 2026-07-10）。createNewRun 种进 run.hpMax、stats.hp 起手＝hpMax。
@@ -99,8 +101,8 @@ export function createInitialProfile(): PlayerProfile {
     equipment: createStarterLoadout(),
     // 固定资源永久耗尽追踪（POI 固定资源耗尽·2026-06-25）：起手空 Map（无 POI 被采尽）。
     harvestedResources: new Map(),
-    // 持久洞地图（多口持久洞·方案 B·2026-06-25）：起手空 Map（还没进过任何洞·首次进各自生成冻结）。
-    caveMaps: new Map(),
+    // 持久 dive-target 地图注册表（开阔水域持久化·泛化自多口持久洞）：起手空 Map（还没进过任何图·首次进各自生成冻结）。
+    diveMaps: new Map(),
     // 通用 NPC 信任系统（藏宝贸易与信任系统 SPEC §3·2026-06-30）：起手空表（对谁都陌生·档由 trust.ts 派生）。
     trust: {},
     // 对话选项"新/已聊"分档（对话选项面板收窄·2026-07-03）：起手空 Set（什么都没聊过）。
@@ -245,10 +247,10 @@ export function createNewRun(opts: {
    */
   poiId?: string;
   /**
-   * 本次下潜所属持久洞 id（多口持久洞 SPEC §4.2）：caveEntry 路径下潜传 caveId。
-   * 出洞结算据它把 explored/harvest 写回 caveMaps[caveId]。非洞下潜（缺省）→ run.caveId undefined。
+   * 本次下潜所属持久 dive-target id（开阔水域持久化·泛化自多口持久洞 §4.2）：持久路径（caveEntry 等）下潜传该图 id。
+   * 出洞结算据它把 explored/harvest 写回 diveMaps[diveMapId]。非持久下潜（缺省）→ run.diveMapId undefined。
    */
-  caveId?: string;
+  diveMapId?: string;
   /** 背包承载上限覆写（kg·缺省＝RUN_CARRY_WEIGHT·脚本/测试可调）。 */
   carryWeightLimit?: number;
   /** 来自 profile.equipment 的持久装备配置（Otto P3·缺省＝导师起始件）。 */
@@ -304,8 +306,8 @@ export function createNewRun(opts: {
     zoneId: opts.zoneId,
     // POI 固定资源耗尽（2026-06-25）：固定地图 POI 下潜带 poi.id；非 POI（缺省）→ undefined ⇒ harvest 记账 no-op。
     poiId: opts.poiId,
-    // 持久洞所属（多口持久洞·方案 B·2026-06-25）：caveEntry 路径下潜带 caveId；非洞下潜（缺省）→ undefined。
-    caveId: opts.caveId,
+    // 持久 dive-target 所属（开阔水域持久化·泛化自多口持久洞）：caveEntry 等持久路径下潜带该图 id；非持久下潜（缺省）→ undefined。
+    diveMapId: opts.diveMapId,
     map: null,
     stats,
     staminaMax,
@@ -464,8 +466,8 @@ export function hydrateGameState(state: GameState): GameState {
     outpostState: state.profile.outpostState ?? {},
     // 固定资源永久耗尽容器（POI 固定资源耗尽·2026-06-25）：旧档/缺失单点补空 Map（#107 同 shopStock）。
     harvestedResources: state.profile.harvestedResources ?? new Map(),
-    // 持久洞地图容器（多口持久洞·方案 B·2026-06-25）：缺失单点补空 Map（同 harvestedResources·#107）。
-    caveMaps: state.profile.caveMaps ?? new Map(),
+    // 持久 dive-target 地图注册表容器（开阔水域持久化·泛化自多口持久洞）：缺失单点补空 Map（同 harvestedResources·#107）。
+    diveMaps: state.profile.diveMaps ?? new Map(),
     // NPC 信任容器（藏宝贸易与信任系统 SPEC §3·2026-06-30）：缺失单点补空表（同 shopStock·#107·additive 不 bump SAVE·#99）。
     trust: state.profile.trust ?? {},
     // 对话选项已聊记录（对话选项面板收窄·2026-07-03）：缺失单点补空 Set（同 trust·additive 不 bump SAVE·#99）。

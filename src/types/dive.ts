@@ -2,6 +2,10 @@
 // 对应主 SPEC §6.1 节点图生成
 
 import type { ZoneTag } from './events';
+// 持久 dive-target 解析（开阔水域持久化 SPEC §2.2）引用 POI 绑定字段形状（caveEntry/seaEntry）。
+// **类型-only 循环**：chart.ts 亦 `import type` 自本文件（CaveRegion/NodeGate…）——两向皆 type-only、
+// 编译期擦除、无运行时 require 环（标准做法·单一真相：绑定形状只在 ChartPoi 定义一次）。
+import type { ChartPoi } from './chart';
 
 // ============================================================
 // 统一门模型（感知门 SPEC·灯/声呐 × 隐藏/锁住·2×2）—— 一个门 = 哪种感官解锁 × 不满足时怎么表现。
@@ -294,14 +298,14 @@ export interface CavePortal {
 }
 
 /**
- * 一个持久洞的存档记录（多口持久洞 SPEC §2.1·方案 B）。首次进洞生成并冻结于
- * `profile.caveMaps[caveId]`；再进（含换口进）从这里加载＝同一空间续上次。
+ * 一个持久 dive-target（洞 / 开阔海域）的存档记录（开阔水域持久化 SPEC §1·泛化自多口持久洞 §2.1）。首次进生成并冻结于
+ * `profile.diveMaps[id]`；再进（含换口进）从这里加载＝同一空间续上次。洞穴（cave.*）与开阔持久海域（sea.*）共用一张 kind-agnostic 记录。
  * 序列化：`saveReplacer/saveReviver` 的 __map 分支（value 内含 DiveMap 纯对象 + explored:Set
- * 自底向上 revive）——零新序列化代码（同 harvestedResources 先例）。改洞设计＝全局 bump 弃档（#99·无单洞迁移）。
+ * 自底向上 revive）——零新序列化代码（同 harvestedResources 先例）。改图设计＝全局 bump 弃档（#99·无单图迁移）。
  */
-export interface PersistentCave {
-  /** 稳定洞 id（= 生成 seed·= caveMaps key·= harvest 记账 key·命名空间 cave.<短名>）。 */
-  caveId: string;
+export interface PersistentDiveMap {
+  /** 稳定 dive-target id（= 生成 seed·= diveMaps key·= harvest 记账 key·命名空间 cave.<短名> / sea.<短名>）。 */
+  id: string;
   /** 冻结的地图（首次进生成→冻结；运行时突变机制〔未来〕在此就地改写）。 */
   map: DiveMap;
   /** 曾被探明过的节点 id（跨 run 持久·驱动声呐图「已探片」预亮 + 海图认知）。 */
@@ -311,12 +315,26 @@ export interface PersistentCave {
 }
 
 /**
+ * 一个持久 dive-target 的解析结果（开阔水域持久化 SPEC §2.2·discriminated union）。
+ * `dive-start.ts::getPersistentTarget` 把一个 POI 解析成它，收口洞穴 + 开阔海域**两条持久轨**成一条
+ * load-or-generate 路径——`kind` 只在「用哪个生成器 / 怎么解析起手节点」两处分派：
+ *   - `'cave'`      → `generatePersistentCaveMap`（多口门户/区域/深度）+ `resolveCaveEntryNode` 挑起手节点。
+ *   - `'openwater'` → `generateDiveMap`（层状 DAG·复用现有生成器·冻结原样·MVP 单入口＝`map.startNodeId`）。
+ * `id`＝稳定 dive-target id（`diveMaps` key·= 生成 seed·= harvest 记账 key·命名空间 `cave.<短名>`/`sea.<短名>`）。
+ * `entry`＝对应 POI 绑定字段（`caveEntry`/`seaEntry`）——门户解析细节按 `kind` 分派，持久轨（注册表/冻结/
+ * overlay/写回）**同一条**。多入口＝给 `seaEntry` 补 `entryNodeId?/mouthDepth?` 并换起手解析器，不重写轨（SPEC §5·defer）。
+ */
+export type PersistentTarget =
+  | { kind: 'cave'; id: string; entry: NonNullable<ChartPoi['caveEntry']> }
+  | { kind: 'openwater'; id: string; entry: NonNullable<ChartPoi['seaEntry']> };
+
+/**
  * 一个持久洞的生成参数（多口持久洞 SPEC §2.4·**数据驱动**·单一来源 data/caves.json·engine/caves.ts::getCave）。
  * 这组数据＝生成器的**全部**输入：「加大洞」改 sizeScale/depthRange；「这洞将来要挂很多口」调大 entrancePortals。
  * **没有任何口数/形状写死在 mapgen 代码里**——全是这张表（§5 可扩展硬要求落成机制·§7 守门）。
  */
 export interface CaveGenParams {
-  /** 稳定洞 id（= 生成 seed·= caveMaps key·命名空间 cave.<短名>）。 */
+  /** 稳定洞 id（= 生成 seed·= diveMaps key·命名空间 cave.<短名>）。 */
   caveId: string;
   /** 复用哪个 zone 的内容池/标签/敌人（事件抽取走 buildEventPool(zone)·内容仍是 zone 的）。 */
   zoneId: string;

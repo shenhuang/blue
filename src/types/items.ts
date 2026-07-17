@@ -117,6 +117,17 @@ export interface ItemDef {
   harvestPersist?: 'save' | 'run';
 
   /**
+   * 该道具是否为「开阔海域有限矿藏」（开阔水域持久化 SPEC §4.2/§4.3·声明式意图标记）：
+   * 标 true ⇒ 必须 harvestPersist === 'save'，否则 regress 红（scripts/check-openwater-harvest.mjs 守门）。
+   * 缺省 undefined/false ＝ 不受此约束（可再生道具 / 非贴底采集道具都不必标）。
+   * 焊的坑：engine/items.ts::harvestPersistOf 缺省 'run'（可再生·下次重进刷新），但「矿藏」类内容
+   * 作者心智默认「采完没有」——两者相反。忘手写 'save' 不会报错，只会让矿藏静默变成采不完的刷子。
+   * 本字段把「这是一块有限矿藏」的意图显式声明出来，让门替作者把关，而非指望每次都记得手写档位。
+   * 当前（openwater 矿藏内容尚未落地）仓内可能没有任何道具标此字段——门对空集直接放行，是为未来焊坑。
+   */
+  deposit?: boolean;
+
+  /**
    * 该道具赋予的能力标签（通用·不限 category）。与 events.ts hasCapability 条件配套使用：
    * hasCapability 同时扫装备槽（run.equipment）和当前潜水背包（run.inventory），任意来源匹配即满足。
    *

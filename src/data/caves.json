@@ -1,5 +1,5 @@
 {
-  "_doc": "持久洞登记表（多口持久洞 SPEC §2.4·方案 B）。一个 zone 在此登记一条 CaveGenParams ⇒ 变成持久洞（走 generatePersistentCaveMap + caveMaps 存档路径）；没登记的 zone 保持每潜重生（#98）。加一个新持久洞 = 加一条 caves[] 条目（= 可扩展模型本身·不改码）。caveId 用独立命名空间 cave.<短名>。数值占位·留作者最后调（defer-number-tuning）。POI→入口绑定在 chart_pois.json 的 caveEntry（T3b）·此处只定洞本身。**2026-07-12 洞穴内容整删**：原 5 条持久洞（blue_caves/serpentine_deep/mirror_maze/flooded_gallery/blue_throat）绑定的 zone 均已从 zones.json 删除 ⇒ 全部登记清空，只留 1 条 repoint 到 QA 夹具 zone.vertical_test 的技术性条目，纯为保住 scripts/playthrough-cave.ts 对 generatePersistentCaveMap/caveMaps 存档路径的真实注册表集成回归覆盖（无 chart POI 绑定·玩家不可见·不算叙事内容）。机制本身未动，只是暂无叙事洞数据——下次登记新持久洞照此表结构加条目即可。",
+  "_doc": "持久洞登记表（多口持久洞 SPEC §2.4·方案 B）。一个 zone 在此登记一条 CaveGenParams ⇒ 变成持久洞（走 generatePersistentCaveMap + diveMaps 存档路径）；没登记的 zone 保持每潜重生（#98）。加一个新持久洞 = 加一条 caves[] 条目（= 可扩展模型本身·不改码）。caveId 用独立命名空间 cave.<短名>。数值占位·留作者最后调（defer-number-tuning）。POI→入口绑定在 chart_pois.json 的 caveEntry（T3b）·此处只定洞本身。**2026-07-12 洞穴内容整删**：原 5 条持久洞（blue_caves/serpentine_deep/mirror_maze/flooded_gallery/blue_throat）绑定的 zone 均已从 zones.json 删除 ⇒ 全部登记清空，只留 1 条 repoint 到 QA 夹具 zone.vertical_test 的技术性条目，纯为保住 scripts/playthrough-cave.ts 对 generatePersistentCaveMap/diveMaps 存档路径的真实注册表集成回归覆盖（无 chart POI 绑定·玩家不可见·不算叙事内容）。机制本身未动，只是暂无叙事洞数据——下次登记新持久洞照此表结构加条目即可。",
   "caves": [
     {
       "caveId": "cave.vertical_test",

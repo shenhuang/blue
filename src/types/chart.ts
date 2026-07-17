@@ -122,12 +122,12 @@ export interface ChartPoi {
   };
   /**
    * 多口持久洞入口绑定（多口持久洞 SPEC §2.3）：设了 ⇒ 本 POI 是某持久洞的一个**入口**。
-   * 下潜走持久洞路径（load-or-generate caveMaps[caveId]·起手 = 解析出的入口节点），而非 zone/band 每潜重生路径。
+   * 下潜走持久洞路径（load-or-generate diveMaps[caveId]·起手 = 解析出的入口节点），而非 zone/band 每潜重生路径。
    * **解耦/数据驱动**：别处再开一个口 = 加一条带 caveEntry 的 POI 绑到现成入口门户，不重生、不改码。
    * 与 bandId/columnId 路径互斥（dive-start 先判 caveEntry）。
    */
   caveEntry?: {
-    /** 目标洞稳定 id（= 持久图 seed·= caveMaps key·命名空间 cave.<短名>）。多口共享同一 caveId ⇒ 落同一张图。 */
+    /** 目标洞稳定 id（= 持久图 seed·= diveMaps key·命名空间 cave.<短名>）。多口共享同一 caveId ⇒ 落同一张图。 */
     caveId: string;
     /**
      * 显式绑定到地图的某入口门户节点 id（最稳·作者钉死「这个口落这个节点」）。
@@ -143,6 +143,26 @@ export interface ChartPoi {
      * true ⇒ 海图标已知但 dim、不能从此下潜（仍可作为洞内上浮的出口）。T4 温度门控的接入点。
      */
     entranceBlocked?: boolean;
+  };
+  /**
+   * 开阔持久海域入口绑定（开阔水域持久化 SPEC §2.4）：设了 ⇒ 本 POI 是某持久开阔海域的一个**入口**。
+   * 下潜走持久图路径（load-or-generate diveMaps[seaId]·**复用现有 generateDiveMap 层状生成器**首次进生成→冻结·
+   * 起手＝图起点），而非 zone 每潜重生路径。与 caveEntry 并列、由 dive-start.ts::getPersistentTarget 一并解析
+   * 成 PersistentTarget（`kind:'openwater'`）。与 caveEntry/bandId 互斥（getPersistentTarget 先判 caveEntry·同既有次序）。
+   *
+   * **「开阔＝没有墙的洞穴」**：持久轨（注册表/冻结/overlay/写回/load-or-generate）与洞穴**同一条**；
+   * 只是绑定形状按 kind 有别（加法·[[correctness-over-minimal]]）——洞穴入口有多门户 region/depth 绑定 +
+   * 温度封口语义（caveEntry），开阔海域 MVP 只需单入口，故不复用/更名 caveEntry。
+   * **MVP 薄登记**（SPEC §2.4/§9）：不建 data/seas.json、无 getSea 登记表——「一片海＝一个 zone + 单入口」，
+   * zone 复用 poi.zoneId 的内容池，seaId 只作 diveMaps key + 生成 seedKey。多入口（entryNodeId?/mouthDepth?/
+   * regionBias?·对称 caveEntry）+ 跨 beacon 海图同海分组＝future（SPEC §5·defer·别堵死抽象即可）。
+   */
+  seaEntry?: {
+    /**
+     * 目标持久海域稳定 id（= diveMaps key·= 生成 seedKey·命名空间 sea.<短名>·独立于 cave.* 命名空间）。
+     * 多口共享同一 seaId ⇒ 落同一张冻结图（多入口 defer·SPEC §5）。
+     */
+    seaId: string;
   };
   /** true = 持久 anchor（永远在）；false = roaming（每次回港刷新） */
   persistent: boolean;

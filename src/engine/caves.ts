@@ -28,8 +28,8 @@ export function allCaves(): CaveGenParams[] {
  * （同一张图、不同已探片）——叠加在本潜 scanMemory/visited 之上。非洞下潜 / 未进过该洞 → undefined（零影响·旧行为不变）。
  */
 export function persistentExploredForRun(profile: PlayerProfile, run: RunState | undefined): Set<string> | undefined {
-  if (!run?.caveId) return undefined;
-  return profile.caveMaps.get(run.caveId)?.explored;
+  if (!run?.diveMapId) return undefined;
+  return profile.diveMaps.get(run.diveMapId)?.explored;
 }
 
 /**
@@ -38,5 +38,5 @@ export function persistentExploredForRun(profile: PlayerProfile, run: RunState |
  * 未进过该洞（未生成冻结）→ undefined（海图仍可按 caveId 分组·门户深度待首次进后可见）。
  */
 export function cavePortalsForChart(profile: PlayerProfile, caveId: string): CavePortal[] | undefined {
-  return profile.caveMaps.get(caveId)?.portals;
+  return profile.diveMaps.get(caveId)?.portals;
 }

@@ -224,6 +224,11 @@ tasks.push({ name: 'check-zone-region', cmd: ['node', join('scripts', 'check-zon
 // dev 工作台漂移门（纯 node·柱 POI 接入 / 战场压力存活聚合 / tone 档位样式·把 #206 dev 面板↔引擎漂移焊成会红的检查·见 scripts/check-dev-panels.mjs）
 tasks.push({ name: 'check-dev-panels', cmd: ['node', join('scripts', 'check-dev-panels.mjs')] });
 
+// openwater 采集持久性守门（纯 node·开阔水域持久化 SPEC §4.2/§4.3/§8 Lane D·凡 ItemDef.deposit===true
+// 的「开阔海域有限矿藏」道具，harvestPersist 必须是 'save'——缺省 'run' 会让矿藏「下次刷新」变成玩家
+// 永远采不完的静默 bug·当前若无任何 deposit:true 道具则空集直接过·见 scripts/check-openwater-harvest.mjs）
+tasks.push({ name: 'check-openwater-harvest', cmd: ['node', join('scripts', 'check-openwater-harvest.mjs')] });
+
 // 海图 UI SSR smoke
 tasks.push({ name: 'smoke-chart-ui', cmd: [tsx, join('scripts', 'smoke-chart-ui.tsx')] });
 

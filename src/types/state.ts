@@ -2,7 +2,7 @@
 // 与主 SPEC §3 三属性、§7 死亡与元进度对齐
 
 import type { EquipmentSlot, DecoyKind } from './items';
-import type { DiveMap, NodeKind, PersistentCave, GateSense } from './dive';
+import type { DiveMap, NodeKind, PersistentDiveMap, GateSense } from './dive';
 import type { CombatState } from './combat';
 import type { PoiModifier } from './chart';
 import type { Lighthouse } from './lighthouse';
@@ -94,13 +94,13 @@ export interface PlayerProfile {
    */
   harvestedResources: Map<string, Set<string>>;
   /**
-   * 持久洞地图（多口持久洞 SPEC §2.1·方案 B）：caveId → 该洞的冻结地图 + 持久探索态。
-   * 首次进洞生成并冻结于此；再进（含换口进）从这里加载＝同一空间续上次（料/尸/已探）。
+   * 持久 dive-target 地图注册表（开阔水域持久化 SPEC §1·泛化自多口持久洞 §2.1）：id → 该图的冻结地图 + 持久探索态。
+   * 洞穴（cave.*）与开阔持久海域（sea.*）共用一张 kind-agnostic 注册表。首次进生成并冻结于此；再进（含换口进）从这里加载＝同一空间续上次（料/尸/已探）。
    * 容器必填：createInitialProfile 种 new Map()，旧档缺它由 hydrateGameState 单点补（同 harvestedResources·#107）。
    * 序列化由 saveReplacer/saveReviver 的 __map 分支处理（value 内含 DiveMap 纯对象 + explored:Set·自底向上 revive·零新代码）。
-   * SAVE_VERSION 9→10：形状变·按 #99 不写迁移、bump 弃旧档从头开始。
+   * SAVE_VERSION 9→10 引入·16→17 泛化更名 caveMaps→diveMaps：形状变·按 #99 不写迁移、bump 弃旧档从头开始。
    */
-  caveMaps: Map<string, PersistentCave>;
+  diveMaps: Map<string, PersistentDiveMap>;
   /**
    * 通用 NPC 信任系统（藏宝贸易与信任系统 SPEC §3·2026-06-30）：npcId → 信任原始数值（累加·「档」由
    * engine/trust.ts::trustTier 派生·不另存档）。触碰只经 engine/trust.ts（读写派生）+ state.ts（种子/水合）——
@@ -354,11 +354,11 @@ export interface RunState {
    */
   poiId?: string;
   /**
-   * 本次下潜所属持久洞 id（多口持久洞 SPEC §4.2）：caveEntry 路径下潜时落 caveId。
-   * 出洞结算据它把 explored/harvest 写回正确的 caveMaps[caveId]（探/采记账 by caveId·资源空间是「洞」非「单口」）。
-   * 缺省（非洞下潜·zone/band/教学）→ undefined ⇒ 走 poiId 记账旧路径（真条件字段·不种不补）。
+   * 本次下潜所属持久 dive-target id（开阔水域持久化 SPEC §1·泛化自多口持久洞 §4.2）：持久路径（caveEntry 等）下潜时落该图 id。
+   * 出洞结算据它把 explored/harvest 写回正确的 diveMaps[diveMapId]（探/采记账 by dive-target id·资源空间是「一张图」非「单口」）。
+   * 缺省（非持久下潜·zone/band/教学）→ undefined ⇒ 走 poiId 记账旧路径（真条件字段·不种不补）。
    */
-  caveId?: string;
+  diveMapId?: string;
   map: DiveMap | null; // 随机生成的节点图；教学线性脚本下潜为 null
   stats: Stats;
   staminaMax: number;

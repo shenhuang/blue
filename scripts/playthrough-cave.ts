@@ -143,20 +143,20 @@ L('  0 caves.json 登记表加载 + getCave 解析 ✓');
     persistent: true, caveEntry: { caveId: 'cave.vertical_test', regionBias: 'rim' as const },
   } as unknown as ChartPoi;
 
-  // 首次进 → 生成并冻结进 caveMaps（入存档）
+  // 首次进 → 生成并冻结进 diveMaps（入存档）
   const s = startDiveFromPoi(gs, poiA);
-  assert(s.run && s.run.caveId === 'cave.vertical_test', '10: run.caveId 应= cave.vertical_test');
+  assert(s.run && s.run.diveMapId === 'cave.vertical_test', '10: run.diveMapId 应= cave.vertical_test');
   assert(s.run!.map && s.run!.map.nodes[s.run!.currentNodeId!]?.portalKind === 'entrance', '10: 首次进起手应在入口门户');
-  const frozen = s.profile.caveMaps.get('cave.vertical_test');
-  assert(frozen, '10: 首次进应把 cave 冻结进 caveMaps');
+  const frozen = s.profile.diveMaps.get('cave.vertical_test');
+  assert(frozen, '10: 首次进应把 cave 冻结进 diveMaps');
   const nodeCountFirst = Object.keys(frozen!.map.nodes).length;
 
   // 模拟探了几个点 → 回港写回 explored（生还才落袋）
   const visited = Object.keys(s.run!.map!.nodes).slice(0, 3);
   const s1 = { ...s, run: { ...s.run!, visitedNodeIds: visited } };
   const r1 = handleReturnToPort(s1);
-  const exploredAfter = r1.state.profile.caveMaps.get('cave.vertical_test')!.explored;
-  assert(visited.every((id) => exploredAfter.has(id)), '10: 回港应把访问节点写回 caveMaps.explored');
+  const exploredAfter = r1.state.profile.diveMaps.get('cave.vertical_test')!.explored;
+  assert(visited.every((id) => exploredAfter.has(id)), '10: 回港应把访问节点写回 diveMaps.explored');
 
   // 换口再进（同 caveId·不同 regionBias）→ 同一张冻结图（未重生·节点数不变）+ explored 保留
   const poiB = {
@@ -164,7 +164,7 @@ L('  0 caves.json 登记表加载 + getCave 解析 ✓');
     persistent: true, caveEntry: { caveId: 'cave.vertical_test', regionBias: 'deep' as const },
   } as unknown as ChartPoi;
   const s2 = startDiveFromPoi(r1.state, poiB);
-  const frozen2 = s2.profile.caveMaps.get('cave.vertical_test')!;
+  const frozen2 = s2.profile.diveMaps.get('cave.vertical_test')!;
   assert(Object.keys(frozen2.map.nodes).length === nodeCountFirst, '10: 换口再进应是同一张图（不重生·节点数不变）');
   assert(frozen2.explored.size >= visited.length, '10: 换口再进 explored 应保留（续上次）');
   assert(s2.run!.map!.nodes[s2.run!.currentNodeId!]?.portalKind === 'entrance', '10: 换口再进起手仍在入口门户');

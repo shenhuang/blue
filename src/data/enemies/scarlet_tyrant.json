@@ -1,0 +1,89 @@
+{
+  "_comment": "猩红暴君 / Scarlet Tyrant（Ch1 第二个 boss·猩红暴君boss SPEC docs/spec/深海回响_猩红暴君boss_SPEC.md·2026-07-17 Cowork·核心机制车道）：同族更大的头足个体，威胁不来自数值膨胀而来自**它当着你的面吞掉同类夺来的词条**（§0/§2）。**不自带初始词条**（§3.4·EnemyDef 不设 affixes/randomAffixes·全靠吃·集合语义天然 5 封顶）。scarletFeed＝吃 ≤50% 生命的活同伴回其剩余血 + 夺其词条（combat-scarlet.ts::maybeScarletAct·§2·弑亲者胃口 0.2、暴君 0.5）。第五波剧情杀（combat.scarlet_wave5·§5）：5 只弑亲者在场→玩家首次 attack 被 maybeScarletFinaleInterception 拦截→triggerScarletTyrantEntrance（暴君 runtime spawn·瞬吃 3·夺 3·玩家那击落空·剩暴君+2）。bands=band.scarlet_tyrant_boss＝**专属占位 band·无 zone 引用 ⇒ 永不被随机 pickEnemy 选中**（boss 只经第五波 runtime spawn + combat.scarlet_tyrant_solo 显式遭遇出现·满足 check-enemy-refs 孤儿门 c 的 ≥1 bands/biomes）。hpMaxBonus 是玩家/scenario 侧 baseline（combatScenario.ts）**非本 def 字段**——暴君耐久＝自身 hp + 夺来词条（§5.1 风险③）。**注册表**：新增本文件须跑 `npm run gen:enemies` 重生 registry.generated.ts（check-enemy-refs --check 过期门·整合阶段跑）。数值/词条常量/文案全占位·待作者调（defer-number-tuning·文风克制冷短句·守剧透红线 quirk #117·头足类·非古文明·非人类·守 protagonist-voice/no-transliteration/check-no-human-assertion）。",
+  "enemies": [
+    {
+      "id": "enemy.scarlet_tyrant",
+      "name": "[待过稿] 猩红暴君",
+      "tier": "uncanny",
+      "bands": ["band.scarlet_tyrant_boss"],
+      "biomes": ["midwater"],
+      "role": "boss",
+      "threatTier": "high",
+      "hp": 90,
+      "defense": 2,
+      "speed": 7,
+      "threat": 14,
+      "hostility": "aggressive",
+      "initialStance": "attacking",
+      "aiPattern": "aggressor",
+      "scarletFeed": {
+        "hpThresholdRatio": 0.5,
+        "healByVictimHp": true,
+        "stealAffixes": true,
+        "feedText": "[待过稿] 它转向队伍里最弱的那只，腕足一卷送进口中——被吞过的地方，它身上又叠出一层不属于自己的斑纹。"
+      },
+      "phases": [
+        {
+          "hpThreshold": 0.3,
+          "transitionText": "[待过稿] 它身上缝着的每一层皮都在收紧——它不再挑拣，逢近就咬。",
+          "stanceForce": "enraged"
+        }
+      ],
+      "attacks": [
+        {
+          "id": "tyrant.arm_sweep",
+          "name": "[待过稿] 巨腕横扫",
+          "damageType": "physical",
+          "damage": [9, 15],
+          "description": "[待过稿] 一整圈腕足同时张开，比半个人还宽的吸盘带着硬齿刮过来。",
+          "weight": 3
+        },
+        {
+          "id": "tyrant.beak_crush",
+          "name": "[待过稿] 巨喙咬碎",
+          "damageType": "physical",
+          "damage": [13, 20],
+          "description": "[待过稿] 腕足正中那张喙咬合下来——它吃过太多同类，这一口没有半分犹豫。",
+          "weight": 1
+        }
+      ],
+      "loot": {
+        "guaranteed": [{ "itemId": "item.coral_shard", "qty": [2, 4], "weight": 1 }],
+        "rolls": [{ "itemId": "item.coral_shard", "qty": [1, 3], "weight": 1 }],
+        "rollCount": 1,
+        "victoryModifier": { "kill": 1.0 }
+      },
+      "victoryConditions": ["kill"],
+      "codex": {
+        "habitat": "[待过稿] 岩礁下部的开阔水域，海床之上一片没有遮挡的水。它不藏——它是这片水里最不需要藏的东西。",
+        "behavior": "[待过稿] 它靠吃同类长大。每吞下一只带着某项优势的同伴，那项优势就成了它自己的。把小的打成半死却不收尾，喂给它的就越多。",
+        "appearance": "[待过稿] 远比其余同类更大，通体暗红，体表层层叠叠缝满了不属于自己的斑纹与伤疤——每一处都对应一只被它吞下的同类。",
+        "firstSeenHint": "[待过稿] 瞄准的那只还没被碰到，水就先从更深处被挤开了——有个更大的东西，抢在了前面。"
+      }
+    }
+  ],
+  "combatEncounters": [
+    {
+      "_comment": "第五波剧情杀（§5·观察回合 + 首攻触发暴君登场瞬吃3夺3·演出定死）：5 只弑亲者在场（distributeScarletWaveAffixes 波级注入 5 个互不相同词条·§3.2）——玩家先看到压迫（观察回合＝开打前的初始态·无独立机制）。玩家**首次 attack 结算前**被 combat-scarlet.ts::maybeScarletFinaleInterception 拦成 triggerScarletTyrantEntrance（暴君 spawn·吃 3·夺 3·玩家那击落空·§5.4）→ 剩暴君+2 继续常规战。**id 必须＝ combat-scarlet.ts::SCARLET_FINALE_ENCOUNTER_ID『combat.scarlet_wave5』**（拦截靠 encounterId 匹配·改名务必两处同步）。暴君非静态 party 成员（runtime spawn）故不写进 members。数值/词条 RNG 变动 ⇒ baseline 须 bless:combat。",
+      "id": "combat.scarlet_wave5",
+      "party": {
+        "members": [
+          { "defId": "enemy.scarlet_kinslayer" },
+          { "defId": "enemy.scarlet_kinslayer" },
+          { "defId": "enemy.scarlet_kinslayer" },
+          { "defId": "enemy.scarlet_kinslayer" },
+          { "defId": "enemy.scarlet_kinslayer" }
+        ]
+      },
+      "showIntro": true,
+      "introText": "[待过稿] 五只暗红的影子从不同方向围拢过来，斑纹杂乱地叠在一起，逼近时排成一个收口的阵形。"
+    },
+    {
+      "_comment": "暴君 solo baseline 载体（照 warren_hatchery_solo / cave_grouper_boss_solo 的 _solo 约定）：只放暴君·供车道⑤验暴君常规攻击 / phases（HP≤30% enrage）/ 满足 check-enemy-refs（b）遭遇引用完整。scarletFeed（吃活夺词条）留在波次场景验（solo 无可吃同伴 ⇒ maybeScarletAct 自然 no-op）。数值/文案占位·defer。",
+      "id": "combat.scarlet_tyrant_solo",
+      "party": { "members": [{ "defId": "enemy.scarlet_tyrant" }] },
+      "showIntro": false,
+      "introText": "[待过稿] 只剩那一只最大的——它身上缝满了同类的斑纹。"
+    }
+  ]
+}

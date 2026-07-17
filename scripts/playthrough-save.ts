@@ -69,13 +69,13 @@ s = {
         timestamp: 0,
       },
     ],
-    // 多口持久洞（方案 B·2026-06-25）：一个冻结洞——验证 Map<caveId,{map, explored:Set, portals}> 的
+    // 多口持久洞（方案 B·2026-06-25）：一个冻结洞——验证 Map<id,{map, explored:Set, portals}> 的
     // 嵌套 Set + DiveMap 纯对象 round-trip（复用 __map/__set·零新序列化代码）。
-    caveMaps: new Map([
+    diveMaps: new Map([
       [
         'cave.test',
         {
-          caveId: 'cave.test',
+          id: 'cave.test',
           map: {
             zoneId: 'zone.vertical_test',
             generatedAt: 123,
@@ -174,9 +174,9 @@ assert(
   'run.decoy（猎手 §4·真条件字段·纯对象）应 round-trip',
 );
 {
-  const cave = back!.profile.caveMaps?.get('cave.test');
+  const cave = back!.profile.diveMaps?.get('cave.test');
   assert(
-    back!.profile.caveMaps instanceof Map &&
+    back!.profile.diveMaps instanceof Map &&
       !!cave &&
       cave.explored instanceof Set &&
       cave.explored.has('node.0') &&
@@ -185,10 +185,10 @@ assert(
       cave.portals.length === 2 &&
       cave.portals[1].kind === 'exit' &&
       cave.portals[1].region === 'deep',
-    'profile.caveMaps（多口持久洞·Map<caveId,{map, explored:Set, portals}>·嵌套 Set + DiveMap）应 round-trip',
+    'profile.diveMaps（多口持久洞·Map<id,{map, explored:Set, portals}>·嵌套 Set + DiveMap）应 round-trip',
   );
 }
-L('  round-trip：三个 profile Set + run.activeFlags/sensors/power/sensorTuning + deaths + shopStock + lighthouses(Set) + caveMaps(Map+嵌套Set) + 数值 全部还原 ✓');
+L('  round-trip：三个 profile Set + run.activeFlags/sensors/power/sensorTuning + deaths + shopStock + lighthouses(Set) + diveMaps(Map+嵌套Set) + 数值 全部还原 ✓');
 
 // 2. 损坏 JSON → null
 assert(deserializeGameState('not json{') === null, '损坏 JSON 应返回 null');
@@ -238,7 +238,7 @@ L('  非浏览器环境 loadGame() → null ✓');
   // (c) 合法当前版本存档 → 正常读取、不删
   store[SAVE_KEY] = raw;
   const ok = loadGame();
-  assert(ok && ok.version === 16, '当前版本存档应正常读取');
+  assert(ok && ok.version === 17, '当前版本存档应正常读取');
   assert(SAVE_KEY in store, '合法存档不应被删除');
   delete (globalThis as { localStorage?: unknown }).localStorage;
 }
@@ -266,7 +266,7 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
   }
   delete old.profile.shopStock;
   delete old.profile.outpostState;
-  delete old.profile.caveMaps;
+  delete old.profile.diveMaps;
   const h = deserializeGameState(JSON.stringify(old));
   assert(h && h.run, '6: 同版本缺字段旧档应正常反序列化（hydrate 而非拒收）');
   // run 级 canonical 默认（与 createNewRun 种子一致）
@@ -299,8 +299,8 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
     '6: profile.outpostState 补 {}',
   );
   assert(
-    h.profile.caveMaps instanceof Map && h.profile.caveMaps.size === 0,
-    '6: profile.caveMaps 补空 Map（多口持久洞·#107 同 harvestedResources）',
+    h.profile.diveMaps instanceof Map && h.profile.diveMaps.size === 0,
+    '6: profile.diveMaps 补空 Map（多口持久洞·#107 同 harvestedResources）',
   );
   // 幂等：hydrate 后的档再走一遍 serialize→deserialize 不再变
   const again = deserializeGameState(serializeGameState(h));

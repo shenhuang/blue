@@ -1,9 +1,9 @@
 {
-  "_comment": "敌人词条系统试点（2026-07-12·单词条随机化修正）：第一只带词条的敌人——每次开战从全部 5 个词条（狂暴/灵巧/硬壳/自愈/剧毒）里随机抽恰好 1 个（randomAffixes.count=1），呈现『它吞并了同类中随机一只的某项优势』——这是未来「击杀夺取词条」机制 + tier 系统（更高 tier ⇒ 更高 count）的天然落点。combatEncounters 里的 solo 遭遇用 affixesOverride 钉死一个已知词条（berserk）供 baseline 复现（真实随机遭遇不受此覆写影响——只有这个特定 encounter 定义被钉死，defId 直查另起遭遇仍随机）。数值占位·待作者调（defer-number-tuning）。",
+  "_comment": "敌人词条系统试点（2026-07-12·单词条随机化修正）+ 猩红暴君 boss 杂兵（2026-07-17·猩红暴君boss SPEC §1/§4）：每次开战从全部 5 个词条（狂暴/灵巧/硬壳/自愈/剧毒）里随机抽恰好 1 个（randomAffixes.count=1），呈现『它吞并了同类中随机一只的某项优势』。**2026-07-17 re-home**：bands 由『band.midwater.t4』（中层随机池）改挂『zone.scarlet_tyrant_grounds』（猩红暴君落点·SPEC §1.2「改落到本 boss 的落点」·避免作为普通杂兵散在 midwater 随机池与 boss 专属逐波追猎冲突·落点车道建 chart anchor poi.anchor.scarlet_tyrant + zone）。combatEncounters：solo 遭遇用 affixesOverride 钉死 berserk 供 baseline 复现（不匹配 combat.scarlet_wave 前缀 ⇒ 不被 distributeScarletWaveAffixes 覆盖）；波次 1–4（combat.scarlet_wave1–4·§4·1→3→4→5）纯弑亲者·词条由波级分发器注入（combat-scarlet.ts::distributeScarletWaveAffixes·对整波一次无放回·§3.2·第五波 combat.scarlet_wave5 剧情杀在 scarlet_tyrant.json）。互吃预演＝combat-scarlet.ts::maybeScarletAct（弑亲者自己回合吃 ≤20% 生命的活同伴·§2）。节点→遭遇路由（撞下一波）由落点/dive 车道承载。数值/词条 RNG 占位·待作者调（defer-number-tuning）·动 RNG 须 bless:combat。",
   "enemies": [
     {
       "id": "enemy.scarlet_kinslayer",
-      "bands": ["band.midwater.t4"],
+      "bands": ["zone.scarlet_tyrant_grounds"],
       "biomes": ["midwater"],
       "role": "predator",
       "codex": {
@@ -22,6 +22,12 @@
       "initialStance": "alerted",
       "aiPattern": "aggressor",
       "randomAffixes": { "count": 1 },
+      "scarletFeed": {
+        "hpThresholdRatio": 0.2,
+        "healByVictimHp": true,
+        "stealAffixes": true,
+        "feedText": "[待过稿] 离它最近的那只刚一露怯，它便侧身卷了上去——腕足收拢、一声闷响，身上的斑纹又多缝了一块。"
+      },
       "attacks": [
         {
           "id": "kinslayer.rake",
@@ -65,6 +71,55 @@
         ]
       },
       "introText": "斑纹杂乱的那一只脱离了队形，直冲向你——它已经决定你是今天最弱的一个。"
+    },
+    {
+      "_comment": "波次 1（§4·到位置主动攻击触发·story-pin 开场后进入·SPEC §1.3）：1 只弑亲者。distributeScarletWaveAffixes 对本波注入 1 个词条（combat.scarlet_wave 前缀 ⇒ 走分发器·非 randomAffixes 逐怪掷）。落点车道的 story.scarlet_tyrant_encounter 事件 outcome.triggerCombatId 应指向本 id（引第一波）。数值/词条 RNG 占位·bless:combat。",
+      "id": "combat.scarlet_wave1",
+      "party": { "members": [{ "defId": "enemy.scarlet_kinslayer" }] },
+      "showIntro": true,
+      "introText": "[待过稿] 一只暗红的身体从水里分出来，斑纹比别的都杂乱，径直冲了过来。"
+    },
+    {
+      "_comment": "波次 2（§4·深入一节·3 只·互吃预演开始）：波级分发注入 3 个互不相同词条（§3.2）。任一只被打到 ≤20% 生命未收尾 → 同伴在自己回合吞它（combat-scarlet.ts::maybeScarletAct·回其剩余血 + 夺其词条·§2）。",
+      "id": "combat.scarlet_wave2",
+      "party": {
+        "members": [
+          { "defId": "enemy.scarlet_kinslayer" },
+          { "defId": "enemy.scarlet_kinslayer" },
+          { "defId": "enemy.scarlet_kinslayer" }
+        ]
+      },
+      "showIntro": true,
+      "introText": "[待过稿] 又深入一节。这次是三只，一边逼近一边互相试探——它们也在挑谁更弱。"
+    },
+    {
+      "_comment": "波次 3（§4·密度升·4 只）：波级分发注入 4 个互不相同词条。",
+      "id": "combat.scarlet_wave3",
+      "party": {
+        "members": [
+          { "defId": "enemy.scarlet_kinslayer" },
+          { "defId": "enemy.scarlet_kinslayer" },
+          { "defId": "enemy.scarlet_kinslayer" },
+          { "defId": "enemy.scarlet_kinslayer" }
+        ]
+      },
+      "showIntro": true,
+      "introText": "[待过稿] 四只。水里的暗红影子几乎连成一片，斑纹各不相同，贴得更紧了。"
+    },
+    {
+      "_comment": "波次 4（§4·压迫最大的一波常规战·5 只）：波级分发注入 5 个互不相同词条（满 pool）。第五波（combat.scarlet_wave5·剧情杀）在 scarlet_tyrant.json。",
+      "id": "combat.scarlet_wave4",
+      "party": {
+        "members": [
+          { "defId": "enemy.scarlet_kinslayer" },
+          { "defId": "enemy.scarlet_kinslayer" },
+          { "defId": "enemy.scarlet_kinslayer" },
+          { "defId": "enemy.scarlet_kinslayer" },
+          { "defId": "enemy.scarlet_kinslayer" }
+        ]
+      },
+      "showIntro": true,
+      "introText": "[待过稿] 五只一齐压上来，从五个方向同时收拢——它们群体最完整的一次扑击。"
     }
   ]
 }

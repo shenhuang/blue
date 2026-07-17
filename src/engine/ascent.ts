@@ -228,10 +228,10 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
 
   // 穿越发现（多口持久洞 SPEC §6.2·T3b）：从持久洞的**出口门户**（portalKind:'exit'·顺流泄出口·§1）上浮
   // ⇒ 置该洞的 traversalFlag，揭示对侧口 POI（跨 beacon·副口 anchor 的 requiresFlags 消费它）。只认出口——
-  // 从入口上浮是来路、不揭示。非洞下潜 run.caveId 缺席 / 洞无 traversalFlag（单口·blue_caves）⇒ 跳过（零影响）。
-  if (run.caveId && run.map && run.currentNodeId) {
+  // 从入口上浮是来路、不揭示。非持久下潜 run.diveMapId 缺席 / 洞无 traversalFlag（单口·blue_caves）⇒ 跳过（零影响）。
+  if (run.diveMapId && run.map && run.currentNodeId) {
     const surfacedFrom = run.map.nodes[run.currentNodeId]?.portalKind;
-    const traversalFlag = getCave(run.caveId)?.traversalFlag;
+    const traversalFlag = getCave(run.diveMapId)?.traversalFlag;
     if (surfacedFrom === 'exit' && traversalFlag) flags.add(traversalFlag);
   }
 

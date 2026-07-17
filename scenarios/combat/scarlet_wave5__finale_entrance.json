@@ -1,0 +1,22 @@
+{
+  "_comment": "第五波剧情杀端到端（SPEC §5·combat-scarlet.ts::maybeScarletFinaleInterception→triggerScarletTyrantEntrance）——车道⑤新建。观察回合＝开战后、玩家第一次出手前的初始态（5 只弑亲者在场，无独立机制承载，就是战斗刚开始还没行动过的那一刻）；玩家第一次 attack 结算前被 applyAttack 顶部的 `maybeScarletFinaleInterception` 拦截（combat.ts 第 580 行左右）——本文件只给**一个**动作（targetIndex:0，瞄准 combat.scarlet_wave5.0）来精确摘出这一拍，不往后推进以免把『end-to-end 触发』和『后续常规战斗』的断言混在一起。**本文件是全套里 RNG 无关性最强的一份**：三条系统叙事（暴君破场 / 瞬吃合并叙事 / 玩家这一击落空）是 triggerScarletTyrantEntrance 里**无条件**推入 log 的固定字符串（分别在函数开头、victims.length>0 分支、函数末尾），只要拦截触发就必定出现，与词条分发的 RNG 结果完全无关——已逐行核对 combat-scarlet.ts 源码抄录，未做任何转写。**enemiesAlive=3 是精确值而非下界**：SCARLET_FINALE_DEVOUR_COUNT 是硬编码常量 3（非 RNG），targetFirst 排序把『玩家瞄准的那只』（这里=combat.scarlet_wave5.0，因为 targetIndex:0）排最前、其余按 instanceId 升序补满，故 victims 恒为 {.0,.1,.2} 三只、devour 后场上恰好剩 2 只弑予者（.3/.4）+1 只暴君=3 只存活，与词条分发结果（谁分到哪个词条）完全无关，是这套机制里少见的『纯常量决定、不依赖 RNG』的断言点。**回血恒为 0（结构性，非本文件独有）**：triggerScarletTyrantEntrance 里暴君以 hp=tyrantDef.hp（满血90）生成后立即瞬吃 3 只满血（30）弑亲者，scarletDevour 的回血算式 `max(0, min(eaterDef.hp, eater.hp+victim.hp)-eater.hp)`在 eater.hp 已等于 eaterDef.hp 时恒为 0——**这意味着 SPEC §2『回被吃者剩余血』这条效果，在当前唯一的暴君 spawn 路径（本剧情杀）里永远看不到非零效果**，只有暴君在登场后的后续回合先被玩家打伤、再吞掉某只残余弑亲者时才可能出现非零回血，这是本车道自查发现的一个机制细节（非 bug，只是设计上『回血』这条支路在开场瞬间恒等于摆设，值得报给作者/车道①确认是否符合预期）。**只给 1 个动作也回避了词条相关的一切不确定性**：这一击被拦截时是在 applyAttack 顶部就 return，尚未走到 resolveDodge/防御力计算，故本战没有任何伤害结算、闪避判定与本次断言无关；瞬吃 3 只夺 3 distinct 词条这件事本身已经被 §3.2 distributeScarletWaveAffixes 的『同一波 rollAffixes(AFFIX_IDS, N) 无放回』代码路径保证互不相同（Fisher-Yates shuffle-and-take 对无重复源数组取前 N 个天然不重复，这是逻辑证明、不依赖种子），但 EnemySnapshot/expect schema 目前不暴露 affixes 字段，故『暴君合并后持有 3 个 distinct 词条』这件事本文件**验证不到**具体是哪 3 个，只能验证到『触发时机 + 数量常量 + 三条固定叙事』这些不读 affixes 字段就能确认的部分（详见本车道报告的『疑点』小节）。bonuses.hpMaxBonus=100：本战只跑 1 个动作，worst-case 是这同一回合内暴君（满血 90·可能带 berserk 词条则额外一次攻击·上限各 20）+ 2 只幸存弑亲者（各上限 12·至多其一带 berserk 再 +12）反击玩家一次——五个词条里 berserk 只会落在暴君或某只弑亲者其中之一身上（distributeScarletWaveAffixes 保证同一波内 5 只弑亲者词条互不相同，暴君只从被吞的 3 只里继承，berserk 若被继承则暴君两次出手，否则落在幸存的 2 只之一），worst-case 合计 ≈ 20+20（暴君两次）+12+12（两只弑亲者各一次）=64；起手 200 满血扣满仍余 136 缓冲。**数值/文案占位；本 baseline 未实跑**（沙箱无 esbuild，按边界约定不跑 bless/regress/build）。",
+  "combatId": "combat.scarlet_wave5",
+  "seed": 1,
+  "bonuses": { "hpMaxBonus": 100 },
+  "stats": { "hp": 200 },
+  "actions": [
+    { "actionId": "action.knife_slash", "targetIndex": 0 }
+  ],
+  "expect": {
+    "outcome": "noActionProvided",
+    "survived": true,
+    "finalPhase": "combat",
+    "enemiesAlive": 3,
+    "logIncludes": [
+      "水被从更深处挤开——一只远比其余更大的猩红身体撞进场中，一圈腕足已经张开。",
+      "它连挣扎都没给它们——离它最近的几只同类被腕足卷进口中，身上的斑纹随即层层叠到了它自己身上。",
+      "你这一击落进原地翻起的血水里——你瞄准的那只，已经被先一步卷走了。"
+    ],
+    "notes": "本文件的三条 logIncludes 与 enemiesAlive=3 是**精确断言、非概率性下界**（依据：SCARLET_FINALE_DEVOUR_COUNT=3 是硬编码常量；三条叙事是函数体内无条件 push 的固定字符串；victims.length>0 在 5 只弑亲者的第一波观察回合里恒成立）——若 bless 实跑后这四项里任何一项不符，几乎可以断定是 combat-scarlet.ts 的触发条件/spawn 逻辑/文案已经改动，而不是 RNG 巧合，应回查代码而非直接改断言迁就现状。仅 turnsElapsed 与『暴君具体继承了哪 3 个词条』未断言/无法断言（前者是回合数记录方式的细节，后者受限于 EnemySnapshot 不暴露 affixes 字段，见本车道报告）。若要继续把这场戏推进到胜负（追加更多动作），后续每个动作都会真实结算伤害/闪避/词条效果，届时需要的 bonuses 与断言都要重新核算，不在本文件范围内。"
+  }
+}
