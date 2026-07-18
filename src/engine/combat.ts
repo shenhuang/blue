@@ -488,7 +488,8 @@ export function applyPlayerAction(
     // —— 1b. 物品消耗统一在此（任何 requiresItemId + consumesItem 的行动·#108）——
     // 此前只有 use_item 在 applyUseItem 里自扣；decoy 是 flee 效果也带道具，消耗就近收口到行动入口，
     // 效果分发各分支不再各管各的（availability 已在上面校验过持有）。
-    if (action.consumesItem && action.requiresItemId && s.run) {
+    // dev 试玩 unlimitedSupplies：消耗品使用不扣数（缺省 undefined ⇒ 照常扣·逐字节等价）。
+    if (action.consumesItem && action.requiresItemId && s.run && !s.run.devFlags?.unlimitedSupplies) {
       s = {
         ...s,
         run: { ...s.run, inventory: removeFromInventory(s.run.inventory, action.requiresItemId, 1) },
@@ -814,6 +815,10 @@ export function applyStatsDelta(state: GameState, deltas: Partial<Record<keyof S
   }
   // 上限 clamp（战斗系统改版 2026-07-10）：负伤下线后体力上限恒 run.staminaMax（无 staminaMaxDelta 折算）；生命上限＝run.hpMax。
   stats = clampStats(stats, { stamina: state.run.staminaMax, oxygen: state.run.oxygenMax, hp: state.run.hpMax });
+  // dev 试玩 godMode：HP/氧气不跌破 1 ⇒ 战斗即死判定（hp<=0 / oxygen<=0）与事件 hp 伤永不致死。缺省 undefined 逐字节等价。
+  if (state.run.devFlags?.godMode) {
+    stats = { ...stats, hp: Math.max(1, stats.hp), oxygen: Math.max(1, stats.oxygen) };
+  }
   return { ...state, run: { ...state.run, stats } };
 }
 

@@ -151,7 +151,8 @@ export function startDive(
     getCaveTemperature(zoneId).intensity,
     loadoutInsulation(state.run.equipment),
   ).reach;
-  if (thermalReach === 'entry_blocked') {
+  // dev 试玩 godMode：极端温度入口封锁不拦（缺省 undefined ⇒ 照常拦·逐字节等价）。
+  if (thermalReach === 'entry_blocked' && !state.run.devFlags?.godMode) {
     return appendLog(state, {
       tone: 'system',
       text: `${zone.name}的温度太过极端——现有潜服扛不住，连洞口都靠不近。升级保温再来。`,
@@ -402,7 +403,9 @@ export function applyCarryItems(
     if (!def || def.category !== 'consumable') continue;
     let q = Math.min(p.qty, countInInventory(profileInv, p.itemId));
     // 逐件削减 q 直到「现有背包重量 + 这 q 件的重量」不超承载（先选先得·截断超重部分）。
-    while (q > 0 && totalRunInventoryWeight(runInv) + weightForItem(p.itemId, q) > run.carryWeightLimit) q--;
+    // dev 试玩 unlimitedSupplies：不计负重·全带（缺省 undefined ⇒ 照常截断·逐字节等价）。
+    if (!run.devFlags?.unlimitedSupplies)
+      while (q > 0 && totalRunInventoryWeight(runInv) + weightForItem(p.itemId, q) > run.carryWeightLimit) q--;
     if (q <= 0) continue;
     profileInv = removeFromInventory(profileInv, p.itemId, q);
     runInv = addToInventory(runInv, p.itemId, q);

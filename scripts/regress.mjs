@@ -255,6 +255,10 @@ tasks.push({ name: 'smoke-economy-panel', cmd: [tsx, join('scripts', 'smoke-econ
 // + EnemySnapshot 扩展〔phaseCount/reachable〕+ buildCombatEntryState 实战入口·见 scripts/smoke-combat-panel.tsx）
 tasks.push({ name: 'smoke-combat-panel', cmd: [tsx, join('scripts', 'smoke-combat-panel.tsx')] });
 
+// dev 试玩启动器（?editor=playtest）SSR smoke + run.devFlags guard 行为断言（守 PlaytestPanel 渲染 +
+// unlimitedSupplies/godMode 缺省逐字节等价·开启即生效·见 scripts/smoke-playtest-launcher.tsx）
+tasks.push({ name: 'smoke-playtest-launcher', cmd: [tsx, join('scripts', 'smoke-playtest-launcher.tsx')] });
+
 // 海图 POI 调试器 SSR smoke + parity（守 ChartViewDevPanel 渲染 + poiRevealState/effectiveDistance/describeModifier 自洽·见 scripts/smoke-chart-editor.mjs）
 tasks.push({ name: 'smoke-chart-editor', cmd: [tsx, join('scripts', 'smoke-chart-editor.mjs')] });
 

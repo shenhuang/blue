@@ -326,7 +326,8 @@ export function applyOutcome(state: GameState, outcome: Outcome): OutcomeResult 
           // 背包承载（重量制·#资源重量制 2026-06-21）：dive 期间 run 背包加这件后超 carryWeightLimit → 跳过该件并日志提示
           // （不阻断整个事件·其余 loot 继续 roll）。inv 是本事件累计的工作副本——含本轮已拾的其它件，焊死「一个事件塞爆」。
           // 港口侧（无 run）仓库无承载上限，照旧不限。
-          if (s.run && totalRunInventoryWeight(inv) + weightForItem(roll.itemId, qty) > s.run.carryWeightLimit) {
+          // dev 试玩 unlimitedSupplies：拾取不计负重（缺省 undefined ⇒ 照常超载跳过·逐字节等价）。
+          if (s.run && !s.run.devFlags?.unlimitedSupplies && totalRunInventoryWeight(inv) + weightForItem(roll.itemId, qty) > s.run.carryWeightLimit) {
             const name = getItemDef(roll.itemId)?.name ?? roll.itemId;
             s = appendLog(s, { tone: 'system', text: `背包超载，无法拾取 ${name}。` });
             continue;
@@ -516,7 +517,9 @@ export function tickTurns(
   if (turns <= 0) return run;
   const depth = run.currentDepth;
   const depthFactor = 1 + depth / 50;
-  const oxygenDrain = turns * 1 * depthFactor * (opts?.o2CostMult ?? 1);
+  // dev 试玩 godMode：氧气不耗、氮气不累积 ⇒ 潜行不因缺氧溺亡、也不攒减压债（缺省 undefined 逐字节等价）。
+  const god = run.devFlags?.godMode ?? false;
+  const oxygenDrain = god ? 0 : turns * 1 * depthFactor * (opts?.o2CostMult ?? 1);
 
   // 温度：按洞双极局部债（按 run.zoneId 查侧表·潜服 insulation 抵消·深度无关）·见 engine/temperature.ts。
   // 中性洞（侧表未命中·绝大多数 zone）→ intensity 0 → ceiling 0 → thermalStress 趋 0（恢复）⇒ 行为逐字节不变。
@@ -526,8 +529,8 @@ export function tickTurns(
   const stats: Stats = {
     ...run.stats,
     oxygen: Math.max(0, run.stats.oxygen - oxygenDrain),
-    // 氮气：饱和模型（深度定 ceiling·停留定逼近·同一式同管吸/排）·见 engine/nitrogen.ts
-    nitrogen: stepNitrogen(run.stats.nitrogen, depth, turns),
+    // 氮气：饱和模型（深度定 ceiling·停留定逼近·同一式同管吸/排）·见 engine/nitrogen.ts（godMode 冻结＝不攒债）
+    nitrogen: god ? run.stats.nitrogen : stepNitrogen(run.stats.nitrogen, depth, turns),
     // 温度：指数逼近 ceiling（同管累积/恢复）·逐回合 step == 一次性 step(turns)（守 stalker 一致性·同氮气）
     thermalStress: stepThermalStress(run.stats.thermalStress, thermalIntensity, insulation, turns),
   };

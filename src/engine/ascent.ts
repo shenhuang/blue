@@ -205,8 +205,8 @@ export function executeAscent(state: GameState, mode: AscentMode): AscentResult 
     oxygen = Math.max(0, oxygen - 5); // 剧烈呼吸额外耗氧
   }
 
-  // 死亡判定（应急上浮 + IV 型 = 死亡）
-  if (bends === 4) {
+  // 死亡判定（应急上浮 + IV 型 = 死亡）·dev 试玩 godMode 不致死（缺省 undefined 逐字节等价）
+  if (bends === 4 && !run.devFlags?.godMode) {
     narrative.push('血液里的氮气炸开。你没能挣扎到岸边。');
     return {
       state: executeDeath(s, '严重减压病（IV 型）'),

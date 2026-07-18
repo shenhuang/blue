@@ -489,6 +489,14 @@ export interface RunState {
     /** 每间卵室的存卵数（提前凿卵→她撤过去时库存更少·§15.1）。ensureQueenPlaced 初始化·advanceQueenRelocation 清旧那间。 */
     eggs?: Record<string, number>;
   };
+  /**
+   * dev 试玩启动器专用开关（?editor=playtest·PlaytestPanel 经 App initialState+ephemeral 注入·2026-07-18）。
+   * 真条件字段（quirk #106·absent＝正常游戏）：createNewRun 仅在 opts.devFlags 传入时落、hydrateGameState 不补。
+   * **仅 ephemeral 预览注入·绝不落存档**（App ephemeral 跳过 saveGame ⇒ 不走 serialize/round-trip）⇒ 不 bump SAVE_VERSION（#99）。
+   * unlimitedSupplies＝消耗品使用不扣数 + 装载/拾取不计负重；godMode＝氧气/HP/减压病(IV)/极端温度入口全不致死不拦
+   * （engine 各 guard 点在源头 clamp/短路 `run.devFlags?.x`·缺省 undefined 逐字节等价旧行为）。
+   */
+  devFlags?: { unlimitedSupplies?: boolean; godMode?: boolean };
 }
 
 /** 装备配置（9 槽纸娃娃·作者 2026-06-19·见 types/items.ts EquipmentSlot 注释） */
