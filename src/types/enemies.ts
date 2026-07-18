@@ -465,16 +465,16 @@ export interface EnemyDef {
   };
 
   /**
-   * 猩红暴君 / 弑亲者·吃活同伴夺词条（猩红暴君 boss SPEC §2·2026-07-17·engine/combat-scarlet.ts::maybeScarletAct）：
+   * 猩红暴君 / 噬亲者·吃活同伴夺词条（猩红暴君 boss SPEC §2·2026-07-17·engine/combat-scarlet.ts::maybeScarletAct）：
    * 带此字段的单位在**自己的敌方回合**择一吞掉一只 hp/maxhp ≤ hpThresholdRatio 的活同伴（且不比自己大）——
    * **回被吃者剩余血**（healByVictimHp·封顶自身 def.hp·**非固定量**·区别于 warrenFeed.hpGainPerSacrifice）+
    * **夺其词条**（stealAffixes·combat-scarlet.ts::mergeAffixesDedup 集合语义**去重**·§3.3 运行时硬约束·check-boundaries
    * 规则九只守静态声明·运行时 merge 须自己去重）。被吞者 hp→0 记入 fledInstanceIds（**被吞≠被杀·不掉料**·#244）。
-   * 弑亲者 0.2 / 暴君 0.5（占位·defer-number-tuning）。**仅带此字段的 def 进 maybeScarletAct 分支** ⇒ 普通敌人逐字节
+   * 噬亲者 0.2 / 暴君 0.5（占位·defer-number-tuning）。**仅带此字段的 def 进 maybeScarletAct 分支** ⇒ 普通敌人逐字节
    * 不变（守 #99）。暴君**不自带初始词条**（§3.4·EnemyDef 不设 affixes/randomAffixes·全靠吃·集合语义天然 5 封顶）。
    */
   scarletFeed?: {
-    /** 吃 hp/maxhp ≤ 此比例的活同伴（弑亲者 0.2 / 暴君 0.5·占位·defer-number-tuning）。 */
+    /** 吃 hp/maxhp ≤ 此比例的活同伴（噬亲者 0.2 / 暴君 0.5·占位·defer-number-tuning）。 */
     hpThresholdRatio: number;
     /** 回被吃者剩余血（封顶自身 def.hp·缺省/true＝回·false＝只夺词条不回血·占位语义·defer）。 */
     healByVictimHp?: boolean;

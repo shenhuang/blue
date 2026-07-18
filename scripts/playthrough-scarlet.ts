@@ -10,8 +10,8 @@
 //       → confirmEncounter → combat.scarlet_wave1 → 强杀胜利 → scarletWave 0(未种)→1。
 //   A2-A3. wave2/wave3：胜利后无 run.stalker → 移动触发 spawnScarletPursuer（encounterId=当前波·3 跳外现身）
 //       → 追向它（stalkerStep/advanceStalker 推进）→ 接触 → 该波战斗（party 3/4 只）→ 强杀胜利 → scarletWave 递增。
-//   A4. wave5（第五波剧情杀）：追猎+接触 → 5 只弑亲者在场 → 首次真实 attack 被 maybeScarletFinaleInterception
-//       拦成暴君登场瞬吃 3（enemy.scarlet_tyrant 现身·弑亲者 5→2·玩家瞄准的那只优先被吃）→ 收尾强杀胜利
+//   A4. wave5（第五波剧情杀）：追猎+接触 → 5 只噬亲者在场 → 首次真实 attack 被 maybeScarletFinaleInterception
+//       拦成暴君登场瞬吃 3（enemy.scarlet_tyrant 现身·噬亲者 5→2·玩家瞄准的那只优先被吃）→ 收尾强杀胜利
 //       → scarletWave 3→4（全部波次打完·scarletCurrentEncounterId 越界返 null）。
 //   B.  追兵 despawn（信号切断 + 等满 waitTurns，走同一条 advanceStalker 'seek_last' 脱离路径）后，
 //       下一步移动仍能重新生成同一波的追猎者（dive-move.ts 的 spawn 分支只认「无 run.stalker」，
@@ -244,7 +244,7 @@ L('\n========== A2. wave2 追猎+接触+胜利（scarletWave 1→2） ==========
   assert(combatId2 === 'combat.scarlet_wave2', `接触触发的战斗应=combat.scarlet_wave2（实际 ${combatId2}）`);
   assert(!contacted.run!.stalker, '接触后追猎者应清空（避免连环伏击）');
   const partySize2 = contacted.phase.kind === 'combat' ? contacted.phase.combat.enemies.length : -1;
-  assert(partySize2 === 3, `wave2 应 3 只弑亲者（实际 ${partySize2}）`);
+  assert(partySize2 === 3, `wave2 应 3 只噬亲者（实际 ${partySize2}）`);
   L(`  ③ 追猎者 encounterId=${spawnedEncounterId} ✓ · 接触触发 ${combatId2}（${partySize2} 只）✓`);
 
   const won = forceWin(contacted);
@@ -265,7 +265,7 @@ L('\n========== A3. wave3 追猎+接触+胜利（scarletWave 2→3） ==========
   const combatId3 = contacted.phase.kind === 'combat' ? contacted.phase.combat.encounterId : '';
   assert(combatId3 === 'combat.scarlet_wave3', `接触触发的战斗应=combat.scarlet_wave3（实际 ${combatId3}）`);
   const partySize3 = contacted.phase.kind === 'combat' ? contacted.phase.combat.enemies.length : -1;
-  assert(partySize3 === 4, `wave3 应 4 只弑亲者（实际 ${partySize3}）`);
+  assert(partySize3 === 4, `wave3 应 4 只噬亲者（实际 ${partySize3}）`);
   L(`  ③ 追猎者 encounterId=${spawnedEncounterId} ✓ · 接触触发 ${combatId3}（${partySize3} 只）✓`);
 
   const won = forceWin(contacted);
@@ -287,11 +287,11 @@ L('\n========== A4. wave5 追猎+接触+暴君登场瞬吃3+胜利（scarletWave
   assert(combatId5 === 'combat.scarlet_wave5', `接触触发的战斗应=combat.scarlet_wave5（实际 ${combatId5}）`);
   const enemiesBefore = contacted.phase.kind === 'combat' ? contacted.phase.combat.enemies : [];
   assert(
-    enemiesBefore.length === 5 && enemiesBefore.every((e) => e.defId === 'enemy.scarlet_kinslayer'),
-    `前置：wave5 开场应 5 只弑亲者（实际 ${enemiesBefore.map((e) => e.defId).join(',')}）`,
+    enemiesBefore.length === 5 && enemiesBefore.every((e) => e.defId === 'enemy.scarlet_kineater'),
+    `前置：wave5 开场应 5 只噬亲者（实际 ${enemiesBefore.map((e) => e.defId).join(',')}）`,
   );
   assert(!enemiesBefore.some((e) => e.defId === 'enemy.scarlet_tyrant'), '前置：暴君登场前场上不该有暴君');
-  L(`  ③ 追猎者 encounterId=${spawnedEncounterId} ✓ · 接触触发 ${combatId5}（5 只弑亲者·暴君未现身）✓`);
+  L(`  ③ 追猎者 encounterId=${spawnedEncounterId} ✓ · 接触触发 ${combatId5}（5 只噬亲者·暴君未现身）✓`);
 
   // 顶满资源，避免 applyPlayerAction 因体力/氧气不足被 availability 拦（本测不测资源约束）；
   // 特意瞄准某一只，验证 SPEC §5.4「玩家瞄准的那只优先被吃」。
@@ -299,17 +299,17 @@ L('\n========== A4. wave5 追猎+接触+暴君登场瞬吃3+胜利（scarletWave
   const afterAttack = applyPlayerAction(primed(contacted), 'action.fist', targetId);
   assert(afterAttack.outcome === 'continue', `首次 attack 应被拦成暴君登场（非胜利·实际 outcome=${afterAttack.outcome}）`);
   const enemiesAfter = afterAttack.state.phase.kind === 'combat' ? afterAttack.state.phase.combat.enemies : [];
-  // ④ wave5 触发暴君登场：场上出现 enemy.scarlet_tyrant + 弑亲者从 5 减到 2
+  // ④ wave5 触发暴君登场：场上出现 enemy.scarlet_tyrant + 噬亲者从 5 减到 2
   assert(
     enemiesAfter.some((e) => e.defId === 'enemy.scarlet_tyrant' && e.hp > 0),
     '④：首次 attack 后场上应出现活着的 enemy.scarlet_tyrant（暴君破场）',
   );
-  const kinslayersLeft = enemiesAfter.filter((e) => e.defId === 'enemy.scarlet_kinslayer' && e.hp > 0).length;
-  assert(kinslayersLeft === 2, `④：暴君登场瞬吃 3 → 弑亲者应从 5 剩 2（实际 ${kinslayersLeft}）`);
+  const kineatersLeft = enemiesAfter.filter((e) => e.defId === 'enemy.scarlet_kineater' && e.hp > 0).length;
+  assert(kineatersLeft === 2, `④：暴君登场瞬吃 3 → 噬亲者应从 5 剩 2（实际 ${kineatersLeft}）`);
   const targetDevoured = enemiesAfter.find((e) => e.instanceId === targetId)?.hp === 0;
   assert(targetDevoured, '玩家瞄准的那只应优先被暴君吞掉（SPEC §5.4「那一击落空」）');
   assert(afterAttack.state.run!.scarletWave === 3, '暴君登场瞬间 scarletWave 不该变（这一波还没打完）');
-  L(`  ④ 暴君登场：弑亲者 5→${kinslayersLeft}（含玩家瞄准目标）+ enemy.scarlet_tyrant 现身 ✓`);
+  L(`  ④ 暴君登场：噬亲者 5→${kineatersLeft}（含玩家瞄准目标）+ enemy.scarlet_tyrant 现身 ✓`);
 
   const won = forceWin(afterAttack.state);
   // ② 全部波次打完：0(未种)→1→2→3→4

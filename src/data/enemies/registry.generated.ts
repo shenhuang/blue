@@ -16,7 +16,7 @@ import mycelial_fish from './mycelial_fish.json';
 import reef_barracuda from './reef_barracuda.json';
 import reef_grouper from './reef_grouper.json';
 import reef_shark from './reef_shark.json';
-import scarlet_kinslayer from './scarlet_kinslayer.json';
+import scarlet_kineater from './scarlet_kineater.json';
 import scarlet_tyrant from './scarlet_tyrant.json';
 import scavenger from './scavenger.json';
 import slope_patrol from './slope_patrol.json';
@@ -40,7 +40,7 @@ export const ENEMY_FILE_MODULES: EnemyFileModule[] = [
   reef_barracuda,
   reef_grouper,
   reef_shark,
-  scarlet_kinslayer,
+  scarlet_kineater,
   scarlet_tyrant,
   scavenger,
   slope_patrol,

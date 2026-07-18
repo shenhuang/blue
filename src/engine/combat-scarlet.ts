@@ -1,5 +1,5 @@
 // 猩红暴君 / Scarlet Tyrant boss 核心机制（猩红暴君 boss SPEC §2/§3/§4/§5·2026-07-17）——
-// 「吃同类夺其优势」的头足猎手一族：弑亲者（scarlet_kinslayer）互吃预演 → 第五波暴君（scarlet_tyrant）
+// 「吃同类夺其优势」的头足猎手一族：噬亲者（scarlet_kineater）互吃预演 → 第五波暴君（scarlet_tyrant）
 // 破场瞬吃三只、把词条集于一身。自包含钩子，全部由 EnemyDef.scarletFeed 数据字段驱动：不带该字段的
 // 普通敌人在每个钩子里都是 no-op（守蜂群 SPEC §9「非对应 def 零成本」约定）⇒ 普通战斗逐字节不变。
 //
@@ -23,17 +23,17 @@ import { getEnemyDef, setCombat, pushCombatLog } from './combat';
 
 /** 暴君 code id（boss·运行时由第五波剧情杀 spawn·非静态 party 成员）。 */
 export const SCARLET_TYRANT_DEF_ID = 'enemy.scarlet_tyrant';
-/** 弑亲者 code id（杂兵·1→3→4→5 逐波·互吃预演 + 被暴君吞并）。 */
-export const SCARLET_KINSLAYER_DEF_ID = 'enemy.scarlet_kinslayer';
+/** 噬亲者 code id（杂兵·1→3→4→5 逐波·互吃预演 + 被暴君吞并）。 */
+export const SCARLET_KINEATER_DEF_ID = 'enemy.scarlet_kineater';
 /**
  * 波次遭遇 id 前缀（§4）：`combat.scarlet_wave1`..`combat.scarlet_wave5`。distributeScarletWaveAffixes 据此
- * 识别「本场是猩红暴君的一波·该做跨怪无放回词条分发」——绕开 solo baseline（combat.scarlet_kinslayer_solo
+ * 识别「本场是猩红暴君的一波·该做跨怪无放回词条分发」——绕开 solo baseline（combat.scarlet_kineater_solo
  * 用 affixesOverride 钉死 berserk·不匹配本前缀 ⇒ 不被覆盖·baseline 复现不破）。落点车道把这些 id 钉到声呐图节点。
  */
 export const SCARLET_WAVE_ENCOUNTER_PREFIX = 'combat.scarlet_wave';
 /** 第五波剧情杀遭遇 id（§5·观察回合 + 首攻触发暴君登场）。前缀匹配 ⇒ 也参与波级词条分发（5 只各带 1 个不同词条）。 */
 export const SCARLET_FINALE_ENCOUNTER_ID = 'combat.scarlet_wave5';
-/** 第五波暴君登场瞬吃的弑亲者数（§5·吃 3 剩 2·占位·defer-number-tuning）。 */
+/** 第五波暴君登场瞬吃的噬亲者数（§5·吃 3 剩 2·占位·defer-number-tuning）。 */
 export const SCARLET_FINALE_DEVOUR_COUNT = 3;
 
 export function isScarletWaveEncounter(encounterId: string): boolean {
@@ -70,18 +70,18 @@ export function mergeAffixesDedup(
 // ——— §3.2 一波内跨怪无放回词条分发器（遭遇层小机制） ———
 
 /**
- * 波级词条分发（§3.2·startCombat 末调用·非猩红波遭遇零成本早退）：对整波在场的弑亲者调**一次**
+ * 波级词条分发（§3.2·startCombat 末调用·非猩红波遭遇零成本早退）：对整波在场的噬亲者调**一次**
  * rollAffixes(AFFIX_IDS, N) 取 N 个**互不相同**的词条、逐一注入每只的 EnemyInstance.affixes——**绕开**
  * def.randomAffixes 的逐怪独立掷（那会跨怪撞词条·两只都抽到狂暴）。因 pool=5 且 N≤5，rollAffixes 天然给
  * 得出 N 个不同 id ⇒ 玩家看得清「每只一个不同优势」，暴君吞并时收进 N 个不同词条（读作「集大成」）。
- * 仅覆盖弑亲者（暴君靠吃·§3.4 不自带词条·且登场时还没上场）。数值/RNG 变动 ⇒ 其 baseline 须 bless:combat。
+ * 仅覆盖噬亲者（暴君靠吃·§3.4 不自带词条·且登场时还没上场）。数值/RNG 变动 ⇒ 其 baseline 须 bless:combat。
  */
 export function distributeScarletWaveAffixes(state: GameState): GameState {
   if (state.phase.kind !== 'combat') return state;
   const combat = state.phase.combat;
   if (!isScarletWaveEncounter(combat.encounterId)) return state; // 非猩红波 ⇒ 逐字节不变
   const kinIds = combat.enemies
-    .filter((e) => e.hp > 0 && e.defId === SCARLET_KINSLAYER_DEF_ID)
+    .filter((e) => e.hp > 0 && e.defId === SCARLET_KINEATER_DEF_ID)
     .map((e) => e.instanceId);
   if (kinIds.length === 0) return state;
   const distinct = rollAffixes(AFFIX_IDS, kinIds.length); // 对整波一次·无放回·N 个不同 id
@@ -98,8 +98,8 @@ export function distributeScarletWaveAffixes(state: GameState): GameState {
 
 /**
  * 选一只可吞的活同伴（吃食者敌方回合·§2）：从场上活单位里挑 hp/maxhp ≤ 吃食者胃口 thresholdRatio 的一只
- * （弑亲者 0.2 / 暴君 0.5·占位·defer）。**只吃不比自己大的**（victimDef.hp ≤ eaterDef.hp）——守「更大的捕食者
- * 夺走优势」母题的方向（防小弑亲者反吃暴君）。**最濒死优先**（hp/maxhp 比最低·ties → instanceId 字典序）＝
+ * （噬亲者 0.2 / 暴君 0.5·占位·defer）。**只吃不比自己大的**（victimDef.hp ≤ eaterDef.hp）——守「更大的捕食者
+ * 夺走优势」母题的方向（防小噬亲者反吃暴君）。**最濒死优先**（hp/maxhp 比最低·ties → instanceId 字典序）＝
  * 确定性无 RNG（baseline 稳）。无合格对象 ⇒ undefined（吃食者本回合不吃·落常规攻击）。
  */
 function pickScarletVictim(
@@ -168,7 +168,7 @@ function scarletDevour(
 
 /**
  * maybeScarletAct（吃活同伴夺词条 dispatcher·§2·runEnemyTurn 起手·mirror maybeWarrenQueenAct）：每敌方回合
- * 起手，场上每只带 scarletFeed 的单位（弑亲者 / 暴君）**择一吞食**——挑一只 hp ≤ 自己胃口的活同伴吞下、回其
+ * 起手，场上每只带 scarletFeed 的单位（噬亲者 / 暴君）**择一吞食**——挑一只 hp ≤ 自己胃口的活同伴吞下、回其
  * 剩余血、夺其词条。放在 order 捕获**之前**（同 maybeConsumeJuvenile·combat.ts）⇒ 被吞者 hp→0 不进本回合行动
  * 队列（无幽灵行动）。仅带 scarletFeed 的 def 进分支；无该字段的普通战斗逐字节不变（守 #99）。一回合一吞（不占
  * 其常规攻击·吞完仍在 runEnemyTurn 攻击循环里以夺来词条加持出手·§5.1 暴君行为②）。
@@ -196,8 +196,8 @@ export function maybeScarletAct(state: GameState): GameState {
 
 /**
  * 暴君登场瞬吃 3 夺 3（§5.3·演出定死）：那一刻暴君**破场而出**——spawn 一只 scarlet_tyrant（无初始词条·§3.4）、
- * 当场吞掉 SCARLET_FINALE_DEVOUR_COUNT 只弑亲者、把它们各自那 1 个（波级分发保证互不相同·§3.2）词条集于一身
- * （去重后＝3 个不同·§3.3），剩暴君 + 2 只。**玩家瞄准的那只优先被吃**（playerTargetId·若是活弑亲者）——刀未落、
+ * 当场吞掉 SCARLET_FINALE_DEVOUR_COUNT 只噬亲者、把它们各自那 1 个（波级分发保证互不相同·§3.2）词条集于一身
+ * （去重后＝3 个不同·§3.3），剩暴君 + 2 只。**玩家瞄准的那只优先被吃**（playerTargetId·若是活噬亲者）——刀未落、
  * 猎物已被更大的怪抢吞（§5.4「那一击落空」）。spawn 用 CombatState.spawnSeq 派生唯一 instanceId（同 maybeEnemySplit）。
  * 暴君 def 缺失（注册表未 gen:enemies 重生）⇒ 安全 no-op（不崩·整合阶段 gen:enemies 补齐后即生效）。
  */
@@ -234,10 +234,10 @@ export function triggerScarletTyrantEntrance(
     spawnSeq: seq + 1,
   }));
 
-  // 2) 选 3 只弑亲者（玩家瞄准的那只优先·§5.4）
+  // 2) 选 3 只噬亲者（玩家瞄准的那只优先·§5.4）
   const livingKin = () =>
     (s.phase.kind === 'combat' ? s.phase.combat.enemies : []).filter(
-      (e) => e.hp > 0 && e.defId === SCARLET_KINSLAYER_DEF_ID,
+      (e) => e.hp > 0 && e.defId === SCARLET_KINEATER_DEF_ID,
     );
   const pool = livingKin();
   const targetFirst = pool

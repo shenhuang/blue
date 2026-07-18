@@ -852,7 +852,7 @@ function runEnemyTurn(state: GameState): GameState {
   // 口孵深鱼（maternalBehavior）：母鱼回合开头检查 HP < 50%——有存活护巢仔时消耗一只回血。
   // 在 order 捕获**之前**执行：被消耗的护巢仔 HP→0 后不会出现在行动队列里（无幽灵行动）。
   s = maybeConsumeJuvenile(s);
-  s = maybeScarletAct(s); // 猩红暴君/弑亲者·吃活同伴夺词条（§2·非 scarletFeed def 零成本 no-op·先于 order 捕获·被吞不进行动队列）
+  s = maybeScarletAct(s); // 猩红暴君/噬亲者·吃活同伴夺词条（§2·非 scarletFeed def 零成本 no-op·先于 order 捕获·被吞不进行动队列）
 
   // 按 aggro 降序，每个活着的敌人依次行动（战斗状态系统 SPEC §2.3：眩晕不再是「预先滤掉」——
   // order 含本回合全部活敌，走到自己回合时才结算 settleStatusesAtTurnStart 知道是否眩晕，

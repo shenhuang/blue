@@ -103,6 +103,10 @@ tasks.push({ name: 'check-event-dc', cmd: ['node', join('scripts', 'check-event-
 // POI 专属事件门（纯 node·DiveEvent.poiId 必须命中 chart_pois.json 真实 POI·拼错=软锁，见 scripts/check-event-poi.mjs）
 tasks.push({ name: 'check-event-poi', cmd: ['node', join('scripts', 'check-event-poi.mjs')] });
 
+// 事件注册门（纯 node·机制化 quirk #260：src/data/events/*.json 每个事件 id 必须经 zones.ts 的
+// for-of 注册构造接进 EVENT_DB，否则 getEventById 静默返 undefined→「[事件未找到]」·见 scripts/check-event-registered.mjs）
+tasks.push({ name: 'check-event-registered', cmd: ['node', join('scripts', 'check-event-registered.mjs')] });
+
 // 主角语调门（纯 node·禁直白情绪/生理戏剧化命名·扫事件正文+日志页·把 [[protagonist-voice]] 散文落成会红的门·漂移修 quirk #184·见 scripts/check-protagonist-voice.mjs）
 tasks.push({ name: 'check-protagonist-voice', cmd: ['node', join('scripts', 'check-protagonist-voice.mjs')] });
 
