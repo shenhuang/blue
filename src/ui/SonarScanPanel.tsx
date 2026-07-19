@@ -19,7 +19,7 @@
 // 旧 scanMemory（BFS 量程集）/scanOrigins（ping 原点表）已删：门解锁改读 sensors.sonar（活条件·engine/dive-select），
 // 猎手听觉改全图必闻（engine/stalker）——渲染只吃 lastScanTurn + sensors.sonar 两个标量。
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import type { GameState, NodeChoice, RunState } from '@/types';
 import { deriveMapLayout, type MapLayout } from './mapLayout';
@@ -42,6 +42,9 @@ import {
   shadeSonarSdf,
 } from '@/engine/sonarGeometry';
 import { buildOpenWaterGeometry, bakeOpenWaterRGBA } from './openWaterRender';
+
+/** SSR 安全的 useLayoutEffect：renderToString 对 useLayoutEffect 有 dev 告警（smoke 走 SSR），服务端退化为 useEffect（都不跑·无行为差）。 */
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 import { zoneAllowsBacktrack, getZone } from '@/engine/zones';
 import { persistentExploredForRun } from '@/engine/caves';
 
@@ -487,19 +490,34 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
     el.textContent = CAVE_STYLE;
     document.head.appendChild(el);
   }, []);
-  // 实测方框宽高比 → frameAspect（全框显示，作者 06-13）。ResizeObserver 跟随窗口/布局变化；夹 [0.5,3] 防极端。
+  // 实测方框宽高比 → frameAspect（全框显示，作者 06-13）。夹 [0.5,3] 防极端；0.01 阈值防抖动 churn。
+  // 只碰 refs + setState（稳定）⇒ 下面两个 [] effect 捕获首个实例即可。
+  const measureAspect = () => {
+    const el = stackRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) {
+      const a = Math.min(3, Math.max(0.5, r.width / r.height));
+      setFrameAspect((prev) => (Math.abs(prev - a) > 0.01 ? a : prev));
+    }
+  };
+  // **首绘前**同步测量（2026-07-20 修「两边黑边→突跳全宽」）：frameAspect 初值是竖窄默认（220/300），
+  // 方框实际更宽时首帧以 letterbox 上屏（object-fit:contain 两侧留黑），等 ResizeObserver（passive effect·
+  // paint 后才 observe）补测才跳成全宽——面板随事件视图卸载重挂（见 sweepPlayedKey 注），每次重挂都重演一遍。
+  // useLayoutEffect 在 paint 前同步跑：量到真实比例立刻 setState ⇒ React 在浏览器上屏前就以正确比例重渲，
+  // 黑边帧根本不产生。SSR 不跑（useIsoLayoutEffect）＝smoke 输出逐字节同旧。
+  useIsoLayoutEffect(() => {
+    measureAspect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // ResizeObserver 跟随后续窗口/布局变化（首帧已由上面 layout effect 保底）。
   useEffect(() => {
     const el = stackRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => {
-      const r = el.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) {
-        const a = Math.min(3, Math.max(0.5, r.width / r.height));
-        setFrameAspect((prev) => (Math.abs(prev - a) > 0.01 ? a : prev));
-      }
-    });
+    const ro = new ResizeObserver(measureAspect);
     ro.observe(el);
     return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const run: RunState | undefined = state.run ?? undefined;
   const map = run?.map ?? null;
@@ -524,7 +542,10 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   const here = (layout && curId && layout.pos[curId]) || { x: (layout?.width ?? 0) / 2, y: (layout?.height ?? 0) / 2 };
 
   // viewW 随方框比例横向铺开（全框显示·作者 06-13）；纵向深度窗 VIEW_H 不变。默认 frameAspect=VIEW_W/VIEW_H ⇒ viewW=VIEW_W（逐字节同旧）。
-  const viewW = VIEW_H * frameAspect;
+  // **量化到偶整数**（2026-07-20·配 frameAspect 实测小数比例）：viewW 的三个消费点各自取整——离屏 ow=round(viewW/2)、
+  // bake 的 sx 用 round(viewW×RS)、常驻循环画布宽 ow×2×RS——小数 viewW 会互差 1–2px ⇒ 扩散圆原点/半径微偏 +
+  // canvas 光栅比例与 viewBox 精确比例错位 ~1px。偶整数让三处逐字相等（默认 220 本就是偶数＝行为不变）。
+  const viewW = Math.round((VIEW_H * frameAspect) / 2) * 2;
 
   // 选中即入画（#118·作者反馈「离得远要调地图才能看到」）：列表/图上选中相邻节点时，
   // 若它在当前视窗外（10% 安全边距），平移视角到「你与它的中点」——两头尽量同框；
@@ -740,6 +761,22 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  // callback ref：stack 可能晚于 mount 出现（先空态后成图），用它挂/卸 wheel listener（passive:false）。
+  // useCallback 稳定身份（2026-07-20）：内联函数每次 render 重建会让 React 每帧「先 null 卸再挂」——
+  // wheel listener 反复拆装 + stackRef 短暂置空，纯 churn。只碰 refs ⇒ [] 恒安全。
+  const stackCb = useCallback((el: HTMLDivElement | null) => {
+    stackRef.current = el;
+    if (wheelCleanupRef.current) {
+      wheelCleanupRef.current();
+      wheelCleanupRef.current = null;
+    }
+    if (el) {
+      const h = (e: WheelEvent) => wheelRef.current?.(e);
+      el.addEventListener('wheel', h, { passive: false });
+      wheelCleanupRef.current = () => el.removeEventListener('wheel', h);
+    }
+  }, []);
+
   // ---- 早退（hooks 已全部在上方按序调用）----
   if (!run || !map || !layout) return null;
   // 没有单独的「空态面板」（三层解耦）：没 ping 过＝画布全黑 + 位置点标记照常压在迷雾上（位置总可见）——
@@ -885,19 +922,6 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
       const nvh = VIEW_H / z;
       return clampCam({ dx: wxp - fx * nvw + nvw / 2 - here.x, dy: wyp - fy * nvh + nvh / 2 - here.y, z });
     });
-  };
-  // callback ref：stack 可能晚于 mount 出现（先空态后成图），用它挂/卸 wheel listener（passive:false）。
-  const stackCb = (el: HTMLDivElement | null) => {
-    stackRef.current = el;
-    if (wheelCleanupRef.current) {
-      wheelCleanupRef.current();
-      wheelCleanupRef.current = null;
-    }
-    if (el) {
-      const h = (e: WheelEvent) => wheelRef.current?.(e);
-      el.addEventListener('wheel', h, { passive: false });
-      wheelCleanupRef.current = () => el.removeEventListener('wheel', h);
-    }
   };
   const camMoved = cam.z !== 1 || cam.dx !== 0 || cam.dy !== 0;
 
