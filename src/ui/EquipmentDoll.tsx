@@ -73,10 +73,6 @@ function describeEffect(e: EquipmentEffect): string {
       return '解锁动作';
     case 'unlockSonar':
       return '解锁声呐';
-    case 'sonarPingCostReduction':
-      return `ping 耗电 −${e.value}`;
-    case 'sonarScanRangeBonus':
-      return `声呐规划纵深 +${e.value}`;
     case 'lampEfficiency':
       return `灯省电 ${Math.round(e.value * 100)}%`;
     case 'signatureReduction':

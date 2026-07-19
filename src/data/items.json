@@ -349,7 +349,7 @@
       "name": "声呐组件",
       "category": "equipment",
       "rarity": "uncommon",
-      "description": "组起一台手持声呐。关灯时可发脉冲探测前方——但回波远不如灯下所见可靠。黑水区从此能摸着探路。",
+      "description": "组起一台手持声呐。停下发一记脉冲，整片水域的轮廓便收进图上——可你一动身，那张图就旧了。",
       "weight": 2,
       "sellPrice": 0,
       "story": {
@@ -386,101 +386,7 @@
             }
           ],
           "gold": 120
-        },
-        "upgradeSteps": [
-          {
-            "materials": [
-              {
-                "itemId": "item.lantern_gland",
-                "qty": 1
-              },
-              {
-                "itemId": "item.eel_skin",
-                "qty": 3
-              }
-            ],
-            "gold": 160,
-            "statDeltas": [
-              {
-                "kind": "sonarPingCostReduction",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "materials": [
-              {
-                "itemId": "item.eel_skin",
-                "qty": 3
-              },
-              {
-                "itemId": "item.cave_octopus_beak",
-                "qty": 2
-              },
-              {
-                "itemId": "item.quartz_crystal",
-                "qty": 1
-              }
-            ],
-            "gold": 200,
-            "statDeltas": [
-              {
-                "kind": "sonarScanRangeBonus",
-                "value": 1
-              }
-            ]
-          },
-          {
-            "materials": [
-              {
-                "itemId": "item.eel_skin",
-                "qty": 3
-              },
-              {
-                "itemId": "item.cave_octopus_beak",
-                "qty": 3
-              },
-              {
-                "itemId": "item.manganese_nodule",
-                "qty": 1
-              }
-            ],
-            "gold": 240,
-            "statDeltas": [
-              {
-                "kind": "sonarScanRangeBonus",
-                "value": 1
-              }
-            ]
-          },
-          {
-            "materials": [
-              {
-                "itemId": "item.lantern_gland",
-                "qty": 2
-              },
-              {
-                "itemId": "item.cave_octopus_beak",
-                "qty": 3
-              },
-              {
-                "itemId": "item.manganese_nodule",
-                "qty": 1
-              },
-              {
-                "itemId": "item.iron_concretion",
-                "qty": 1
-              }
-            ],
-            "gold": 320,
-            "statDeltas": [
-              {
-                "kind": "sonarScanRangeBonus",
-                "value": 2
-              }
-            ]
-          }
-        ]
+        }
       }
     },
     {

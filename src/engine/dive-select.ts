@@ -48,12 +48,23 @@ export function effectiveGate(node: DiveNode, run: RunState, revealCorpseHint: b
 
 /**
  * 该节点的门是否已解锁（感知门 SPEC §2.2·按 sense 分流·单一真相）：
- *   无门 → true；lamp 门 → 灯亮且有电（lampOn·持续态）；sonar 门 → 本潜已扫过（scanMemory 有记·一记 ping 粘住）。
+ *   无门 → true；lamp 门 → 灯亮且有电（lampOn·持续态）；sonar 门 → **这一站 ping 过**（sensors.sonar==='ping'·
+ *   与灯同构的活条件·声呐无升级化 2026-07-19：ping 揭示整张图、门跟着当站脉冲走——移动后脉冲散了、门随之回锁，
+ *   同灯关掉即回锁；旧「scanMemory 有记＝一记 ping 全潜粘住」已删）。
  */
 export function gateUnlocked(node: DiveNode, run: RunState, revealCorpseHint: boolean): boolean {
   const g = effectiveGate(node, run, revealCorpseHint);
   if (!g) return true;
-  return g.sense === 'lamp' ? lampOn(run) : run.scanMemory[node.id] !== undefined;
+  return g.sense === 'lamp' ? lampOn(run) : run.sensors.sonar === 'ping';
+}
+
+/**
+ * 「隐藏位置点」判定（声呐渲染三层解耦·**位置点层默认总可见的唯一例外**·作者拍板＝复用 NodeGate hidden）：
+ * hidden 门未解锁且非来路 → 图上不画该节点标记（防剧透）；无门 / locked / 已解锁 / 来路 → 画。
+ * **单一判据**：与 enterNodeSelection 的 hidden 过滤同一条谓词（那边过滤 choices、这边过滤标记）——别各写各的。
+ */
+export function nodeMarkerVisible(node: DiveNode, run: RunState, revealCorpseHint: boolean, visited: boolean): boolean {
+  return visited || gateUnlocked(node, run, revealCorpseHint) || effectiveGate(node, run, revealCorpseHint)?.mode !== 'hidden';
 }
 
 /**
@@ -156,7 +167,7 @@ export function enterNodeSelection(state: GameState): GameState {
   //   - 地标 / Lv.1 尸体经 effectiveGate 豁免整潜门（恒诚实真相·结构可感 / 地图知识）。
   const NEUTRAL_CORPSE = '前方的水暗下去，看不清里面有什么。';
   const choices: NodeChoice[] = nextChoices
-    .filter((n) => visitedSet.has(n.id) || gateUnlocked(n, run, revealCorpseHint) || effectiveGate(n, run, revealCorpseHint)?.mode !== 'hidden')
+    .filter((n) => nodeMarkerVisible(n, run, revealCorpseHint, visitedSet.has(n.id)))
     .map((n) => {
       const isCorpse = n.kind === 'corpse';
       const isLandmark = n.kind === 'ascent_point' || n.kind === 'air_pocket' || n.kind === 'camp';

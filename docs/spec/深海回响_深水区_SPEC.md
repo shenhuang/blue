@@ -344,7 +344,7 @@
 - 边可上可下（朝浅＝朝上＝truthful·迷路回边天然朝上）；`chord`（跨层回边近似·`layer` 差 ≠1）由 consumer 差异化/淡化。
 - `SonarScanPanel`：viewBox portrait（窄×高）；聚焦楔形 `focusWedgePath` deeper↓〔+π/2〕/ back↑〔−π/2〕/ lateral←→〔0 & π〕（SVG y 朝下）；量程环/楔形/接触半径用 `min(VIEW_W,VIEW_H)`。
 
-**扇区（`engine/sonar.ts::nodeSector`，定向 ping / 猎手扇区）**
+**扇区（`engine/sonar.ts::nodeSector`，定向 ping / 猎手扇区）——⚠ 2026-07-19 声呐无升级化：定向 ping/扇区揭示（`revealSonarScanDirectional` 等）设计作废（声呐无射程·一记 ping 全图）；nodeSector/stalkerSector 从未实装·仅作历史设计参考**
 - 按 `node.depth` 差分（**非 layer**）：deeper＝更深米（Δ > `SECTOR_DEPTH_EPS`）/ back＝更浅（Δ < −EPS）/ lateral＝|Δ| ≤ EPS。**必须与 y∝depth 一致**——否则「朝深」楔形指下、ping 却扩 layer-deeper（迷路图里那节点可能 depth 更浅、渲染在上方）＝自相矛盾。涟漪：`revealSonarScanDirectional`/`stalkerSector`/`seenStalkerSector`/`pingAimsAtSoundStalker` 全经 `nodeSector`（引擎不 import ui/mapLayout）。
 
 **生成（`engine/mapgen.ts`）——主下行 depth 单调-from-start**

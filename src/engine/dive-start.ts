@@ -200,10 +200,10 @@ export function startDive(
     currentNodeId: map.startNodeId,
     currentDepth: map.nodes[map.startNodeId].depth,
     visitedNodeIds: [map.startNodeId],
-    // 新一潜＝新一张图的全新探索：重置随上一潜带过来的「逐潜瞬时态」——声呐迷雾（scanMemory·扫描中心记忆）
-    // 与猎手（stalker）。不重置会泄漏：确定性地图（同 band/POI ⇒ 同 node id·#98）下，上一潜扫过的中心会在
-    // 这一潜点亮你这次没扫过的地方（作者报「一条不该亮的线」）。两者皆 run 级派生·不入存档，重置即新图新雾。
-    scanMemory: {},
+    // 新一潜＝新一张图的全新探索：重置随上一潜带过来的「逐潜瞬时态」——声呐扫描班次（lastScanTurn·全图迷雾
+    // 黑/灰判定·声呐无升级化 2026-07-19）与猎手（stalker）。不重置会泄漏：上一潜的 ping 会让这一潜的新图
+    // 起手就整片灰（该全黑的地方被点亮·同旧 scanOrigins 泄漏一个病根·#98）。皆 run 级派生·不入存档，重置即新图新雾。
+    lastScanTurn: undefined,
     stalker: undefined,
     // 撤退/月相存档窗（蜂群 boss SPEC §9.11）：把离港结转的 Warren 追猎档接回 run（窗内续上·窗外蜂巢
     // 重新聚拢清零）。没有结转档（从未打过 Warren / 已清）→ undefined，同旧行为逐字节不变。
@@ -212,7 +212,7 @@ export function startDive(
 
   const startNode = map.nodes[map.startNodeId];
 
-  // 落地不自动扫（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：起始节点声呐 off（scanMemory 空·全黑）——
+  // 落地不自动扫（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：起始节点声呐 off（lastScanTurn 空·全黑）——
   // 想看掉进的那片洞＝落地后主动 ping 一记（付电 + 暴露）。旧「按 profile 偏好种 sonarOn/sonarNext + 落地自动扫」已删。
   let run: RunState = run0;
 

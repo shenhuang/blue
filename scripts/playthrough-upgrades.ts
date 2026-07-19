@@ -12,8 +12,7 @@
 // 跑法：npx tsx scripts/playthrough-upgrades.ts
 
 import { createInitialGameState, createNewRun, countInInventory, createStarterLoadout, HOME_LIGHTHOUSE_ID, RUN_CARRY_WEIGHT } from '../src/engine/state';
-import { SONAR_PING_COST, ROOM_FEATURE_CHANCE_MAX } from '../src/engine/clarity';
-import { SONAR_SCAN_RANGE_MAX } from '../src/engine/sonar';
+import { ROOM_FEATURE_CHANCE_MAX } from '../src/engine/clarity';
 import {
   canPurchase,
   getUpgradeBonuses,
@@ -22,8 +21,8 @@ import {
   purchaseUpgrade,
 } from '../src/engine/upgrades';
 import { getRunBonuses } from '../src/engine/lighthouses';
-// 段2：声呐＝Otto 打造的装备件（§8 对账声呐迁装备后 getEquipmentStats→getRunBonuses→run.sensorTuning 逐项相等）。
-import { craftEquipment, upgradeEquipment, canCraftEquipment, canUpgradeEquipment, hasSonarEquipped, getEquipmentStats } from '../src/engine/equipment';
+// 段2：声呐＝Otto 打造的装备件（§8·声呐无升级化 2026-07-19：打造＝解锁·Lv.1 到顶·无升级步）。
+import { craftEquipment, canCraftEquipment, canUpgradeEquipment, hasSonarEquipped, equipmentMaxLevel } from '../src/engine/equipment';
 import type { GameState, InventoryItem } from '../src/types';
 import { makeHarness, type PtAssert } from './lib/pt';
 
@@ -194,52 +193,33 @@ assert(s3run.oxygenMax === 70, '气瓶库 lv1 应让 oxygenMax = 70');
 assert(s3run.stats.oxygen === 70, '初始 oxygen 应填到上限');
 assert(s3run.carryWeightLimit === RUN_CARRY_WEIGHT, `重量制：carryWeightLimit 恒 ${RUN_CARRY_WEIGHT}kg`);
 
-log.push('\n========== 8. 段2：声呐＝Otto 打造的装备件 → 打造+升满 → getRunBonuses → run.sensorTuning（对账旧 sonar_rig 逐项相等）==========');
-// 声呐从「升级线 sonar_rig」迁成「Otto 打造的装备件」(item.sonar.handheld)：空槽→打造 Lv.1（=解锁）→逐级升 Lv.5。
-// 端到端：装备增量经 getEquipmentStats → getRunBonuses（声呐项读 eq）→ createNewRun → deriveSensorTuning，
-// 产出与旧 sonar_rig lv1-5 **逐项相等**（quirk #140 防双计：换源 + 退役旧线·数值不变）。dive_kit/evasion_rig 已删（灯/规避回基线）。
+log.push('\n========== 8. 段2：声呐＝Otto 打造的装备件（声呐无升级化 2026-07-19：打造＝解锁·Lv.1 到顶）==========');
+// 声呐从「升级线 sonar_rig」迁成「Otto 打造的装备件」(item.sonar.handheld)；2026-07-19 声呐无升级化后
+// upgradeSteps 整段从 items.json 删除——打造 Lv.1 即全功能（一记 ping 全图揭示·ping 耗电=常量 SONAR_PING_COST）。
 state = createInitialGameState();
 state = { ...state, profile: { ...state.profile, equipment: createStarterLoadout() } };
-// 给足打造 + 升满声呐的全部料 + 金（craft+Lv1-5 合并：lantern_gland 4 / eel_skin 11 / cave_octopus_beak 10 / iron_concretion 2 / quartz_crystal 1 / manganese_nodule 2 / 1040 金）
+// 给足打造声呐的料 + 金（craft：lantern_gland 1 / eel_skin 2 / cave_octopus_beak 2 / iron_concretion 1 / 120 金）
 state = withProfile(
   [
-    { itemId: 'item.lantern_gland', qty: 5 },
-    { itemId: 'item.eel_skin', qty: 11 },
-    { itemId: 'item.cave_octopus_beak', qty: 12 },
-    { itemId: 'item.iron_concretion', qty: 2 },
-    { itemId: 'item.quartz_crystal', qty: 1 },
-    { itemId: 'item.manganese_nodule', qty: 2 },
+    { itemId: 'item.lantern_gland', qty: 1 },
+    { itemId: 'item.eel_skin', qty: 2 },
+    { itemId: 'item.cave_octopus_beak', qty: 2 },
+    { itemId: 'item.iron_concretion', qty: 1 },
   ],
-  1200,
+  200,
 );
 
-// (a) 空槽 → Otto 打造（null→Lv.1·账单＝旧 sonar.lv1）＝解锁
+// (a) 空槽 → Otto 打造（null→Lv.1）＝解锁（声呐唯一的获得动作·无后续升级）
 assert(state.profile.equipment!.sonar === null, '8: 起手声呐槽空（起手没声呐）');
 assert(canCraftEquipment(state.profile.equipment!, state.profile.inventory, state.profile.bankedGold, 'item.sonar.handheld').ok, '8: 料+金够 → 可打造声呐');
 state = craftEquipment(state, 'item.sonar.handheld');
 assert(hasSonarEquipped(state.profile.equipment!), '8: 打造后声呐已装备（＝解锁）');
 assert(getRunBonuses(state.profile).sonarUnlocked === true, '8: getRunBonuses.sonarUnlocked 由 hasSonarEquipped 派生');
 
-// (b) Otto 逐级改装到 Lv.5（账单＝旧 sonar.lv2-5）
-for (let lv = 1; lv < 5; lv++) {
-  assert(canUpgradeEquipment(state.profile.equipment!, state.profile.inventory, state.profile.bankedGold, 'sonar').ok, `8: 可升声呐 Lv.${lv}→${lv + 1}`);
-  state = upgradeEquipment(state, 'sonar');
-}
-assert(state.profile.equipment!.sonar!.level === 5, '8: 声呐升到 Lv.5');
-
-// (c) getEquipmentStats 累计（感知重做后声呐件精简·车道 4）：lv2=pingCost−2；scanRange 主轴＝lv3(+1)+lv4(+1)+lv5(+2)=4。
-//   旧 sonarRobustness（抗假回波·lv2）+ sonarRangeBonus（深度 reach·lv3）随感知重做删——lv3 重指为 scanRange（规划纵深·SPEC §2.2）。
-const eqStats = getEquipmentStats(state.profile.equipment!);
-assert(eqStats.sonarPingCostReduction === 2, '8: sonarPingCostReduction = 2（sonar lv2）');
-assert(eqStats.sonarScanRangeBonus === 4, '8: sonarScanRangeBonus = 4（lv3 +1〔重指自旧 sonarRangeBonus〕 + lv4 +1 + lv5 +2）');
-
-// (d) 桥：getRunBonuses 透传 → createNewRun 烤进 run.sensorTuning（感知重做后声呐诚实·只剩 pingCost + scanRange 主轴）
-const rb = getRunBonuses(state.profile);
-const upRun = createNewRun({ zoneId: 'zone.vertical_test', bonuses: rb });
-assert(upRun.sensors.sonarUnlocked === true, '8: run 声呐解锁');
-assert(upRun.sensorTuning!.pingCost === SONAR_PING_COST - 2, '8: run.sensorTuning.pingCost（6-2）');
-assert(upRun.sensorTuning!.sonarScanRange === SONAR_SCAN_RANGE_MAX, '8: run.sensorTuning.sonarScanRange = 上限（声呐升满·+4 夹到 MAX·规划纵深主轴）');
-log.push('  声呐打造 Lv.1 → 升 Lv.5 → getEquipmentStats → getRunBonuses → createNewRun 烤进 run.sensorTuning（感知重做后声呐诚实·pingCost + scanRange 主轴）✓');
+// (b) 无升级：Lv.1 到顶（upgradeSteps 已删·canUpgradeEquipment 拒绝）
+assert(equipmentMaxLevel('item.sonar.handheld') === 1, '8: 声呐件 Lv.1 到顶（无 upgradeSteps）');
+assert(!canUpgradeEquipment(state.profile.equipment!, state.profile.inventory, state.profile.bankedGold, 'sonar').ok, '8: 声呐不可升级（无升级步·声呐无升级化）');
+log.push('  声呐打造＝解锁 · Lv.1 到顶 · 无升级轴（ping 耗电常量·一记 ping 全图揭示）✓');
 
 // ============================================================
 // 9. 房间 feature 出现率升级（salvage_guild lv4·声呐与房间 §6/§8.3 续）

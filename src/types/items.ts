@@ -242,14 +242,10 @@ export type EquipmentEffect =
   | { kind: 'insulation'; value: number }
   | { kind: 'lightRadius'; value: number }
   | { kind: 'unlocksAction'; actionId: string }
-  // 声呐件专属（段2·作者 2026-06-19）：声呐从「升级线」迁成「Otto 打造的装备件」。
-  // 数值 kind 名沿用 UpgradeEffect 同名字段＝逐级数值 1:1 端口（对账逐项相等·见 deriveSensorTuning）。
+  // 声呐件专属（段2·作者 2026-06-19·声呐无升级化 2026-07-19 精简）：声呐＝Otto 打造的 Lv.1 固定装备件。
   // unlockSonar＝Lv.1 base（装上即解锁声呐能力·声明用·getEquipmentStats 不读 base·解锁由「声呐槽是否有件」派生）。
+  // （旧升级轴 sonarPingCostReduction/sonarScanRangeBonus 已删——声呐无升级：ping 耗电＝常量、一记 ping 揭示整张图。）
   | { kind: 'unlockSonar'; value: boolean }
-  | { kind: 'sonarPingCostReduction'; value: number }
-  // 声呐主升级轴（感知重做 SPEC §2.2「更远的声呐 = 预判未来的选项」）：一记 ping 的规划纵深跳数加成。
-  // （旧 sonarRobustness〔抗假回波〕/ sonarRangeBonus〔深度降档 reach〕已随感知重做删——声呐诚实、深度不降档。）
-  | { kind: 'sonarScanRangeBonus'; value: number }
   // 灯/电池/规避「档位件」base 效果（A·作者 2026-06-20·退役的灯/电池/规避升级做回固定属性件·别重建 upgrades.json 三线）。
   // 这些 kind 喂 deriveSensorTuning 的同名旋钮：lighthouses.ts::getRunBonuses 改读 eq.*（替段2 的字面 0）。
   // 固定属性件数值全在 base effects（不升级·getEquipmentStats 读 base）；与声呐件（数值在 upgradeSteps）互补。

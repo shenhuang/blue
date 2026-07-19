@@ -11,7 +11,7 @@
 // run 级·派生·不入 profile·不 bump SAVE_VERSION（Stalker 纯对象·JSON 自动 round-trip·`?? undefined` 兜底）。
 
 import type { RunState, DiveMap, Stalker, SenseModality, StalkerLostBehavior, DiveDecoy, DecoyKind } from '@/types';
-import { buildUndirectedAdjacency, revealSonarScan, sonarScanRange, nodeIsNarrow } from './sonar';
+import { buildUndirectedAdjacency, nodeIsNarrow } from './sonar';
 import { ALERT_WARN } from './clarity';
 import { getEncounter, getEnemyDef } from './combat';
 
@@ -19,7 +19,7 @@ import { getEncounter, getEnemyDef } from './combat';
 // 可调参数（tunables，SPEC §8）
 // ============================================================
 
-/** 猎手现身时距你的跳数（声呐量程外·不是当场伏击·给你读出来 + 反应的窗口）。 */
+/** 猎手现身时距你的跳数（隔几跳现身·不是当场伏击·给你读出来 + 反应的窗口。旧「声呐量程外」说法已随射程删除——现为独立反应窗常量）。 */
 export const STALKER_SPAWN_HOPS = 3;
 /**
  * 速度阀 HSPEED（猎手 SPEC §5·**核心平衡旋钮**）：每回合沿图推进的「一条边的分数」。
@@ -137,7 +137,7 @@ function hashStr(s: string): number {
  */
 type BlockedFn = (id: string) => boolean;
 
-/** BFS 距离场：origin 到每个可达节点的跳数（无向·与声呐量程同款邻接）。blocked 节点不进不穿（origin 豁免）。确定性。 */
+/** BFS 距离场：origin 到每个可达节点的跳数（无向·buildUndirectedAdjacency 同款邻接）。blocked 节点不进不穿（origin 豁免）。确定性。 */
 function bfsDist(map: DiveMap, originId: string, blocked?: BlockedFn): Record<string, number> {
   const adj = buildUndirectedAdjacency(map);
   const dist: Record<string, number> = { [originId]: 0 };
@@ -186,7 +186,7 @@ export function nextHopToward(map: DiveMap, fromId: string, toId: string, blocke
 }
 
 /**
- * 现身点（距 origin 约 hops 跳·声呐量程外·给反应窗口）：取距离==hops 的节点；
+ * 现身点（距 origin 约 hops 跳·隔几跳现身给反应窗口）：取距离==hops 的节点；
  * 没有正好那么远的（小图）→ 取最远可达。确定性（按 id 排序）。无其它节点 → null。
  * exclude（§5 大型猎手）：**容不下它的点不当现身点**（占位过滤·距离仍按全图算——它从图外来，
  * 不需要「从你这里非窄可达」；现身后被窄缝隔开＝它在它那侧巡，诚实的洞穴物理）。全被排除 → null。
@@ -615,15 +615,13 @@ export function playerEvadesProbe(run: RunState, stalker: Stalker): boolean {
 }
 
 /**
- * 一记 ping 扫描猎手（§2.1「声呐＝位置」·§8.7「位置只在被扫到时更新」）：量程内 + 未躲过 → 刷新 seenNodeId/seenTurn；
- * 量程外 / 被躲过 → 原样（你看到的还是旧位置，或一直没定位＝「只感觉到它」）。pingSonar 调。
+ * 一记 ping 扫描猎手（§2.1「声呐＝位置」·§8.7「位置只在被扫到时更新」·声呐无升级化 2026-07-19＝**全图必闻**）：
+ * 无量程——每记 ping 未被躲过就刷新 seenNodeId/seenTurn（与「一记 ping 揭示整张图」同一诚实轴）；
+ * 被躲过 → 原样（你看到的还是旧位置，或一直没定位＝「只感觉到它」）。快照仍会过期（红点是 ping 那刻的旧影）。pingSonar 调。
  */
 export function scanStalker(run: RunState, stalker: Stalker): Stalker {
   if (!run.map || !run.currentNodeId) return stalker;
-  const reached = revealSonarScan(run.map, run.currentNodeId, sonarScanRange(run));
-  // mid-edge：边的任一端进量程即「扫到」（波前够到这段通道）。
-  const inRange = reached.includes(stalker.nodeId) || (stalker.edgeTo !== undefined && reached.includes(stalker.edgeTo));
-  if (!inRange || stalkerEvadesScan(run, stalker)) return stalker;
+  if (stalkerEvadesScan(run, stalker)) return stalker;
   // 快照当前位置（含中段）→ 红点只在被扫到那刻刷新、之间冻结（§8.7）。
   return {
     ...stalker,

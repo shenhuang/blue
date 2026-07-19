@@ -11,9 +11,9 @@
 // 泛化（都在同一趟里）：多热源 → 把所有源一起入队（多源 BFS·仍 O(V+E)）；源初始值不等 → 按偏移入桶队列；
 // 边有代价 → 那才升级成 Dijkstra O(E log V)（目前边全等权·用不上）。
 //
-// **无向语义**：邻接按无向算（layered 图的 connectsTo 是单向的，warren/maze 是双向的）。声呐
-// （sonar.ts::revealSonarScan）特意也用无向（「照得到你来时的上游」），两者是同一个「图上跳数」概念。
-// 声呐那份暂不动（已测机制·不为了漂亮去撕），将来可表达成本函数的一次射程过滤。
+// **无向语义**：邻接按无向算（layered 图的 connectsTo 是单向的，warren/maze 是双向的）。声呐侧同款
+// 无向邻接（sonar.ts::buildUndirectedAdjacency·「照得到你来时的上游」），两者是同一个「图上跳数」概念。
+// （旧 revealSonarScan 射程 BFS 已随声呐无升级化删·2026-07-19——一记 ping 全图揭示、无跳数过滤。）
 
 import type { DiveMap } from '@/types';
 

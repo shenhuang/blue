@@ -48,7 +48,7 @@ export function maybeApproachEncounter(state: GameState, target: DiveNode): Game
  * 升成「有位置的逼近猎手」。返回 { state, contact }——contact=true 时 state 已是伏击 combat 态（moveToNode 提前返回）；
  * 否则 state 是更新了 run.stalker（现身 / 逼近 / 信号切断后搜 / 跟丢 despawn）+ 叙事的 dive 态，moveToNode 照常进节点。
  *   - 已有猎手 → advanceStalker 推进一回合：接触到你 → 触发现有伏击遭遇（复用 ambushEncounters·不加新敌）。
- *   - 无猎手 + 越线（predatorApproaches·同旧触发线）→ 在声呐量程外现身（不当场伏击·给读出来+反应的窗口）。
+ *   - 无猎手 + 越线（predatorApproaches·同旧触发线）→ 隔几跳现身（STALKER_SPAWN_HOPS·不当场伏击·给读出来+反应的窗口）。
  * 仅进入事件/尸体节点时（地标是落脚点·不伏击·留「摸黑奔向出口」的出路·同旧路径）。
  */
 export function stalkerStep(

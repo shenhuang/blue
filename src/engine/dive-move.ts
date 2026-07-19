@@ -137,7 +137,7 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
           return { ...s, phase: { kind: 'dive', subPhase: { kind: 'event', eventId: SCARLET_INTRO_EVENT_ID } } };
         }
       } else if (!s.run!.stalker) {
-        // 上一波已胜、这一波的追猎者还没现身 → 在声呐量程外现身（同猎手 SPEC §2.4 惯例）。
+        // 上一波已胜、这一波的追猎者还没现身 → 隔几跳现身（STALKER_SPAWN_HOPS·同猎手 SPEC §2.4 惯例）。
         const pursuer = spawnScarletPursuer(s.run!);
         if (pursuer) {
           s = appendLog(

@@ -1362,14 +1362,7 @@ html, body, #root {
   font-size: 1.4em;
   opacity: 0.5;
 }
-/* 量程环（声呐开着时·半径＝SONAR_REVEAL_R 揭示圆同大）：淡青虚线，标出这一记扫多远。 */
-.sonar-range-ring {
-  fill: none;
-  stroke: var(--cyan);
-  stroke-width: 0.6;
-  opacity: 0.16;
-  stroke-dasharray: 3 5;
-}
+/* （旧「量程环」.sonar-range-ring 已随声呐无升级化删·2026-07-19——无射程无圈：一记 ping 就是整张图。） */
 .sonar-edge {
   stroke: var(--cyan);
   stroke-width: 1.4;

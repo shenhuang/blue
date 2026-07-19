@@ -25,7 +25,7 @@ export function allCaves(): CaveGenParams[] {
 
 /**
  * 当前下潜所属持久洞的「跨 run 已探」节点集（多口持久洞 §6.1）：声呐图/选点 UI 据它**预亮已探片**
- * （同一张图、不同已探片）——叠加在本潜 scanMemory/visited 之上。非洞下潜 / 未进过该洞 → undefined（零影响·旧行为不变）。
+ * （同一张图、不同已探片）——叠加在本潜 已扫（lastScanTurn）/visited 之上。非洞下潜 / 未进过该洞 → undefined（零影响·旧行为不变）。
  */
 export function persistentExploredForRun(profile: PlayerProfile, run: RunState | undefined): Set<string> | undefined {
   if (!run?.diveMapId) return undefined;

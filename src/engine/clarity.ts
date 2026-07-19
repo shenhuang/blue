@@ -11,8 +11,6 @@
 // 纯函数 + 防御性读取（run 字段可能因脚本构造的部分 run 而缺失 → 用默认兜底）。
 
 import type { RunState, DiveNode, ClarityTier, SensorTuning } from '@/types';
-// 声呐量程跳数的基线/上限住 sonar.ts（声呐的家）；deriveSensorTuning 在此夹紧它。
-import { SONAR_SCAN_RANGE, SONAR_SCAN_RANGE_MAX } from './sonar';
 
 // ============================================================
 // 可调参数（tunables，SPEC §8）
@@ -20,7 +18,10 @@ import { SONAR_SCAN_RANGE, SONAR_SCAN_RANGE_MAX } from './sonar';
 
 /** 默认电池总量（升级可提升，留 Phase 2）。 */
 export const POWER_MAX = 40;
-/** 一次声呐 ping 的耗电（声呐 >> 灯，SPEC §3.2）。 */
+/**
+ * 一次声呐 ping 的耗电（声呐 >> 灯，SPEC §3.2）。**固定值**——声呐无升级化（2026-07-19）后
+ * 无省电轴（旧 sonarPingCostReduction/sensorTuning.pingCost 已删）；ping 的代价＝这口电 + alert 自曝。
+ */
 export const SONAR_PING_COST = 6;
 /** 灯每回合基准耗电（再乘水况因子；清水因子 0 → 浅水近免费，Q2）。 */
 export const LIGHT_POWER_PER_TURN = 1;
@@ -38,8 +39,6 @@ export const SIGNATURE_SONAR = 3;
 // 升级把上面的基线常量往"更强"推；这里的地板/上限守铁律：
 //   读真相永远要自曝（§3.2/§3.3）——隐蔽能降 signature，但点灯/ping 暴露永不为 0。
 //   （旧「无完全可信传感器」失真阈值地板已随感知重做删——声呐诚实、欺骗只剩低 san，不再有可调的失真阈值。）
-/** 声呐 ping 耗电下限（升级最省也到此为止）。 */
-export const SONAR_PING_COST_MIN = 3;
 /** 灯耗电乘子下限（升级最省也到此为止；清水仍 0，只压黑/浊水那段）。 */
 export const LAMP_DRAIN_MULT_MIN = 0.25;
 /** signature 减免上限（隐蔽升满也到此为止）。 */
@@ -55,12 +54,10 @@ export const ROOM_FEATURE_CHANCE_MAX = 0.3;
 /** 猎手规避上限（猎手 SPEC §3 守地板）：单条规避旋钮（吸声/迷彩）升满也到此为止——规避永不到 1，最深/最凶仍找得到你（对称 SIGNATURE_MIN_ACTIVE 的「永不全隐」铁律）。 */
 export const STEALTH_BONUS_MAX = 0.6;
 
-/** 升级派生的传感器加成（来自 getRunBonuses；各项可缺，缺＝0）。 */
+/** 升级派生的传感器加成（来自 getRunBonuses；各项可缺，缺＝0）。声呐两轴（省电/射程）已随声呐无升级化删（2026-07-19）。 */
 export interface SensorUpgradeBonus {
-  sonarPingCostReduction?: number;
   lampEfficiency?: number; // 从灯耗电乘子 1 里减去的量（sum）
   signatureReduction?: number; // signature 减免（sum）
-  sonarScanRangeBonus?: number; // 声呐一记 ping 的规划纵深跳数加成（视觉 lookahead + 猎手听觉同轴·sum，有上限 SONAR_SCAN_RANGE_MAX）
   roomFeatureChanceBonus?: number; // 大房间出现率加成（声呐与房间 §6/§8.3 续·sum，有上限 ROOM_FEATURE_CHANCE_MAX）
   soundAbsorbBonus?: number; // 猎手规避 T1 吸声（规避声感猎手·sum，有上限 STEALTH_BONUS_MAX）
   camoBonus?: number; // 猎手规避 T2 主动迷彩（规避光感猎手·sum，有上限 STEALTH_BONUS_MAX）
@@ -68,27 +65,18 @@ export interface SensorUpgradeBonus {
 
 /**
  * 把"升级加成"烤成本次下潜的有效传感器参数（应用地板/上限）。createNewRun 出海前调一次，结果存 run.sensorTuning。
- * 空入参（未升级）→ 全基线（与 0a/0b 行为逐字节一致）。
+ * 空入参（未升级）→ 全基线（与 0a/0b 行为逐字节一致）。声呐不在此列（无升级·ping 耗电＝常量 SONAR_PING_COST）。
  */
 export function deriveSensorTuning(b: SensorUpgradeBonus = {}): SensorTuning {
   return {
-    pingCost: Math.max(SONAR_PING_COST_MIN, SONAR_PING_COST - (b.sonarPingCostReduction ?? 0)),
     lampDrainMult: Math.max(LAMP_DRAIN_MULT_MIN, 1 - (b.lampEfficiency ?? 0)),
     signatureReduction: Math.min(SIGNATURE_REDUCTION_MAX, Math.max(0, b.signatureReduction ?? 0)),
-    // 声呐一记 ping 的规划纵深跳数（感知重做 SPEC §2.2「更远的声呐 = 预判未来的选项」）：基线 + 加成，
-    // 夹到上限＝再升也扫不穿整洞（守北极星）。同一值驱动视觉 lookahead 揭示 + 猎手听觉量程（不再分两轴）。
-    sonarScanRange: Math.min(SONAR_SCAN_RANGE_MAX, SONAR_SCAN_RANGE + (b.sonarScanRangeBonus ?? 0)),
     // 大房间出现率加成（声呐与房间 §6/§8.3 续）：0..ROOM_FEATURE_CHANCE_MAX，缺省 0＝mapgen 输出逐字节不变。
     roomFeatureChanceBonus: Math.min(ROOM_FEATURE_CHANCE_MAX, Math.max(0, b.roomFeatureChanceBonus ?? 0)),
     // 猎手规避（猎手 SPEC §3）：0..STEALTH_BONUS_MAX，缺省 0＝无规避（stalker.ts::playerEvadesStalker 算 0 概率＝advanceStalker 逐字节不变·向后兼容）。
     soundAbsorbBonus: Math.min(STEALTH_BONUS_MAX, Math.max(0, b.soundAbsorbBonus ?? 0)),
     camoBonus: Math.min(STEALTH_BONUS_MAX, Math.max(0, b.camoBonus ?? 0)),
   };
-}
-
-/** 本次下潜声呐 ping 的有效耗电（升级派生·sensorTuning 必有〔createNewRun 种/hydrate 补〕）。dive.ts / NodeSelectView 共用。 */
-export function sonarPingCost(run: RunState): number {
-  return run.sensorTuning.pingCost;
 }
 
 /** 'none' 档（摸黑 / 灯打不透）的盲航预览文案——沿用旧 dark 行为（quirk #27/#41）。 */

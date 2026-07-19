@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { GameState, NodeChoice } from '@/types';
 import { setLight, pingSonar } from '@/engine/dive';
-import { sonarPingCost } from '@/engine/clarity';
+import { SONAR_PING_COST } from '@/engine/clarity';
 import { StatusBar } from './StatusBar';
 import { SonarScanPanel } from './SonarScanPanel';
 import { LootPanel } from './LootPanel';
@@ -100,7 +100,8 @@ export function DiveHeader({ state, onStateChange, choices = [], pendingNodeId =
   }
 
   const lightOn = run.sensors.light;
-  const pingCost = sonarPingCost(run);
+  // ping 耗电＝常量（声呐无升级化 2026-07-19·无省电轴）。
+  const pingCost = SONAR_PING_COST;
   const alreadyPinged = run.sensors.sonar === 'ping';
   const canPing = sonarUnlocked && !alreadyPinged && run.power >= pingCost;
 
@@ -166,14 +167,14 @@ export function DiveHeader({ state, onStateChange, choices = [], pendingNodeId =
           </div>
           {activePanel === 'sonar' ? (
             <>
-              {/* 声呐扫一记（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：一记诚实 ping·付电 + 暴露·
-                  揭示前方 sonarScanRange 跳的规划纵深。这一站已 ping / 电不足 → 禁用。 */}
+              {/* 声呐扫一记（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」·声呐无升级化 2026-07-19）：
+                  一记诚实 ping·付电 + 暴露·整片水域收进图上；移动后图变旧（全灰）。这一站已 ping / 电不足 → 禁用。 */}
               <div className="dive-sonar-controls">
                 <button
                   className="btn sensor-btn sonar-ping"
                   disabled={!canPing}
                   onClick={() => onStateChange(pingSonar(state))}
-                  title="扫一记声呐：诚实揭示前方几跳的水路供规划——代价是耗电 + 被听见（暴露）。走到下一站再想看就再扫一记。"
+                  title="扫一记声呐：整片水域的轮廓都收进图上——代价是耗电 + 被听见（暴露）。移动后图会过期，想看新的再扫一记。"
                 >
                   {alreadyPinged
                     ? '已扫（走一步再扫）'

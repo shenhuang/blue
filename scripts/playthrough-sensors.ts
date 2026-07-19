@@ -7,8 +7,9 @@
 //   8. tickTurns 灯耗电：清水近免费 / 黑水耗 / 关灯不耗（暴露脊柱保留·PRESERVE）
 //   9. 声呐一记 ping（感知重做 §2.2「ping 才扫、不 ping 不扫」）：ping→sonar=ping；移动→归 off（脉冲瞬时·不自动扫）
 //  10. signature：灯 > 声呐 > 摸黑（暴露脊柱·0b 接遭遇/combat·PRESERVE）
-//  11. 升级轨：powerMax/ping 耗电/灯效率/隐蔽 随升级派生，含地板/上限 + 未升级=基线
-//      （抗欺骗〔声呐&灯〕/reach 旋钮已随感知重做退成惰性·不再断言其行为）
+//  11. 升级轨：powerMax/灯效率/隐蔽 随升级派生，含地板/上限 + 未升级=基线
+//      （抗欺骗〔声呐&灯〕/reach 旋钮已随感知重做退成惰性；声呐两轴〔省电/射程〕已随声呐无升级化删·2026-07-19——
+//       ping 耗电恒 SONAR_PING_COST 常量·11b 只验常量实扣）
 //
 // 跑法： npx tsx scripts/playthrough-sensors.ts
 
@@ -25,8 +26,6 @@ import {
   SONAR_PING_COST,
   // 升级轨（section 11）
   deriveSensorTuning,
-  sonarPingCost,
-  SONAR_PING_COST_MIN,
   LAMP_DRAIN_MULT_MIN,
   SIGNATURE_BASE,
   SIGNATURE_LIGHT,
@@ -288,12 +287,10 @@ function mkUp(
 
 L('\n========== 11. 升级轨：传感器随升级成长 ==========');
 {
-  // 11.0 未升级 = 基线（守"defaults 复现 0a/0b 行为"）
+  // 11.0 未升级 = 基线（守"defaults 复现 0a/0b 行为"）——声呐旋钮已不在 sensorTuning（无升级·耗电=常量）。
   const baseTuning = createNewRun({ zoneId: 'zone.vertical_test' }).sensorTuning!;
   assert(
-    baseTuning.pingCost === SONAR_PING_COST &&
-      baseTuning.lampDrainMult === 1 &&
-      baseTuning.signatureReduction === 0,
+    baseTuning.lampDrainMult === 1 && baseTuning.signatureReduction === 0,
     '11.0: 未升级 sensorTuning = 基线',
   );
 
@@ -302,15 +299,13 @@ L('\n========== 11. 升级轨：传感器随升级成长 ==========');
   assert(upPow.powerMax === POWER_MAX + 20, '11a: powerMaxBonus → powerMax +20');
   assert(upPow.power === upPow.powerMax, '11a: 电池起手＝满（powerMax）');
 
-  // 11b ping 耗电（能耗效率）+ 地板 + 端到端实扣
-  assert(sonarPingCost(mkUp({ sonarUnlocked: true, sonarPingCostReduction: 2 }).run!) === SONAR_PING_COST - 2, '11b: ping 耗电减免');
-  assert(deriveSensorTuning({ sonarPingCostReduction: 99 }).pingCost === SONAR_PING_COST_MIN, '11b: ping 耗电有地板');
+  // 11b ping 耗电＝常量（声呐无升级化 2026-07-19·省电轴已删）：端到端实扣恒 SONAR_PING_COST。
   {
-    let s = enterNodeSelection(mkUp({ sonarUnlocked: true, sonarPingCostReduction: 2 }));
+    let s = enterNodeSelection(mkUp({ sonarUnlocked: true }));
     s = setLight(s, false);
     const p0 = s.run!.power;
     s = pingSonar(s);
-    assert(s.run!.power === p0 - (SONAR_PING_COST - 2), '11b: pingSonar 实扣减免后耗电');
+    assert(s.run!.power === p0 - SONAR_PING_COST, '11b: pingSonar 实扣常量耗电（无省电升级轴）');
   }
 
   // 11c 灯效率（能耗效率）：黑水耗电减半 + 地板
@@ -330,17 +325,16 @@ L('\n========== 11. 升级轨：传感器随升级成长 ==========');
   const sigDark2 = signature({ ...mk().run!, sensors: { light: false, sonar: 'off', sonarUnlocked: false } });
   assert(sigStealth > sigDark2, '11f: 隐蔽再强、点灯 signature 仍 > 摸黑（读真相必自曝，§3.2/§3.3）');
 
-  // 11g createNewRun 端到端把（存活的）bonus 烤进 sensorTuning
+  // 11g createNewRun 端到端把（存活的）bonus 烤进 sensorTuning（声呐两轴已删·不在此列）
   const allUp = createNewRun({
     zoneId: 'zone.vertical_test',
-    bonuses: { powerMaxBonus: 40, sonarPingCostReduction: 2, lampEfficiency: 0.5, signatureReduction: 3 },
+    bonuses: { powerMaxBonus: 40, lampEfficiency: 0.5, signatureReduction: 3 },
   });
   assert(allUp.powerMax === POWER_MAX + 40, '11g: powerMax');
-  assert(allUp.sensorTuning!.pingCost === SONAR_PING_COST - 2, '11g: sensorTuning.pingCost');
   assert(allUp.sensorTuning!.lampDrainMult === 0.5, '11g: sensorTuning.lampDrainMult');
   assert(allUp.sensorTuning!.signatureReduction === 3, '11g: sensorTuning.signatureReduction');
 
-  L('  powerMax / ping 耗电 / 灯效率 / 隐蔽 随升级成长，地板上限守铁律（抗欺骗/reach 旋钮已退惰性）✓');
+  L('  powerMax / 灯效率 / 隐蔽 随升级成长，地板上限守铁律（ping 耗电=常量·声呐无升级）✓');
 }
 
 // ============================================================

@@ -18,8 +18,7 @@ import {
   deserializeGameState,
   loadGame,
 } from '../src/engine/state';
-import { POWER_MAX, SONAR_PING_COST, deriveSensorTuning } from '../src/engine/clarity';
-import { SONAR_SCAN_RANGE } from '../src/engine/sonar';
+import { POWER_MAX, deriveSensorTuning } from '../src/engine/clarity';
 import type { GameState } from '../src/types';
 import { makeHarness, type PtAssert } from './lib/pt';
 
@@ -96,9 +95,10 @@ s = {
   },
   run: {
     // 深水区 Phase 0 升级轨：给非默认 bonuses，让 powerMax/sensorTuning 带可辨识值，验证它们也 round-trip。
+    // （声呐两轴 sonarPingCostReduction/sonarScanRangeBonus 已随声呐无升级化删·2026-07-19。）
     ...createNewRun({
       zoneId: 'zone.vertical_test',
-      bonuses: { powerMaxBonus: 20, sonarPingCostReduction: 2, lampEfficiency: 0.5, signatureReduction: 3, sonarScanRangeBonus: 1, roomFeatureChanceBonus: 0.18, soundAbsorbBonus: 0.5, camoBonus: 0.4 },
+      bonuses: { powerMaxBonus: 20, lampEfficiency: 0.5, signatureReduction: 3, roomFeatureChanceBonus: 0.18, soundAbsorbBonus: 0.5, camoBonus: 0.4 },
     }),
     currentDepth: 30,
     activeFlags: new Set(['air_used:node.5', 'run.scratch']),
@@ -160,14 +160,12 @@ assert(
     back!.run?.sensors?.sonar === 'off' &&
     typeof back!.run?.power === 'number' &&
     back!.run?.powerMax === POWER_MAX + 20 &&
-    back!.run?.sensorTuning?.pingCost === SONAR_PING_COST - 2 &&
     back!.run?.sensorTuning?.lampDrainMult === 0.5 &&
     back!.run?.sensorTuning?.signatureReduction === 3 &&
-    back!.run?.sensorTuning?.sonarScanRange === SONAR_SCAN_RANGE + 1 &&
     back!.run?.sensorTuning?.roomFeatureChanceBonus === 0.18 &&
     back!.run?.sensorTuning?.soundAbsorbBonus === 0.5 &&
     back!.run?.sensorTuning?.camoBonus === 0.4,
-  'run.sensors / power / powerMax / sensorTuning（感知重做后：pingCost + scanRange 主轴 + 隐蔽 + 房间出现率轴 + 猎手规避轴）应 round-trip',
+  'run.sensors / power / powerMax / sensorTuning（声呐无升级化后：灯效率 + 隐蔽 + 房间出现率轴 + 猎手规避轴）应 round-trip',
 );
 assert(
   back!.run?.decoy?.nodeId === 'node.3' && back!.run?.decoy?.kind === 'sound' && back!.run?.decoy?.expiresTurn === 9,
@@ -238,7 +236,7 @@ L('  非浏览器环境 loadGame() → null ✓');
   // (c) 合法当前版本存档 → 正常读取、不删
   store[SAVE_KEY] = raw;
   const ok = loadGame();
-  assert(ok && ok.version === 17, '当前版本存档应正常读取');
+  assert(ok && ok.version === 18, '当前版本存档应正常读取');
   assert(SAVE_KEY in store, '合法存档不应被删除');
   delete (globalThis as { localStorage?: unknown }).localStorage;
 }
@@ -255,7 +253,7 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
     'powerMax',
     'alert',
     'sensorTuning',
-    'scanMemory',
+    'lastScanTurn',
     'bandAlertFactor',
     'sonarDeception',
     'huntEnabled',
@@ -281,12 +279,13 @@ L('  启动清旧档：不兼容 / 损坏 → 删除 + null · 合法 → 读取
     '6: sensorTuning 补未升级基线（deriveSensorTuning({})）',
   );
   assert(
-    Object.keys(h.run.scanMemory).length === 0 && h.run.bandAlertFactor === 1 && h.run.huntEnabled === false,
-    '6: scanMemory {} / bandAlertFactor 1 / huntEnabled false',
+    h.run.bandAlertFactor === 1 && h.run.huntEnabled === false,
+    '6: bandAlertFactor 1 / huntEnabled false',
   );
-  // 真条件字段不补（缺席即语义：无猎手 / 无诱饵）
+  // 真条件字段不补（缺席即语义：无猎手 / 无诱饵 / 没扫过=黑）
   assert(h.run.stalker === undefined, '6: stalker 缺席不补（真条件字段）');
   assert(h.run.decoy === undefined, '6: decoy 缺席不补（真条件字段·猎手 §4）');
+  assert(h.run.lastScanTurn === undefined, '6: lastScanTurn 缺席不补（真条件字段·没扫过＝全黑·声呐无升级化）');
   // 声呐脉冲 sonar 缺省 'off'（感知重做后无 sonarOn/sonarNext 双态字段·ping 才扫）
   assert(h.run.sensors.sonar === 'off', '6: sensors.sonar 缺省 off（感知重做后 ping 才扫·无跨回合持续态）');
   // profile 容器补 {}（条目级懒默认语义留在读点）

@@ -46,6 +46,9 @@ export const CTRL_OFF = 48; // 隧道弯折的最大垂向偏移
 export const WALL_LO = -2; // SDF < WALL_LO ＝水道内（蓝）·导出给 smoke 断言投影闸
 export const WALL_HI = 2.2; // [WALL_LO, WALL_HI) ＝发光岩壁带（越大壁越厚）
 
+// （旧「战争迷雾揭示圆」sonarRevealRadius/SONAR_REVEAL_R_BASE/_STEP 已随声呐无升级化删·2026-07-19：
+//   一记 ping 揭示整张图·迷雾成全图三态开关〔黑/亮/灰·SonarScanPanel〕·无 punch 圆无半径。）
+
 /**
  * 声呐 SDF→RGBA 三档上色（水/发光岩壁/透明岩）——单一来源。
  * 自 ui/SonarScanPanel::bakeCaveRGBA 抽出·洞穴与（未来）开阔水域共享同一段·防风格漂移。

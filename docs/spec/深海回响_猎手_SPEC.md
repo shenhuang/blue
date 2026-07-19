@@ -102,7 +102,7 @@
   - §2.4 **出现 / 逼近 / 接触**（统一·复用 `ambushEncounters`·接触触发现有伏击遭遇）。
   - §2.3 **丢信号性格**（`wait`〔含 `waitTurns=0`＝掉头就走〕/ `seek_last` 去上次信号点徘徊找你再走）+ §2.5 **摸黑/拉距/上浮脱离**（脱离 despawn）。
   - §2.6 **范围＝深 band 门控**（`DepthBand.hunts` → `run.huntEnabled`·复用现有捕食者·越深越会 evade）。
-  - 位置**只在被 ping 扫到时更新**（§8.7·`stalker.seenNodeId`/`seenTurn`）·`evadesSonar` 躲扫描（深 band 概率）。
+  - 位置**只在被 ping 扫到时更新**（§8.7·`stalker.seenNodeId`/`seenTurn`）·`evadesSonar` 躲扫描（深 band 概率）。**2026-07-19 声呐无升级化**：快照不再受量程限制——每记 ping 全图必闻（evade 仍适用·快照仍会过期）。
   - **additive + gated 铁律**：`DepthBand.hunts` 缺省 off → `run.huntEnabled` undefined → 既有 `alert→maybeApproachEncounter` 瞬时伏击逐字节不变（守 `playthrough-stealth` §4-§6）。`run.stalker?`/`huntEnabled?` run 级·不入 profile·**不 bump SAVE_VERSION**（同 scanMemory/sonarDeception）。
 - **Phase 2+（2026-06-10 #109 全部收束 ✅——本 SPEC 机制层完工·余下＝内容/调参/Phase 3 接口）**：
   - **§2.2 per-encounter `sensesBy` + active 探测** ✅（#109·`CombatEncounterDef.stalker` 档案标签〔「给现有敌打标签、不是加敌」〕：
@@ -132,7 +132,7 @@
 - **敌人别太多**：复用 `ambushEncounters`；apex 是事件不是常规敌；新 `sensesBy` 是给现有敌**打标签**、不是加敌。
 - **不擅自触发 d_reveal（#42）/ 叙述永不交底（#54）**。
 - **软门控（作者 2026-06-03）**：深度靠装备/强敌·band 不加硬 flag·`hunts` 是内容门不是锁。
-- **存档**：未发布不迁移——`run.stalker?`/`run.huntEnabled?` 派生·`?? 默认` 兜底·**不 bump SAVE_VERSION**（同 `scanMemory`/`sonarDeception`/`bandAlertFactor`）。
+- **存档**：未发布不迁移——`run.stalker?`/`run.huntEnabled?` 派生·`?? 默认` 兜底·**不 bump SAVE_VERSION**（同 `lastScanTurn`/`bandAlertFactor` 一族；旧例 `scanMemory`/`sonarDeception` 字段已删）。
 
 ## 10. 决策日志
 - **2026-06-06（发起 + 三问拍板，作者方向 A「声呐与房间收尾」之 §8.7 stalker）**：声呐与房间 §8.7 此前留作者拍板的「定位 stalker」正式开题。三问定调——① **一猎手两保真度**：灯＝知道有东西接近、声呐＝知道位置+距离、同一只猎手（§2.1）；② **感官模态**(光/声/双) + **切信号行为**(停原地 / 移到上次信号点 / 后期主动探测·升级 T1 吸声 T2 主动迷彩) + **大型生物狭小空间避难** + **执着等待者耗资源** + **decoy 道具引开**(战斗中也能逃)（§2.2-2.6 / §3-6）；③ **全深度小概率·浅弱深难**（§2.6）。据此成文 v0.1，§7 分阶段：Phase 1 spine（感知分层 + 统一出现/逼近/接触 + 基础两行为 + 深 band 门控·additive/gated）本 session 实装，其余 deferred（已捕捉）。**实装详情见 STATUS.md 顶部滚动条目（quirk #84）。**

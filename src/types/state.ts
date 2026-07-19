@@ -194,9 +194,11 @@ export interface SensorState {
    */
   litThisTurn?: boolean;
   /**
-   * 声呐模式（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：'ping'＝本回合发过一记 ping（诚实远场侦察·付电 + 暴露）；
+   * 声呐模式（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：'ping'＝这一站发过一记 ping（诚实侦察·付电 + 暴露）；
    * 'off'＝没 ping（默认·不扫）。**移动后归 off（脉冲是瞬时的·不跨回合持续）**——旧「本回合开/关 + 预约下回合」双态状态机已删。
    * 一潜内一站至多一记 ping（1 scan/停留）；weakStalkerHasSignal / signature 据 'ping' 判「你这回合响不响」。
+   * 声呐无升级化（2026-07-19）后它还是**全图迷雾的 fresh 位**（'ping'＝全亮）与**声呐门的活条件**
+   * （dive-select.gateUnlocked：sonar 门＝这一站 ping 过·同灯 lampOn 的持续态语义）。
    */
   sonar: 'off' | 'ping';
   /** 声呐能力是否已解锁（升级派生，后期才有）。未解锁则 ping 不可用、黑水保持盲航。 */
@@ -209,20 +211,12 @@ export interface SensorState {
  * （故脚本构造的部分 run / 旧存档 缺此字段时行为＝未升级基线）。各值的下限/上限（地板）集中在 clarity.ts::deriveSensorTuning。
  */
 export interface SensorTuning {
-  /** 声呐 ping 单次耗电（默认 SONAR_PING_COST；升级下调，有地板）。 */
-  pingCost: number;
+  // 声呐旋钮（pingCost / sonarScanRange）已随「声呐无升级化」（2026-07-19）整体删除：
+  //   ping 耗电＝常量 SONAR_PING_COST（无减免轴）；射程概念不复存在（一记 ping 揭示整张图·无 BFS 跳数）。
   /** 灯每回合耗电的乘子（默认 1；升级下调＝更省电，有地板）。清水因子仍 0，只在黑/浊水生效。 */
   lampDrainMult: number;
   /** signature 减免（默认 0；升级上调＝更隐蔽，有上限＝点灯/ping 暴露永不归零，守"读真相必自曝"）。 */
   signatureReduction: number;
-  /**
-   * 声呐一记 ping 的有效跳数＝**规划纵深**（感知重做 SPEC §2.2「更远的声呐 = 预判未来的选项」）：一记 ping
-   * 从当前节点无向 BFS 揭示这么多跳之外的节点（进 run.scanMemory·SonarScanPanel 画出来供规划）+ 同量程内的猎手听觉。
-   * 默认 SONAR_SCAN_RANGE，升级上调（sonarScanRangeBonus·声呐主升级轴）、有上限 SONAR_SCAN_RANGE_MAX
-   * （< 最深 + < 全洞——再升也扫不穿整洞、照不到最深处·守北极星）。sonar.ts::sonarScanRange(run) 读它；
-   * 缺省（旧档/部分 run）→ 回退基线常量。
-   */
-  sonarScanRange: number;
   /**
    * 大房间（多事件房间）出现率加成（声呐与房间 §6/§8.3 续）。默认 0，升级上调、有上限 ROOM_FEATURE_CHANCE_MAX。
    * mapgen.rollExtraFeatures 读它抬大房间概率；**band 的 maxRoomFeatures 仍是房间最大 feature 数的天花板**
@@ -252,7 +246,7 @@ export type StalkerLostBehavior = 'wait' | 'seek_last';
 /**
  * 一只在下潜内追猎你的「猎手」（猎手 SPEC Phase 1 spine）。把抽象的警觉（run.alert·#59）做成一个
  * **有位置、会逼近、按你用哪种感官显示不同保真度**的实体（灯＝知道在接近 / 声呐＝知道位置+距离·同一只猎手）。
- * **run 级·派生·不入 profile·不 bump SAVE_VERSION**（同 scanMemory；纯对象，JSON 自动 round-trip）。
+ * **run 级·派生·不入 profile·不 bump SAVE_VERSION**（同 lastScanTurn 族；纯对象，JSON 自动 round-trip）。
  * 仅在 run.huntEnabled（DepthBand.hunts·深 band）时 engage；缺省 → 引擎走旧 alert→伏击瞬时路径（向后兼容）。
  */
 export interface Stalker {
@@ -414,12 +408,15 @@ export interface RunState {
    */
   bandAlertFactor: number;
   /**
-   * 声呐探索图记忆（声呐与房间 SPEC §5「会过时的记忆」）：nodeId → 上次被 ping 扫到时的 run.turn。
-   * 累积（每记 ping 把**量程内 BFS 揭示的所有节点**〔sonarScanRange 跳·规划纵深·感知重做 SPEC §2.2〕stamp 成当前 turn）；
-   * UI 据 (turn − stamp) 渐隐余像 + 据此把这些「几跳之外」的节点画出来供规划。run 级、不入存档、
-   * 不 bump SAVE_VERSION——createNewRun 种 {} + 旧档由 hydrateGameState 单点补 {}（同 shopStock/outpostState）。
+   * 本潜最近一记 ping 的回合（声呐无升级化·2026-07-19·替代旧 scanMemory〔BFS 量程集〕+ scanOrigins〔ping 原点表〕）：
+   * 一记 ping 揭示**整张图**（无射程），所以迷雾只剩全图三态——
+   *   undefined＝本潜从未 ping 过（全黑）；sensors.sonar==='ping'＝这一站 ping 过（全亮·fresh）；
+   *   否则＝ping 过但已移动（全灰·stale·常驻不回黑）。
+   * 渲染层（SonarScanPanel）读它判黑/灰 + 作扫描波班次 key；声呐门解锁改读 sensors.sonar（同灯的活条件·dive-select）；
+   * 猎手听觉改为每记 ping 全图必闻（stalker.scanStalker·无量程）。
+   * run 级·真条件字段（不种不补·absent＝没扫过）·不入存档语义·不 bump SAVE_VERSION。
    */
-  scanMemory: Record<string, number>;
+  lastScanTurn?: number;
   // 本次下潜的不可信声呐失真强度（曾派生自 band·抬高低 san 假回波阈值）：**感知重做已删**（声呐诚实·SPEC §2.2/§3）。
   /**
    * 本次下潜是否启用「猎手」（猎手 SPEC Phase 1·§2.6 范围门控）：diveIntoBand（经 startDiveFromPoi） 从 DepthBand.hunts 落到 run。

@@ -1,18 +1,22 @@
-// 声呐探索图（下潜内）—— 声呐渲染重做 SPEC（docs/spec/深海回响_声呐渲染重做_SPEC.md §2/§3/§4）。
+// 声呐探索图（下潜内）—— 有机洞穴剖面 + 战争迷雾**三层解耦**（声呐渲染重做 SPEC 谱系·2026-07-18 重构）。
 //
-// 重做：从「示意 node graph（圆点 + 连线）」改成**有机洞穴垂直剖面 + 雷达式扫描**（作者逐拍 demo 拍板·别再画连线）。
-//   - 背景＝**真实侧剖洞穴**（canvas·作者验收 v3）：深色岩石里凿出蓝色水道（SDF 并集：边→弯折路由隧道 + 节点→主 blob+散瓣房间·**域扭曲**把直胶囊弯成蜿蜒水道+不规则岩壁·**smin 平滑并集**把相邻房间熔成大洞〔多 POI 同室〕·半分辨率提速）。图是**隐藏骨架**(节点图)的有机皮·连通＝开阔水域·**无连线**。
-//   - 纵轴＝真实深度（#92 上浅下深·压短 pxPerMeter·作者要节点更近）；横向自由铺开（byLayer 分散·见 mapLayout.ts）。
-//   - 雷达式揭示（canvas）：一记扫描＝从你当前位置扩散的亮前缘 + 淡化拖尾·墙/点随波前到达才点亮；旧图**保留到下次扫描**才刷新（不逐回合淡出·§4）。
-//   - 节点显隐（防剧透 + 自由感·§2）：只对**可立即前往的相邻节点**（＝ NodeSelectView 的移动 choices）画**可点**标记（点击＝触发那条 move choice）；其余节点只显洞的几何、不标点。
-//     POI 标记**偏心**落在房间内（不必正中·可贴洞壁·作者要求）+ 落点按节点语义（kind）相关：出口/气袋偏顶、休整偏底、事件贴壁（poiOffset）；再 voidTrack 跟随扭曲后的洞、不浮在岩里。点击仍触发同一条 move（偏移纯视觉）。
-//   - 非洞穴场景（层状·沉船/礁）：先全黑只显节点占位（§2·留后续专属背景）。
+// 三层（各司其职·互不越界）：
+//   ① **背景地图层**（canvas 底图·**不吃揭示**）：整张固定的有机洞穴剖面（buildCaveGeometry(layout)·SDF 并集：
+//      边→弯折路由隧道 + 节点→主 blob+散瓣房间·域扭曲+smin·半分辨率）或开阔水域海床（openWaterRender）。
+//      确定性按 node/edge id 派生＝同地同图（#100）；纵轴＝真实深度（#92）。
+//   ② **战争迷雾层**（合成层·**全图三态**·声呐无升级化 2026-07-19）：声呐无射程无升级——一记 ping 揭示**整张图**。
+//      三态＝黑（run.lastScanTurn 空＝本潜没 ping 过·**结构上不合成底图**＝防剧透）/ 亮（sensors.sonar==='ping'＝
+//      这一站 ping 过·整图全亮·新 ping 从脚下荡开扩散点亮）/ 灰（ping 过但移动了·整图 FOG_DIM·常驻不回黑——
+//      图还在、只是旧了）。旧「逐原点 punch 圆 + 半径=射程」已删。洞穴与开阔水域同一套迷雾。
+//   ③ **位置点层**（SVG 覆盖·压迷雾之上·**默认总可见**）：相邻可去节点＝可点标记（点击＝那条 move choice）；
+//      其余节点＝不可点定位标记（没有 move choice·机制必然）。唯一例外＝「隐藏位置点」（NodeGate hidden 未解锁·
+//      nodeMarkerVisible·与选点过滤同一谓词）。known（走过/本潜 ping 过/持久已探）→ 字形+深度；未知 → 「? m」
+//      （信息梯度只存在于 ping 前——一记 ping 全图具名）。POI 标记偏心落房间内（poiOffset 按 kind）+ voidTrack 跟随扭曲后的洞。
 //
 // 纯渲染：canvas 在 useEffect 里画（SSR 不跑·只出空 canvas）；语义/可点标记走 SVG 覆盖层（SSR 可断言 + 可点 + 无障碍）。
-// 感知重做后声呐诚实（SPEC §2.2）：不再有欺骗表象/伪接触——节点按真 kind 画。威胁是 clarity 单一来源（threatContact·诚实）；
-// 猎手位置 stalkerSonarBlip（§8.7 会过时·mid-edge 插值）。ping 是一记诚实动作（车道 4 落地·SPEC §2.2「ping 才扫」）：
-// 一记 ping 揭示 sonarScanRange 跳的规划纵深（scanReveal stamp 进 scanMemory·这里把「几跳之外」的节点也画出来供规划）——
-// 射程 = 看多远。几何揭示圆（SONAR_REVEAL_R·SDF/雷达扫/猎手红点）整套渲染留用（与单记 ping 兼容）。
+// 感知重做后声呐诚实（SPEC §2.2）：无欺骗表象——节点按真 kind 画。威胁 threatContact / 猎手 stalkerSonarBlip（会过时）。
+// 旧 scanMemory（BFS 量程集）/scanOrigins（ping 原点表）已删：门解锁改读 sensors.sonar（活条件·engine/dive-select），
+// 猎手听觉改全图必闻（engine/stalker）——渲染只吃 lastScanTurn + sensors.sonar 两个标量。
 
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
@@ -22,6 +26,8 @@ import { moveToNode } from '@/engine/dive';
 import { threatContact } from '@/engine/clarity';
 import { stalkerSonarBlip } from '@/engine/stalker';
 import { hash01, roomScale01, distSeg, fbm } from '@/engine/sonar';
+import { nodeMarkerVisible } from '@/engine/dive-select';
+import { getUpgradeBonuses } from '@/engine/upgrades';
 import {
   clampViewToBox,
   SONAR_PX_PER_M,
@@ -61,14 +67,16 @@ const RENDER_SCALE = 2;
  * 放慢 + **线性前缘**（frame 里 eased=k·恒速）：SVG 标记「波到才亮」的延迟（dist/maxR×SWEEP_MS）可与波前精确同步。
  */
 const SWEEP_MS = 2600;
-/** 半揭示残段（#1「平时全黑」修正）：边只有一端被扫过 → 从已知端画一小截变窄的隧道口（房间的出口看得见、通向哪看不见·防剧透轴不破）。 */
-const STUB_FRAC = 0.38; // 半揭示边的猎手 blip 路由截断比例（stalkerRoutePoint·#1 残段几何已被 06-13 敞口通道取代，但 blip 仍按此截断不画进未扫黑岩）
+// （旧「半揭示残段 / 敞口通道」STUB_FRAC / OPEN_TAPER_MIN 已随三层解耦删除：背景几何恒完整，
+//  「看不看得到」全归迷雾层的全图三态（黑/亮/灰）——几何不再按揭示裁剪。）
+
 /**
- * 敞口通道收窄系数（作者 06-13 重设计·洞穴固定·不完整揭示）：半揭示边（一端已扫）不再画短残段封口，
- * 而是沿整条路由画一条**敞口、向未扫端逐渐收窄到 r×此值、没入黑暗**的通道，伸到未扫节点位置——
- * 可去但未扫的相邻节点落在开口处的水里（不再浮在墙外）；未画其房间＝内容仍不剧透（只露「这边还有路」）。
+ * 已播过扫描波的班次（**模块级·跨挂载**·作者 07-18 bug①「事件推进会重扫一遍」）：
+ * 面板随事件视图切换会卸载重挂，ref 归零——若只看 ref，每次重挂都把最新一班波再播一遍（观感＝凭空重扫，
+ * 且波心是上一记 ping 的原点、不是你脚下）。一班扫描物理上只发生一次 ⇒ 全局只播一次：挂载时发现这班
+ * 已播过 → 直接落「已放完」状态（静态三态即位）；只有真·新 ping（班次变、没播过）才起波。
  */
-const OPEN_TAPER_MIN = 0.32;
+let sweepPlayedKey: string | null = null;
 
 /**
  * 面板自带的布局/动画 CSS（客户端注入 document.head·见 useEffect）。
@@ -91,6 +99,9 @@ const CAVE_STYLE = `
 .sonar-node-marker:focus { outline: none; }
 .sonar-node-marker:focus:not(:focus-visible) { outline: none; }
 .sonar-node-marker:focus-visible { outline: 2px solid #8cffeb; outline-offset: 2px; }
+/* 位置点层·非相邻定位标记（三层解耦·总可见但不可点）：压暗区分「可去」与「只定位」；
+   pointer-events:none＝点它等于点空处（取消选中）·不与拖拽/两段点击抢事件。 */
+.sonar-node-far { opacity: .5; pointer-events: none; }
 /* 「波到才亮」（#3·§3）：标记随扫描波前到达时刻淡入（delay 内联·与线性波前同步）。CSS 客户端注入＝SSR 输出元素照常在（smoke 断言不受影响）。 */
 .sonar-wave-in { opacity: 0; animation: sonarWaveIn .4s ease-out forwards; }
 /* 两段点击（#5）：图上选中高亮＝下方事件列表项 .event-option.is-pending 同款光边（规则同住此处＝单一来源·列表 DOM 在 NodeSelectView）。 */
@@ -155,18 +166,14 @@ export interface CaveTun { ax: number; ay: number; bx: number; by: number; r: nu
 export interface CaveRoom { x: number; y: number; r: number; }
 
 /**
- * 几何圆战争迷雾三态（作者 06-13 重设计）：洞穴**整张固定**（buildCaveGeometry 喂全节点·同地同图），bakeCaveRGBA
- * 只把它烤成「整张全亮的洞」；三态遮罩在**合成层用几何圆**做（SonarScanPanel 常驻 rAF 循环·clip 到圆）：
- *   黑＝不在任何扫描圆里（没扫过）/ 暗＝只落在以前回合的扫描圆里（FOG_DIM·常驻·不回黑）/ 亮＝落在本回合扫描圆里（随扩散圆点亮）。
- * 圆＝以「扫描中心」节点（run.scanMemory 的键·见 engine/dive-sensors.scanReveal）为心、半径 SONAR_REVEAL_R 的世界圆。
+ * 战争迷雾**全图三态**（声呐无升级化 2026-07-19）：洞穴**整张固定**（buildCaveGeometry(layout)·同地同图），
+ * bakeCaveRGBA 只把它烤成「整张全亮的洞」；三态在**合成层整幅**做（常驻 rAF 循环）：
+ *   黑＝本潜没 ping 过（run.lastScanTurn 空）——**不 drawImage**＝结构上不合成·防剧透；
+ *   亮＝这一站 ping 过（sensors.sonar==='ping'）——整图全亮·新 ping 从脚下扩散圆点亮（仅动画期 clip）；
+ *   灰＝ping 过但移动了——整图 FOG_DIM（常驻·不回黑＝图还在、只是旧了）。
+ * 旧「逐原点 punch 圆·半径=射程」已删（无射程无升级·一记 ping 揭示整张图）。
  */
-export const FOG_DIM = 0.4; // 「暗」层亮度（以前回合扫过的残留·合成层 globalAlpha）
-
-/**
- * 一次扫描在声呐图上点亮的圆的**世界半径**（layout 坐标·≈照亮你身边一圈洞）。固定·不随升级——
- * 升级走「猎手听觉量程」（sonar.ts::sonarScanRange·BFS 跳数·只管能否听到猎手），与这个视觉揭示圆有意分开（作者「R 一开始就是 1」）。
- */
-export const SONAR_REVEAL_R = 64;
+export const FOG_DIM = 0.4; // 「灰」层亮度（过期整图的残留·合成层 globalAlpha·占位·defer-number-tuning）
 
 /** 取景包围盒「略微再大一圈」的世界余量（作者拍板）：盒＝扫过区域(点亮+暗) + 这点余量，边缘留一圈黑透气。 */
 const SONAR_BOX_PAD = 26;
@@ -250,22 +257,18 @@ export function edgeRoutePts(
 }
 
 /**
- * 猎手 blip 的路由落点（作者 06-11「红点出墙」修复）：沿渲染同源路由按弧长取 prog；
- * 只有一端被扫过 → 截进半揭示残段口内（STUB_FRAC·留 8% 边距别顶死封口）——位置仍诚实
- * （在哪条水道、朝哪头走都对），只是不画进没揭示的岩里；双端都没扫 → null（调用方回退直线·罕见）。
+ * 猎手 blip 的路由落点（作者 06-11「红点出墙」修复）：沿渲染同源路由按弧长取 prog——红点永远落在画出来的
+ * 那条水道里（隧道是弯折折线·房心直线插值会画进岩里）。三层解耦后背景几何恒完整、标记压在迷雾之上，
+ * 旧「按 scanMemory 截进残段口」已删（位置本就诚实·黑区标记合法）。没这条边 → null（调用方回退直线·罕见）。
  */
 export function stalkerRoutePoint(
   layout: MapLayout,
   from: string,
   to: string,
   prog: number,
-  memory: Record<string, number>,
 ): { x: number; y: number } | null {
   const pts = edgeRoutePts(layout, from, to);
   if (!pts || pts.length < 2) return null;
-  const haveFrom = memory[from] !== undefined;
-  const haveTo = memory[to] !== undefined;
-  if (!haveFrom && !haveTo) return null;
   const segL: number[] = [];
   let total = 0;
   for (let i = 0; i + 1 < pts.length; i++) {
@@ -275,9 +278,6 @@ export function stalkerRoutePoint(
   }
   if (total <= 0) return pts[0];
   let target = Math.max(0, Math.min(1, prog)) * total;
-  const stub = total * STUB_FRAC * 0.92;
-  if (haveFrom && !haveTo) target = Math.min(target, stub);
-  else if (!haveFrom && haveTo) target = Math.max(target, total - stub);
   for (let i = 0; i < segL.length; i++) {
     if (target <= segL[i] || i === segL.length - 1) {
       const t = segL[i] > 0 ? Math.min(1, target / segL[i]) : 0;
@@ -292,53 +292,23 @@ export function stalkerRoutePoint(
 }
 
 /**
- * 由布局派生有机洞穴几何（确定性·按 node/edge id 派生·同地点同洞·守 #100）：
- *  - 每条**两端都已揭示**的边 → 弯折路由的隧道（1-2 控制点垂向偏移）+ 随边浮动半宽；
- *  - 每个**已揭示**的节点 → 主房间 blob + 1-2 散瓣（不规则形状）+ 偶发死路壁龛（alcove）。
- * scannedIds/memory 决定哪些点/边已被声呐揭示（其余不画＝防剧透·渐进揭示·§2/§3）。
+ * 由布局派生有机洞穴几何（确定性·按 node/edge id 派生·同地点同洞·守 #100）——**背景层·不吃揭示**（三层解耦）：
+ *  - 每条边 → 弯折路由的隧道（1-2 控制点垂向偏移）+ 随边浮动半宽；
+ *  - 每个节点 → 主房间 blob + 1-2 散瓣（不规则形状）+ 偶发死路壁龛（alcove）。
+ * 整张洞穴恒完整——「看不看得到」全归迷雾层的全图三态（黑/亮/灰）；旧「按揭示画残段/敞口通道」已删。
  */
-export function buildCaveGeometry(
-  layout: MapLayout,
-  scannedIds: string[],
-  memory: Record<string, number>,
-): { tuns: CaveTun[]; rooms: CaveRoom[] } {
+export function buildCaveGeometry(layout: MapLayout): { tuns: CaveTun[]; rooms: CaveRoom[] } {
   const tuns: CaveTun[] = [];
   const rooms: CaveRoom[] = [];
   for (const e of layout.edges) {
-    const haveA = memory[e.a] !== undefined;
-    const haveB = memory[e.b] !== undefined;
-    if (!haveA && !haveB) continue;
     const route = routeForEdgeEntry(layout, e);
     if (!route) continue;
     const { pts, r } = route;
-    if (haveA && haveB) {
-      for (let i = 0; i + 1 < pts.length; i++) {
-        tuns.push({ ax: pts[i].x, ay: pts[i].y, bx: pts[i + 1].x, by: pts[i + 1].y, r });
-      }
-      continue;
-    }
-    // 敞口通道（作者 06-13 重设计·取代旧短残段#1）：洞穴是固定的，扫描不足显示「不完整的洞穴」而非闭合墙。
-    // 一端已扫 → 沿整条确定性路由画一条**敞口、向未扫端逐渐收窄（r→r×OPEN_TAPER_MIN）、没入黑暗**的通道，
-    // 一直伸到未扫节点位置：可去但未扫的相邻节点因此落在开口处的水里（marker 不再浮在墙外）；
-    // 不画该节点房间＝内容仍不剧透（只露「这边还有路、通向暗处」）。两端都扫到后换成整条匀宽隧道（同路由·不跳变）。
-    const walk = haveA ? pts : [...pts].reverse();
-    let total = 0;
-    for (let i = 0; i + 1 < walk.length; i++) total += Math.hypot(walk[i + 1].x - walk[i].x, walk[i + 1].y - walk[i].y);
-    let acc = 0;
-    for (let i = 0; i + 1 < walk.length; i++) {
-      const segL = Math.hypot(walk[i + 1].x - walk[i].x, walk[i + 1].y - walk[i].y) || 1;
-      const fMid = total > 0 ? (acc + segL / 2) / total : 0; // 0=已扫端 → 1=未扫端
-      acc += segL;
-      tuns.push({
-        ax: walk[i].x,
-        ay: walk[i].y,
-        bx: walk[i + 1].x,
-        by: walk[i + 1].y,
-        r: r * (1 - (1 - OPEN_TAPER_MIN) * fMid),
-      });
+    for (let i = 0; i + 1 < pts.length; i++) {
+      tuns.push({ ax: pts[i].x, ay: pts[i].y, bx: pts[i + 1].x, by: pts[i + 1].y, r });
     }
   }
-  for (const id of scannedIds) {
+  for (const id of Object.keys(layout.pos)) {
     const p = layout.pos[id];
     if (!p) continue;
     const R = roomRadius(id);
@@ -425,7 +395,7 @@ export function bakeCaveRGBA(
   outH: number,
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(outW * outH * 4);
-  // 整张「全亮的洞」（水/壁/岩）——揭示三态（黑/暗/亮）由合成层用几何圆遮罩做（见 SonarScanPanel rAF 循环·FOG_DIM 注）。
+  // 整张「全亮的洞」（水/壁/岩）——迷雾全图三态（黑/亮/灰）由合成层整幅做（见 SonarScanPanel rAF 循环·FOG_DIM 注）。
   for (let gy = 0; gy < outH; gy++) {
     for (let gx = 0; gx < outW; gx++) {
       const wx = rect.x + ((gx + 0.5) / outW) * rect.w;
@@ -471,22 +441,26 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   /** 扫描波班次（06-11 六修·常驻循环制）：key=这班扫描（lastScanTurn）·t0=起播时刻。
    *  播放进度由常驻 rAF 循环按真实流逝时间推——effect/cleanup 永远砍不掉一班进行中的波。 */
   const sweepRef = useRef<{ key: string; t0: number } | null>(null);
-  /** 重烤数据（bake effect 写·常驻循环读）：离屏洞穴位图 + 本帧合成所需几何参数。 */
+  /** 重烤数据（bake effect 写·常驻循环读）：离屏洞穴位图 + 本帧合成所需迷雾态（全图三态·声呐无升级化）。 */
   const bakeRef = useRef<{
     off: HTMLCanvasElement;
     ow: number;
     oh: number;
     haveCave: boolean;
-    /** 以前回合扫过的中心圆心（本 canvas 像素）＝暗底并集。 */
-    dimCentersPx: { x: number; y: number }[];
-    /** 本回合扫描中心圆心（本 canvas 像素）＝亮圆·随扩散点亮；null＝本回合没扫。 */
-    brightCenterPx: { x: number; y: number } | null;
-    /** 揭示圆半径（本 canvas 像素）。 */
-    Rpx: number;
+    /** 全图迷雾三态：'black'＝没扫过（不合成）/ 'dim'＝扫过已过期（FOG_DIM 整图）/ 'bright'＝这一站扫过（整图全亮）。 */
+    fog: 'black' | 'dim' | 'bright';
+    /** 新 ping 扩散动画期间、波前未及处的底色（ping 前一刻的态）：首扫＝'black'（圆外仍黑）/ 重扫＝'dim'（圆外保持灰）。 */
+    underFog: 'black' | 'dim';
+    /** 扩散动画原点（本 canvas 像素·波从你脚下荡开）。 */
+    originPx: { x: number; y: number };
+    /** 扩散完整半径（本 canvas 像素·＝世界 maxRWorld 换算·与 SVG「波到才亮」同速同径）。 */
+    sweepRpx: number;
   } | null>(null);
   /** 循环节流：放完且无新烤 → 跳帧（needsRedraw 由 bake effect 置位；doneSweepKey 记最后放完的班次）。 */
   const needsRedrawRef = useRef<boolean>(true);
   const doneSweepKeyRef = useRef<string | null>(null);
+  /** 本实例拥有的 SVG「波到才亮」班次（配 sweepPlayedKey·播放中 re-render 不掉 class·重挂载不重弹）。 */
+  const waveAnimKeyRef = useRef<string | null>(null);
   // 面板 CSS 客户端注入 head（一次·SSR 不跑＝输出干净·不污染 smoke 子串断言）。
   useEffect(() => {
     if (typeof document === 'undefined' || document.getElementById(CAVE_STYLE_ID)) return;
@@ -511,11 +485,14 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   }, []);
   const run: RunState | undefined = state.run ?? undefined;
   const map = run?.map ?? null;
-  const memory = run?.scanMemory ?? {};
+  // 迷雾层唯一数据源（声呐无升级化·全图三态）：lastScanTurn（黑/非黑 + 扫描波班次）+ sensors.sonar（亮/灰）。
+  const everScanned = run?.lastScanTurn !== undefined;
+  const fresh = run?.sensors.sonar === 'ping';
   // 持久洞「已探片」预亮（多口持久洞 §6.1）：当前洞跨 run 已探节点叠加进「known」——同一张图、不同已探片。
-  // 非持久下潜（run.diveMapId 缺）→ undefined ⇒ known 计算逐字节不变（旧行为）。
+  // 非持久下潜（run.diveMapId 缺）→ undefined ⇒ known 计算不变（旧行为）。
   const persistentExplored = persistentExploredForRun(state.profile, run);
-  const scannedIds = map ? Object.keys(memory).filter((id) => map.nodes[id]) : [];
+  // 走过的节点（known 判定 + 标记层 hidden 门豁免来路·§2.4 同口径）。
+  const visitedSet = new Set(run?.visitedNodeIds ?? []);
 
   // 换节点＝视角跟人走：清平移偏移（保留缩放档·玩家调好的倍率是偏好）。hooks 在早退前。
   const curIdDep = run?.currentNodeId ?? null;
@@ -562,65 +539,35 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
     });
   }, [pendingNodeId]);
   const isOpenWater = run ? !zoneAllowsBacktrack(run.zoneId) : false;
-  // 渲染侧并入（不写 scanMemory·存档/引擎零变化·揭示与欺骗语义仍归 clarity/sonar）：
-  //  ① 你脚下那间永远可见（#1）：人都站在这儿了，眼前这间洞不该是黑的；
-  //  ② 猎手 fix 锚点那间也画出来（06-11 二修「红点仍刷在墙外」·quirk #116 补全）：声呐既然回了
-  //     它的位置，「那里有水」已被回波证实——只画它所在的房间（及随之自然出现的残段口），通向哪
-  //     仍不画（边照旧双端齐才整条·防剧透轴不破）。红点从此永远站在画出来的水里。
-  const fixForRender = run && !isOpenWater ? stalkerSonarBlip(run) : null;
-  const mergeIds: string[] = [];
-  if (!isOpenWater && curId && map?.nodes[curId] && memory[curId] === undefined) mergeIds.push(curId);
-  if (
-    fixForRender &&
-    map?.nodes[fixForRender.nodeId] &&
-    memory[fixForRender.nodeId] === undefined &&
-    !mergeIds.includes(fixForRender.nodeId)
-  ) {
-    mergeIds.push(fixForRender.nodeId);
-  }
-  const renderIds = mergeIds.length > 0 ? [...scannedIds, ...mergeIds] : scannedIds;
-  const renderMemory: Record<string, number> =
-    mergeIds.length > 0 ? { ...memory, ...Object.fromEntries(mergeIds.map((id) => [id, -1])) } : memory;
-  // 最近一次扫描的 turn（任一节点被刷新的最大 stamp）→ 变化即重新雷达扫一遍（波重播 key）。
-  let lastScanTurn = -1;
-  for (const id of scannedIds) lastScanTurn = Math.max(lastScanTurn, memory[id] ?? -1);
-  const curTurn = run?.turn ?? 0;
-  // 几何圆战争迷雾（作者 06-13 重设计·见 FOG_DIM/SONAR_REVEAL_R 注）：渲染按「扫描中心」（scanMemory 的键＝在该节点扫过的回合）
-  // + 半径 SONAR_REVEAL_R 画圆。暗底＝**所有**扫描中心圆并集（含本回合·会被亮圆盖住）；亮圆＝**本回合**扫描中心
-  // （当前节点·若本回合扫到）随扩散圆点亮、盖在暗底上；圆外＝黑（没扫过）。合成在常驻 rAF 循环里 clip 到圆做。
-  const dimCenters: { x: number; y: number }[] = [];
-  let brightCenter: { x: number; y: number } | null = null;
-  if (layout) {
-    for (const id of scannedIds) {
-      const p = layout.pos[id];
-      if (!p) continue;
-      dimCenters.push({ x: p.x, y: p.y }); // 所有中心进暗底（本回合那个也在·亮圆会盖上去＝不闪黑）
-      if (memory[id] === curTurn) brightCenter = { x: p.x, y: p.y }; // 本回合扫到的中心（scanReveal 只盖当前节点）
-    }
-  }
-  // 「已揭示」＝落在任一扫描中心圆里（几何·与节点 BFS 无关）——给标记定「known/未知」。
-  const isRevealed = (p: { x: number; y: number }): boolean =>
-    dimCenters.some((c) => Math.hypot(p.x - c.x, p.y - c.y) <= SONAR_REVEAL_R);
-  // bake signature 用的扫描指纹（哪些中心·各自回合）→ 扫描或回合推进后重烤。
-  const stateSig = `${curTurn}|${scannedIds
-    .map((id) => `${id}:${memory[id]}`)
-    .sort()
-    .join(',')}`;
+  // 最近一记 ping 的 turn（run 字段直读·声呐无升级化）→ 迷雾黑/非黑 + 波重播 key；-1＝本潜没 ping 过。
+  const lastScanTurn = run?.lastScanTurn ?? -1;
+  // 全图迷雾三态（见 FOG_DIM 注）：黑＝没 ping 过 / 亮＝这一站 ping 过（fresh）/ 灰＝ping 过但移动了（stale）。
+  // **不 ping 脚下不亮**语义自然保留：落地没 ping ＝黑；ping 过一次后图常驻（亮或灰）、不回黑。
+  const fog: 'black' | 'dim' | 'bright' = !everScanned ? 'black' : fresh ? 'bright' : 'dim';
+  // bake signature 用的迷雾指纹 → 新 ping / 移动变灰后重合成。
+  const stateSig = `${lastScanTurn}|${fog}`;
+  // 扫描波班次 key（全局唯一到「这张图的这一班」）：generatedAt+startNode 区分图/潜次，lastScanTurn 区分班次——
+  // 供 sweepPlayedKey「一班只播一次」记账（跨挂载·跨 run 不误撞）。
+  const sweepKey = `${map?.generatedAt ?? 0}|${map?.startNodeId ?? ''}|${lastScanTurn}`;
+  // 本次渲染 SVG「波到才亮」（威胁/猎手）播不播动画：这班没播过（本实例即将播）或本实例正拥有这班（播放中
+  // re-render 不掉 class）→ 播；重挂载回来（别处已播）→ 静态直显不重弹。SSR 不跑 effect ⇒ 恒「未播」＝输出不变。
+  const waveAnim = (lastScanTurn >= 0 && sweepPlayedKey !== sweepKey) || waveAnimKeyRef.current === sweepKey;
+  if (waveAnim) waveAnimKeyRef.current = sweepKey;
 
-  // 取景框＝「点亮+暗区域」（所有扫描中心圆·半径 SONAR_REVEAL_R）的世界包围盒 + 略大一圈余量（作者拍板的 zoom/pan 机制）：
-  // 无论怎么拖，取景中心都夹在这个盒里（clampViewToBox·见 vbX/vbY + clampCam）＝相机不离开扫过的那片、不会拖进无边黑雾。
-  // 盒比视窗大 → 可在盒内平移；盒比视窗小（刚起手只一圈）→ 锁定居中、拖不动（整片已在框内）。
-  let boxLoX = here.x - SONAR_REVEAL_R, boxHiX = here.x + SONAR_REVEAL_R;
-  let boxLoY = here.y - SONAR_REVEAL_R, boxHiY = here.y + SONAR_REVEAL_R;
-  for (const id of scannedIds) {
-    const p = layout?.pos[id];
-    if (!p) continue;
-    boxLoX = Math.min(boxLoX, p.x - SONAR_REVEAL_R);
-    boxHiX = Math.max(boxHiX, p.x + SONAR_REVEAL_R);
-    boxLoY = Math.min(boxLoY, p.y - SONAR_REVEAL_R);
-    boxHiY = Math.max(boxHiY, p.y + SONAR_REVEAL_R);
-  }
+  // 取景包围盒（三层解耦调整）：位置点层总可见 ⇒ 相机得能拖到全图任意标记——盒＝整张布局范围 ∪ 你，
+  // 加余量（clampViewToBox 夹取景中心·钳制机制本身不变）。旧「只框扫过区」/「外扩揭示圆半径」随 punch 圆一起退役。
+  let boxLoX = Math.min(0, here.x), boxHiX = Math.max(layout?.width ?? 0, here.x);
+  let boxLoY = Math.min(0, here.y), boxHiY = Math.max(layout?.height ?? 0, here.y);
   boxLoX -= SONAR_BOX_PAD; boxHiX += SONAR_BOX_PAD; boxLoY -= SONAR_BOX_PAD; boxHiY += SONAR_BOX_PAD;
+
+  // 扫描波完整半径（世界单位）：从你脚下荡到布局最远角＝波扫完整张图（canvas 扩散圆与 SVG「波到才亮」同用＝同速同径）。
+  const maxRWorld = Math.max(
+    1,
+    Math.hypot(here.x - boxLoX, here.y - boxLoY),
+    Math.hypot(here.x - boxHiX, here.y - boxLoY),
+    Math.hypot(here.x - boxLoX, here.y - boxHiY),
+    Math.hypot(here.x - boxHiX, here.y - boxHiY),
+  );
 
   // 取景窗（#2 缩放/平移）：z 缩放视野尺寸，dx/dy 平移视野中心（世界单位·相对你）。
   const vw = viewW / cam.z;
@@ -629,12 +576,9 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   const vbX = clampViewToBox(here.x + cam.dx, vw, boxLoX, boxHiX) - vw / 2;
   const vbY = clampViewToBox(here.y + cam.dy, vh, boxLoY, boxHiY) - vh / 2;
 
-  // 整张固定洞穴（作者 06-13）：geometry 喂**全部节点**＝同地同图、不随扫描 morph、下次来同一洞；
-  // 「看不看得到」全交给合成层的几何圆遮罩（黑=圆外 / 暗=旧圆 / 亮=本回合圆），不按扫描子集重建几何。
+  // 背景层（三层解耦）：整张固定洞穴＝同地同图、不随扫描 morph、下次来同一洞；「看不看得到」全归迷雾层 punch 圆。
   const allIds = layout ? Object.keys(layout.pos) : [];
-  const fullMemory: Record<string, number> = {};
-  for (const id of allIds) fullMemory[id] = 0;
-  const cave = layout && !isOpenWater ? buildCaveGeometry(layout, allIds, fullMemory) : { tuns: [], rooms: [] };
+  const cave = layout && !isOpenWater ? buildCaveGeometry(layout) : { tuns: [], rooms: [] };
   // 开阔水域几何（Phase 2·SPEC §2/§8）：填此前的 isOpenWater 空占位（旧 = 无声呐图·只黑底节点）。
   // 临时从 layout+zone 确定性派生（Phase 2/3 契约·Phase 3 改由 mapgen 从节点喂）；非开阔 / 无 run → null。
   const owGeom =
@@ -679,18 +623,34 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
     // 世界 → 本 canvas 像素（缩放/平移后中心不一定在正中）：sx 为 world→px 等比标度（宽高同标度·见 viewW 注）。
     const sx = W / rect.w;
     const toPx = (p: { x: number; y: number }) => ({ x: (p.x - rect.x) * sx, y: (p.y - rect.y) * sx });
-    const dimCentersPx = dimCenters.map(toPx); // 以前 + 本回合所有扫描中心圆心（暗底并集）
-    const brightCenterPx = brightCenter ? toPx(brightCenter) : null; // 本回合扫描中心圆心（亮·随扩散）
-    const Rpx = SONAR_REVEAL_R * sx; // 揭示圆半径（本 canvas 像素）
-    // 只更新数据，不画：合成交给常驻循环（cleanup 砍不到它）。三态遮罩＝几何圆 clip（见循环）。
-    bakeRef.current = { off, ow, oh, haveCave, dimCentersPx, brightCenterPx, Rpx };
-    const keyNow = `${lastScanTurn}`;
-    if (!sweepRef.current || sweepRef.current.key !== keyNow) {
-      // 新扫描（lastScanTurn 变）→ 开一班新波（一圈装饰余辉·叠在常驻迷雾上·不裁底图）。
+    // 全图迷雾三态 + 扩散参数：波从你脚下荡开、半径到世界最远角（maxRWorld·与 SVG「波到才亮」同速同径）。
+    // underFog＝新一班波开播前的底态（首扫黑/重扫灰）——波前未及处保持 ping 前一刻的样子（不闪黑）。
+    const prevFog = bakeRef.current?.fog;
+    const underFog: 'black' | 'dim' =
+      sweepRef.current?.key === sweepKey
+        ? (bakeRef.current?.underFog ?? 'black') // 同一班（纯平移/缩放重烤）：底态不变
+        : prevFog === 'dim' || prevFog === 'bright'
+          ? 'dim'
+          : 'black';
+    bakeRef.current = {
+      off, ow, oh, haveCave, fog,
+      underFog,
+      originPx: toPx(here),
+      sweepRpx: maxRWorld * sx,
+    };
+    if (sweepRef.current?.key !== sweepKey) {
+      // 一班扫描全局只播一次（sweepPlayedKey 模块级·跨挂载·作者 07-18 bug①）：真·新 ping（没播过）→ 起波；
+      // 重挂载回来（事件推进/视图切换·这班已播过）→ 落「已放完」班次（t0=-∞ ⇒ k=1）＝静态三态即位、不重播。
+      const shouldPlay = lastScanTurn >= 0 && sweepPlayedKey !== sweepKey;
       sweepRef.current = {
-        key: keyNow,
-        t0: typeof performance !== 'undefined' ? performance.now() : Date.now(),
+        key: sweepKey,
+        t0: shouldPlay
+          ? typeof performance !== 'undefined'
+            ? performance.now()
+            : Date.now()
+          : Number.NEGATIVE_INFINITY,
       };
+      if (shouldPlay) sweepPlayedKey = sweepKey;
     }
     needsRedrawRef.current = true; // 重烤（含纯平移/缩放）至少重画一帧
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -712,7 +672,7 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
       if (!animating && !needsRedrawRef.current && doneSweepKeyRef.current === sw.key) return; // 静止帧跳过
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      const { off, ow, oh, haveCave, dimCentersPx, brightCenterPx, Rpx } = bake;
+      const { off, ow, oh, haveCave, fog, underFog, originPx, sweepRpx } = bake;
       // 画布内部分辨率从 bakeRef 的 ow/oh 派生（= viewW/2 × VIEW_H/2·全框比例）——常驻循环读 ref 不拿 viewW 旧闭包。
       const W = ow * 2 * RENDER_SCALE;
       const H = oh * 2 * RENDER_SCALE;
@@ -721,33 +681,37 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
 
       ctx.clearRect(0, 0, W, H);
       ctx.imageSmoothingEnabled = true;
-      if (haveCave) {
-        // ① 暗底＝所有扫描中心圆并集、压暗（FOG_DIM）：落在里头＝暗（以前扫过·常驻不回黑·#4）；圆外不画＝黑（没扫过·#2）。
-        if (dimCentersPx.length) {
-          ctx.save();
-          ctx.beginPath();
-          for (const c of dimCentersPx) ctx.arc(c.x, c.y, Rpx, 0, Math.PI * 2);
-          ctx.clip();
+      // 全图迷雾三态（声呐无升级化）：黑＝不 drawImage（结构上不合成·防剧透）/ 灰＝整图 FOG_DIM /
+      // 亮＝整图全亮（新 ping 扩散动画期间用扩散圆 clip 从脚下点亮·波前未及处保持 underFog 底态＝首扫黑外圈、重扫灰外圈）。
+      if (haveCave && fog !== 'black') {
+        if (fog === 'dim') {
           ctx.globalAlpha = FOG_DIM;
           ctx.drawImage(off, 0, 0, ow, oh, 0, 0, W, H);
-          ctx.restore(); // 还原 globalAlpha=1
-        }
-        // ② 亮圆＝本回合扫描中心，随扩散圆（半径 Rpx*k → Rpx）点亮、盖在暗底上（圆内全亮·#3；圆外仍暗/黑·#4）。
-        if (brightCenterPx) {
-          const r = animating ? Rpx * k : Rpx;
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(brightCenterPx.x, brightCenterPx.y, r, 0, Math.PI * 2);
-          ctx.clip();
-          ctx.drawImage(off, 0, 0, ow, oh, 0, 0, W, H);
-          ctx.restore();
+          ctx.globalAlpha = 1;
+        } else {
+          // bright
+          if (animating && underFog === 'dim') {
+            // 重扫：波前未及处保持旧灰底（不闪黑）。
+            ctx.globalAlpha = FOG_DIM;
+            ctx.drawImage(off, 0, 0, ow, oh, 0, 0, W, H);
+            ctx.globalAlpha = 1;
+          }
+          const r = animating ? sweepRpx * k : 0;
           if (animating) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(originPx.x, originPx.y, r, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(off, 0, 0, ow, oh, 0, 0, W, H);
+            ctx.restore();
             // 扩散圆的亮前缘环（雷达余辉装饰·只动画时·标出「点亮到哪了」）。
             ctx.strokeStyle = 'rgba(170,255,240,0.85)';
             ctx.lineWidth = 2 * RENDER_SCALE;
             ctx.beginPath();
-            ctx.arc(brightCenterPx.x, brightCenterPx.y, r, 0, Math.PI * 2);
+            ctx.arc(originPx.x, originPx.y, r, 0, Math.PI * 2);
             ctx.stroke();
+          } else {
+            ctx.drawImage(off, 0, 0, ow, oh, 0, 0, W, H);
           }
         }
       }
@@ -760,28 +724,16 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
 
   // ---- 早退（hooks 已全部在上方按序调用）----
   if (!run || !map || !layout) return null;
-  // 洞穴图里 renderIds 至少含你脚下那间（#1）＝空态只剩「开阔水域 + 没扫过」。
-  if (renderIds.length === 0) {
-    return (
-      <div className="sonar-panel">
-        <div className="sonar-panel-head">
-          <span className="sonar-panel-title">声呐图</span>
-          <span className="sonar-panel-sub">一片黑。开着声呐往前走，或扫一记，听听四周。</span>
-        </div>
-        <div className="sonar-scan sonar-scan-empty">
-          <span className="sonar-empty-note">· · ·</span>
-        </div>
-      </div>
-    );
-  }
+  // 没有单独的「空态面板」（三层解耦）：没 ping 过＝画布全黑 + 位置点标记照常压在迷雾上（位置总可见）——
+  // 头部副标给「扫一记」提示。旧 renderIds 空态早退随 mergeIds 一起退役。
 
-  // 相邻可去节点（§2·只这些画可点标记）：用 NodeSelectView 同一份 choices＝点击声呐图＝触发同一条 move。
+  // 位置点层·相邻可去（可点档）：用 NodeSelectView 同一份 choices＝点击声呐图＝触发同一条 move。
   const adj = choices.filter((c) => layout.pos[c.nodeId]);
 
   // 猎手（§8.7 会过时·mid-edge 插值）：上次被扫到的位置（可能在通道中段）→ 红呼吸点（不要 X）。
   // 落点沿**渲染同源路由**（stalkerRoutePoint·作者 06-11「红点出墙」修复）：隧道是弯折折线，
-  // 房心直线插值会把通道中段的点画进岩里；远端未扫时再截进半揭示残段口内。开阔水域无洞壁仍走直线。
-  const stalkerFix = !isOpenWater ? fixForRender : stalkerSonarBlip(run);
+  // 房心直线插值会把通道中段的点画进岩里。开阔水域无洞壁仍走直线。
+  const stalkerFix = stalkerSonarBlip(run);
   let stalkerPos: { x: number; y: number } | null = null;
   if (stalkerFix) {
     const a = layout.pos[stalkerFix.nodeId];
@@ -790,7 +742,7 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
         const b = layout.pos[stalkerFix.edgeTo];
         const t = stalkerFix.edgeProg;
         const onRoute = !isOpenWater
-          ? stalkerRoutePoint(layout, stalkerFix.nodeId, stalkerFix.edgeTo, t, renderMemory)
+          ? stalkerRoutePoint(layout, stalkerFix.nodeId, stalkerFix.edgeTo, t)
           : null;
         stalkerPos = onRoute
           ? voidTrack(onRoute.x, onRoute.y)
@@ -819,13 +771,12 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
 
   // 低 san 伪接触（S2）：**感知重做已删**（声呐诚实·SPEC §2.2/§3）——不再画幻影 blip。
 
-  // 你的呼吸点：voidTrack 跟随扭曲后的洞（不浮在岩里）；量程环/取景仍以房间中心 here 为准。
+  // 你的呼吸点：voidTrack 跟随扭曲后的洞（不浮在岩里）；取景仍以房间中心 here 为准（量程环已随无射程删）。
   const youMark = voidTrack(here.x, here.y);
 
-  // —— 「波到才亮」（#3）：标记按波前到达时刻延迟淡入（线性波前 → delay = dist/maxR × SWEEP_MS·与 canvas 同一比例）。
-  // 外层 <g key=lastScanTurn>＝只有真扫描会重挂载重播；纯平移/缩放不重弹。 ——
-  // 标记淡入（「波到才亮」）与 canvas 扩散圆同径：同一 SONAR_REVEAL_R（以本回合扫描中心为心·扩散到圆边才点亮）。
-  const maxRWorld = SONAR_REVEAL_R;
+  // —— 「波到才亮」（#3·现只作用于**扫描驱动**的标记＝威胁/猎手快照）：按波前到达时刻延迟淡入
+  // （线性波前 → delay = dist/maxRWorld × SWEEP_MS·与 canvas 扩散圆同径同速——maxRWorld 在上方与包围盒一起算）。
+  // 位置点层总可见＝**不再**随扫描重挂载重弹（每记 ping 全图标记闪一遍会打脸「总可见」）——canvas 扩散动画仍在。
   const waveDelay = (x: number, y: number): CSSProperties => ({
     animationDelay: `${Math.round(Math.min(1, Math.hypot(x - here.x, y - here.y) / Math.max(1, maxRWorld)) * SWEEP_MS)}ms`,
   });
@@ -931,6 +882,26 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   };
   const camMoved = cam.z !== 1 || cam.dx !== 0 || cam.dy !== 0;
 
+  // —— 位置点层·非相邻（三层解耦·默认总可见）——
+  // 「隐藏位置点」唯一例外＝NodeGate hidden 未解锁（nodeMarkerVisible·与 enterNodeSelection 过滤同一谓词·别各写各的）。
+  // 不可点（没有对应 move choice＝机制必然·CSS pointer-events:none）；known 才露字形/深度，未知只给「? m」。
+  const adjIds = new Set(adj.map((c) => c.nodeId));
+  const revealCorpseHint = getUpgradeBonuses(state.profile).revealCorpseHint;
+  const farMarkers: Array<{ id: string; kind: string | undefined; known: boolean; depth: number; m: { x: number; y: number } }> = [];
+  for (const id of allIds) {
+    if (id === curId || adjIds.has(id)) continue; // 你＝呼吸点；相邻＝可点档（各自另画）
+    const node = map.nodes[id];
+    const p = layout.pos[id];
+    if (!node || !p) continue;
+    if (!nodeMarkerVisible(node, run, revealCorpseHint, visitedSet.has(id))) continue;
+    // known＝走过 / 本潜 ping 过（一记 ping 全图具名·声呐无升级化）/ 持久洞跨 run 已探。
+    const known = visitedSet.has(id) || everScanned || (persistentExplored?.has(id) ?? false);
+    const o = known ? poiOffset(id, node.kind) : { dx: 0, dy: 0 };
+    farMarkers.push({ id, kind: node.kind, known, depth: node.depth, m: voidTrack(p.x + o.dx, p.y + o.dy) });
+  }
+  // 残图小地图的「已 mapped」点：本潜 ping 过＝全图（一记 ping 全测绘）；没 ping 过＝只有你（你永远知道自己在哪）。
+  const miniIds = everScanned ? allIds : allIds.filter((id) => id === curId);
+
   // 残图小地图（方位感·保留·不逐回合淡出·§4）：全洞外框 + 已 mapped 的点 + 你。
   const MINI_W = 60;
   const MINI_H = 96;
@@ -941,9 +912,11 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
       <div className="sonar-panel-head">
         <span className="sonar-panel-title">声呐图</span>
         <span className="sonar-panel-sub">
-          {isOpenWater
-            ? '开阔水域——没有洞壁可循，只有黑暗里的接触与读数。'
-            : '回波凿出的洞——蓝是水路，暗是岩。会过时，信几分由你。'}
+          {!everScanned
+            ? '一片黑。扫一记，听听四周。'
+            : isOpenWater
+              ? '开阔水域——没有洞壁可循，只有黑暗里的接触与读数。'
+              : '回波凿出的洞——蓝是水路，暗是岩。会过时，信几分由你。'}
         </span>
         {/* 回正（#2）：缩放/平移过才出现（SSR 默认视角＝不渲染·smoke 零影响）。 */}
         {camMoved && (
@@ -977,32 +950,37 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
               if (movedRef.current <= 6) onPendingChange?.(null);
             }}
           >
-            {/* 量程环（已解锁声呐时显示·半径＝SONAR_REVEAL_R 与揭示圆同大）：一眼看出「一记 ping 从你这儿点亮多大一圈」。
-                感知重做后声呐＝一记诚实 ping（SPEC §2.2）：射程升级揭示更多跳之外的节点供规划，几何揭示圆本身固定。 */}
-            {run.sensors.sonarUnlocked && (
-              <circle className="sonar-range-ring" cx={here.x} cy={here.y} r={SONAR_REVEAL_R} />
-            )}
-            {/* 「波到才亮」组（#3）：key=lastScanTurn＝真扫描重挂载重播淡入；平移/缩放不重弹。 */}
-            <g key={`wave-${lastScanTurn}`}>
-            {/* 低 san 伪接触（S2）：感知重做已删（声呐诚实·SPEC §2.2）——不再画幻影 blip。 */}
-            {/* 相邻可去节点（§2·只这些可点·点击＝触发那条 move choice·与 NodeSelectView 同步）。
+            {/* （旧「量程环」已随声呐无升级化删——无射程无圈：一记 ping 就是整张图。） */}
+            {/* —— 位置点层（三层解耦·压迷雾之上·默认总可见·静态＝不随扫描重弹）—— */}
+            {/* 非相邻定位标记（不可点）：known → 字形+深度 / 未知 → 「? m」（作者拍板·沿用未知样式）。 */}
+            {farMarkers.map((f) => {
+              const glyph = f.known ? kindGlyph(f.kind) : null;
+              return (
+                <g key={f.id} className={`sonar-blip sonar-node-far ${f.known ? kindClass(f.kind) : ''}`}>
+                  <circle cx={f.m.x} cy={f.m.y} r={4} />
+                  {glyph && (
+                    <text className="sonar-blip-glyph" x={f.m.x} y={f.m.y + 3}>
+                      {glyph}
+                    </text>
+                  )}
+                  <text className="sonar-blip-depth" x={f.m.x} y={f.m.y - 8}>
+                    {f.known ? `${f.depth}m` : '? m'}
+                  </text>
+                </g>
+              );
+            })}
+            {/* 相邻可去节点（可点·点击＝触发那条 move choice·与 NodeSelectView 同步）。
                 声呐诚实（感知重做 SPEC §2.2）：按真 kind 画·无欺骗表象/无回波/读数乱码。 */}
             {adj.map((c) => {
               const p = layout.pos[c.nodeId];
               if (!p) return null;
               const node = map.nodes[c.nodeId];
-              // POI 落点：已扫节点 → 偏心 + voidTrack 跟随扭曲后的洞；未扫但可去的相邻节点（作者 06-13）→
-              // 吸附到敞口通道的水里（projectIntoWater·配合上面的敞口通道伸到该节点）＝落在开口处、不再浮在墙外。
-              let m = { x: p.x, y: p.y };
-              // 已知＝落在某扫描圆里（几何·isRevealed）或脚下/锚点并入（你在那儿/回波证实）或**持久洞跨 run 已探**（§6.1 预亮）。
-              // 未知＝可去但本局没扫到、且非持久已探。非洞下潜 persistentExplored=undefined ⇒ 逐字节不变。
-              const known = isRevealed(p) || mergeIds.includes(c.nodeId) || (persistentExplored?.has(c.nodeId) ?? false);
-              if (known) {
-                const o = poiOffset(c.nodeId, node.kind);
-                m = voidTrack(p.x + o.dx, p.y + o.dy);
-              } else if (haveCaveGeom) {
-                m = projectIntoWater({ x: p.x, y: p.y }, cave);
-              }
+              // known＝走过（visited）/本潜 ping 过（一记 ping 全图具名）/持久洞跨 run 已探（§6.1 预亮）；未知＝还没扫过。
+              const known = visitedSet.has(c.nodeId) || everScanned || (persistentExplored?.has(c.nodeId) ?? false);
+              // 落点：known → 偏心（poiOffset 按 kind 语义）；未知 → 房心。都过 voidTrack 跟随扭曲后的洞——
+              // 背景几何恒完整（每节点必有房间＝落点必在水里），旧「吸附敞口通道」的 projectIntoWater 已不需要。
+              const o = known ? poiOffset(c.nodeId, node.kind) : { dx: 0, dy: 0 };
+              const m = voidTrack(p.x + o.dx, p.y + o.dy);
               const glyph = kindGlyph(node.kind);
               const feats = node.features ?? [];
               const isRoom = feats.length > 1;
@@ -1011,8 +989,7 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
               return (
                 <g
                   key={c.nodeId}
-                  className={`sonar-blip sonar-node-marker sonar-wave-in ${kindClass(node.kind)} ${isRoom ? 'is-room' : ''} ${isPending ? 'is-pending' : ''}`}
-                  style={waveDelay(m.x, m.y)}
+                  className={`sonar-blip sonar-node-marker ${kindClass(node.kind)} ${isRoom ? 'is-room' : ''} ${isPending ? 'is-pending' : ''}`}
                   onClick={(ev) => {
                     // 图上点击**只做选中/切换选中**（作者 06-11 拍板·替代 06-10 的「再击同点＝前往」）：
                     // 出发永远走下方列表项——图是纯定位层，配合拖拽手势后不会误触发移动/事件。
@@ -1058,11 +1035,14 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
                 </g>
               );
             })}
+            {/* 「波到才亮」组（#3·只剩**扫描驱动**的快照标记＝威胁/猎手）：key=lastScanTurn＝真扫描重挂载重播淡入；
+                平移/缩放不重弹；位置点层在组外（总可见·不随扫描闪）。 */}
+            <g key={`wave-${lastScanTurn}`}>
             {/* 威胁接触（S3 廉价版·琥珀·读不准方位/距离） */}
             {threat && threatPos && (
               <g
-                className={`sonar-threat sonar-wave-in ${threat.imminent ? 'is-near' : ''}`}
-                style={waveDelay(threatPos.x, threatPos.y)}
+                className={`sonar-threat ${waveAnim ? 'sonar-wave-in' : ''} ${threat.imminent ? 'is-near' : ''}`}
+                style={waveAnim ? waveDelay(threatPos.x, threatPos.y) : undefined}
               >
                 <circle cx={threatPos.x} cy={threatPos.y} r={6} />
                 <text className="sonar-threat-label" x={threatPos.x} y={threatPos.y - 9}>
@@ -1073,7 +1053,7 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
             {/* 猎手（§5 观感·§8.7 会过时）：红呼吸点 + 外圈（不要 X）·mid-edge 插值·大型生物一大团。
                 wave-in 包外层（与 sonar-pulse 的 animation 互斥·同元素会互盖）。 */}
             {stalkerFix && stalkerPos && (
-              <g className="sonar-wave-in" style={waveDelay(stalkerPos.x, stalkerPos.y)}>
+              <g className={waveAnim ? 'sonar-wave-in' : undefined} style={waveAnim ? waveDelay(stalkerPos.x, stalkerPos.y) : undefined}>
                 <g className={`sonar-stalker sonar-pulse ${stalkerFix.large ? 'is-large' : ''}`}>
                   {stalkerFix.large && (
                     <circle className="sonar-stalker-mass" cx={stalkerPos.x} cy={stalkerPos.y} r={18} />
@@ -1101,7 +1081,7 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
           aria-label="残图小地图"
         >
           <rect className="sonar-mini-extent" x={1} y={1} width={MINI_W - 2} height={MINI_H - 2} />
-          {renderIds.map((id) => {
+          {miniIds.map((id) => {
             const p = layout.pos[id];
             if (!p) return null;
             const isCurrent = id === curId;

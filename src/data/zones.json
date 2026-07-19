@@ -96,7 +96,7 @@
       "generation": "random",
       "mapShape": "layered",
       "canFreeAscend": true,
-      "_qa_fixture_doc": "开阔水域声呐渲染 look-dev 夹具（开阔水域 SPEC §8 Phase 2·2026-07-13）：mapShape=layered ⇒ isOpenWater ⇒ SonarScanPanel 走 openWaterSdf 边缘型海床分支。沙档＝无结构、只沙波 floor。浅/小 depthRange 便于声呐取景框住海床（配 scenes registry openwater_sand：scanMemory 全揭示 + 站最深节点）。tag 'sand' 仅选声呐形态·当前无对应事件（同 vertical_test tag 'cave' 亦无事件·空池已由 mapgen 兜底）。regionId 故意不填（落调试器「未分区/开发测试」桶·同 horizontal_test）。"
+      "_qa_fixture_doc": "开阔水域声呐渲染 look-dev 夹具（开阔水域 SPEC §8 Phase 2·2026-07-13）：mapShape=layered ⇒ isOpenWater ⇒ SonarScanPanel 走 openWaterSdf 边缘型海床分支。沙档＝无结构、只沙波 floor。浅/小 depthRange 便于声呐取景框住海床（配 scenes registry openwater_sand：revealAllAtDeepest 标已扫全亮 + 站最深节点）。tag 'sand' 仅选声呐形态·当前无对应事件（同 vertical_test tag 'cave' 亦无事件·空池已由 mapgen 兜底）。regionId 故意不填（落调试器「未分区/开发测试」桶·同 horizontal_test）。"
     },
     {
       "id": "zone.openwater_coral_test",

@@ -278,13 +278,10 @@ export interface RunStartBonuses {
   /** 声呐能力是否已解锁（段2：声呐＝Otto 打造的装备件·由 hasSonarEquipped 派生·见 getRunBonuses）。 */
   sonarUnlocked: boolean;
   // 深水区 Phase 0 升级轨（全局升级派生，前哨灯塔暂不贡献）：createNewRun 据此种 powerMax / sensorTuning。
+  // （声呐两轴 sonarPingCostReduction/sonarScanRangeBonus 已随声呐无升级化删·2026-07-19——声呐无升级·仅 sonarUnlocked。）
   powerMaxBonus: number;
-  sonarPingCostReduction: number;
   lampEfficiency: number;
   signatureReduction: number;
-  // 声呐主升级轴（感知重做 SPEC §2.2「更远的声呐 = 预判未来的选项」）：一记 ping 的规划纵深跳数加成
-  // （视觉 lookahead + 猎手听觉同轴）。旧 sonarRobustness/lampRobustness/lampRangeBonus/sonarRangeBonus 随感知重做删。
-  sonarScanRangeBonus: number;
   // 声呐与房间 §6/§8.3 续：大房间出现率加成。
   roomFeatureChanceBonus: number;
   // 猎手 SPEC §3 升级规避：玩家侧规避（吸声 T1 / 迷彩 T2）。
@@ -301,9 +298,9 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
   const g = getUpgradeBonuses(profile);
   // 段1：并入穿戴件升级增量（Otto·equipment.ts 单点）——starter 全 Lv.1 时为 0、对既有基线零扰动。
   const eq = profile.equipment ? getEquipmentStats(profile.equipment) : emptyEquipmentStats();
-  // 段2（2026-06-19）+ A 档位件（2026-06-20）+ 感知重做精简（车道 4）：传感器加成全部来源＝穿戴件 eq（getEquipmentStats·单点）——
-  //   · 声呐（sonarUnlocked / pingCost / scanRangeBonus）：读 eq（Otto 打造的声呐件·数值在 upgradeSteps）。
-  //     sonarUnlocked＝声呐槽是否装着件（hasSonarEquipped 单一来源）。scanRangeBonus＝声呐主升级轴（规划纵深·SPEC §2.2）。
+  // 段2（2026-06-19）+ A 档位件（2026-06-20）+ 感知重做精简（车道 4）+ 声呐无升级化（2026-07-19）：
+  // 传感器加成全部来源＝穿戴件 eq（getEquipmentStats·单点）——
+  //   · 声呐：只剩 sonarUnlocked＝声呐槽是否装着件（hasSonarEquipped 单一来源）。无升级数值轴（ping 耗电＝常量·无射程）。
   //   · 灯/电池/规避（powerMax / lampEfficiency / signatureReduction / soundAbsorb / camo）：
   //     A 把退役的灯/电池/规避升级做回「固定属性档位件」（Mira 买·数值在 base effects）→ 改读 eq.*（替段2 的字面 0）。
   //     注：powerMaxBonus 仍被 dive-start 的前哨在线补给 rechargeBonus 叠加（在此给 eq 起点·dive-start += recharge）。
@@ -315,10 +312,8 @@ export function getRunBonuses(profile: PlayerProfile): RunStartBonuses {
     staminaMaxBonus: g.staminaMaxBonus + eq.staminaMaxBonus,
     sonarUnlocked: sonarPresent,
     powerMaxBonus: eq.powerMaxBonus,
-    sonarPingCostReduction: eq.sonarPingCostReduction,
     lampEfficiency: eq.lampEfficiency,
     signatureReduction: eq.signatureReduction,
-    sonarScanRangeBonus: eq.sonarScanRangeBonus,
     roomFeatureChanceBonus: g.roomFeatureChanceBonus,
     soundAbsorbBonus: eq.soundAbsorbBonus,
     camoBonus: eq.camoBonus,

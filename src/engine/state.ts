@@ -40,7 +40,10 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // run/stats 形状变（加 hp/hpMax·减 injuries）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始。体力不再致死（改行动预算）、伤害改打 HP。
 // 16→17（开阔水域持久化·2026-07-17）：持久图注册表泛化更名 profile.caveMaps→diveMaps（Map<id, PersistentDiveMap>）、记录字段 caveId→id、
 // run.caveId→run.diveMapId——洞穴与开阔持久海域共用一张 kind-agnostic 注册表。形状变（字段更名·非纯加）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始。
-const SAVE_VERSION = 17;
+// 17→18（声呐无升级化·2026-07-19）：删声呐升级轴（items.json 声呐件 upgradeSteps 整段 + sensorTuning.pingCost/sonarScanRange）
+// + run.scanMemory/scanOrigins 收敛成 run.lastScanTurn?（一记 ping 全图揭示·三态全图迷雾）——
+// 装备/run 形状变（旧档可能持有 Lv>1 声呐件·升级步已不存在）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始。
+const SAVE_VERSION = 18;
 
 /**
  * 生命值上限基线（战斗系统改版 2026-07-10）。createNewRun 种进 run.hpMax、stats.hp 起手＝hpMax。
@@ -266,14 +269,12 @@ export function createNewRun(opts: {
     staminaMaxBonus?: number;
     /** 生命上限加成（战斗系统改版 2026-07-10）：run.hpMax = HP_MAX + 此值。未来潜服/升级 + boss 战 baseline 生存力都走它（同 staminaMaxBonus 模式）。 */
     hpMaxBonus?: number;
-    /** 声呐能力是否已解锁（深水区 Phase 0a；省略 = 未解锁 = 早期仅有灯）。 */
+    /** 声呐能力是否已解锁（深水区 Phase 0a；省略 = 未解锁 = 早期仅有灯）。声呐无升级化后这是声呐唯一的加成位。 */
     sonarUnlocked?: boolean;
     // 深水区 Phase 0 升级轨（省略 = 未升级 = 基线，行为与 0a/0b 一致）。
     powerMaxBonus?: number;
-    sonarPingCostReduction?: number;
     lampEfficiency?: number;
     signatureReduction?: number;
-    sonarScanRangeBonus?: number;
     roomFeatureChanceBonus?: number;
     soundAbsorbBonus?: number;
     camoBonus?: number;
@@ -285,10 +286,8 @@ export function createNewRun(opts: {
   // 深水区 Phase 0 升级轨：电池总量 = 基线 + 加成；其余传感器旋钮烤成 sensorTuning（地板/上限在 deriveSensorTuning）。
   const powerMax = POWER_MAX + (opts.bonuses?.powerMaxBonus ?? 0);
   const sensorTuning = deriveSensorTuning({
-    sonarPingCostReduction: opts.bonuses?.sonarPingCostReduction,
     lampEfficiency: opts.bonuses?.lampEfficiency,
     signatureReduction: opts.bonuses?.signatureReduction,
-    sonarScanRangeBonus: opts.bonuses?.sonarScanRangeBonus,
     roomFeatureChanceBonus: opts.bonuses?.roomFeatureChanceBonus,
     soundAbsorbBonus: opts.bonuses?.soundAbsorbBonus,
     camoBonus: opts.bonuses?.camoBonus,
@@ -335,8 +334,7 @@ export function createNewRun(opts: {
     sensorTuning,
     // 深水区 Phase 0b：警觉从 0 起（点灯/ping 在深水抬、摸黑降）。
     alert: 0,
-    // 声呐与房间 S0：声呐图记忆起手为空（全黑，只随 ping 一块块点亮）。
-    scanMemory: {},
+    // 声呐迷雾起手全黑（lastScanTurn 真条件字段·不种——undefined＝本潜从未 ping 过·声呐无升级化 2026-07-19）。
     // band 派生旋钮的「无 band」默认（POI 下潜 / 浅水基线）；startDiveFromOutpost 按 band 覆写。
     // 必填化（CHANGELOG #107）：默认值即旧读点 `?? 1 / 缺省假` 的语义，行为不变。
     bandAlertFactor: 1,
@@ -499,7 +497,7 @@ export function hydrateGameState(state: GameState): GameState {
       powerMax,
       alert: run.alert ?? 0,
       sensorTuning: run.sensorTuning ?? deriveSensorTuning({}),
-      scanMemory: run.scanMemory ?? {},
+      // lastScanTurn 真条件字段（absent＝没扫过）·不补（同 ascentLocked/litThisTurn 族）。
       bandAlertFactor: run.bandAlertFactor ?? 1,
       huntEnabled: run.huntEnabled ?? false,
       // 固定资源 run 级耗尽容器（POI 固定资源耗尽·2026-06-25）：缺失单点补空 Map（poiId/harvestedSaveItems

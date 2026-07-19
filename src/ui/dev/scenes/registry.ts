@@ -150,18 +150,24 @@ const funeral: SceneDef = {
   },
 };
 
-// 开阔水域声呐 look-dev（开阔水域 SPEC §8 Phase 2·2026-07-13）：把整张图标为已扫 + 站到最深节点
-// ⇒ 声呐取景框住海床（否则起手只框住顶部一圈水·海床在 zone 底看不到）。scanMemory 全填＝合法揭示态
-// （同 MapDevPanel 全揭示概览 mem[id]=0）·非手搓 phase（守本文件「用真引擎构造器」约定）。
+// 开阔水域声呐 look-dev（开阔水域 SPEC §8 Phase 2·2026-07-13·声呐无升级化 2026-07-19 改法）：标「这一站已 ping」
+// + 站到最深节点 ⇒ 声呐迷雾整图全亮（fresh）、取景框住海床（否则起手全黑·海床在 zone 底看不到）。
+// lastScanTurn + sensors.sonar='ping' ＝合法揭示态（与 pingSonar 写的字段一致·非手搓 phase·守「真引擎构造器」约定）。
 const revealAllAtDeepest = (s: GameState): GameState => {
   const run = s.run;
   if (!run?.map) return s;
   const ids = Object.keys(run.map.nodes);
   if (ids.length === 0) return s;
-  const scanMemory: Record<string, number> = {};
-  for (const id of ids) scanMemory[id] = 0;
   const deepest = ids.reduce((a, b) => (run.map!.nodes[b].depth > run.map!.nodes[a].depth ? b : a), ids[0]);
-  return { ...s, run: { ...run, scanMemory, currentNodeId: deepest } };
+  return {
+    ...s,
+    run: {
+      ...run,
+      lastScanTurn: run.turn,
+      sensors: { ...run.sensors, sonar: 'ping' },
+      currentNodeId: deepest,
+    },
+  };
 };
 
 // 四档各一 scene（开阔水域声呐·SPEC §5 沙/珊瑚/岩/珊瑚礁混合）：真引擎 createNewRun+startDive+enterNodeSelection

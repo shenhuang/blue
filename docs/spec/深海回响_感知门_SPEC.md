@@ -3,6 +3,7 @@
 > 状态：**拟定 2026-07-05**（作者本 session 定向 · Cowork 交互 · Opus）· **未实装 · 未提交 · 下 session 单车道实现**（本 session 只写 SPEC · 零代码）。
 > 本 SPEC **扩展并部分改写** `感知重做_SPEC` §2.1（灯门从「整潜级」下放到 per-node）+ §2.2（声呐从「只侦察」加上「门」职能）。**推广 #262** 的 per-node 隐藏黑点（`DiveNode.dark`）：把「per-node 隐藏黑 + 整潜灯门 + 新声呐门」收成一个 `NodeGate{sense,mode}`。#262 的 `dark` 布尔**被本模型取代**（dormant · 未激活 · runtime 生成不入存档 → 干净替换）。
 > 数值 / 密度 / 阈值 / 文案一律留最后统一调（memory `defer-number-tuning`）· 本 SPEC 只定**机制、数据形状、边界**。
+> **⚠ 2026-07-19 声呐无升级化（CHANGELOG #315）**：声呐门解锁语义由「`scanMemory` 一记 ping 全潜粘住」改为**活条件** `run.sensors.sonar==='ping'`（同灯 lampOn 的持续态·移动后脉冲散了门回锁·`dive-select.ts::gateUnlocked`·作者拍板「和灯一样」）。本档下文的 `scanMemory` 引用均为历史（字段已删）。「关键不对称」段作废——灯与声呐现同为活条件、只是一个持续（开着灯）一个按站（这一站 ping 过）。
 
 ## 1. 北极星 / 为什么
 

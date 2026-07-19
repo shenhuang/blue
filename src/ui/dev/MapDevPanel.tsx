@@ -182,10 +182,8 @@ export function MapDevPanel({ onClose }: MapDevPanelProps) {
   // 两者都全揭示整图（dev 概览·非玩家渐进揭示）；与游戏内同一渲染函数＝单一来源、观感一致。
   const caveGeom = useMemo(() => {
     if (!map || !caveLayout || isOpenWater) return null;
-    const ids = Object.keys(map.nodes);
-    const mem: Record<string, number> = {};
-    for (const id of ids) mem[id] = 0; // 全揭示＝看整张洞
-    return buildCaveGeometry(caveLayout, ids, mem);
+    // 三层解耦后 buildCaveGeometry 本就整图恒完整（背景层不吃揭示）——dev 概览天然「全揭」，无需再喂全 mem。
+    return buildCaveGeometry(caveLayout);
   }, [map, caveLayout, isOpenWater]);
   const owGeom = useMemo(
     () => (map && caveLayout && isOpenWater ? buildOpenWaterGeometry(caveLayout, zone, map) : null),

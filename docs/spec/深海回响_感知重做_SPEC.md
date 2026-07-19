@@ -5,7 +5,8 @@
 > 数值 / 阈值 / 手感一律留最后统一调（见 memory `defer-number-tuning`）·本 SPEC 只定**机制与边界**。
 >
 > **⚠⚠ 二次 supersede · 2026-07-10 理智系统移除**：本 SPEC 的新北极星把欺骗**收敛成单一「低理智」轴**（§1 第三条 / §2.3·低 san → 改选项 + 改怪物 + 幻觉遭遇）。**该低理智轴现已整体删除**——连续理智值 `run.stats.sanity`（0–100·无值 / 无条 / 无 drain）+ 事件理智检定（166 处 `check.stat:'sanity'` 全塌成 success 分支）+ `sanityRange` 事件门 + `EventOption.hallucination` + 幻觉系统（`HALLUCINATION_*` / `clarity.ts::hallucinationApproaches` / `dive-stalker.ts::maybeHallucinationEncounter` / StoryEditor 幻觉模式）+ 氮醉扣理智 全删。「发疯 / 头脑不正常」改为**二态节点门**：地点缝 seam 节点（`types/dive.ts` `DiveNode.seam.bypassCapability:'steady_mind'`〔定心坠〕·无它入缝即 `executeDeath`〔复用旧「理智崩溃·疯狂上浮」死因〕·当前 DORMANT〔0 seam 节点·作者晚放〕）。守门＝`scripts/check-no-sanity.mjs`（src 里 latin `sanity`/`hallucinat` 残留即红；叙事中文「理智 / 幻觉」不禁）。SAVE_VERSION 13→14。
-> - **本 SPEC 仍成立的那半（不受本次移除影响）**：三件诚实感知（灯＝诚实近场硬门 / 声呐＝诚实远场侦察 / 电 / signature / 射程 / 探图渲染·§2.1 / §2.1b / §2.2 / §4）+ §3 声呐欺骗引擎的整体拆除（`check-no-sonar-deception`）。
+> - **本 SPEC 仍成立的那半（不受本次移除影响）**：三件诚实感知（灯＝诚实近场硬门 / 声呐＝诚实侦察 / 电 / signature / 探图渲染·§2.1 / §2.1b / §2.2 / §4）+ §3 声呐欺骗引擎的整体拆除（`check-no-sonar-deception`）。
+> **⚠⚠⚠ 三次修订 · 2026-07-19 声呐无升级化（CHANGELOG #315）**：§2.2 的「射程＝规划纵深·可升级·BFS lookahead·猎手听觉同轴」**整轴删除**——声呐**无升级无射程**：一记 ping 揭示**整张图**（`run.lastScanTurn` 单标量·迷雾＝全图三态 黑/亮/灰·SonarScanPanel）；声呐门＝**活条件** `sensors.sonar==='ping'`（同灯 lampOn·移动回锁）；猎手＝每记 ping **全图必闻**（evade 仍适用）；ping 耗电＝常量（省电升级轴同删）。「ping 才扫、不 ping 不扫」「付电+自曝」「1 scan/停留」不变。以 `engine/sonar.ts` 头注为准。
 > - **作废的那半**：§1 第三条「欺骗=只剩低 san」+ §2.3 整节 + §6「低 san 欺骗单轴测试」+ §7① 幻觉遭遇钩子 + §8 对剧情 §3.7 的「收敛为单轴」结论。下列段落保留作历史理据，读时按本 banner 折算——欺骗**再无任何机制承载**，感知全诚实。
 
 ## 1. 北极星 / 为什么改

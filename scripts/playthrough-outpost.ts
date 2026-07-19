@@ -211,8 +211,8 @@ assert(outpostStage(sUsable.profile, OUTPOST) === OUTPOST_USABLE_STAGE, '4: 主�
 const round = deserializeGameState(serializeGameState(sUsable));
 assert(round, '4: deserialize 不为 null');
 assert(outpostStage(round!.profile, OUTPOST) === 2, '4: round-trip 后 stage 仍 2（flag 持久）');
-assert(round!.version === 17, '4: SAVE_VERSION 17（round-trip 后不变·白板收口 bump）');
-L('  stage flag round-trip / SAVE_VERSION 17 不变 ✓');
+assert(round!.version === 18, '4: SAVE_VERSION 18（round-trip 后不变·声呐无升级化 bump）');
+L('  stage flag round-trip / SAVE_VERSION 18 不变 ✓');
 
 // ============================================================
 // 5. 补给设施：建成即全额生效（能源容量门控已删·2026-06-21）
