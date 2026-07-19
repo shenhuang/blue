@@ -107,7 +107,26 @@ const CAVE_STYLE = `
 .sonar-node-marker.is-pending circle { stroke: #eafffa; stroke-width: 2.2; filter: drop-shadow(0 0 5px rgba(140,255,235,.95)); }
 .sonar-pending-ring { fill: none; stroke: #eafffa; stroke-width: 1.6; stroke-dasharray: 4 3; animation: sonarBreath 1.6s ease-in-out infinite; }
 .event-option.is-pending { border-color: #7defdc; box-shadow: 0 0 0 1px #7defdc, 0 0 10px rgba(125, 239, 220, .45); }
-.sonar-recenter { margin-left: auto; flex-shrink: 0; }
+/* 回正＝图内浮动小图标（作者 2026-07-19 #320）：绝对定位在声呐图右上角——出现/消失**零回流**
+   （旧「面板头部行内按钮」出现时会挤动标题行/把图往下推＝加载/拖动后图的位置突变）。 */
+.sonar-recenter {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: rgba(6, 14, 17, 0.82);
+  border: 1px solid rgba(140, 255, 235, 0.35);
+  border-radius: 4px;
+  color: #8cffeb;
+  font-size: 15px;
+  line-height: 24px;
+  text-align: center;
+  cursor: pointer;
+}
+.sonar-recenter:hover { background: rgba(10, 24, 28, 0.92); border-color: rgba(140, 255, 235, 0.65); }
 .sonar-you circle.sonar-you-core { fill: #4ed1c1; stroke: none; }
 .sonar-you circle.sonar-you-ring { fill: none; stroke: #4ed1c1; stroke-width: 1.4; }
 .sonar-stalker circle.sonar-stalker-core { fill: #ff5a5a; stroke: none; }
@@ -897,12 +916,7 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
               ? '开阔水域——没有洞壁可循，只有黑暗里的接触与读数。'
               : '回波凿出的洞——蓝是水路，暗是岩。会过时，信几分由你。'}
         </span>
-        {/* 回正（#2）：缩放/平移过才出现（SSR 默认视角＝不渲染·smoke 零影响）。 */}
-        {camMoved && (
-          <button className="btn small sonar-recenter" onClick={() => setCam({ dx: 0, dy: 0, z: 1 })}>
-            回正
-          </button>
-        )}
+        {/* （回正按钮 #320 移进图内右上角浮动小图标——头部行内出现/消失会挤动布局·见 stack 内 .sonar-recenter。） */}
       </div>
       <div className="sonar-scan-wrap">
         <div
@@ -1031,6 +1045,22 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
               <circle className="sonar-you-core" cx={youMark.x} cy={youMark.y} r={3} />
             </g>
           </svg>
+          {/* 回正（#2 → #320 图内浮动小图标）：缩放/平移过才出现（绝对定位＝出现/消失零回流；
+              SSR 默认视角＝不渲染·smoke Q2 断言零影响）。stopPropagation：别让点它触发平移跟踪/取消选中。 */}
+          {camMoved && (
+            <button
+              className="sonar-recenter"
+              title="回正（回到你所在位置·恢复默认缩放）"
+              aria-label="回正"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCam({ dx: 0, dy: 0, z: 1 });
+              }}
+            >
+              ⌖
+            </button>
+          )}
         </div>
         {/* （残图小地图已删·#316：已扫全图点位泄拓扑、与「不显示所有节点」相悖；方位感靠主图缩放/平移。） */}
       </div>
