@@ -16,7 +16,7 @@ import { getRunBonuses } from '../src/engine/lighthouses';
 import { tickTurns } from '../src/engine/events';
 import { applyStatsDelta } from '../src/engine/combat';
 import { applyCarryItems } from '../src/engine/dive-start';
-import { PlaytestPanel } from '../src/ui/dev/PlaytestPanel';
+import { PlaytestPanel, DEFAULT_PICKS } from '../src/ui/dev/PlaytestPanel';
 import type { GameState } from '../src/types';
 
 let pass = 0;
@@ -94,6 +94,11 @@ const ZONE = 'zone.vertical_test';
   assert(noSonarRun.sensors.sonarUnlocked === false, '未选声呐 → sonarUnlocked=false（缺省不解锁）');
 }
 
+// —— 默认装备自带声呐（#317·作者 2026-07-19）：声呐是地图本体（#315/#316），试玩默认配置必须带——
+{
+  assert(DEFAULT_PICKS.sonar === 'item.sonar.handheld', '默认试玩装备自带声呐（#317·别退回镜像 starter 的 null）');
+}
+
 // —— SSR: 配置面板渲染（launched=null·App 懒加载不牵动）——
 {
   const html = renderToStaticMarkup(createElement(PlaytestPanel));
@@ -101,6 +106,7 @@ const ZONE = 'zone.vertical_test';
   assert(html.includes('god mode'), 'SSR：god mode 开关');
   assert(html.includes('启动下潜'), 'SSR：启动按钮');
   assert(html.includes('气瓶') && html.includes('武器·主'), 'SSR：装备槽标签');
+  assert(html.includes('重置为默认装备（含声呐）'), 'SSR：重置按钮改「默认装备（含声呐）」（#317）');
 }
 
 console.log(`\n✅ smoke-playtest-launcher 全过（${pass} 断言）`);

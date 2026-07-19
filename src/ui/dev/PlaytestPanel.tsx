@@ -37,12 +37,16 @@ const SLOT_LABEL: Record<EquipmentSlot, string> = {
   charm3: '饰品 3',
 };
 
-/** 起始装备默认选择（镜像 createStarterLoadout·让 picker 开局落在合理配置上）。 */
-const STARTER_PICKS: Record<EquipmentSlot, string | null> = {
+/**
+ * 试玩默认装备（作者 2026-07-19 #317：**自带声呐**·不再照抄 createStarterLoadout）：
+ * 声呐现在是地图本体（#315 一记 ping 全图揭示·#316 标记只画相邻+敌）——没它图全黑、几乎测不了任何下潜内容，
+ * 每次启动手动选一遍太蠢。其余槽仍镜像起始装备；想测「无声呐盲潜」手动把声呐槽改回（空）即可。
+ */
+export const DEFAULT_PICKS: Record<EquipmentSlot, string | null> = {
   tank: 'item.tank.bluefin_mk1',
   suit: 'item.suit.thermal_basic',
   light: 'item.light.hand_torch',
-  sonar: null,
+  sonar: 'item.sonar.handheld',
   tool: 'item.dive_knife.standard',
   ranged: null,
   charm: null,
@@ -97,7 +101,7 @@ export function PlaytestPanel() {
     [],
   );
 
-  const [picks, setPicks] = useState<Record<EquipmentSlot, string | null>>(() => ({ ...STARTER_PICKS }));
+  const [picks, setPicks] = useState<Record<EquipmentSlot, string | null>>(() => ({ ...DEFAULT_PICKS }));
   const [zoneId, setZoneId] = useState<string>(zones[0]?.id ?? '');
   const [unlimited, setUnlimited] = useState(true); // 无限补给（不扣消耗/不计负重）·常开
   const [godMode, setGodMode] = useState(false); // 无敌（氧气/HP/减压病/极端温度全不致死不拦）
@@ -157,7 +161,9 @@ export function PlaytestPanel() {
           ← 试玩配置
         </button>
         <Suspense fallback={null}>
-          <App initialState={launched} ephemeral />
+          {/* onPlaytestEnd（#317）：run 收束回港那一刻（上浮结算「回港」/葬礼后）结束试玩、回本配置面板——
+              试玩 profile 是合成的、港口没意义；选项 state 都在本组件 ⇒ 回来即可一键再启动。 */}
+          <App initialState={launched} ephemeral onPlaytestEnd={() => setLaunched(null)} />
         </Suspense>
       </div>
     );
@@ -174,7 +180,7 @@ export function PlaytestPanel() {
         <div style={{ marginBottom: 8, color: '#8fb4d0', fontWeight: 600 }}>
           装备（基础档）
           <button
-            onClick={() => setPicks({ ...STARTER_PICKS })}
+            onClick={() => setPicks({ ...DEFAULT_PICKS })}
             style={{
               marginLeft: 12,
               background: '#16232f',
@@ -186,7 +192,7 @@ export function PlaytestPanel() {
               cursor: 'pointer',
             }}
           >
-            重置为起始装备
+            重置为默认装备（含声呐）
           </button>
         </div>
         {EQUIPMENT_SLOTS.map((slot) => (
