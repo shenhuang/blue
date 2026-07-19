@@ -1,9 +1,10 @@
 /* ============================================================
- * Dev 面板（仅 import.meta.env.DEV）—— 事件回归 Phase 2
+ * Dev 面板共用基底样式（仅 ?editor 工作台面板 import）
  *
- * 这个文件只被 EventDevPanel.tsx 静态 import；
- * 由于 EventDevPanel 在 prod build 走 lazy() + DEV 守卫被 tree-shake，
- * 整份 css 也不会进 prod 包。
+ * 现被 EconomyDevPanel.tsx 静态 import，combat-panel.css / map-panel.css
+ * 在其上叠加各自面板样式；面板全走 EditorApp lazy() → 不进游戏首屏。
+ * （2026-07-19：EventDevPanel/StatsDevPanel/ChartViewDevPanel 已删——
+ *   本文件保留共用部分·历史事件面板专属选择器随引用消失自然闲置。）
  *
  * 选择器全部 .dev-* 前缀，避免与游戏 UI 撞车；颜色变量复用 styles.css 的 :root
  * ============================================================ */
@@ -421,18 +422,6 @@
   padding: 10px 12px;
 }
 
-.dev-step-tone-realistic {
-  border-color: var(--text-muted);
-}
-
-.dev-step-tone-uncanny {
-  border-color: #5a4970;
-}
-
-.dev-step-tone-cosmic {
-  border-color: #6a2a3e;
-}
-
 .dev-step-head {
   display: flex;
   align-items: baseline;
@@ -629,8 +618,9 @@
 }
 
 /* ============================================================
- * StatsDevPanel —— 内容分布统计（BI 风格·ZONE/TONE 两页签）
- * 选择器 .dev-bi-* 前缀·复用 styles.css 主题变量
+ * BI 骨架（.dev-bi-* 前缀·复用 styles.css 主题变量）
+ * 原为 StatsDevPanel 而写（该面板已删·2026-07-19）；
+ * EconomyDevPanel（素材经济）镜像复用本骨架 → 整段保留。
  * ============================================================ */
 .dev-bi-body {
   flex: 1;
@@ -879,7 +869,7 @@
 .dev-bi-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 
 /* ============================================================
- * EconomyDevPanel —— 素材经济（镜像 StatsDevPanel·复用 .dev-bi-* 骨架）
+ * EconomyDevPanel —— 素材经济（复用上方 .dev-bi-* BI 骨架·其原主 StatsDevPanel 已删 2026-07-19）
  * 仅补「状态信号」配色 + 过滤条；其余沿用上方 BI 类（KPI/卡片/表/热力矩阵/图例）。
  * ============================================================ */
 
@@ -943,102 +933,3 @@
 .eco-method-col { color: #7fa9c0; border-color: #45667a; }
 .eco-method-event { color: #7fb08a; border-color: #4a7a55; }
 .eco-empty-d { color: var(--text-faint); font-size: 11px; padding: 4px 0; }
-
-/* ── ChartViewDevPanel（?editor=chartdev）─────────────────────────────────────────────────── */
-
-.dev-chart-body {
-  grid-template-columns: 300px 1fr;
-}
-
-.dev-chart-table-col {
-  background: var(--bg);
-  overflow-y: auto;
-}
-
-.dev-chart-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-}
-
-.dev-chart-table th {
-  position: sticky;
-  top: 0;
-  text-align: left;
-  padding: 5px 8px;
-  border-bottom: 1px solid var(--border);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-muted);
-  background: var(--bg-elev);
-  white-space: nowrap;
-  z-index: 1;
-}
-
-.dev-chart-table td {
-  padding: 4px 8px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-  white-space: nowrap;
-}
-
-.dev-chart-table tbody tr:hover td {
-  background: var(--bg-elev);
-}
-
-.dev-chart-row-hidden td {
-  opacity: 0.4;
-}
-
-.dev-chart-badge-anchor,
-.dev-chart-badge-roam,
-.dev-chart-badge-col {
-  display: inline-block;
-  padding: 1px 5px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
-
-.dev-chart-badge-anchor {
-  background: rgba(78, 209, 193, 0.12);
-  color: var(--accent);
-}
-
-.dev-chart-badge-roam {
-  background: rgba(210, 162, 76, 0.12);
-  color: #d2a24c;
-}
-
-.dev-chart-badge-col {
-  background: rgba(122, 140, 220, 0.14);
-  color: #8a9cdc;
-}
-
-.dev-chart-lit  { color: var(--green, #5fb98e); }
-.dev-chart-dim  { color: var(--warn, #d6b25e); }
-
-.dev-mono { font-variant-numeric: tabular-nums; }
-
-.dev-chart-coord { font-size: 11px; }
-
-.dev-chart-owner {
-  font-size: 10px;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dev-chart-mod-tag {
-  display: inline-block;
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 0 4px;
-  margin-right: 3px;
-  font-size: 10px;
-  color: var(--text-muted);
-  white-space: nowrap;
-}

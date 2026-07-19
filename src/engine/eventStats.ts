@@ -1,11 +1,12 @@
 // eventStats —— 事件内容「分布统计」纯聚合层（叶子·无 UI·无副作用）
 //
 // 目的：把「内容平衡」从靠人眼/散文，变成一处可复用的派生数据——
-//   - StatsDevPanel（?editor=stats）渲染它，作者一眼看出最薄/最饱和的池；
+//   - materialStats（经济「素材」面板数据层）与 smoke-event-stats 门直接吃它；
 //   - 将来若要把「分布太偏就报警」升成 regress 机制（见 docs/QUIRKS 散文→机制约定），
 //     CLI / 检查脚本直接 import 本文件，不必在 UI 里复刻聚合逻辑。
+//   （原第一消费者 StatsDevPanel〔?editor=stats 统计 tab〕已删·2026-07-19——聚合层不动。）
 //
-// 数据来源：engine/eventScenario.ts::listAllEvents()（同 EventDevPanel 的事件源·EVENT_DB 单一真相）。
+// 数据来源：engine/eventScenario.ts::listAllEvents()（EVENT_DB 单一真相）。
 // 边界：engine ↛ ui（check-boundaries 规则一）——本文件只 import 同层 engine，零 React/DOM。
 //
 // 计数口径（重要·UI 也照此标注）：

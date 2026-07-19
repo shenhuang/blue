@@ -49,7 +49,7 @@
       "canFreeAscend": false,
       "hunts": true,
       "ambushEncounters": ["combat.blind_eel_solo", "combat.cave_octopus_solo"],
-      "_qa_fixture_doc": "猎手默认开启（#318·作者 2026-07-19「有猎手的图默认都会有猎手·不能开关」）：hunts=true ⇒ startDive 落 run.huntEnabled ⇒ 有位置的猎手默认在场（quirk #264）。depthRange [30,70] ≥ ALERT_MIN_DEPTH(25) ⇒ 警觉越线即现身。试玩启动器/回归用的「猎手图」；既有 baseline zone（vertical_test 等）刻意不标 hunts——标了会翻 playthrough-stealth 锁定的旧瞬时伏击路径断言。"
+      "_qa_fixture_doc": "猎手默认开启（#318·作者 2026-07-19「有猎手的图默认都会有猎手·不能开关」）：hunts=true ⇒ startDive 落 run.huntEnabled ⇒ 有位置的猎手默认在场（quirk #264）。depthRange [30,70] ≥ ALERT_MIN_DEPTH(25) ⇒ 警觉越线即现身。潜点测试（原试玩启动器）/回归用的「猎手图」；既有 baseline zone（vertical_test 等）刻意不标 hunts——标了会翻 playthrough-stealth 锁定的旧瞬时伏击路径断言。"
     },
     {
       "id": "zone.serpentine_test",

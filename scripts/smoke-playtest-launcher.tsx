@@ -1,4 +1,4 @@
-// dev 试玩启动器（?editor=playtest·PlaytestPanel）SSR 冒烟 + run.devFlags guard 行为断言（2026-07-18）。
+// dev 潜点测试（原「试玩启动器」·?editor=playtest·PlaytestPanel）SSR 冒烟 + run.devFlags guard 行为断言（2026-07-18）。
 // 守两件事：
 //   ① 配置面板 SSR 渲染不崩、关键控件在（schema/EditorApp 演进别静默打挂它）；
 //   ② run.devFlags 各 guard 在源头短路/clamp——**缺省 undefined 逐字节等价旧行为**（每条断言的「默认」侧
@@ -112,7 +112,7 @@ const ZONE = 'zone.vertical_test';
 // —— SSR: 配置面板渲染（launched=null·App 懒加载不牵动）——
 {
   const html = renderToStaticMarkup(createElement(PlaytestPanel));
-  assert(html.includes('试玩启动器'), 'SSR：面板标题「试玩启动器」');
+  assert(html.includes('潜点测试'), 'SSR：面板标题「潜点测试」（原「试玩启动器」·2026-07-19 改名）');
   assert(html.includes('god mode'), 'SSR：god mode 开关');
   assert(html.includes('启动下潜'), 'SSR：启动按钮');
   assert(html.includes('气瓶') && html.includes('武器·主'), 'SSR：装备槽标签');

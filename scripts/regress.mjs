@@ -255,12 +255,12 @@ tasks.push({ name: 'smoke-economy-panel', cmd: [tsx, join('scripts', 'smoke-econ
 // + EnemySnapshot 扩展〔phaseCount/reachable〕+ buildCombatEntryState 实战入口·见 scripts/smoke-combat-panel.tsx）
 tasks.push({ name: 'smoke-combat-panel', cmd: [tsx, join('scripts', 'smoke-combat-panel.tsx')] });
 
-// dev 试玩启动器（?editor=playtest）SSR smoke + run.devFlags guard 行为断言（守 PlaytestPanel 渲染 +
+// dev 潜点测试（原试玩启动器·?editor=playtest）SSR smoke + run.devFlags guard 行为断言（守 PlaytestPanel 渲染 +
 // unlimitedSupplies/godMode 缺省逐字节等价·开启即生效·见 scripts/smoke-playtest-launcher.tsx）
 tasks.push({ name: 'smoke-playtest-launcher', cmd: [tsx, join('scripts', 'smoke-playtest-launcher.tsx')] });
 
-// 海图 POI 调试器 SSR smoke + parity（守 ChartViewDevPanel 渲染 + poiRevealState/effectiveDistance/describeModifier 自洽·见 scripts/smoke-chart-editor.mjs）
-tasks.push({ name: 'smoke-chart-editor', cmd: [tsx, join('scripts', 'smoke-chart-editor.mjs')] });
+// （原 smoke-chart-editor 随 ChartViewDevPanel〔POI 调试 tab〕删除·2026-07-19 移除；
+//   poiRevealState/effectiveDistance 等引擎派生仍由 playthrough/事件回归覆盖。）
 
 // 事件平衡聚合 smoke（守 engine/eventStats 派生恒等式〔byTone/矩阵合计/建议引用真实〕·materialStats↔smoke-economy-panel 的镜像补全·见 scripts/smoke-event-stats.mjs）
 tasks.push({ name: 'smoke-event-stats', cmd: [tsx, join('scripts', 'smoke-event-stats.mjs')] });

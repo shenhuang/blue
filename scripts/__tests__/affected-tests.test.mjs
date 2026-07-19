@@ -1,6 +1,7 @@
 // affected-tests 入口谓词（isEntry·经 computeAffected 间接测）——行为测入口 = playthrough*.ts +
-// smoke-*.{tsx,mjs} + verify-tutorial.mjs。smoke-chart-editor.mjs（regress 正式任务）曾因谓词只认
-// .tsx 被漏成「unexplained→ALL」：改它本该精确选出它自己，却触发全量。这里把 .mjs 入口钉住。
+// smoke-*.{tsx,mjs} + verify-tutorial.mjs。史因：smoke-chart-editor.mjs（已随 POI 调试面板删除·
+// 2026-07-19）曾因谓词只认 .tsx 被漏成「unexplained→ALL」——改它本该精确选出它自己，却触发全量。
+// 这里用现存的 smoke-event-stats.mjs 把 .mjs 入口钉住（谓词按文件名派生任务名·不查文件存在性）。
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { computeAffected } from '../affected-tests.mjs';
@@ -14,10 +15,10 @@ test('入口谓词：smoke-*.tsx 是行为测入口', () => {
   assert.deepEqual(r.tasks, ['smoke-chart-ui']);
 });
 
-test('入口谓词：smoke-*.mjs 也是行为测入口（smoke-chart-editor 这类 .mjs smoke）', () => {
-  const r = computeAffected(['scripts/smoke-chart-editor.mjs'], fakeGraph);
+test('入口谓词：smoke-*.mjs 也是行为测入口（smoke-event-stats 这类 .mjs smoke）', () => {
+  const r = computeAffected(['scripts/smoke-event-stats.mjs'], fakeGraph);
   assert.equal(r.mode, 'subset');
-  assert.deepEqual(r.tasks, ['smoke-chart-editor']);
+  assert.deepEqual(r.tasks, ['smoke-event-stats']);
 });
 
 test('入口谓词：verify-tutorial.mjs 特判仍在', () => {

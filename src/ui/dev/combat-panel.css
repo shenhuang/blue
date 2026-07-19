@@ -1,11 +1,11 @@
 /* ============================================================
  * Combat Dev 面板（仅 import.meta.env.DEV）—— 战斗回归 Phase 3
  *
- * 通过 @import 复用事件面板的基础变量与控件（.dev-* 前缀）。
+ * 通过 @import 复用 dev-panel.css 的基础变量与控件（.dev-* 前缀）。
  * 本文件只追加战斗专属样式（.dev-combat-*）。
  *
  * 由 CombatDevPanel.tsx 静态 import；prod build 时 lazy + DEV 守卫
- * 让本文件不进 bundle（与 EventDevPanel 同套验证标准）。
+ * 让本文件不进 bundle。
  * ============================================================ */
 
 @import './dev-panel.css';

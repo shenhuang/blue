@@ -8,12 +8,12 @@
 //       原 ① ChartViewDevPanel 引用 buildColumnPois 随深度柱系统删除·2026-07-12 移除）：
 //   ② CombatDevPanel 战场压力按 enemiesAlive 聚合（非 enemiesFinal）——
 //      守与引擎 applyEnvironmentalPressure「只累计 hp>0 的 boss」一致、别虚报。
-//   ③ dev-panel.css 为 Tone 每个值（src/types/events.ts 单一源）都备 .dev-step-tone-<t> ——
-//      守事件步骤三档（realistic/uncanny/cosmic）视觉不丢。
+//   （原 ③ dev-panel.css Tone 档位样式随 EventDevPanel〔事件回归 tab〕删除·2026-07-19 移除——
+//     .dev-step-tone-* 只有该面板用·编号不重排。）
 //   ④ 游戏入口（App.tsx + main.tsx）不得直接挂 dev 面板 / 走旧 `?dev&panel=` 路由 ——
 //      dev 面板只经 ?editor 工作台（EditorApp）；焊死「游戏内地图调试器已撤·编辑器是唯一调试地图的地方」（2026-07-09）。
 //
-// 深层行为另由 smoke-chart-editor（柱 POI 实际渲染/接入）与 smoke-combat-panel（面板渲染）守（tsx·Mac/nightly）；
+// 深层行为另由 smoke-combat-panel（面板渲染）守（tsx·Mac/nightly）；
 // 本门是沙箱可跑的那一半。改了被守的写法 → 同步更新这里的正则（单一源在注释里点名）。
 //
 // 在 scripts/regress.mjs 注册为 check-dev-panels（纯 node·沙箱也跑）。
@@ -28,8 +28,8 @@ const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 const errors = [];
 const fail = (m) => errors.push(m);
 
-// （原 ① 海图调试器接入深度柱 POI 断言随深度柱系统删除·2026-07-12 移除。ChartViewDevPanel 的
-//   POI 渲染仍由 smoke-chart-editor 守·本门盯下面三条纯静态漂移。）
+// （原 ① 海图调试器接入深度柱 POI 断言随深度柱系统删除·2026-07-12 移除；
+//   ChartViewDevPanel 本体与其 smoke-chart-editor 亦已删·2026-07-19。本门盯 ②④ 两条纯静态漂移。）
 
 // ② 战斗面板战场压力按存活敌人聚合 -------------------------------------------------------------
 const combatDev = read('src/ui/dev/CombatDevPanel.tsx');
@@ -48,23 +48,7 @@ if (!ENV_ALIVE.test(combatDev)) {
   );
 }
 
-// ③ dev-panel.css 覆盖 Tone 全部档位 -----------------------------------------------------------
-const eventsTypes = read('src/types/events.ts');
-const toneMatch = eventsTypes.match(/export type Tone\s*=\s*([^;]+);/);
-if (!toneMatch) {
-  fail('未能在 src/types/events.ts 解析 `export type Tone = ...`（单一源变了？更新本门）。');
-} else {
-  const tones = [...toneMatch[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
-  const css = read('src/ui/dev/dev-panel.css');
-  for (const t of tones) {
-    if (!css.includes(`.dev-step-tone-${t}`)) {
-      fail(
-        `dev-panel.css 缺 .dev-step-tone-${t} —— 事件步骤块 tone「${t}」无专属样式、与其它档视觉无区分（#206）。\n` +
-          `      修：在 dev-panel.css 加 .dev-step-tone-${t} { border-color: ...; }。`,
-      );
-    }
-  }
-}
+// （原 ③ Tone 档位样式检查随 EventDevPanel 删除·2026-07-19 移除·编号不重排。）
 
 // ④ 游戏入口不得直接挂 dev 面板 / 走 ?dev&panel= 路由 ----------------------------------------
 //   编辑器是唯一调试地图（及一切 dev 面板）的地方：dev 面板只经 ?editor 工作台（EditorApp）。
@@ -97,5 +81,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  '✓ check-dev-panels: 三条 dev 面板门通过（战场压力存活聚合 / tone 档位样式齐 / 游戏入口 App+main 不挂 dev 面板）',
+  '✓ check-dev-panels: 两条 dev 面板门通过（战场压力存活聚合 / 游戏入口 App+main 不挂 dev 面板）',
 );

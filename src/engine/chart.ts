@@ -115,8 +115,8 @@ function condHash(runsCompleted: number, salt: string): number {
 
 /**
  * 海图「时间种子」单一访问点（月相潮汐·SPEC §3）：chart 的海况/遮蔽/roaming 全以它为时钟。
- * ＝ `profile.day`（hydrate 后≡runsCompleted·港口等待推进后两钟分离）；缺 day（旧档 / dev 面板裸 profile）
- * → 回退 runsCompleted（守逐字节不变·不动并发编辑中的 ChartViewDevPanel——它拨 runsCompleted 滑杆即驱动）。
+ * ＝ `profile.day`（hydrate 后≡runsCompleted·港口等待推进后两钟分离）；缺 day（旧档 / dev 裸 profile）
+ * → 回退 runsCompleted（守逐字节不变）。
  */
 function chartSeed(profile: PlayerProfile): number {
   return profile.day ?? profile.runsCompleted;

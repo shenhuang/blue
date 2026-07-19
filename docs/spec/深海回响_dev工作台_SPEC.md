@@ -4,6 +4,8 @@
 >
 > **⚠ 2026-07-12：剧情编辑器 StoryEditor 已整体删除**（Phase 2 只读走查工具·Phase 3 节点编辑一直未接·维护面收窄）。本档保留原「6 工具 → 3 域」的历史叙述作沿革参考，但下方表格/架构图/路由表已同步改为现状（5 工具）；引擎侧 `eventSatisfy`/`eventGraph`/`eventScenario` 不受影响（仍被 playthrough 等消费）。见 QUIRKS.md 新条目。
 >
+> **⚠ 2026-07-19：事件回归 EventDevPanel、内容分布统计 StatsDevPanel、POI 调试 ChartViewDevPanel（`?editor=chartdev`）三 tab 连组件删除**；「试玩/启动器」改名「**潜点/潜点测试**」（URL key 仍 `playtest`·深链不断）。CLI 事件回归门（event-runner/playthrough）与 `engine/eventStats` 聚合层**不受影响**（前者是 ship 门主体·后者仍被 materialStats/smoke-event-stats 消费）。现存 5 工具：潜点测试·素材·战斗回归·海图·地图调试。
+>
 > 把散落的 dev 工具收进**一个独立 sibling 根 `?editor`**（带左导航的工作台），与游戏 App 彻底解耦。
 > 起于 2026-06-21 session（作者拍：全合并·工作台为唯一入口·先方案再开工）。
 
@@ -18,7 +20,7 @@ dev 工具现在**两套机制并存、且互相重叠**：
 重叠：海图编辑器与地图调试器都叫「地图」但是**两张不同的图**（大地图 POI vs 下潜关卡 mapgen）。
 散在两处 = 入口割裂、`App.tsx` 背着不属于游戏的 dev 逻辑、地图调试器揭图破坏迷雾的门控只能靠运行时守。
 
-## 2. 现状清单（5 工具 → 3 域·原 6 工具，剧情编辑器 StoryEditor 已于 2026-07-12 删除）
+## 2. 合并前清单（沿革·2026-06-21 时点·其中 事件回归/内容分布统计 已于 2026-07-19 删除）
 
 | 工具 | 现入口 | 引擎来源 | 性质 |
 |---|---|---|---|
@@ -35,18 +37,19 @@ dev 工具现在**两套机制并存、且互相重叠**：
 单一 dev 工作台根，左导航按 3 域分组，content 区懒加载挂当前工具：
 
 ```
-?editor —— dev 工作台（EditorApp·与游戏 App 平级的 sibling 根·main.tsx 分发）
-├─ 事件
-│   ├─ 回归        EventDevPanel    key=event
-│   └─ 统计        StatsDevPanel    key=stats
+?editor —— dev 工作台（EditorApp·与游戏 App 平级的 sibling 根·main.tsx 分发·2026-07-19 现状）
+├─ 潜点
+│   └─ 潜点测试    PlaytestPanel    key=playtest（原「试玩/启动器」·2026-07-19 改名）
+├─ 经济
+│   └─ 素材        EconomyDevPanel  key=economy
 ├─ 战斗
 │   └─ 回归        CombatDevPanel   key=combat
-├─ 地图
-│   ├─ 海图        MapEditor        key=chart
-│   └─ 关卡 mapgen MapDevPanel      key=map
-└─ 试玩
-    └─ 启动器      PlaytestPanel    key=playtest
+└─ 地图
+    ├─ 海图        MapEditor        key=chart
+    └─ 关卡 mapgen MapDevPanel      key=map
 ```
+
+（原「事件[回归 key=event·统计 key=stats]」组与「地图/POI 调试 key=chartdev」已删·2026-07-19。）
 
 - **EditorShell**：`position:fixed; inset:0; display:flex`。左 nav rail（定宽·分组列表·当前项高亮）+ content 区（`position:relative; flex:1; overflow:hidden; min-width:0`）。
 - **EditorApp**：持 `tab` state（初值由 URL 解析）、`lazy()` 各工具、把当前工具渲进 content 区；切 tab 时同步 `history.replaceState` 改 `?editor=<key>`（深链可分享·手机无 Shift 键靠 URL 进，沿用旧 `?dev&panel=` 的理由）。
@@ -55,7 +58,7 @@ dev 工具现在**两套机制并存、且互相重叠**：
 
 | URL | 落点 | 备注 |
 |---|---|---|
-| `?editor=<key>` | 工作台 · 对应 tab | key ∈ {event,stats,economy,combat,chart,chartdev,map,playtest}·未知回退 chart |
+| `?editor=<key>` | 工作台 · 对应 tab | key ∈ {playtest,economy,combat,chart,map}·未知回退 chart（含已删 event/stats/chartdev 旧深链） |
 | `?editor`（裸） | 工作台 · `chart` | **保住旧海图书签**（旧 `?editor`＝海图） |
 | 其它 | 游戏 App | 不变 |
 
@@ -89,7 +92,7 @@ dev 工具现在**两套机制并存、且互相重叠**：
 - 工作台在 `src/ui`，受 check-boundaries 规则二约束（不手搓 phase 字面量·读 `phase.kind` 不受限）。
 - 新增 game↛dev 规则（第 3 步）后，游戏主包不再含任何 dev 工具代码。
 
-## 9. 试玩启动器 PlaytestPanel（`?editor=playtest`·2026-07-18 新增·第 6 工具）
+## 9. 潜点测试 PlaytestPanel（原「试玩启动器」·2026-07-19 改名·`?editor=playtest`·2026-07-18 新增）
 
 让 dev 不必玩到某处、也不必凑齐装备/补给，就能试玩任意海域的内容。配置项：自选**基础装备**（每槽从 `allItems()` 里 `category==='equipment'` 的候选选一件·**不含升级档**·作者 2026-07-18「先 2」）+ 三开关 + 任意 zone → 一键经**真实 App** 跑整趟下潜（每次启动新生成地图）。
 

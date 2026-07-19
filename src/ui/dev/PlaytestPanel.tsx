@@ -1,4 +1,4 @@
-// dev 试玩启动器（?editor=playtest·2026-07-18）：自选基础装备 + 无限补给/god mode 开关 + 任意 zone
+// dev 潜点测试（原「试玩启动器」·2026-07-19 改名·?editor=playtest·2026-07-18）：自选基础装备 + 无限补给/god mode 开关 + 任意 zone
 //   → 经真实 App（initialState + ephemeral）跑一整趟下潜，**绝不落存档**（ephemeral 跳过 saveGame）。
 //
 // 住 src/ui/dev/＝dev 桶：import 游戏 App 属 dev→game（check-boundaries 规则五只禁 game→dev·反向允许·同
@@ -160,7 +160,7 @@ export function PlaytestPanel() {
             cursor: 'pointer',
           }}
         >
-          ← 试玩配置
+          ← 潜点测试配置
         </button>
         <Suspense fallback={null}>
           {/* onPlaytestEnd（#317）：run 收束回港那一刻（上浮结算「回港」/葬礼后）结束试玩、回本配置面板——
@@ -173,7 +173,7 @@ export function PlaytestPanel() {
 
   return (
     <div style={box}>
-      <h2 style={{ margin: '0 0 4px', color: '#eafff0' }}>试玩启动器</h2>
+      <h2 style={{ margin: '0 0 4px', color: '#eafff0' }}>潜点测试</h2>
       <p style={{ margin: '0 0 18px', color: '#7796ac', fontSize: 13 }}>
         自选基础装备 + 补给/无敌开关 + 任意海域，一键起真游戏跑整趟下潜（预览态·绝不落存档）。
       </p>

@@ -3,7 +3,6 @@
   "budgets": {
     "src/engine/combat.ts": 1171,
     "src/ui/dev/CombatDevPanel.tsx": 1512,
-    "src/ui/dev/EventDevPanel.tsx": 1034,
     "src/ui/SeaChartView.tsx": 1172,
     "src/ui/SonarScanPanel.tsx": 1141
   }

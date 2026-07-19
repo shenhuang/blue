@@ -7,7 +7,7 @@
 //
 // 设计：
 //   - 所有计算走 src/engine/combatScenario.ts，不复刻引擎逻辑
-//   - 与 EventDevPanel 视觉一致（复用 .dev-* 控件，叠 .dev-combat-* 战斗专属）
+//   - 复用 dev-panel.css 的 .dev-* 控件基底，叠 .dev-combat-* 战斗专属
 //   - JSON/localStorage 走 CombatScenarioSerializer
 //   - localStorage key 加 `.combat.` 中缀避免与事件 scenario 撞 key（quirk #25）
 //

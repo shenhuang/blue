@@ -43,8 +43,8 @@ function withDevTutorialSkip(s: GameState): GameState {
  * dev UI 预览注入（?dev&scene=·见 main.tsx + ui/dev/scenes）传可选 prop：
  *   - initialState 顶替 loadGame()（用真实引擎构造器造的合法 state·渲真实 UI＝逐像素保真）
  *   - ephemeral   跳过自动存档（预览绝不落盘·不覆盖玩家真实存档）
- *   - onPlaytestEnd（?editor=playtest·#317）run 收束回港（phase→'port'）那一刻回调——试玩启动器借此
- *     结束试玩回配置面板（试玩 profile 合成·港口无意义）。正常游戏 / scene 预览不传＝零影响。
+ *   - onPlaytestEnd（?editor=playtest·#317）run 收束回港（phase→'port'）那一刻回调——潜点测试面板（原
+ *     试玩启动器）借此结束试玩回配置面板（试玩 profile 合成·港口无意义）。正常游戏 / scene 预览不传＝零影响。
  * App 不 import 任何 dev/scenes（由 main.tsx 装配）→ game↛dev 边界不破。
  */
 export default function App({
@@ -68,7 +68,7 @@ export default function App({
     saveGame(state);
   }, [state, ephemeral]);
 
-  // 试玩启动器收尾（?editor=playtest·#317）：run 收束回港那一刻（上浮结算「回港」/葬礼后）交还启动器——
+  // 潜点测试收尾（原试玩启动器·?editor=playtest·#317）：run 收束回港那一刻（上浮结算「回港」/葬礼后）交还面板——
   // 结算/葬礼屏照常可见（它们在 port 之前），只把「进港口 UI」换成「结束试玩」。读 phase.kind 分流是允许的
   // （check-boundaries 规则二只禁构造 phase 字面量）。不传 prop（正常游戏/scene 预览）＝效果为零。
   useEffect(() => {

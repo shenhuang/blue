@@ -488,7 +488,7 @@ export interface RunState {
     eggs?: Record<string, number>;
   };
   /**
-   * dev 试玩启动器专用开关（?editor=playtest·PlaytestPanel 经 App initialState+ephemeral 注入·2026-07-18）。
+   * dev 潜点测试面板专用开关（原试玩启动器·?editor=playtest·PlaytestPanel 经 App initialState+ephemeral 注入·2026-07-18）。
    * 真条件字段（quirk #106·absent＝正常游戏）：createNewRun 仅在 opts.devFlags 传入时落、hydrateGameState 不补。
    * **仅 ephemeral 预览注入·绝不落存档**（App ephemeral 跳过 saveGame ⇒ 不走 serialize/round-trip）⇒ 不 bump SAVE_VERSION（#99）。
    * unlimitedSupplies＝消耗品使用不扣数 + 装载/拾取不计负重；godMode＝氧气/HP/减压病(IV)/极端温度入口全不致死不拦

@@ -258,7 +258,7 @@ export function createNewRun(opts: {
   carryWeightLimit?: number;
   /** 来自 profile.equipment 的持久装备配置（Otto P3·缺省＝导师起始件）。 */
   equipment?: EquipmentLoadout;
-  /** dev 试玩启动器开关（?editor=playtest·真条件字段·仅 ephemeral 注入·不落档·不 bump SAVE·见 RunState.devFlags）。 */
+  /** dev 潜点测试开关（原试玩启动器·?editor=playtest·真条件字段·仅 ephemeral 注入·不落档·不 bump SAVE·见 RunState.devFlags）。 */
   devFlags?: RunState['devFlags'];
   /**
    * 从港口升级派生的全局加成（可选；脚本/测试可省略）。
@@ -341,7 +341,7 @@ export function createNewRun(opts: {
     huntEnabled: false,
     // POI 固定资源 run 级耗尽（2026-06-25）：起手空 Map（本 run 还没采过任何点）。
     harvestedNodes: new Map(),
-    // dev 试玩启动器开关（真条件字段·缺省 undefined＝正常游戏·仅 ephemeral 注入·同 poiId/diveMapId 透传法）。
+    // dev 潜点测试开关（真条件字段·缺省 undefined＝正常游戏·仅 ephemeral 注入·同 poiId/diveMapId 透传法）。
     devFlags: opts.devFlags,
   };
 }
