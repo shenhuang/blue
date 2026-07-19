@@ -939,9 +939,11 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
               const node = map.nodes[c.nodeId];
               // known＝走过（visited）/本潜 ping 过（一记 ping 全图具名）/持久洞跨 run 已探（§6.1 预亮）；未知＝还没扫过。
               const known = visitedSet.has(c.nodeId) || everScanned || (persistentExplored?.has(c.nodeId) ?? false);
-              // 落点：known → 偏心（poiOffset 按 kind 语义）；未知 → 房心。都过 voidTrack 跟随扭曲后的洞——
-              // 背景几何恒完整（每节点必有房间＝落点必在水里），旧「吸附敞口通道」的 projectIntoWater 已不需要。
-              const o = known ? poiOffset(c.nodeId, node.kind) : { dx: 0, dy: 0 };
+              // 落点**恒用同一锚**（作者 2026-07-19 #319「ping 后节点不许突然跳位」）：known 与否都取 poiOffset
+              // 偏心位——旧「未知＝房心、扫到瞬间跳去偏心位」的突变已删。known 只切字形/深度文案（「? m」→真值），
+              // 位置从头到尾稳定。kind 不因此泄漏：相邻节点的地标身份在下方选项列表本就恒诚实（豁免门·§2.3）。
+              // 都过 voidTrack 跟随扭曲后的洞——背景几何恒完整（每节点必有房间＝落点必在水里）。
+              const o = poiOffset(c.nodeId, node.kind);
               const m = voidTrack(p.x + o.dx, p.y + o.dy);
               const glyph = kindGlyph(node.kind);
               const feats = node.features ?? [];

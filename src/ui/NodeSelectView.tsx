@@ -183,11 +183,8 @@ export function NodeSelectView({ state, choices, features, onStateChange }: Prop
 
         {roomFeatures.length > 0 && <p className="dim">或者，离开这片水域：</p>}
 
-        {pending && (
-          <p className="dim sonar-pending-hint">
-            已在声呐图上选中一处——下方亮边的就是它。图上点击只负责选中；要出发，点下方那条亮边的选项。
-          </p>
-        )}
+        {/* （旧「已在声呐图上选中一处……」pending 提示句已删·作者 2026-07-19 #319——两段点击的联动高亮
+            〔图上 pending-ring ↔ 列表项亮边〕自己会说话，不需要这句说明文。） */}
 
         {/* 派生门标注（感知门 SPEC §3）：当前节点还有被 hidden 门挡着的去处 → 提示需要灯 / 声呐（占位文案·作者后调）。
             locked 门不在此汇总（选项自身已标「需要灯/需要声呐」）。 */}
