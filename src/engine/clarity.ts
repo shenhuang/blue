@@ -239,63 +239,16 @@ export function sonarPingAlertDelta(run: RunState): number {
   return SONAR_PING_ALERT * alertDepthFactor(run) * run.bandAlertFactor;
 }
 
-// ============================================================
-// 威胁定位（声呐与房间 SPEC §7 S3 · 廉价版）
-// ============================================================
-// 把 Phase 0b 一直抽象的 run.alert 做成声呐图上一处**近似接触**：警觉高＝水里有东西循着你逼近，
-// 声呐能听出个大概方位 + 远近，但读不准——廉价版**不定位到具体节点**（那是 stalker 版，§8.7 留作者拍板）。
-// 单一来源（SonarScanPanel 纯渲染、不加判定分支）。威胁由 alert 驱动＝真危险（诚实·感知重做后无 san 侧失真）。
-
-/** 声呐图上开始听得到威胁接触的警觉线（沿用 ALERT_WARN＝既有「熄灯反应窗口」预警线）。 */
-export const THREAT_CONTACT_ALERT = ALERT_WARN;
-
-export interface ThreatContact {
-  /** 近似方位角（弧度）——按 turn 漂移，你定不住它（廉价版不锚到节点·确定性）。 */
-  angle: number;
-  /** 逼近度 0..1（0＝预警线刚到/最远，1＝最高警觉/最近）；blip 画得离你越近＝越逼近。 */
-  proximity: number;
-  /** 粗距标签：远 / 中 / 近（读不出精确距离·廉价版只给档）。 */
-  range: 'far' | 'mid' | 'near';
-  /** 已越过接近线（ALERT_THRESHOLD）——它到你跟前了、下一步移动会被接近遭遇（predatorApproaches）。 */
-  imminent: boolean;
-  /**
-   * 读数损坏——**感知重做后恒为 false**：威胁接触由 alert（真危险）驱动、诚实（SPEC §2.2 声呐永不撒谎）。
-   * 「读不出距离」这类失真属已移除的欺骗轴（2026-07-10），字段暂留给 UI 类型稳定（SonarScanPanel 仍读）。
-   */
-  garbled: boolean;
-}
-
-/**
- * 声呐图上的近似威胁接触（S3 廉价版）：由 run.alert 派生。alert < 预警线 → null（水里还算静、无接触）。
- * 越过预警线 → 一处听得见、定不住的接触：方位按 turn 漂移、距离只给粗档。诚实（garbled 恒 false·欺骗移交低 san 轴）。
- * 确定性哈希（不耗 RNG·SSR 安全）。
- */
-export function threatContact(run: RunState): ThreatContact | null {
-  const alert = run.alert;
-  if (alert < THREAT_CONTACT_ALERT) return null;
-  const span = Math.max(1, ALERT_MAX - THREAT_CONTACT_ALERT);
-  const proximity = Math.min(1, (alert - THREAT_CONTACT_ALERT) / span);
-  const imminent = alert >= ALERT_THRESHOLD;
-  const range: ThreatContact['range'] = imminent ? 'near' : proximity > 0.45 ? 'mid' : 'far';
-  const angle = (hashStr(`threat:${run.turn}`) % 360) * (Math.PI / 180);
-  return { angle, proximity, range, imminent, garbled: false };
-}
+// （旧「威胁定位」琥珀接触 threatContact/ThreatContact/THREAT_CONTACT_ALERT 已删·2026-07-19 #316 作者拍板：
+//   它是 alert 驱动的模糊方位感、方位按 turn 漂移＝不扫描也每回合动——与「信息只在扫描时更新」相悖。
+//   声呐图上的敌显现在只剩：追猎红点（scanStalker 扫描快照）+ 女王常显（warrenHunt.queenNodeId·扫过后实时）。
+//   alert 的紧张感由数值条/遭遇本身承担。）
 
 // ============================================================
 // 预览文案：灯下诚实真相（感知重做后不再有低 san 幻觉改写·SPEC §2.1）
 // ============================================================
 // 声呐的不可信表象 / 结构化表象 / 低 san 伪接触 / 假回波阈值曲线整套已随感知重做删除——
-// 声呐＝诚实远场侦察，永不撒谎（SPEC §2.2/§3）。
-
-// 确定性哈希（FNV-1a）——威胁接触方位 / 未来低 san 钩子的稳定选择用（不消耗 RNG·SSR 安全）。
-function hashStr(s: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
+// 声呐＝诚实侦察，永不撒谎（SPEC §2.2/§3）。
 
 /**
  * 灯下看到的预览＝地面真相（node.preview），恒诚实。

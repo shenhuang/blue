@@ -1421,40 +1421,9 @@ html, body, #root {
   letter-spacing: 0.5px;
   opacity: 0.85;
 }
-/* 伪接触：和真接触一模一样的幻影 blip（与真无异——同 cyan、同大小，不标记、不变形）。 */
-.sonar-phantom {
-  fill: var(--cyan);
-}
-/* 威胁接触（声呐与房间 S3 廉价版）：alert 驱动的近似接触＝琥珀色 blip，和真节点(cyan)/伪接触一眼可分——
-   这是真危险的读数，不是欺骗。越过接近线→偏红脉动（它到你跟前了）。 */
-.sonar-threat circle {
-  fill: var(--warn);
-  opacity: 0.88;
-}
-.sonar-threat.is-near circle {
-  fill: var(--danger);
-  animation: sonar-threat-pulse 1.1s ease-in-out infinite;
-}
-.sonar-threat-label {
-  fill: var(--warn);
-  font-size: 7px;
-  text-anchor: middle;
-  font-weight: 700;
-}
-.sonar-threat.is-near .sonar-threat-label {
-  fill: var(--danger);
-}
-@keyframes sonar-threat-pulse {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-/* 猎手精确定位（猎手 SPEC §2.1 声呐＝位置·§8.7 只在被扫到时更新·会过时渐隐）：深红 ✕ blip，
-   比模糊威胁接触(琥珀)更实——这是声呐独有的「它在哪」保真度（灯只给「有东西在接近」的模糊感）。 */
+/* （旧「伪接触 .sonar-phantom」〔感知重做删〕与「威胁接触琥珀 .sonar-threat」〔#316 删·不扫也每回合飘〕样式已清。） */
+/* 猎手精确定位（猎手 SPEC §2.1 声呐＝位置·§8.7 只在被扫到时更新·会过时渐隐）：深红 blip——
+   声呐独有的「它在哪」保真度（扫描快照·琥珀模糊接触已删 #316）。 */
 .sonar-stalker circle {
   fill: none;
   stroke: var(--danger);
@@ -1478,28 +1447,7 @@ html, body, #root {
 .sonar-stalker.is-large .sonar-stalker-mark {
   font-size: 12px;
 }
-.sonar-mini {
-  position: absolute;
-  right: 6px;
-  bottom: 6px;
-  /* 竖盒（#92 垂直化）：整张图越深越长，竖向残图把全程深度跨度收得下。 */
-  width: 60px;
-  height: 96px;
-  background: rgba(4, 11, 13, 0.82);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-}
-.sonar-mini-extent {
-  fill: none;
-  stroke: var(--border);
-  stroke-width: 0.8;
-}
-.sonar-mini-blip {
-  fill: var(--cyan);
-}
-.sonar-mini-blip.is-here {
-  fill: #eafffb;
-}
+/* （残图小地图 .sonar-mini* 已删·#316：已扫全图点位泄拓扑·方位感靠主图缩放/平移。） */
 
 /* 深水区 Phase 0b：警觉预警（被探测） */
 .alert-warning {

@@ -8,13 +8,14 @@
 //      三态＝黑（run.lastScanTurn 空＝本潜没 ping 过·**结构上不合成底图**＝防剧透）/ 亮（sensors.sonar==='ping'＝
 //      这一站 ping 过·整图全亮·新 ping 从脚下荡开扩散点亮）/ 灰（ping 过但移动了·整图 FOG_DIM·常驻不回黑——
 //      图还在、只是旧了）。旧「逐原点 punch 圆 + 半径=射程」已删。洞穴与开阔水域同一套迷雾。
-//   ③ **位置点层**（SVG 覆盖·压迷雾之上·**默认总可见**）：相邻可去节点＝可点标记（点击＝那条 move choice）；
-//      其余节点＝不可点定位标记（没有 move choice·机制必然）。唯一例外＝「隐藏位置点」（NodeGate hidden 未解锁·
-//      nodeMarkerVisible·与选点过滤同一谓词）。known（走过/本潜 ping 过/持久已探）→ 字形+深度；未知 → 「? m」
-//      （信息梯度只存在于 ping 前——一记 ping 全图具名）。POI 标记偏心落房间内（poiOffset 按 kind）+ voidTrack 跟随扭曲后的洞。
+//   ③ **标记层**（SVG 覆盖·压迷雾之上·2026-07-19 #316 收窄「只画能抵达的 + 敌」）：**只画**相邻可去节点
+//      （＝下方 move choices 一一对应·可点·含可退回的来路）+ 你 + 敌——追猎红点（scanStalker 扫描快照·会过期）
+//      与女王（warrenHunt.queenNodeId·**扫过后实时常显**·唯一实时敌显·boss 特权）。非相邻节点**不再画定位标记**
+//      （旧「位置点总可见/? m 全图」已删）；known（走过/本潜 ping 过/持久已探）→ 字形+深度；未知 → 「? m」。
+//      POI 标记偏心落房间内（poiOffset 按 kind）+ voidTrack 跟随扭曲后的洞。琥珀「威胁接触」与残图小地图已删（#316）。
 //
 // 纯渲染：canvas 在 useEffect 里画（SSR 不跑·只出空 canvas）；语义/可点标记走 SVG 覆盖层（SSR 可断言 + 可点 + 无障碍）。
-// 感知重做后声呐诚实（SPEC §2.2）：无欺骗表象——节点按真 kind 画。威胁 threatContact / 猎手 stalkerSonarBlip（会过时）。
+// 感知重做后声呐诚实（SPEC §2.2）：无欺骗表象——节点按真 kind 画。猎手 stalkerSonarBlip（扫描快照·会过时）。
 // 旧 scanMemory（BFS 量程集）/scanOrigins（ping 原点表）已删：门解锁改读 sensors.sonar（活条件·engine/dive-select），
 // 猎手听觉改全图必闻（engine/stalker）——渲染只吃 lastScanTurn + sensors.sonar 两个标量。
 
@@ -23,11 +24,8 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import type { GameState, NodeChoice, RunState } from '@/types';
 import { deriveMapLayout, type MapLayout } from './mapLayout';
 import { moveToNode } from '@/engine/dive';
-import { threatContact } from '@/engine/clarity';
 import { stalkerSonarBlip } from '@/engine/stalker';
 import { hash01, roomScale01, distSeg, fbm } from '@/engine/sonar';
-import { nodeMarkerVisible } from '@/engine/dive-select';
-import { getUpgradeBonuses } from '@/engine/upgrades';
 import {
   clampViewToBox,
   SONAR_PX_PER_M,
@@ -50,7 +48,6 @@ import { persistentExploredForRun } from '@/engine/caves';
 /** 纵向取景窗（窄×高·#92 上浅下深）：只显当前节点周围一片（SPEC「默认放大、几乎看不到全貌」）。 */
 const VIEW_W = 220;
 const VIEW_H = 300;
-const VIEW_R = Math.min(VIEW_W, VIEW_H);
 /** 缩放/平移（#2·作者 06-10）：z＝缩放（1=默认取景），dx/dy＝视野中心相对你的世界偏移。纯视图态·不入存档。 */
 const ZOOM_MIN = 0.6;
 const ZOOM_MAX = 2.5;
@@ -99,9 +96,11 @@ const CAVE_STYLE = `
 .sonar-node-marker:focus { outline: none; }
 .sonar-node-marker:focus:not(:focus-visible) { outline: none; }
 .sonar-node-marker:focus-visible { outline: 2px solid #8cffeb; outline-offset: 2px; }
-/* 位置点层·非相邻定位标记（三层解耦·总可见但不可点）：压暗区分「可去」与「只定位」；
-   pointer-events:none＝点它等于点空处（取消选中）·不与拖拽/两段点击抢事件。 */
-.sonar-node-far { opacity: .5; pointer-events: none; }
+/* （旧 .sonar-node-far 非相邻定位标记已删·#316「只画能抵达的 + 敌」。） */
+/* 女王（The Warren·#316·扫过后实时常显·唯一实时敌显）：大一号的红——弥散团 + 环 + 核。 */
+.sonar-queen circle.sonar-queen-mass { fill: #ff5a5a; stroke: none; opacity: .14; }
+.sonar-queen circle.sonar-queen-ring { fill: none; stroke: #ff5a5a; stroke-width: 2; }
+.sonar-queen circle.sonar-queen-core { fill: #ff5a5a; stroke: none; }
 /* 「波到才亮」（#3·§3）：标记随扫描波前到达时刻淡入（delay 内联·与线性波前同步）。CSS 客户端注入＝SSR 输出元素照常在（smoke 断言不受影响）。 */
 .sonar-wave-in { opacity: 0; animation: sonarWaveIn .4s ease-out forwards; }
 /* 两段点击（#5）：图上选中高亮＝下方事件列表项 .event-option.is-pending 同款光边（规则同住此处＝单一来源·列表 DOM 在 NodeSelectView）。 */
@@ -753,21 +752,22 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
     }
   }
 
-  // 威胁接触（S3 廉价版·alert 驱动）：没被声呐精确定位时画一处模糊琥珀接触（同一只猎手不重复标记）。
-  const threat = threatContact(run);
-  let threatPos =
-    threat && !stalkerFix
-      ? {
-          x: here.x + Math.cos(threat.angle) * VIEW_R * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
-          y: here.y + Math.sin(threat.angle) * VIEW_R * 0.42 * (0.38 + 0.55 * (1 - threat.proximity)),
-        }
-      : null;
+  // （旧「威胁接触」琥珀 blip 已删·#316：alert 驱动·方位按 turn 漂移＝不扫描也每回合动，与「信息只在扫描时更新」相悖。）
 
-  // 出墙最后一道闸（06-11 三修）：红点与琥珀接触在渲染前都过 projectIntoWater——极坐标接触本就不看墙、
-  // 路由/voidTrack 也只是近似，最终裁决交给画面同一块 SDF（在岩里就挪到最近的水里）。
+  // 出墙最后一道闸（06-11 三修）：敌显标记在渲染前都过 projectIntoWater——路由/voidTrack 只是近似，
+  // 最终裁决交给画面同一块 SDF（在岩里就挪到最近的水里）。
   const haveCaveGeom = !isOpenWater && (cave.tuns.length > 0 || cave.rooms.length > 0);
   if (stalkerPos && haveCaveGeom) stalkerPos = projectIntoWater(stalkerPos, cave);
-  if (threatPos && haveCaveGeom) threatPos = projectIntoWater(threatPos, cave);
+
+  // 女王（The Warren·#316 作者拍板「扫过后实时常显」）：本潜 ping 过一次后、她的**真实**卵室位置常显——
+  // 唯一的实时敌显（boss 特权·声呐成为追猎女王的搜寻工具）；她撤退（relocate）标记跟着走、图变灰也不消失。
+  // 追猎红点仍是扫描快照（别把实时语义下放给普通猎手）。没扫过＝不画（图还全黑·quirk #263）。
+  const queenId = run.warrenHunt?.queenNodeId;
+  let queenPos =
+    everScanned && queenId && layout.pos[queenId]
+      ? voidTrack(layout.pos[queenId].x, layout.pos[queenId].y)
+      : null;
+  if (queenPos && haveCaveGeom) queenPos = projectIntoWater(queenPos, cave);
 
   // 低 san 伪接触（S2）：**感知重做已删**（声呐诚实·SPEC §2.2/§3）——不再画幻影 blip。
 
@@ -882,30 +882,9 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   };
   const camMoved = cam.z !== 1 || cam.dx !== 0 || cam.dy !== 0;
 
-  // —— 位置点层·非相邻（三层解耦·默认总可见）——
-  // 「隐藏位置点」唯一例外＝NodeGate hidden 未解锁（nodeMarkerVisible·与 enterNodeSelection 过滤同一谓词·别各写各的）。
-  // 不可点（没有对应 move choice＝机制必然·CSS pointer-events:none）；known 才露字形/深度，未知只给「? m」。
-  const adjIds = new Set(adj.map((c) => c.nodeId));
-  const revealCorpseHint = getUpgradeBonuses(state.profile).revealCorpseHint;
-  const farMarkers: Array<{ id: string; kind: string | undefined; known: boolean; depth: number; m: { x: number; y: number } }> = [];
-  for (const id of allIds) {
-    if (id === curId || adjIds.has(id)) continue; // 你＝呼吸点；相邻＝可点档（各自另画）
-    const node = map.nodes[id];
-    const p = layout.pos[id];
-    if (!node || !p) continue;
-    if (!nodeMarkerVisible(node, run, revealCorpseHint, visitedSet.has(id))) continue;
-    // known＝走过 / 本潜 ping 过（一记 ping 全图具名·声呐无升级化）/ 持久洞跨 run 已探。
-    const known = visitedSet.has(id) || everScanned || (persistentExplored?.has(id) ?? false);
-    const o = known ? poiOffset(id, node.kind) : { dx: 0, dy: 0 };
-    farMarkers.push({ id, kind: node.kind, known, depth: node.depth, m: voidTrack(p.x + o.dx, p.y + o.dy) });
-  }
-  // 残图小地图的「已 mapped」点：本潜 ping 过＝全图（一记 ping 全测绘）；没 ping 过＝只有你（你永远知道自己在哪）。
-  const miniIds = everScanned ? allIds : allIds.filter((id) => id === curId);
-
-  // 残图小地图（方位感·保留·不逐回合淡出·§4）：全洞外框 + 已 mapped 的点 + 你。
-  const MINI_W = 60;
-  const MINI_H = 96;
-  const miniScale = Math.min(MINI_W / Math.max(1, layout.width), (MINI_H - 4) / Math.max(1, layout.height));
+  // （旧「非相邻定位标记」farMarkers 层与残图小地图已删·#316「只画能抵达的 + 敌」：
+  //   非相邻节点不再画任何标记——地形轮廓扫过仍全图可见，但「哪里有节点」只显示你此刻能去的；
+  //   hidden 门过滤对标记层不再需要（choices 已经过 enterNodeSelection 的 nodeMarkerVisible 过滤）。）
 
   return (
     <div className={`sonar-panel ${isOpenWater ? 'is-open-water' : ''}`}>
@@ -950,25 +929,8 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
               if (movedRef.current <= 6) onPendingChange?.(null);
             }}
           >
-            {/* （旧「量程环」已随声呐无升级化删——无射程无圈：一记 ping 就是整张图。） */}
-            {/* —— 位置点层（三层解耦·压迷雾之上·默认总可见·静态＝不随扫描重弹）—— */}
-            {/* 非相邻定位标记（不可点）：known → 字形+深度 / 未知 → 「? m」（作者拍板·沿用未知样式）。 */}
-            {farMarkers.map((f) => {
-              const glyph = f.known ? kindGlyph(f.kind) : null;
-              return (
-                <g key={f.id} className={`sonar-blip sonar-node-far ${f.known ? kindClass(f.kind) : ''}`}>
-                  <circle cx={f.m.x} cy={f.m.y} r={4} />
-                  {glyph && (
-                    <text className="sonar-blip-glyph" x={f.m.x} y={f.m.y + 3}>
-                      {glyph}
-                    </text>
-                  )}
-                  <text className="sonar-blip-depth" x={f.m.x} y={f.m.y - 8}>
-                    {f.known ? `${f.depth}m` : '? m'}
-                  </text>
-                </g>
-              );
-            })}
+            {/* （旧「量程环」已随声呐无升级化删；旧「非相邻定位标记」已随 #316 删——只画能抵达的 + 敌。） */}
+            {/* —— 标记层（压迷雾之上·只画相邻可去 + 你 + 敌）—— */}
             {/* 相邻可去节点（可点·点击＝触发那条 move choice·与 NodeSelectView 同步）。
                 声呐诚实（感知重做 SPEC §2.2）：按真 kind 画·无欺骗表象/无回波/读数乱码。 */}
             {adj.map((c) => {
@@ -1035,21 +997,9 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
                 </g>
               );
             })}
-            {/* 「波到才亮」组（#3·只剩**扫描驱动**的快照标记＝威胁/猎手）：key=lastScanTurn＝真扫描重挂载重播淡入；
-                平移/缩放不重弹；位置点层在组外（总可见·不随扫描闪）。 */}
+            {/* 「波到才亮」组（#3·只剩**扫描驱动**的快照标记＝猎手；琥珀威胁已删 #316）：key=lastScanTurn＝
+                真扫描重挂载重播淡入；平移/缩放不重弹。 */}
             <g key={`wave-${lastScanTurn}`}>
-            {/* 威胁接触（S3 廉价版·琥珀·读不准方位/距离） */}
-            {threat && threatPos && (
-              <g
-                className={`sonar-threat ${waveAnim ? 'sonar-wave-in' : ''} ${threat.imminent ? 'is-near' : ''}`}
-                style={waveAnim ? waveDelay(threatPos.x, threatPos.y) : undefined}
-              >
-                <circle cx={threatPos.x} cy={threatPos.y} r={6} />
-                <text className="sonar-threat-label" x={threatPos.x} y={threatPos.y - 9}>
-                  {threat.garbled ? '?' : threat.range === 'near' ? '近' : threat.range === 'mid' ? '中' : '远'}
-                </text>
-              </g>
-            )}
             {/* 猎手（§5 观感·§8.7 会过时）：红呼吸点 + 外圈（不要 X）·mid-edge 插值·大型生物一大团。
                 wave-in 包外层（与 sonar-pulse 的 animation 互斥·同元素会互盖）。 */}
             {stalkerFix && stalkerPos && (
@@ -1064,6 +1014,15 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
               </g>
             )}
             </g>
+            {/* 女王（The Warren·#316·扫过后**实时**常显·不在 wave 组＝不随扫描班次重弹）：
+                大一号的红——她撤退标记跟着走；图变灰也不消失（boss 特权·quirk #263）。 */}
+            {queenPos && (
+              <g className="sonar-queen sonar-pulse" aria-label="女王">
+                <circle className="sonar-queen-mass" cx={queenPos.x} cy={queenPos.y} r={22} />
+                <circle className="sonar-queen-ring" cx={queenPos.x} cy={queenPos.y} r={13} />
+                <circle className="sonar-queen-core" cx={queenPos.x} cy={queenPos.y} r={5} />
+              </g>
+            )}
             {/* 你（呼吸点 + 外圈·青·不要 X·§5 观感） */}
             <g className="sonar-you sonar-pulse">
               <circle className="sonar-you-ring" cx={youMark.x} cy={youMark.y} r={7} />
@@ -1071,31 +1030,7 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
             </g>
           </svg>
         </div>
-
-        {/* 残图小地图：外框 = 全洞范围·点 = 已 mapped·亮点 = 你（保留·不逐回合淡出·§4） */}
-        <svg
-          className="sonar-mini"
-          viewBox={`0 0 ${MINI_W} ${MINI_H}`}
-          preserveAspectRatio="xMidYMid meet"
-          role="img"
-          aria-label="残图小地图"
-        >
-          <rect className="sonar-mini-extent" x={1} y={1} width={MINI_W - 2} height={MINI_H - 2} />
-          {miniIds.map((id) => {
-            const p = layout.pos[id];
-            if (!p) return null;
-            const isCurrent = id === curId;
-            return (
-              <circle
-                key={id}
-                className={`sonar-mini-blip ${isCurrent ? 'is-here' : ''}`}
-                cx={2 + p.x * miniScale}
-                cy={2 + p.y * miniScale}
-                r={isCurrent ? 2.6 : 1.6}
-              />
-            );
-          })}
-        </svg>
+        {/* （残图小地图已删·#316：已扫全图点位泄拓扑、与「不显示所有节点」相悖；方位感靠主图缩放/平移。） */}
       </div>
     </div>
   );

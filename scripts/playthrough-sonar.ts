@@ -1,4 +1,4 @@
-// 声呐探索扫描回归（声呐无升级化 2026-07-19「一记 ping = 全图揭示」+ 声呐与房间 S1/S3 存留段）。纯引擎断言（不碰 UI/combat）：
+// 声呐探索扫描回归（声呐无升级化 2026-07-19「一记 ping = 全图揭示」+ 声呐与房间 S1 存留段）。纯引擎断言（不碰 UI/combat）：
 //   1. buildUndirectedAdjacency：无向邻接（照得到来时的上游）+ 幽灵边过滤
 //   2. 全图揭示 + 声呐门活条件：ping 前 sonar 门锁 / ping 后开（sensors.sonar==='ping'·同灯 lampOn 语义）/ 移动后回锁
 //   3. pingSonar 写 lastScanTurn（全图迷雾班次·无 BFS 无射程）+ 扣常量电 + sonar='ping'
@@ -24,19 +24,15 @@ import {
   POWER_MAX,
   SONAR_PING_COST,
   ALERT_MAX,
-  ALERT_THRESHOLD,
-  THREAT_CONTACT_ALERT,
   sonarPingAlertDelta,
   alertDelta,
   alertDepthFactor,
-  threatContact,
-  deriveSensorTuning,
 } from '../src/engine/clarity';
 import { buildUndirectedAdjacency } from '../src/engine/sonar';
 import { gateUnlocked } from '../src/engine/dive-select';
 import { makeHarness, type PtAssert } from './lib/pt';
 
-const pt = makeHarness('声呐探索扫描回归（无升级全图揭示 + S1 多事件房间 + S3 威胁定位 + 一记 ping 单动作·2026-07-19）');
+const pt = makeHarness('声呐探索扫描回归（无升级全图揭示 + S1 多事件房间 + 一记 ping 单动作·2026-07-19）');
 const { L } = pt;
 const assert: PtAssert = pt.assert;
 const sameSet = (a: string[], b: string[]) =>
@@ -332,32 +328,10 @@ L('\n========== 10. 多事件房间（S1）==========');
 }
 
 // ============================================================
-// 12. 威胁定位（声呐与房间 S3 廉价版）：run.alert → 近似接触 + 粗距档（诚实·感知重做后无失真）
+// 12. 威胁定位（S3 廉价版琥珀接触）：**整节随 #316 删除**（作者拍板删掉琥珀——alert 驱动·方位按 turn
+//     漂移＝不扫描也每回合动，与「信息只在扫描时更新」相悖；threatContact/ThreatContact/THREAT_CONTACT_ALERT
+//     已从 engine/clarity.ts 移除。敌显只剩：追猎红点〔扫描快照·§8〕+ 女王常显〔smoke-chart-ui §W〕）。
 // ============================================================
-L('\n========== 12. 威胁定位（S3 廉价版）==========');
-{
-  const tr = (o: { alert?: number; turn?: number }): RunState =>
-    ({ alert: o.alert ?? 0, stats: {}, turn: o.turn ?? 0, sensorTuning: deriveSensorTuning({}) } as unknown as RunState);
-
-  // (a) 预警线下 → 无接触（水里还算静）
-  assert(threatContact(tr({ alert: THREAT_CONTACT_ALERT - 1 })) === null, '12a: 警觉未到预警线 → 无威胁接触');
-  // (b) 越过预警线 → 有接触；逼近度随 alert 涨（blip 离你越近）
-  const warn = threatContact(tr({ alert: THREAT_CONTACT_ALERT }))!;
-  const hi = threatContact(tr({ alert: ALERT_MAX }))!;
-  assert(warn && hi, '12b: 越过预警线 → 有威胁接触');
-  assert(hi.proximity > warn.proximity, '12b: 警觉越高逼近度越高');
-  // (c) 越过接近线（ALERT_THRESHOLD）→ imminent + range=near；预警线刚到 → 未 imminent
-  const near = threatContact(tr({ alert: ALERT_THRESHOLD }))!;
-  assert(near.imminent && near.range === 'near', '12c: 越过接近线 → imminent + 近');
-  assert(!warn.imminent, '12c: 预警线刚到 → 未 imminent（还有熄灯反应窗口）');
-  // (d) 感知重做：威胁诚实（garbled 恒 false·失真移交地点缝·SPEC §2.2/§2.3）。
-  assert(!threatContact(tr({ alert: ALERT_MAX }))!.garbled, '12d: 威胁诚实（garbled 恒 false）');
-  // (e) 确定性（不耗 RNG·SSR 安全）：同输入同方位/逼近度
-  const a = threatContact(tr({ alert: 70, turn: 3 }))!;
-  const b = threatContact(tr({ alert: 70, turn: 3 }))!;
-  assert(a.angle === b.angle && a.proximity === b.proximity, '12e: 威胁接触确定性（同输入同结果）');
-  L('  预警线门 / 逼近度随 alert / imminent 近 / 威胁诚实(不 garbled) / 确定性 ✓');
-}
 
 // ============================================================
 // 14. 声呐一记 ping 单动作（感知重做 SPEC §2.2「ping 才扫、不 ping 不扫」）：
