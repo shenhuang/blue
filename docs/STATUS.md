@@ -1,11 +1,11 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。**活数字（事件 / 敌人 / 脚本 / scenario 计数）以 `npm run handoff` 的 git 真值为准·本档不再硬抄**（防 STATUS 随内容 churn 漂移）。近期 session（新→旧）：
+> **2026-07-20 #324 声呐图首绘 letterbox 黑边跳变修复（Cowork 交互·Fable·沙箱全量 regress 89/89 绿 + prod build 沙箱实跑绿·新 quirk #267·commit `71e0201`·push 留 Mac/nightly）**：用户报「两边黑→突跳全宽」＝frameAspect 首帧竖窄默认 + RO paint 后才补测；修＝useIsoLayoutEffect 首绘前量框 + viewW 偶整数量化（三消费点像素逐字对齐）+ stackCb useCallback。全文审计其余渲染路径无它恙。沙箱基建：vite 8 已用 rolldown ⇒ regress.mjs build 跳过检查（#147 找旧 rollup native）过时·修正留作者拍；补三个 linux-arm64 binding 后沙箱能实跑 build。详见 CHANGELOG #324。
+>
 > **2026-07-19 #323 潜点三栏化+删地图调试器（Cowork 交互·Fable·同日续·沙箱全量 regress 90/90 绿〔build 环境跳〕·新 quirk #266·push 留 Mac/nightly）**：潜点面板（?editor=playtest）三栏化——左=大区分组海域列表（zoneGroups.ts）·中=声呐全图预览（SonarMapView.tsx 自 MapDevPanel 抽取·与游戏内烤图同源）·右=装备/开关/启动；固定 seedKey=`playtest::<zoneId>`·**预览=启动 state 单一来源（built.run.map·同对象零漂移）**；不做换图/存 seed（seed≠图身份·将来钦定图=冻结整张 DiveMap·quirk #266）。**MapDevPanel/?editor=map 整删**（潜点预览接棒·analyzeMap 读数走 CLI），潜点大目录删、潜点测试并入「地图」组改名「潜点」。工作台现状：**经济[素材]/战斗[回归]/地图[海图·潜点]**。详见 CHANGELOG #323。
 >
 > **2026-07-19 #322 chart 编辑器右下按钮整编（Cowork 交互·Fable·同日续·沙箱全量 regress 89/89 绿〔build 环境跳〕·无新 quirk·commit `bfbc0b1`·push 留 Mac/nightly）**：海图编辑器（?editor=chart）右下操作组——「导出」通道整删（按钮+模态+ExportBlock+showExport·`fileTexts` 留给「保存进项目」拼 `/__save_chart`），跑回归移至保存进项目左侧，四钮 flex:1 等宽两行（跑回归|保存进项目 / 撤销|重置·padding 统一 8px）。与 #321 同日同树并飞·两 commit 显式 add 互不吞。详见 CHANGELOG #322。
->
-> **2026-07-19 #321 dev 工作台瘦身（Cowork 交互·Fable·同日续·沙箱全量 regress 89/89 绿〔build 环境跳〕·新 quirk #265·commit `a610981`·push 留 Mac/nightly）**：删 POI 调试 ChartViewDevPanel / 事件回归 EventDevPanel / 统计 StatsDevPanel 三 tab 连组件与随葬（smoke-chart-editor·check-dev-panels 门③·tone/chart 死样式·file-budget 条目）；「试玩/启动器」改名「**潜点/潜点测试**」（只显示层·key 仍 playtest）。工作台现状：**潜点[潜点测试]/经济[素材]/战斗[回归]/地图[海图·地图调试]**。CLI 事件回归门与 eventStats/ScenarioSerializer 皆未动（quirk #265 幸存者甄别）。详见 CHANGELOG #321。
 
 ## 1. 一句话状态
 
