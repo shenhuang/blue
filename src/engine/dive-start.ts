@@ -205,6 +205,10 @@ export function startDive(
     // 起手就整片灰（该全黑的地方被点亮·同旧 scanOrigins 泄漏一个病根·#98）。皆 run 级派生·不入存档，重置即新图新雾。
     lastScanTurn: undefined,
     stalker: undefined,
+    // 猎手＝图的属性（#318·作者「有猎手的图默认都会有猎手·不能开关」）：zone.hunts 是 run.huntEnabled 的
+    // **唯一产者**（旧 DepthBand.hunts 已随 band 删·#294；试玩启动器开关同批删）。恒定·按图·无开关；
+    // startDive 是全部下潜路径的单一汇流点 ⇒ 此处落值即覆盖所有入口（quirk #264）。
+    huntEnabled: zone.hunts ?? false,
     // 撤退/月相存档窗（蜂群 boss SPEC §9.11）：把离港结转的 Warren 追猎档接回 run（窗内续上·窗外蜂巢
     // 重新聚拢清零）。没有结转档（从未打过 Warren / 已清）→ undefined，同旧行为逐字节不变。
     warrenHunt: resolveWarrenHuntCarry(state.profile.warrenHunt, state.profile.day ?? state.profile.runsCompleted),

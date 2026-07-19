@@ -101,7 +101,7 @@
   - §2.1 **感知分层**（灯＝接近〔复用 threatContact〕 / 声呐＝位置·同一猎手）。**« threatContact 已删 #316·灯半边空缺·声呐半边仍在 »**
   - §2.4 **出现 / 逼近 / 接触**（统一·复用 `ambushEncounters`·接触触发现有伏击遭遇）。
   - §2.3 **丢信号性格**（`wait`〔含 `waitTurns=0`＝掉头就走〕/ `seek_last` 去上次信号点徘徊找你再走）+ §2.5 **摸黑/拉距/上浮脱离**（脱离 despawn）。
-  - §2.6 **范围＝深 band 门控**（`DepthBand.hunts` → `run.huntEnabled`·复用现有捕食者·越深越会 evade）。
+  - §2.6 **范围＝深 band 门控**（`DepthBand.hunts` → `run.huntEnabled`·复用现有捕食者·越深越会 evade）。**« ⚠ #318（2026-07-19）产者重接：band 已删（#294）·现＝`zone.hunts`（图的属性·恒定·无开关·作者「有猎手的图默认都会有猎手」）→ `startDive` 落 `run.huntEnabled`·quirk #264。»**
   - 位置**只在被 ping 扫到时更新**（§8.7·`stalker.seenNodeId`/`seenTurn`）·`evadesSonar` 躲扫描（深 band 概率）。**2026-07-19 声呐无升级化**：快照不再受量程限制——每记 ping 全图必闻（evade 仍适用·快照仍会过期）。
   - **additive + gated 铁律**：`DepthBand.hunts` 缺省 off → `run.huntEnabled` undefined → 既有 `alert→maybeApproachEncounter` 瞬时伏击逐字节不变（守 `playthrough-stealth` §4-§6）。`run.stalker?`/`huntEnabled?` run 级·不入 profile·**不 bump SAVE_VERSION**（同 scanMemory/sonarDeception）。
 - **Phase 2+（2026-06-10 #109 全部收束 ✅——本 SPEC 机制层完工·余下＝内容/调参/Phase 3 接口）**：

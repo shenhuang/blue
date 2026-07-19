@@ -10,8 +10,9 @@
 //       恒 'seek_last'，大 patience（守口/搜寻更执着·数值占位·defer-number-tuning）。
 //   §8  主线门——逃了不 bank 进度、下次从头：scarletWave 挂 RunState（非 PlayerProfile），run 结束（上浮
 //       回港/死亡）随之整个丢弃，天然「不持久化」，不必另写重置逻辑。
-//   §11.3⑤ run.huntEnabled 当前无生产接通路径——本编排**不读/不依赖 huntEnabled**，dive-move.ts 里开一条
-//       独立分支、gate 在 isScarletGrounds，与 huntEnabled 三岔平级、互不干扰、互不改变对方行为。
+//   §11.3⑤ 本编排**不读/不依赖 huntEnabled**——dive-move.ts 里开一条独立分支、gate 在 isScarletGrounds，
+//       与 huntEnabled 三岔平级、互不干扰、互不改变对方行为。（huntEnabled 产者 #318 起＝zone.hunts〔图属性〕；
+//       猩红地盘刻意不标 hunts——专属编排在，别再叠通用猎手。）
 //
 // 落点现状（2026-07-17「路线 P」·见 data/chart_pois.json::poi.anchor.scarlet_tyrant 注）：anchor 目前纯占位、
 // 不带 story 块——SPEC §1.3 原设想的 story-pin 强制开场随 #300 主线重建 defer。scarletSeabedIntroDue（到海床

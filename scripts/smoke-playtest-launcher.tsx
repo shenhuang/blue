@@ -13,6 +13,7 @@ import {
   countInInventory,
 } from '../src/engine/state';
 import { getRunBonuses } from '../src/engine/lighthouses';
+import { startDive } from '../src/engine/dive';
 import { tickTurns } from '../src/engine/events';
 import { applyStatsDelta } from '../src/engine/combat';
 import { applyCarryItems } from '../src/engine/dive-start';
@@ -97,6 +98,15 @@ const ZONE = 'zone.vertical_test';
 // —— 默认装备自带声呐（#317·作者 2026-07-19）：声呐是地图本体（#315/#316），试玩默认配置必须带——
 {
   assert(DEFAULT_PICKS.sonar === 'item.sonar.handheld', '默认试玩装备自带声呐（#317·别退回镜像 starter 的 null）');
+}
+
+// —— 猎手＝图的属性（#318·作者「有猎手的图默认都会有猎手·不能开关」）：zone.hunts → startDive 落 run.huntEnabled——
+{
+  const base = createInitialGameState();
+  const hunt = startDive({ ...base, run: createNewRun({ zoneId: 'zone.hunt_test' }) }, 'zone.hunt_test');
+  assert(hunt.run!.huntEnabled === true, 'hunts 图（zone.hunt_test）→ run.huntEnabled=true（图的属性·无开关）');
+  const plain = startDive({ ...base, run: createNewRun({ zoneId: ZONE }) }, ZONE);
+  assert(plain.run!.huntEnabled === false, '未标 hunts 的图（vertical_test）→ huntEnabled=false（baseline 旧路径不变）');
 }
 
 // —— SSR: 配置面板渲染（launched=null·App 懒加载不牵动）——

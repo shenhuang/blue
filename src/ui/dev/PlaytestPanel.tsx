@@ -105,7 +105,8 @@ export function PlaytestPanel() {
   const [zoneId, setZoneId] = useState<string>(zones[0]?.id ?? '');
   const [unlimited, setUnlimited] = useState(true); // 无限补给（不扣消耗/不计负重）·常开
   const [godMode, setGodMode] = useState(false); // 无敌（氧气/HP/减压病/极端温度全不致死不拦）
-  const [huntEnabled, setHuntEnabled] = useState(false); // 启用猎手（测 stalker 内容用）
+  // （旧「启用猎手」开关已删·#318：猎手＝图的属性（zone.hunts→run.huntEnabled·startDive 唯一产者）——
+  //   有猎手的图恒有猎手、无开关；下拉里带「·猎手」的 zone 就是。测无猎手＝选没标的图。）
   const [launched, setLaunched] = useState<GameState | null>(null);
 
   const buildLoadout = (): EquipmentLoadout => {
@@ -134,8 +135,9 @@ export function PlaytestPanel() {
     // 每次启动新生成地图（zone 的 mapgen 是随机的·POI 层为空故无固定 seedKey 可用·不再暴露 seed 旋钮）。
     s = startDive(s, zoneId);
     if (s.run) s = enterNodeSelection(s);
-    // 兜底再钉一次 devFlags/huntEnabled 到最终 run（防 startDive 内部重建丢失·守 gameplay guard 生效）。
-    if (s.run) s = { ...s, run: { ...s.run, devFlags, huntEnabled: huntEnabled || s.run.huntEnabled } };
+    // 兜底再钉一次 devFlags 到最终 run（防 startDive 内部重建丢失·守 gameplay guard 生效）。
+    // huntEnabled 不在此碰（#318）：它是图的属性（zone.hunts·startDive 已落）·启动器不覆写。
+    if (s.run) s = { ...s, run: { ...s.run, devFlags } };
     setLaunched(s);
   };
 
@@ -220,13 +222,9 @@ export function PlaytestPanel() {
           <input type="checkbox" checked={unlimited} onChange={(e) => setUnlimited(e.target.checked)} />{' '}
           无限补给（消耗品不扣数 · 装载/拾取不计负重）
         </label>
-        <label style={{ display: 'block', marginBottom: 6, cursor: 'pointer' }}>
+        <label style={{ display: 'block', cursor: 'pointer' }}>
           <input type="checkbox" checked={godMode} onChange={(e) => setGodMode(e.target.checked)} />{' '}
           god mode（氧气/HP/减压病/极端温度全不致死不拦）
-        </label>
-        <label style={{ display: 'block', cursor: 'pointer' }}>
-          <input type="checkbox" checked={huntEnabled} onChange={(e) => setHuntEnabled(e.target.checked)} />{' '}
-          启用猎手（测 stalker 追猎内容）
         </label>
       </section>
 
@@ -237,7 +235,7 @@ export function PlaytestPanel() {
           <select style={select} value={zoneId} onChange={(e) => setZoneId(e.target.value)}>
             {zones.map((z) => (
               <option key={z.id} value={z.id}>
-                {z.name} · {z.depthRange[0]}–{z.depthRange[1]}m
+                {z.name} · {z.depthRange[0]}–{z.depthRange[1]}m{z.hunts ? ' · 猎手' : ''}
               </option>
             ))}
           </select>

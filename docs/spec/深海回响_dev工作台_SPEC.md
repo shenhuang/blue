@@ -93,7 +93,7 @@ dev 工具现在**两套机制并存、且互相重叠**：
 
 让 dev 不必玩到某处、也不必凑齐装备/补给，就能试玩任意海域的内容。配置项：自选**基础装备**（每槽从 `allItems()` 里 `category==='equipment'` 的候选选一件·**不含升级档**·作者 2026-07-18「先 2」）+ 三开关 + 任意 zone → 一键经**真实 App** 跑整趟下潜（每次启动新生成地图）。
 
-- **三开关**：**无限补给** `unlimitedSupplies`（消耗品使用不扣数 · 装载/拾取不计负重·默认开）；**god mode** `godMode`（氧气/HP/减压病 IV/极端温度入口全不致死不拦·默认关）；**启用猎手** `huntEnabled`（测 stalker 追猎内容）。二档「god mode 可切换」＝作者拍板（既能纯逛测内容、又能测真实难度）。
+- **开关（#318 后剩两个）**：**无限补给** `unlimitedSupplies`（消耗品使用不扣数 · 装载/拾取不计负重·默认开）；**god mode** `godMode`（氧气/HP/减压病 IV/极端温度入口全不致死不拦·默认关）。二档「god mode 可切换」＝作者拍板（既能纯逛测内容、又能测真实难度）。**旧「启用猎手」开关已删（#318）**：猎手＝图的属性（`zone.hunts`→`run.huntEnabled`·startDive 唯一产者·quirk #264）——有猎手的图恒有猎手、无开关；zone 下拉带「·猎手」后缀标识，测猎手选 `zone.hunt_test`。
 - **海域＝zone**：#300 白板后 `chart_pois` 只剩两个未解锁锚点、`generateChart` 返回空 ⇒ 真正可下潜内容＝`zones.json` 的 zone（`generation==='random'`·含两个 boss 的 grounds）。故「选任意 POI」在此落成「选任意 zone」（同 MapDevPanel 枚举）；将来 chart 恢复真实可达 POI 再加一栏。
 - **保真 & 不落档**：state 全走真实引擎入口（`createInitialGameState`/`createNewRun`/`getRunBonuses` 派生装备加成/`startDive`/`enterNodeSelection`·别手搓 phase 字面量·同 registry.ts 约定）；`App` 懒加载（dev→game·规则五允许·同 ScenePreview）、`ephemeral` 跳过 `saveGame` ⇒ **绝不覆盖玩家存档**（复用 #257 截图 harness 的注入机制）。
 - **无限/god 机制层**：`RunState.devFlags?: { unlimitedSupplies?; godMode? }`（真条件字段·quirk #106·缺省 undefined 逐字节等价·不 bump SAVE·**仅 ephemeral 注入**）。engine 7 处单点 guard（每处缺省短路＝旧行为）：消耗品扣数（`combat.ts` step1b）/ 装载截重（`dive-start.ts::applyCarryItems`）/ 拾取超重（`events.ts::applyOutcome`）/ 氧气+氮气 tick（`events.ts::tickTurns`）/ HP·氧气 clamp≥1（`combat.ts::applyStatsDelta`）/ 极端温度入口（`dive-start.ts::startDive`）/ 减压病 IV 死亡（`ascent.ts`）。

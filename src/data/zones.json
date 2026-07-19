@@ -35,6 +35,23 @@
       "_qa_fixture_doc": "2026-07-12 洞穴内容整删：本 zone 是「maze+vertical」QA 夹具，本应逐字克隆 zone.horizontal_test（无 ambushEncounters/weakHunts/depthCurveRange）——但为了不让既有 regress 覆盖静默失效，这里保留了旧 zone.blue_caves 的三项技术性例外：①ambushEncounters/weakHunts（scripts/playthrough-stalker.ts 潜伏捕食者/伏击/弱变体幼体系统覆盖）②depthCurveRange（scripts/playthrough-mapgen-scenarios.ts 洞型谱·剖面曲线 per-POI 性格拉开不变量·需要一个真区间才能产生不同 k）。若要严格「三者逐字同型」，删掉这些字段即可，但会让对应回归退化/需另行改写（见各自文件顶注）。depthRange 同日追改 [35,50]→[12,55]（同 zone.blue_caves 原值）：作者反馈初版太紧凑——vertical 布局轴＝深度本身（mapLayout.ts::layoutVertical height∝depthRange span·pxPerMeter=20），沿用 horizontal_test 的窄深度锁窗（其布局轴是 layer/树距、深度span 大小不影响它）会让纵向图看着挤；scenarios/mapgen/vertical_test__seed1.json baseline 本就只锁结构不变量、不锁 depth 数值，故此改零风险。"
     },
     {
+      "id": "zone.hunt_test",
+      "name": "猎手测试廊",
+      "description": "配了猎手的洞穴水道——这张图的属性：黑水里恒有循声循光逼近的东西。（开发测试用·非正式内容）",
+      "depthRange": [30, 70],
+      "layerCount": 6,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["cave"] }
+      ],
+      "generation": "random",
+      "mapShape": "maze",
+      "canFreeAscend": false,
+      "hunts": true,
+      "ambushEncounters": ["combat.blind_eel_solo", "combat.cave_octopus_solo"],
+      "_qa_fixture_doc": "猎手默认开启（#318·作者 2026-07-19「有猎手的图默认都会有猎手·不能开关」）：hunts=true ⇒ startDive 落 run.huntEnabled ⇒ 有位置的猎手默认在场（quirk #264）。depthRange [30,70] ≥ ALERT_MIN_DEPTH(25) ⇒ 警觉越线即现身。试玩启动器/回归用的「猎手图」；既有 baseline zone（vertical_test 等）刻意不标 hunts——标了会翻 playthrough-stealth 锁定的旧瞬时伏击路径断言。"
+    },
+    {
       "id": "zone.serpentine_test",
       "name": "蛇形测试廊",
       "description": "水道随深度左右折返的蛇形水道——路径绕来绕去，问题是认不认得清。（开发测试用·非正式内容）",

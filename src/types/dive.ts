@@ -144,6 +144,15 @@ export interface ZoneDef {
    */
   canFreeAscend?: boolean;
   /**
+   * 「有位置的猎手」是不是这张图的属性（#318·作者 2026-07-19「有猎手的图默认都会有猎手·不能开关」）：
+   * true → startDive 落 `run.huntEnabled`（唯一产者·恒定·无玩家/dev 开关）⇒ 警觉越线时走 stalker
+   * 逼近路径（出现→逼近→接触伏击）而非旧瞬时伏击。需配 ambushEncounters（猎手接触触发的遭遇池同源）。
+   * 缺省/false ＝无猎手图（走旧瞬时伏击 + weakHunts 浅水旁路）。旧产者 DepthBand.hunts 已随 band 删除（#294）——
+   * 本字段是它的 zone 级重接。boss 地盘（warren/scarlet·各有专属追猎编排）与 baseline 测试 zone
+   * （vertical_test 等·playthrough-stealth 锁旧路径）**刻意不标**。
+   */
+  hunts?: boolean;
+  /**
    * 深水区 Phase 0b：该 zone 潜伏捕食者可用的遭遇 id 池。警觉越过阈值时 moveToNode 触发其一
    * （复用该 zone 现有的 solo encounter）。空 / 未设 → 该 zone 无主动遭遇——浅水 / 教学 zone 不设，
    * §7.5「浅水免探测压力」天然成立。

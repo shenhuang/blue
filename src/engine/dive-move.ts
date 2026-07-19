@@ -122,7 +122,7 @@ export function moveToNode(state: GameState, nodeId: string): GameState {
 
   // 高警觉 + 该 zone 有潜伏捕食者 → 遭遇（先于节点 kind 分发；摸黑可避免）。四条路径：
   //   - 猩红暴君 boss（zone.scarlet_tyrant_grounds·engine/scarlet-hunt.ts·猩红暴君boss SPEC §4/§7/§8）→
-  //     独立编排的逐波追猎，**不读 huntEnabled**（§11.3⑤ 该字段当前无生产接通路径）：wave0 到海床节点触发
+  //     独立编排的逐波追猎，**不读 huntEnabled**（§11.3⑤·该字段产者 #318 起＝zone.hunts·猩红地盘刻意不标）：wave0 到海床节点触发
   //     开场事件；wave>=1 时无追猎者→现身，有追猎者→推进（复用与 huntEnabled 分支相同的 stalkerStep 主体）。
   //   - 深 band（run.huntEnabled·猎手 SPEC Phase 1）→ 有位置的逼近猎手（出现→逼近→接触才伏击·非接触则照常进节点）；
   //   - 浅水弱变体（猎手 Q3·zone.weakHunts 数据 opt-in·浅水线下小概率）→ 同款逼近猎手的弱版（weakStalkerStep

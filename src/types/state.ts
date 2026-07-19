@@ -247,7 +247,7 @@ export type StalkerLostBehavior = 'wait' | 'seek_last';
  * 一只在下潜内追猎你的「猎手」（猎手 SPEC Phase 1 spine）。把抽象的警觉（run.alert·#59）做成一个
  * **有位置、会逼近、按你用哪种感官显示不同保真度**的实体（灯＝知道在接近 / 声呐＝知道位置+距离·同一只猎手）。
  * **run 级·派生·不入 profile·不 bump SAVE_VERSION**（同 lastScanTurn 族；纯对象，JSON 自动 round-trip）。
- * 仅在 run.huntEnabled（DepthBand.hunts·深 band）时 engage；缺省 → 引擎走旧 alert→伏击瞬时路径（向后兼容）。
+ * 仅在 run.huntEnabled（zone.hunts·图的属性·#318）时 engage；缺省 → 引擎走旧 alert→伏击瞬时路径（向后兼容）。
  */
 export interface Stalker {
   /**
@@ -419,10 +419,11 @@ export interface RunState {
   lastScanTurn?: number;
   // 本次下潜的不可信声呐失真强度（曾派生自 band·抬高低 san 假回波阈值）：**感知重做已删**（声呐诚实·SPEC §2.2/§3）。
   /**
-   * 本次下潜是否启用「猎手」（猎手 SPEC Phase 1·§2.6 范围门控）：diveIntoBand（经 startDiveFromPoi） 从 DepthBand.hunts 落到 run。
-   * 真 → moveToNode 走有位置的逼近猎手（出现→逼近→接触触发现有伏击）；假（createNewRun 种 false＝
-   * POI 下潜/浅水默认·旧档由 hydrateGameState 单点补 false）→ 走旧 alert→maybeApproachEncounter 瞬时
-   * 伏击（逐字节不变·守 playthrough-stealth）。派生自 band，不 bump SAVE_VERSION。
+   * 本次下潜是否有「有位置的猎手」（猎手 SPEC Phase 1）＝**图的属性**（#318·作者「有猎手的图默认都会有猎手·
+   * 不能开关」）：startDive 从 `zone.hunts` 落到 run（唯一产者·恒定·无玩家/dev 开关；旧产者 DepthBand.hunts
+   * 已随 band 删 #294·试玩启动器开关同批删）。真 → moveToNode 走有位置的逼近猎手（出现→逼近→接触触发现有
+   * 伏击）；假（createNewRun 种 false·旧档由 hydrateGameState 单点补 false）→ 走旧 alert→maybeApproachEncounter
+   * 瞬时伏击（逐字节不变·守 playthrough-stealth）。派生自 zone，不 bump SAVE_VERSION。
    */
   huntEnabled: boolean;
   /**
