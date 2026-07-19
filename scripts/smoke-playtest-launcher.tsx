@@ -121,7 +121,7 @@ const ZONE = 'zone.vertical_test';
 {
   const html = renderToStaticMarkup(createElement(PlaytestPanel));
   assert(html.includes('潜点 · PlaytestPanel'), 'SSR：面板标题「潜点」（试玩启动器→潜点测试→潜点·2026-07-19）');
-  assert(html.includes('god mode'), 'SSR：god mode 开关');
+  assert(html.includes('作弊模式'), 'SSR：作弊模式开关');
   assert(html.includes('启动下潜'), 'SSR：启动按钮');
   assert(html.includes('气瓶') && html.includes('武器·主'), 'SSR：装备槽标签');
   assert(html.includes('重置为默认装备（含声呐）'), 'SSR：重置按钮改「默认装备（含声呐）」（#317）');

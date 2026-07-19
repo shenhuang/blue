@@ -243,7 +243,7 @@ export function PlaytestPanel() {
             {previewMap && zone && <SonarMapView map={previewMap} zone={zone} />}
             {!previewMap && (
               <div className="dev-faint" style={{ margin: 'auto', padding: 20 }}>
-                该海域当前配置下潜不了（多半是温度封口——潜服扛不住）。换保温潜服，或开 god mode。
+                该海域当前配置下潜不了（多半是温度封口——潜服扛不住）。换保温潜服，或开作弊模式。
               </div>
             )}
           </div>
@@ -290,7 +290,7 @@ export function PlaytestPanel() {
             </label>
             <label style={{ display: 'block', cursor: 'pointer' }}>
               <input type="checkbox" checked={godMode} onChange={(e) => setGodMode(e.target.checked)} />{' '}
-              god mode（氧气/HP/减压病/极端温度全不致死不拦）
+              作弊模式（氧气/HP/减压病/极端温度全不致死不拦）
             </label>
           </div>
 
