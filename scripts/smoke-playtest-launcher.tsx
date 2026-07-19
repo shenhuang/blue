@@ -2,7 +2,13 @@
 // 守两件事：
 //   ① 配置面板 SSR 渲染不崩、关键控件在（schema/EditorApp 演进别静默打挂它）；
 //   ② run.devFlags 各 guard 在源头短路/clamp——**缺省 undefined 逐字节等价旧行为**（每条断言的「默认」侧
-//      即等价基线）、开启即生效。App 在 PlaytestPanel 里懒加载 ⇒ 渲染 config 视图不牵动整棵游戏树、无需 css-stub。
+//      即等价基线）、开启即生效。App 在 PlaytestPanel 里懒加载 ⇒ 渲染 config 视图不牵动整棵游戏树。
+// CSS 处理（2026-07-19 三栏化起）：PlaytestPanel 含 `import './playtest-panel.css'`（→ map-panel.css 链），
+// tsx/node 不认 .css → 先 register css-stub-loader，再**动态** import 面板（静态会先于 register 求值炸）——
+// 同 smoke-combat-panel/smoke-economy-panel 套路。engine 模块无 css·可静态 import。
+import { register } from 'node:module';
+register('./css-stub-loader.mjs', import.meta.url);
+
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
@@ -17,8 +23,10 @@ import { startDive } from '../src/engine/dive';
 import { tickTurns } from '../src/engine/events';
 import { applyStatsDelta } from '../src/engine/combat';
 import { applyCarryItems } from '../src/engine/dive-start';
-import { PlaytestPanel, DEFAULT_PICKS } from '../src/ui/dev/PlaytestPanel';
 import type { GameState } from '../src/types';
+
+// 含 .css import 的面板必须在 register() 之后动态加载（见文件头）。
+const { PlaytestPanel, DEFAULT_PICKS } = await import('../src/ui/dev/PlaytestPanel');
 
 let pass = 0;
 function assert(cond: unknown, msg: string): asserts cond {
@@ -112,7 +120,7 @@ const ZONE = 'zone.vertical_test';
 // —— SSR: 配置面板渲染（launched=null·App 懒加载不牵动）——
 {
   const html = renderToStaticMarkup(createElement(PlaytestPanel));
-  assert(html.includes('潜点测试'), 'SSR：面板标题「潜点测试」（原「试玩启动器」·2026-07-19 改名）');
+  assert(html.includes('潜点 · PlaytestPanel'), 'SSR：面板标题「潜点」（试玩启动器→潜点测试→潜点·2026-07-19）');
   assert(html.includes('god mode'), 'SSR：god mode 开关');
   assert(html.includes('启动下潜'), 'SSR：启动按钮');
   assert(html.includes('气瓶') && html.includes('武器·主'), 'SSR：装备槽标签');

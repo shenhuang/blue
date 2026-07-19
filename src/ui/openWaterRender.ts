@@ -304,7 +304,7 @@ export function buildOpenWaterGeometry(
 
 /**
  * 开阔水域几何的世界「下沿」（海床最深谷 + 结构最大下探 OW_STRUCT_MAX_DROP·再留像素余量）。
- * 单一来源给「把整张开阔水域烤进固定画布」的全图渲染（MapDevPanel dev 概览）定取景框下边界——
+ * 单一来源给「把整张开阔水域烤进固定画布」的全图渲染（SonarMapView dev 概览）定取景框下边界——
  * 海床基线在节点之下 OW_FLOOR_GAP，若只取节点包围盒会把海床/礁体裁掉（游戏内是移动取景窗·不暴露）。
  * OW_STRUCT_MAX_DROP 由结构旋钮算·手感调了也不用手抄数字（跟 CAVE_GEOM_MARGIN 同理）。纯函数。
  */

@@ -2,7 +2,7 @@
 // （历史上 hash01/roomScale01 已迁 engine/sonar.ts·这是那次「渲染兼职库出 ui」的下半截）。
 //
 // 边界：纯常量 + 纯函数，零 React/DOM（engine ↛ ui·check-boundaries 规则一）。
-// 消费方：ui/SonarScanPanel（SDF 渲染/取景）、ui/dev/MapDevPanel（全图烤洞）、scripts/smoke-chart-ui（直测）。
+// 消费方：ui/SonarScanPanel（SDF 渲染/取景）、ui/dev/SonarMapView（全图烤洞·原 MapDevPanel）、scripts/smoke-chart-ui（直测）。
 
 /**
  * 纯钳制 helper（smoke Q4 直测）：把取景窗（view 宽）中心夹进内容 [0,extent]——内容比取景窗还小（装得下）→

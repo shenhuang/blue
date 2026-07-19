@@ -402,7 +402,7 @@ export interface CaveRect { x: number; y: number; w: number; h: number; }
 
 /**
  * 把洞穴几何烤成 RGBA 像素（水道蓝绿·岩壁发光青·岩石透明，越深越暗）。
- * **单一来源**：声呐取景窗（SonarScanPanel，rect＝220×300 窗）与地图调试器全图概览（MapDevPanel，rect＝整图）
+ * **单一来源**：声呐取景窗（SonarScanPanel，rect＝220×300 窗）与 dev 全图概览（SonarMapView·原 MapDevPanel，rect＝整图）
  * 共用同一像素外观，避免两处洞穴长得不一样（守洞穴一致性 #100·别 churn 成两套着色）。
  * deepK 按 rect 纵向（上浅下深·与 y∝depth 一致）。纯函数·不碰 DOM·返回可直接喂 `ImageData.data.set(...)` 的数组。
  */
@@ -625,7 +625,7 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
     const octx = off.getContext('2d');
     let haveCave = false;
     if (octx && !isOpenWater && cave.tuns.length + cave.rooms.length > 0) {
-      // 取景窗与 MapDevPanel 全图概览共用同一像素外观（bakeCaveRGBA·单一来源·守洞穴一致性 #100）。
+      // 取景窗与 dev 全图概览（SonarMapView）共用同一像素外观（bakeCaveRGBA·单一来源·守洞穴一致性 #100）。
       const img = octx.createImageData(ow, oh);
       img.data.set(bakeCaveRGBA(cave, rect, ow, oh));
       octx.putImageData(img, 0, 0);

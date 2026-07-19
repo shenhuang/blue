@@ -1,27 +1,19 @@
 /* ============================================================
- * 地图调试器 dev 面板（仅 import.meta.env.DEV）—— 迷路 mapgen 可视化
+ * 声呐全图/海域选择共用样式（dev 桶·仅 ?editor 工作台）
  *
- * 只被 MapDevPanel.tsx 静态 import；prod build 时 App.tsx 的 lazy() + DEV 守卫
- * 让 MapDevPanel 被 tree-shake，这份 css 也不进包（与 combat-panel.css 同套路）。
+ * 被 SonarMapView.tsx（声呐 stack + 拓扑覆盖层）与 PlaytestPanel.tsx
+ * （经 playtest-panel.css @import·海域手风琴/中栏）静态 import；
+ * 全走 EditorApp lazy() → 不进游戏主包（与 combat-panel.css 同套路）。
+ *
+ * 2026-07-19：地图调试器 MapDevPanel 删除——其专属选择器（三栏 grid/节点图
+ * SVG/图例/结构读数）已一并清掉；本文件只剩两面板仍在用的共用部分。
  *
  * 复用事件面板的 .dev-* 基础变量与控件：
  * ============================================================ */
 
 @import './dev-panel.css';
 
-/* 三栏：左 ZONE 选择 + 生成参数 · 中 节点图/声呐图 · 右 结构读数
-   （作者 2026-06-27：结构读数单开一栏·ZONE 选择单独一栏） */
-.dev-map-body {
-  grid-template-columns: 280px 1fr 240px;
-  /* 单行拉满 body 高度＝三栏（尤其中间地图）延伸到底·不随左栏条目数缩小（作者 2026-06-27） */
-  grid-template-rows: minmax(0, 1fr);
-}
-.dev-map-readout-col {
-  background: var(--bg);
-}
-
-/* —— zone 选择：左竖向 tab（洞穴/开阔水域）+ 右 zone 列表（替旧下拉·作者 2026-06-27）—— */
-/* 分类条在列表上方·点条收起/展开各自列表（手风琴·作者 2026-06-27「tab 做成列表上方·可收起该列表」） */
+/* —— zone 选择：分类条在列表上方·点条收起/展开各自列表（手风琴·作者 2026-06-27）—— */
 .dev-map-acc {
   display: flex;
   flex-direction: column;
@@ -65,6 +57,7 @@
   border-radius: 5px;
 }
 
+/* 中栏（声呐图所在列）：纵向 flex·图区吃满剩余高度 */
 .dev-map-canvas-col {
   background: var(--bg);
   display: flex;
@@ -82,92 +75,7 @@
     var(--bg);
 }
 
-.dev-map-svg {
-  display: block;
-}
-
-/* 节点 */
-.dev-map-node circle {
-  stroke: var(--border);
-  stroke-width: 1.5;
-}
-.dev-map-node text {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  fill: var(--text);
-  font-size: 9px;
-  text-anchor: middle;
-  dominant-baseline: middle;
-}
-.dev-map-node .dev-map-node-sub {
-  fill: var(--text-faint);
-  font-size: 7px;
-}
-
-/* 节点配色（按 kind / 角色） */
-.dev-map-fill-entrance { fill: var(--accent); }
-.dev-map-fill-exit { fill: var(--green, #5fb98e); }
-.dev-map-fill-event { fill: var(--bg-elev-2); }
-.dev-map-fill-rest { fill: var(--bg-elev); }
-.dev-map-fill-corpse { fill: #6a2a3e; }
-.dev-map-fill-air { fill: #1f5b66; }
-.dev-map-fill-camp { fill: #3a5a32; }
-
-.dev-map-node.is-deepest circle {
-  stroke: var(--warn, #d6b25e);
-  stroke-width: 2.5;
-}
-.dev-map-node.is-deadend circle {
-  stroke-dasharray: 3 2;
-}
-
-/* 边 */
-.dev-map-edge {
-  stroke: var(--border);
-  stroke-width: 1.5;
-}
-.dev-map-edge.is-chord {
-  stroke: var(--accent);
-  stroke-opacity: 0.55;
-  stroke-dasharray: 4 3;
-}
-
-/* 图例 */
-.dev-map-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 8px 4px 0;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-.dev-map-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.dev-map-swatch {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  display: inline-block;
-}
-
-/* 结构读数 */
-.dev-map-check {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 2px 0;
-  font-size: 12px;
-  border-bottom: 1px dotted var(--border);
-}
-.dev-map-check:last-child { border-bottom: none; }
-.dev-map-check .ok { color: var(--green, #5fb98e); }
-.dev-map-check .bad { color: var(--danger); font-weight: 600; }
-.dev-map-check-key { color: var(--text-muted); }
-
-/* —— 声呐洞穴图（canvas 剖面 + 节点覆盖层；与游戏内同一 bakeCaveRGBA·替换原节点图）—— */
+/* —— 声呐全图 stack（canvas 底 + svg 覆盖层·SonarMapView）—— */
 .dev-map-cave-wrap {
   /* 洞穴底色＝岩（rock 像素透明，露出此暗底）；居中放置整图 stack */
   background: #0a0e12;
@@ -194,8 +102,8 @@
   height: 100%;
   pointer-events: none;
 }
-/* 连边覆盖层（dev 专属·仅调试器·游戏内声呐**不画**）——叠在深色声呐底(洞穴/开阔水域)上，
-   故用亮白半透明描边（比节点图那套 --border 深色边亮得多才读得出）；回边(chord)走 accent 青虚线。 */
+/* 连边覆盖层（dev 专属·游戏内声呐**不画**）——叠在深色声呐底(洞穴/开阔水域)上，
+   故用亮白半透明描边；回边(chord)走 accent 青虚线。 */
 .dev-cave-edge {
   stroke: rgba(225, 255, 248, 0.5);
   stroke-width: 1.2;
@@ -222,4 +130,3 @@
   stroke: rgba(0, 0, 0, 0.7);
   stroke-width: 2px;
 }
-/* （已删 .dev-map-cave-empty：开阔水域空状态在 showCave=false 分支走节点图·那段提示永不可达·2026-06-27） */

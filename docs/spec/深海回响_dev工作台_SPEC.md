@@ -6,6 +6,8 @@
 >
 > **⚠ 2026-07-19：事件回归 EventDevPanel、内容分布统计 StatsDevPanel、POI 调试 ChartViewDevPanel（`?editor=chartdev`）三 tab 连组件删除**；「试玩/启动器」改名「**潜点/潜点测试**」（URL key 仍 `playtest`·深链不断）。CLI 事件回归门（event-runner/playthrough）与 `engine/eventStats` 聚合层**不受影响**（前者是 ship 门主体·后者仍被 materialStats/smoke-event-stats 消费）。现存 5 工具：潜点测试·素材·战斗回归·海图·地图调试。
 >
+> **⚠ 2026-07-19（同日晚·作者拍）：地图调试器 MapDevPanel（`?editor=map`）整体删除**——潜点面板三栏化后其声呐全图预览（共享 `SonarMapView.tsx`·同 seed＝实跑图）已覆盖主用途；mapgen 不变量仍由 CLI 门（`playthrough-mapgen-scenarios`/`analyzeMap`）守着（analyzeMap 可视化读数栏不随迁·要看读数跑 CLI）。同批：**潜点大目录删除**，潜点测试并入「地图」组改名「**潜点**」（URL key 仍 `playtest`·`?editor=map` 旧深链回退 chart）。现存 4 工具：素材·战斗回归·海图·潜点。下方 §3–§5 表格/架构图/路由表中的 map 行、§9 标题「潜点测试」按本条读。
+>
 > 把散落的 dev 工具收进**一个独立 sibling 根 `?editor`**（带左导航的工作台），与游戏 App 彻底解耦。
 > 起于 2026-06-21 session（作者拍：全合并·工作台为唯一入口·先方案再开工）。
 

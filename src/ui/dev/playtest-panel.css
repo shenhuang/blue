@@ -1,0 +1,59 @@
+/* ============================================================
+ * 潜点测试面板（?editor=playtest）—— 三栏布局（2026-07-19）
+ *
+ * 只被 PlaytestPanel.tsx 静态 import；经 EditorApp lazy() → 不进游戏主包。
+ * 复用 map-panel.css 的 dev-map-acc（左栏 zone 手风琴）+ dev-map-cave-*（中栏声呐 stack）
+ * 与 dev-panel.css 基底（.dev-panel/.dev-col）。本文件只放潜点测试专属的差异。
+ * ============================================================ */
+
+@import './map-panel.css';
+
+/* 三栏：左 海域选择 · 中 声呐预览 · 右 装备/开关/启动（右栏放 9 个装备下拉·比 map 的读数栏宽） */
+.dev-playtest-body {
+  grid-template-columns: 280px 1fr 400px;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.dev-playtest-form {
+  background: var(--bg-elev);
+}
+
+/* 装备行：label + select 单行对齐（等宽整齐·作者偏好） */
+.dev-playtest-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.dev-playtest-row-label {
+  flex: none;
+  width: 72px;
+  color: var(--text-muted);
+}
+.dev-playtest-row select {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font: inherit;
+}
+
+.dev-playtest-launch {
+  width: 100%;
+  margin-top: 14px;
+  background: #1f6f43;
+  color: #eafff0;
+  border: 1px solid #2e9d60;
+  border-radius: 6px;
+  padding: 9px 22px;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.dev-playtest-launch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

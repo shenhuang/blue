@@ -1,7 +1,7 @@
 // 节点图 → 2D 布局推导（共享纯函数·**渲染单一来源**）。
 //
 // DiveNode 不存 2D 坐标（types/dive.ts §6.1），但多处要把节点图画成图：
-//   - ui/dev/MapDevPanel（mapgen 调试器）
+//   - ui/dev/SonarMapView（dev 声呐全图预览·原 MapDevPanel·2026-07-19 删并入）
 //   - ui/SonarScanPanel（声呐探索图，声呐与房间 SPEC §5/§7 S0）
 // 这两处此前各自铺点会漂移，故抽成一处：单一来源（深水区 SPEC §13「位置即深度」系统不变量）。
 //
@@ -15,7 +15,7 @@
 //   - spiral：层沿外旋臂（下旋甬道·迷向）。
 //
 // 注：只决定**几何**（在哪画），不决定**可见性**（画不画）——可见性由各 consumer 决定
-// （MapDevPanel 全画；SonarScanPanel 只画已被声呐扫到的、且按余像渐隐）。
+// （SonarMapView 全画；SonarScanPanel 只画已被声呐扫到的、且按余像渐隐）。
 // 确定性：只依赖 map 结构 + node.depth + id 排序（+ 按 id 派生的 jitter/角度），不碰 RNG（守同地同图 #98/#100）。
 
 import type { DiveMap, DiveNode, LayoutStyle } from '@/types';
