@@ -1,11 +1,11 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。**活数字（事件 / 敌人 / 脚本 / scenario 计数）以 `npm run handoff` 的 git 真值为准·本档不再硬抄**（防 STATUS 随内容 churn 漂移）。近期 session（新→旧）：
+> **2026-07-19 #323 潜点三栏化+删地图调试器（Cowork 交互·Fable·同日续·沙箱全量 regress 90/90 绿〔build 环境跳〕·新 quirk #266·push 留 Mac/nightly）**：潜点面板（?editor=playtest）三栏化——左=大区分组海域列表（zoneGroups.ts）·中=声呐全图预览（SonarMapView.tsx 自 MapDevPanel 抽取·与游戏内烤图同源）·右=装备/开关/启动；固定 seedKey=`playtest::<zoneId>`·**预览=启动 state 单一来源（built.run.map·同对象零漂移）**；不做换图/存 seed（seed≠图身份·将来钦定图=冻结整张 DiveMap·quirk #266）。**MapDevPanel/?editor=map 整删**（潜点预览接棒·analyzeMap 读数走 CLI），潜点大目录删、潜点测试并入「地图」组改名「潜点」。工作台现状：**经济[素材]/战斗[回归]/地图[海图·潜点]**。详见 CHANGELOG #323。
+>
 > **2026-07-19 #322 chart 编辑器右下按钮整编（Cowork 交互·Fable·同日续·沙箱全量 regress 89/89 绿〔build 环境跳〕·无新 quirk·commit `bfbc0b1`·push 留 Mac/nightly）**：海图编辑器（?editor=chart）右下操作组——「导出」通道整删（按钮+模态+ExportBlock+showExport·`fileTexts` 留给「保存进项目」拼 `/__save_chart`），跑回归移至保存进项目左侧，四钮 flex:1 等宽两行（跑回归|保存进项目 / 撤销|重置·padding 统一 8px）。与 #321 同日同树并飞·两 commit 显式 add 互不吞。详见 CHANGELOG #322。
 >
 > **2026-07-19 #321 dev 工作台瘦身（Cowork 交互·Fable·同日续·沙箱全量 regress 89/89 绿〔build 环境跳〕·新 quirk #265·commit `a610981`·push 留 Mac/nightly）**：删 POI 调试 ChartViewDevPanel / 事件回归 EventDevPanel / 统计 StatsDevPanel 三 tab 连组件与随葬（smoke-chart-editor·check-dev-panels 门③·tone/chart 死样式·file-budget 条目）；「试玩/启动器」改名「**潜点/潜点测试**」（只显示层·key 仍 playtest）。工作台现状：**潜点[潜点测试]/经济[素材]/战斗[回归]/地图[海图·地图调试]**。CLI 事件回归门与 eventStats/ScenarioSerializer 皆未动（quirk #265 幸存者甄别）。详见 CHANGELOG #321。
->
-> **2026-07-19 #315–#320 声呐大改一日六连（Cowork 交互·Fable·每笔沙箱全量 regress 90/90 绿·SAVE 17→18·新 quirk #262/#263/#264·全部已 commit·push 留 Mac/nightly）**：**#315 声呐无升级化**（收编 07-18 三层解耦·无升级无射程·一记 ping 全图揭示·迷雾全图三态 黑/亮/灰＝`run.lastScanTurn`+`sensors.sonar` 两标量·声呐门=活条件同灯·猎手全图必闻·scanMemory/scanOrigins/BFS/半径/升级链整删·quirk #262）→ **#316 标记层收窄**「只画能抵达的+敌」（删琥珀 threatContact〔不扫也每回合飘的病根〕/残图小地图/全图 ? m 点·新增女王扫后实时常显 `.sonar-queen`·quirk #263·蜂群 SPEC 记「三选一搜寻被消解」知情后果）→ **#317 试玩启动器**默认自带声呐 + 上浮回港即结束试玩（`App.onPlaytestEnd`）→ **#318 猎手改图属性**（`zone.hunts`→`startDive` 唯一产者·勘察揭示旧产者随 band 删后真游戏猎手从来不开·删启动器开关·新 `zone.hunt_test`·quirk #264·内容期逐图拍 hunts 留作者）→ **#319** ping 后标记不跳位（恒用 poiOffset 锚）+ 删「已选中一处」提示句 → **#320** 回正改图内右上角浮动小图标（零回流）。**留作者**：dev-server 肉眼验三态/扩散/标记收窄观感（quirk #91/#93）·FOG_DIM/SWEEP_MS 等数值 defer·manganese_nodule 孤儿化去留·内容期逐图拍 hunts。详见 CHANGELOG #315–#320。
 
 ## 1. 一句话状态
 
