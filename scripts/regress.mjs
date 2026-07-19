@@ -23,6 +23,7 @@
 
 import { spawn } from 'node:child_process';
 import { readdirSync, mkdtempSync, existsSync, mkdirSync, renameSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir, cpus } from 'node:os';
 import { dirname, join, resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -68,14 +69,31 @@ tasks.push({ name: 'typecheck', cmd: [tsc, '--noEmit'] });
 tasks.push({ name: 'typecheck-scripts', cmd: [tsc, '--noEmit', '-p', 'tsconfig.scripts.json'] });
 
 // 生产构建（落全新临时目录，避免 mount 删不掉旧 assets 的 EACCES）
-// 沙箱（Linux）缺 @rollup/rollup-linux-arm64-gnu（node_modules 是 macOS 装的）→ 自动跳过（quirk #147）。
-// nightly 单独用 NODE_PATH=/tmp/rollup-linux-fix 跑 build，不走本门。
-const ROLLUP_LINUX_NATIVE = join(ROOT, 'node_modules', '@rollup', 'rollup-linux-arm64-gnu');
-const canBuild = process.platform !== 'linux' || existsSync(ROLLUP_LINUX_NATIVE);
-if (canBuild) {
+// 沙箱（Linux）node_modules 是 macOS 装的 → 缺 Linux 原生 binding 时自动跳过（quirk #147）。
+// 2026-07-20（CHANGELOG #325）：判定改「按当前 arch 解析 vite build 实际要的 native 包」——旧检查硬编码
+// vite5 时代的 `@rollup/rollup-linux-arm64-gnu` 仓内路径，vite 8 换 rolldown+lightningcss 后静默过时（恒跳）。
+// require.resolve 认 NODE_PATH ⇒ 沙箱按配方补装 binding（见 [[blue_regress_sandbox]]/HANDOFF）后 build 真进门；
+// 再换 bundler 时更新 BUILD_NATIVES 清单——缺哪个会打印包名，不会再静默恒跳。
+const requireCjs = createRequire(import.meta.url);
+const BUILD_NATIVES = [
+  `@rolldown/binding-linux-${process.arch}-gnu`, // vite 8 bundler（rolldown）的平台 binding
+  `lightningcss-linux-${process.arch}-gnu`, // vite 8 css transformer 的平台 binding
+];
+const missingBuildNative =
+  process.platform !== 'linux'
+    ? null
+    : (BUILD_NATIVES.find((m) => {
+        try {
+          requireCjs.resolve(m);
+          return false;
+        } catch {
+          return true;
+        }
+      }) ?? null);
+if (missingBuildNative === null) {
   tasks.push({ name: 'build', cmd: [vite, 'build', '--outDir', buildOut, '--logLevel', 'warn'] });
 } else {
-  console.log('⚠  build 自动跳过（沙箱缺 rollup-linux-arm64-gnu·#147·nightly 单独处理）');
+  console.log(`⚠  build 自动跳过（沙箱缺 ${missingBuildNative}·#147·补装 binding 即进门·留 Mac/nightly）`);
 }
 
 // tsx 任务（smoke-*/playthrough*）靠 esbuild 转译 TS 起子进程。沙箱（Linux）的 node_modules 是 macOS
