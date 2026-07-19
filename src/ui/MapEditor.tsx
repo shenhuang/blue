@@ -59,7 +59,6 @@ export default function MapEditor() {
   const [sel, setSel] = useState<Sel>(null);
   const [view, setView] = useState<ViewBox>({ x: -0.12, y: -0.06, w: 1.28 }); // 默认含海岸左侧 + [0,1] + 右侧余量
   const [saveMsg, setSaveMsg] = useState('');
-  const [showExport, setShowExport] = useState(false);
   const [history, setHistory] = useState<{ pois: PoisFile; regions: RegionsFile; lh: LhFile }[]>([]);
   const [regress, setRegress] = useState<{ running: boolean; ok?: boolean; output?: string } | null>(null);
   const drag = useRef<Sel>(null);
@@ -204,7 +203,7 @@ export default function MapEditor() {
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
   }
 
-  // ── 保存 / 导出 ────────────────────────────────────────────────────────────
+  // ── 保存 ──────────────────────────────────────────────────────────────────
   const fileTexts = useMemo(() => ({
     [DATA_FILES.pois]: JSON.stringify(poisFile, null, 2) + '\n',
     [DATA_FILES.regions]: JSON.stringify(regionsFile, null, 2) + '\n',
@@ -420,46 +419,15 @@ export default function MapEditor() {
 
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={saveToProject} style={{ flex: 1, background: '#15422c', color: '#d6f2e0', border: '1px solid #2f7a4f', borderRadius: 5, padding: '9px 10px', cursor: 'pointer', fontWeight: 600 }}>保存进项目</button>
-            <button onClick={runRegress} disabled={regress?.running} style={{ background: '#16323b', color: '#eaf4f7', border: '1px solid #2a505d', borderRadius: 5, padding: '9px 10px', cursor: regress?.running ? 'wait' : 'pointer' }}>{regress?.running ? '回归中…' : '跑回归'}</button>
+            <button onClick={runRegress} disabled={regress?.running} style={{ flex: 1, background: '#16323b', color: '#eaf4f7', border: '1px solid #2a505d', borderRadius: 5, padding: '8px 10px', cursor: regress?.running ? 'wait' : 'pointer' }}>{regress?.running ? '回归中…' : '跑回归'}</button>
+            <button onClick={saveToProject} style={{ flex: 1, background: '#15422c', color: '#d6f2e0', border: '1px solid #2f7a4f', borderRadius: 5, padding: '8px 10px', cursor: 'pointer', fontWeight: 600 }}>保存进项目</button>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={undo} disabled={!history.length} style={{ flex: 1, background: history.length ? '#1a2c33' : '#121c21', color: history.length ? '#cfe3e8' : '#4a5d64', border: '1px solid #283b44', borderRadius: 5, padding: '8px 10px', cursor: history.length ? 'pointer' : 'default' }}>撤销{history.length ? ` (${history.length})` : ''}</button>
-            <button onClick={() => setShowExport(true)} style={{ flex: 1, background: '#16323b', color: '#eaf4f7', border: '1px solid #2a505d', borderRadius: 5, padding: '8px 10px', cursor: 'pointer' }}>导出</button>
-            <button onClick={resetAll} style={{ background: '#241418', color: '#e0a39e', border: '1px solid #5a2a2a', borderRadius: 5, padding: '8px 10px', cursor: 'pointer' }}>重置</button>
+            <button onClick={resetAll} style={{ flex: 1, background: '#241418', color: '#e0a39e', border: '1px solid #5a2a2a', borderRadius: 5, padding: '8px 10px', cursor: 'pointer' }}>重置</button>
           </div>
         </div>
       </div>
-
-      {showExport && (
-        <div onClick={() => setShowExport(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 10 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: '#0d171d', border: '1px solid #283b44', borderRadius: 8, padding: 18, width: 'min(900px, 95vw)', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: '#eaf4f7' }}>导出（整文件覆盖粘回 · 或直接用「保存进项目」）</div>
-              <button onClick={() => setShowExport(false)} style={{ background: 'none', color: '#9fb6bd', border: 'none', fontSize: 18, cursor: 'pointer' }}>×</button>
-            </div>
-            <ExportBlock title={DATA_FILES.pois} text={fileTexts[DATA_FILES.pois]} />
-            <ExportBlock title={DATA_FILES.regions} text={fileTexts[DATA_FILES.regions]} />
-            <ExportBlock title={DATA_FILES.lighthouses} text={fileTexts[DATA_FILES.lighthouses]} />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ExportBlock({ title, text }: { title: string; text: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <span style={{ color: '#9fb6bd', fontSize: 12 }}>{title}</span>
-        <button onClick={() => { navigator.clipboard?.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1200); }}
-          style={{ background: '#16323b', color: '#eaf4f7', border: '1px solid #2a505d', borderRadius: 4, padding: '3px 10px', cursor: 'pointer', fontSize: 12 }}>
-          {copied ? '已复制 ✓' : '复制'}
-        </button>
-      </div>
-      <textarea readOnly value={text} style={{ width: '100%', height: 130, background: '#0a1014', color: '#a8c3cc', border: '1px solid #1d2d36', borderRadius: 4, padding: 8, font: '11px/1.4 ui-monospace, monospace', resize: 'vertical' }} />
     </div>
   );
 }
