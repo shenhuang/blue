@@ -1,11 +1,11 @@
 # 深海回响 · 当前实装状态
 
 > 当前实装状态见下方各节（§1 一句话状态最权威）。完整会话历史 → [docs/archive/CHANGELOG.md](archive/CHANGELOG.md)；已知 quirk 与约定 → [docs/QUIRKS.md](QUIRKS.md)。**活数字（事件 / 敌人 / 脚本 / scenario 计数）以 `npm run handoff` 的 git 真值为准·本档不再硬抄**（防 STATUS 随内容 churn 漂移）。近期 session（新→旧）：
+> **2026-07-20 #326 地图真 2D 坐标两阶段（Cowork 交互·Fable + 2 实装 subagent + 1 对抗复审 subagent〔~9 万图 fuzz〕·沙箱全量 regress 91/91 绿〔含 build·含新门〕·SAVE 18→19·新 quirk #269·commit `33e525f`·push 留 Mac/nightly）**：「画得近⇔有边」根治——Phase 1 `orderByBarycenter` 渲染重心排序（转兜底·「有边画远」-83%·#196 逐字节注记作废）；Phase 2 撒点 mapgen（SPEC 新档四处拍板全建议案：参数化条带域/Gabriel∪MST/米制椭圆/maze+layered 同批）：`mapgen-scatter.ts` 脊柱（分层撒点**最终空间**·k 进层位映射·结构编排只删边不动点）+ `DiveNode.x`（米·y≡depth 构造保证）+ mapLayout 存量坐标直用；layered 无向可回头（漫游统一·id `node.i`）。新门 coords2d 792 图（唯一最浅/不假熔/不画远/结构/确定性/k 三档 D 段）。复审三修：k 末端重映射→最终空间采样（k=2.6 曾 300/300 破诚实）、N floor 12、域宽容量公式（交付率 100%·横向真横条）。「近而无边」终值 0.00/图。**待作者肉眼验收**（潜点预览·连同 #315–#323 积压）。详见 CHANGELOG #326。
+>
 > **2026-07-20 #324 声呐图首绘 letterbox 黑边跳变修复（Cowork 交互·Fable·沙箱全量 regress 89/89 绿 + prod build 沙箱实跑绿·新 quirk #267·commit `71e0201`·push 留 Mac/nightly）**：用户报「两边黑→突跳全宽」＝frameAspect 首帧竖窄默认 + RO paint 后才补测；修＝useIsoLayoutEffect 首绘前量框 + viewW 偶整数量化（三消费点像素逐字对齐）+ stackCb useCallback。全文审计其余渲染路径无它恙。沙箱基建：vite 8 已用 rolldown ⇒ regress.mjs build 跳过检查（#147 找旧 rollup native）过时。**（2026-07-20 同日续·#325·commit `327afc3`·quirk #268）**：作者拍「改」——build 门改按 arch 动态探测 rolldown/lightningcss binding（require.resolve 认 NODE_PATH），沙箱补装后全量 90/90 **含 build** 一趟过；缺 binding 打印包名再跳·不再静默恒跳。详见 CHANGELOG #324/#325。
 >
 > **2026-07-19 #323 潜点三栏化+删地图调试器（Cowork 交互·Fable·同日续·沙箱全量 regress 90/90 绿〔build 环境跳〕·新 quirk #266·push 留 Mac/nightly）**：潜点面板（?editor=playtest）三栏化——左=大区分组海域列表（zoneGroups.ts）·中=声呐全图预览（SonarMapView.tsx 自 MapDevPanel 抽取·与游戏内烤图同源）·右=装备/开关/启动；固定 seedKey=`playtest::<zoneId>`·**预览=启动 state 单一来源（built.run.map·同对象零漂移）**；不做换图/存 seed（seed≠图身份·将来钦定图=冻结整张 DiveMap·quirk #266）。**MapDevPanel/?editor=map 整删**（潜点预览接棒·analyzeMap 读数走 CLI），潜点大目录删、潜点测试并入「地图」组改名「潜点」。工作台现状：**经济[素材]/战斗[回归]/地图[海图·潜点]**。详见 CHANGELOG #323。
->
-> **2026-07-19 #322 chart 编辑器右下按钮整编（Cowork 交互·Fable·同日续·沙箱全量 regress 89/89 绿〔build 环境跳〕·无新 quirk·commit `bfbc0b1`·push 留 Mac/nightly）**：海图编辑器（?editor=chart）右下操作组——「导出」通道整删（按钮+模态+ExportBlock+showExport·`fileTexts` 留给「保存进项目」拼 `/__save_chart`），跑回归移至保存进项目左侧，四钮 flex:1 等宽两行（跑回归|保存进项目 / 撤销|重置·padding 统一 8px）。与 #321 同日同树并飞·两 commit 显式 add 互不吞。详见 CHANGELOG #322。
 
 ## 1. 一句话状态
 
