@@ -7,7 +7,9 @@
 //
 // 布局风格（LayoutStyle·见 types/dive.ts + docs/spec/深海回响_地图渲染补全_SPEC.md）：
 //   渲染层是「形状」的唯一瓶颈——同一张拓扑图按不同 style 铺成不同形状。style 由 map.layoutStyle（mapgen 盖章）决定，
-//   `opts.layoutStyle` 仍可临时覆盖（纯渲染·当前无 UI 暴露——MapDevPanel 已撤「换形状」下拉·2026-06-27/#229）。**'vertical' 是默认且逐字节复现旧图**（所有不声明的 zone/旧图走这条）。
+//   `opts.layoutStyle` 仍可临时覆盖（纯渲染·当前无 UI 暴露——MapDevPanel 已撤「换形状」下拉·2026-06-27/#229）。**'vertical' 是默认**（所有不声明的 zone/旧图走这条）。
+//   ⚠ 2026-07-20 起同层排序改**重心法**（orderByBarycenter·消「画得近却没连边」）——旧「vertical 逐字节复现旧图」注记作废：
+//   几何槽位公式（y∝depth·x 等距槽）一字不动，变的只是**节点↔槽位的分配**；仍确定性纯函数、不碰 RNG。
 //   - vertical：纵轴＝真实深度（#92·上浅下深·y∝depth）·横轴＝同深兄弟摊开（x 无方向语义·纯避重叠）。
 //   - horizontal：进洞树距(layer)→横轴（进来多远＝主压力轴）·深度退成纵向弱带（配 orientation='horizontal'）。
 //   - serpentine：层按行蛇形折返（盘绕·难辨来路）。
@@ -72,7 +74,7 @@ type Built = { pos: Record<string, { x: number; y: number }>; width: number; hei
 
 /**
  * 把任意原始坐标平移到 [pad, ·] 并按实际包围盒定画布尺寸——**保证所有节点落在 [0,width]×[0,height] 内**
- * （非竖向策略共用·免每个策略各算尺寸出错·dev 全图画布据此不裁切）。vertical 不走这条（保持逐字节旧值）。
+ * （非竖向策略共用·免每个策略各算尺寸出错·dev 全图画布据此不裁切）。vertical 不走这条（自身按 maxConcurrent 定宽·历史尺寸公式不动）。
  */
 function normalize(raw: Record<string, { x: number; y: number }>, padX: number, padY: number): Built {
   let minX = Infinity;
@@ -114,7 +116,7 @@ export function deriveMapLayout(map: DiveMap, opts?: MapLayoutOpts): MapLayout {
   }
 
   // 按**到入口的树距（node.layer）**分组并列——保留洞穴的分叉形状（#98 修 #92：按 layer 分组而非按 depth 分箱）。
-  // 组内按 id 稳定排序（确定性）；maxConcurrent = 最宽并列数；maxLayer = 最大树距。
+  // 组内先按 id 排出确定性基序；maxConcurrent = 最宽并列数；maxLayer = 最大树距。
   const byLayer = new Map<number, DiveNode[]>();
   for (const n of nodes) {
     if (!byLayer.has(n.layer)) byLayer.set(n.layer, []);
@@ -127,30 +129,44 @@ export function deriveMapLayout(map: DiveMap, opts?: MapLayoutOpts): MapLayout {
     maxConcurrent = Math.max(maxConcurrent, col.length);
     maxLayer = Math.max(maxLayer, lay);
   }
+  const g: Geom ={ pxPerMeter, colW, padX, padY, dMin, dMax, maxConcurrent, maxLayer };
 
-  const g: Geom = { pxPerMeter, colW, padX, padY, dMin, dMax, maxConcurrent, maxLayer };
+  // ── 存量坐标路径（地图2D坐标 SPEC §1·2026-07-20）：mapgen 撒点图（全节点带 x·米制）直接用真坐标——
+  // px = x·pxPerMeter（等比·纵横同尺）·y∝depth 照旧。形状（含手性）由 mapgen 全权决定 ⇒ **跳过渲染层镜像**；
+  // 无 x 的图（教学单节点/warren/旧路径）走下方派生兜底（Phase 1 重心排序）。
+  const stored = nodes.length > 0 && nodes.every((n) => typeof n.x === 'number' && Number.isFinite(n.x));
   let built: Built;
-  switch (style) {
-    case 'horizontal':
-      built = layoutHorizontal(byLayer, g);
-      break;
-    case 'serpentine':
-      built = layoutSerpentine(byLayer, g);
-      break;
-    case 'warren':
-      built = layoutWarren(byLayer, g);
-      break;
-    case 'vertical':
-    default:
-      built = layoutVertical(byLayer, g);
-      break;
+  if (stored) {
+    const raw: Record<string, { x: number; y: number }> = {};
+    for (const n of nodes) raw[n.id] = { x: n.x! * pxPerMeter, y: (n.depth - dMin) * pxPerMeter };
+    built = normalize(raw, padX, padY);
+  } else {
+    // 重心排序（2026-07-20·「画得近却没连边」渲染侧修·Phase 1）：同层顺序从纯 id 字典序改为按相邻层邻居平均位次排
+    // ——有边的节点尽量画到彼此正上/正下方。warren 布局不吃组内序（角色锚位+id 排叶）·跑了也无影响。
+    orderByBarycenter(byLayer, map);
+    switch (style) {
+      case 'horizontal':
+        built = layoutHorizontal(byLayer, g);
+        break;
+      case 'serpentine':
+        built = layoutSerpentine(byLayer, g);
+        break;
+      case 'warren':
+        built = layoutWarren(byLayer, g);
+        break;
+      case 'vertical':
+      default:
+        built = layoutVertical(byLayer, g);
+        break;
+    }
   }
   const { pos, width, height } = built;
 
   // 左右手性（#100 确定性·按图内容派生·约一半朝左一半朝右·**只镜像 X·Y=真实深度不动**）——
   // 别让所有洞都朝一个方向（作者 2026-06-27「都往右」）。同一张图永远同一手性（同地同图不变）。
+  // 存量坐标图不镜像（手性已由 mapgen rng 决定·渲染只忠实呈现）。
   const handKey = nodes.reduce((s, n) => s + n.depth * 7 + n.layer * 3 + n.id.length, 0);
-  if (style !== 'warren' && h01('hand:' + handKey) < 0.5) {
+  if (!stored && style !== 'warren' && h01('hand:' + handKey) < 0.5) {
     for (const id in pos) pos[id] = { x: width - pos[id].x, y: pos[id].y };
   }
 
@@ -172,13 +188,72 @@ export function deriveMapLayout(map: DiveMap, opts?: MapLayoutOpts): MapLayout {
   return { pos, edges, width, height, r };
 }
 
+/**
+ * 重心排序（Sugiyama barycenter·确定性·2026-07-20）：把每层组内顺序改为「参照侧邻居的平均**居中位次**」升序
+ * （下扫参照＝所有更浅层、上扫＝所有更深层——迷路 chord 常跨 >1 层·只看紧邻层会漏，故取「已排一侧全部邻居」）。
+ * 居中位次＝j-(len-1)/2，与各 style 组内摆位公式同基准（层宽不同也可比）。无参照邻居的节点保持当前位次；
+ * 并列 tie-break 用 id（确定性·同图同序·不碰 RNG·守 #98/#100）。上下扫 2 轮（层宽 2–4·经验足够收敛）。
+ * 诚实预期：2D 画任意图无法保证「画得近⇔有边」——重心法消掉大头，残余个别 case 是几何极限不是 bug。
+ * （不够再升级二档：宽度≤6 逐层穷举 polish·超宽回退重心——2026-07-20 讨论已认可。）
+ */
+function orderByBarycenter(byLayer: Map<number, DiveNode[]>, map: DiveMap): void {
+  if (byLayer.size <= 1) return;
+  // 无向邻接（connectsTo 双向冗余/单向缺失都归一成 Set）
+  const nbrs = new Map<string, Set<string>>();
+  const link = (a: string, b: string) => {
+    let s = nbrs.get(a);
+    if (!s) nbrs.set(a, (s = new Set()));
+    s.add(b);
+  };
+  for (const id in map.nodes) {
+    for (const to of map.nodes[id].connectsTo) {
+      if (!map.nodes[to] || to === id) continue;
+      link(id, to);
+      link(to, id);
+    }
+  }
+  const layers = [...byLayer.keys()].sort((a, b) => a - b);
+  const posOf = new Map<string, number>(); // nodeId → 当前居中位次
+  const refresh = (col: DiveNode[]) => col.forEach((n, j) => posOf.set(n.id, j - (col.length - 1) / 2));
+  for (const lay of layers) refresh(byLayer.get(lay)!);
+
+  const sweep = (order: number[], refShallower: boolean) => {
+    for (const lay of order) {
+      const col = byLayer.get(lay)!;
+      if (col.length < 2) continue;
+      const key = new Map<string, number>();
+      for (const n of col) {
+        let sum = 0;
+        let cnt = 0;
+        for (const m of nbrs.get(n.id) ?? []) {
+          const ml = map.nodes[m].layer;
+          if (refShallower ? ml < lay : ml > lay) {
+            sum += posOf.get(m) ?? 0;
+            cnt++;
+          }
+        }
+        key.set(n.id, cnt > 0 ? sum / cnt : (posOf.get(n.id) ?? 0));
+      }
+      col.sort((a, b) => key.get(a.id)! - key.get(b.id)! || a.id.localeCompare(b.id));
+      refresh(col);
+    }
+  };
+  const down = layers.slice(1); // 首层无更浅参照·保持基序
+  const up = layers.slice(0, -1).reverse(); // 末层无更深参照
+  for (let round = 0; round < 2; round++) {
+    sweep(down, true);
+    sweep(up, false);
+  }
+}
+
 // ============================================================
 // 布局策略（确定性纯函数·各返回 pos + 画布尺寸·尺寸须包住所有 pos）
 // ============================================================
 
 /**
- * vertical（默认·**逐字节复现旧图**）：纵轴 y∝真实深度（上浅下深），横轴各 layer 组共用中线、组内对称排开。
+ * vertical（默认）：纵轴 y∝真实深度（上浅下深），横轴各 layer 组共用中线、组内对称排开。
  * 同 layer 因 depth jitter 各在略不同纵位＝略错落的一排；x 无深度方向语义（纯避重叠）。
+ * （组内顺序 2026-07-20 起由重心排序供给——「逐字节复现旧图」注记作废·槽位公式未动。）
  */
 function layoutVertical(byLayer: Map<number, DiveNode[]>, g: Geom): Built {
   const centerX = g.padX + ((g.maxConcurrent - 1) * g.colW) / 2;

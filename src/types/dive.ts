@@ -201,6 +201,13 @@ export interface DiveNode {
   id: string;
   layer: number;
   depth: number;
+  /**
+   * 真 2D 横坐标（**米**·与 depth 同单位·地图2D坐标 SPEC §1·2026-07-20 拍板）：mapgen 撒点产出（Poisson-disk
+   * ①条带域 ②Gabriel∪MST 连边）。纵坐标不另存＝`depth` 本身（「位置即深度」构造保证·深水区 SPEC §13 升级）。
+   * 渲染 px = x·pxPerMeter（等比）。**可选**：无 x 的图（教学单节点/warren/旧路径）走 `deriveMapLayout`
+   * 派生兜底（Phase 1 重心排序）。入档（run.map）⇒ 引入时 SAVE_VERSION 18→19（#99 直接废档）。
+   */
+  x?: number;
   zoneTag: ZoneTag;
   /** 节点类型 */
   kind: NodeKind;

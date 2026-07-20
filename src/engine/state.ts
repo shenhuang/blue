@@ -43,7 +43,9 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // 17→18（声呐无升级化·2026-07-19）：删声呐升级轴（items.json 声呐件 upgradeSteps 整段 + sensorTuning.pingCost/sonarScanRange）
 // + run.scanMemory/scanOrigins 收敛成 run.lastScanTurn?（一记 ping 全图揭示·三态全图迷雾）——
 // 装备/run 形状变（旧档可能持有 Lv>1 声呐件·升级步已不存在）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始。
-const SAVE_VERSION = 18;
+// 18→19（地图真 2D 坐标·2026-07-20·地图2D坐标 SPEC）：DiveNode 加 x（米·撒点产出）·maze/layered 拓扑改
+// 撒点+Gabriel∪MST ⇒ run.map 形状/结构双变 → 按 #99 bump 弃旧档。
+const SAVE_VERSION = 19;
 
 /**
  * 生命值上限基线（战斗系统改版 2026-07-10）。createNewRun 种进 run.hpMax、stats.hp 起手＝hpMax。

@@ -57,7 +57,7 @@
 ## 3. 拓扑（engine·几乎不动）
 
 - 复用 `generateDiveMap`（`mapgen.ts` 按 `zone.mapShape` 分派）→ 层状 DAG（`mapgen-layered.ts`）。可加一个 `mapShape:'openwater'` 薄壳（多半 delegate 给 layered），或直接复用 layered·实装时定。
-- 节点图保持**无坐标**（`DiveNode` 只 `depth`）。渲染时 `deriveMapLayout` 派生 2D（Y=真实深度·`mapLayout.ts`）。
+- ~~节点图保持**无坐标**（`DiveNode` 只 `depth`）。渲染时 `deriveMapLayout` 派生 2D（Y=真实深度·`mapLayout.ts`）。~~ **⚠ SUPERSEDED（2026-07-20·地图2D坐标 SPEC）**：mapgen 撒点产真坐标（`DiveNode.x`·米·y≡depth），layered 同批改撒点+Gabriel∪MST（无向·可回头=漫游语义统一·节点 id `node.i`）；`deriveMapLayout` 有 x 直用、无 x 才派生。下两行「海床 contour 由节点派生」不变——真 x 让「每 X 列最深节点」更准。
 - **海床 contour 由节点确定性派生**（锚点节点＝`seabedNodeIds`·✅ #307·见 §4a）：按「每 X 列最深可达节点」下沿 + 由 `map.zoneId`/节点 id 种子化的风格化起伏（沙 sin / 珊瑚+结构 / 岩+结构）。**派生不入存档·由 id 确定性算 → 声呐诚实、可复现**（守感知重做不变量）。开阔水域＝海床之上一大片水域可漫游。
 
 ---

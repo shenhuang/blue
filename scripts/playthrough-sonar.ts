@@ -7,7 +7,7 @@
 //   6. ping 当场抬警觉：深水 spike / 浅水免压（深度因子 0）/ 深 band 倍率 / clamp 上限
 //   7. 全图三态生命周期：黑（没 ping 过）→ 亮（这一站 ping 过）→ 灰（移动后 sonar 归 off·lastScanTurn 常驻不回黑）→ 再 ping 刷新班次
 //   8. 猎手全图必闻：无量程——几跳外的猎手每记 ping 也快照（seenNodeId/seenTurn）·快照随后过期（stale 增长）
-//   9. 存档：lastScanTurn round-trip·SAVE_VERSION = 18（声呐无升级化 bump）
+//   9. 存档：lastScanTurn round-trip·SAVE_VERSION = 19（地图2D坐标 bump）
 //   （旧 §1 revealSonarScan BFS / §2 sonarScanRange 升级轴 / §2b sonarRevealRadius 迷雾圆——整套随「无射程无升级」删除。）
 //
 // 跑法： npx tsx scripts/playthrough-sonar.ts
@@ -261,18 +261,18 @@ L('\n========== 8. 猎手全图必闻（无量程·快照会过期）=========='
 }
 
 // ============================================================
-// 9. 存档：lastScanTurn round-trip·SAVE_VERSION = 18（声呐无升级化 bump·quirk #99 不迁移）
+// 9. 存档：lastScanTurn round-trip·SAVE_VERSION = 19（地图2D坐标 bump·quirk #99 不迁移）
 // ============================================================
 L('\n========== 9. lastScanTurn round-trip ==========');
 {
   const s = pingSonar(mk({ depth: 50 }));
   const back = deserializeGameState(serializeGameState(s));
   assert(back !== null, '9: 反序列化成功');
-  assert(back!.version === 18, '9: SAVE_VERSION 18（声呐无升级化 bump·旧档作废不迁移）');
+  assert(back!.version === 19, '9: SAVE_VERSION 19（地图2D坐标 bump·旧档作废不迁移）');
   assert(back!.run!.lastScanTurn === s.run!.lastScanTurn, '9: lastScanTurn 原样 round-trip（普通数字·真条件字段）');
   const fresh = deserializeGameState(serializeGameState(mk())); // 没 ping 过：absent 保持 absent
   assert(fresh!.run!.lastScanTurn === undefined, '9: 没 ping 过 round-trip 后仍是黑（absent 不被补种）');
-  L('  lastScanTurn round-trip + absent 保真 + SAVE_VERSION 18 ✓');
+  L('  lastScanTurn round-trip + absent 保真 + SAVE_VERSION 19 ✓');
 }
 
 // ============================================================
@@ -358,7 +358,7 @@ L('\n========== 14. 一记 ping 单动作（§2.2）==========');
 
   // (e) 存档 round-trip：sonar 普通枚举·保真
   const rt = deserializeGameState(serializeGameState(movedOff));
-  assert(rt!.version === 18, '14e: SAVE_VERSION 18（声呐无升级化 bump）');
+  assert(rt!.version === 19, '14e: SAVE_VERSION 19（地图2D坐标 bump）');
   assert(rt!.run!.sensors.sonar === 'off', '14e: sensors.sonar round-trip 保真');
   L('  默认不扫 / ping 付暴露 / 移动归 off(不自动扫) / 暴露按状态 / 存档 round-trip ✓');
 }

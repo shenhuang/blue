@@ -20,7 +20,7 @@ export interface MapAnalysis {
   edgeCount: number;
   /** 从 startNodeId 沿 connectsTo 可达的节点数 */
   reachableCount: number;
-  /** 全部节点是否都从起点可达（迷路图应为 true；层状图因有孤立的同层起点节点天然 false） */
+  /** 全部节点是否都从起点可达（真 2D 撒点脊柱后迷路/层状同为无向连通 ⇒ 恒 true·2026-07-20 起层状不再有孤立同层起点节点） */
   allReachable: boolean;
   /** connectsTo 是否完全对称（双向） */
   isUndirected: boolean;

@@ -1,6 +1,8 @@
 // 迷路图生成器（洞穴：蓝洞群）——generateMazeMap
-// 双向边的连通图：成树 + 弦边（环）+ 死路 + 多个最深点；入口与「洞另一头的出口」都是
-// ascent_point。剖面曲线 k（洞型谱）与横向廊模式见函数内注释。公共工具见 mapgen-shared。
+// 真 2D 坐标版（地图2D坐标 SPEC·Phase 2·2026-07-20）：**先撒点、后连边**——节点位置由 Poisson-disk 撒点产出、
+// y≡depth（「位置即深度」构造保证）、连边＝Gabriel∪MST 邻近图（近而无边⇒中间必隔点或墙）。撒点脊柱见
+// mapgen-scatter.ts（与 layered 共用）；本文件只做上层：节点类型 / 事件抽取 / 地标 / corpse / 双向 connectsTo。
+// 剖面曲线 k（洞型谱）与横向廊模式（orientation/serpentine）经 domain + curveK 传给脊柱。公共工具见 mapgen-shared。
 
 import type { DiveMap, DiveNode, NodeFeature, NodeKind, ZoneTag } from '@/types';
 import { buildEventPool, pickWeighted, tagsForDepth } from './zones';
@@ -16,20 +18,22 @@ import {
   roomPreview,
   placeCorpses,
 } from './mapgen-shared';
+import { buildScatterGraph, type ScatterDomain } from './mapgen-scatter';
 
 // ============================================================
-// 迷路图（洞穴）—— 双向连通图：环 + 死路 + 多个最深点
+// 迷路图（洞穴）—— 真 2D 撒点连图：环 + 死路 + 多个最深点
 // ============================================================
 //
-// 生成步骤：
-//   1. 随机生成成树（spanning tree）——保证连通 + 自然产生死路（树叶）。父节点从"最近放置的
-//      几个"里挑，使树更像蜿蜒的主水道而非星形。
-//   2. 选定受保护的叶子：deepCount 个"最深点"（深度强制 = d1，且邻居更浅 → 局部极大）+ 1 个
-//      "另一头的出口"（far exit, ascent_point）。受保护叶子不接弦边，保证它们维持 degree 1。
-//   3. 加弦边（chord）制造环（绕回原点的回路），只连"距离相近"的非保护节点，不破坏深点/出口。
-//   4. 赋深度：按到入口的树距递增（远 = 深）+ 抖动；入口最浅；最深点钉死 d1。
-//   5. 赋节点类型：入口 + far exit = ascent_point；其余 event（洞里事件密度高）/ 偶尔 rest。
-//   6. corpse pass：在非入口非出口节点按 depth ±10m 植入尸体。
+// 生成步骤（因果倒置：先位置、后边——SPEC §0/§2）：
+//   1. 节点数 N：从 zone 派生（layerCount × 布局倍率）；opts.layerCount 可覆盖（平廊拉长图）。
+//   2. buildScatterGraph（撒点脊柱·mapgen-scatter.ts）：分层撒点（最终空间·洞型谱 k 进采样）→ Gabriel∪MST 连边 →
+//      结构编排（entrance 钉最浅 / 2–3 最深点钉 d1 成 degree-1 叶 / far exit 叶 / 补环）→ BFS 树距。
+//      （无「分离修复」pass——分层 minDist + 只删边不动点已构造性保住分离·SPEC §2③ 实装修正。）
+//      产出：pts(x,y=depth) / adj(无向) / dist(树距=layer) / entrance / deepPoints / farExit。
+//   3. depth[i] = round(clamp(pts[i].y))（deepPoints 保证 = d1·entrance = d0）；节点带 x=pts[i].x（保留小数）。
+//   4. 节点类型：entrance + far exit = ascent_point；其余 event（洞里事件密度高）/ 偶尔 rest。
+//   5. 地标（气穴 / 扎营点）：从非保护内部节点里挑，给迷路的岔路 / 死路加"值得绕"的理由。
+//   6. corpse pass：在非入口非出口非地标节点按 depth ±10m 植入尸体。
 //   7. connectsTo 双向：邻接表两边都写，玩家可回头/重访（重访不重播事件见 dive.ts::moveToNode）。
 
 export function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): DiveMap {
@@ -38,143 +42,40 @@ export function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): 
   const d1 = baseD1;
   const canFreeAscend = zone.canFreeAscend !== false;
 
-  // —— 节点数：从 zone 派生（layerCount × 布局倍率）；opts.layerCount 可覆盖（平廊拉长图）。
-  // 竖向 ×2（历史规模·逐字节不变）；宽布局（横/蛇行/环/螺旋）×3＝POI 更多（作者 2026-06-27·见 nodeCountMultiplier）。——
-  const minN = Math.max(8, (opts.layerCount ?? zone.layerCount) * nodeCountMultiplier(resolveLayoutStyle(zone)));
+  // —— 1. 节点数：从 zone 派生（layerCount × 布局倍率）；opts.layerCount 可覆盖（平廊拉长图）。
+  // 竖向 ×2（历史规模）；宽布局（横/蛇行）×3＝POI 更多（作者 2026-06-27·见 nodeCountMultiplier）。——
+  // 下限 12（复审 fuzz 实证 N<10 撒点脊柱不安全：MST 边免修剪→边长超上限 / 不足两死路等）——经 layerCount POI 覆盖
+  // 可把节点数压到低值故须防御（现役 zone 本就 ≥12·此地板对它们 no-op·只兜低 layerCount 覆盖）。
+  const minN = Math.max(12, (opts.layerCount ?? zone.layerCount) * nodeCountMultiplier(resolveLayoutStyle(zone)));
   const maxN = minN + 4;
   const N = randInt(minN, maxN, rng);
 
-  const adj: Set<number>[] = Array.from({ length: N }, () => new Set<number>());
-  const link = (a: number, b: number) => {
-    adj[a].add(b);
-    adj[b].add(a);
-  };
+  // —— 2. 撒点脊柱：domain 按朝向/布局分流（横向锁带 / 蛇行折返 / 竖向下行）；curveK 走洞型谱链（照旧）——
+  const domain: ScatterDomain =
+    zone.orientation === 'horizontal' ? 'horizontal' : resolveLayoutStyle(zone) === 'serpentine' ? 'serpentine' : 'vertical';
+  const curveK = resolveDepthCurve(opts);
+  const { pts, adj, dist, entrance, deepPoints, farExit } = buildScatterGraph({ rng, n: N, d0, d1, curveK, domain });
+  // 实际节点数（撒点自适应间距下可能略少于目标 N·内容预算近似即可）——以下全用它，别用目标 N。
+  const nodeCount = pts.length;
 
-  // —— 1. 随机成树：i 接到 [i-window, i-1] 里随机一个已放置节点（偏近 → 蜿蜒主道）——
-  for (let i = 1; i < N; i++) {
-    const lo = Math.max(0, i - 4);
-    const p = randInt(lo, i - 1, rng);
-    link(i, p);
-  }
+  // —— 3. 深度（= 撒点 y·deepPoints 保证 d1·entrance d0）——
+  const depth = pts.map((p) => Math.round(clamp(p.y, d0, d1)));
 
-  // —— 树距（hop distance from 入口 node 0），同时是 DiveNode.layer 的新语义 ——
-  const dist = new Array<number>(N).fill(0);
-  {
-    const seen = new Array<boolean>(N).fill(false);
-    const queue: number[] = [0];
-    seen[0] = true;
-    while (queue.length) {
-      const u = queue.shift()!;
-      for (const v of adj[u]) {
-        if (!seen[v]) {
-          seen[v] = true;
-          dist[v] = dist[u] + 1;
-          queue.push(v);
-        }
-      }
-    }
-  }
-  const maxDist = Math.max(1, ...dist);
-
-  // —— 2. 选受保护叶子：最深点 + far exit ——
-  const leaves: number[] = [];
-  for (let i = 1; i < N; i++) if (adj[i].size === 1) leaves.push(i);
-  leaves.sort((a, b) => dist[b] - dist[a]); // 远的优先
-
-  const protectedSet = new Set<number>();
-  const deepCount = Math.min(leaves.length, N >= 13 ? 3 : 2);
-  const deepPoints = leaves.slice(0, deepCount);
-  for (const dp of deepPoints) protectedSet.add(dp);
-
-  // far exit：另一片叶子（不与最深点重叠）；没有富余叶子时退化为最远的非保护节点
-  let farExit: number | undefined = leaves.find((l) => !protectedSet.has(l));
-  if (farExit === undefined) {
-    let best = -1;
-    let bestDist = -1;
-    for (let i = 1; i < N; i++) {
-      if (protectedSet.has(i)) continue;
-      if (dist[i] > bestDist) {
-        bestDist = dist[i];
-        best = i;
-      }
-    }
-    if (best >= 0) farExit = best;
-  }
+  // 保护集（entrance / 最深点 / far exit·地标与 corpse 都绕开它们·守迷路结构不变量）
+  const protectedSet = new Set<number>([entrance, ...deepPoints]);
   if (farExit !== undefined) protectedSet.add(farExit);
 
-  // —— 3. 加弦边制造环（不碰受保护叶子）——
-  const nonProtected: number[] = [];
-  for (let i = 0; i < N; i++) if (!protectedSet.has(i)) nonProtected.push(i);
-  const targetChords = randInt(2, 3, rng);
-  let chords = 0;
-  let attempts = 0;
-  while (chords < targetChords && attempts < N * 6 && nonProtected.length >= 2) {
-    attempts++;
-    const a = pickFrom(nonProtected, rng);
-    const b = pickFrom(nonProtected, rng);
-    if (a === b || adj[a].has(b)) continue;
-    if (Math.abs(dist[a] - dist[b]) > 2) continue; // 只连距离相近的水道，回路才可信
-    link(a, b);
-    chords++;
-  }
-  // 兜底：保证至少一个环（万一上面没凑到相近的一对）
-  if (chords === 0) {
-    outer: for (const a of nonProtected) {
-      for (const b of nonProtected) {
-        if (a !== b && !adj[a].has(b)) {
-          link(a, b);
-          chords++;
-          break outer;
-        }
-      }
-    }
-  }
-
-  // —— 4. 赋深度（按朝向分流）——
-  const kCurve = resolveDepthCurve(opts);
-  const isHorizontal = zone.orientation === 'horizontal';
-  const depth = new Array<number>(N).fill(d0);
-
-  if (isHorizontal) {
-    // 水平廊模式：深度锁在 [d0,d1] 中值附近小幅浮动；探索距离（layer/dist）替代深度成为主压力轴。
-    // depthRange 语义 = 「基准深度 ± (span/2)」；不强制最深点钉死 d1（深度轴已不是压力来源）。
-    const baseMid = (d0 + d1) / 2;
-    const hVariance = (d1 - d0) / 2;
-    for (let i = 0; i < N; i++) {
-      const jitter = (rng() * 2 - 1) * hVariance;
-      depth[i] = Math.round(clamp(baseMid + jitter, d0, d1));
-    }
-  } else {
-    // 垂直模式（默认）：k=1 走原式（逐字节复现旧图）；k≠1 时 pow 单调 ⇒ 「位置即深度」#92 对任意 k>0 保持。
-    // jitter 的 rng 消耗每节点恒一次、与 k 无关 ⇒ 曲线只改深度值、不动结构 rng 流。
-    const jitterRange = (d1 - d0) * 0.12;
-    for (let i = 1; i < N; i++) {
-      const frac = dist[i] / maxDist;
-      const curved = kCurve === 1 ? frac : Math.pow(frac, kCurve);
-      const jitter = (rng() * 2 - 1) * jitterRange;
-      depth[i] = Math.round(clamp(d0 + (d1 - d0) * curved + jitter, d0, d1));
-    }
-    // 最深点钉死 d1，并把其（唯一）邻居压到更浅 → 严格局部极大
-    for (const dp of deepPoints) {
-      depth[dp] = d1;
-      for (const nb of adj[dp]) {
-        if (depth[nb] >= depth[dp]) {
-          depth[nb] = clamp(depth[dp] - randInt(3, 8, rng), d0, d1 - 1);
-        }
-      }
-    }
-  }
+  const idOf = (i: number) => `node.${i}`;
 
   // —— 5. 节点类型 + 事件抽取 ——
-  const idOf = (i: number) => `node.${i}`;
   const triggeredFakeIds: string[] = [];
   const nodes: Record<string, DiveNode> = {};
 
   // 地标节点（气穴 / 扎营点）：从非保护内部节点里挑，给迷路的岔路 / 死路加"值得绕"的理由。
   // 它们不是事件池事件——不受洞穴内容稀薄影响；也不算 ascent_point，不动迷路结构不变量。
   const landmarkEligible: number[] = [];
-  for (let i = 1; i < N; i++) if (!protectedSet.has(i)) landmarkEligible.push(i);
-  const byDepthDesc = [...landmarkEligible].sort((a, b) => depth[b] - depth[a]);
+  for (let i = 0; i < nodeCount; i++) if (!protectedSet.has(i)) landmarkEligible.push(i);
+  const byDepthDesc = [...landmarkEligible].sort((a, b) => depth[b] - depth[a] || a - b); // 显式 tie-break（同深按索引·house style·确定性）
   let airPocketIdx = -1;
   let campIdx = -1;
   if (byDepthDesc.length > 0 && rng() < 0.7) {
@@ -187,7 +88,7 @@ export function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): 
     campIdx = pickFrom(campPool, rng);
   }
 
-  for (let i = 0; i < N; i++) {
+  for (let i = 0; i < nodeCount; i++) {
     const depthI = depth[i];
     const zoneTag: ZoneTag = pickFrom(opts.bandTags ?? tagsForDepth(zone, depthI), rng) ?? 'reef';
     let kind: NodeKind;
@@ -195,7 +96,7 @@ export function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): 
     let features: NodeFeature[] | undefined;
     let preview: string;
 
-    if (i === 0) {
+    if (i === entrance) {
       kind = 'ascent_point';
       preview = '洞口在你身后，水面的光从这里漏进来。回头还能从这儿出去。';
     } else if (i === farExit) {
@@ -246,8 +147,9 @@ export function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): 
 
     nodes[idOf(i)] = {
       id: idOf(i),
-      layer: dist[i], // 迷路图里 layer = 到入口的树距（深度层级近似）
+      layer: dist[i], // 迷路图里 layer = 到入口的树距（BFS·深度层级近似）
       depth: depthI,
+      x: pts[i].x, // 真 2D 横坐标（米·保留小数·渲染 px = x·pxPerMeter·SPEC §1）
       zoneTag,
       kind,
       eventId,
@@ -258,10 +160,9 @@ export function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): 
   }
 
   // —— 6. Corpse pass（迷路版）——
-  // 候选 = 非入口（i!==0）、非 ascent_point 的节点。
-  // 候选 = 非入口、非 ascent_point、非地标（气穴/扎营）的节点
+  // 候选 = 非入口、非 ascent_point、非地标（气穴/扎营）的节点。
   const corpseCandidateIds: string[] = [];
-  for (let i = 1; i < N; i++) {
+  for (let i = 0; i < nodeCount; i++) {
     const k = nodes[idOf(i)].kind;
     if (k !== 'ascent_point' && k !== 'air_pocket' && k !== 'camp') corpseCandidateIds.push(idOf(i));
   }
@@ -271,6 +172,6 @@ export function generateMazeMap(opts: GenOpts, baseD0: number, baseD1: number): 
     zoneId: zone.id,
     generatedAt: Date.now(),
     nodes,
-    startNodeId: idOf(0),
+    startNodeId: idOf(entrance),
   };
 }
