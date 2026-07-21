@@ -8,8 +8,11 @@
 //   d = max( wy − floorY(wx),  结构 field union )  →  边缘型 floor（单值·不碎/不悬空）∪ 坐在海床上的离散结构。
 // 2026-07-13 look-dev 反馈三改（本文件这版·二轮：初版按「每个节点插值」实测会在列间距抖出尖峰·收窄成
 // 只用贴底节点·见 @/engine/seabed::seabedNodeIds）：
-//   ① floor 低频形状改由**终点节点**锚点反距离加权插值（不再是单一 baseY 常数）——每条分支的终点自身 x 处
+//   ① floor 低频形状改由**贴底节点**锚点反距离加权插值（不再是单一 baseY 常数）——锚点自身 x 处
 //      海床贴着它的实际深度走·不再飘空；高频细节改「折叠 sin 出尖脊窄谷 + 域扭曲」的 ridge 沙纹，不是圆头正弦。
+//      ⚠ 锚点集当年＝「分支终点」拓扑近似；**2026-07-21 起＝几何下包络**（engine/seabed.ts）——#326 换成撒点
+//      mapgen 后「没有更深邻居」退化成散在中层的局部极大点，把 IDW（power=2）逼成阶跃 ⇒ 近垂直悬崖 + 针尖 +
+//      节点被埋进岩体。换定义后「海床恒在全部节点之下」是构造保证。**插值机制本身没动**（interpAnchorY 原样）。
 //   ② rock 去掉「圆顶拱洞」变体（悬空倒 U）·统一走圆钝礁丘。
 //   ③ 结构（rock/coral）不再由 buildOpenWaterGeometry 一次性按节点 x 包围盒预建列表，改成 bake 时按
 //      实际取景矩形现算（structsInRange）——不管相机怎么平移缩放、开发面板画多大，地形都铺到看得见的最外范围。
@@ -60,8 +63,9 @@ export type OwStyle = 'sand' | 'coral' | 'rock' | 'reef';
 
 /** 边缘型海床 contour 参数（单值 heightfield·派生不入存档·由 zone id + 节点布局确定性算·SPEC §3）。 */
 export interface OwFloor {
-  /** 每个节点一条锚点（x, y + OW_FLOOR_GAP）：海床低频形状由此反距离加权插值（见 interpAnchorY）——
-   *  每个节点（含分支终点）自身 x 附近海床都贴着它走·不再靠一个全局 baseY 常数碰运气对齐。 */
+  /** 每个**贴底节点**一条锚点（x, y + OW_FLOOR_GAP·贴底节点＝几何下包络·engine/seabed.ts::seabedNodeIds）：
+   *  海床低频形状由此反距离加权插值（见 interpAnchorY）——锚点自身 x 附近海床都贴着它走·不再靠一个全局
+   *  baseY 常数碰运气对齐。锚点取自下包络 ⇒ 恒在全部节点之下 ⇒ 插值出的海床不会埋住任何节点。 */
   anchors: Array<{ x: number; y: number }>;
   /** 无锚点兜底基线（anchors 为空时的极端 fallback）。 */
   fallbackY: number;
@@ -267,13 +271,16 @@ function structsInRange(style: OwStyle, seed: string, floor: OwFloor, xLo: numbe
 
 /**
  * 由布局派生开阔水域几何（Phase 2 临时派生·Phase 3 交给 mapgen·契约＝OwGeom）：
- * floor 锚点＝**贴底节点**（分支终点 ∧ 有海床档·engine/seabed.ts::seabedNodeIds 单源·与事件 atSeabed 同源）
- * 自身 x 之下 OW_FLOOR_GAP（落进其揭示圆内·游戏内可见）——只挑贴底节点、不是每个节点：分层图里同一层
- * 节点常落在相近的 x（列位置按层各自居中分配·边之间交叉画），若给路过的每个中间节点都强行按精确深度插值，
- * 会在列与列之间炸出尖锐的尖峰（沙纹变成一排倒挂冰柱，不是海床——2026-07-13 look-dev 二轮反馈实测过）。
- * 终点数量少、间距天然更宽，IDW 插值出的海床形状更接近真实起伏而非逐点强拟合。
+ * floor 锚点＝**贴底节点**（＝几何下包络 ∧ 有海床档·engine/seabed.ts::seabedNodeIds 单源·与事件 atSeabed 同源）
+ * 自身 x 之下 OW_FLOOR_GAP（落进其揭示圆内·游戏内可见）——只挑贴底节点、不是每个节点：给路过的每个中间
+ * 节点都强行按精确深度插值，会在相近 x 的节点之间炸出尖锐的尖峰（沙纹变成一排倒挂冰柱，不是海床——
+ * 2026-07-13 look-dev 二轮反馈实测过）。下包络点数量少、间距天然更宽，且**恒在全部节点之下**（构造保证），
+ * IDW 插值出的海床形状既接近真实起伏、又不会把任何节点埋进不透明岩体。
+ * 本层只做**米→px 换算**：包络在 engine 侧按 `node.x`/`node.depth`（米）算好，px 是它的等比仿射像（守
+ * check-boundaries 规则一 engine↛ui·quirk #95——判定不能反过来依赖 mapLayout）。
  * **无贴底节点（整图 midwater 无底蓝水）⇒ floored=false**：不建 floor·bake 整窗全水（见 bakeOpenWaterRGBA）。
- * 没有 map（理论上不该发生·两个调用方都传了）时退化为「用全部节点、当有海床」，不炸但不精确贴终点。
+ * 没有 map（理论上不该发生·两个调用方都传了）时退化为「用全部节点、当有海床」——⚠ 该退化路径**会**把浅
+ * 节点也当锚点（＝上面说的倒挂冰柱 + 可能埋住深节点）；它只是「不炸」的兜底，不是可用观感，别当支持路径依赖。
  * 结构不在这里生成，留给 bake 时按实际取景窗现算（structsInRange）。
  * 确定性·纯函数（同 zone 同 layout 同海床·守感知诚实/可复现·SPEC §3）。
  */

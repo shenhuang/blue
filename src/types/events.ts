@@ -202,9 +202,14 @@ export type Condition =
   | { kind: 'npcTrustTier'; npcId: string; minTier: number }
   /**
    * 开阔水域「贴底节点」门控（开阔水域 SPEC §4·zoneTag 一物两用）：当前节点是贴底节点
-   * （分支终点 ∧ zoneTag 是有海床档 sand/coral/rock/atoll·见 engine/seabed.ts::seabedNodeIds）即满足。
+   * （**几何下包络** ∧ zoneTag 是有海床档 sand/coral/rock/atoll·见 engine/seabed.ts::seabedNodeIds）即满足。
    * 让珊瑚采集 / 矿床 / 海底爬行生物 / 尸体 / 巢穴等**贴底专属**内容只在真正到海床的节点出现，
-   * 不在悬空中层（midwater 无底蓝水）节点出现。派生·纯拓扑+tag·不入存档。
+   * 不在悬空中层（midwater 无底蓝水）节点出现。派生·纯几何+tag·不入存档。
+   *
+   * 「贴底」的准确含义＝**渲染出来的海床正贴在这个节点身下**（下包络就是海床锚点集·渲染与门共用单一真相
+   * ⇒ 门为真 ⟺ 画面上脚下就是海床）。2026-07-21 前这里是拓扑近似「没有更深邻居的分支终点」——#326 撒点
+   * mapgen（无向邻近图）后它退化成「局部深度极大点」，会让悬在中层的节点（实测 70–100m 域里的 73m 节点）
+   * 误判贴底、触发采集/矿床内容；换成几何下包络后与画面重新对齐。
    */
   | { kind: 'atSeabed' }
   | { kind: 'all'; of: Condition[] }
