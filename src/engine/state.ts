@@ -45,7 +45,12 @@ import lighthouseData from '@/data/lighthouse_upgrades.json';
 // 装备/run 形状变（旧档可能持有 Lv>1 声呐件·升级步已不存在）→ 按 quirk #99 不写迁移、bump 弃旧档从头开始。
 // 18→19（地图真 2D 坐标·2026-07-20·地图2D坐标 SPEC）：DiveNode 加 x（米·撒点产出）·maze/layered 拓扑改
 // 撒点+Gabriel∪MST ⇒ run.map 形状/结构双变 → 按 #99 bump 弃旧档。
-const SAVE_VERSION = 19;
+// 19→20（撒点域横纵比地板 + 采样密度·2026-07-21）：修「很多地图变成一条线走到底」——竖直/蛇行撒点域此前
+// 被容量公式压成 ≈1:10 的窄条（Gabriel 图在近共线点集上必退化成路径），现补 per-kind 横纵比地板；同时
+// PTS_PER_LEVEL 1.4→2.6 / JITTER 0.7→0.15 / 节点预算 ×1.5。**同 seed 出的图形状与节点数都变了**，旧档
+// run.map 与新 mapgen 不自洽（存的是旧形状的图、继续潜会走在与新规则不符的拓扑上）→ 按 #99 不写迁移、
+// 版本不符即删旧档从头开始。
+const SAVE_VERSION = 20;
 
 /**
  * 生命值上限基线（战斗系统改版 2026-07-10）。createNewRun 种进 run.hpMax、stats.hp 起手＝hpMax。

@@ -44,6 +44,12 @@ interface MapgenExpect {
   allReachable?: boolean;
   isUndirected?: boolean;
   hasCycle?: boolean;
+  /**
+   * 环秩下限——把 `hasCycle` 这个**布尔**升级成**量级**。退化成「一条线 + 补的那一根弦」的图 cycleRank 恒 =1，
+   * hasCycle 照样 true、蒙混过关（2026-07-21「一条线走到底」bug 的实际形态）。全 zone 的形状门见
+   * scripts/playthrough-mapshape.ts；本键给单份 scenario 钉一个具体下限。
+   */
+  minCycleRank?: number;
   hasDeadEnd?: boolean;
   minDeadEnds?: number;
   minDeepestPoints?: number;
@@ -125,6 +131,7 @@ function assertExpect(name: string, map: DiveMap, a: MapAnalysis, zoneShape: str
   if (e.allReachable !== undefined) expectEq(name, 'allReachable', a.allReachable, e.allReachable);
   if (e.isUndirected !== undefined) expectEq(name, 'isUndirected', a.isUndirected, e.isUndirected);
   if (e.hasCycle !== undefined) expectEq(name, 'hasCycle', a.hasCycle, e.hasCycle);
+  if (e.minCycleRank !== undefined) expectGte(name, 'cycleRank', a.cycleRank, e.minCycleRank);
   if (e.hasDeadEnd !== undefined) expectEq(name, 'hasDeadEnd', a.hasDeadEnd, e.hasDeadEnd);
   if (e.minDeadEnds !== undefined) expectGte(name, 'deadEnds', a.deadEndIds.length, e.minDeadEnds);
   if (e.minDeepestPoints !== undefined) expectGte(name, 'deepestPoints', a.deepestNodeIds.length, e.minDeepestPoints);

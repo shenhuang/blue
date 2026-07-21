@@ -53,6 +53,13 @@ export const NONADJ_MIN_FACTOR = 1.0;
  * 真要更短须加节点预算或缩深度窗·集成侧协调·[[defer-number-tuning]]）。占位待调。
  * 20.0＝覆盖洞型谱极端档（k=0.45 稀顶入口井边 / k=2.6 稀底深井边·coords2d 门 D 段 k 三档×40 seed 实测
  * 最长 18.0——「廊+坑」的长竖井是**设计**·非画远缺陷；k=1 实测最长 14）。
+ *
+ * **已知残留（2026-07-21 实测·非本次引入）**：把 coords2d 门的 k 扫描从 seed 1–40 放宽到 1–500 后，
+ * `zone.vertical_test` k=2.6 有极少数 seed 的**最长 MST 边**擦过 20（改前 main：2/6500 图·最长 20.04；
+ * 改后：1/6500 图·最长 20.03——本次改动让它**变少**、没变多）。成因是结构性的：k=2.6 把填充点全压到顶部，
+ * 两个最深点种子仍钉在 d1 ⇒ MST 必须搭一根长桥下去，而 MST 边按设计永不修剪（守连通）。真要根治得动
+ * 脊柱算法本体（例如让最深点种子随 k 一起上移，或给 MST 长桥补中继点），本次不动（加法原则）。
+ * 门之所以绿是因为它只扫 seed 1–40；扩大扫描窗口前先决定是抬这个上限还是补中继点。
  */
 export const EDGE_MAX_FACTOR = 20.0;
 
@@ -66,11 +73,51 @@ const BRIDSON_K = 30;
  */
 const SAME_DEPTH_MIN_DIST = NONADJ_MIN_FACTOR + 0.3;
 
+/**
+ * 撒点**节点预算系数**：脊柱实际撒的点数 = 生成器目标 n × 此值（四舍五入）。
+ *
+ * 为什么在脊柱层而不是各生成器：`n` 是生成器按 zone 声明的**内容预算**（多少个事件/地标位），而「要多少点
+ * 才连得出网而不是一条线」是**几何**问题——同一条脊柱被 maze / layered 共用，密度需求同源，散到两个生成器
+ * 里改就会漂。两个生成器都已按 `pts.length` 而非 `n` 取实际节点数（撒点本就可能少于目标），故在此缩放安全。
+ * 1.5＝作者 2026-07-21 拍板的内容预算变更（配合下方 PTS_PER_LEVEL 抬密度，让每层并排点够多、Gabriel 连得出
+ * 跨层斜边＝真网）。占位待调（[[defer-number-tuning]]）。
+ */
+const NODE_BUDGET_SCALE = 1.5;
+
 // ============================================================
 // 类型
 // ============================================================
 
 export type ScatterDomain = 'vertical' | 'horizontal' | 'serpentine';
+
+/**
+ * 撒点域**横纵比地板**（per-kind·数据驱动·2026-07-21 修「一条线走到底」）——域宽 ≥ 深度跨度 × 本表比例。
+ *
+ * 病根：`buildDomain` 的容量推宽 `capW = n·cellW·cellH /(PACK·availH)` 与**深度跨度成反比**，代入真实 zone
+ * 后恒小于 `COLS_FLOOR·cellW`（≈4.86m）⇒ 竖直/蛇行撒点域被钉死成「4.9m 宽 × 数十米高」的窄条（≈1:10）。
+ * 近共线点集上 Gabriel 图**必然**退化成一条路径（p_i 与 p_{i+2} 的直径圆恒包含 p_{i+1}·跨层斜边全被否决），
+ * 于是 9/10 zone 都「一条线走到底」。此前只有 horizontal 有这条地板（旧 `H_ASPECT`）——也正是唯一没退化的域。
+ * 本表把那条地板从 horizontal 的特判**推广成每个 domain kind 一行**：新增 kind 时 `Record` 全键强制补一行，
+ * 漏了 typecheck 就红（机制化·不靠散文提醒）。
+ *
+ * 语义 = **域宽 / 深度跨度**（widthScale 在其之上再乘·同旧 horizontal 写法）：
+ *   - horizontal 1.4：逐字保留旧 `H_ASPECT`（宽为主轴·深度锁带 ⇒ 出图长宽比 >1＝真横条）。
+ *   - vertical 0.5：下潜仍是纵向主轴（实测出图横纵比 ≈0.37–0.50＝竖长方形），但横向宽到足以让同层并排点
+ *     被 Gabriel 连成梯格、跨层连出斜边＝真网。椭圆度量 DX=1.7 > DY=1.0 ⇒ 横向距离本就"折价"，0.5 已够。
+ *     **别再往上抬**：0.5→0.7 对 spineRatio 只从 0.484 改善到 0.457（≈无感），却把「有边不画远」
+ *     （EDGE_MAX_FACTOR）的越界图数从 1/6500 推到 8/6500——洞型谱 k=2.6 时点全挤到顶、两个最深点种子在
+ *     d1 孤悬，MST 必须搭一根长桥下去，域越宽这根桥的横向分量越长（详见下方 EDGE_MAX 残留风险注）。
+ *   - serpentine 0.22：此值作用于**折返带带宽**，而蛇行 bbox = 带宽 × 3.4（`amp = width·1.2` 左右折返）
+ *     ⇒ 实际出图横纵比 ≈0.63。**别照抄 vertical 的值**（0.5 会把 bbox 撑到 1.7 倍深度跨度、折返形状被拍平）；
+ *     也别再往下压（实测 0.15 时带宽已窄到撒点被 minDist 拒收、交付 N 从 29 掉到 27.4）——这正是
+ *     "每个 kind 一行、各自按自己的几何取值"的意义。
+ * 全部占位待调（[[defer-number-tuning]]·作者末期统调手感）。
+ */
+const DOMAIN_ASPECT_FLOOR: Record<ScatterDomain, number> = {
+  vertical: 0.5,
+  horizontal: 1.4,
+  serpentine: 0.22,
+};
 
 export interface ScatterOpts {
   rng: () => number;
@@ -152,7 +199,10 @@ function buildDomain(kind: ScatterDomain, d0: number, d1: number, widthScale: nu
   const PACK = 0.55; // 面积填充效率余量（<1·欠估容量⇒域偏大⇒交付≥95%）·占位待调
   const COLS_FLOOR = 2.2; // 分层每带并排点最小列数地板·占位待调
   const capW = (n * cellW * cellH) / (PACK * availH);
-  const baseW = Math.max(deepPairMinW, capW, COLS_FLOOR * cellW);
+  // 三条地板取大：①两最深点放得下 ②容量够铺 n 点 ③每带够并排 COLS_FLOOR 列；再叠**横纵比地板**
+  // （DOMAIN_ASPECT_FLOOR·per-kind·见其注：①②③ 全与深度跨度无关或成反比 ⇒ 深跨度图会被压成窄条、
+  // Gabriel 退化成一条路径）。最后乘 widthScale（生成器侧的"宽感"系数）。
+  const baseW = Math.max(deepPairMinW, capW, COLS_FLOOR * cellW, span * DOMAIN_ASPECT_FLOOR[kind]);
 
   if (kind === 'serpentine') {
     // 折返带（下行 switchback·参考 ui/mapLayout.ts layoutSerpentine 的三角波）：中线随深度左右折返·带宽=width·振幅随带宽。
@@ -182,8 +232,8 @@ function buildDomain(kind: ScatterDomain, d0: number, d1: number, widthScale: nu
   }
 
   // vertical（默认）／ horizontal（深度锁带·宽高语义对调·x 为主轴）：同「竖条 + 上下保留带」骨架。
-  const H_ASPECT = 1.4; // 横向域宽 ≥ span×此 ⇒ 出图长宽比 >1（真横条·占位待调）
-  const width = kind === 'horizontal' ? Math.max(baseW, span * H_ASPECT) * widthScale : baseW * widthScale;
+  // 横纵比地板已并进 baseW（DOMAIN_ASPECT_FLOOR·旧 H_ASPECT 特判收编进那张表）⇒ 此处两 kind 同一行。
+  const width = baseW * widthScale;
   return {
     entrance: () => ({ x: width / 2, y: d0 }),
     deepSeeds: () => [
@@ -211,8 +261,18 @@ function buildDomain(kind: ScatterDomain, d0: number, d1: number, widthScale: nu
  */
 function scatterPoints(rng: () => number, n: number, k: number, dom: Domain): { pts: Pt[]; deepCount: number } {
   const minDist = SAME_DEPTH_MIN_DIST; // 同深 x-分离下限（略高于 NONADJ·含整数 round 裕量）
-  const JITTER = 0.7; // 层内深度抖动幅度（× 层高·破规整）·占位待调
-  const PTS_PER_LEVEL = 1.4; // 每层约放几个点：>1 ⇒ 部分层并排两点 ⇒ Gabriel 成二列梯格（有环 + 内部可修剪成死路·破纯路径）·占位待调
+  /**
+   * 层内深度抖动幅度（× 层高·破规整）。0.15（原 0.7·2026-07-21 下调）：抖动过大时同层两点的深度被打散成
+   * 一前一后 ⇒ Gabriel 把它们**串联**（前后相邻）而非**并联**（同深并排）⇒ 下方 PTS_PER_LEVEL 想要的
+   * 「二列梯格」名存实亡、图退化成一条线。留 0.15 只为破死板网格感，不足以打乱层的并排关系。占位待调。
+   */
+  const JITTER = 0.15;
+  /**
+   * 每层约放几个点。2.6（原 1.4·2026-07-21 上调）：1.4 的层宽分布是 `[2,1,1,2,1,1,…]`——只有 1/3 的层
+   * 真有并排两点，其余层是单点 ⇒ 注释里承诺的「二列梯格」从未成形。2.6 ⇒ 每层稳定 2–3 点并排，
+   * Gabriel 才连得出同层横边 + 跨层斜边＝真网（环 + 岔路 + 可修剪成死路）。占位待调。
+   */
+  const PTS_PER_LEVEL = 2.6;
   const pts: Pt[] = [dom.entrance()];
   const [dsA, dsB] = dom.deepSeeds();
   let deepCount = 0;
@@ -444,7 +504,10 @@ function addShortChord(pts: Pt[], adj: Set<number>[], dist: number[], locked: Se
  * **诚实构造**：最小间距=NONADJ + 只删边/只往下钉 ⇒ ③ 非相邻不假熔恒成立、无需分离修复（见文件头注）。
  */
 export function buildScatterGraph(opts: ScatterOpts): ScatterGraph {
-  const { rng, n, d0, d1, curveK, domain, widthScale = 1 } = opts;
+  const { rng, d0, d1, curveK, domain, widthScale = 1 } = opts;
+  // 内容预算 → 几何预算（见 NODE_BUDGET_SCALE 注：密度是脊柱的事、不是各生成器的事）。
+  // 两个生成器都按 `pts.length` 取实际节点数，故此处放大不会让它们的下标/循环失配。
+  const n = Math.round(opts.n * NODE_BUDGET_SCALE);
   // 洞型谱 k：horizontal 深度锁带忽略（传 1）；其余走 curveK。曲线在分层撒点的层位映射生效（最终 y 空间·见文件头注）。
   const k = domain === 'horizontal' ? 1 : curveK;
 
@@ -483,6 +546,16 @@ export function buildScatterGraph(opts: ScatterOpts): ScatterGraph {
         adj[dp].add(best);
         adj[best].add(dp);
       }
+    }
+    // 兜底（2026-07-21 补）：deep↔deep 那条边可能是**割边**——两个最深点串在图的两半之间时，删了就把图劈成
+    // 两半，而上面的"孤点重连"只在 degree 归零时触发、逮不到这种形态（实测 vertical_test k=2.6 seed=30：
+    // {最深点, 它的邻点} 整块掉成孤岛 ⇒ analyzeMap().allReachable=false ⇒ 玩家永远走不到那两个节点）。
+    // 检测到断开就把边加回来：宁可两卵室串成一条（下面 5b 会另找内部点补足 minDeadEnds），也绝不许出不可达节点。
+    // **可证安全**：删边前图必连通，孤点重连只加边，故"恢复这一条边"必然复原连通（加边只会合并分量）。
+    // 本兜底在 main 上从未被触发（实测 10400 图 0 次），是本次撒点密度/域宽变更把它变成可达路径才补的。
+    if (!isConnected(adj)) {
+      adj[a].add(b);
+      adj[b].add(a);
     }
   }
   const protectedSet = new Set<number>([entrance, ...deepPoints]);

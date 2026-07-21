@@ -1,5 +1,5 @@
 {
-  "_comment": "纵向测试廊（zone.vertical_test）迷路图 baseline（seed 1）：2026-07-12 洞穴内容整删后 repoint 自已删除的 zone.blue_caves__seed1——只锁结构性不变量（不锁 exact nodeCount/edgeCount/maxDepth/entranceDepth，避免绑死具体深度窗口）。入口=洞口(ascent)、另有远端出口、有环、有死路、多个最深点、全可达。",
+  "_comment": "纵向测试廊（zone.vertical_test）迷路图 baseline（seed 1）：2026-07-12 洞穴内容整删后 repoint 自已删除的 zone.blue_caves__seed1——只锁结构性不变量（不锁 exact nodeCount/edgeCount/maxDepth/entranceDepth，避免绑死具体深度窗口）。入口=洞口(ascent)、另有远端出口、有环、有死路、多个最深点、全可达。2026-07-21（撒点域横纵比地板 + 采样密度·修「一条线走到底」）复核：本文件**无需改数值**——正因为只锁结构不变量，形状变了它仍然绿；实测 seed 1 从 N=13/E=13/cycleRank=1 变成 N=20/E=29/cycleRank=10（记录在此供后人对照，不作断言）。新增 minCycleRank:2 把「有环」从布尔升级成量级——旧图 cycleRank 恒=1（一条线 + 补的那一根弦）也能让 hasCycle=true 蒙混过关；消费方＝scripts/playthrough-mapgen-scenarios.ts 的 MapgenExpect.minCycleRank（同批加）。全 zone 形状门另见 scripts/playthrough-mapshape.ts。",
   "zoneId": "zone.vertical_test",
   "seed": 1,
   "depthOffset": 0,
@@ -8,6 +8,7 @@
     "allReachable": true,
     "isUndirected": true,
     "hasCycle": true,
+    "minCycleRank": 2,
     "hasDeadEnd": true,
     "minDeadEnds": 2,
     "minDeepestPoints": 2,
