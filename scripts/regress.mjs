@@ -72,7 +72,11 @@ tasks.push({ name: 'typecheck-scripts', cmd: [tsc, '--noEmit', '-p', 'tsconfig.s
 // 沙箱（Linux）node_modules 是 macOS 装的 → 缺 Linux 原生 binding 时自动跳过（quirk #147）。
 // 2026-07-20（CHANGELOG #325）：判定改「按当前 arch 解析 vite build 实际要的 native 包」——旧检查硬编码
 // vite5 时代的 `@rollup/rollup-linux-arm64-gnu` 仓内路径，vite 8 换 rolldown+lightningcss 后静默过时（恒跳）。
-// require.resolve 认 NODE_PATH ⇒ 沙箱按配方补装 binding（见 [[blue_regress_sandbox]]/HANDOFF）后 build 真进门；
+// require.resolve 认 NODE_PATH ⇒ 检测本身能被 NODE_PATH 满足；
+// **但 2026-07-22（#329）实测：装了也进不了门**——`@rolldown/binding-linux-arm64-gnu@1.1.3` 在本沙箱
+// （Ubuntu 22.04 · glibc 2.35 · arm64 · 4K page）光是 `require()` 就 **bus error / core dump**，不是缺包
+// 而是那个 .node 在这里根本跑不起来（且 `lightningcss-linux-arm64-gnu` 还另缺）。所以别再把「沙箱 build 跳过」
+// 当成一条 npm install 就能补的欠账去追——**build 门就是留给 Mac/nightly 的**（quirk #147/#272）。
 // 再换 bundler 时更新 BUILD_NATIVES 清单——缺哪个会打印包名，不会再静默恒跳。
 const requireCjs = createRequire(import.meta.url);
 const BUILD_NATIVES = [
@@ -93,7 +97,9 @@ const missingBuildNative =
 if (missingBuildNative === null) {
   tasks.push({ name: 'build', cmd: [vite, 'build', '--outDir', buildOut, '--logLevel', 'warn'] });
 } else {
-  console.log(`⚠  build 自动跳过（沙箱缺 ${missingBuildNative}·#147·补装 binding 即进门·留 Mac/nightly）`);
+  console.log(
+    `⚠  build 自动跳过（沙箱缺 ${missingBuildNative}·#147/#272·**补装也没用**：rolldown binding 在本沙箱 require 即 core dump·留 Mac/nightly）`,
+  );
 }
 
 // tsx 任务（smoke-*/playthrough*）靠 esbuild 转译 TS 起子进程。沙箱（Linux）的 node_modules 是 macOS
