@@ -1363,13 +1363,9 @@ html, body, #root {
   opacity: 0.5;
 }
 /* （旧「量程环」.sonar-range-ring 已随声呐无升级化删·2026-07-19——无射程无圈：一记 ping 就是整张图。） */
-.sonar-edge {
-  stroke: var(--cyan);
-  stroke-width: 1.4;
-}
-.sonar-edge.is-chord {
-  stroke-dasharray: 3 4;
-}
+/* （旧 .sonar-edge / .is-chord 连边样式已删·2026-07-22——游戏内声呐自 #315 起不画连边〔守欺骗轴：给你点、
+    不给你拓扑〕；虚线 chord 只在 dev 潜点预览画，那边走 .dev-cave-edge 自己的一套。要在游戏内加连边＝先过
+    「玩家该不该白拿拓扑」这一关，不是捡回这段 CSS。） */
 .sonar-blip circle {
   fill: var(--cyan);
 }
