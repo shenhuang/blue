@@ -18,6 +18,12 @@
   background: var(--bg-elev);
 }
 
+/* 中栏形状读数（analyzeMap 的 spineRatio/maxOffSpineBranch/offSpineBranchCount 极简一行·
+   非整栏复活·见 PlaytestPanel.tsx 顶部注释）：与标题、图区各留一点呼吸。 */
+.dev-map-shape-readout {
+  margin: 2px 0 6px;
+}
+
 /* 装备行：label + select 单行对齐（等宽整齐·作者偏好） */
 .dev-playtest-row {
   display: flex;

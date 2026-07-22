@@ -24,7 +24,11 @@
 //   2. 起点＝全局唯一最浅（depth 严格 < 其它所有节点——比既有「起点=图顶」的 ≤ 更强：入口钉域顶是构造
 //      保证，不接受并列）；
 //   3. 非相邻不假熔：任意无边对 scatterMetric ≥ NONADJ_MIN_FACTOR（点取 {x, y:depth}）；
-//   4. 有边不画远：任意边 scatterMetric ≤ EDGE_MAX_FACTOR；
+//   4. 有边不画远（**软上限·统计门**，非逐图硬断言）：EDGE_MAX_FACTOR=20 是软上限而非硬不变量——MST 骨架
+//      边永不修剪（守连通·mapgen-scatter pruneEdges），故洞型谱陡端（k=2.6·填充点压到顶、两最深点孤悬 d1）
+//      偶有一根必需的长桥擦过 20（实测 2/~3900 图·最长 20.03·纯连通性代价、非「画远」缺陷）。本门不再逐边
+//      硬 fail，而是跨整个 sweep 累计「含≥1 条超长边的图」占比，仅当 **per-map 违反率 > EDGE_OVERLONG_MAX_RATE**
+//      才变红（见该常量注 + 结尾「④ 统计门」段）。其余 1/2/3/5 仍是硬不变量、逐图 fail、不软化；
 //   5. 结构不变量（analyzeMap·字段名照抄 src/engine/mapgen-analyze.ts，不猜）：allReachable && isUndirected
 //      && hasCycle && hasDeadEnd && localMaximaIds.length ≥ 2（"局部极大"取 localMaximaIds——mapgen-maze.ts
 //      的"最深点"注释本就把两者当同义词，但 analyzeMap 里它们是两个不同字段；SPEC §4 原文写的是「局部极大」，
@@ -56,6 +60,28 @@ const MAZE_SEEDS = 120;
 const LAYERED_SEEDS = 60;
 const DETERMINISM_SEED = 7;
 const MAX_PRINTED_FAILS_TOTAL = 40;
+
+/**
+ * ④「有边不画远」软上限专用：k=2.6（洞型谱陡端）seed 扫描宽度。此档是**唯一**产生超 EDGE_MAX_FACTOR 长桥的
+ * 档（填充点全压到顶、两最深点孤悬 d1 ⇒ MST 必搭一根长桥·MST 边永不修剪），且极稀（~0.5–1‰）。放宽到数千图
+ * 才 EXERCISE 得到长桥、给统计门一个有分子的分母（旧 40 seed 恒 0、门形同虚设）。3000＝实测足以稳定含到已知
+ * 两坏 seed（437/2557）、整门仍 ~1s。占位·可调（分子太小时可再往上抬换更稳的率估）。 */
+const LONG_BRIDGE_SEEDS = 3000;
+
+/**
+ * ④「有边不画远」软上限**违反率阈值**（per-map·= 含≥1 条超长边的图 / 跑过④检的图）。
+ *
+ * 背景：EDGE_MAX_FACTOR=20 是**软上限**、不是硬不变量——MST 骨架边永不修剪（守连通·见 mapgen-scatter
+ * pruneEdges），洞型谱陡端 k=2.6 偶有一根必需的长桥擦过 20（纯连通性代价·非「画远」缺陷·作者拍板：接受 20
+ * 为软上限）。故本门不再逐图硬 fail，改判整个 sweep 的 per-map 违反率（框架同 mapgen-scatter 头注「坏图/总图」）。
+ *
+ * **实测（current main·本门当前 sweep·2026-07-22）**：2/3912 图含超长边 = 0.511‰（最长 20.027·k=2.6 seed=437；
+ * 另 seed=2557=20.013）；纯 k=2.6 档 2/3000 = 0.667‰；per-edge 2/~135000 ≈ 0.015‰。k=0.45/1.8 各 3000 seed 全 0。
+ * 阈值取 0.0015（1.5‰）＝观察值约 3× 裕量（当前 sweep 下需 6 张坏图才触发·现 2 张），既不因偶发必需长桥 flake、
+ * 又能在长桥率明显恶化时变红。参考点：作者曾试 vertical 横纵比 0.5→0.7 把越界推到 ~1.2‰（因别的原因否决）——
+ * 若要连那种档次的回退都逮住，可把阈值下压到 ~0.001（1‰·裕量降到 ~2×·略易 flake）。**这是门参数、非玩法手感，
+ * 作者可按「灵敏 vs 稳」的取舍微调此‰**（[[defer-number-tuning]] 数值统调不含它·它不是手感）。 */
+const EDGE_OVERLONG_MAX_RATE = 0.0015;
 
 // 与 scripts/playthrough-mapgen-scenarios.ts / playthrough-bluecaves.ts 等同款 LCG（种子化确定性生成）。
 function makeRng(seed: number): () => number {
@@ -93,6 +119,14 @@ function fingerprint(map: DiveMap): string {
 const fails: string[] = [];
 let mapsChecked = 0;
 
+// ④「有边不画远」软上限统计累加器（跨整个 sweep·结尾统一按 per-map 率判·见 EDGE_OVERLONG_MAX_RATE 注）。
+let edgeCheckedMaps = 0; // 跑过④边检的图数（missingX===0·per-map 分母）
+let edgeOverlongMaps = 0; // 至少含一条超长边的图数（per-map 分子）
+let edgeCheckedEdges = 0; // 跑过④检的边总数（per-edge 分母）
+let edgeOverlongEdges = 0; // 超 EDGE_MAX_FACTOR 的边总数（per-edge 分子）
+let worstEdgeMetric = 0; // 观察到的最长边度量（报告用）
+let worstEdgeTag = '';
+
 /** 对一张图跑①②③④⑤五项断言（⑥确定性按 zone 单独跑一次，见 checkDeterminism）。 */
 function checkMap(tag: string, map: DiveMap): void {
   mapsChecked++;
@@ -124,30 +158,40 @@ function checkMap(tag: string, map: DiveMap): void {
     }
   }
 
-  // ③④ 坐标诚实（非相邻不假熔 / 有边不画远）——x 缺失时几何判据无意义，①已经报过，这里跳过避免刷屏
+  // ③④ 坐标诚实（非相邻不假熔 / 有边不画远）——x 缺失时几何判据无意义，①已经报过，这里跳过避免刷屏。
+  // ③ 假熔＝**硬**不变量（逐图 fail·不软化）；④ 画远＝**软上限统计门**：这里只累计，结尾按 per-map 率判。
   if (missingX.length === 0) {
+    edgeCheckedMaps++;
     const adj: Record<string, Set<string>> = {};
     for (const n of nodes) adj[n.id] = new Set(n.connectsTo);
     const linked = (id1: string, id2: string): boolean => adj[id1].has(id2) || adj[id2].has(id1);
 
+    let mapHasOverlong = false;
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
         const na = nodes[i];
         const nb = nodes[j];
         const m = scatterMetric({ x: xOf(na), y: na.depth }, { x: xOf(nb), y: nb.depth });
         if (linked(na.id, nb.id)) {
-          if (!(m <= EDGE_MAX_FACTOR)) {
-            fails.push(
-              `${tag}: 边 ${na.id}–${nb.id} 画远（scatterMetric=${m.toFixed(3)} > EDGE_MAX_FACTOR=${EDGE_MAX_FACTOR}）`,
-            );
+          // ④ 有边不画远＝软上限（EDGE_MAX_FACTOR=20 非硬不变量·MST 长桥是连通必需）：累计、不逐图 fail。
+          edgeCheckedEdges++;
+          if (m > EDGE_MAX_FACTOR) {
+            edgeOverlongEdges++;
+            mapHasOverlong = true;
+            if (m > worstEdgeMetric) {
+              worstEdgeMetric = m;
+              worstEdgeTag = `${tag}: 边 ${na.id}–${nb.id} scatterMetric=${m.toFixed(3)}`;
+            }
           }
         } else if (!(m >= NONADJ_MIN_FACTOR)) {
+          // ③ 非相邻不假熔＝硬不变量（保持逐图 fail）。
           fails.push(
             `${tag}: 非相邻 ${na.id}–${nb.id} 疑似假熔（scatterMetric=${m.toFixed(3)} < NONADJ_MIN_FACTOR=${NONADJ_MIN_FACTOR}）`,
           );
         }
       }
     }
+    if (mapHasOverlong) edgeOverlongMaps++;
   }
 
   // ⑤ 结构不变量（analyzeMap·字段名照抄 mapgen-analyze.ts）
@@ -200,18 +244,27 @@ for (const zoneId of [...MAZE_ZONES, ...LAYERED_ZONES]) checkDeterminism(zoneId)
 // D. 洞型谱 k 扫描（对抗复审 2026-07-20 补盲区）：上面 genMap 不带 seedKey ⇒ resolveDepthCurve 恒 k=1，
 // ①–⑤ 此前从未在 k≠1 图上跑过——而 vertical_test 自配 depthCurveRange [0.45,2.6]、真实 POI 经 seedKey 派生
 // 随时激活（末端重映射时代 k=2.6 曾 300/300 seed 破「入口唯一最浅」·修法=在最终空间采样·见 mapgen-scatter 头注）。
-// 显式 depthCurve 三档 × seed 跑同款①–⑤；再补一批 seedKey 派生路径（POI 实际走的洞型解析链）。
-const CURVE_KS = [0.45, 1.8, 2.6];
-const CURVE_SEEDS = 40;
+// 显式 depthCurve 各档 × seed 跑同款①②③⑤；再补一批 seedKey 派生路径（POI 实际走的洞型解析链）。
+//
+// **k=2.6 特意放宽到 LONG_BRIDGE_SEEDS 图**（其余档只需薄扫确认 clean）：k=2.6 是洞型谱陡端——分层撒点把
+// 填充点全压到顶部、两个最深点种子仍钉在 d1 孤悬，MST 必须搭一根长桥下去（且 MST 边永不修剪·守连通），是
+// **唯一**会擦过 EDGE_MAX_FACTOR 软上限的档（k=0.45/1.8 实测各 0/3000）。窄扫描（旧 40 seed）恒 0、④软上限
+// 统计门形同虚设；放宽到数千图才真正 EXERCISE 到长桥、给软上限率一个有分子的分母（见文件头注 §4「断言 4」）。
+const CURVE_K_SEEDS: Array<[number, number]> = [
+  [0.45, 120],
+  [1.8, 120],
+  [2.6, LONG_BRIDGE_SEEDS],
+];
 console.log(
-  `\n========== D. 洞型谱 k 扫描（zone.vertical_test × k∈{${CURVE_KS.join(', ')}} × seed 1–${CURVE_SEEDS} + seedKey 派生×12） ==========`,
+  `\n========== D. 洞型谱 k 扫描（zone.vertical_test × ${CURVE_K_SEEDS.map(([k, s]) => `k=${k}×${s}`).join(' / ')} + seedKey 派生×12） ==========`,
 );
 {
   const zone = getZone('zone.vertical_test');
   if (!zone) throw new Error('zone.vertical_test 不存在');
   const before = fails.length;
-  for (const k of CURVE_KS) {
-    for (let seed = 1; seed <= CURVE_SEEDS; seed++) {
+  const overlongBefore = edgeOverlongMaps;
+  for (const [k, seedCount] of CURVE_K_SEEDS) {
+    for (let seed = 1; seed <= seedCount; seed++) {
       checkMap(
         `vertical_test k=${k} seed=${seed}`,
         generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], rng: makeRng(seed), depthCurve: k }),
@@ -224,9 +277,32 @@ console.log(
       generateDiveMap({ zone, profileFlags: FLAGS, deaths: [], seedKey: `poi.k.${i}` }),
     );
   }
+  const overlongHere = edgeOverlongMaps - overlongBefore;
   console.log(
-    fails.length === before ? `  ✓ k≠1 全档过①–⑤（曲线只弯剖面·不弯诚实）` : `  ✗ ${fails.length - before} 处违反（明细见结尾）`,
+    fails.length === before
+      ? `  ✓ k≠1 全档过①②③⑤（曲线只弯剖面·不弯诚实）·④软上限：本段 ${overlongHere} 图含长桥（统计见结尾）`
+      : `  ✗ ${fails.length - before} 处硬违反（明细见结尾）`,
   );
+}
+
+// ④ 有边不画远：软上限统计门（EDGE_MAX_FACTOR 是软上限·见文件头注「断言 4」+ EDGE_OVERLONG_MAX_RATE 注）。
+// per-map 率（含≥1 条超长边的图 / 跑过④检的图）是**主判据**——对应 mapgen-scatter 头注「坏图/总扫描图」框架；
+// per-edge 率仅旁证打印（超长边极稀·恒在 0.0x‰ 量级·作门太钝）。分母/分子/率无论过不过都打印（可审计）。
+const overlongMapRate = edgeCheckedMaps > 0 ? edgeOverlongMaps / edgeCheckedMaps : 0;
+const overlongEdgeRate = edgeCheckedEdges > 0 ? edgeOverlongEdges / edgeCheckedEdges : 0;
+console.log(`\n========== ④ 有边不画远（软上限·统计门·阈值 ${(EDGE_OVERLONG_MAX_RATE * 1000).toFixed(1)}‰） ==========`);
+console.log(`  per-map ：${edgeOverlongMaps}/${edgeCheckedMaps} 图含超长边 = ${(overlongMapRate * 1000).toFixed(3)}‰`);
+console.log(
+  `  per-edge：${edgeOverlongEdges}/${edgeCheckedEdges} 边 > EDGE_MAX_FACTOR=${EDGE_MAX_FACTOR} = ${(overlongEdgeRate * 1000).toFixed(4)}‰`,
+);
+if (worstEdgeMetric > 0) console.log(`  最长边度量：${worstEdgeMetric.toFixed(3)}（${worstEdgeTag}）`);
+if (overlongMapRate > EDGE_OVERLONG_MAX_RATE) {
+  fails.push(
+    `④ 软上限违反率 ${(overlongMapRate * 1000).toFixed(3)}‰（${edgeOverlongMaps}/${edgeCheckedMaps} 图）> 阈值 ` +
+      `${(EDGE_OVERLONG_MAX_RATE * 1000).toFixed(1)}‰——长桥变多，查 mapgen 撒点密度/域宽/MST（EDGE_MAX_FACTOR 仍应留 20）`,
+  );
+} else {
+  console.log(`  ✓ 在阈值内（软上限=偶发必需长桥·非缺陷·见文件头注「断言 4」）`);
 }
 
 console.log('');
@@ -238,6 +314,6 @@ if (fails.length > 0) {
 } else {
   console.log(
     `✓ playthrough 完成：坐标诚实扫描全绿（${mapsChecked} 张图：全节点带 x · 起点全局唯一最浅 · ` +
-      `非相邻不假熔 · 有边不画远 · 结构不变量 · 确定性）`,
+      `非相邻不假熔 · 有边不画远(软上限统计门) · 结构不变量 · 确定性）`,
   );
 }

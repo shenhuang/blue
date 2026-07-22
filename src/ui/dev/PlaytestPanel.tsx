@@ -5,7 +5,11 @@
 // 三栏化（2026-07-19·作者拍）：左栏＝大区分组海域列表（zoneGroups.ts）·中栏＝声呐全图
 // 预览（共享 SonarMapView·带 dev 拓扑覆盖层）·右栏＝装备/开关/启动。
 // 同日晚地图调试器 MapDevPanel 删除（作者「没用了」）——本面板的声呐预览接棒其可视化职能；
-// mapgen 不变量仍由 CLI 门（playthrough-mapgen-scenarios/analyzeMap）守着，analyzeMap 读数栏不随迁。
+// mapgen 不变量仍由 CLI 门（playthrough-mapgen-scenarios/analyzeMap）守着，analyzeMap 读数栏不随迁
+// （整栏 nodeCount/edgeCount/deadEnd/cycle/… 十几个字段没有复活）。
+// 2026-07-22 补：中栏标题下仍加了**一行**极简形状读数——只挑 spineRatio/maxOffSpineBranch/
+// offSpineBranchCount 这三个"网状 vs 一条线到底"判据（+ nodeCount），给肉眼验收用；
+// 对 previewMap 现算现扔（不进 state/存档），单一来源不变。
 //
 // **固定 seed（2026-07-19·作者拍）**：启动传 seedKey=`playtest::<zoneId>` → 同海域每次测试同图（与真游戏
 // 「同地点同图」#98 语义一致）。预览不是另烤一张——**直接展示启动要用的那个 state 的 run.map**（built memo
@@ -28,6 +32,7 @@ import type { GameState, ZoneDef, EquipmentLoadout, EquipmentInstance, Equipment
 import { EQUIPMENT_SLOTS } from '@/types/items';
 import { createInitialGameState, createNewRun } from '@/engine/state';
 import { startDive, enterNodeSelection } from '@/engine/dive';
+import { analyzeMap } from '@/engine/mapgen';
 import { allItems } from '@/engine/items';
 import { ZONES } from '@/engine/zones';
 import { getRunBonuses } from '@/engine/lighthouses';
@@ -144,6 +149,9 @@ export function PlaytestPanel() {
   // 温度封口等启动失败时 startDive 早退 → run.map 仍是 createNewRun 的 null（无图可预览·也别让启动）。
   const previewMap = built?.run?.map ?? null;
 
+  // 形状读数（极简·非复活整栏）：直接 analyzeMap(previewMap)——同一张预览=实跑图，零漂移。
+  const mapAnalysis = useMemo(() => (previewMap ? analyzeMap(previewMap) : null), [previewMap]);
+
   if (launched) {
     return (
       <div style={{ position: 'relative' }}>
@@ -239,6 +247,12 @@ export function PlaytestPanel() {
             声呐全图预览 · {zone?.name ?? zoneId}{' '}
             <span className="dev-faint">（固定 seed·就是启动后实跑的那张图·连边＝dev 拓扑覆盖）</span>
           </h3>
+          {mapAnalysis && (
+            <div className="dev-faint dev-map-shape-readout">
+              节点 {mapAnalysis.nodeCount} · 脊柱占比 {mapAnalysis.spineRatio.toFixed(2)} · 离脊支{' '}
+              {mapAnalysis.offSpineBranchCount}（最大 {mapAnalysis.maxOffSpineBranch}）
+            </div>
+          )}
           <div className="dev-map-svg-wrap dev-map-cave-wrap">
             {previewMap && zone && <SonarMapView map={previewMap} zone={zone} />}
             {!previewMap && (
