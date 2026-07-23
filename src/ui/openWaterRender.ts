@@ -54,9 +54,12 @@ import {
   OW_WALL_RIPPLE_WAVELEN,
   OW_WALL_RIPPLE_WARP_DEPTH,
   OW_WALL_RIPPLE_WARP_FREQ,
+  OW_OPENSIDE_SLOPE,
+  OW_OPENSIDE_EASE,
+  OW_OPENSIDE_REVEAL,
 } from '@/engine/sonarGeometry';
 
-/** 恒判为水的 SDF 哨兵（shadeSonarSdf 三档：d<WALL_LO 即水）——单源·bake 与 openWaterSdf 敞侧断崖共用。 */
+/** 恒判为水的 SDF 哨兵（shadeSonarSdf 三档：d<WALL_LO 即水）——floorless bake 分支「墙间开水」兜底单源。 */
 const OW_WATER = -1000;
 
 /** 世界取景矩形（烤图用·结构等价 SonarScanPanel 的 CaveRect）。 */
@@ -241,14 +244,28 @@ export function wallInnerX(wy: number, wall: OwWall, side: OwWallSide): number {
 }
 
 /**
- * 单侧墙 + otherSide='midwater' 时，wx 是否落在**敞侧**（无墙那侧）node 外包络之外＝陆架断崖的无底区。
- * side='left' ⇒ 右敞（wx > maxNodeX）·side='right' ⇒ 左敞（wx < minNodeX）·'both'/taper 无敞侧。
+ * 单侧墙 + otherSide='midwater' 敞侧：wx 距「陆架坡折起点」多远（进敞侧方向为正·陆架上 / 无敞侧 ⇒ ≤0）。
+ * 坡折起点＝该侧最外节点 x ± OW_WALL_MARGIN（与墙侧对称留呼吸区·#330 复审 NIT1）：
+ * side='left' ⇒ 右敞·起点 maxNodeX+MARGIN；side='right' ⇒ 左敞·起点 minNodeX−MARGIN；'both'/taper 无敞侧 ⇒ 恒 −∞。
  */
-function beyondOpenSide(wx: number, wall: OwWall): boolean {
-  // 敞侧起点与墙侧对称留 OW_WALL_MARGIN（最外节点也有 24px 呼吸区再入断崖·#330 复审 NIT1）。
-  if (wall.side === 'left') return wx > wall.maxNodeX + OW_WALL_MARGIN;
-  if (wall.side === 'right') return wx < wall.minNodeX - OW_WALL_MARGIN;
-  return false;
+function openSidePast(wx: number, wall: OwWall): number {
+  if (wall.side === 'both' || wall.otherSide !== 'midwater') return Number.NEGATIVE_INFINITY;
+  if (wall.side === 'left') return wx - (wall.maxNodeX + OW_WALL_MARGIN); // 右敞
+  return wall.minNodeX - OW_WALL_MARGIN - wx; // side==='right'·左敞
+}
+
+/**
+ * 临渊侧陆架坡折下沉量（世界·加到 floorY ⇒ 海床越出敞侧越深·落出取景＝无底·SPEC §6.4）。取代旧布尔硬切
+ * （beyondOpenSide→OW_WATER 那堵垂直岩面「截断」·#333 作者反馈「被截断·不是边缘下降」）。缓入（quad ease）保证
+ * 坡折起点斜率从 0 起、与平陆架 C1 连续·不长尖角（§5.3「圆钝非尖脊」）；越过肩部转恒定斜率线性下沉：
+ *   past≤0（陆架上/无敞侧） ⇒ 0；0<past<EASE ⇒ SLOPE·past²/(2·EASE)（斜率 0→SLOPE）；past≥EASE ⇒ SLOPE·(past−EASE/2)。
+ * past>0 时严格单调递增 ⇒ 一定是「下降」不是竖切、也不是平台。旋钮 defer §9（别调·[[defer-number-tuning]]）。
+ */
+export function openSideDrop(wx: number, wall: OwWall): number {
+  const past = openSidePast(wx, wall);
+  if (past <= 0) return 0;
+  if (past < OW_OPENSIDE_EASE) return (OW_OPENSIDE_SLOPE * past * past) / (2 * OW_OPENSIDE_EASE);
+  return OW_OPENSIDE_SLOPE * (past - OW_OPENSIDE_EASE / 2);
 }
 
 /**
@@ -266,9 +283,12 @@ export function openWaterSdf(
   structs: OwStructures,
   wall: OwWall | null,
 ): number {
-  // 单侧墙 + otherSide='midwater'：敞侧（无墙那侧）node 外包络之外＝陆架断崖·无底无结构无墙 ⇒ 早退成水（SPEC §6.4/§6.5）。
-  if (wall && wall.side !== 'both' && wall.otherSide === 'midwater' && beyondOpenSide(wx, wall)) return OW_WATER;
-  let d = wy - owFloorY(wx, floor);
+  // 边缘型 floor：临渊侧（otherSide='midwater' 敞侧）过坡折起点后海床线性下沉（openSideDrop）⇒ 越远越深·
+  // 落出取景＝无底陆架断崖（取代旧 beyondOpenSide→OW_WATER 的垂直「截断」·#333·SPEC §6.4）。结构在敞侧坡上收口·
+  // 由 bakeOpenWaterRGBA 裁 struct 窗口保证（裸坡·不铺礁）；深处 floorY 远大于取景 wy ⇒ d 恒负＝水（自然无底）。
+  let floorY = owFloorY(wx, floor);
+  if (wall) floorY += openSideDrop(wx, wall);
+  let d = wy - floorY;
   if (OW_FLOOR_NOISE > 0) d += (fbm(wx * 0.05, wy * 0.05) - 0.5) * OW_FLOOR_NOISE;
   const { disks, caps } = structs;
   for (let k = 0; k < caps.length; k++) {
@@ -459,7 +479,12 @@ export function owFloorBottom(geom: OwGeom): number {
   if (!geom.floored) return geom.floor.fallbackY;
   let maxAnchorY = geom.floor.fallbackY;
   for (const a of geom.floor.anchors) if (a.y > maxAnchorY) maxAnchorY = a.y;
-  return maxAnchorY + OW_FLOOR_AMP + OW_STRUCT_MAX_DROP; // OW_FLOOR_AMP＝正弦幅值上界
+  let bottom = maxAnchorY + OW_FLOOR_AMP + OW_STRUCT_MAX_DROP; // OW_FLOOR_AMP＝正弦幅值上界
+  // 临渊侧（otherSide='midwater' 敞侧）陆架坡折下沉段：dev 全图概览（SonarMapView）下沿多留一段 REVEAL·
+  // 框住海床下降一截再入无底（否则下降全落框底之下、概览里又成一刀横切·#333）。游戏内移动取景窗不用此。
+  const w = geom.wall;
+  if (w && w.side !== 'both' && w.otherSide === 'midwater') bottom += OW_OPENSIDE_REVEAL;
+  return bottom;
 }
 
 /**
@@ -475,11 +500,20 @@ export function bakeOpenWaterRGBA(
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(outW * outH * 4);
   const lo = rect.x - OW_CULL_MARGIN, hi = rect.x + rect.w + OW_CULL_MARGIN;
+  // 结构撒点窗口（默认＝取景窗 ± cull margin）。临渊侧（otherSide='midwater' 敞侧）陆架坡折下沉段＝**裸坡**：
+  // 把撒点窗口在坡折起点（= openSidePast 起点·maxNodeX+MARGIN / minNodeX−MARGIN）收口，别让礁/珊瑚顺着
+  // 下沉的海床滑进临渊——结构定根在 owFloorY（不含 openSideDrop）·越过坡折若仍撒会浮在下沉坡之上/悬空。
+  let sLo = lo, sHi = hi;
+  const ow = geom.wall;
+  if (ow && ow.side !== 'both' && ow.otherSide === 'midwater') {
+    if (ow.side === 'left') sHi = Math.min(sHi, ow.maxNodeX + OW_WALL_MARGIN); // 右敞·收口右缘
+    else sLo = Math.max(sLo, ow.minNodeX - OW_WALL_MARGIN); // 左敞·收口左缘
+  }
   // floorless（开阔无底蓝水）：无海床无结构 ⇒ 底面恒为水（d 远小于 WALL_LO），只保留 deepK 深度渐变。
   // 别走 openWaterSdf 的 floor 分支——它对空锚点会退化成 fallbackY 处一条平海床（interpAnchorY 空集回 fallbackY），非无底。
   // **但侧壁必须仍渲染**（§6.4·openwater_slot_test 无底裂隙＝两壁夹一线开水）：floorless 时手动只 union 墙 SDF
   // （绕过被短路成整窗水的 floor 分支·quirk #255 的墙版）——OW_WATER 兜底＝墙之间的开水。
-  const structs = geom.floored ? structsInRange(geom.style, geom.seed, geom.floor, lo, hi) : { disks: [], caps: [] };
+  const structs = geom.floored ? structsInRange(geom.style, geom.seed, geom.floor, sLo, sHi) : { disks: [], caps: [] };
   for (let gy = 0; gy < outH; gy++) {
     for (let gx = 0; gx < outW; gx++) {
       const wx = rect.x + ((gx + 0.5) / outW) * rect.w;

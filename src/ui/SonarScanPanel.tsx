@@ -39,6 +39,10 @@ import {
   SMIN_K,
   CTRL_OFF,
   WALL_LO,
+  OW_WALL_MARGIN,
+  OW_FLOOR_GAP,
+  OW_OPENSIDE_SLOPE,
+  OW_OPENSIDE_REVEAL,
   shadeSonarSdf,
 } from '@/engine/sonarGeometry';
 import { buildOpenWaterGeometry, bakeOpenWaterRGBA } from './openWaterRender';
@@ -593,11 +597,29 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   const waveAnim = (lastScanTurn >= 0 && sweepPlayedKey !== sweepKey) || waveAnimKeyRef.current === sweepKey;
   if (waveAnim) waveAnimKeyRef.current = sweepKey;
 
+  // 开阔水域几何（Phase 2·SPEC §2/§8）：填此前的 isOpenWater 空占位（旧 = 无声呐图·只黑底节点）。临时从
+  // layout+zone 确定性派生（Phase 2/3 契约·Phase 3 改由 mapgen 从节点喂）；非开阔 / 无 run → null。
+  // **提前到取景盒之前算**（原在 bake 处）：临渊侧要用它的墙包络放开取景盒（下方 #333 续）。
+  const owGeom =
+    layout && isOpenWater && run
+      ? buildOpenWaterGeometry(layout, getZone(run.zoneId), run.map ?? undefined)
+      : null;
+
   // 取景包围盒（三层解耦调整）：位置点层总可见 ⇒ 相机得能拖到全图任意标记——盒＝整张布局范围 ∪ 你，
   // 加余量（clampViewToBox 夹取景中心·钳制机制本身不变）。旧「只框扫过区」/「外扩揭示圆半径」随 punch 圆一起退役。
   let boxLoX = Math.min(0, here.x), boxHiX = Math.max(layout?.width ?? 0, here.x);
   let boxLoY = Math.min(0, here.y), boxHiY = Math.max(layout?.height ?? 0, here.y);
   boxLoX -= SONAR_BOX_PAD; boxHiX += SONAR_BOX_PAD; boxLoY -= SONAR_BOX_PAD; boxHiY += SONAR_BOX_PAD;
+  // 临渊侧（otherSide='midwater' 敞侧）放开取景盒（#333 续）：默认盒夹在节点包络 + PAD 里，看不到节点外的
+  // 陆架坡折（openSideDrop 的下沉几何）——潜水中也该能平移出去、往下看断崖坠进深渊。按 REVEAL 外扩敞侧那一向：
+  // 横向到「floor 降到 REVEAL 深」的水平跨度（坡折起点 margin + REVEAL/SLOPE）·纵向多留 REVEAL 深。别的边不动。
+  const owWallBox = owGeom?.wall;
+  if (owWallBox && owWallBox.side !== 'both' && owWallBox.otherSide === 'midwater') {
+    const spanX = OW_WALL_MARGIN + OW_OPENSIDE_REVEAL / OW_OPENSIDE_SLOPE;
+    if (owWallBox.side === 'left') boxHiX = Math.max(boxHiX, owWallBox.maxNodeX + spanX); // 右敞
+    else boxLoX = Math.min(boxLoX, owWallBox.minNodeX - spanX); // 左敞
+    boxHiY = Math.max(boxHiY, owWallBox.deepestY + OW_FLOOR_GAP + OW_OPENSIDE_REVEAL); // 往下看坡折坠进深渊一截
+  }
 
   // 扫描波完整半径（世界单位）：从你脚下荡到布局最远角＝波扫完整张图（canvas 扩散圆与 SVG「波到才亮」同用＝同速同径）。
   const maxRWorld = Math.max(
@@ -618,12 +640,7 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   // 背景层（三层解耦）：整张固定洞穴＝同地同图、不随扫描 morph、下次来同一洞；「看不看得到」全归迷雾层 punch 圆。
   const allIds = layout ? Object.keys(layout.pos) : [];
   const cave = layout && !isOpenWater ? buildCaveGeometry(layout) : { tuns: [], rooms: [] };
-  // 开阔水域几何（Phase 2·SPEC §2/§8）：填此前的 isOpenWater 空占位（旧 = 无声呐图·只黑底节点）。
-  // 临时从 layout+zone 确定性派生（Phase 2/3 契约·Phase 3 改由 mapgen 从节点喂）；非开阔 / 无 run → null。
-  const owGeom =
-    layout && isOpenWater && run
-      ? buildOpenWaterGeometry(layout, getZone(run.zoneId), run.map ?? undefined)
-      : null;
+  // （owGeom 已在取景盒之前算·见上方 #333 续 hoist——临渊侧放开取景盒要用其墙包络。）
 
   // canvas（06-11 六修·常驻渲染循环）：本 effect 只负责「重烤数据」（离屏洞穴位图 + 几何参数 → bakeRef）
   // 与「开新一班波」（sweepRef）；**真正的逐帧合成由下面常驻 rAF 循环做**——effect 重跑/cleanup 永远

@@ -35,10 +35,14 @@ import {
   buildOpenWaterGeometry,
   wallInnerX,
   bakeOpenWaterRGBA,
+  openSideDrop,
+  owFloorY,
+  openWaterSdf,
   type OwWall,
   type OwRect,
+  type OwStructures,
 } from '../src/ui/openWaterRender';
-import { OW_WALL_MARGIN } from '../src/engine/sonarGeometry';
+import { OW_WALL_MARGIN, OW_OPENSIDE_SLOPE } from '../src/engine/sonarGeometry';
 import { makeHarness, type PtAssert } from './lib/pt';
 
 const pt = makeHarness('开阔水域侧壁防埋点回归（buildOpenWaterGeometry.wall / wallInnerX·SPEC §6·#330）');
@@ -299,6 +303,90 @@ assert(
 L(
   `  floorless slot renders walls, open center — #330 review NIT3：${SLOT_W}×${SLOT_H} 烤图共 ` +
     `${slotNonWaterPixels}/${SLOT_W * SLOT_H} 个非水像素（墙已渲染）· 中心像素 alpha=${slotCenterAlpha}（纯水）✓`,
+);
+
+// ============================================================
+// ⑦（#333）临渊侧陆架坡折：otherSide='midwater' 敞侧海床必须**下降**（取代旧 beyondOpenSide→OW_WATER 的
+// 垂直「截断」岩面·作者反馈「被截断·不是边缘下降」）。两层锁：
+//   ⑦a 函数级（openSideDrop）——陆架上(past≤0)恒 0；过坡折起点后严格单调递增；越肩部达到 SLOPE 预测的可观深度。
+//   ⑦b 渲染级（真 openWaterSdf·空结构隔离出纯 floor+wall）——同一敞侧、越深处「岩→水」翻转 x 越靠外
+//      ＝海床顶面是**斜坡**（对角线）非竖直岩面。竖切会让翻转 x 与深度无关（各深度同一 x）⇒ 直接抓现行。
+// 用 cliff 夹具（side='left'·右敞 midwater·唯一 midwater 单侧墙夹具）。
+// ============================================================
+const CLIFF_ZONE = 'zone.openwater_cliff_test';
+const cliffZone = getZone(CLIFF_ZONE);
+assert(cliffZone, `zone ${CLIFF_ZONE} 应存在（临渊坡折门用·左壁右敞 midwater 夹具）`);
+
+const cliffMap = generateDiveMap({ zone: cliffZone, profileFlags: FLAGS, deaths: [], rng: makeRng(1) });
+const cliffLayout = deriveMapLayout(cliffMap);
+const cliffGeom = buildOpenWaterGeometry(cliffLayout, cliffZone, cliffMap);
+const cliffWall = cliffGeom.wall;
+assert(cliffWall !== null, `${CLIFF_ZONE}: geom.wall 不应为 null（声明了 openWaterWall.side='left'）——否则坡折门空跑`);
+assert(
+  cliffGeom.floored === true,
+  `${CLIFF_ZONE}: geom.floored 应为 true（左壁有底陆架·右侧才是临渊）——否则不是「一侧贴底一侧临渊」的坡折场景`,
+);
+assert(
+  cliffWall!.side === 'left' && cliffWall!.otherSide === 'midwater',
+  `${CLIFF_ZONE}: 夹具应 side='left'/otherSide='midwater'（右敞临渊）·实际 side='${cliffWall!.side}'/otherSide='${cliffWall!.otherSide}'`,
+);
+
+const breakX = cliffWall!.maxNodeX + OW_WALL_MARGIN; // 右敞坡折起点（= openSidePast 起点）
+
+// ⑦a 函数级：openSideDrop 形状（陆架上 0 · 过坡折严格递增 · 达到 SLOPE 预测的可观深度）。
+assert(
+  openSideDrop(breakX - 10, cliffWall!) === 0,
+  `⑦a: 陆架上（坡折起点之内）openSideDrop 必须恒 0·实际=${openSideDrop(breakX - 10, cliffWall!)}（不该提前下沉）`,
+);
+const DROP_SPAN = 120;
+const DROP_STEPS = 24;
+const dropSamples: number[] = [];
+for (let i = 0; i <= DROP_STEPS; i++) dropSamples.push(openSideDrop(breakX + (DROP_SPAN * i) / DROP_STEPS, cliffWall!));
+let dropMonoOk = true;
+for (let i = 1; i < dropSamples.length; i++) if (!(dropSamples[i] > dropSamples[i - 1] + EPS)) dropMonoOk = false;
+assert(
+  dropMonoOk,
+  `⑦a: 过坡折起点后 openSideDrop 必须严格单调递增（下降·非平台非竖切）·样本=${dropSamples.map((v) => v.toFixed(1)).join(',')}`,
+);
+const dropFar = openSideDrop(breakX + DROP_SPAN, cliffWall!);
+const dropFloor = 0.4 * OW_OPENSIDE_SLOPE * DROP_SPAN; // 稳健下界（随 SLOPE 旋钮缩放·缓入最多吃掉 EASE/2 那点·证明真斜坡非 ε）
+assert(
+  dropFar >= dropFloor,
+  `⑦a: 坡折 ${DROP_SPAN} 世界单位后下沉量=${dropFar.toFixed(1)} 应 ≥ ${dropFloor.toFixed(1)}（=0.4·SLOPE·span）`,
+);
+
+// ⑦b 渲染级：真 openWaterSdf（空结构隔离纯 floor+wall）岩→水翻转 x 随深度外移＝斜坡非竖切。
+const NO_STRUCTS: OwStructures = { disks: [], caps: [] };
+const shelfY = owFloorY(breakX, cliffGeom.floor); // 坡折起点处陆架顶面（drop=0）
+const SCAN_STEP = 0.5;
+const SCAN_X0 = breakX - 5; // 起点落在陆架上（两个深度都应是岩）
+const SCAN_X1 = breakX + 300;
+const rockRightBoundaryX = (wy: number): number => {
+  let prev = openWaterSdf(SCAN_X0, wy, cliffGeom.floor, NO_STRUCTS, cliffWall);
+  for (let x = SCAN_X0 + SCAN_STEP; x <= SCAN_X1; x += SCAN_STEP) {
+    const d = openWaterSdf(x, wy, cliffGeom.floor, NO_STRUCTS, cliffWall);
+    if (prev >= 0 && d < 0) return x; // 岩(顶面之下)→水(顶面之上) 翻转＝海床顶面在此深度的 x
+    prev = d;
+  }
+  return NaN;
+};
+const wyShallow = shelfY + 6;
+const wyDeep = shelfY + 46;
+const bShallow = rockRightBoundaryX(wyShallow);
+const bDeep = rockRightBoundaryX(wyDeep);
+assert(
+  Number.isFinite(bShallow) && Number.isFinite(bDeep),
+  `⑦b: 两个深度都应扫到岩→水翻转（海床顶面）·实际 浅=${bShallow} 深=${bDeep}（NaN＝没找到·范围/深度选取有误）`,
+);
+assert(
+  bDeep > bShallow + 3,
+  `⑦b: 深处海床顶面 x=${bDeep.toFixed(1)} 应比浅处 x=${bShallow.toFixed(1)} 更靠外（+3）＝下沉斜坡（对角线）·` +
+    `近似相等＝竖直「截断」岩面回归（#333 修的正是它）`,
+);
+
+L(
+  `  临渊侧陆架坡折 — #333：${CLIFF_ZONE} 敞侧 openSideDrop 陆架上=0 / 过坡折严格递增（${DROP_SPAN}单位后下沉 ${dropFar.toFixed(1)}）· ` +
+    `真 SDF 海床顶面 浅处x=${bShallow.toFixed(1)} < 深处x=${bDeep.toFixed(1)}（斜坡非竖切）✓`,
 );
 
 pt.done();
