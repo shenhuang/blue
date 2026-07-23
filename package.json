@@ -11,9 +11,11 @@
     "typecheck": "tsc --noEmit",
     "regress": "node scripts/regress.mjs",
     "regress:quick": "node scripts/regress.mjs --only typecheck",
+    "regress:sandbox": "node scripts/regress-sandbox.mjs",
     "psm": "node scripts/psm.mjs",
     "affected": "node scripts/affected-tests.mjs",
     "handoff": "node scripts/handoff.mjs",
+    "push": "node scripts/push.mjs",
     "roadmap:check": "node scripts/check-roadmap-stale.mjs",
     "check:branch": "node scripts/check-branch.mjs",
     "weekend:start": "node scripts/set-writer.mjs weekend",
@@ -39,6 +41,6 @@
     "@vitejs/plugin-react": "^4.3.1",
     "tsx": "^4.22.3",
     "typescript": "^5.5.3",
-    "vite": "^5.4.0"
+    "vite": "^8.1.0"
   }
 }
