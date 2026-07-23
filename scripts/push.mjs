@@ -59,11 +59,20 @@ if (branch !== 'main') {
 }
 // 先静默 fetch 一次拿真值（免 quirk #103 幻影）；无网则继续用本地 tracking ref。
 git([...NOPROXY, 'fetch', 'origin', 'main'], { stdio: 'ignore' });
-const ahead = gitOut(['rev-list', '--count', 'origin/main..HEAD']);
-const behind = gitOut(['rev-list', '--count', 'HEAD..origin/main']);
+// 落后 origin（常是 nightly 的 .gitkeep/report）→ 裸 push 会被 non-fast-forward 拒。
+// 先把本地 unpushed commit rebase 到 origin/main 上（安全·只动未发布的本地 commit）。
+let behind = gitOut(['rev-list', '--count', 'HEAD..origin/main']);
 if (behind && behind !== '0') {
-  console.log(`[push] ⚠ 落后 origin/main ${behind} 笔（可能 nightly 推的 .gitkeep 之类）——push 前你可能想先 rebase/merge。`);
+  console.log(`[push] 落后 origin/main ${behind} 笔——先 rebase 本地 unpushed commit 到最新…`);
+  const rb = git(['rebase', 'origin/main'], { stdio: 'inherit' });
+  if (rb.status !== 0) {
+    git(['rebase', '--abort'], { stdio: 'ignore' });
+    console.error('[push] ✗ rebase 有冲突——已 --abort 还原到 push 前。手动 `git rebase origin/main` 解决后再 `npm run push`。');
+    process.exit(1);
+  }
+  behind = gitOut(['rev-list', '--count', 'HEAD..origin/main']);
 }
+const ahead = gitOut(['rev-list', '--count', 'origin/main..HEAD']);
 if (!ahead || ahead === '0') {
   console.log('[push] 无待 push 的 commit（origin/main 已是最新）。收工。');
   process.exit(0);
