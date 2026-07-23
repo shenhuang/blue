@@ -25,6 +25,10 @@
 //   7.（#330 对抗复审加固·NIT3）floorless bake——双壁无底裂隙夹具 zone.openwater_slot_test：
 //      geom.floored===false 且 geom.wall!==null（floorless 短路不该连墙一起吞掉）；真烤一张图，
 //      断言确有非水像素（墙渲染出来了）且水道正中心仍是纯水（没有被过度填充吞掉）。
+//   8.（#333）临渊侧陆架坡折——cliff 夹具（side='left'·右敞 midwater）：openSideDrop 陆架上=0、过坡折严格
+//      单调递增（下沉）；真 SDF 海床顶面翻转 x 随深度外移＝下沉斜坡非竖直「截断」岩面。
+//   9.（#335）收口缓坡——shelf 夹具（side='right'·左收 taper）：openSideDrop 陆架上=0、过坡折严格单调递减
+//      （上收·midwater 的镜像·同一 openSideMag 形状差符号）；真 SDF 海床顶面翻转 x 随深度移＝上收升坡非竖直封边墙。
 //
 // 跑法： npx tsx scripts/playthrough-openwater-wall.ts
 
@@ -387,6 +391,92 @@ assert(
 L(
   `  临渊侧陆架坡折 — #333：${CLIFF_ZONE} 敞侧 openSideDrop 陆架上=0 / 过坡折严格递增（${DROP_SPAN}单位后下沉 ${dropFar.toFixed(1)}）· ` +
     `真 SDF 海床顶面 浅处x=${bShallow.toFixed(1)} < 深处x=${bDeep.toFixed(1)}（斜坡非竖切）✓`,
+);
+
+// ============================================================
+// ⑧（#335）收口缓坡：otherSide='taper' 敞侧海床必须**上收**（floor 升出取景顶＝缓坡封边·SPEC §6.0.2）——
+// 与 ⑦ 的 midwater 下沉镜像（同一条 openSideMag 形状·符号相反）。两层锁：
+//   ⑧a 函数级（openSideDrop）——陆架上(past≤0)恒 0；过坡折起点后严格单调**递减**（负·上升）；越肩部达 SLOPE 预测的可观升量。
+//   ⑧b 渲染级（真 openWaterSdf·空结构隔离纯 floor+wall）——同一敞侧、越深处「水→岩」翻转 x 越靠近坡折起点
+//      ＝海床顶面是**升坡**（对角线）非竖直封边墙。竖直封边会让翻转 x 与深度无关（各深度同一 x）⇒ 直接抓现行。
+// 用 shelf 夹具（side='right'·左敞 taper·唯一 taper 单侧墙夹具）。
+// ============================================================
+const SHELF_ZONE = 'zone.openwater_shelf_test';
+const shelfZone = getZone(SHELF_ZONE);
+assert(shelfZone, `zone ${SHELF_ZONE} 应存在（收口缓坡门用·右壁左收 taper 夹具）`);
+
+const shelfMap = generateDiveMap({ zone: shelfZone, profileFlags: FLAGS, deaths: [], rng: makeRng(1) });
+const shelfLayout = deriveMapLayout(shelfMap);
+const shelfGeom = buildOpenWaterGeometry(shelfLayout, shelfZone, shelfMap);
+const shelfWall = shelfGeom.wall;
+assert(shelfWall !== null, `${SHELF_ZONE}: geom.wall 不应为 null（声明了 openWaterWall.side='right'）——否则收口门空跑`);
+assert(
+  shelfGeom.floored === true,
+  `${SHELF_ZONE}: geom.floored 应为 true（右壁有底·左侧才是收口缓坡·属底面 contour）——否则不是「一侧贴底一侧收口」场景`,
+);
+assert(
+  shelfWall!.side === 'right' && shelfWall!.otherSide === 'taper',
+  `${SHELF_ZONE}: 夹具应 side='right'/otherSide='taper'（左收缓坡）·实际 side='${shelfWall!.side}'/otherSide='${shelfWall!.otherSide}'`,
+);
+
+const shelfBreakX = shelfWall!.minNodeX - OW_WALL_MARGIN; // 左敞坡折起点（= openSidePast 起点）
+
+// ⑧a 函数级：openSideDrop 形状（陆架上 0 · 过坡折严格递减〔负·上升〕 · 达 SLOPE 预测的可观升量）。
+assert(
+  openSideDrop(shelfBreakX + 10, shelfWall!) === 0,
+  `⑧a: 陆架上（坡折起点之内〔右侧〕）openSideDrop 必须恒 0·实际=${openSideDrop(shelfBreakX + 10, shelfWall!)}（不该提前上收）`,
+);
+const RISE_SPAN = 120;
+const RISE_STEPS = 24;
+const riseSamples: number[] = [];
+for (let i = 0; i <= RISE_STEPS; i++) riseSamples.push(openSideDrop(shelfBreakX - (RISE_SPAN * i) / RISE_STEPS, shelfWall!));
+let riseMonoOk = true;
+for (let i = 1; i < riseSamples.length; i++) if (!(riseSamples[i] < riseSamples[i - 1] - EPS)) riseMonoOk = false;
+assert(
+  riseMonoOk,
+  `⑧a: 过坡折起点后 openSideDrop 必须严格单调递减（上升·非平台非竖切）·样本=${riseSamples.map((v) => v.toFixed(1)).join(',')}`,
+);
+const riseFar = openSideDrop(shelfBreakX - RISE_SPAN, shelfWall!);
+const riseCeil = -0.4 * OW_OPENSIDE_SLOPE * RISE_SPAN; // 稳健上界（负·随 SLOPE 缩放·缓入最多吃掉 EASE/2·证明真升坡非 ε）
+assert(
+  riseFar <= riseCeil,
+  `⑧a: 收口 ${RISE_SPAN} 世界单位后上收量=${riseFar.toFixed(1)} 应 ≤ ${riseCeil.toFixed(1)}（=−0.4·SLOPE·span·负＝上升）`,
+);
+
+// ⑧b 渲染级：真 openWaterSdf（空结构隔离纯 floor+wall）水→岩翻转 x 随深度移＝升坡非竖直封边。
+// 取 wy 在坡折起点陆架顶面**之上**（水中）：越深（wy 越大·越贴海床）floor 只需升一点就够到它 ⇒ 翻转更靠坡折起点；
+// 越浅（wy 越小）floor 要升更多 ⇒ 翻转更远入敞侧。竖直封边则翻转 x 与深度无关。
+const shelfTopY = owFloorY(shelfBreakX, shelfGeom.floor); // 坡折起点处陆架顶面（offset=0）
+const RISE_SCAN_STEP = 0.5;
+const RISE_SCAN_X0 = shelfBreakX + 5; // 起点落在陆架上（右侧·顶面之上＝水）
+const RISE_SCAN_X1 = shelfBreakX - 300; // 扫向左（敞侧）
+// 从陆架侧（大 x）向敞侧（小 x）扫，找「水（顶面之上）→岩（升起的顶面）」翻转＝该深度海床顶面 x。
+const rockLeftBoundaryX = (wy: number): number => {
+  let prev = openWaterSdf(RISE_SCAN_X0, wy, shelfGeom.floor, NO_STRUCTS, shelfWall);
+  for (let x = RISE_SCAN_X0 - RISE_SCAN_STEP; x >= RISE_SCAN_X1; x -= RISE_SCAN_STEP) {
+    const d = openWaterSdf(x, wy, shelfGeom.floor, NO_STRUCTS, shelfWall);
+    if (prev < 0 && d >= 0) return x; // 水(顶面之上)→岩(升起的顶面) 翻转＝海床顶面在此深度的 x
+    prev = d;
+  }
+  return NaN;
+};
+const wyRiseDeep = shelfTopY - 6; // 陆架顶面之上一点（贴顶面·水中）——floor 升 6 就够到 ⇒ 翻转近坡折起点
+const wyRiseShallow = shelfTopY - 46; // 陆架顶面之上较高（水中）——floor 要升 46 才够到 ⇒ 翻转远入敞侧
+const bRiseDeep = rockLeftBoundaryX(wyRiseDeep);
+const bRiseShallow = rockLeftBoundaryX(wyRiseShallow);
+assert(
+  Number.isFinite(bRiseDeep) && Number.isFinite(bRiseShallow),
+  `⑧b: 两个深度都应扫到水→岩翻转（升起的海床顶面）·实际 深=${bRiseDeep} 浅=${bRiseShallow}（NaN＝没找到·范围/深度选取有误）`,
+);
+assert(
+  bRiseDeep > bRiseShallow + 3,
+  `⑧b: 较深处海床顶面 x=${bRiseDeep.toFixed(1)} 应比较浅处 x=${bRiseShallow.toFixed(1)} 更靠近坡折起点（+3）＝上收升坡（对角线）·` +
+    `近似相等＝竖直封边墙回归（收口缓坡失效·退回 no-op 或写成竖切）`,
+);
+
+L(
+  `  收口缓坡 — #335：${SHELF_ZONE} 敞侧 openSideDrop 陆架上=0 / 过坡折严格递减（${RISE_SPAN}单位后上收 ${riseFar.toFixed(1)}）· ` +
+    `真 SDF 海床顶面 深处x=${bRiseDeep.toFixed(1)} > 浅处x=${bRiseShallow.toFixed(1)}（升坡非竖直封边）✓`,
 );
 
 pt.done();

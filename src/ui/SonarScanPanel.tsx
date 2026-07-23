@@ -45,7 +45,7 @@ import {
   OW_OPENSIDE_REVEAL,
   shadeSonarSdf,
 } from '@/engine/sonarGeometry';
-import { buildOpenWaterGeometry, bakeOpenWaterRGBA } from './openWaterRender';
+import { buildOpenWaterGeometry, bakeOpenWaterRGBA, owFloorY } from './openWaterRender';
 
 /** SSR 安全的 useLayoutEffect：renderToString 对 useLayoutEffect 有 dev 告警（smoke 走 SSR），服务端退化为 useEffect（都不跑·无行为差）。 */
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -610,15 +610,21 @@ export function SonarScanPanel({ state, choices, onStateChange, pendingNodeId, o
   let boxLoX = Math.min(0, here.x), boxHiX = Math.max(layout?.width ?? 0, here.x);
   let boxLoY = Math.min(0, here.y), boxHiY = Math.max(layout?.height ?? 0, here.y);
   boxLoX -= SONAR_BOX_PAD; boxHiX += SONAR_BOX_PAD; boxLoY -= SONAR_BOX_PAD; boxHiY += SONAR_BOX_PAD;
-  // 临渊侧（otherSide='midwater' 敞侧）放开取景盒（#333 续）：默认盒夹在节点包络 + PAD 里，看不到节点外的
-  // 陆架坡折（openSideDrop 的下沉几何）——潜水中也该能平移出去、往下看断崖坠进深渊。按 REVEAL 外扩敞侧那一向：
-  // 横向到「floor 降到 REVEAL 深」的水平跨度（坡折起点 margin + REVEAL/SLOPE）·纵向多留 REVEAL 深。别的边不动。
+  // 单侧墙敞侧放开取景盒（#333 midwater·#335 taper）：默认盒夹在节点包络 + PAD 里，看不到节点外的坡折几何
+  // （openSideDrop）——潜水中也该能平移出去看敞侧。横向两态同扩；纵向 midwater 往下（看断崖坠进深渊）·
+  // taper 往上（看缓坡升起封边）。boxLoY 上扩只在缓坡真会升出盒顶时才生效（min 夹·深坡折＝no-op）。
   const owWallBox = owGeom?.wall;
-  if (owWallBox && owWallBox.side !== 'both' && owWallBox.otherSide === 'midwater') {
+  if (owWallBox && owWallBox.side !== 'both') {
     const spanX = OW_WALL_MARGIN + OW_OPENSIDE_REVEAL / OW_OPENSIDE_SLOPE;
-    if (owWallBox.side === 'left') boxHiX = Math.max(boxHiX, owWallBox.maxNodeX + spanX); // 右敞
-    else boxLoX = Math.min(boxLoX, owWallBox.minNodeX - spanX); // 左敞
-    boxHiY = Math.max(boxHiY, owWallBox.deepestY + OW_FLOOR_GAP + OW_OPENSIDE_REVEAL); // 往下看坡折坠进深渊一截
+    const openLeft = owWallBox.side === 'right'; // 墙在右 ⇒ 左敞
+    const breakX = openLeft ? owWallBox.minNodeX - OW_WALL_MARGIN : owWallBox.maxNodeX + OW_WALL_MARGIN;
+    if (openLeft) boxLoX = Math.min(boxLoX, owWallBox.minNodeX - spanX); // 左敞
+    else boxHiX = Math.max(boxHiX, owWallBox.maxNodeX + spanX); // 右敞
+    if (owWallBox.otherSide === 'midwater') {
+      boxHiY = Math.max(boxHiY, owWallBox.deepestY + OW_FLOOR_GAP + OW_OPENSIDE_REVEAL); // 往下看坡折坠进深渊一截
+    } else if (owGeom) {
+      boxLoY = Math.min(boxLoY, owFloorY(breakX, owGeom.floor) - OW_OPENSIDE_REVEAL); // 往上看缓坡升起封边一截
+    }
   }
 
   // 扫描波完整半径（世界单位）：从你脚下荡到布局最远角＝波扫完整张图（canvas 扩散圆与 SVG「波到才亮」同用＝同速同径）。
