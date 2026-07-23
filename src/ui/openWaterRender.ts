@@ -48,7 +48,16 @@ import {
   OW_ROCK_MOUND_R,
   OW_ROCK_MOUND_H,
   OW_ROCK_SIDE_R,
+  OW_WALL_MARGIN,
+  OW_WALL_TAPER,
+  OW_WALL_RIPPLE_AMP,
+  OW_WALL_RIPPLE_WAVELEN,
+  OW_WALL_RIPPLE_WARP_DEPTH,
+  OW_WALL_RIPPLE_WARP_FREQ,
 } from '@/engine/sonarGeometry';
+
+/** 恒判为水的 SDF 哨兵（shadeSonarSdf 三档：d<WALL_LO 即水）——单源·bake 与 openWaterSdf 敞侧断崖共用。 */
+const OW_WATER = -1000;
 
 /** 世界取景矩形（烤图用·结构等价 SonarScanPanel 的 CaveRect）。 */
 export interface OwRect {
@@ -79,6 +88,27 @@ export interface OwStructures {
   caps: Array<{ ax: number; ay: number; bx: number; by: number; r: number }>;
 }
 
+/** wallInnerX 查询哪一侧墙（'both' 只出现在配置 OwWall.side·查询恒指定单侧）。 */
+export type OwWallSide = 'left' | 'right';
+
+/**
+ * 侧壁 / 峡谷墙（#330·开阔水域 SPEC §6·底面轴之外的正交「侧壁轴」）。派生不入存档（由 zone id + 节点 x 布局
+ * 确定性算）。墙内面＝深度 wy 的单值函数 wallInnerX(wy)（每深度一个内壁 x·墙后恒岩·union 进 openWaterSdf 的 max）。
+ * minNodeX/maxNodeX ＝**全节点** x 外包络（防埋点 clamp 基准·§6.5）；deepestY ＝最深节点 y（taper 参照）。
+ */
+export interface OwWall {
+  side: 'left' | 'right' | 'both';
+  /** 归一化（缺省 'taper'）·仅 side !== 'both' 有意义：单侧墙另一侧＝收口缓坡('taper') / 敞向无底蓝水('midwater')。 */
+  otherSide: 'taper' | 'midwater';
+  /** 全节点 x 外包络（layout px·左墙 clamp = minNodeX − margin·右墙 = maxNodeX + margin·恒清所有节点）。 */
+  minNodeX: number;
+  maxNodeX: number;
+  /** 全节点最深 y（layout px·taper 参照：浅于此向图心收 V/U）。 */
+  deepestY: number;
+  /** hash(seed) 派生相位（同 zone 同墙起伏·可复现）。 */
+  phase: number;
+}
+
 /** OwGeom 不再随身带结构列表（结构按取景窗现算·见 structsInRange）——只留 floor + 撒结构要用的 style/seed。 */
 export interface OwGeom {
   floor: OwFloor;
@@ -86,6 +116,8 @@ export interface OwGeom {
   seed: string;
   /** 本图有没有海床：false＝开阔无底蓝水（midwater·无贴底节点）⇒ bake 整窗全水·无 floor 无结构（SPEC §4）。 */
   floored: boolean;
+  /** 侧壁配置（无 openWaterWall ⇒ null＝无墙·现状纯 floor/floorless·SPEC §6.1）。floorless 时墙仍渲染（bake 特判）。 */
+  wall: OwWall | null;
 }
 
 /**
@@ -130,14 +162,112 @@ export function owFloorY(wx: number, floor: OwFloor): number {
   return interpAnchorY(wx, floor.anchors, floor.fallbackY) + rippleDetail(wx, floor);
 }
 
+// ─── 侧壁 / 峡谷（#330·开阔水域 SPEC §6）──────────────────────────────────────────
+// 墙内面＝深度 wy 的单值函数 wallInnerX(wy)·union 进 openWaterSdf 的 max（岩＝正 d）。防埋点靠构造：
+// 内面 clamp 到「节点 x 外包络 ± margin」之外·恒清所有节点（§6.5·换轴到水平的 #327 下包络思路）。
+
 /**
- * 开阔水域「水/岩 SDF」（caveSdf 的兄弟·SPEC §2.1/§2.2）：
+ * 墙内面微起伏（世界·圆钝非尖脊·SPEC §6.2）：**同 rippleDetail 的相位调制**——瞬时角速率
+ * rate=k(1+D·sin(t·F))·D<1 恒正 ⇒ 相位积分严格单调 ⇒ 数学上永不折叠 / 不长干涉尖角（§5.3 教训）。
+ * 只是自变量换成深度 wy、旋钮换成 OW_WALL_*（与 floor/cave 各自独立·调墙绝不动底·§6.0 Q3）。
+ */
+function wallRipple(wy: number, phase: number): number {
+  const k = (Math.PI * 2) / OW_WALL_RIPPLE_WAVELEN;
+  const t = wy + phase;
+  const u =
+    k * t - ((k * OW_WALL_RIPPLE_WARP_DEPTH) / OW_WALL_RIPPLE_WARP_FREQ) * Math.cos(t * OW_WALL_RIPPLE_WARP_FREQ);
+  return OW_WALL_RIPPLE_AMP * Math.sin(u);
+}
+
+/**
+ * 由**全节点 layout 位置**（防埋点须清所有节点 x·§6.5）+ zone 的 openWaterWall 配置确定性派生墙包络。
+ * cfg 缺省（zone 无 openWaterWall）⇒ 返 null＝无墙（现状·纯 floor/floorless·零行为变化）。
+ * 传全节点（非仅贴底锚点）是刻意的：① §6.5 要清**所有**节点；② floorless（midwater）时贴底锚点为空、
+ * 唯有全节点才算得出包络 ⇒ 无底裂隙的墙照样立得起来（openwater_slot_test 关键路径）。
+ * seed 派生相位（同 zone 同墙·可复现）。空点集兜底 0（不该发生·防 NaN）。
+ */
+export function computeWallEnvelope(
+  positions: Array<{ x: number; y: number }>,
+  cfg: { side: 'left' | 'right' | 'both'; otherSide?: 'taper' | 'midwater'; material?: 'rock' } | undefined,
+  seed: string,
+): OwWall | null {
+  if (!cfg) return null;
+  let minNodeX = Infinity;
+  let maxNodeX = -Infinity;
+  let deepestY = -Infinity;
+  for (const p of positions) {
+    if (p.x < minNodeX) minNodeX = p.x;
+    if (p.x > maxNodeX) maxNodeX = p.x;
+    if (p.y > deepestY) deepestY = p.y;
+  }
+  if (!Number.isFinite(minNodeX)) {
+    minNodeX = 0;
+    maxNodeX = 0;
+  }
+  if (!Number.isFinite(deepestY)) deepestY = 0;
+  return {
+    side: cfg.side,
+    otherSide: cfg.otherSide ?? 'taper', // 归一化·side='both' 时无意义（双侧都建墙）
+    minNodeX,
+    maxNodeX,
+    deepestY,
+    phase: hash01('owwall' + seed) * 997,
+  };
+}
+
+/**
+ * 某深度 wy 的墙内面世界 x（水/岩水平分界·SPEC §6.2）。请求侧无墙 ⇒ 返「不遮挡哨兵」
+ * （左→−∞·右→+∞·union 里 dWall=−∞ 永不入选 max）。**防埋点构造保证**：
+ *  - 左墙 clampX = minNodeX − OW_WALL_MARGIN，内面 = min(taperX+ripple, clampX) ≤ clampX < 所有节点 x ⇒ 无节点被埋（水侧＝wx > 内面）。
+ *  - 右墙对称：clampX = maxNodeX + OW_WALL_MARGIN，内面 = max(taperX+ripple, clampX) ≥ clampX（水侧＝wx < 内面）。
+ * taperX 随浅（wy 小）**离图心张开**＝V/U 上宽下窄（底 wy=deepestY 最窄贴 clampX·向上开口·峡谷横截面）——
+ * 必须与防埋点 clamp **同向**：窄底＝clampX、上宽落在 clamp 允许的那侧，min/max 才会选中 taperX ⇒ taper+ripple 真正生效。
+ * 写成「上收（向图心）」会与 clamp 反向被整段吃掉、墙变竖直平板（#330 对抗复审逮到·别回改）。OW_WALL_TAPER/RIPPLE 手感 defer §9·别调。
+ */
+export function wallInnerX(wy: number, wall: OwWall, side: OwWallSide): number {
+  const ripple = wallRipple(wy, wall.phase);
+  if (side === 'left') {
+    if (wall.side !== 'left' && wall.side !== 'both') return Number.NEGATIVE_INFINITY;
+    const clampX = wall.minNodeX - OW_WALL_MARGIN;
+    // 上宽下窄：浅处（wy 小）内面向左退离图心·底贴 clampX。taperX ≤ clampX ⇒ min 取 taperX＝taper 生效·仍 ≤ clampX 不埋点。
+    const taperX = clampX - OW_WALL_TAPER * (wall.deepestY - wy);
+    return Math.min(taperX + ripple, clampX);
+  }
+  if (wall.side !== 'right' && wall.side !== 'both') return Number.POSITIVE_INFINITY;
+  const clampX = wall.maxNodeX + OW_WALL_MARGIN;
+  // 右墙镜像：浅处内面向右退离图心·底贴 clampX。taperX ≥ clampX ⇒ max 取 taperX＝taper 生效·仍 ≥ clampX 不埋点。
+  const taperX = clampX + OW_WALL_TAPER * (wall.deepestY - wy);
+  return Math.max(taperX + ripple, clampX);
+}
+
+/**
+ * 单侧墙 + otherSide='midwater' 时，wx 是否落在**敞侧**（无墙那侧）node 外包络之外＝陆架断崖的无底区。
+ * side='left' ⇒ 右敞（wx > maxNodeX）·side='right' ⇒ 左敞（wx < minNodeX）·'both'/taper 无敞侧。
+ */
+function beyondOpenSide(wx: number, wall: OwWall): boolean {
+  // 敞侧起点与墙侧对称留 OW_WALL_MARGIN（最外节点也有 24px 呼吸区再入断崖·#330 复审 NIT1）。
+  if (wall.side === 'left') return wx > wall.maxNodeX + OW_WALL_MARGIN;
+  if (wall.side === 'right') return wx < wall.minNodeX - OW_WALL_MARGIN;
+  return false;
+}
+
+/**
+ * 开阔水域「水/岩 SDF」（caveSdf 的兄弟·SPEC §2.1/§2.2/§6.2）：
  *  - 边缘型 floor：垂直有符号距离 wy−floorY(wx)（floor 上=水=负·下=岩=正·单值 ⇒ 不碎/无悬空碎片）；
- *  - 结构层：每个正内 field（r−dist）取 max 并集叠上 floor ⇒ 一像素是岩 ⟺ 在海床下 或 落在任一结构内。
+ *  - 结构层：每个正内 field（r−dist）取 max 并集叠上 floor ⇒ 一像素是岩 ⟺ 在海床下 或 落在任一结构内；
+ *  - 侧壁层：dWallL/dWallR（墙内面到 wx 的水平有符号距离·岩＝正）并进同一个 max（缺席侧 wallInnerX 返 ±∞ 哨兵 ⇒ 永不入选）。
  * < WALL_LO＝水·[WALL_LO,WALL_HI)＝发光边·≥＝透明岩（同 shadeSonarSdf 三档·细结构半宽<WALL_HI ⇒ 整根实心青线）。
  * 确定性·纯函数（headless 可跑·look-dev 靠它出图）。structs 由调用方按取景窗现算好传入（见 structsInRange）。
  */
-export function openWaterSdf(wx: number, wy: number, floor: OwFloor, structs: OwStructures): number {
+export function openWaterSdf(
+  wx: number,
+  wy: number,
+  floor: OwFloor,
+  structs: OwStructures,
+  wall: OwWall | null,
+): number {
+  // 单侧墙 + otherSide='midwater'：敞侧（无墙那侧）node 外包络之外＝陆架断崖·无底无结构无墙 ⇒ 早退成水（SPEC §6.4/§6.5）。
+  if (wall && wall.side !== 'both' && wall.otherSide === 'midwater' && beyondOpenSide(wx, wall)) return OW_WATER;
   let d = wy - owFloorY(wx, floor);
   if (OW_FLOOR_NOISE > 0) d += (fbm(wx * 0.05, wy * 0.05) - 0.5) * OW_FLOOR_NOISE;
   const { disks, caps } = structs;
@@ -150,6 +280,12 @@ export function openWaterSdf(wx: number, wy: number, floor: OwFloor, structs: Ow
     const s = disks[k];
     const f = s.r - Math.hypot(wx - s.x, wy - s.y);
     if (f > d) d = f;
+  }
+  if (wall) {
+    const dWallL = wallInnerX(wy, wall, 'left') - wx; // wx 在左内面之左＝墙后岩（正）
+    if (dWallL > d) d = dWallL;
+    const dWallR = wx - wallInnerX(wy, wall, 'right'); // wx 在右内面之右＝墙后岩（正）
+    if (dWallR > d) d = dWallR;
   }
   return d;
 }
@@ -306,7 +442,10 @@ export function buildOpenWaterGeometry(
   if (!floored) for (const id of Object.keys(layout.pos)) { const p = layout.pos[id]; if (p && p.y > maxY) maxY = p.y; }
   const fallbackY = (isFinite(maxY) ? maxY : layout.height) + OW_FLOOR_GAP;
   const floor: OwFloor = { anchors, fallbackY, phase: hash01('owph' + seed) * 997 };
-  return { floor, style, seed, floored };
+  // 侧壁（§6）：与 floor 正交·从**全节点** layout 位置（非仅贴底锚点·§6.5 须清所有节点·floorless 时锚点空但节点非空）
+  // 派生·确定性（同 seed 同墙）。zone 无 openWaterWall ⇒ null＝无墙（现状·零行为变化）。
+  const wall = computeWallEnvelope(Object.values(layout.pos), zone?.openWaterWall, seed);
+  return { floor, style, seed, floored, wall };
 }
 
 /**
@@ -336,15 +475,20 @@ export function bakeOpenWaterRGBA(
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(outW * outH * 4);
   const lo = rect.x - OW_CULL_MARGIN, hi = rect.x + rect.w + OW_CULL_MARGIN;
-  // floorless（开阔无底蓝水）：无海床无结构 ⇒ 每像素恒为水（d 远小于 WALL_LO），只保留 deepK 深度渐变。
-  // 别走 openWaterSdf——它对空锚点会退化成 fallbackY 处一条平海床（interpAnchorY 空集回 fallbackY），非无底。
-  const WATER = -1000; // 恒判为水的 SDF 哨兵（shadeSonarSdf 三档：d<WALL_LO 即水）
+  // floorless（开阔无底蓝水）：无海床无结构 ⇒ 底面恒为水（d 远小于 WALL_LO），只保留 deepK 深度渐变。
+  // 别走 openWaterSdf 的 floor 分支——它对空锚点会退化成 fallbackY 处一条平海床（interpAnchorY 空集回 fallbackY），非无底。
+  // **但侧壁必须仍渲染**（§6.4·openwater_slot_test 无底裂隙＝两壁夹一线开水）：floorless 时手动只 union 墙 SDF
+  // （绕过被短路成整窗水的 floor 分支·quirk #255 的墙版）——OW_WATER 兜底＝墙之间的开水。
   const structs = geom.floored ? structsInRange(geom.style, geom.seed, geom.floor, lo, hi) : { disks: [], caps: [] };
   for (let gy = 0; gy < outH; gy++) {
     for (let gx = 0; gx < outW; gx++) {
       const wx = rect.x + ((gx + 0.5) / outW) * rect.w;
       const wy = rect.y + ((gy + 0.5) / outH) * rect.h;
-      const d = geom.floored ? openWaterSdf(wx, wy, geom.floor, structs) : WATER;
+      const d = geom.floored
+        ? openWaterSdf(wx, wy, geom.floor, structs, geom.wall)
+        : geom.wall
+          ? Math.max(OW_WATER, wallInnerX(wy, geom.wall, 'left') - wx, wx - wallInnerX(wy, geom.wall, 'right'))
+          : OW_WATER;
       const i = (gy * outW + gx) * 4;
       const tex = fbm(wx * 0.12, wy * 0.12); // 表面纹理（同洞穴）
       const deepK = Math.min(1, Math.max(0, (wy - rect.y) / rect.h));

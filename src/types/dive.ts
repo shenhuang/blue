@@ -84,6 +84,17 @@ export interface ZoneDef {
   nodesPerLayer: [number, number];
   /** 抽取事件用的 zoneTag 池（每层可不同） */
   zoneTagsByDepth: Array<{ minDepth: number; tags: ZoneTag[] }>;
+  /**
+   * 开阔水域「侧壁 / 峡谷」配置（#330·开阔水域 SPEC §6）。与 zoneTagsByDepth（底面轴）**正交**——
+   * 这是「侧壁轴」：管峡谷墙，不是新 zoneTag。缺省 = 无墙（现状·纯 floor/floorless）。
+   *  - side：墙在左 / 右 / 双侧（峡谷横截面）。
+   *  - otherSide：仅 side∈{left,right} 有意义/必填——单侧墙时另一侧是 'taper'（floor 上收成缓坡封边）
+   *    还是 'midwater'（无墙无底·陆架断崖式敞向蓝水）。side='both' 时不填。
+   *  - material：墙面材质（MVP 仅 'rock'·留轴将来可扩珊瑚墙等）。
+   * 墙几何派生不入存档（由 zone id + 节点 x 布局确定性算·守感知诚实/可复现）；加此可选字段不 bump SAVE_VERSION。
+   * 合法性由 check-openwater-wall 门守（side/otherSide/material 组合·regress 会红）。
+   */
+  openWaterWall?: { side: 'left' | 'right' | 'both'; otherSide?: 'taper' | 'midwater'; material?: 'rock' };
   /** 解锁条件：哪些 flag 必须存在 */
   requiresFlags?: string[];
   /** MVP 阶段：教学关用 'linearScripted' 表示线性脚本下潜 */

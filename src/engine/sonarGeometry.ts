@@ -135,3 +135,13 @@ export const OW_STRUCT_MAX_DROP = Math.ceil(
     OW_CORAL_DOME_R * 1.4,
   ) + 6,
 );
+
+// ─── 侧壁 / 峡谷（#330·开阔水域 SPEC §6·独立旋钮·绝不借 floor/cave 的 WARP_*/SMIN_K）──────────────
+// 墙内面＝深度的单值函数 wallInnerX(wy)（每深度一个内壁 x·墙后恒岩）·union 进 openWaterSdf 的 max。
+// 起步值·手感一律 defer 作者对真渲染器一次性调（§9·[[defer-number-tuning]]）——别每 session 当 todo 催。
+export const OW_WALL_MARGIN = 24; // 墙内面离该侧最外节点 x 的世界余量（防埋点·§6.5 构造保证的 margin）
+export const OW_WALL_TAPER = 0.35; // V/U 张开系数：每上浮 1 世界单位·墙内面离图心退多少（0=竖直壁·>0=上宽下窄峡谷·底最窄贴防埋点 clamp·见 wallInnerX 头注 #330）
+export const OW_WALL_RIPPLE_AMP = 4; // 墙内面微起伏幅（世界·圆钝非尖脊·被防埋点裁到不越过节点侧）
+export const OW_WALL_RIPPLE_WAVELEN = 60; // 墙起伏基准波长（世界）
+export const OW_WALL_RIPPLE_WARP_DEPTH = 0.5; // 墙起伏疏密调制深度（<1·瞬时速率恒正保证不折叠·同 §5.3 教训）
+export const OW_WALL_RIPPLE_WARP_FREQ = 0.05; // 墙起伏疏密调制空间频率

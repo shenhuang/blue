@@ -256,6 +256,7 @@ tasks.push({ name: 'check-dev-panels', cmd: ['node', join('scripts', 'check-dev-
 // 的「开阔海域有限矿藏」道具，harvestPersist 必须是 'save'——缺省 'run' 会让矿藏「下次刷新」变成玩家
 // 永远采不完的静默 bug·当前若无任何 deposit:true 道具则空集直接过·见 scripts/check-openwater-harvest.mjs）
 tasks.push({ name: 'check-openwater-harvest', cmd: ['node', join('scripts', 'check-openwater-harvest.mjs')] });
+tasks.push({ name: 'check-openwater-wall', cmd: ['node', join('scripts', 'check-openwater-wall.mjs')] });
 
 // 海图 UI SSR smoke
 tasks.push({ name: 'smoke-chart-ui', cmd: [tsx, join('scripts', 'smoke-chart-ui.tsx')] });

@@ -159,6 +159,70 @@
       "mapShape": "layered",
       "canFreeAscend": true,
       "_qa_fixture_doc": "开阔水域声呐渲染 look-dev 夹具（开阔水域 SPEC §8 Phase 2·2026-07-14 六轮·作者提议「珊瑚长在岩矿上」）：tag 'atoll'（不用通用内容 tag 'reef'，避免语义打架）→ OwStyle 'reef' 混合档＝先按 OW_ROCK_SPACING 撒圆钝礁丘打底，再按 OW_CORAL_SPACING 密布软珊瑚扇——珊瑚生根点用 surfaceYAt 贴着礁面/裸沙面走（礁石区珊瑚长在礁顶、礁石间隙珊瑚长在沙面），不是统一贴平地。见 zone.openwater_sand_test 头注同款技术说明。"
+    },
+    {
+      "id": "zone.openwater_canyon_test",
+      "name": "开阔·峡谷（双壁·有底·测试）",
+      "description": "两侧岩壁上收的峡谷横截面——岩矿海床居中、左右岩壁向上收拢。（开发测试用·侧壁 look-dev·非正式内容）",
+      "depthRange": [30, 60],
+      "layerCount": 4,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["rock"] }
+      ],
+      "openWaterWall": { "side": "both", "material": "rock" },
+      "generation": "random",
+      "mapShape": "layered",
+      "canFreeAscend": true,
+      "_qa_fixture_doc": "侧壁/峡谷 look-dev 夹具（开阔水域 SPEC §6·#330）：openWaterWall.side='both' + 有海床档(rock) ⇒ 双壁有底峡谷。墙内面＝节点 x 外包络外扩 OW_WALL_MARGIN（防埋点·§6.5）·向浅处 OW_WALL_TAPER 上收成 V/U。墙面 union 进 openWaterSdf 走 shadeSonarSdf 三档(暗芯青边)。配 scenes registry openwater_canyon。"
+    },
+    {
+      "id": "zone.openwater_cliff_test",
+      "name": "开阔·断崖（左壁·右临渊·测试）",
+      "description": "陆架断崖——左侧岩壁与沙床，右侧无墙无底直落蓝水。（开发测试用·侧壁 look-dev·非正式内容）",
+      "depthRange": [24, 50],
+      "layerCount": 4,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["sand"] }
+      ],
+      "openWaterWall": { "side": "left", "otherSide": "midwater", "material": "rock" },
+      "generation": "random",
+      "mapShape": "layered",
+      "canFreeAscend": true,
+      "_qa_fixture_doc": "侧壁/峡谷 look-dev 夹具（开阔水域 SPEC §6·#330）：side='left' + otherSide='midwater' ⇒ 单壁断崖·左岩壁+沙床、右侧敞向无底蓝水。测「有底但一侧临渊」——墙侧 floor 在、敞侧 bake 落水。见 zone.openwater_canyon_test 头注。"
+    },
+    {
+      "id": "zone.openwater_shelf_test",
+      "name": "开阔·半坡（右壁·左收口·测试）",
+      "description": "右侧岩壁、左侧 floor 上收成缓坡封边的半封闭珊瑚坡。（开发测试用·侧壁 look-dev·非正式内容）",
+      "depthRange": [18, 42],
+      "layerCount": 4,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["coral"] }
+      ],
+      "openWaterWall": { "side": "right", "otherSide": "taper", "material": "rock" },
+      "generation": "random",
+      "mapShape": "layered",
+      "canFreeAscend": true,
+      "_qa_fixture_doc": "侧壁/峡谷 look-dev 夹具（开阔水域 SPEC §6·#330）：side='right' + otherSide='taper' ⇒ 单壁半坡·右岩壁、左侧 floor 上收成缓坡封边（非墙·属 floor contour 的一部分）。见 zone.openwater_canyon_test 头注。"
+    },
+    {
+      "id": "zone.openwater_slot_test",
+      "name": "开阔·裂隙（双壁·无底·测试）",
+      "description": "无底裂隙峡谷——左右岩壁夹一线，下方直落蓝水、无海床。（开发测试用·侧壁 look-dev·非正式内容）",
+      "depthRange": [28, 58],
+      "layerCount": 4,
+      "nodesPerLayer": [2, 3],
+      "zoneTagsByDepth": [
+        { "minDepth": 0, "tags": ["midwater"] }
+      ],
+      "openWaterWall": { "side": "both", "material": "rock" },
+      "generation": "random",
+      "mapShape": "layered",
+      "canFreeAscend": true,
+      "_qa_fixture_doc": "侧壁/峡谷 look-dev 夹具（开阔水域 SPEC §6·#330·关键 bake 路径）：side='both' + midwater(floorless) ⇒ 无底裂隙。测 bakeOpenWaterRGBA 的 floorless 短路必须仍渲染墙（geom.floored=false 时 openWaterSdf 被旁路成整窗水·墙 SDF 要绕过这条短路仍求值·SPEC §6.4/§6.2·quirk #255 的墙版）。见 zone.openwater_canyon_test 头注。"
     }
   ]
 }
