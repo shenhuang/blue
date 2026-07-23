@@ -1,7 +1,9 @@
 // 战斗 dev 面板 SSR 冒烟 + 关键路径 parity 守门（镜像 smoke-economy-panel·quirk #155）。
-//   ① CombatDevPanel SSR 渲染不抛错 + 关键骨架在（标题/模式切换/新字段 bonuses·wornSkin·injuries）。
+//   ① CombatDevPanel SSR 渲染不抛错 + 潜点式三栏骨架在（标题「战斗 · CombatPanel」/ 左「选择对手」+「单个敌人」/
+//      中「对手详情」/ 右「装备（基础档）」+「▶ 进入战斗」）——2026-07-23 从基线编辑器改造成潜点式战斗测试。
 //   ② serializer round-trip：bonuses / wornSkin / injuries 表单↔input 双向不丢；装备 override 由
 //      EQUIPMENT_SLOTS 派生（防回到 5 槽子集·sonar/ranged/charm2/charm3 勾了也生效）。
+//      （注：面板改造后不再挂 CombatScenarioSerializer 表单 UI·但序列化库本体仍供 CLI/baseline 复用·此处直测库层。）
 //   ③ engine parity：EnemySnapshot 新增 phaseCount/phaseIndex/reachable 正确（boss 阶段 / 链鳗按序门），
 //      bonuses.staminaMaxBonus 抬高 staminaMax（boss 体力解卡·#164），wornSkin 透传到 EnemyInstance（#162），
 //      buildCombatEntryState 造出 combat 相位 state（实战预览入口·不跑回合）。
@@ -37,17 +39,20 @@ function assert(cond: unknown, msg: string): asserts cond {
 const { CombatDevPanel } = await import('../src/ui/dev/CombatDevPanel');
 const { CombatView } = await import('../src/ui/CombatView');
 
-// ── ① SSR 渲染（onClose 缺省·工作台里关闭由左导航取代·对齐 PanelShell quirk #112） ──────────
+// ── ① SSR 渲染（潜点式三栏骨架·工作台里关闭由左导航取代·对齐 PanelShell quirk #112） ──────────
 const html = renderToStaticMarkup(<CombatDevPanel />);
-assert(html.includes('战斗回归 dev 面板'), '面板应渲染标题「战斗回归 dev 面板」');
-// 预览模式切换（批处理 baseline / 实战）
-assert(html.includes('批处理预览'), '应渲染「批处理预览」模式按钮');
-assert(html.includes('进入实战'), '应渲染「进入实战」模式按钮');
-// 今日新字段控件（#162/#164·负伤 §10）
-assert(html.includes('staminaMaxBonus'), '应渲染 bonuses.staminaMaxBonus 控件（#164）');
-assert(html.includes('oxygenMaxBonus'), '应渲染 bonuses.oxygenMaxBonus 控件（#164）');
-assert(html.includes('wornSkin'), '应渲染 wornSkin（水鬼皮囊）区块（#162）');
-// 负伤系统整套下线（战斗系统改版 2026-07-10）：「起始伤势」区块 + injuries 序列化 round-trip 已删。
+assert(html.includes('战斗 · CombatPanel'), '面板应渲染标题「战斗 · CombatPanel」（2026-07-23 潜点式改造）');
+// 左栏：对手选择——潜点式手风琴（遭遇 / 单个敌人两收起组）+ 每行左侧敌人头像
+assert(html.includes('选择对手'), '左栏应渲染「选择对手」标题');
+assert(html.includes('dev-map-acc-head'), '左栏应是手风琴（dev-map-acc-head 分类条·与潜点同一套）');
+assert(html.includes('遭遇（多敌）'), '左栏应有「遭遇（多敌）」收起组');
+assert(html.includes('单个敌人'), '左栏应有「单个敌人」收起组');
+assert(html.includes('enemy-portrait'), '对手行左侧应渲染敌人头像（EnemyPortrait·占位线稿/立绘自适应）');
+// 中栏：对手详情卡
+assert(html.includes('对手详情'), '中栏应渲染「对手详情」');
+// 右栏：装备 + 启动
+assert(html.includes('装备（基础档）'), '右栏应渲染「装备（基础档）」逐槽装备下拉');
+assert(html.includes('▶ 进入战斗'), '右栏应渲染「▶ 进入战斗」启动键（→ 真实 CombatView）');
 
 // ── ② serializer round-trip（form ↔ input·新字段不丢 + 装备槽派生）──────────
 const f = emptyCombatFormState('combat.horror_sapien_solo');

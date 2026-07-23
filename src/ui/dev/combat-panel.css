@@ -8,7 +8,8 @@
  * 让本文件不进 bundle。
  * ============================================================ */
 
-@import './dev-panel.css';
+/* 经 map-panel.css 间接拿 dev-panel.css 基底 + 左栏手风琴（.dev-map-acc*·与潜点面板同一套·单一来源）。 */
+@import './map-panel.css';
 
 /* —— 敌人列表 —— */
 
@@ -445,4 +446,90 @@
   background: var(--bg);
   max-height: 70vh;
   overflow-y: auto;
+}
+
+/* ============================================================
+ * 潜点式战斗测试三栏（2026-07-23）——对齐 PlaytestPanel：
+ *   左 对手选择（.dev-col-form·两段列表）· 中 详情（.dev-col-preview）· 右 装备+开打（.dev-combat-loadout-col）。
+ *   装备行/启动键镜像 .dev-playtest-*（那套住 playtest-panel.css·本面板不 import 它·故这里各留一份等价样式）。
+ * ============================================================ */
+.dev-combat-body {
+  grid-template-columns: 280px 1fr 360px;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.dev-combat-loadout-col {
+  background: var(--bg-elev);
+}
+
+/* 装备行：label + select 单行对齐（等宽整齐·作者偏好·同潜点右栏）。 */
+.dev-combat-eq-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.dev-combat-eq-label {
+  flex: none;
+  width: 72px;
+  color: var(--text-muted);
+}
+.dev-combat-eq-row select {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font: inherit;
+}
+
+.dev-combat-launch {
+  width: 100%;
+  margin-top: 14px;
+  background: #1f6f43;
+  color: #eafff0;
+  border: 1px solid #2e9d60;
+  border-radius: 6px;
+  padding: 9px 22px;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.dev-combat-launch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 实战全屏接管的滚动容器（配置视图三栏之外的另一态）。 */
+.dev-combat-live-body {
+  padding: 12px 16px;
+  overflow: auto;
+}
+
+/* 对手行：头像槽（EnemyPortrait·30px）+ 文本列（名在上·id/属性在下）。复用 .dev-event-item 基底，只叠 flex 布局。 */
+.dev-combat-oppo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dev-combat-row-icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dev-combat-row-text {
+  flex: 1;
+  min-width: 0;
+}
+/* 只剩名字一行（属性都在中栏）·省略过长名（遭遇拼接名可能很长）、去掉底距保持行紧凑。 */
+.dev-combat-row-text .dev-event-id {
+  margin-bottom: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

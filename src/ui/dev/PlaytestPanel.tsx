@@ -28,65 +28,37 @@
 
 import { lazy, Suspense, useMemo, useState } from 'react';
 import './playtest-panel.css';
-import type { GameState, ZoneDef, EquipmentLoadout, EquipmentInstance, EquipmentSlot } from '@/types';
+import type { GameState, ZoneDef } from '@/types';
 import { EQUIPMENT_SLOTS } from '@/types/items';
 import { createInitialGameState, createNewRun } from '@/engine/state';
 import { startDive, enterNodeSelection } from '@/engine/dive';
 import { analyzeMap } from '@/engine/mapgen';
-import { allItems } from '@/engine/items';
 import { ZONES } from '@/engine/zones';
 import { getRunBonuses } from '@/engine/lighthouses';
 import { SonarMapView } from './SonarMapView';
 import { groupZonesByRegion, UNCLASSIFIED, type ZoneTabKey } from './zoneGroups';
+import {
+  DEFAULT_PICKS,
+  SLOT_LABEL,
+  useEquipmentOptionsBySlot,
+  picksToLoadout,
+  type EquipmentPicks,
+} from './loadoutPicker';
+
+// 装备选择器的数据/逻辑现由 loadoutPicker 单一来源（与战斗面板 CombatDevPanel 共用）。
+// DEFAULT_PICKS 从本模块再导出——smoke-playtest-launcher 仍 `import { DEFAULT_PICKS }` 自 PlaytestPanel（#317 断言）。
+export { DEFAULT_PICKS };
 
 // 游戏 App 懒加载（dev→game·check-boundaries 规则五允许·同 ScenePreview）：只在「启动下潜」时才下载 App chunk，
 // 工作台首屏与本面板的 SSR 冒烟都不牵动整棵游戏组件树（也就无需 css-stub）。
 const App = lazy(() => import('@/App'));
 
-/** 槽 → 中文标签（仅 UI·不进引擎键名）。 */
-const SLOT_LABEL: Record<EquipmentSlot, string> = {
-  tank: '气瓶',
-  suit: '潜水衣',
-  light: '潜水灯',
-  sonar: '声呐',
-  tool: '武器·主',
-  ranged: '武器·副',
-  charm: '饰品 1',
-  charm2: '饰品 2',
-  charm3: '饰品 3',
-};
-
-/**
- * 试玩默认装备（作者 2026-07-19 #317：**自带声呐**·不再照抄 createStarterLoadout）：
- * 声呐现在是地图本体（#315 一记 ping 全图揭示·#316 标记只画相邻+敌）——没它图全黑、几乎测不了任何下潜内容，
- * 每次启动手动选一遍太蠢。其余槽仍镜像起始装备；想测「无声呐盲潜」手动把声呐槽改回（空）即可。
- */
-export const DEFAULT_PICKS: Record<EquipmentSlot, string | null> = {
-  tank: 'item.tank.bluefin_mk1',
-  suit: 'item.suit.thermal_basic',
-  light: 'item.light.hand_torch',
-  sonar: 'item.sonar.handheld',
-  tool: 'item.dive_knife.standard',
-  ranged: null,
-  charm: null,
-  charm2: null,
-  charm3: null,
-};
-
 /** 固定 seed（同海域同图·与真游戏 seedKey=poi.id 的「同地点同图」语义一致）。 */
 const playtestSeedKey = (zoneId: string) => `playtest::${zoneId}`;
 
 export function PlaytestPanel() {
-  // 每槽的全部基础装备候选（不含升级档·作者 2026-07-18「先 2」）。
-  const optionsBySlot = useMemo(() => {
-    const map = {} as Record<EquipmentSlot, { id: string; name: string; baseLevel: number }[]>;
-    for (const slot of EQUIPMENT_SLOTS) {
-      map[slot] = allItems()
-        .filter((it) => it.category === 'equipment' && it.equipment?.slot === slot)
-        .map((it) => ({ id: it.id, name: it.name, baseLevel: it.equipment?.baseLevel ?? 1 }));
-    }
-    return map;
-  }, []);
+  // 每槽的全部基础装备候选（不含升级档）——loadoutPicker 单一来源（与战斗面板共用）。
+  const optionsBySlot = useEquipmentOptionsBySlot();
 
   // 可下潜 zone（generation==='random'）+ 大区分组（zoneGroups.ts）。
   const zones = useMemo<ZoneDef[]>(
@@ -95,7 +67,7 @@ export function PlaytestPanel() {
   );
   const TABS = useMemo(() => groupZonesByRegion(zones), [zones]);
 
-  const [picks, setPicks] = useState<Record<EquipmentSlot, string | null>>(() => ({ ...DEFAULT_PICKS }));
+  const [picks, setPicks] = useState<EquipmentPicks>(() => ({ ...DEFAULT_PICKS }));
   const [zoneId, setZoneId] = useState<string>(
     () => TABS.find((t) => t.zones.length > 0)?.zones[0]?.id ?? zones[0]?.id ?? '',
   );
@@ -122,12 +94,7 @@ export function PlaytestPanel() {
   // 引擎侧 startDive 将来怎么改（flags/deaths/sensorTuning 等都会影响 mapgen）预览都不会漂。
   const built = useMemo<GameState | null>(() => {
     if (!zoneId) return null;
-    const loadout = {} as EquipmentLoadout;
-    for (const slot of EQUIPMENT_SLOTS) {
-      const id = picks[slot];
-      const opt = id ? optionsBySlot[slot].find((o) => o.id === id) : null;
-      loadout[slot] = opt ? ({ itemId: opt.id, slot, level: opt.baseLevel } as EquipmentInstance) : null;
-    }
+    const loadout = picksToLoadout(picks, optionsBySlot);
     const devFlags = { unlimitedSupplies: unlimited, godMode };
     const base = createInitialGameState();
     // profile 先落所选装备，再由 getRunBonuses 从装备派生随身加成（sonarUnlocked / 氧气·电量·声呐射程…）——

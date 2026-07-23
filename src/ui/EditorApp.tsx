@@ -37,7 +37,8 @@ const isTabKey = (v: string | null): v is TabKey =>
 
 const NAV: EditorNavGroup[] = [
   { group: '经济', items: [{ key: 'economy', label: '素材' }] },
-  { group: '战斗', items: [{ key: 'combat', label: '回归' }] },
+  // 2026-07-23：「回归」→「战斗」（面板从基线编辑器改造成潜点式战斗测试·URL key 仍 combat·深链不断）。
+  { group: '战斗', items: [{ key: 'combat', label: '战斗' }] },
   {
     group: '地图',
     items: [
